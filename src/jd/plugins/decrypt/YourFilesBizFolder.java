@@ -45,7 +45,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             if (reqinfo.getHtmlCode().contains("Ordner Passwort")) {
-                String url = parameter.substring(0, parameter.lastIndexOf("/") + 1) + new Regex(reqinfo.getHtmlCode(), "action\\=(folders\\.php\\?fid\\=.*)method\\=post>").getFirstMatch().trim();
+                String url = parameter.substring(0, parameter.lastIndexOf("/") + 1) + new Regex(reqinfo.getHtmlCode(), "action\\=(folders\\.php\\?fid\\=.*)method\\=post>").getMatch(0).trim();
                 String cookie = reqinfo.getCookie();
                 String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.decrypt.passwordProtected", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
                 String post = "act=login&password=" + password + "&login=Einloggen";
@@ -93,7 +93,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

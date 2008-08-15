@@ -52,7 +52,7 @@ public class Merge {
             } else {
                 for (int i = 0; i < files.length; i++) {
                     try {
-                        if (Integer.parseInt(new Regex(files[i].getName(), "\\.([\\d]+)($|\\.)").getFirstMatch()) != i + 1) { return null; }
+                        if (Integer.parseInt(new Regex(files[i].getName(), "\\.([\\d]+)($|\\.)").getMatch(0)) != i + 1) { return null; }
                     } catch (Exception e) {
                         // TODO: handle exception
                     }

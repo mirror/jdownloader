@@ -41,7 +41,7 @@ public class FilesTo extends PluginForHost {
     static private final String AGB_LINK = "http://www.files.to/content/aup";
     static private final String CAPTCHA_WRONG = "Der eingegebene code ist falsch";
     // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.2";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.1.2";
     static private final String CODER = "JD-Team";
     static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
 
@@ -98,8 +98,8 @@ public class FilesTo extends PluginForHost {
                 // Datei gelöscht?
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) { return false; }
 
-                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getFirstMatch());
-                int fileSize = getFileSize(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getFirstMatch()));
+                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getMatch(0));
+                int fileSize = getFileSize(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getMatch(0)));
                 downloadLink.setName(fileName);
 
                 try {
@@ -132,10 +132,10 @@ public class FilesTo extends PluginForHost {
         int size = 0;
 
         if (source.contains("KB")) {
-            source = new Regex(source, "(.*?) KB").getFirstMatch();
+            source = new Regex(source, "(.*?) KB").getMatch(0);
             size = Integer.parseInt(source) * 1024;
         } else if (source.contains("MB")) {
-            source = new Regex(source, "(.*?) MB").getFirstMatch();
+            source = new Regex(source, "(.*?) MB").getMatch(0);
             size = Integer.parseInt(source) * 1024 * 1024;
         }
 
@@ -165,7 +165,7 @@ public class FilesTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -205,8 +205,8 @@ public class FilesTo extends PluginForHost {
 
         if (requestInfo.getHtmlCode() != null) {
 
-            session = new Regex(requestInfo.getHtmlCode(), SESSION).getFirstMatch();
-            captchaAddress = new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getFirstMatch() + "?" + session;
+            session = new Regex(requestInfo.getHtmlCode(), SESSION).getMatch(0);
+            captchaAddress = new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getMatch(0) + "?" + session;
 
         } else {
 
@@ -257,7 +257,7 @@ public class FilesTo extends PluginForHost {
 
         }
 
-        finalURL = new Regex(requestInfo.getHtmlCode(), DOWNLOAD_URL).getFirstMatch();
+        finalURL = new Regex(requestInfo.getHtmlCode(), DOWNLOAD_URL).getMatch(0);
         logger.info(finalURL);
 
         // Download vorbereiten

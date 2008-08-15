@@ -20,10 +20,10 @@ public class FileUploadnet extends PluginForHost {
     static private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final Pattern PAT_VIEW = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAT_Member = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
@@ -62,9 +62,9 @@ public class FileUploadnet extends PluginForHost {
             
                 br.getPage(downloadurl);
                 if (!br.containsHTML("Datei existiert nicht auf unserem Server")) {
-                    String filename = br.getRegex("<h1>Download \"(.*?)\"</h1>").getFirstMatch();
+                    String filename = br.getRegex("<h1>Download \"(.*?)\"</h1>").getMatch(0);
                     String filesize;
-                    if ((filesize = br.getRegex("e:</b></td><td>(.*?)Kbyte<td>").getFirstMatch()) != null) {
+                    if ((filesize = br.getRegex("e:</b></td><td>(.*?)Kbyte<td>").getMatch(0)) != null) {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
@@ -75,9 +75,9 @@ public class FileUploadnet extends PluginForHost {
                 downloadurl = downloadLink.getDownloadURL();
                 br.getPage(downloadurl);
                 if (!  br.containsHTML("Datei existiert nicht auf unserem Server")) {
-                    String filename =   br.getRegex("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getFirstMatch();
+                    String filename =   br.getRegex("<h1>Bildeigenschaften von \"(.*?)\"</h1>").getMatch(0);
                     String filesize;
-                    if ((filesize =   br.getRegex("e:</b>(.*?)Kbyte").getFirstMatch()) != null) {
+                    if ((filesize =   br.getRegex("e:</b>(.*?)Kbyte").getMatch(0)) != null) {
                         downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.trim())) * 1024);
                     }
                     downloadLink.setName(filename);
@@ -114,7 +114,7 @@ public class FileUploadnet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -131,13 +131,13 @@ public class FileUploadnet extends PluginForHost {
 
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
             /* DownloadFiles */
-            downloadurl =   br.getRegex("action=\"(.*?)\" method=\"post\"").getFirstMatch();
+            downloadurl =   br.getRegex("action=\"(.*?)\" method=\"post\"").getMatch(0);
             Form form = br.getForm(0);
      br.openFormConnection(form);
           
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
-            downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getFirstMatch();
+            downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
             br.openGetConnection(downloadurl);
        } else {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

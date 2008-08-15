@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 public class XupIn extends PluginForHost {
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.2.0";
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "jD-Team";
     private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
@@ -98,16 +98,16 @@ public class XupIn extends PluginForHost {
 
             if (requestInfo.containsHTML(NOT_FOUND)) {
 
-                if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) {
-                    downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+                if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0) != null) {
+                    downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0));
                 }
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                 return false;
 
             }
 
-            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
-            Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
+            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getMatch(0)).trim();
+            Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getMatch(0).trim()) * 1024 * 1024);
 
             // downloadinfos gefunden? -> download verfügbar
             if (fileName != null && length != null) {
@@ -156,7 +156,7 @@ public class XupIn extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -183,8 +183,8 @@ public class XupIn extends PluginForHost {
 
         if (requestInfo.containsHTML(NOT_FOUND)) {
 
-            if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch() != null) {
-                downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getFirstMatch());
+            if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0) != null) {
+                downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0));
             }
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -198,12 +198,12 @@ public class XupIn extends PluginForHost {
 
         }
 
-        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getFirstMatch()).trim();
+        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getMatch(0)).trim();
         downloadLink.setName(fileName);
 
         try {
 
-            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getFirstMatch().trim()) * 1024 * 1024);
+            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getMatch(0).trim()) * 1024 * 1024);
             downloadLink.setDownloadSize(length);
 
         } catch (Exception e) {
@@ -234,9 +234,9 @@ public class XupIn extends PluginForHost {
 
         }
 
-        vid = new Regex(requestInfo.getHtmlCode(), VID).getFirstMatch();
-        vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
-        captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getFirstMatch();
+        vid = new Regex(requestInfo.getHtmlCode(), VID).getMatch(0);
+        vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
+        captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
 
         // case PluginStep.STEP_GET_CAPTCHA_FILE:
 

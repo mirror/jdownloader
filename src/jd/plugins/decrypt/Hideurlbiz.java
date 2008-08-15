@@ -44,7 +44,7 @@ public class Hideurlbiz extends PluginForDecrypt {
             if (br.getRedirectLocation() != null) {
                 decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
             } else {
-                String link = new Regex(page, Pattern.compile("action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String link = new Regex(page, Pattern.compile("action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (link != null) decryptedLinks.add(createDownloadlink(link));
             }
             progress.increase(1);
@@ -75,7 +75,7 @@ public class Hideurlbiz extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

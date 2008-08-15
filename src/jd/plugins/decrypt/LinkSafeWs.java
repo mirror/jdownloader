@@ -40,7 +40,7 @@ public class LinkSafeWs extends PluginForDecrypt {
         String[][] files = new Regex(br.getPage(parameter), Pattern.compile("<input type='hidden' name='id' value='(.*?)' />(.*?)<input type='hidden' name='f' value='(.*?)' />", Pattern.DOTALL)).getMatches();
         progress.setRange(files.length);
         for (String[] elements : files) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.postPage("http://www.linksafe.ws/go/", "id=" + elements[0] + "&f=" + elements[2] + "&Download.x=5&Download.y=10&Download=Download"), Pattern.compile("src=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.postPage("http://www.linksafe.ws/go/", "id=" + elements[0] + "&f=" + elements[2] + "&Download.x=5&Download.y=10&Download=Download"), Pattern.compile("src=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0))));
             progress.increase(1);
         }
 
@@ -69,7 +69,7 @@ public class LinkSafeWs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

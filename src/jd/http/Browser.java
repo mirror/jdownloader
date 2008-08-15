@@ -849,7 +849,7 @@ public class Browser {
     }
 
     public String getMatch(String string) {
-        return getRegex(string).getFirstMatch();
+        return getRegex(string).getMatch(0);
 
     }
 

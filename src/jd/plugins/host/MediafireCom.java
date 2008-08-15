@@ -68,7 +68,7 @@ public class MediafireCom extends PluginForHost {
 
             if (br.getRegex(offlinelink).matches()) { return false; }
 
-            downloadLink.setName(br.getRegex("<title>(.*?)<\\/title>").getFirstMatch().trim());
+            downloadLink.setName(br.getRegex("<title>(.*?)<\\/title>").getMatch(0).trim());
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -98,7 +98,7 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -124,13 +124,13 @@ public class MediafireCom extends PluginForHost {
             return;
         }
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
-        String url = br.getRegex("http\\:\\/\\/\"(.*?)'\"").getFirstMatch();
+        String url = br.getRegex("http\\:\\/\\/\"(.*?)'\"").getMatch(0);
         url = "http://" + url.replaceAll("'(.*?)'", "$1");
 
-        String[] vars = new Regex(url, "\\+ ?([a-z0-9]*?) ?\\+").getMatches(1);
+        String[] vars = new Regex(url, "\\+ ?([a-z0-9]*?) ?\\+").getColumn(1);
 
         for (String var : vars) {
-            String value = br.getRegex(var + " ?= ?\\'(.*?)\\'").getFirstMatch();
+            String value = br.getRegex(var + " ?= ?\\'(.*?)\\'").getMatch(0);
             url = url.replaceAll("\\+ ?" + var + " ?\\+", value);
 
         }

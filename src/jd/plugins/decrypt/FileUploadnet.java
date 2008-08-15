@@ -34,8 +34,8 @@ public class FileUploadnet extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String user = new Regex(parameter, "upload\\.net/(.*?)/").getFirstMatch();
-        String file = new Regex(parameter, user + "/(.*)").getFirstMatch();
+        String user = new Regex(parameter, "upload\\.net/(.*?)/").getMatch(0);
+        String file = new Regex(parameter, user + "/(.*)").getMatch(0);
         String link = "http://www.file-upload.net/member/data3.php?user=" + user + "&name=" + file;
         if (link != null) {
             link.replaceAll(" ", "%20");
@@ -68,7 +68,7 @@ public class FileUploadnet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

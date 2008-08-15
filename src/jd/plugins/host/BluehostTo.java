@@ -34,9 +34,9 @@ public class BluehostTo extends PluginForHost {
     // http://bluehost.to/dl=uScPWKtIN
 
     // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.1";
     // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
     static private final String HOST = "bluehost.to";
@@ -176,7 +176,7 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

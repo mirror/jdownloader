@@ -45,10 +45,10 @@ public class FastLoadNet extends PluginForHost {
     private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.2.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.2.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String HOST = "fast-load.net";
 
@@ -112,8 +112,8 @@ public class FastLoadNet extends PluginForHost {
 
             }
 
-            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
-            Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
+            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getMatch(0)).trim();
+            Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getMatch(1).trim()) * 1024 * 1024);
 
             // downloadinfos gefunden? -> download verfügbar
             if (fileName != null && length != null) {
@@ -163,7 +163,7 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -196,12 +196,12 @@ public class FastLoadNet extends PluginForHost {
 
         }
 
-        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(1)).trim();
+        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getMatch(0)).trim();
         downloadLink.setName(fileName);
 
         try {
 
-            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getFirstMatch(2).trim()) * 1024 * 1024);
+            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getMatch(1).trim()) * 1024 * 1024);
             downloadLink.setDownloadSize(length);
 
         } catch (Exception e) {

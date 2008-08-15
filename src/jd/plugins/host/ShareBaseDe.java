@@ -50,9 +50,9 @@ public class ShareBaseDe extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
     private static final String PLUGIN_NAME = HOST;
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.1";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.1";
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     private static final String SIM_DL = "Das gleichzeitige Downloaden";
     private static final String WAIT = "Du musst noch °:°:° warten!";
     private String cookies = "";
@@ -91,8 +91,8 @@ public class ShareBaseDe extends PluginForHost {
         try {
 
             RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
-            String fileSize = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch());
+            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getMatch(0));
+            String fileSize = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILESIZE).getMatch(0));
             boolean sim_dl = new Regex(requestInfo.getHtmlCode(), SIM_DL).count() > 0;
             boolean dl_limit = new Regex(requestInfo.getHtmlCode(), DL_LIMIT).count() > 0;
             // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
@@ -152,7 +152,7 @@ public class ShareBaseDe extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -171,7 +171,7 @@ public class ShareBaseDe extends PluginForHost {
 
         requestInfo = HTTP.getRequest(downloadUrl);
 
-        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getFirstMatch());
+        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getMatch(0));
 
         if (requestInfo.containsHTML(DOWLOAD_RUNNING)) {
             // step.setStatus(PluginStep.STATUS_ERROR);

@@ -264,10 +264,10 @@ public class Secured extends PluginForDecrypt {
     // static private final String PLUGIN_NAME = "secured.in";
 
     // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "2.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "2.0";
 
     // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     static private final String JS_URL = "http://secured.in/scripts/main_final.js";
 
@@ -396,7 +396,7 @@ public class Secured extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

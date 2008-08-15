@@ -53,11 +53,11 @@ public class FastShareorg extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
             if (!br.containsHTML("No filename specified or the file has been deleted")) {
-                downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getFirstMatch()));
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex("Wenn sie die Datei \"<b>(.*?)<\\/b>\"").getMatch(0)));
                 String filesize = null;
-                if ((filesize = br.getRegex( "<i>\\((.*)MB\\)</i>").getFirstMatch()) != null) {
+                if ((filesize = br.getRegex( "<i>\\((.*)MB\\)</i>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
-                } else if ((filesize = br.getRegex( "<i>\\((.*)KB\\)</i>").getFirstMatch()) != null) {
+                } else if ((filesize = br.getRegex( "<i>\\((.*)KB\\)</i>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
                 }
                 return true;
@@ -93,7 +93,7 @@ public class FastShareorg extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -112,7 +112,7 @@ public class FastShareorg extends PluginForHost {
         /* Link holen */
         Form form = br.getForm(0);
         br.submitForm(form);
-        if ((url = new Regex(br, "Link: <a href=(.*)><b>").getFirstMatch()) == null) {
+        if ((url = new Regex(br, "Link: <a href=(.*)><b>").getMatch(0)) == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;

@@ -22,10 +22,10 @@ public class YourFileSendercom extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
@@ -96,7 +96,7 @@ public class YourFileSendercom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -117,7 +117,7 @@ public class YourFileSendercom extends PluginForHost {
             return;
         }
 
-        String link = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("unescape\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        String link = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("unescape\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);

@@ -41,7 +41,7 @@ public class Linkshield extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
-            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=(?!blank)(.*?)>")).getFirstMatch();
+            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=(?!blank)(.*?)>")).getMatch(0);
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link));
             } else {
@@ -76,7 +76,7 @@ public class Linkshield extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -43,8 +43,8 @@ public class LoadingCc extends PluginForDecrypt {
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String content = new Regex(reqinfo.getHtmlCode(), "\\<!-- Hauptfenster --\\>(.*?)\\<!-- Rechte Navigation --\\>").getFirstMatch();
-            String[] links = new Regex(content, "<a href=\"([^\"]*?)\" target=\"\\_blank\"><img src='images[^>]*?' border=\"0\" />").getMatches(1);
+            String content = new Regex(reqinfo.getHtmlCode(), "\\<!-- Hauptfenster --\\>(.*?)\\<!-- Rechte Navigation --\\>").getMatch(0);
+            String[] links = new Regex(content, "<a href=\"([^\"]*?)\" target=\"\\_blank\"><img src='images[^>]*?' border=\"0\" />").getColumn(1);
             progress.setRange(links.length);
             for (int i = 0; i < links.length; i++) {
                 if (!links[i].matches("(?is)http://.*?loading\\.cc.*")) {
@@ -82,7 +82,7 @@ public class LoadingCc extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

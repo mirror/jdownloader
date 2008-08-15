@@ -22,10 +22,10 @@ public class Vipfilecom extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
@@ -67,7 +67,7 @@ public class Vipfilecom extends PluginForHost {
                 } else if (linkinfo[0][1].matches("Kb")) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
                 }
-                downloadLink.setName(new Regex(downloadurl, PAT_SUPPORTED).getFirstMatch());
+                downloadLink.setName(new Regex(downloadurl, PAT_SUPPORTED).getMatch(0));
                 return true;
             }
         } catch (Exception e) {
@@ -100,7 +100,7 @@ public class Vipfilecom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -115,7 +115,7 @@ public class Vipfilecom extends PluginForHost {
             return;
         }
         /* DownloadLink holen, 2x der Location folgen */
-        String link = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        String link = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);

@@ -98,7 +98,7 @@ public class DataHu extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -115,7 +115,7 @@ public class DataHu extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         RequestInfo requestInfo = HTTP.getRequest(new URL(url));
 
-        String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String[] test = link.split("/");
         String name = test[test.length - 1];
         downloadLink.setName(name);

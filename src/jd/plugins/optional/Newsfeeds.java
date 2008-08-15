@@ -416,12 +416,12 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             }
 
-            String[] matches = requestInfo.getRegexp(patEntry).getMatches(1);
+            String[] matches = requestInfo.getRegexp(patEntry).getColumn(1);
 
             for (String match : matches) {
 
-                String title = new Regex(Pattern.compile(patTitle).matcher(match)).getFirstMatch(1);
-                String link = new Regex(Pattern.compile(patLink).matcher(match)).getFirstMatch(1);
+                String title = new Regex(Pattern.compile(patTitle).matcher(match)).getMatch(0);
+                String link = new Regex(Pattern.compile(patLink).matcher(match)).getMatch(0);
 
                 if (title != null && link != null) {
 
@@ -460,7 +460,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -889,7 +889,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 }
 
                 Regex regex = requestInfo.getRegexp("Pages \\(([0-9]+)\\):");
-                String pagesString = regex.getFirstMatch(1);
+                String pagesString = regex.getMatch(0);
                 int pages = 1;
                 if (pagesString != null) {
                     pages = Integer.parseInt(pagesString);
@@ -911,8 +911,8 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
                     for (String[] match2 : matches2) {
 
-                        String id1 = new Regex(Pattern.compile("(S[0-9]+){0,1}E[0-9]+").matcher(match2[0])).getFirstMatch(0);
-                        String id2 = new Regex(Pattern.compile("(S[0-9]+){0,1}E[0-9]+").matcher(parameter[0])).getFirstMatch(0);
+                        String id1 = new Regex(Pattern.compile("(S[0-9]+){0,1}E[0-9]+").matcher(match2[0])).getMatch(-1);
+                        String id2 = new Regex(Pattern.compile("(S[0-9]+){0,1}E[0-9]+").matcher(parameter[0])).getMatch(-1);
 
                         if (parameter[0].contains(match2[0]) || id1 != null && id2 != null && id1.equals(id2)) {
 
@@ -920,7 +920,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
                             regex = new Regex(Pattern.compile("href=\"(http://download\\.serienjunkies\\.org/.*?\\.html)\"").matcher(match2[1]));
 
-                            for (String link : regex.getMatches(1)) {
+                            for (String link : regex.getColumn(1)) {
                                 links.add(link);
                             }
 

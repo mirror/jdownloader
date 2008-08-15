@@ -960,7 +960,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                                 String html = JDUtilities.getLocalFile(element);
                                 if (Regex.matches(html, "src\\=\"(.*?)\"")) {
-                                    html = new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
+                                    html = new Regex(html, "src\\=\"(.*?)\"").getMatch(0);
                                     html = JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + ret.getName() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
                                 }
 
@@ -2126,13 +2126,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static void showChangelogDialog() {
         String update = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html"));
-        String message = new Regex(update, "<!--message-->(.+?)<!--message-->").getFirstMatch();
-        String version = new Regex(update, "<p>version(.*?)<").getFirstMatch().trim();
-        String updates = new Regex(update, "<ul>(.*?)</ul>").getFirstMatch();
+        String message = new Regex(update, "<!--message-->(.+?)<!--message-->").getMatch(0);
+        String version = new Regex(update, "<p>version(.*?)<").getMatch(0).trim();
+        String updates = new Regex(update, "<ul>(.*?)</ul>").getMatch(0);
         String[][] lines = new Regex(updates, "<li>(.*?)\\:(.*?)</li>").getMatches();
         ArrayList<String[]> list = new ArrayList<String[]>();
         for (String[] line : lines) {
-            String type = new Regex(line[1], "\\((.*?)\\)").getFirstMatch();
+            String type = new Regex(line[1], "\\((.*?)\\)").getMatch(0);
             if (type != null) {
                 line[1] = line[1].replaceAll("\\((.*?)\\)", "");
                 line[0] += " (" + type + ")";

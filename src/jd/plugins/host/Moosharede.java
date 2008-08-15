@@ -21,10 +21,10 @@ public class Moosharede extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?mooshare\\.de/index\\.php\\?pid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
 
@@ -56,7 +56,7 @@ public class Moosharede extends PluginForHost {
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
-                String filename = br.getRegex("<center>Dateiname: <b>(.*?)</b>").getFirstMatch();
+                String filename = br.getRegex("<center>Dateiname: <b>(.*?)</b>").getMatch(0);
                 if (filename != "") {
                     downloadLink.setName(filename);
                     return true;
@@ -92,7 +92,7 @@ public class Moosharede extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -108,7 +108,7 @@ public class Moosharede extends PluginForHost {
         }
 
         /* DownloadLink holen */
-        String url = br.getRegex("popup\\('(.*?)',").getFirstMatch();
+        String url = br.getRegex("popup\\('(.*?)',").getMatch(0);
         br.openGetConnection(url);
 
         /* Datei herunterladen */

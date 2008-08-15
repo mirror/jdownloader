@@ -50,8 +50,8 @@ public class MyvideoDe extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
 
-            String link = new Regex(reqinfo.getHtmlCode(), DOWNLOADURL).getFirstMatch();
-            String name = Encoding.UTF8Decode(new Regex(reqinfo.getHtmlCode(), FILENAME).getFirstMatch().trim());
+            String link = new Regex(reqinfo.getHtmlCode(), DOWNLOADURL).getMatch(0);
+            String name = Encoding.UTF8Decode(new Regex(reqinfo.getHtmlCode(), FILENAME).getMatch(0).trim());
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
@@ -93,7 +93,7 @@ public class MyvideoDe extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

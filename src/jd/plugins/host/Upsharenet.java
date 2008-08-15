@@ -23,10 +23,10 @@ public class Upsharenet extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?upshare\\.(net|eu)/download\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
@@ -107,7 +107,7 @@ Browser.clearCookies(HOST);
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -176,7 +176,7 @@ Browser.clearCookies(HOST);
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
         /* DownloadLink holen */
-        String link = new Regex(br, Pattern.compile("document.location=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String link = new Regex(br, Pattern.compile("document.location=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (link == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);

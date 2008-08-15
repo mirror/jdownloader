@@ -36,20 +36,20 @@ public class GappingOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         if (parameter.indexOf("index.php") != -1) {
-            String links[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://gapping\\.org/file\\.php\\?id=(.*?)\" >", Pattern.CASE_INSENSITIVE)).getMatches(0);
+            String links[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://gapping\\.org/file\\.php\\?id=(.*?)\" >", Pattern.CASE_INSENSITIVE)).getColumn(1);
             progress.setRange(links.length);
             for (String element : links) {
-                decryptedLinks.add(createDownloadlink(new Regex(br.getPage("http://gapping.org/decry.php?fileid=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch().trim()));
+                decryptedLinks.add(createDownloadlink(new Regex(br.getPage("http://gapping.org/decry.php?fileid=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0).trim()));
                 progress.increase(1);
             }
         } else if (parameter.indexOf("file.php") != -1) {
             parameter = parameter.replace("file.php?id=", "decry.php?fileid=");
-            decryptedLinks.add(createDownloadlink(new Regex(br.getPage(parameter), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch().trim()));
+            decryptedLinks.add(createDownloadlink(new Regex(br.getPage(parameter), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0).trim()));
         } else {
-            String[] links = new Regex(br.getPage(parameter), Pattern.compile("http://gapping\\.org/d/(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getMatches(0);
+            String[] links = new Regex(br.getPage(parameter), Pattern.compile("http://gapping\\.org/d/(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
-                decryptedLinks.add(createDownloadlink(new Regex(br.getPage(element), Pattern.compile("src=\"(.*?)\"", Pattern.DOTALL)).getFirstMatch().trim()));
+                decryptedLinks.add(createDownloadlink(new Regex(br.getPage(element), Pattern.compile("src=\"(.*?)\"", Pattern.DOTALL)).getMatch(0).trim()));
                 progress.increase(1);
             }
         }
@@ -79,7 +79,7 @@ public class GappingOrg extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

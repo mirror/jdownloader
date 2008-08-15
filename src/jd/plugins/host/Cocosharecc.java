@@ -25,10 +25,10 @@ public class Cocosharecc extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?cocoshare\\.cc/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
@@ -61,9 +61,9 @@ public class Cocosharecc extends PluginForHost {
             downloadurl = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(downloadurl));
             if (requestInfo.containsHTML("Download startet automatisch")) {
-                String filename = requestInfo.getRegexp("<h1>(.*?)</h1>").getFirstMatch();
+                String filename = requestInfo.getRegexp("<h1>(.*?)</h1>").getMatch(0);
                 String filesize;
-                if ((filesize = requestInfo.getRegexp("Dateigr&ouml;sse:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(.*?)Bytes<br").getFirstMatch()) != null) {
+                if ((filesize = requestInfo.getRegexp("Dateigr&ouml;sse:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(.*?)Bytes<br").getMatch(0)) != null) {
                     downloadLink.setDownloadSize(new Integer(filesize.trim().replaceAll("\\.", "")));
                 }
                 downloadLink.setName(filename);
@@ -99,7 +99,7 @@ public class Cocosharecc extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -116,13 +116,13 @@ public class Cocosharecc extends PluginForHost {
         }
 
         /* Warten */
-        String waittime = requestInfo.getRegexp("var num_timeout = (\\d+);").getFirstMatch();
+        String waittime = requestInfo.getRegexp("var num_timeout = (\\d+);").getMatch(0);
         if (waittime != null) {
             sleep(new Integer(waittime.trim()) * 1000, downloadLink);
         }
 
         /* DownloadLink holen */
-        downloadurl = "http://www.cocoshare.cc" + requestInfo.getRegexp("<meta http-equiv=\"refresh\" content=\"\\d+; URL=(.*?)\"").getFirstMatch();
+        downloadurl = "http://www.cocoshare.cc" + requestInfo.getRegexp("<meta http-equiv=\"refresh\" content=\"\\d+; URL=(.*?)\"").getMatch(0);
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
         downloadurl = requestInfo.getLocation();
         if (downloadurl == null) {

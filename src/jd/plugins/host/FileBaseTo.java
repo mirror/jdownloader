@@ -72,7 +72,7 @@ public class FileBaseTo extends PluginForHost {
                 return false;
             }
             
-            String size=br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getFirstMatch();
+            String size=br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getMatch(0);
             downloadLink.setDownloadSize(Regex.getSize(size));
 
             return true;
@@ -103,7 +103,7 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

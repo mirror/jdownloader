@@ -133,18 +133,18 @@ public class FileFactory extends PluginForHost {
 
         }
 
-        String newURL = "http://" + requestInfo.getConnection().getURL().getHost() + new Regex(requestInfo.getHtmlCode(), baseLink).getFirstMatch();
+        String newURL = "http://" + requestInfo.getConnection().getURL().getHost() + new Regex(requestInfo.getHtmlCode(), baseLink).getMatch(0);
         logger.info(newURL);
 
         if (newURL != null) {
 
             newURL = newURL.replaceAll("' \\+ '", "");
             requestInfo = HTTP.getRequest((new URL(newURL)), null, downloadLink.getName(), true);
-            actionString = "http://www.filefactory.com/" + new Regex(requestInfo.getHtmlCode(), frameForCaptcha).getFirstMatch();
+            actionString = "http://www.filefactory.com/" + new Regex(requestInfo.getHtmlCode(), frameForCaptcha).getMatch(0);
             actionString = actionString.replaceAll("&amp;", "&");
             requestInfo = HTTP.getRequest((new URL(actionString)), "viewad11=yes", newURL, true);
             // captcha Adresse finden
-            captchaAddress = "http://www.filefactory.com" + new Regex(requestInfo.getHtmlCode(), patternForCaptcha).getFirstMatch();
+            captchaAddress = "http://www.filefactory.com" + new Regex(requestInfo.getHtmlCode(), patternForCaptcha).getMatch(0);
             captchaAddress = captchaAddress.replaceAll("&amp;", "&");
             // post daten lesen
             postTarget = HTMLParser.getFormInputHidden(requestInfo.getHtmlCode());
@@ -191,7 +191,7 @@ public class FileFactory extends PluginForHost {
 
             }
 
-            postTarget = new Regex(requestInfo.getHtmlCode(), patternForDownloadlink).getFirstMatch();
+            postTarget = new Regex(requestInfo.getHtmlCode(), patternForDownloadlink).getMatch(0);
             postTarget = postTarget.replaceAll("&amp;", "&");
 
         } catch (Exception e) {
@@ -216,8 +216,8 @@ public class FileFactory extends PluginForHost {
 
                 logger.severe("Download limit reached as free user");
 
-                String waitTime = new Regex(requestInfo.getHtmlCode(), WAIT_TIME).getFirstMatch(1);
-                String unit = new Regex(requestInfo.getHtmlCode(), WAIT_TIME).getFirstMatch(2);
+                String waitTime = new Regex(requestInfo.getHtmlCode(), WAIT_TIME).getMatch(0);
+                String unit = new Regex(requestInfo.getHtmlCode(), WAIT_TIME).getMatch(1);
                 wait = 0;
 
                 if (unit.equals("minutes")) {
@@ -357,7 +357,7 @@ public class FileFactory extends PluginForHost {
             if (requestInfo.getHeaders().get("Content-Type").toString().contains("text/html")) {
                 /* falls direct-download ausgeschalten ist */
                 requestInfo = HTTP.getRequest(new URL(link), greq.getCookieString(), downloadLink.getDownloadURL(), true);
-                link = new Regex(requestInfo.getHtmlCode(), Pattern.compile(PREMIUM_LINK, Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                link = new Regex(requestInfo.getHtmlCode(), Pattern.compile(PREMIUM_LINK, Pattern.CASE_INSENSITIVE)).getMatch(0);
                 
                 if(link==null){
                     logger.warning("Account Settings invalid");
@@ -418,9 +418,9 @@ public class FileFactory extends PluginForHost {
                 return false;
             } else {
 
-                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode().replaceAll("\\&\\#8203\\;", ""), FILENAME).getFirstMatch());
+                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
                 int length = 0;
-                Double fileSize = Double.parseDouble(new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(1).replaceAll(",", ""));
+                Double fileSize = Double.parseDouble(new Regex(requestInfo.getHtmlCode(), FILESIZE).getMatch(0).replaceAll(",", ""));
                 //                
                 // // Dateiname ist auf der Seite nur gekürzt auslesbar ->
                 // linkchecker
@@ -433,7 +433,7 @@ public class FileFactory extends PluginForHost {
                 // "link_text="+fileFactoryUrlEncode(downloadLink.getDownloadURL
                 // ()), true);
                 // String f2 = new Regex(requestInfo.getHtmlCode(),
-                // FILENAME).getFirstMatch();
+                // FILENAME).getMatch(0);
                 // if(f2!=null)fileName=f2;
                 // if(fileName==null)return false;
                 // fileName = fileName.replaceAll(" <br>", "").trim();
@@ -441,7 +441,7 @@ public class FileFactory extends PluginForHost {
                 // Double fileSize = Double.parseDouble(new
                 // Regex(requestInfo.getHtmlCode(),
                 // FILESIZE).getFirstMatch(1).replaceAll(",", ""));
-                String unit = new Regex(requestInfo.getHtmlCode(), FILESIZE).getFirstMatch(2);
+                String unit = new Regex(requestInfo.getHtmlCode(), FILESIZE).getMatch(1);
 
                 if (unit.equals("B")) {
                     length = (int) Math.round(fileSize);
@@ -499,7 +499,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

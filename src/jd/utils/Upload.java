@@ -176,10 +176,10 @@ public class Upload {
             form = br.getForm(0);
 
             form.setFileToPost(file);
-            form.action = br.getRegex("document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getFirstMatch() + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
+            form.action = br.getRegex("document..*?.action = \"(http://.*?.uploaded.to/up\\?upload_id=)\";").getMatch(0) + Math.round(10000 * Math.random()) + "0" + Math.round(10000 * Math.random());
             br.submitForm(form);
             br.getPage("http://uploaded.to/home");
-            return br.getRegex("http://uploaded.to/\\?id=[A-Za-z0-9]+").getFirstMatch();
+            return br.getRegex("http://uploaded.to/\\?id=[A-Za-z0-9]+").getMatch(0);
         } catch (Exception e) {
             e.printStackTrace();
         }

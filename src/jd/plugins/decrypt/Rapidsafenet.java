@@ -46,7 +46,7 @@ public class Rapidsafenet extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
 
             // Links auslesen und konvertieren
-            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
         } catch (IOException e) {
@@ -78,7 +78,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -55,7 +55,7 @@ public class Tinyurl extends PluginForDecrypt {
             }
 
             // Link der Liste hinzufügen
-            decryptedLinks.add(createDownloadlink(new Regex(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"(.*?)\">Proceed to", Pattern.CASE_INSENSITIVE).getFirstMatch()));
+            decryptedLinks.add(createDownloadlink(new Regex(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"(.*?)\">Proceed to", Pattern.CASE_INSENSITIVE).getMatch(0)));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -85,7 +85,7 @@ public class Tinyurl extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

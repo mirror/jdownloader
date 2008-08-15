@@ -44,9 +44,9 @@ public class ShareRocktEs extends PluginForDecrypt {
         br.setFollowRedirects(false);
         String[] matches;
         if (new Regex(cryptedLink, patternSupported_v).matches()) {
-            matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getMatches(1);
+            matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getColumn(1);
         } else {
-            String match = new Regex(cryptedLink, patternSupported_go).getFirstMatch();
+            String match = new Regex(cryptedLink, patternSupported_go).getMatch(0);
             if (match == null) { return null; }
             matches = new String[] { match };
         }
@@ -57,15 +57,15 @@ public class ShareRocktEs extends PluginForDecrypt {
             linksite = br.getPage("http://share.rockt.es/?go=" + match);
             boolean gotLink = false;
             while (!gotLink) {
-                if ((followlink = new Regex(linksite, Pattern.compile("document\\.location='\\?go=(.*?)'")).getFirstMatch()) != null) {
+                if ((followlink = new Regex(linksite, Pattern.compile("document\\.location='\\?go=(.*?)'")).getMatch(0)) != null) {
                     linksite = br.getPage("http://share.rockt.es/?go=" + followlink);
                 } else {
                     gotLink = true;
-                    String link = new Regex(linksite, Pattern.compile("<iframe src='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    String link = new Regex(linksite, Pattern.compile("<iframe src='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     if (link != null) {
                         decryptedLinks.add(createDownloadlink(link));
                     } else {
-                        link = new Regex(linksite, Pattern.compile("document\\.location='(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        link = new Regex(linksite, Pattern.compile("document\\.location='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
                         if (link != null) {
                             decryptedLinks.add(createDownloadlink(link));
                         }
@@ -98,7 +98,7 @@ public class ShareRocktEs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

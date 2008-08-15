@@ -65,13 +65,13 @@ public final class Sniffy {
             list = whiteList.matcher(list).replaceAll("");
 
             String r;
-            if ((r = new Regex(list, blackList).getFirstMatch()) != null) {
+            if ((r = new Regex(list, blackList).getMatch(0)) != null) {
                 JDUtilities.getLogger().warning("Sniffy(forbidden sniffer):2" + r);
                 check2 = true;
             }
             if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false) || JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
 
-                if ((r = new Regex(list, blackListproxy).getFirstMatch()) != null) {
+                if ((r = new Regex(list, blackListproxy).getMatch(0)) != null) {
                     JDUtilities.getLogger().warning("Sniffy:(forbidden proxytools)" + r);
                     check2 = true;
                 }

@@ -83,7 +83,7 @@ public class YouTubeCom extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(url);
             String video_id = "";
             String t = "";
-            String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getFirstMatch();
+            String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getMatch(0);
             if (match == null) { return null; }
 
             /* DownloadUrl holen */
@@ -98,7 +98,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
             }
             String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
-            String name = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getFirstMatch().trim());
+            String name = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getMatch(0).trim());
             /* Konvertierungsmöglichkeiten adden */
             if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEOMP4);
@@ -153,7 +153,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -37,7 +37,7 @@ public class FTI6xto extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        if (!parameter.endsWith(".dlc")) parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + new Regex(br.getPage(parameter), Pattern.compile("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc", Pattern.CASE_INSENSITIVE)).getFirstMatch() + ".dlc";
+        if (!parameter.endsWith(".dlc")) parameter = "http://92.241.164.148/store/file/dlc/forcedl.php?file=" + new Regex(br.getPage(parameter), Pattern.compile("http://92\\.241\\.164\\.148/store/file/dlc/forcedl\\.php\\?file=(.*?)\\.dlc", Pattern.CASE_INSENSITIVE)).getMatch(0) + ".dlc";
 
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         if (Browser.download(container, parameter)) {
@@ -69,7 +69,7 @@ public class FTI6xto extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

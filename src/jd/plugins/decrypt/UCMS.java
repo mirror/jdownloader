@@ -74,7 +74,7 @@ public class UCMS extends PluginForDecrypt {
                 host = "http://" + host;
             }
 
-            String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (pass != null) {
                 if (pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-")) {
                     pass = null;
@@ -91,7 +91,7 @@ public class UCMS extends PluginForDecrypt {
                         }
 
                         logger.finest("Captcha Protected");
-                        String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                         captchaFile = getLocalCaptchaFile(this);
                         Browser.download(captchaFile, captchaAdress);
                         capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
@@ -130,7 +130,7 @@ public class UCMS extends PluginForDecrypt {
                 }
                 String links[][] = null;
                 if (reqinfo.containsHTML("unescape")) {
-                    String temp = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+                    String temp = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0))));
                     links = new Regex(temp, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 } else {
                     links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
@@ -170,7 +170,7 @@ public class UCMS extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -39,7 +39,7 @@ public class MediafireFolder extends PluginForDecrypt {
             Browser br = new Browser();
 
             br.getPage(parameter);
-            String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getFirstMatch();
+            String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);
             if (reqlink == null) { return null; }
             br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
             String links[][] = br.getRegex(Pattern.compile("[a-z]{2}\\[[0-9]+\\]=Array\\('[0-9]+'\\,'[0-9]+'\\,[0-9]+\\,'([a-z0-9]*?)'\\,'[a-f0-9]{32}'\\,'(.*?)'\\,'([\\d]*?)'", Pattern.CASE_INSENSITIVE)).getMatches();
@@ -82,7 +82,7 @@ public class MediafireFolder extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

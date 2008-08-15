@@ -37,9 +37,9 @@ import jd.utils.JDUtilities;
 public class Filer extends PluginForHost {
 
     // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.5";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.5";
     // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
     // static private final Pattern GETID =
     // Pattern.compile("http://[\\w\\.]*?filer.net/file([\\d]+)/.*?",
@@ -107,7 +107,7 @@ this.enablePremium();
 
         if (Regex.matches(page, PATTERN_MATCHER_ERROR)) {
             // step.setStatus(PluginStep.STATUS_ERROR);
-            String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getFirstMatch();
+            String error = new Regex(page, "folgende Fehler und versuchen sie es erneut.*?<ul>.*?<li>(.*?)<\\/li>").getMatch(0);
             logger.severe("Error: " + error);
             // step.setParameter(JDLocale.L("plugin.host.filernet.error." +
             // JDUtilities.getMD5(error), error));
@@ -117,7 +117,7 @@ this.enablePremium();
         }
 
         br.setFollowRedirects(false);
-        String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getFirstMatch();
+        String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
         if (wait != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             // step.setParameter(Long.parseLong(wait)*60*1000);
@@ -191,7 +191,7 @@ this.enablePremium();
         br.postPage("http://www.filer.net/login", "username=" + Encoding.urlEncode(user) + "&password=" + Encoding.urlEncode(pass) + "&commit=Einloggen");
         page = br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
-        String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getFirstMatch();
+        String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getMatch(0);
         br.getPage("http://www.filer.net/dl/" + id);
 
         HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
@@ -241,7 +241,7 @@ this.enablePremium();
                 code = Plugin.getCaptchaCode(captchaFile, this);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
-                bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getFirstMatch());
+                bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getMatch(0));
                 downloadLink.setDownloadSize(bytes);
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();
@@ -289,7 +289,7 @@ this.enablePremium();
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

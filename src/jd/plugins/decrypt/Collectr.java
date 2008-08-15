@@ -52,7 +52,7 @@ public class Collectr extends PluginForDecrypt {
             br.submitForm(forms[0]);
         }
 
-        String links[] = br.getRegex("<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getMatches(1);
+        String links[] = br.getRegex("<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getColumn(1);
         progress.setRange(links.length);
 
         for (String element : links) {
@@ -85,7 +85,7 @@ public class Collectr extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

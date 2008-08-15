@@ -50,18 +50,18 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 } catch (InterruptedException e) {
                 }
                 RequestInfo reqinfo = HTTP.getRequest(new URL(cryptedLink.replace("ddlm_cr.php", "test2.php")), null, cryptedLink, false);
-                String link = new Regex(reqinfo.getHtmlCode(), "<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE).getFirstMatch();
+                String link = new Regex(reqinfo.getHtmlCode(), "<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE).getMatch(0);
                 if (link == null) { return null; }
                 decryptedLinks.add(createDownloadlink(link));
             } else if (new Regex(cryptedLink, patternLink_Main).matches()) {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                 // passwort auslesen
-                String password = new Regex(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n.*?</tr>\n.*?<tr>\n.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE).getFirstMatch();
+                String password = new Regex(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n.*?</tr>\n.*?<tr>\n.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE).getMatch(0);
                 if (password != null && password.contains("kein Passwort")) {
                     password = null;
                 }
 
-                String ids[] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\n?\" target=\"\\_blank\" onmouseout=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE).getMatches(1);
+                String ids[] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\n?\" target=\"\\_blank\" onmouseout=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE).getColumn(1);
 
                 progress.setRange(ids.length);
                 DownloadLink link;
@@ -109,7 +109,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

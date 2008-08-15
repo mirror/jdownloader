@@ -42,7 +42,7 @@ public class RockHouseIn extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String links[][] = new Regex(reqinfo.getHtmlCode(), "<td><a href=\'(.*?)\' target=\'_blank\'>", Pattern.CASE_INSENSITIVE).getMatches();
-            String pw = jd.http.Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE).getFirstMatch());
+            String pw = jd.http.Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE).getMatch(0));
             for (String[] element : links) {
                 DownloadLink link = createDownloadlink(element[0].replaceAll("\n", ""));
                 link.addSourcePluginPassword(pw);
@@ -77,7 +77,7 @@ public class RockHouseIn extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

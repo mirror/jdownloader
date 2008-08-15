@@ -122,6 +122,7 @@ public class Regex {
     public Regex(String data, String pattern) {
         if (data == null || pattern == null) { return; }
         matcher = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL).matcher(data);
+
     }
 
     public Regex(String data, String pattern, int flags) {
@@ -134,6 +135,7 @@ public class Regex {
      */
     public int count() {
         if (matcher == null) { return 0; }
+        matcher.reset();
         int c = 0;
         Matcher matchertmp = matcher;
         while (matchertmp.find()) {
@@ -160,25 +162,27 @@ public class Regex {
     public String getFirstMatch() {
         if (matcher == null) { return null; }
         if (matcher.groupCount() == 0) {
-            return getFirstMatch(0);
+            return getMatch(-1);
         } else {
-            return getFirstMatch(1);
+            return getMatch(0);
         }
     }
 
-    /**
-     * gibt den ersten Treffer einer group aus
-     */
-    public String getFirstMatch(int group) {
-        if (matcher == null) { return null; }
-        Matcher matchertmp = matcher;
-        if (matchertmp.find()) { return matchertmp.group(group); }
-        return null;
-    }
+    // /**
+    // * gibt den ersten Treffer einer group aus
+    // */
+    // public String getFirstMatchOfRow(int group) {
+    // if (matcher == null) { return null; }
+    // Matcher matchertmp = matcher;
+    // matcher.reset();
+    // if (matchertmp.find()) { return matchertmp.group(group); }
+    // return null;
+    // }
 
     public String getMatch(int group) {
         if (matcher == null) { return null; }
         Matcher matchertmp = matcher;
+        matcher.reset();
         if (matchertmp.find()) { return matchertmp.group(group + 1); }
 
         return null;
@@ -189,6 +193,7 @@ public class Regex {
      * gibt den matcher aus
      */
     public Matcher getMatcher() {
+        matcher.reset();
         return matcher;
     }
 
@@ -198,7 +203,7 @@ public class Regex {
     public String[][] getMatches() {
         if (matcher == null) { return null; }
         Matcher matchertmp = matcher;
-
+        matcher.reset();
         ArrayList<String[]> ar = new ArrayList<String[]>();
         while (matchertmp.find()) {
             int c = matchertmp.groupCount();
@@ -220,20 +225,28 @@ public class Regex {
     }
 
     /**
-     * gibt alle Treffer in einer group als Array aus
+     * Die RegexKlasse kann man sich wie einen 2D parser vorstellen. Ein Pattern
+     * kann beliebig viele PLatzhalter haben und werden von 0-...[x]
+     * durchnummeriert. x entspricht der Spaltennummer Gleichzeitig kann ein
+     * Pattern im Text mehrfach vorkommen. ergebnisse werden von 0-...[y]
+     * durchnummeriert. y entspricht der Reihe. getColomn(x) gibt dabei für
+     * jeden Treffer den Wert des x. Platzhalters zurück
+     * 
      */
-    public String[] getMatches(int group) {
+    public String[] getColumn(int x) {
         if (matcher == null) { return null; }
         Matcher matchertmp = matcher;
+        matcher.reset();
         ArrayList<String> ar = new ArrayList<String>();
         while (matchertmp.find()) {
-            ar.add(matchertmp.group(group));
+            ar.add(matchertmp.group(x));
         }
         return ar.toArray(new String[ar.size()]);
     }
 
     public boolean matches() {
         try {
+            matcher.reset();
             if (matcher.find()) { return true; }
         } catch (Exception e) {
             // TODO: handle exception
@@ -299,11 +312,11 @@ public class Regex {
 
     public static long getMilliSeconds(String expire, String timeformat, Locale l) {
         SimpleDateFormat dateFormat;
-        
-        if(l!=null){
-            dateFormat= new SimpleDateFormat(timeformat, l);
-        }else{
-            dateFormat= new SimpleDateFormat(timeformat);
+
+        if (l != null) {
+            dateFormat = new SimpleDateFormat(timeformat, l);
+        } else {
+            dateFormat = new SimpleDateFormat(timeformat);
         }
         if (expire == null) { return -1; }
 
@@ -317,5 +330,41 @@ public class Regex {
         }
         return -1;
 
+    }
+
+    public String getMatch(int entry, int group) {
+        if (matcher == null) { return null; }
+        Matcher matchertmp = matcher;
+        matcher.reset();
+        // group++;
+        entry++;
+        int groupCount = 0;
+        while (matchertmp.find()) {
+            if (groupCount == group) { return matchertmp.group(entry); }
+
+            groupCount++;
+        }
+        return null;
+    }
+
+    public String[] getRow(int y) {
+        if (matcher == null) { return null; }
+        Matcher matchertmp = matcher;
+        matcher.reset();
+        int groupCount = 0;
+        while (matchertmp.find()) {
+            if (groupCount == y) {
+                int c = matchertmp.groupCount();
+
+                String[] group = new String[c];
+
+                for (int i = 1; i <= c; i++) {
+                    group[i - 1] = matchertmp.group(i);
+                }
+                return group;
+            }
+            groupCount++;
+        }
+        return null;
     }
 }

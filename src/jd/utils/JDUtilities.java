@@ -979,14 +979,17 @@ public class JDUtilities {
             RequestInfo ri;
 
             ri = HTTP.getRequest(new URL(site), null, null, true);
-            String ip = new XPath(ri.getHtmlCode(), "/ip", false).getFirstMatch();
-            if (ip == null) {
-                logger.info("Sec. IP Check failed.");
-                return "offline";
-            } else {
-                logger.info("Sec. IP Check success. PLease Check Your IP Check settings");
-                return ip;
+            Pattern pattern = Pattern.compile(patt);
+            Matcher matcher = pattern.matcher(ri.getHtmlCode());
+            if (matcher.find()) {
+                if (matcher.groupCount() > 0) {
+                    return matcher.group(1);
+                } else {
+                    logger.severe("Primary bad Regex: " + patt);
+
+                }
             }
+         return "offline";
         }
 
         catch (Exception e1) {

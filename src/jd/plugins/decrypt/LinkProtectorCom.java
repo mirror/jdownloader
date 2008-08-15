@@ -61,7 +61,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
             String referrer = null;
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 if (requestInfo.containsHTML("Bad Referrer!")) {
-                    referrer = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Site below:<br><a href=(.*?)>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    referrer = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Site below:<br><a href=(.*?)>", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     requestInfo = HTTP.getRequest(url, null, referrer, false);
                 } else if (requestInfo.containsHTML("<h1>PASSWORD PROTECTED LINK</h1>") || requestInfo.containsHTML("Incorrect Password")) {
                     if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
@@ -74,10 +74,10 @@ public class LinkProtectorCom extends PluginForDecrypt {
                 }
             }
             if (do_continue == true) {
-                String cryptedLink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("write\\(stream\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                int charCode = Integer.parseInt(new Regex(requestInfo.getHtmlCode(), Pattern.compile("fromCharCode\\(yy\\[i\\]-(.*?)\\)\\;", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                String cryptedLink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("write\\(stream\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                int charCode = Integer.parseInt(new Regex(requestInfo.getHtmlCode(), Pattern.compile("fromCharCode\\(yy\\[i\\]-(.*?)\\)\\;", Pattern.CASE_INSENSITIVE)).getMatch(0));
                 String decryptedLink = decryptCode(cryptedLink, charCode);
-                String link = new Regex(decryptedLink, Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch().trim();
+                String link = new Regex(decryptedLink, Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0).trim();
                 if (link != null) {
                     decryptedLinks.add(createDownloadlink(link));
                 } else {
@@ -113,7 +113,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

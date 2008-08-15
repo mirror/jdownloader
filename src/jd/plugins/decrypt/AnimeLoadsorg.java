@@ -39,7 +39,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
 
         Browser.clearCookies(host);
         br.getPage(parameter);
-        String[] links = br.getRegex("src=\"(.*?)\"").getMatches(1);
+        String[] links = br.getRegex("src=\"(.*?)\"").getColumn(1);
         progress.setRange(links.length);
 
         for (String element : links) {
@@ -72,7 +72,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

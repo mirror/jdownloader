@@ -73,11 +73,11 @@ public class Gwarezcc extends PluginForDecrypt {
             } else if (cryptedLink.matches(patternLink_Details_Download.pattern())) {
                 /* Link auf die Download Info Seite */
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)").getFirstMatch();
+                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)").getMatch(0);
 
                 if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
                     /* DLC Suchen */
-                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getMatches(0);
+                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
                     if (dlc.length == 1) {
                         decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
                         dlc_found = true;
@@ -88,7 +88,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (dlc_found == false) {
                     /* Mirrors suchen (Verschlüsselt) */
-                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(1);
                     for (int i = 0; i < mirror_pages.length; i++) {
                         /* Mirror Page zur weiteren Verarbeitung adden */
                         decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));
@@ -98,13 +98,13 @@ public class Gwarezcc extends PluginForDecrypt {
             } else if (cryptedLink.matches(patternLink_Details_Mirror_Parts.pattern())) {
                 /* Link zu den Parts des Mirrors (Verschlüsselt) */
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getFirstMatch();
+                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
                 /* Parts suchen */
-                String parts[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getMatches(1);
+                String parts[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getColumn(1);
                 /* Passwort suchen */
                 url = new URL("http://gwarez.cc/" + downloadid + "#details");
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (password == null) {
                     logger.severe("Please Update Gwarez Plugin(PW Pattern)");
                 } else {
@@ -154,7 +154,7 @@ public class Gwarezcc extends PluginForDecrypt {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

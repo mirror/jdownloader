@@ -61,7 +61,7 @@ public class Netloadin extends PluginForHost {
 
     private static String getID(String link) {
 
-        return new Regex(link, "\\/datei([a-fA-F0-9]{32})").getFirstMatch();
+        return new Regex(link, "\\/datei([a-fA-F0-9]{32})").getMatch(0);
 
     }
 
@@ -94,7 +94,7 @@ public class Netloadin extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink, linkStatus);
         if (linkStatus.isFailed()) return;
-        String url = br.getRegex("<div class=\"Free_dl\"><a href=\"(.*?)\">").getFirstMatch();
+        String url = br.getRegex("<div class=\"Free_dl\"><a href=\"(.*?)\">").getMatch(0);
         url = url.replaceAll("\\&amp\\;", "&");
 
         if (br.containsHTML(FILE_NOT_FOUND)) {
@@ -136,7 +136,7 @@ public class Netloadin extends PluginForHost {
             return;
         }
 
-        String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getFirstMatch();
+        String captchaURL = br.getRegex("<img style=\".*?\" src=\"(.*?)\" alt=\"Sicherheitsbild\" \\/>").getMatch(0);
         Form[] forms = br.getForms();
         Form captchaPost = forms[0];
         captchaPost.action="index.php?id=10";
@@ -180,7 +180,7 @@ public class Netloadin extends PluginForHost {
 
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
 
-            long waitTime = Long.parseLong(new Regex(br.getRequest().getHtmlCode(), DOWNLOAD_WAIT_TIME).getFirstMatch());
+            long waitTime = Long.parseLong(new Regex(br.getRequest().getHtmlCode(), DOWNLOAD_WAIT_TIME).getMatch(0));
             waitTime = waitTime * 10L;
 
             linkStatus.setValue(waitTime);
@@ -193,7 +193,7 @@ public class Netloadin extends PluginForHost {
             RUNNING_FREE_DOWNLOADS--;
             return;
         }
-        String finalURL = br.getRegex(NEW_HOST_URL).getFirstMatch();
+        String finalURL = br.getRegex(NEW_HOST_URL).getMatch(0);
 
         sleep(20000, downloadLink);
 
@@ -259,10 +259,10 @@ public class Netloadin extends PluginForHost {
 
             // String login =
             // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-            String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getFirstMatch().trim();
+            String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
          
-            String days=new Regex(validUntil,"([\\d]+) ?Tage").getFirstMatch();
-            String hours=new Regex(validUntil,"([\\d]+) ?Stunde").getFirstMatch();
+            String days=new Regex(validUntil,"([\\d]+) ?Tage").getMatch(0);
+            String hours=new Regex(validUntil,"([\\d]+) ?Stunde").getMatch(0);
             long res=0;
             if(days!=null)res+=Long.parseLong(days.trim())*24*60*60*1000;
             if(hours!=null)res+=Long.parseLong(hours.trim())*60*60*1000;
@@ -310,7 +310,7 @@ public class Netloadin extends PluginForHost {
             }
 
             String url = br.getRedirectLocation();
-            if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getFirstMatch();
+            if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
             if (url == null) {
                 logger.severe("Download link not found");
 
@@ -426,7 +426,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

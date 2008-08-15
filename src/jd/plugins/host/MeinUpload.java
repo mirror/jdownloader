@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 
 public class MeinUpload extends PluginForHost {
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.1.0";
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
     // 
     private static final String CODER = "jD-Team";
@@ -103,16 +103,16 @@ public class MeinUpload extends PluginForHost {
         br.getPage("http://meinupload.com/account.html?aktion=status");
         
         
-        String expire=br.getRegex("Account g&uuml;ltig bis: </td><td align=.*?>(.*?)</td>").getFirstMatch();
+        String expire=br.getRegex("Account g&uuml;ltig bis: </td><td align=.*?>(.*?)</td>").getMatch(0);
         if(expire==null){
             ai.setValid(false);
             ai.setStatus("Account invalid. Logins wrong?");
             return ai;
         }
-        String trafficLeft=br.getRegex("Verbleibender Traffic: </td><td align=.*?>(.*?)/td>").getFirstMatch();
-        String points=br.getRegex("<td>Gesammelte Punkte: </td>.*?<td align=.*?>([\\d]*?)</td>").getFirstMatch();
-        String cash=br.getRegex(" <td><b>Guthaben:</b> </td>.*?<td align=.*?><b>([\\d]*?) \\&euro\\;</b></td>").getFirstMatch();
-        String files=br.getRegex("<td>Hochgeladene Dateien: </td>.*?<td align=.*?>([\\d]*?)</td>").getFirstMatch();
+        String trafficLeft=br.getRegex("Verbleibender Traffic: </td><td align=.*?>(.*?)/td>").getMatch(0);
+        String points=br.getRegex("<td>Gesammelte Punkte: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
+        String cash=br.getRegex(" <td><b>Guthaben:</b> </td>.*?<td align=.*?><b>([\\d]*?) \\&euro\\;</b></td>").getMatch(0);
+        String files=br.getRegex("<td>Hochgeladene Dateien: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
         
         ai.setStatus("Account is ok.");
         ai.setValidUntil(Regex.getMilliSeconds(expire,"dd.MM.yyyy",null));
@@ -132,7 +132,7 @@ public class MeinUpload extends PluginForHost {
 
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
         downloadLink.requestGuiUpdate();
-        String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (id == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -217,16 +217,16 @@ public class MeinUpload extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         try {
-            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (id == null) { return false;
             // http://meinupload.com/infos.api?get_id=3794082988
             }
 
             String page = new GetRequest("http://meinupload.com/infos.api?get_id=" + id).load();
 
-            String status = new Regex(page, "<status>([\\d]*?)</status>").getFirstMatch();
-            String filesize = new Regex(page, "<filesize>([\\d]*?)</filesize>").getFirstMatch();
-            String name = new Regex(page, "<name>(.*?)</name>").getFirstMatch();
+            String status = new Regex(page, "<status>([\\d]*?)</status>").getMatch(0);
+            String filesize = new Regex(page, "<filesize>([\\d]*?)</filesize>").getMatch(0);
+            String name = new Regex(page, "<name>(.*?)</name>").getMatch(0);
             if (status == null || !status.equals("1")) { return false; }
 
             if (filesize == null || name == null) { return false; }
@@ -272,7 +272,7 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

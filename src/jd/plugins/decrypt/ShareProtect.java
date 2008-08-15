@@ -41,19 +41,19 @@ public class ShareProtect extends PluginForDecrypt {
             Browser.clearCookies(host);
 
             br.getPage(parameter);
-            String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getMatches(1);
+            String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getColumn(1);
             StringBuffer htmlc = new StringBuffer();
             for (String element : matches) {
                 htmlc.append(Encoding.htmlDecode(element) + "\n");
             }
 
-            String[] links = new Regex(htmlc, "<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getMatches(1);
+            String[] links = new Regex(htmlc, "<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getColumn(1);
             progress.setRange(links.length);
             htmlc = new StringBuffer();
             for (String element : links) {
 
                 br.getPage("http://" + br.getHost() + "/" + element);
-                htmlc.append(Encoding.htmlDecode(br.getRegex("unescape\\(\\'(.*?)'\\)").getFirstMatch()) + "\n");
+                htmlc.append(Encoding.htmlDecode(br.getRegex("unescape\\(\\'(.*?)'\\)").getMatch(0)) + "\n");
                 progress.increase(1);
             }
             br.getRequest().setHtmlCode(htmlc.toString());
@@ -90,7 +90,7 @@ public class ShareProtect extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

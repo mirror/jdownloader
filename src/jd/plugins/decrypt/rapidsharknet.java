@@ -56,7 +56,7 @@ public class rapidsharknet extends PluginForDecrypt {
             } else if (cryptedLink.matches(patternLink_safephp.pattern())) {
                 String downloadid = url.getFile().substring(13);
                 requestInfo = HTTP.getRequest(url, null, "http://rapidshark.net/" + downloadid, false);
-                downloadid = new Regex(requestInfo, "src=\"(.*)\"></iframe>").getFirstMatch();
+                downloadid = new Regex(requestInfo, "src=\"(.*)\"></iframe>").getMatch(0);
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadid)));
             }
         } catch (MalformedURLException e) {
@@ -91,7 +91,7 @@ public class rapidsharknet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

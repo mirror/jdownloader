@@ -450,7 +450,7 @@ public class JDController implements ControlListener, UIListener {
         } else {
             String dlcKey = ri.getHtmlCode();
 
-            dlcKey = new Regex(dlcKey, "<rc>(.*?)</rc>").getFirstMatch();
+            dlcKey = new Regex(dlcKey, "<rc>(.*?)</rc>").getMatch(0);
             if (dlcKey.trim().length() < 80) {
 
             return null; }

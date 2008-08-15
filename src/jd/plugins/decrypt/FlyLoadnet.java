@@ -39,11 +39,11 @@ public class FlyLoadnet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         if (new Regex(parameter, patternSupported_Download).matches()) {
-            String id = new Regex(parameter, patternSupported_Download).getFirstMatch();
+            String id = new Regex(parameter, patternSupported_Download).getMatch(0);
             decryptedLinks.add(createDownloadlink("http://flyload.net/request_window.php?" + id));
         } else if (new Regex(parameter, patternSupported_Request).matches()) {
-            String id = new Regex(parameter, patternSupported_Request).getFirstMatch();
-            String pw = new Regex(br.getPage("http://flyload.net/download.php?view." + id), Pattern.compile("<td color:red;' class='forumheader3'>(?!<b>)(.*?)</td>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String id = new Regex(parameter, patternSupported_Request).getMatch(0);
+            String pw = new Regex(br.getPage("http://flyload.net/download.php?view." + id), Pattern.compile("<td color:red;' class='forumheader3'>(?!<b>)(.*?)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             String links[][] = new Regex(br.getPage(parameter), Pattern.compile("value='(.*?)' readonly onclick", Pattern.CASE_INSENSITIVE)).getMatches();
             progress.setRange(links.length);
             for (String[] element : links) {
@@ -89,7 +89,7 @@ public class FlyLoadnet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

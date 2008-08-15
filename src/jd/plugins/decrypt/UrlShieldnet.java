@@ -83,14 +83,14 @@ public class UrlShieldnet extends PluginForDecrypt {
             }
             if (do_continue == true) {
                 if (br.containsHTML("window.alert")) {
-                    logger.severe(br.getRegex("window.alert\\(\"(.*?)\"\\)").getFirstMatch());
+                    logger.severe(br.getRegex("window.alert\\(\"(.*?)\"\\)").getMatch(0));
                     do_continue = false;
                 }
             }
             if (do_continue == true) {
                 /* doofes JS */
-                String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch());
-                String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
+                String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 all = all.replaceAll("document\\.writeln\\(s\\);", "");
                 Context cx = Context.enter();
                 Scriptable scope = cx.initStandardObjects();
@@ -100,7 +100,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                 Context.exit();
 
                 /* Link zur richtigen Seiten */
-                String page_link = new Regex(java_page, Pattern.compile("src=\"(/content\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String page_link = new Regex(java_page, Pattern.compile("src=\"(/content\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 String url = "http://www.urlshield.net" + page_link;
 
                 for (int retry = 1; retry < 5; retry++) {
@@ -111,7 +111,7 @@ public class UrlShieldnet extends PluginForDecrypt {
 
                     br.getPage(url);
                     if (br.containsHTML("getkey.php?id")) {
-                        String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                         form = br.getForm(0);
                         /* Captcha zu verarbeiten */
                         captchaFile = getLocalCaptchaFile(this);
@@ -161,7 +161,7 @@ public class UrlShieldnet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

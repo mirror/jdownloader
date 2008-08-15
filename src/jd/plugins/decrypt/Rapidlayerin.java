@@ -52,9 +52,9 @@ public class Rapidlayerin extends PluginForDecrypt {
             RequestInfo requestInfo = HTTP.getRequest(url);
 
             /* DownloadLink entschlüsseln */
-            String fun_id = new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)\\(", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            String all = "function " + new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)a=", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            String dec = new Regex(requestInfo.getHtmlCode(), Pattern.compile("a=(.*?);document.write", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String fun_id = new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)\\(", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String all = "function " + new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)a=", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String dec = new Regex(requestInfo.getHtmlCode(), Pattern.compile("a=(.*?);document.write", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
             Context cx = Context.enter();
             Scriptable scope = cx.initStandardObjects();
@@ -98,7 +98,7 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

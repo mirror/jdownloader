@@ -41,11 +41,11 @@ public class DatenschleuderCc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
-            String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+            String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(1);
             progress.setRange(links.length);
             for (String element : links) {
                 reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + element));
-                String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=\"(.*?)\" name=\"dl\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=\"(.*?)\" name=\"dl\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (link != null) {
                     progress.increase(1);
                     decryptedLinks.add(createDownloadlink(link.replace("http://anonym.to?", "")));
@@ -80,7 +80,7 @@ public class DatenschleuderCc extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -60,8 +60,8 @@ public final class JavaScript {
 	b.getPage("http://rapidlayer.in/go/c8f16ccc");
 	JavaScript js = b.getJavaScript();
 	js.javaScript="var document;\r\n"+js.javaScript;
-    String fun_id = b.getRegex("function (.*?)\\(").getFirstMatch();
-    String dec = b.getRegex("a=(.*?);document.write").getFirstMatch();
+    String fun_id = b.getRegex("function (.*?)\\(").getMatch(0);
+    String dec = b.getRegex("a=(.*?);document.write").getMatch(0);
 
 	//js.javaScript=js.javaScript.replaceAll("document.getElementById\\('ausgabe'\\).innerHTML=", "return ");
 System.out.println(js);

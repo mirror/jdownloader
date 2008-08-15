@@ -43,10 +43,10 @@ public class ShareOnlineBiz extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "2.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "2.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
@@ -87,7 +87,7 @@ public class ShareOnlineBiz extends PluginForHost {
                  */
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo != null && requestInfo.getLocation() == null) {
-                    String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     String sizev[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("</font> \\((.*?) (.*?)\\) angefordert", Pattern.CASE_INSENSITIVE)).getMatches();
 
                     double size = Double.parseDouble(sizev[0][0].trim());
@@ -135,7 +135,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -204,8 +204,8 @@ public class ShareOnlineBiz extends PluginForHost {
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
         /* DownloadLink holen, thx @dwd */
-        String all = requestInfo.getRegexp("eval\\(unescape\\(.*?\"\\)\\)\\);").getFirstMatch();
-        String dec = requestInfo.getRegexp("loadfilelink\\.decode\\(\".*?\"\\);").getFirstMatch();
+        String all = requestInfo.getRegexp("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(0);
+        String dec = requestInfo.getRegexp("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(0);
         Context cx = Context.enter();
         Scriptable scope = cx.initStandardObjects();
         String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";

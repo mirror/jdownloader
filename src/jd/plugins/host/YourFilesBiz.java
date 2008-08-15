@@ -48,9 +48,9 @@ public class YourFilesBiz extends PluginForHost {
 
     private static final String PLUGIN_NAME = HOST;
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.1.0";
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     private String downloadURL = "";
     private HTTPConnection urlConnection;
 
@@ -166,7 +166,7 @@ public class YourFilesBiz extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

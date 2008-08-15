@@ -40,9 +40,9 @@ import jd.utils.JDUtilities;
 
 public class QshareCom extends PluginForHost {
     // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.1";
     // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
     static private final String HOST = "qshare.com";
@@ -83,7 +83,7 @@ public class QshareCom extends PluginForHost {
         login.put("cookie", "1");
         br.submitForm(login);
 
-        String premiumError = br.getRegex("Following error occured: (.*?)[\\.|<]").getFirstMatch();
+        String premiumError = br.getRegex("Following error occured: (.*?)[\\.|<]").getMatch(0);
         if (premiumError != null) {
             ai.setValid(false);
             ai.setStatus(premiumError);
@@ -91,7 +91,7 @@ public class QshareCom extends PluginForHost {
         }
         br.getPage("http://qshare.com/index.php?sysm=user_adm&sysf=details");
 
-        String expire = br.getRegex("[Ablauf der Flatrate am|Flatrate expires on]: <SPAN STYLE=.*?>(.*?)</SPAN>").getFirstMatch();
+        String expire = br.getRegex("[Ablauf der Flatrate am|Flatrate expires on]: <SPAN STYLE=.*?>(.*?)</SPAN>").getMatch(0);
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss", Locale.UK);
         if (expire == null) {
@@ -137,7 +137,7 @@ public class QshareCom extends PluginForHost {
 
         if (br.getRedirectLocation() != null) br.getPage((String) null);
 
-        String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getFirstMatch();
+        String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
         if (error != null) {
             linkStatus.setErrorMessage(error);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -153,7 +153,7 @@ public class QshareCom extends PluginForHost {
             return;
         }
 
-        String wait = new Regex(page, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getFirstMatch();
+        String wait = new Regex(page, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getMatch(0);
         if (wait != null) {
             long waitTime = Long.parseLong(wait) * 60 * 1000;
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -161,7 +161,7 @@ public class QshareCom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
-        String link = new Regex(page, "<div id=\"download_link\"><a href=\"(.*?)\"").getFirstMatch();
+        String link = new Regex(page, "<div id=\"download_link\"><a href=\"(.*?)\"").getMatch(0);
 
         if (link == null) {
 
@@ -207,7 +207,7 @@ public class QshareCom extends PluginForHost {
         login.put("cookie", "1");
         br.submitForm(login);
 
-        String premiumError = br.getRegex("[Following error occured|Folgender Fehler ist aufgetreten]: (.*?)[\\.|<]").getFirstMatch();
+        String premiumError = br.getRegex("[Following error occured|Folgender Fehler ist aufgetreten]: (.*?)[\\.|<]").getMatch(0);
         if (premiumError != null) {
             linkStatus.setErrorMessage(Encoding.htmlDecode(premiumError));
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
@@ -215,7 +215,7 @@ public class QshareCom extends PluginForHost {
             return;
         }
         br.getPage(downloadLink.getDownloadURL());
-        String url = br.getRegex("A HREF=\"(.*?)\">").getFirstMatch();
+        String url = br.getRegex("A HREF=\"(.*?)\">").getMatch(0);
         br.openGetConnection(url);
 
         if (br.getRedirectLocation() != null) {
@@ -224,7 +224,7 @@ public class QshareCom extends PluginForHost {
         } else {
             logger.warning("InDirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
             br.loadConnection(null);
-            String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getFirstMatch();
+            String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
             if (error != null) {
                 linkStatus.setErrorMessage(error);
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -247,7 +247,7 @@ public class QshareCom extends PluginForHost {
             login.put("cookie", "1");
             br.submitForm(login);
             br.getPage((String) null);
-            url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/"+account.getUser()+"/"+account.getPass()+"/.*?)\"").getFirstMatch();
+            url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/"+account.getUser()+"/"+account.getPass()+"/.*?)\"").getMatch(0);
             br.setFollowRedirects(true);
             br.openGetConnection(url);
 
@@ -323,7 +323,7 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

@@ -45,10 +45,10 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             URL url = new URL(cryptedLink);
-            String downloadid = new Regex(url.getFile(), "/([a-zA-Z0-9]+)\\!").getFirstMatch();
+            String downloadid = new Regex(url.getFile(), "/([a-zA-Z0-9]+)\\!").getMatch(0);
             url = new URL("http://protect.tehparadox.com/getdata.php");
             RequestInfo requestInfo = HTTP.postRequest(url, null, cryptedLink, null, "id=" + downloadid, false);
-            String downloadlink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<iframe name=\"ifram\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String downloadlink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<iframe name=\"ifram\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (downloadlink != null) {
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadlink)));
             } else {
@@ -86,7 +86,7 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

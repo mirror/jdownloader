@@ -43,7 +43,7 @@ public class LinkBucks extends PluginForDecrypt {
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String link = new Regex(reqinfo.getHtmlCode(), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getFirstMatch();
+            String link = new Regex(reqinfo.getHtmlCode(), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getMatch(0);
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link));
             } else {
@@ -78,7 +78,7 @@ public class LinkBucks extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

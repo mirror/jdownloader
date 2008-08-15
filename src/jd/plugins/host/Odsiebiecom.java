@@ -23,10 +23,10 @@ public class Odsiebiecom extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?odsiebie\\.com/pokaz/\\d+---[a-zA-Z0-9]+.html", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
@@ -63,11 +63,11 @@ public class Odsiebiecom extends PluginForHost {
         try {
             requestInfo = HTTP.getRequest(new URL(downloadurl));
             if (requestInfo != null && requestInfo.getLocation() == null) {
-                String filename = requestInfo.getRegexp("Nazwa pliku: <strong>(.*?)</strong>").getFirstMatch();
+                String filename = requestInfo.getRegexp("Nazwa pliku: <strong>(.*?)</strong>").getMatch(0);
                 String filesize;
-                if ((filesize = requestInfo.getRegexp("Rozmiar pliku: <strong>(.*?)MB</strong>").getFirstMatch()) != null) {
+                if ((filesize = requestInfo.getRegexp("Rozmiar pliku: <strong>(.*?)MB</strong>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
-                } else if ((filesize = requestInfo.getRegexp("Rozmiar pliku: <strong>(.*?)KB</strong>").getFirstMatch()) != null) {
+                } else if ((filesize = requestInfo.getRegexp("Rozmiar pliku: <strong>(.*?)KB</strong>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024));
                 }
                 downloadLink.setName(filename);
@@ -103,7 +103,7 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -121,18 +121,18 @@ public class Odsiebiecom extends PluginForHost {
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
          */
-        String steplink = requestInfo.getRegexp("<a href=\"/pobierz/(.*?)\"  style=\"font-size: 18px\">(.*?)</a>").getFirstMatch();
+        String steplink = requestInfo.getRegexp("<a href=\"/pobierz/(.*?)\"  style=\"font-size: 18px\">(.*?)</a>").getMatch(0);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */
             /* Film,Mp3 */
-            downloadurl = requestInfo.getRegexp("<PARAM NAME=\"FileName\" VALUE=\"(.*?)\"").getFirstMatch();
+            downloadurl = requestInfo.getRegexp("<PARAM NAME=\"FileName\" VALUE=\"(.*?)\"").getMatch(0);
             /* Flash */
             if (downloadurl == null) {
-                downloadurl = requestInfo.getRegexp("<PARAM NAME=\"movie\" VALUE=\"(.*?)\"").getFirstMatch();
+                downloadurl = requestInfo.getRegexp("<PARAM NAME=\"movie\" VALUE=\"(.*?)\"").getMatch(0);
             }
             /* Bilder, Animationen */
             if (downloadurl == null) {
-                downloadurl = requestInfo.getRegexp("onLoad=\"scaleImg\\('thepic'\\)\" src=\"(.*?)\" \\/").getFirstMatch();
+                downloadurl = requestInfo.getRegexp("onLoad=\"scaleImg\\('thepic'\\)\" src=\"(.*?)\" \\/").getMatch(0);
             }
             /* kein Link gefunden */
             if (downloadurl == null) {
@@ -157,7 +157,7 @@ public class Odsiebiecom extends PluginForHost {
             }
             if (requestInfo.containsHTML("captcha.php")) {
                 /* Captcha File holen */
-                String captchaurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"(.*?captcha.*?)\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String captchaurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"(.*?captcha.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 captchaFile = getLocalCaptchaFile(this);
                 HTTPConnection captcha_con = new HTTPConnection(new URL(captchaurl).openConnection());
                 captcha_con.setRequestProperty("Referer", referrerurl);
@@ -188,7 +188,7 @@ public class Odsiebiecom extends PluginForHost {
                 downloadcookie = downloadcookie + requestInfo.getCookie();
             }
             /* DownloadLink suchen */
-            steplink = requestInfo.getRegexp("<a href=\"/download/(.*?)\"").getFirstMatch();
+            steplink = requestInfo.getRegexp("<a href=\"/download/(.*?)\"").getMatch(0);
             if (steplink == null) {
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 // step.setStatus(PluginStep.STATUS_ERROR);

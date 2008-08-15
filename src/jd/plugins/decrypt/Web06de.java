@@ -37,7 +37,7 @@ public class Web06de extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String link = new Regex(cryptedLink, "user=\\d+site=(.*)").getFirstMatch();
+        String link = new Regex(cryptedLink, "user=\\d+site=(.*)").getMatch(0);
         if (link != null) {
             decryptedLinks.add(createDownloadlink(link));
             return decryptedLinks;
@@ -67,7 +67,7 @@ public class Web06de extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

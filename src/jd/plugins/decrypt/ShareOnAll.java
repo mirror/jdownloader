@@ -41,7 +41,7 @@ public class ShareOnAll extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             Browser.clearCookies(host);
-            String id = new Regex(cryptedLink, patternSupported).getFirstMatch();
+            String id = new Regex(cryptedLink, patternSupported).getMatch(0);
             String url = "http://www.shareonall.com/showlinks.php?f=" + id + ".htm";
 
             br.getPage(url);
@@ -50,7 +50,7 @@ public class ShareOnAll extends PluginForDecrypt {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 if (br.containsHTML("<img src='code")) {
                     form = br.getForm(0);
-                    String captchaAddress = br.getRegex(Pattern.compile("src='code/(.*?)'", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                    String captchaAddress = br.getRegex(Pattern.compile("src='code/(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     captchaAddress = "http://www.shareonall.com/code/" + captchaAddress;
 
                     File captchaFile = this.getLocalCaptchaFile(this);
@@ -111,7 +111,7 @@ public class ShareOnAll extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

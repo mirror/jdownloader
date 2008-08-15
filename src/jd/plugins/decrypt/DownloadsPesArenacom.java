@@ -38,8 +38,8 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String id = new Regex(parameter, patternSupported).getFirstMatch();
-        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.getPage("http://downloads.pes-arena.com/content.php?id=" + id), Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch())));
+        String id = new Regex(parameter, patternSupported).getMatch(0);
+        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.getPage("http://downloads.pes-arena.com/content.php?id=" + id), Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0))));
 
         return decryptedLinks;
     }
@@ -66,7 +66,7 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -82,7 +82,7 @@ public class RequestInfo {
      * gibt den ersten Match aus
      */
     public String getFirstMatch(String pattern) {
-        return getRegexp(pattern).getFirstMatch();
+        return getRegexp(pattern).getMatch(0);
     }
 
     /**

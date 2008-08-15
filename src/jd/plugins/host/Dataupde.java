@@ -19,10 +19,10 @@ public class Dataupde extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
@@ -54,8 +54,8 @@ public class Dataupde extends PluginForHost {
             br.getPage(downloadurl);
 
             if (!Regex.matches(br, "\\>Fehler\\!\\<")) {
-                String filename = br.getRegex("helvetica;\">(.*?)</div>").getFirstMatch();
-                String filesizeString = br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getFirstMatch();
+                String filename = br.getRegex("helvetica;\">(.*?)</div>").getMatch(0);
+                String filesizeString = br.getRegex("<label>Größe: (.*?)<\\/label><br \\/>").getMatch(0);
                 downloadLink.setDownloadSize(Regex.getSize(filesizeString));
                 downloadLink.setName(filename);
                 return true;
@@ -86,7 +86,7 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

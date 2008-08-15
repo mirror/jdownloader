@@ -232,7 +232,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             // Get HappyHour
             else if (request.getRequestURI().matches("[\\s\\S]*?/get/happyhour/gui[01]{1}/[\\s\\S]*")) {
 
-                Integer happyguiint = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/get/happyhour/gui([01]{1})/[\\s\\S]*").getFirstMatch());
+                Integer happyguiint = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/get/happyhour/gui([01]{1})/[\\s\\S]*").getMatch(0));
                 Boolean happygui = false;
                 if (happyguiint == 1) {
                     happygui = true;
@@ -583,7 +583,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             else if (request.getRequestURI().matches("[\\s\\S]*?/action/update/force[01]{1}/[\\s\\S]*")) {
 
-                Integer force = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/action/update/force([01]{1})/[\\s\\S]*").getFirstMatch());
+                Integer force = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/action/update/force([01]{1})/[\\s\\S]*").getMatch(0));
                 if (force == 1) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, true);
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
@@ -663,7 +663,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Set Downloadlimit
             else if (request.getRequestURI().matches("(?is).*/action/set/download/limit/[0-9]+.*")) {
-                Integer newdllimit = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/download/limit/([0-9]+).*").getFirstMatch());
+                Integer newdllimit = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/download/limit/([0-9]+).*").getMatch(0));
                 logger.fine("RemoteControl - Set max. Downloadspeed: " + newdllimit.toString());
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, newdllimit.toString());
                 JDUtilities.getSubConfig("DOWNLOAD").save();
@@ -672,7 +672,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Set max. sim. Downloads
             else if (request.getRequestURI().matches("(?is).*/action/set/download/max/[0-9]+.*")) {
-                Integer newsimdl = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/download/max/([0-9]+).*").getFirstMatch());
+                Integer newsimdl = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/download/max/([0-9]+).*").getMatch(0));
                 logger.fine("RemoteControl - Set max. sim. Downloads: " + newsimdl.toString());
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, newsimdl.toString());
                 JDUtilities.getSubConfig("DOWNLOAD").save();
@@ -705,16 +705,16 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Add Link(s)
             else if (request.getRequestURI().matches("(?is).*/action/add/links/grabber[01]{1}/start[01]{1}/[\\s\\S]+")) {
-                String link = new Regex(request.getRequestURI(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/([\\s\\S]+)").getFirstMatch();
+                String link = new Regex(request.getRequestURI(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start[01]{1}/([\\s\\S]+)").getMatch(0);
                 // response.getWriter().println(link);
-                Integer showgrab = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/action/add/links/grabber([01]{1})/start[01]{1}/[\\s\\S]+").getFirstMatch());
+                Integer showgrab = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/action/add/links/grabber([01]{1})/start[01]{1}/[\\s\\S]+").getMatch(0));
                 Boolean hidegrabber = false;
                 if (showgrab == 0) {
                     hidegrabber = true;
                 }
                 ;
                 // response.getWriter().println(hidegrabber.toString());
-                Integer stdl = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start([01]{1})/[\\s\\S]+").getFirstMatch());
+                Integer stdl = Integer.parseInt(new Regex(request.getRequestURI(), "[\\s\\S]*?/action/add/links/grabber[01]{1}/start([01]{1})/[\\s\\S]+").getMatch(0));
                 Boolean startdl = false;
                 if (stdl == 1) {
                     startdl = true;
@@ -732,7 +732,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Open DLC Container
             else if (request.getRequestURI().matches("(?is).*/action/add/container/[\\s\\S]+")) {
-                String dlcfilestr = new Regex(request.getRequestURI(), "[\\s\\S]*/action/add/container/([\\s\\S]+)").getFirstMatch();
+                String dlcfilestr = new Regex(request.getRequestURI(), "[\\s\\S]*/action/add/container/([\\s\\S]+)").getMatch(0);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().loadContainerFile(new File(dlcfilestr));
@@ -741,7 +741,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Save Linklist as DLC Container
             else if (request.getRequestURI().matches("(?is).*/action/save/container/[\\s\\S]+")) {
-                String dlcfilestr = new Regex(request.getRequestURI(), "[\\s\\S]*/action/save/container/([\\s\\S]+)").getFirstMatch();
+                String dlcfilestr = new Regex(request.getRequestURI(), "[\\s\\S]*/action/save/container/([\\s\\S]+)").getMatch(0);
                 dlcfilestr = Encoding.htmlDecode(dlcfilestr);
                 // wegen leerzeichen etc, die ja in urls verändert werden...
                 JDUtilities.getController().saveDLC(new File(dlcfilestr));
@@ -750,7 +750,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Set ClipBoard
             else if (request.getRequestURI().matches("(?is).*/action/set/clipboard/.*")) {
-                boolean newclip = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/clipboard/(.*)").getFirstMatch());
+                boolean newclip = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/clipboard/(.*)").getMatch(0));
                 logger.fine("RemoteControl - Set ClipBoard: " + newclip);
                 if (ClipboardHandler.getClipboard().isEnabled() ^ newclip) /*
                                                                              * C++
@@ -770,7 +770,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Set Beta Enabled
             else if (request.getRequestURI().matches("(?is).*/action/set/beta/.*")) {
-                boolean newbeta = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/beta/(.*)").getFirstMatch());
+                boolean newbeta = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/beta/(.*)").getMatch(0));
                 logger.fine("RemoteControl - Set Beta: " + newbeta);
                 if (ClipboardHandler.getClipboard().isEnabled() ^ newbeta) /*
                                                                              * C++
@@ -791,7 +791,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Set ReconnectEnabled
             else if (request.getRequestURI().matches("(?is).*/action/set/reconnectenabled/.*")) {
-                boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/reconnectenabled/(.*)").getFirstMatch());
+                boolean newrc = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/reconnectenabled/(.*)").getMatch(0));
                 boolean disprc = newrc;
                 if (newrc == false) {
                     newrc = true;
@@ -821,7 +821,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Set use premium
             else if (request.getRequestURI().matches("(?is).*/action/set/premiumenabled/.*")) {
-                boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/premiumenabled/(.*)").getFirstMatch());
+                boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/premiumenabled/(.*)").getMatch(0));
                 logger.fine("RemoteControl - Set Premium: " + newuseprem);
                 if (newuseprem ^ JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem)) /*
                                                                                                                                          * C++
@@ -893,7 +893,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

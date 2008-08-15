@@ -53,10 +53,10 @@ public class Megauploadcom extends PluginForHost {
     static private final String ERROR_FILENOTFOUND = "Die Datei konnte leider nicht gefunden werden";
 
     // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.1";
 
     // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     static private final String ERROR_TEMP_NOT_AVAILABLE = "Zugriff auf die Datei ist vor";
 
@@ -116,12 +116,12 @@ public class Megauploadcom extends PluginForHost {
         br.postPage("http://megaupload.com/en/", "login="+account.getUser()+"&password="+account.getPass());
        
         br.getPage("http://www.megaupload.com/xml/premiumstats.php?confirmcode="+ Browser.getCookie("http://megaupload.com", "user")+"&language=en&uniq="+System.currentTimeMillis());
-       String days= br.getRegex("daysremaining=\"(\\d*?)\"").getFirstMatch();
+       String days= br.getRegex("daysremaining=\"(\\d*?)\"").getMatch(0);
        ai.setValidUntil(System.currentTimeMillis()+(Long.parseLong(days)*24*50*50*1000));
        if(days==null||days.equals("0"))ai.setExpired(true);
        ///xml/rewardpoints.php?confirmcode=ed4f6c040c12111d9aae6fa0cc046861&language=en&uniq=1218486921448
        br.getPage("http://www.megaupload.com/xml/rewardpoints.php?confirmcode="+ Browser.getCookie("http://megaupload.com", "user")+"&language=en&uniq="+System.currentTimeMillis());
-       String points= br.getRegex("availablepoints=\"(\\d*?)\"").getFirstMatch();
+       String points= br.getRegex("availablepoints=\"(\\d*?)\"").getMatch(0);
       ai.setPremiumPoints(Integer.parseInt(points));
        
      return ai;   
@@ -246,7 +246,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

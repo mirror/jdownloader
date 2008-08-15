@@ -150,7 +150,7 @@ public class JDSimpleWebserver extends Thread {
                                     int post_len_read = new Integer(0);
                                     byte[] cbuf = new byte[post_len];
                                     int indexstart = 0;
-                                    String limiter = new Regex(headers.get("content-type"), Pattern.compile("boundary=(.*)", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                                    String limiter = new Regex(headers.get("content-type"), Pattern.compile("boundary=(.*)", Pattern.CASE_INSENSITIVE)).getMatch(0);
                                     if (limiter != null) {
                                         /*
                                          * nur weitermachen falls ein limiter
@@ -176,7 +176,7 @@ public class JDSimpleWebserver extends Thread {
                                             String MultiPartData[][] = new Regex(JDHexUtils.getHexString(cbuf), Pattern.compile(limiter + JDHexUtils.getHexString("\r") + "{0,1}" + JDHexUtils.getHexString("\n") + "{0,1}" + JDHexUtils.REGEX_MATCH_ALL_HEX + "(?=" + "" + JDHexUtils.getHexString("\r") + "{0,1}" + JDHexUtils.getHexString("\n") + "{0,1}" + limiter + ")", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
                                             for (String[] element : MultiPartData) {
                                                 if (element[0].contains(JDHexUtils.getHexString("Content-Disposition: form-data; name=\"container\""))) {
-                                                    String containertyp = new Regex(element[0], Pattern.compile(JDHexUtils.getHexString("filename=\"") + JDHexUtils.REGEX_FIND_ALL_HEX + JDHexUtils.getHexString(".") + JDHexUtils.REGEX_MATCH_ALL_HEX + JDHexUtils.getHexString("\""), Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                                                    String containertyp = new Regex(element[0], Pattern.compile(JDHexUtils.getHexString("filename=\"") + JDHexUtils.REGEX_FIND_ALL_HEX + JDHexUtils.getHexString(".") + JDHexUtils.REGEX_MATCH_ALL_HEX + JDHexUtils.getHexString("\""), Pattern.CASE_INSENSITIVE)).getMatch(0);
                                                     if (containertyp != null) {
                                                         containertyp = new String(JDHexUtils.getByteArray(containertyp));
                                                     }

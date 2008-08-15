@@ -47,7 +47,7 @@ public class XinkIt extends PluginForDecrypt {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             File captchaFile = null;
             String capTxt = "";
-            String session = "PHPSESSID=" + new Regex(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getFirstMatch();
+            String session = "PHPSESSID=" + new Regex(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getMatch(0);
             boolean do_continue = false;
             for (int retry = 1; retry < 5; retry++) {
 
@@ -59,7 +59,7 @@ public class XinkIt extends PluginForDecrypt {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
 
-                    String captchaAdress = "http://xink.it/captcha-" + new Regex(reqinfo.getHtmlCode(), "src=\"captcha-(.*?)\"", Pattern.CASE_INSENSITIVE).getFirstMatch();
+                    String captchaAdress = "http://xink.it/captcha-" + new Regex(reqinfo.getHtmlCode(), "src=\"captcha-(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);
                     captchaAdress += "?" + session;
 
                     captchaFile = getLocalCaptchaFile(this);
@@ -121,7 +121,7 @@ public class XinkIt extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -142,9 +142,9 @@ public class XinkIt extends PluginForDecrypt {
         // TODO: hier bitte die JS lib nutzen
         String evalCode = Encoding.Base64Decode(source);
 
-        String l010 = Encoding.Base64Decode(new Regex(evalCode, "l010 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
-        String gt = new Regex(evalCode, "gt\\=\"(.*?)\";").getFirstMatch();
-        String l011 = Encoding.Base64Decode(new Regex(evalCode, "l011 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getFirstMatch());
+        String l010 = Encoding.Base64Decode(new Regex(evalCode, "l010 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getMatch(0));
+        String gt = new Regex(evalCode, "gt\\=\"(.*?)\";").getMatch(0);
+        String l011 = Encoding.Base64Decode(new Regex(evalCode, "l011 \\= l001011l10110101l11010101l101l01l\\(\"(.*?)\"\\);").getMatch(0));
         String l012 = Encoding.Base64Decode(gt);
 
         String r = l012;

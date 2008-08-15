@@ -21,10 +21,10 @@ public class SiloFilescom extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?silofiles\\.com/file/\\d+/.*?", Pattern.CASE_INSENSITIVE);
 
     // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "1.0.0.0";
+    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
 
     // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
@@ -57,11 +57,11 @@ public class SiloFilescom extends PluginForHost {
         try {
             requestInfo = HTTP.getRequest(new URL(downloadurl));
             if (requestInfo != null && requestInfo.getLocation() == null) {
-                String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getFirstMatch();
+                String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getMatch(0);
                 String filesize;
-                if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)MB</b>").getFirstMatch()) != null) {
+                if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)MB</b>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
-                } else if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)KB</b>").getFirstMatch()) != null) {
+                } else if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)KB</b>").getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024));
                 }
                 downloadLink.setName(filename);
@@ -97,7 +97,7 @@ public class SiloFilescom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -121,7 +121,7 @@ public class SiloFilescom extends PluginForHost {
         }
 
         /* DownloadLink holen */
-        downloadurl = requestInfo.getRegexp("document.location=\"(.*?)\"").getFirstMatch();
+        downloadurl = requestInfo.getRegexp("document.location=\"(.*?)\"").getMatch(0);
 
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);

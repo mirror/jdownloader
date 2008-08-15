@@ -64,7 +64,7 @@ public class DDLWarez extends PluginForDecrypt {
                         try {
                             clone.submitForm(form);
 
-                            downloadlink = clone.getRegex(Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                            downloadlink = clone.getRegex(Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getMatch(0);
                             break;
                         } catch (Exception e) {
                             logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " PostRequest-Error, try again!");
@@ -121,7 +121,7 @@ public class DDLWarez extends PluginForDecrypt {
                 br.setConnectTimeout(5 * 60 * 1000);
                 br.getPage(parameter);
 
-                String pass = br.getRegex(Pattern.compile("<td>Passwort:</td>.*?<td style=\"padding-left:10px;\">(.*?)</td>.*?</tr>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
+                String pass = br.getRegex(Pattern.compile("<td>Passwort:</td>.*?<td style=\"padding-left:10px;\">(.*?)</td>.*?</tr>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                 Vector<String> passwords = new Vector<String>();
                 if (pass != null && !pass.equals("kein Passwort")) {
                     passwords.add(pass);
@@ -181,7 +181,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -55,8 +55,8 @@ public class Zippysharecom extends PluginForHost {
             for (int i = 1; i < 3; i++) {
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (!requestInfo.containsHTML("File does not exist")) {
-                    downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch()));
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch().replaceAll(",", "\\.")) * 1024 * 1024));
+                    downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getMatch(0).replaceAll(",", "\\.")) * 1024 * 1024));
                     return true;
                 }
                 Thread.sleep(250);
@@ -97,7 +97,7 @@ public class Zippysharecom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -117,7 +117,7 @@ public class Zippysharecom extends PluginForHost {
 
         // case PluginStep.STEP_DOWNLOAD:
         /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        String linkurl = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
         HTTPConnection urlConnection = requestInfo.getConnection();

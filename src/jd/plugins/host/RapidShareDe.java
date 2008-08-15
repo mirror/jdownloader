@@ -90,12 +90,12 @@ br.setFollowRedirects(false);
         // return;
         // }
         try {
-            waittime = Long.parseLong(new Regex(br, "<script>var.*?\\= ([\\d]+)").getFirstMatch()) * 1000;
+            waittime = Long.parseLong(new Regex(br, "<script>var.*?\\= ([\\d]+)").getMatch(0)) * 1000;
             
             this.sleep((int)waittime, downloadLink);
         } catch (Exception e) {
             try {
-                waittime = Long.parseLong(new Regex(br, "Oder warte (\\d*?) Minute").getFirstMatch()) * 60000;
+                waittime = Long.parseLong(new Regex(br, "Oder warte (\\d*?) Minute").getMatch(0)) * 60000;
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 linkStatus.setValue(waittime);
                 return;
@@ -109,11 +109,11 @@ br.setFollowRedirects(false);
         }
 
         // case PluginStep.STEP_GET_CAPTCHA_FILE:
-        String ticketCode = Encoding.htmlDecode(new Regex(br, "unescape\\(\\'(.*?)\\'\\)").getFirstMatch());
+        String ticketCode = Encoding.htmlDecode(new Regex(br, "unescape\\(\\'(.*?)\\'\\)").getMatch(0));
 
         form = Form.getForms(ticketCode)[0];
         File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
-        String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getFirstMatch();
+        String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getMatch(0);
         logger.info("CaptchaAdress:" + captchaAdress);
         boolean fileDownloaded = br.downloadFile(captchaFile, captchaAdress);
         if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
@@ -193,7 +193,7 @@ br.setFollowRedirects(false);
             
             
         }
-        String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getFirstMatch();
+        String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getMatch(0);
         if (error != null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
@@ -201,7 +201,7 @@ br.setFollowRedirects(false);
             return;
 
         }
-        String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getFirstMatch();
+        String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getMatch(0);
 
         HTTPConnection urlConnection;
         GetRequest req = new GetRequest(url);
@@ -282,7 +282,7 @@ br.setFollowRedirects(false);
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

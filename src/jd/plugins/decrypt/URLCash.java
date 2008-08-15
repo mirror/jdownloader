@@ -42,7 +42,7 @@ public class URLCash extends PluginForDecrypt {
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String link = new Regex(reqinfo.getHtmlCode(), "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">", Pattern.CASE_INSENSITIVE).getFirstMatch();
+            String link = new Regex(reqinfo.getHtmlCode(), "<META HTTP-EQUIV=\"Refresh\" .*? URL=(.*?)\">", Pattern.CASE_INSENSITIVE).getMatch(0);
             if (link == null) { return null; }
             decryptedLinks.add(createDownloadlink(link));
         } catch (IOException e) {
@@ -73,7 +73,7 @@ public class URLCash extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

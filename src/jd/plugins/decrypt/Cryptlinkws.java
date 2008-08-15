@@ -52,10 +52,10 @@ public class Cryptlinkws extends PluginForDecrypt {
         if (cryptedLink.matches(patternSupported_File.pattern())) {
             /* Einzelne Datei */
             br.getPage(cryptedLink);
-            String link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
+            String link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
             link = Encoding.htmlDecode(Encoding.htmlDecode(link));
             br.getPage("http://www.cryptlink.ws/" + link);
-            link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
+            link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
             link = Encoding.htmlDecode(Encoding.htmlDecode(link));
             if (link.startsWith("cryptfiles/")) {
                 /* Weiterleitung durch Server */
@@ -120,7 +120,7 @@ public class Cryptlinkws extends PluginForDecrypt {
             }
 
             if (do_continue == true) {
-                String[] links = br.getRegex("href=\"crypt\\.php\\?file=(.*?)\"").getMatches(1);
+                String[] links = br.getRegex("href=\"crypt\\.php\\?file=(.*?)\"").getColumn(1);
                 progress.setRange(links.length);
                 for (String element : links) {
                     decryptedLinks.add(createDownloadlink("http://www.cryptlink.ws/crypt.php?file=" + element));
@@ -154,7 +154,7 @@ public class Cryptlinkws extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -62,7 +62,7 @@ public class UploadStube extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            downloadLink.setName(new Regex(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getFirstMatch());
+            downloadLink.setName(new Regex(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
 
             try {
                 String[] fileSize = new Regex(requestInfo.getHtmlCode(), "<b>Dateigr..e:</b> ([0-9\\.]*) (.*?)<br>").getMatches()[0];
@@ -108,7 +108,7 @@ public class UploadStube extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -123,7 +123,7 @@ public class UploadStube extends PluginForHost {
         // }
 
         RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-        String dlurl = new Regex(requestInfo.getHtmlCode(), "onClick=\"window.location=..(http://www.uploadstube.de/.*?)..\">.;").getFirstMatch();
+        String dlurl = new Regex(requestInfo.getHtmlCode(), "onClick=\"window.location=..(http://www.uploadstube.de/.*?)..\">.;").getMatch(0);
         if (dlurl == null) {
             logger.severe("Datei nicht gefunden");
             linkStatus.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

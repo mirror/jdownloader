@@ -42,7 +42,7 @@ public class RsLayerCom extends PluginForDecrypt {
     }
 
     private boolean add_container(String cryptedLink, String ContainerFormat) throws IOException {
-        String link_id = new Regex(cryptedLink, patternSupported).getFirstMatch();
+        String link_id = new Regex(cryptedLink, patternSupported).getMatch(0);
         String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
         if (br.containsHTML(container_link)) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
@@ -60,7 +60,7 @@ public class RsLayerCom extends PluginForDecrypt {
         Browser.clearCookies(host);
         br.getPage(parameter);
         if (parameter.indexOf("/link-") != -1) {
-            String link = br.getRegex("<iframe src=\"(.*?)\" ").getFirstMatch();
+            String link = br.getRegex("<iframe src=\"(.*?)\" ").getMatch(0);
             link = Encoding.htmlDecode(link);
             if (link == null) {
                 return null;
@@ -72,7 +72,7 @@ public class RsLayerCom extends PluginForDecrypt {
             Form[] forms = br.getForms();
             if (forms != null && forms.length != 0 && forms[0] != null) {
                 Form captchaForm = forms[0];
-                String captchaFileName = br.getRegex(strCaptchaPattern).getFirstMatch(1);
+                String captchaFileName = br.getRegex(strCaptchaPattern).getMatch(0);
                 if (captchaFileName == null) { return null; }
                 String captchaUrl = "http://" + host + "/" + captchaFileName;
                 File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
@@ -110,7 +110,7 @@ public class RsLayerCom extends PluginForDecrypt {
                 for (String[] element : layerLinks) {
                     String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
                     String page = br.getPage(layerLink);
-                    String link = new Regex(page, "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getFirstMatch();
+                    String link = new Regex(page, "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getMatch(0);
                     if (link != null) decryptedLinks.add(createDownloadlink(link));
                     progress.increase(1);
                 }
@@ -143,7 +143,7 @@ public class RsLayerCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

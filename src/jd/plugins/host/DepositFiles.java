@@ -52,10 +52,10 @@ public class DepositFiles extends PluginForHost {
     static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
 
     // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getFirstMatch().*= "0.1.3";
+    // ([\\d]*?)\\$").getMatch(0).*= "0.1.3";
 
     // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getFirstMatch();
+    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     static private final String HOST = "depositfiles.com";
 
@@ -162,7 +162,7 @@ public class DepositFiles extends PluginForHost {
         Form[] forms = br.getForms();
         
         if(forms.length<2){
-          String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/span>").getFirstMatch();
+          String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/span>").getMatch(0);
             if(wait!=null){
                 linkStatus.setValue(Regex.getMilliSeconds(wait)); 
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -240,7 +240,7 @@ public class DepositFiles extends PluginForHost {
         // //step.setStatus(PluginStep.STATUS_USER_INPUT);
         // return;
         // }
-        finalURL = new Regex(br, "var dwnsrc = \"(.*?)\";").getFirstMatch();
+        finalURL = new Regex(br, "var dwnsrc = \"(.*?)\";").getMatch(0);
         if (finalURL == null) {
             if (br.containsHTML("IP-Addresse")) {
 //                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -339,7 +339,7 @@ public class DepositFiles extends PluginForHost {
         
         br.submitForm(login);
         br.getPage("http://depositfiles.com/en/gold/");
-        String expire=br.getRegex("You have Gold access until: <b>(.*?)</b>").getFirstMatch();
+        String expire=br.getRegex("You have Gold access until: <b>(.*?)</b>").getMatch(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
         if(expire==null){
             ai.setStatus("Account expired or logins not valid");
@@ -368,7 +368,7 @@ public class DepositFiles extends PluginForHost {
 //        }
 //
 //        String validUntil = br.getRegex("<td>Expiration date:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-//        String trafficLeft = br.getRegex("<td>Traffic left:</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch();
+//        String trafficLeft = br.getRegex("<td>Traffic left:</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getMatch(0);
 //        String files = br.getRegex("<td>Files:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
 //        String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
 //        String usedSpace = br.getRegex("<td>Used storage:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
@@ -459,7 +459,7 @@ public class DepositFiles extends PluginForHost {
 
         cookie += "; " + br.getRequest().getCookieString();
 
-        finalURL = br.getRegex(PATTERN_PREMIUM_REDIRECT).getFirstMatch();
+        finalURL = br.getRegex(PATTERN_PREMIUM_REDIRECT).getMatch(0);
         br.getPage(finalURL);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
 
@@ -468,7 +468,7 @@ public class DepositFiles extends PluginForHost {
         } else {
             logger.info(br + "");
         }
-        finalURL = br.getRegex(PATTERN_PREMIUM_FINALURL).getFirstMatch();
+        finalURL = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
 
         if (finalURL == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -552,9 +552,9 @@ public class DepositFiles extends PluginForHost {
                 // Datei geloescht?
                 if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) { return false; }
 
-                String fileName = new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getFirstMatch();
+                String fileName = new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getMatch(0);
                 downloadLink.setName(fileName);
-                String fileSizeString = new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getFirstMatch();
+                String fileSizeString = new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getMatch(0);
                 int length = (int) Regex.getSize(fileSizeString);
 
                 downloadLink.setDownloadSize(length);
@@ -594,7 +594,7 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

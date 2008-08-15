@@ -47,7 +47,7 @@ public class LWindowInfos {
     public static WindowInformations getActiveWindow() {
         String str = JDUtilities.runCommand("xprop", new String[] { "-root" }, "/usr/bin", 1000);
         try {
-            String ACTIVE_WINDOW_ID = new Regex(str, Pattern.compile("_NET_ACTIVE_WINDOW\\(.*?\\): window id \\# (.*)")).getFirstMatch().split(", ")[0];
+            String ACTIVE_WINDOW_ID = new Regex(str, Pattern.compile("_NET_ACTIVE_WINDOW\\(.*?\\): window id \\# (.*)")).getMatch(0).split(", ")[0];
             return LWindowInfos.getWindowInformation(ACTIVE_WINDOW_ID);
         } catch (Exception e) {
         }
@@ -64,20 +64,20 @@ public class LWindowInfos {
         WindowInformations info = new WindowInformations();
         info.ID = id;
         try {
-            info.WM_CLASS = new Regex(str, Pattern.compile("WM_CLASS\\(.*?\\) = \"(.*)")).getFirstMatch().replaceFirst("\"$", "").split("\", \"");
+            info.WM_CLASS = new Regex(str, Pattern.compile("WM_CLASS\\(.*?\\) = \"(.*)")).getMatch(0).replaceFirst("\"$", "").split("\", \"");
         } catch (Exception e) {
         }
         try {
-            info.WM_NAME = new Regex(str, Pattern.compile("WM_NAME\\(.*?\\) = \"(.*)")).getFirstMatch().replaceFirst("\"$", "");
+            info.WM_NAME = new Regex(str, Pattern.compile("WM_NAME\\(.*?\\) = \"(.*)")).getMatch(0).replaceFirst("\"$", "");
         } catch (Exception e) {
         }
         try {
-            info.WM_ICON_NAME = new Regex(str, Pattern.compile("WM_ICON_NAME\\(.*?\\) = \"(.*)")).getFirstMatch().replaceFirst("\"$", "");
+            info.WM_ICON_NAME = new Regex(str, Pattern.compile("WM_ICON_NAME\\(.*?\\) = \"(.*)")).getMatch(0).replaceFirst("\"$", "");
         } catch (Exception e) {
         }
         try {
             // _NET_WM_PID(CARDINAL) = 5324
-            info.WM_PID = Integer.parseInt(new Regex(str, Pattern.compile("_NET_WM_PID\\(CARDINAL\\) = ([\\d]*)")).getFirstMatch());
+            info.WM_PID = Integer.parseInt(new Regex(str, Pattern.compile("_NET_WM_PID\\(CARDINAL\\) = ([\\d]*)")).getMatch(0));
         } catch (Exception e) {
             // TODO: handle exception
         }
@@ -88,7 +88,7 @@ public class LWindowInfos {
     public static WindowInformations[] getWindowInfos() {
         String str = JDUtilities.runCommand("xprop", new String[] { "-root" }, "/usr/bin", 1000);
         try {
-            String[] LIST_IDS = new Regex(str, Pattern.compile("_NET_CLIENT_LIST\\(.*?\\): window id \\# (.*)")).getFirstMatch().split(", ");
+            String[] LIST_IDS = new Regex(str, Pattern.compile("_NET_CLIENT_LIST\\(.*?\\): window id \\# (.*)")).getMatch(0).split(", ");
             LinkedList<WindowInformations> windowInformations2 = new LinkedList<WindowInformations>();
             for (String element : LIST_IDS) {
                 windowInformations2.add(LWindowInfos.getWindowInformation(element));

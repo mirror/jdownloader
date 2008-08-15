@@ -276,7 +276,7 @@ public class JDLocale {
         try {
             page = r.load();
 
-            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
+            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
         } catch (Exception e) {
 
             e.printStackTrace();
@@ -318,7 +318,7 @@ public class JDLocale {
         try {
             page = r.load();
 
-            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getFirstMatch()));
+            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(page, "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
         } catch (IOException e) {
 
             e.printStackTrace();

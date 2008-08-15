@@ -43,7 +43,7 @@ public class AnimeANet extends PluginForDecrypt {
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String[] links = reqinfo.getRegexp("onclick=\"reqLink\\(\'(.*?)\'\\)").getMatches(1);
+            String[] links = reqinfo.getRegexp("onclick=\"reqLink\\(\'(.*?)\'\\)").getColumn(1);
             progress.setRange(links.length);
             for (String element : links) {
                 reqinfo = HTTP.getRequest(new URL("http://www.animea.net/download_link.php?e_id=" + element));
@@ -82,7 +82,7 @@ public class AnimeANet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

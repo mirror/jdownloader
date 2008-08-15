@@ -115,7 +115,7 @@ public class HTMLParser {
      *         Parameter des Formulars enthält
      */
     public static String getFormInputHidden(String data, String startPattern, String lastPattern) {
-        String pat = new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch();
+        String pat = new Regex(data, startPattern + "(.*?)" + lastPattern).getMatch(0);
         if (pat == null) { return null; }
         return HTMLParser.getFormInputHidden(pat);
     }
@@ -291,6 +291,6 @@ public class HTMLParser {
      *         endPattern
      */
     public static HashMap<String, String> getInputHiddenFields(String data, String startPattern, String lastPattern) {
-        return HTMLParser.getInputHiddenFields(new Regex(data, startPattern + "(.*?)" + lastPattern).getFirstMatch());
+        return HTMLParser.getInputHiddenFields(new Regex(data, startPattern + "(.*?)" + lastPattern).getMatch(0));
     }
 }

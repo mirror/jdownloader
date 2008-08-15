@@ -38,12 +38,12 @@ public class Gamezam extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String id = new Regex(parameter, patternSupported).getFirstMatch();
+        String id = new Regex(parameter, patternSupported).getMatch(0);
 
         boolean gamez_continue = false;
 
         /* Passwort suchen */
-        String pw = new Regex(br.getPage("http://www.gamez.am/start.php?"), Pattern.compile("<tr><td>Passwort:</td><td>(.*?)</td></tr>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String pw = new Regex(br.getPage("http://www.gamez.am/start.php?"), Pattern.compile("<tr><td>Passwort:</td><td>(.*?)</td></tr>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         String page = null;
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             File captchaFile = this.getLocalCaptchaFile(this);
@@ -85,8 +85,8 @@ public class Gamezam extends PluginForDecrypt {
                         progress.increase(1);
                         break;
                     } else {
-                        String follow_link = new Regex(page, Pattern.compile("extern\\.php\\?aktion=unten&nr=(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-                        follow_link = new Regex(br.getPage("http://www.gamez.am/extern.php?aktion=unten&nr=" + follow_link), Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                        String follow_link = new Regex(page, Pattern.compile("extern\\.php\\?aktion=unten&nr=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                        follow_link = new Regex(br.getPage("http://www.gamez.am/extern.php?aktion=unten&nr=" + follow_link), Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
                         if (follow_link != null) {
                             DownloadLink link = createDownloadlink(follow_link);
                             link.addSourcePluginPassword(pw);
@@ -124,7 +124,7 @@ public class Gamezam extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

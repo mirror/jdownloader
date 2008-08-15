@@ -94,16 +94,16 @@ public class ImageFap extends PluginForHost {
         try {
             Browser br = new Browser();
             br.getPage(downloadLink.getDownloadURL());
-            String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
-            String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
-            String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (gallery_name != null) {
                 gallery_name = gallery_name.trim();
             }
             if (picture_name != null) {
                 // String imagelink = DecryptLink(new Regex(br,
                 // Pattern.compile("return lD\\('(\\S+?)'\\);",
-                // Pattern.CASE_INSENSITIVE)).getFirstMatch());
+                // Pattern.CASE_INSENSITIVE)).getMatch(0));
                 // br.setConnectTimeout(1000);
                 // HTTPConnection con = br.openGetConnection(imagelink);
                 // logger.info("GOT connection");
@@ -142,7 +142,7 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
     public int getMaxSimultanFreeDownloadNum() {
@@ -155,18 +155,18 @@ public class ImageFap extends PluginForHost {
         Browser br = new Browser();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
+        String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (picture_name == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+        String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (gallery_name != null) {
             gallery_name = gallery_name.trim();
         }
 
         /* DownloadLink holen */
-        String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getFirstMatch());
+        String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         HTTPConnection con = br.openGetConnection(imagelink);
 
         String filename = Plugin.getFileNameFormHeader(con).replaceAll("getimg\\.php\\?img=", "");

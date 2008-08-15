@@ -43,8 +43,8 @@ public class FalinksCom extends PluginForDecrypt {
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
-            String pw = new Regex(reqinfo.getHtmlCode(), "</form>\npw: (.*?)\n.*?</td>", Pattern.CASE_INSENSITIVE).getFirstMatch();
-            String[] links = new Regex(reqinfo.getHtmlCode(), "\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getMatches(1);
+            String pw = new Regex(reqinfo.getHtmlCode(), "</form>\npw: (.*?)\n.*?</td>", Pattern.CASE_INSENSITIVE).getMatch(0);
+            String[] links = new Regex(reqinfo.getHtmlCode(), "\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(1);
             progress.setRange(links.length);
             for (String link : links) {
                 DownloadLink dlLink = createDownloadlink(link);
@@ -81,7 +81,7 @@ public class FalinksCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

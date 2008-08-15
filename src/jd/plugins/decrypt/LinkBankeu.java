@@ -44,7 +44,7 @@ public class LinkBankeu extends PluginForDecrypt {
 
         String page = br.getPage(parameter);
         String[][] links = new Regex(page, Pattern.compile("onclick='posli\\(\"([\\d]+)\",\"([\\d]+)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches();
-        String[] mirrors = new Regex(page, Pattern.compile("onclick='mirror\\(\"(.*?)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches(1);
+        String[] mirrors = new Regex(page, Pattern.compile("onclick='mirror\\(\"(.*?)\"\\);'", Pattern.CASE_INSENSITIVE)).getColumn(1);
         for (String[] element : links) {
             br.getPage("http://www.linkbank.eu/posli.php?match=" + element[0] + "&id=" + element[1]);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
@@ -80,7 +80,7 @@ public class LinkBankeu extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

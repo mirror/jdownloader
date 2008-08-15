@@ -185,7 +185,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     public String[] getDecryptableLinks(String data) {
         // Vector<String> hits = SimpleMatches.getMatches(data,
         // getSupportedLinks());
-        String[] hits = new Regex(data, getSupportedLinks()).getMatches(0);
+        String[] hits = new Regex(data, getSupportedLinks()).getColumn(0);
         if (hits != null && hits.length > 0) {
 
             for (int i = hits.length - 1; i >= 0; i--) {

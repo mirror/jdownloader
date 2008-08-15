@@ -75,9 +75,9 @@ public class ArchivTo extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
            
-            downloadLink.setName(br.getRegex(FILENAME).getFirstMatch());
+            downloadLink.setName(br.getRegex(FILENAME).getMatch(0));
             if (!br.containsHTML(":  Bytes (~ 0 MB)")) {
-                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex(FILESIZE).getFirstMatch()));
+                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex(FILESIZE).getMatch(0)));
             } else {
                 return false;
             }
@@ -105,7 +105,7 @@ public class ArchivTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -119,10 +119,10 @@ public class ArchivTo extends PluginForHost {
 
             br.getPage(url);
             
-           //ownloadLink.setName(br.getRegex(FILENAME).getFirstMatch());
-           String s = br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getFirstMatch();
-                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getFirstMatch()));
-            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getFirstMatch()), null, url, true);
+           //ownloadLink.setName(br.getRegex(FILENAME).getMatch(0));
+           String s = br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getMatch(0);
+                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getMatch(0)));
+            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getMatch(0)), null, url, true);
 
             HTTPConnection urlConnection = requestInfo.getConnection();
             if (!getFileInformation(downloadLink)) {

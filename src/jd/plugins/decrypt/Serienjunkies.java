@@ -126,7 +126,7 @@ public class Serienjunkies extends PluginForDecrypt {
             return true;
         } else {
 
-            String[] links = new Regex(data, "http://[\\w\\.]{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getMatches(0);
+            String[] links = new Regex(data, "http://[\\w\\.]{3,10}\\.serienjunkies.org/.*", Pattern.CASE_INSENSITIVE).getColumn(0);
             Pattern pat = Pattern.compile("http://[\\w\\.]{3,10}\\.serienjunkies.org/.*(rc[\\_\\-]|rs[\\_\\-]|nl[\\_\\-]|ut[\\_\\-]|su[\\_\\-]|ff[\\_\\-]|cat\\=[\\d]+|p\\=[\\d]+).*", Pattern.CASE_INSENSITIVE);
             for (String element : links) {
                 Matcher m = pat.matcher(element);
@@ -229,7 +229,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     br.getPage("http://serienjunkies.org/?cat=" + cat);
                     htmlcode = br + "";
                     try {
-                        int pages = Integer.parseInt(br.getRegex("<p align=\"center\">  Pages \\(([\\d]+)\\):").getFirstMatch());
+                        int pages = Integer.parseInt(br.getRegex("<p align=\"center\">  Pages \\(([\\d]+)\\):").getMatch(0));
                         for (int i = 2; i < pages + 1; i++) {
                             htmlcode += "\n" + br.getPage("http://serienjunkies.org/?cat=" + cat + "&paged=" + i);
                         }
@@ -240,10 +240,10 @@ public class Serienjunkies extends PluginForDecrypt {
                 String[] titles = htmlcode.replaceFirst("(?is).*?(<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*>)", "$1").split("<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*?>");
                 for (String element : titles) {
 
-                    String title = new Regex(element, "([^><]*?)</a>").getFirstMatch();
+                    String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
                     String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
                     for (String element2 : sp) {
-                        String size = new Regex(element2, "[\\d]+").getFirstMatch();
+                        String size = new Regex(element2, "[\\d]+").getMatch(0);
                         String[][] links = new Regex(element2, "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
                         for (String[] element3 : links) {
                             String[] links2 = HTMLParser.getHttpLinks(element3[1], parameter);
@@ -295,7 +295,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public String[] getDecryptableLinks(String data) {
-        String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getMatches(0);
+        String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getColumn(0);
         Vector<String> ret = new Vector<String>();
         scatChecked = true;
         for (String element : links) {
@@ -332,10 +332,10 @@ public class Serienjunkies extends PluginForDecrypt {
         String[] titles = lastHtmlCode.replaceFirst("(?is).*?(<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*>)", "$1").split("<h2><a href=\"http://serienjunkies.org/[^\"]*\" rel=\"bookmark\"[^>]*?>");
         for (String element : titles) {
 
-            String title = new Regex(element, "([^><]*?)</a>").getFirstMatch();
+            String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
             String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
             for (String element2 : sp) {
-                String size = new Regex(element2, "[\\d]+").getFirstMatch();
+                String size = new Regex(element2, "[\\d]+").getMatch(0);
                 String[][] links = new Regex(element2.replaceAll("<a href=\"http://vote.serienjunkies.org.*?</a>", ""), "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
 
                 for (String[] element3 : links) {
@@ -402,7 +402,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

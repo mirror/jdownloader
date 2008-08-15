@@ -309,7 +309,7 @@ public class Serienjunkies extends PluginForHost {
         try {
 
             URL url = new URL(parameter);
-            subdomain = new Regex(parameter, "http://(.*?)serienjunkies.org.*").getFirstMatch();
+            subdomain = new Regex(parameter, "http://(.*?)serienjunkies.org.*").getMatch(0);
             String modifiedURL = Encoding.htmlDecode(url.toString());
             modifiedURL = modifiedURL.replaceAll("safe/", "safe/f");
             modifiedURL = modifiedURL.replaceAll("save/", "save/f");
@@ -417,7 +417,7 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 

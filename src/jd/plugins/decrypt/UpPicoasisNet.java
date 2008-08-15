@@ -37,7 +37,7 @@ public class UpPicoasisNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String link = new Regex(br.getPage(parameter), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE).getFirstMatch();
+        String link = new Regex(br.getPage(parameter), "frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE).getMatch(0);
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;
@@ -65,7 +65,7 @@ public class UpPicoasisNet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

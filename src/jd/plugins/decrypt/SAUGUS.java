@@ -76,21 +76,21 @@ public class SAUGUS extends PluginForDecrypt {
 
             if (br.containsHTML("<span style=\"font-size:9pt;\">Dateien offline!")) { return null; }
             String hst = "http://" + br.getRequest().getUrl().getHost() + "/";
-            String[] crypt = br.getRegex("document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getMatches(1);
+            String[] crypt = br.getRegex("document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getColumn(1);
             progress.setRange(crypt.length);
 
             for (String string : crypt) {
                 string = deca1(string);
 
-                string = new Regex(string, "\\(deca.*?\\(\'(.*?)\'").getFirstMatch();
+                string = new Regex(string, "\\(deca.*?\\(\'(.*?)\'").getMatch(0);
                 string = deca1(string);
 
-                string = new Regex(string, "\\(dec.*?\\(\'(.*?)\'").getFirstMatch();
+                string = new Regex(string, "\\(dec.*?\\(\'(.*?)\'").getMatch(0);
                 string = deca1(string);
 
-                string = hst + HTMLEntities.unhtmlentities(new Regex(string, "javascript\\:page\\(\'(.*?)\'\\)\\;").getFirstMatch());
+                string = hst + HTMLEntities.unhtmlentities(new Regex(string, "javascript\\:page\\(\'(.*?)\'\\)\\;").getMatch(0));
                 br.getPage(string);
-                string = HTMLEntities.unhtmlentities(new Regex(br.toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getFirstMatch()).trim().replaceAll("^[\\s]*", "");
+                string = HTMLEntities.unhtmlentities(new Regex(br.toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getMatch(0)).trim().replaceAll("^[\\s]*", "");
                 if (!string.toLowerCase().matches("http\\:\\/\\/.*")) {
                     br.getPage(hst + string);
                     decryptedLinks.add(createDownloadlink(br.getForm(0).getAction("http://saug.us")));
@@ -128,7 +128,7 @@ public class SAUGUS extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

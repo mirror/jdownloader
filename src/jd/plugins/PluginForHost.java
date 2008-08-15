@@ -272,7 +272,7 @@ public abstract class PluginForHost extends Plugin {
 
         // Vector<String> hits = SimpleMatches.getMatches(data,
         // getSupportedLinks());
-        String[] hits = new Regex(data, getSupportedLinks()).getMatches(0);
+        String[] hits = new Regex(data, getSupportedLinks()).getColumn(0);
         if (hits != null && hits.length > 0) {
             links = new Vector<DownloadLink>();
             for (String file : hits) {

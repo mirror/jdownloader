@@ -356,7 +356,7 @@ public class Rapidshare extends PluginForHost {
             return;
         }
         // posturl für auswahl free7premium wird gesucht
-        freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getFirstMatch();
+        freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getMatch(0);
         // Fehlerbehandlung auf der ersten Seite
         if (freeOrPremiumSelectPostURL == null) {
             String error = null;
@@ -415,14 +415,14 @@ public class Rapidshare extends PluginForHost {
             return;
         }
         // Ticketwartezeit wird gesucht
-        String ticketTime = new Regex(br, PATTERN_FIND_TICKET_WAITTIME).getFirstMatch();
+        String ticketTime = new Regex(br, PATTERN_FIND_TICKET_WAITTIME).getMatch(0);
         if (ticketTime != null && ticketTime.equals("0")) {
             ticketTime = null;
         }
 
         String ticketCode = br + "";
 
-        String tt = new Regex(ticketCode, "var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getFirstMatch();
+        String tt = new Regex(ticketCode, "var tt =(.*?)document\\.getElementById\\(\"dl\"\\)\\.innerHTML").getMatch(0);
 
         String fun = "function f(){ return " + tt + "} f()";
         Context cx = Context.enter();
@@ -442,13 +442,13 @@ public class Rapidshare extends PluginForHost {
 
         // captchaadresse wird gesucht
         // String cid=new
-        // Regex(ticketCode,PATTERN_FIND_CAPTCHA_IMAGE_URL).getFirstMatch();
+        // Regex(ticketCode,PATTERN_FIND_CAPTCHA_IMAGE_URL).getMatch(0);
         // Pattern
         // p=Pattern.compile("getElementById\\(\""+cid+"\"\\)\\.src\\=\"(.*?)\"");
         //            
         /*
          * String captchaAddress = new Regex(ticketCode,
-         * PATTERN_FIND_CAPTCHA_IMAGE_URL).getFirstMatch(); // Happy Hour check
+         * PATTERN_FIND_CAPTCHA_IMAGE_URL).getMatch(0); // Happy Hour check
          * String captchaCode = null; File captchaFile = null; if
          * (Regex.matches(pReq, PATTERN_MATCHER_HAPPY_HOUR)) {
          * 
@@ -726,16 +726,16 @@ public class Rapidshare extends PluginForHost {
 
     private String findError(String string) {
         String error = null;
-        error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE).getFirstMatch();
+        error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
 
         if (error == null || error.length() == 0) {
-            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getFirstMatch();
+            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getMatch(0);
         }
         if (error == null || error.length() == 0) {
-            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getFirstMatch();
+            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getMatch(0);
         }
         if (error == null || error.length() == 0) {
-            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_1).getFirstMatch();
+            error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_1).getMatch(0);
         }
 
         error = Encoding.htmlDecode(error);
@@ -775,7 +775,7 @@ public class Rapidshare extends PluginForHost {
      */
     private String getDownloadTarget(DownloadLink downloadLink, String ticketCode) {
 
-        String postTarget = new Regex(ticketCode, PATTERN_FIND_DOWNLOAD_POST_URL).getFirstMatch();
+        String postTarget = new Regex(ticketCode, PATTERN_FIND_DOWNLOAD_POST_URL).getMatch(0);
 
         String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
         String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
@@ -815,12 +815,12 @@ public class Rapidshare extends PluginForHost {
         // }
         // Vector<String> serverids = getAllSimpleMatches(ticketCode,
         // patternForServer, 3);
-        String[] serverstrings = new Regex(ticketCode, PATTERN_FIND_MIRROR_URLS).getMatches(1);
+        String[] serverstrings = new Regex(ticketCode, PATTERN_FIND_MIRROR_URLS).getColumn(1);
 
         // logger.info(ticketCode);
         logger.info("wished Mirror #1 Server " + serverAbb);
         logger.info("wished Mirror #2 Server " + server2Abb);
-        String selected = new Regex(ticketCode, PATTERN_FIND_PRESELECTED_SERVER).getFirstMatch();
+        String selected = new Regex(ticketCode, PATTERN_FIND_PRESELECTED_SERVER).getMatch(0);
         logger.info("Preselected Server: " + selected.substring(0, 30));
         if (preselected) {
             logger.info("RS.com-free Use preselected : " + selected.substring(0, 30));
@@ -939,7 +939,7 @@ public class Rapidshare extends PluginForHost {
      * null; // Hashmethode try { this.hashFound = true; String code = new
      * GetRequest("http://jdservice.ath.cx/rs/h.php?loader=jd&code=&hash=" +
      * JDUtilities.getLocalHash(captchaFile)).load(); captchaCode = new
-     * Regex(code, "code=([\\w]{4});").getFirstMatch(); } catch (IOException e) {
+     * Regex(code, "code=([\\w]{4});").getMatch(0); } catch (IOException e) {
      * e.printStackTrace(); }
      * 
      * if (captchaCode == null || captchaCode.trim().length() != 4) { hashFound =
@@ -1023,7 +1023,7 @@ public class Rapidshare extends PluginForHost {
     // private String getErrorMessage(String page) {
     // String[][] m = new Regex(page, PATTERN_FIND_ERROR_MESSAGE).getMatches();
     // String[] errortext = JDUtilities.splitByNewline(new Regex(page,
-    // PATTERN_FIND_ERROR_MESSAGE).getFirstMatch());
+    // PATTERN_FIND_ERROR_MESSAGE).getMatch(0));
     // if (errortext == null || errortext.length <= 0) return "Unknown Error";
     //
     // return JDLocale.L("plugins.host.rapidshare.errors." +
@@ -1039,7 +1039,7 @@ public class Rapidshare extends PluginForHost {
     //
     // String errortext = JDUtilities.splitByNewline(new
     // Regex(requestInfo.getHtmlCode(),
-    // this.PATTERN_FIND_ERROR_MESSAGE).getFirstMatch())[0];
+    // this.PATTERN_FIND_ERROR_MESSAGE).getMatch(0))[0];
     // //step.setParameter(JDLocale.L("plugins.host.rapidshare.errors." +
     // JDUtilities.getMD5(errortext), errortext));
     //
@@ -1064,7 +1064,7 @@ public class Rapidshare extends PluginForHost {
     //
     // logger.severe("Fehler: " + JDUtilities.splitByNewline(new
     // Regex(requestInfo.getHtmlCode(),
-    // this.PATTERN_FIND_ERROR_MESSAGE).getFirstMatch())[0]);
+    // this.PATTERN_FIND_ERROR_MESSAGE).getMatch(0))[0]);
     //
     // }
 
@@ -1099,7 +1099,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -1167,13 +1167,13 @@ public class Rapidshare extends PluginForHost {
             return ai;
         }
         logger.info(br + "");
-        String validUntil = br.getRegex("<td>(Expire date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
+        String validUntil = br.getRegex("<td>(Expire date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getMatch(1).trim();
 
-        String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getFirstMatch(2);
-        String files = br.getRegex("<td>(Files:|Dateien:)</td><td.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
-        String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(1).trim();
-        String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
-        String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getFirstMatch(2).trim();
+        String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getMatch(1);
+        String files = br.getRegex("<td>(Files:|Dateien:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
+        String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getMatch(0).trim();
+        String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
+        String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
         ai.setFilesNum(Integer.parseInt(files));
         ai.setPremiumPoints(Integer.parseInt(rapidPoints));

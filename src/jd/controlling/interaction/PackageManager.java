@@ -124,7 +124,7 @@ public class PackageManager extends Interaction implements Serializable {
         // }
         // html = JDUtilities.getLocalFile(readme);
         // if (Regex.matches(html, "src\\=\"(.*?)\"")) {
-        // html = new Regex(html, "src\\=\"(.*?)\"").getFirstMatch();
+        // html = new Regex(html, "src\\=\"(.*?)\"").getMatch(0);
         // html = JDLocale.L("modules.packagemanager.infonewpackage.title",
         // "Package information") + "<hr><b>" + readme.getAbsolutePath() +
         // "</b><hr><a href='" + html + "'>" +

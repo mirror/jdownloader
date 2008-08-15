@@ -54,7 +54,7 @@ public class LeecherWs extends PluginForDecrypt {
             progress.setRange(outLinks.length);
             for (String[] element : outLinks) {
                 reqinfo = HTTP.getRequest(new URL("http://leecher.ws/out/" + element[0]));
-                String cryptedLink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                String cryptedLink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(cryptedLink)));
                 progress.increase(1);
             }
@@ -87,7 +87,7 @@ public class LeecherWs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getFirstMatch();
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }
