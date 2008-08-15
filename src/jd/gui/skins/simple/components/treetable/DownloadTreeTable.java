@@ -751,6 +751,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             if (getPathForRow(row) == null) { return; }
             Object obj = getPathForRow(row).getLastPathComponent();
             JMenuItem tmp;
+            JPopupMenu popup = new JPopupMenu();
             if (obj instanceof DownloadLink) {
                 Vector<FilePackage> fps = new Vector<FilePackage>();
                 int enabled = 0;
@@ -769,7 +770,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                         resumeable++;
                     }
                 }
-                JPopupMenu popup = new JPopupMenu();
+
                 Plugin plg = ((DownloadLink) obj).getPlugin();
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.info", "Detailansicht"), TreeTableAction.DOWNLOAD_INFO, new Property("downloadlink", obj))));
 
@@ -818,18 +819,16 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen"), TreeTableAction.DOWNLOAD_DLC, new Property("downloadlinks", getSelectedDownloadLinks()))));
 
-                for (Component comp : createPackageMenu(((DownloadLink) obj).getFilePackage(), fps))
+                for (Component comp : createPackageMenu(((DownloadLink) obj).getFilePackage(), fps)) {
                     packagePopup.add(comp);
-
-                popup.show(this, point.x, point.y);
+                }
             } else {
-                JPopupMenu popup = new JPopupMenu();
-
-                for (Component comp : createPackageMenu((FilePackage) obj, getSelectedFilePackages()))
+                for (Component comp : createPackageMenu((FilePackage) obj, getSelectedFilePackages())) {
                     popup.add(comp);
-
-                popup.show(this, point.x, point.y);
+                }
             }
+            popup.show(this, point.x, point.y);
+
             logger.info(getSelectedFilePackages() + "");
             logger.info(getSelectedDownloadLinks() + "");
         }
