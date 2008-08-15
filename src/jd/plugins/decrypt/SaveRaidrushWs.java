@@ -17,24 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class SaveRaidrushWs extends PluginForDecrypt {
-
     static private final String host = "save.raidrush.ws";
-
-    private Pattern patternCount = Pattern.compile("\',\'FREE\',\'");
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public SaveRaidrushWs() {
         super();
@@ -43,20 +35,14 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-            progress.setRange(SimpleMatches.countOccurences(reqinfo.getHtmlCode(), patternCount));
-            ArrayList<ArrayList<String>> links = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), "get('°','FREE','°');");
-            for (int i = 0; i < links.size(); i++) {
-                ArrayList<String> help = links.get(i);
-                reqinfo = HTTP.getRequest(new URL("http://save.raidrush.ws/404.php.php?id=" + help.get(0) + "&key=" + help.get(1)));
-                progress.increase(1);
-                decryptedLinks.add(createDownloadlink("http://" + reqinfo.getHtmlCode().trim()));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        
+        String[][] links = new Regex(br.getPage(parameter), Pattern.compile("get\\('(.*?)','FREE','(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
+        for (String[] elements : links) {
+            decryptedLinks.add(createDownloadlink("http://" + br.getPage("http://save.raidrush.ws/404.php.php?id=" + elements[0] + "&key=" + elements[1])));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
