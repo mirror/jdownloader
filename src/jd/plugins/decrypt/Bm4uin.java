@@ -39,10 +39,12 @@ public class Bm4uin extends PluginForDecrypt {
         String page = br.getPage(parameter);
         String pass = new Regex(page, Pattern.compile("<strong>Password:</strong> <b><font color=red>(.*?)</font></b>", Pattern.CASE_INSENSITIVE)).getFirstMatch();
         String[][] links = new Regex(page, Pattern.compile("onClick=\"window\\.open\\('crypt\\.php\\?id=([\\d]+)&amp;mirror=([\\d\\w]+)&part=([\\d]+)", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
         for (String[] element : links) {
             DownloadLink link = createDownloadlink(new Regex(br.getPage("http://bm4u.in/crypt.php?id=" + element[0] + "&mirror=" + element[1] + "&part=" + element[2]), Pattern.compile("<iframe src=\"(.*?)\" width", Pattern.CASE_INSENSITIVE)).getFirstMatch().trim());
             link.addSourcePluginPassword(pass);
             decryptedLinks.add(link);
+            progress.increase(1);
         }
 
         return decryptedLinks;

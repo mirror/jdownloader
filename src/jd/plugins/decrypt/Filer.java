@@ -17,22 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Filer extends PluginForDecrypt {
     static private String host = "filer.net";
-    static private final Pattern INFO = Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/(.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/\\w*/\\w*", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
         super();
@@ -41,21 +35,16 @@ public class Filer extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(reqinfo.getHtmlCode(), INFO);
-            progress.setRange(matches.size());
-            DownloadLink dl;
-            for (int i = 0; i < matches.size(); i++) {
-                decryptedLinks.add(dl = createDownloadlink("http://www.filer.net/get/" + matches.get(i).get(0) + ".html"));
-                dl.setName(matches.get(i).get(1));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String[][] matches = new Regex(br.getPage(parameter), Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(matches.length);
+        for (String[] elements : matches) {
+            DownloadLink link = createDownloadlink("http://www.filer.net/get/" + elements[0] + ".html");
+            link.setName(elements[1]);
+            decryptedLinks.add(link);
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
