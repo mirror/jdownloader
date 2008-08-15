@@ -27,7 +27,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class Filer extends PluginForDecrypt {
     static private String host = "filer.net";
-    static private final Pattern INFO = Pattern.compile("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/\\w*/\\w*", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
@@ -36,14 +35,11 @@ public class Filer extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-
-        String cryptedLink = parameter;
-        Browser.clearCookies(host);
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        br.getPage(cryptedLink);
-        String[] links = br.getRegex(INFO).getMatches(1);
+        Browser.clearCookies(host);
+        br.getPage(parameter);
+        String[] links = br.getRegex("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>").getMatches(1);
         progress.setRange(links.length);
 
         for (String element : links) {

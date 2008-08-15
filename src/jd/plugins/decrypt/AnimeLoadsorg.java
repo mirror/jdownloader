@@ -17,8 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -26,9 +24,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class AnimeLoadsorg extends PluginForDecrypt {
     static private String host = "anime-loads.org";
@@ -40,21 +36,18 @@ public class AnimeLoadsorg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        
-        String cryptedLink = parameter;
-        Browser.clearCookies(host);
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        
-        br.getPage(cryptedLink);
+
+        Browser.clearCookies(host);
+        br.getPage(parameter);
         String[] links = br.getRegex("src=\"(.*?)\"").getMatches(1);
         progress.setRange(links.length);
-        
+
         for (String element : links) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(element)));
             progress.increase(1);
         }
-        
+
         return decryptedLinks;
     }
 
