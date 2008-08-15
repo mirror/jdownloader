@@ -237,7 +237,7 @@ public class JDInit {
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
 
                 logger.finer("Init Webupdater");
-                final WebUpdater updater = new WebUpdater(JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false) ? "http://jdbetaupdate.ath.cx" : null);
+                final WebUpdater updater = new WebUpdater(CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false) ? "http://jdbetaupdate.ath.cx" : null);
 
                 updater.setCid(oldCid);
                 logger.finer("Get available files");

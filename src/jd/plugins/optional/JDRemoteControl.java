@@ -37,6 +37,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import jd.JDInit;
+import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -780,8 +781,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                                                                              * XOR
                                                                              */
                 {
-                    JDUtilities.getSubConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA", newbeta);
-                    JDUtilities.getSubConfig("WEBUPDATE").save();
+                    CFGConfig.getConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA", newbeta);
+                    CFGConfig.getConfig("WEBUPDATE").save();
                     response.getWriter().println("beta=" + newbeta + " (CHANGED=true)");
                 } else {
                     response.getWriter().println("beta=" + newbeta + " (CHANGED=false)");

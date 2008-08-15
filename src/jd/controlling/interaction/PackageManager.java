@@ -196,7 +196,7 @@ public class PackageManager extends Interaction implements Serializable {
             //
             // ri = Plugin.getRequest(new URL("http://jdpackagelist.ath.cx"),
             // null, null, true);
-            if (JDUtilities.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
+            if (CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
                 br.getPage("http://jdservice.ath.cx/update/packages/betalist.php");
             } else {
                 br.getPage("http://jdservice.ath.cx/update/packages/list.php");

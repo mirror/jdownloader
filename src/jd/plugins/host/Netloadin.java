@@ -67,6 +67,10 @@ public class Netloadin extends PluginForHost {
 
     private String fileStatusText;
 
+    private static int RUNNING_FREE_DOWNLOADS;
+
+    private static long LAST_FREE_DOWNLOAD_START=0;
+
     public Netloadin() {
         setConfigElements();
         this.enablePremium();
@@ -79,6 +83,8 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        LAST_FREE_DOWNLOAD_START=System.currentTimeMillis();
+        RUNNING_FREE_DOWNLOADS++;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
 
@@ -94,12 +100,14 @@ public class Netloadin extends PluginForHost {
         if (br.containsHTML(FILE_NOT_FOUND)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
         if (br.containsHTML(FILE_DAMAGED)) {
             linkStatus.setErrorMessage("File is on a damaged server");
 
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
 
@@ -107,6 +115,7 @@ public class Netloadin extends PluginForHost {
             linkStatus.setErrorMessage("Download link not found");
 
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
 
@@ -115,6 +124,7 @@ public class Netloadin extends PluginForHost {
             linkStatus.setErrorMessage("File is on a damaged server");
 
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
 
@@ -122,6 +132,7 @@ public class Netloadin extends PluginForHost {
             linkStatus.setErrorMessage("Captcha not found");
 
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
 
@@ -132,10 +143,12 @@ public class Netloadin extends PluginForHost {
         if (captchaURL == null) {
             if (br.containsHTML("download_load.tpl")) {
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+                RUNNING_FREE_DOWNLOADS--;
                 return;
             }
 
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
         File file = this.getLocalCaptchaFile(this);
@@ -144,6 +157,7 @@ Browser c=br.cloneBrowser();
             logger.severe("Captcha download failed: " + captchaURL);
 
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
         captchaPost.getVars().put("captcha_check", this.getCaptchaCode(file, downloadLink));
@@ -151,12 +165,14 @@ Browser c=br.cloneBrowser();
         if (br.containsHTML(FILE_NOT_FOUND)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
         if (br.containsHTML(FILE_DAMAGED)) {
             logger.warning("File is on a damaged server");
 
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
 
@@ -168,22 +184,33 @@ Browser c=br.cloneBrowser();
             waitTime = waitTime * 10L;
 
             linkStatus.setValue(waitTime);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
         if (br.containsHTML(CAPTCHA_WRONG)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+            RUNNING_FREE_DOWNLOADS--;
             return;
         }
         String finalURL = br.getRegex(NEW_HOST_URL).getFirstMatch();
 
         sleep(20000, downloadLink);
 
+        
         dl = new RAFDownload(this, downloadLink, br.openGetConnection(finalURL));
         dl.startDownload();
+        RUNNING_FREE_DOWNLOADS--;
 
     }
-
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+//        int max = 5000;
+//        if((System.currentTimeMillis()-LAST_FREE_DOWNLOAD_START)>5000){
+//            return RUNNING_FREE_DOWNLOADS+1;
+//        }
+//        return RUNNING_FREE_DOWNLOADS;
+    }
     private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) throws IOException {
         if (!br.containsHTML("download_password")) return;
         String pass = downloadLink.getStringProperty("LINK_PASSWORD", LINK_PASS);
