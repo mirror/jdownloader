@@ -16,16 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class FrozenRomsIn extends PluginForDecrypt {
     final static String host = "frozen-roms.in";
@@ -38,25 +34,21 @@ public class FrozenRomsIn extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        RequestInfo reqinfo;
+
         String getLinks[][];
-        try {
-            if (parameter.indexOf("get") != -1) {
-                getLinks = new Regex(parameter, Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getMatches();
-            } else {
-                reqinfo = HTTP.getRequest(new URL(parameter));
-                getLinks = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html\"")).getMatches();
-            }
-            progress.setRange(getLinks.length);
-            for (String[] element : getLinks) {
-                reqinfo = HTTP.getRequest(new URL("http://frozen-roms.in/get_" + element[0] + ".html"));
-                decryptedLinks.add(createDownloadlink(reqinfo.getConnection().getHeaderField("Location")));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        if (parameter.indexOf("get") != -1) {
+            getLinks = new Regex(parameter, Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getMatches();
+        } else {
+            getLinks = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html\"")).getMatches();
         }
+        progress.setRange(getLinks.length);
+        for (String[] element : getLinks) {
+            br.getPage("http://frozen-roms.in/get_" + element[0] + ".html");
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            progress.increase(1);
+        }
+
         return decryptedLinks;
     }
 
