@@ -143,7 +143,7 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         // fp.setName(pn);
 
         if (tmpLinks == null) {
-            logger.severe("WARNING! Decrypt Plugins should return a Vector<DownloadLink> !");
+            logger.severe("WARNING! Decrypt Plugins should return a ArrayList<DownloadLink> !");
             progress.finalize();
             return new ArrayList<DownloadLink>();
         }
