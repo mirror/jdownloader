@@ -37,7 +37,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Netloadin extends PluginForHost {
-    static private final String AGB_LINK = "http://netload.in/index.php?id=13";
+    static private final String AGB_LINK = "http://netload.in/index.php?id=12";
 
     static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
 
@@ -354,10 +354,7 @@ Browser c=br.cloneBrowser();
         br.setConnectTimeout(15000);
         String id = Netloadin.getID(downloadLink.getDownloadURL());
         String page = br.getPage("http://netload.in/share/fileinfos2.php?file_id=" + id);
-        for (int i = 0; i < 3; i++) {
-            if (page != null) {
-                break;
-            }
+        for (int i = 0; i < 3 && page == null; i++) {
             try {
                 Thread.sleep(150);
             } catch (InterruptedException e) {
