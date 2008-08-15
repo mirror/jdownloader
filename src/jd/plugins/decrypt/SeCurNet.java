@@ -17,24 +17,17 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class SeCurNet extends PluginForDecrypt {
-    final static String host = "se-cur.net";
-    private String FRAME = "src=\"(.*?)\"";
-    private String LINK_OUT_PATTERN = "href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"";
-    private String LINK_OUT_TEMPLATE = "http://se-cur.net/out.php?d=";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
+    static private final String host = "se-cur.net";
+    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
 
     public SeCurNet() {
         super();
@@ -43,24 +36,16 @@ public class SeCurNet extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo requestInfo = HTTP.getRequest(url);
-            String layerLinks[][] = new Regex(requestInfo.getHtmlCode(), LINK_OUT_PATTERN, Pattern.CASE_INSENSITIVE).getMatches();
-            progress.setRange(layerLinks.length);
-            for (String[] element : layerLinks) {
-                requestInfo = HTTP.getRequest(new URL(LINK_OUT_TEMPLATE + element[0]));
-                String link = new Regex(requestInfo.getHtmlCode(), FRAME, Pattern.CASE_INSENSITIVE).getFirstMatch();
-                link = Encoding.htmlDecode(link);
-                decryptedLinks.add(createDownloadlink(link));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return decryptedLinks;
 
+        String layerLinks[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
+        progress.setRange(layerLinks.length);
+        for (String element : layerLinks) {
+            String link = new Regex(br.getPage("http://se-cur.net/out.php?d=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+            progress.increase(1);
+        }
+
+        return decryptedLinks;
     }
 
     @Override
