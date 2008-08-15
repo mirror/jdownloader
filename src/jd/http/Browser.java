@@ -143,10 +143,8 @@ public class Browser {
     }
 
     public Form[] getForms() {
-       
 
-            return Form.getForms(this);
-     
+        return Form.getForms(this);
 
     }
 
@@ -161,48 +159,44 @@ public class Browser {
         if (!snifferDetection) return false;
         if (Sniffy.hasSniffer()) {
             JDUtilities.getLogger().severe("Sniffer Software detected");
-            throw new SnifferException();   
+            throw new SnifferException();
         }
         return false;
     }
 
     public String getPage(String string) throws IOException {
         string = getURL(string);
-       
 
-            if (currentURL == null) {
-                currentURL = new URL(string);
-            }
-            
-            if (snifferCheck()){
-//                throw new SnifferException();   
-            } 
-            GetRequest request = new GetRequest(string);
-            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            // request.setFollowRedirects(doRedirects);
-            Browser.forwardCookies(request);
-            request.getHeaders().put("Referer", currentURL.toString());
-            if (headers != null) {
-                request.getHeaders().putAll(headers);
-            }
-                    
-                
-            request.connect();
-            String ret = null;
-            if (request.getHttpConnection().getHeaderField("Content-Length") == null || Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
-                ret = request.read();
-            }
-
-            Browser.updateCookies(request);
-            this.request = request;
+        if (currentURL == null) {
             currentURL = new URL(string);
-            if (this.doRedirects && this.request.getLocation() != null) {
-                ret = this.getPage(null);
-            }
-            return ret;
+        }
 
-       
-     
+        if (snifferCheck()) {
+            // throw new SnifferException();
+        }
+        GetRequest request = new GetRequest(string);
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        Browser.forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+
+        request.connect();
+        String ret = null;
+        if (request.getHttpConnection().getHeaderField("Content-Length") == null || Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
+            ret = request.read();
+        }
+
+        Browser.updateCookies(request);
+        this.request = request;
+        currentURL = new URL(string);
+        if (this.doRedirects && this.request.getLocation() != null) {
+            ret = this.getPage(null);
+        }
+        return ret;
+
     }
 
     public int getReadTimeout() {
@@ -268,39 +262,37 @@ public class Browser {
     public HTTPConnection openGetConnection(String string) throws IOException {
         string = getURL(string);
 
-       
-            if (currentURL == null) {
-                currentURL = new URL(string);
-            }
-            if (snifferCheck()){
-                //throw new IOException("Sniffer found");   
-            } 
-            GetRequest request = new GetRequest(string);
-            if (connectTimeout > 0) {
-                request.setConnectTimeout(connectTimeout);
-            }
-            if (readTimeout > 0) {
-                request.setReadTimeout(readTimeout);
-            }
-            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            // request.setFollowRedirects(doRedirects);
-            Browser.forwardCookies(request);
-            request.getHeaders().put("Referer", currentURL.toString());
-            if (headers != null) {
-                request.getHeaders().putAll(headers);
-            }
-     
-            request.connect();
-
-            Browser.updateCookies(request);
-            this.request = request;
+        if (currentURL == null) {
             currentURL = new URL(string);
-            if (this.doRedirects && this.request.getLocation() != null) {
-                this.openGetConnection(null);
-            }
-            return this.request.getHttpConnection();
+        }
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        GetRequest request = new GetRequest(string);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        Browser.forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
 
-   
+        request.connect();
+
+        Browser.updateCookies(request);
+        this.request = request;
+        currentURL = new URL(string);
+        if (this.doRedirects && this.request.getLocation() != null) {
+            this.openGetConnection(null);
+        }
+        return this.request.getHttpConnection();
+
     }
 
     private String getURL(String string) {
@@ -317,38 +309,38 @@ public class Browser {
 
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
-  
-            if (currentURL == null) {
-                currentURL = new URL(url);
-            }
-            if (snifferCheck()){
-                //throw new IOException("Sniffer found");   
-            } 
-            PostRequest request = new PostRequest(url);
-            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            // request.setFollowRedirects(doRedirects);
-            if (connectTimeout > 0) {
-                request.setConnectTimeout(connectTimeout);
-            }
-            if (readTimeout > 0) {
-                request.setReadTimeout(readTimeout);
-            }
-            Browser.forwardCookies(request);
-            request.getHeaders().put("Referer", currentURL.toString());
-            if (post != null) {
-                request.getPostData().putAll(post);
-            }
-            if (headers != null) {
-                request.getHeaders().putAll(headers);
-            }
-            request.connect();
 
-            this.request = request;
+        if (currentURL == null) {
             currentURL = new URL(url);
-            if (this.doRedirects && this.request.getLocation() != null) {
-                this.openGetConnection(null);
-            }
-            return this.request.getHttpConnection();
+        }
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        PostRequest request = new PostRequest(url);
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        Browser.forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        if (post != null) {
+            request.getPostData().putAll(post);
+        }
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+        request.connect();
+
+        this.request = request;
+        currentURL = new URL(url);
+        if (this.doRedirects && this.request.getLocation() != null) {
+            this.openGetConnection(null);
+        }
+        return this.request.getHttpConnection();
 
     }
 
@@ -359,43 +351,41 @@ public class Browser {
 
     public String postPage(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
-  
-            if (currentURL == null) {
-                currentURL = new URL(url);
-            }
-            if (snifferCheck()){
-                //throw new IOException("Sniffer found");   
-            } 
-            PostRequest request = new PostRequest(url);
-            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
-            // request.setFollowRedirects(doRedirects);
-            if (connectTimeout > 0) {
-                request.setConnectTimeout(connectTimeout);
-            }
-            if (readTimeout > 0) {
-                request.setReadTimeout(readTimeout);
-            }
-            Browser.forwardCookies(request);
-            request.getHeaders().put("Referer", currentURL.toString());
-            request.getPostData().putAll(post);
-            if (headers != null) {
-                request.getHeaders().putAll(headers);
-            }
-            request.connect();
-            String ret = null;
-            if (request.getHttpConnection().getHeaderField("Content-Length") == null || limit > 0 && Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
-                ret = request.read();
-            }
 
-            Browser.updateCookies(request);
-            this.request = request;
+        if (currentURL == null) {
             currentURL = new URL(url);
-            if (this.doRedirects && this.request.getLocation() != null) {
-                ret = this.getPage(null);
-            }
-            return ret;
+        }
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        PostRequest request = new PostRequest(url);
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        Browser.forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        request.getPostData().putAll(post);
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+        request.connect();
+        String ret = null;
+        if (request.getHttpConnection().getHeaderField("Content-Length") == null || limit > 0 && Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) <= limit) {
+            ret = request.read();
+        }
 
-     
+        Browser.updateCookies(request);
+        this.request = request;
+        currentURL = new URL(url);
+        if (this.doRedirects && this.request.getLocation() != null) {
+            ret = this.getPage(null);
+        }
+        return ret;
 
     }
 
@@ -521,11 +511,23 @@ public class Browser {
         this.readTimeout = readTimeout;
     }
 
+    public String getBaseURL() {
+        if (request == null) return null;
+
+        String base = request.getUrl().toString();
+        if (base.matches("http://.*/.*")) {
+            return base.substring(0, base.lastIndexOf("/")) + "/";
+        } else {
+            return base + "/";
+        }
+
+    }
+
     public String submitForm(Form form) throws IOException {
         String base = null;
-        if (snifferCheck()){
-            //throw new IOException("Sniffer found");   
-        } 
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
         if (request != null) base = request.getUrl().toString();
         String action = form.getAction(base);
         switch (form.method) {
@@ -598,9 +600,9 @@ public class Browser {
             Browser.forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             String ret = null;
-        
-                ret = request.read();
-         
+
+            ret = request.read();
+
             Browser.updateCookies(request);
             this.request = request;
             try {
@@ -634,11 +636,10 @@ public class Browser {
     }
 
     public String loadConnection(HTTPConnection con) throws IOException {
-    
-            if (con == null) return request.read();
-            if (con == null) return null;
-            return Request.read(con);
-    
+
+        if (con == null) return request.read();
+        if (con == null) return null;
+        return Request.read(con);
 
     }
 

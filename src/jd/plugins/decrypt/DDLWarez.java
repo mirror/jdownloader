@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.GetRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
@@ -36,14 +37,17 @@ public class DDLWarez extends PluginForDecrypt {
         private String downloadlink;
         private Form form;
         private boolean gotjob;
-        private String parameter;
+   
         private int Worker_ID;
+        private Browser br;
 
-        public DDLWarez_Linkgrabber(int id) {
+        public DDLWarez_Linkgrabber(int id, Browser br) {
             downloadlink = null;
             gotjob = false;
             _status = THREADFAIL;
             Worker_ID = id;
+            this.br=br;
+
         }
 
         public String getlink() {
@@ -54,19 +58,17 @@ public class DDLWarez extends PluginForDecrypt {
         public void run() {
             if (gotjob == true) {
                 logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " started!");
-                String action = form.getAction(null);
+               String base=br.getBaseURL();
+                String action = form.getAction(base);
+             
                 if (action.contains("get_file")) {
-                    PostRequest r = new PostRequest(action);
-                    r.setPostVariable("dont", form.getVars().get("dont"));
-                    r.setPostVariable("do", form.getVars().get("do"));
-                    r.setPostVariable("this", form.getVars().get("this"));
-                    r.setPostVariable("now", form.getVars().get("now"));
-                    r.getHeaders().put("Referer", parameter);
+                Browser clone= br.cloneBrowser();
                     for (int retry = 1; retry <= 10; retry++) {
                         try {
-                            r.load();
-                         
-                            downloadlink = new Regex(r.read(), Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getFirstMatch();
+                            clone.submitForm(form);
+                           
+
+                            downloadlink = clone.getRegex(Pattern.compile("<frame\\s.*?src=\"(.*?)\r?\n?\" (?=(NAME=\"second\"))", Pattern.CASE_INSENSITIVE)).getFirstMatch();
                             break;
                         } catch (Exception e) {
                             logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " PostRequest-Error, try again!");
@@ -89,9 +91,9 @@ public class DDLWarez extends PluginForDecrypt {
             _status = THREADPASS;
         }
 
-        public void setjob(Form form, String parameter) {
+        public void setjob(Form form) {
             this.form = form;
-            this.parameter = parameter;
+         
             gotjob = true;
         }
 
@@ -113,27 +115,33 @@ public class DDLWarez extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        Browser.clearCookies(host);
+        
         for (int retry = 1; retry <= 10; retry++) {
             try {
-                GetRequest req = new GetRequest(parameter);
-                req.setReadTimeout(5 * 60 * 1000);
-                req.setConnectTimeout(5 * 60 * 1000);
-                String page = req.load();
-                String pass = new Regex(page, Pattern.compile("<td>Passwort:</td>.*?<td style=\"padding-left:10px;\">(.*?)</td>.*?</tr>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
+             
+                
+
+                br.setReadTimeout(5 * 60 * 1000);
+              
+               br.setConnectTimeout(5 * 60 * 1000);
+                br.getPage(parameter);
+               
+             String pass=br.getRegex(Pattern.compile("<td>Passwort:</td>.*?<td style=\"padding-left:10px;\">(.*?)</td>.*?</tr>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getFirstMatch();
                 Vector<String> passwords = new Vector<String>();
                 if (pass != null && !pass.equals("kein Passwort")) {
                     passwords.add(pass);
                 }
 
-                Form[] forms = Form.getForms(req.getHtmlCode());
+                Form[] forms =br.getForms();
                 progress.setRange(forms.length);
                 DDLWarez_Linkgrabber DDLWarez_Linkgrabbers[] = new DDLWarez_Linkgrabber[forms.length];
                 for (int i = 0; i < forms.length; ++i) {
                     synchronized (Worker_Delay) {
                         Thread.sleep(Worker_Delay);
                     }
-                    DDLWarez_Linkgrabbers[i] = new DDLWarez_Linkgrabber(i);
-                    DDLWarez_Linkgrabbers[i].setjob(forms[i], parameter);
+                    DDLWarez_Linkgrabbers[i] = new DDLWarez_Linkgrabber(i,br.cloneBrowser());
+                    DDLWarez_Linkgrabbers[i].setjob(forms[i]);
                     DDLWarez_Linkgrabbers[i].start();
                 }
                 for (int i = 0; i < forms.length; ++i) {
