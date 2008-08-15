@@ -31,7 +31,8 @@ public class Sexuriacom extends PluginForDecrypt {
 
     private static final Pattern patternSupported_Main = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Crypt = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternSupported = Pattern.compile(patternSupported_Main.pattern() + "|" + patternSupported_Crypt, Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternSupportetRedirect = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternSupported = Pattern.compile(patternSupported_Main.pattern() + "|" + patternSupported_Crypt + "|" + patternSupportetRedirect.pattern(), Pattern.CASE_INSENSITIVE);
 
     private Browser br;
 
@@ -51,8 +52,8 @@ public class Sexuriacom extends PluginForDecrypt {
         if (new Regex(cryptedLink, patternSupported_Main).matches()) {
             String page = br.getPage(cryptedLink);
             String Links[] = new Regex(page, "href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE).getMatches(1);
-            for (String Link : Links) {
-                decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + Link));
+            for (String link : Links) {
+                decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + link));
             }
             return decryptedLinks;
         } else if (new Regex(cryptedLink, patternSupported_Crypt).matches()) {
@@ -69,6 +70,11 @@ public class Sexuriacom extends PluginForDecrypt {
                 logger.info(br.getRedirectLocation());
             }
             return decryptedLinks;
+        }else if(new Regex(cryptedLink, patternSupportetRedirect).matches()){
+        	String id = new Regex(cryptedLink, patternSupportetRedirect).getFirstMatch();
+        	decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_tokam_ist_cool_" + id +".html" ));
+        	System.out.println(decryptedLinks.get(0));
+        	return decryptedLinks;
         }
         return null;
     }
