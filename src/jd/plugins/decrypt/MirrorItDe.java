@@ -16,17 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class MirrorItDe extends PluginForDecrypt {
 
@@ -40,21 +36,16 @@ public class MirrorItDe extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            RequestInfo reqInfo = HTTP.getRequest(new URL(parameter));
-            String[][] links = new Regex(reqInfo.getHtmlCode(), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
-            progress.setRange(links.length);
 
-            for (String[] element : links) {
-                reqInfo = HTTP.getRequest(new URL("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(element[0], "UTF-8") + "&num=" + element[1]));
-                reqInfo = HTTP.getRequest(new URL(reqInfo.getLocation()));
-                decryptedLinks.add(createDownloadlink(reqInfo.getLocation()));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        String[][] links = new Regex(br.getPage(parameter), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
+        for (String[] element : links) {
+            br.getPage("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(element[0], "UTF-8") + "&num=" + element[1]);
+            br.getPage(br.getRedirectLocation());
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

@@ -16,17 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class MyRef extends PluginForDecrypt {
 
@@ -40,21 +35,12 @@ public class MyRef extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            String downloadid = new Regex(url.getFile(), "\\?([\\d].*)").getFirstMatch();
-            url = new URL("http://myref.de/go_counter.php?id=" + downloadid);
-            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
-            decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        String downloadid = new Regex(parameter, "\\?([\\d].*)").getFirstMatch();
+        br.getPage("http://myref.de/go_counter.php?id=" + downloadid);
+        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+
         return decryptedLinks;
     }
 
