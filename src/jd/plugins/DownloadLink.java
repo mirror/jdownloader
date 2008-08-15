@@ -763,7 +763,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             return;
         }
         if (getDownloadLinkController() == null) {
-            logger.severe("TRied to abort download even it has no downlaodController");
+            logger.severe("Tried to abort download even it has no downloadController");
             linkStatus.setInProgress(false);
             return;
 

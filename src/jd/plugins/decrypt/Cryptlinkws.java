@@ -26,12 +26,12 @@ import jd.controlling.DistributeData;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class Cryptlinkws extends PluginForDecrypt {
@@ -49,83 +49,90 @@ public class Cryptlinkws extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         String cryptedLink = parameter;
+        Browser.clearCookies(host);
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = null;
-            RequestInfo reqinfo = null;
-            if (cryptedLink.matches(patternSupported_File.pattern())) {
-                /* eine einzelne Datei */
-                url = new URL(cryptedLink);
-                reqinfo = HTTP.getRequest(url);
-                String link = new Regex(reqinfo.getHtmlCode(), "unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
-                link = Encoding.htmlDecode(Encoding.htmlDecode(link));
-                url = new URL("http://www.cryptlink.ws/" + link);
-                reqinfo = HTTP.getRequest(url);
-                link = new Regex(reqinfo.getHtmlCode(), "unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
-                link = Encoding.htmlDecode(Encoding.htmlDecode(link));
-                if (link.startsWith("cryptfiles/")) {
-                    /* weiterleitung durch den server */
-                    url = new URL("http://www.cryptlink.ws/" + link);
-                    reqinfo = HTTP.getRequest(url);
-                    decryptedLinks.addAll(new DistributeData(reqinfo.getHtmlCode()).findLinks(false));
+
+        if (cryptedLink.matches(patternSupported_File.pattern())) {
+            /* Einzelne Datei */
+            br.getPage(cryptedLink);
+            String link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
+            link = Encoding.htmlDecode(Encoding.htmlDecode(link));
+            br.getPage("http://www.cryptlink.ws/" + link);
+            link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getFirstMatch(2);
+            link = Encoding.htmlDecode(Encoding.htmlDecode(link));
+            if (link.startsWith("cryptfiles/")) {
+                /* Weiterleitung durch Server */
+                br.getPage("http://www.cryptlink.ws/" + link);
+
+                /* Das hier ist eher weniger gut gelöst */
+                decryptedLinks.addAll(new DistributeData(br.toString()).findLinks(false));
+            } else {
+                /* Direkte Weiterleitung */
+                decryptedLinks.add(createDownloadlink(link));
+            }
+        } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
+            /* ganzer Ordner */
+            boolean do_continue = false;
+            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+
+                br.getPage(cryptedLink);
+
+                Form[] forms = br.getForms();
+
+                if (forms.length == 1) {
+                    /* Weder Captcha noch Passwort vorhanden */
                 } else {
-                    /* direkte weiterleitung */
-                    decryptedLinks.add(createDownloadlink(link));
-                }
-            } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
-                /* ein Folder */
-                boolean do_continue = false;
-                for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                    String post_parameter = "";
-                    url = new URL(cryptedLink);
-                    reqinfo = HTTP.getRequest(url);
-                    if (reqinfo.containsHTML(">Ordnerpasswort:<")) {
+                    /* Captcha vorhanden, Passwort vorhanden oder beides */
+
+                    if (forms[0].getVars().containsKey("folderpass")) {
+                        /* Eingabefeld für Passwort vorhanden */
                         String password = JDUtilities.getGUI().showUserInputDialog("Ordnerpasswort?");
                         if (password == null) {
-                            /* auf abbruch geklickt */
+                            /* Auf "Abbruch" gecklickt */
                             return decryptedLinks;
                         }
-                        post_parameter += "folderpass=" + Encoding.urlEncode(password);
+                        forms[0].put("folderpass", password);
+
                     }
-                    if (reqinfo.containsHTML("captcha.php")) {
+
+                    if (forms[0].getVars().containsKey("captchainput")) {
+                        /* Eingabefeld für Captcha vorhanden */
+
                         File captchaFile = getLocalCaptchaFile(this);
                         String captchaCode;
-                        HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.cryptlink.ws/captcha.php").openConnection());
-                        captcha_con.setRequestProperty("Referer", cryptedLink);
-                        captcha_con.setRequestProperty("Cookie", reqinfo.getCookie());
-                        if (!captcha_con.getContentType().contains("text") && !Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                        if (!br.cloneBrowser().downloadFile(captchaFile, "http://www.cryptlink.ws/captcha.php")) {
+
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen!");
                             return decryptedLinks;
                         }
                         /* CaptchaCode holen */
                         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) { return decryptedLinks; }
-                        if (post_parameter != "") {
-                            post_parameter += "&";
-                        }
-                        post_parameter += "captchainput=" + Encoding.urlEncode(captchaCode);
+                        forms[0].put("captchainput", captchaCode);
+
                     }
-                    if (post_parameter != "") {
-                        reqinfo = HTTP.postRequest(new URL("http://www.cryptlink.ws/index.php?action=getfolder"), reqinfo.getCookie(), cryptedLink, null, post_parameter, false);
-                    }
-                    if (!reqinfo.containsHTML("Wrong Password! Klicken Sie") && !reqinfo.containsHTML("Wrong Captchacode! Klicken Sie")) {
-                        do_continue = true;
-                        break;
-                    }
+
+                    br.submitForm(forms[0]);
                 }
-                if (do_continue == true) {
-                    String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"crypt\\.php\\?file=(\\d+)\"", Pattern.CASE_INSENSITIVE)).getMatches(1);
-                    progress.setRange(links.length);
-                    for (String element : links) {
-                        decryptedLinks.add(createDownloadlink("http://www.cryptlink.ws/crypt.php?file=" + element));
-                        progress.increase(1);
-                    }
+
+                if (!br.containsHTML("Wrong Password! Klicken Sie") && !br.containsHTML("Wrong Captchacode! Klicken Sie")) {
+                    do_continue = true;
+                    break;
+                }
+
+            }
+
+            if (do_continue == true) {
+                String[] links = br.getRegex("href=\"crypt\\.php\\?file=(.*?)\"").getMatches(1);
+                progress.setRange(links.length);
+                for (String element : links) {
+                    decryptedLinks.add(createDownloadlink("http://www.cryptlink.ws/crypt.php?file=" + element));
+                    progress.increase(1);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+
         return decryptedLinks;
     }
 
