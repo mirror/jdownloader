@@ -152,7 +152,7 @@ public class Netloadin extends PluginForHost {
             return;
         }
         File file = this.getLocalCaptchaFile(this);
-Browser c=br.cloneBrowser();
+        Browser c=br.cloneBrowser();
         if (!Browser.download(file, c.openGetConnection(captchaURL)) || !file.exists()) {
             logger.severe("Captcha download failed: " + captchaURL);
 
