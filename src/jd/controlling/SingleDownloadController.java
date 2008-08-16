@@ -173,7 +173,9 @@ e.printStackTrace();
             if (linkStatus.isFailed()) {
                 logger.severe("\r\nError occured- " + downloadLink.getLinkStatus());
             }
-
+if(aborted){
+    linkStatus.setErrorMessage(null);
+}
             switch (linkStatus.getLatestStatus()) {
 
             case LinkStatus.ERROR_IP_BLOCKED:

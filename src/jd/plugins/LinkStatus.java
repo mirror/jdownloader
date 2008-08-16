@@ -229,8 +229,13 @@ public class LinkStatus implements Serializable {
 
         return JDLocale.L("gui.downloadlink.finished", "[finished]"); }
 
-        if (!downloadLink.isEnabled() && hasStatus(LinkStatus.FINISHED)) {
+        if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
+            if(downloadLink.isAborted()){
+                ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]");
+            }else{
             ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
+            
+            }
 
             if (errorMessage != null) {
 
@@ -239,7 +244,7 @@ public class LinkStatus implements Serializable {
             return ret;
 
         }
-
+     
         if (isFailed()) { return getLongErrorMessage(); }
       
 
@@ -358,6 +363,7 @@ public class LinkStatus implements Serializable {
     }
 
     public void setErrorMessage(String string) {
+        if(downloadLink.isAborted()&&string!=null)return;
         errorMessage = string;
 
     }

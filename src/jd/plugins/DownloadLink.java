@@ -703,7 +703,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (available != null) { return available; }
         try {
             available = ((PluginForHost) getPlugin()).getFileInformation(this);
-        } catch (IOException e) {
+        } catch (Exception e) {
+            available=false;
             return false;
         }
         return available;

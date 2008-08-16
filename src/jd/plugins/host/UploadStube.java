@@ -17,6 +17,8 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -58,13 +60,13 @@ public class UploadStube extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        try {
+    public boolean getFileInformation(DownloadLink downloadLink) throws MalformedURLException, IOException {
+
+      
             RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             downloadLink.setName(new Regex(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
 
-            try {
+         
                 String[] fileSize = new Regex(requestInfo.getHtmlCode(), "<b>Dateigr..e:</b> ([0-9\\.]*) (.*?)<br>").getMatches()[0];
                 double length = Double.parseDouble(fileSize[0].trim());
                 int bytes;
@@ -77,13 +79,9 @@ public class UploadStube extends PluginForHost {
                     bytes = (int) length;
                 }
                 downloadLink.setDownloadSize(bytes);
-            } catch (Exception e) {
-            }
+         
             return true;
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-        return false;
+      
     }
 
     @Override

@@ -508,6 +508,7 @@ abstract public class DownloadInterface {
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                     error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
+                    e.printStackTrace();
                     ;
 
                 } else {
@@ -1142,6 +1143,7 @@ abstract public class DownloadInterface {
         }
         if (fatalErrorOccured) { return; }
         linkStatus.addStatus(id);
+    
         linkStatus.setErrorMessage(string);
         switch (id) {
         case LinkStatus.ERROR_RETRY:

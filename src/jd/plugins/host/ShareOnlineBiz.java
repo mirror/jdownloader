@@ -204,8 +204,8 @@ public class ShareOnlineBiz extends PluginForHost {
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
         /* DownloadLink holen, thx @dwd */
-        String all = requestInfo.getRegexp("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(0);
-        String dec = requestInfo.getRegexp("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(0);
+        String all = requestInfo.getRegexp("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
+        String dec = requestInfo.getRegexp("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
         Context cx = Context.enter();
         Scriptable scope = cx.initStandardObjects();
         String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";

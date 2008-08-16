@@ -458,7 +458,14 @@ public class DepositFiles extends PluginForHost {
         br.submitForm(login);
 
         cookie += "; " + br.getRequest().getCookieString();
-
+if(br.containsHTML("Your password or login is incorrect")){
+    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    downloadLink.getLinkStatus().setErrorMessage("Your password or login is incorrect");
+    return;
+    
+    
+}
         finalURL = br.getRegex(PATTERN_PREMIUM_REDIRECT).getMatch(0);
         br.getPage(finalURL);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
