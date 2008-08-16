@@ -205,18 +205,20 @@ public class Rapidshare extends PluginForHost {
         super();
 
         // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
-        serverMap.put("Cogent #1", "cg");
+        serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
-        serverMap.put("GlobalCrossing #1", "gc");
+        serverMap.put("GlobalCrossing", "gc");
         serverMap.put("GlobalCrossing #2", "gc2");
-        serverMap.put("Level(3) #1", "l3");
+        serverMap.put("Level(3)", "l3");
         serverMap.put("Level(3) #2", "l32");
         serverMap.put("Level(3) #3", "l33");
         serverMap.put("Level(3) #4", "l34");
-        serverMap.put("Tata Com. #1", "tg");
+        serverMap.put("Tata Com.", "tg");
         serverMap.put("Tata Com. #2", "tg2");
-        serverMap.put("TeliaSonera #1", "tl");
+        serverMap.put("Teleglobe", "tg");
+        serverMap.put("Teleglobe #2", "tg2");
+        serverMap.put("TeliaSonera", "tl");
         serverMap.put("TeliaSonera #2", "tl2");
         serverMap.put("TeliaSonera #3", "tl3");
 
@@ -225,8 +227,11 @@ public class Rapidshare extends PluginForHost {
         setConfigElements();
         enablePremium();
         this.setMaxConnections(30);
+       
     }
-
+    public int getTimegapBetweenConnections() {
+        return 100;
+    }
     /**
      * Prüft vor dem Download ob der Download geschrieben werden darf Es wird
      * z.B. auf "Is local file in progress" oder "fileexists" geprüft.
