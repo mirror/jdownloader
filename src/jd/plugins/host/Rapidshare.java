@@ -224,6 +224,7 @@ public class Rapidshare extends PluginForHost {
         serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
         setConfigElements();
         enablePremium();
+        this.setMaxConnections(30);
     }
 
     /**
@@ -892,9 +893,7 @@ public class Rapidshare extends PluginForHost {
         return host;
     }
 
-    public int getMaxConnections() {
-        return 30;
-    }
+  
 
     /**
      * Versucht den Captchacode zu ermitteln. 1. über die Hashdatenbank 2. Über

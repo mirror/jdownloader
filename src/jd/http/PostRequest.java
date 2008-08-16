@@ -67,6 +67,8 @@ public class PostRequest extends Request {
             wr.write(parameter);
             wr.flush();
             wr.close();
+        }else{
+            httpConnection.setRequestProperty("Content-Length", "0"); 
         }
     }
 

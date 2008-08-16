@@ -255,7 +255,7 @@ public abstract class Request {
             if (first) {
                 first = false;
             } else {
-                buffer.append(";");
+                buffer.append("; ");
             }
             buffer.append(cookie.getKey());
             buffer.append("=");

@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Vector;
@@ -422,8 +423,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Erweiterter "Dateiname"
      */
     public String getFileInfomationString() {
-        
+    
             return  getPlugin().getFileInformationString(this);
+      
         
     }
 
@@ -699,7 +701,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public boolean isAvailable() {
         if (available != null) { return available; }
-        available = ((PluginForHost) getPlugin()).getFileInformation(this);
+        try {
+            available = ((PluginForHost) getPlugin()).getFileInformation(this);
+        } catch (IOException e) {
+            return false;
+        }
         return available;
     }
 

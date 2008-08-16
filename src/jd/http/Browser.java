@@ -104,12 +104,10 @@ public class Browser {
 
         host = Browser.getHost(url);
         HashMap<String, String> cookies;
-        if (!COOKIES.containsKey(host)) {
+        if (!COOKIES.containsKey(host)||(cookies = COOKIES.get(host))==null) {
             cookies = new HashMap<String, String>();
             COOKIES.put(host, cookies);
-        } else {
-            cookies = COOKIES.get(host);
-        }
+        } 
         cookies.put(key.trim(), value.trim());
 
     }
@@ -175,6 +173,12 @@ public class Browser {
         return Form.getForms(this);
 
     }
+    public Form getForm(String name){      
+        for(Form f:getForms()){
+            if(f.hasSubmitValue(name))return f;
+        }
+        return null;
+    }
 
     public HashMap<String, String> getHeaders() {
         if (headers == null) {
@@ -219,9 +223,11 @@ public class Browser {
 
         Browser.updateCookies(request);
         this.request = request;
-        currentURL = new URL(string);
-        if (this.doRedirects && this.request.getLocation() != null) {
+        if (this.doRedirects && request.getLocation() != null) {
             ret = this.getPage(null);
+        }else{
+        
+            currentURL = new URL(string);
         }
         return ret;
 
@@ -255,7 +261,7 @@ public class Browser {
     }
 
     public HTTPConnection openFormConnection(Form form) throws IOException {
-
+if(form==null)return null;
         String base = null;
         if (request != null) base = request.getUrl().toString();
         String action = form.getAction(base);
@@ -321,9 +327,11 @@ public class Browser {
 
         Browser.updateCookies(request);
         this.request = request;
-        currentURL = new URL(string);
-        if (this.doRedirects && this.request.getLocation() != null) {
+        if (this.doRedirects && request.getLocation() != null) {
             this.openGetConnection(null);
+        }else{
+            
+            currentURL = new URL(string);
         }
         return this.request.getHttpConnection();
 
@@ -370,9 +378,11 @@ public class Browser {
         request.connect();
 
         this.request = request;
-        currentURL = new URL(url);
-        if (this.doRedirects && this.request.getLocation() != null) {
+        if (this.doRedirects && request.getLocation() != null) {
             this.openGetConnection(null);
+        }else{
+         
+            currentURL = new URL(url);
         }
         return this.request.getHttpConnection();
 
@@ -403,7 +413,7 @@ public class Browser {
         }
         Browser.forwardCookies(request);
         request.getHeaders().put("Referer", currentURL.toString());
-        request.getPostData().putAll(post);
+        if(post!=null)request.getPostData().putAll(post);
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
@@ -416,9 +426,11 @@ public class Browser {
 
         Browser.updateCookies(request);
         this.request = request;
-        currentURL = new URL(url);
-        if (this.doRedirects && this.request.getLocation() != null) {
+        if (this.doRedirects && request.getLocation() != null) {
             ret = this.getPage(null);
+        }else{
+          
+            currentURL = new URL(url);
         }
         return ret;
 
@@ -859,6 +871,14 @@ public class Browser {
 
     public void setSnifferDetection(boolean snifferDetection) {
         this.snifferDetection = snifferDetection;
+    }
+
+    public String getURL() {
+       if(request==null){
+           return null;
+       }
+       return request.getUrl().toString();
+        
     }
 
 }

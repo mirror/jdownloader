@@ -214,7 +214,11 @@ abstract public class DownloadInterface {
          * @return
          */
         private HTTPConnection copyConnection(HTTPConnection connection) {
-
+            try {
+                downloadLink.getPlugin().waitForNextConnectionAllowed();
+            } catch (InterruptedException e1) {
+                return null;
+            }
             long start = startByte + getPreBytes(this);
             String end = (endByte > 0 ? endByte + 1 : "") + "";
             if (start == 0) { return connection; }
@@ -249,6 +253,16 @@ abstract public class DownloadInterface {
                 } else {
                     httpConnection.connect();
                 }
+
+                if (!httpConnection.isOK()) {
+                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + httpConnection.getHTTPURLConnection().getResponseMessage());
+                    return null;
+                }
+                if (httpConnection.getHeaderField("Location") != null) {
+                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
+                    return null;
+
+                }
                 if (speedDebug) {
                     // logger.finer("Org request headers " + this.getID() + ":"
                     // + request);
@@ -262,7 +276,7 @@ abstract public class DownloadInterface {
 
             } catch (Exception e) {
                 addException(e);
-                error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDUtilities.convertExceptionReadable(e));
+                error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
 
                 e.printStackTrace();
             }
@@ -556,7 +570,7 @@ abstract public class DownloadInterface {
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            //logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
+            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
             // max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {
@@ -797,7 +811,7 @@ abstract public class DownloadInterface {
                 // CLR 1.1.4322; .NET CLR 2.0.50727)}{Authorization: Basic
                 // NDkxMjM4MDpUNFN6N2YySjZK}{Accept-Language: de, en-gb;q=0.9,
                 // en;q=0.8}{Referer:
-                //http://rapidshare.com/files/120598559/Lunar_Strain.rar}{Range:
+                // http://rapidshare.com/files/120598559/Lunar_Strain.rar}{Range:
                 // bytes=26282889-}{Host: rs305tl2.rapidshare.com}{Accept:
                 // text/html, image/gif, image/jpeg, *; q=.2, */*;
                 // q=.2}{Connection: keep-alive}{null: null}{null: null}{null:
@@ -1434,6 +1448,12 @@ abstract public class DownloadInterface {
      */
     public boolean startDownload() {
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
+
+        if (connection.getHeaderField("Location") != null) {
+
+            error(LinkStatus.ERROR_PLUGIN_DEFEKT, "Sent a redirect to Downloadinterface");
+            return false;
+        }
         if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);

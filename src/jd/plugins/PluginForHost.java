@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
@@ -31,7 +32,6 @@ import jd.config.MenuItem;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
-
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -66,6 +66,7 @@ public abstract class PluginForHost extends Plugin {
 
     // private static final int ACCOUNT_NUM = 5;
     public static final String PROPERTY_PREMIUM = "PREMIUM";
+    private static Long LAST_CONNECTION_TIME = 0L;
     protected Browser br = new Browser();
     private boolean enablePremium = false;
 
@@ -309,8 +310,9 @@ public abstract class PluginForHost extends Plugin {
      * 
      * @param parameter
      * @return true/false je nach dem ob die Datei noch online ist (verfügbar)
+     * @throws IOException
      */
-    public abstract boolean getFileInformation(DownloadLink parameter);
+    public abstract boolean getFileInformation(DownloadLink parameter) throws IOException;
 
     /**
      * Gibt einen String mit den Dateiinformationen zurück. Die Defaultfunktion
@@ -322,7 +324,7 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getFileInformationString(DownloadLink parameter) {
-        return parameter.getName();
+        return "";
     }
 
     // /**
@@ -336,7 +338,7 @@ public abstract class PluginForHost extends Plugin {
     // Exception;
 
     public int getFreeConnections() {
-        return Math.max(1, maxConnections - currentConnections);
+        return Math.max(1, this.getMaxConnections() - currentConnections);
     }
 
     /**
@@ -571,16 +573,16 @@ public abstract class PluginForHost extends Plugin {
                     } else if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_DISABLE) {
 
                         account.setEnabled(false);
-                        account.setStatus(downloadLink.getLinkStatus().getErrorMessage());
+                        account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
 
                         getPluginConfig().save();
                         logger.severe("Premium Account " + account.getUser() + ": expired");
                     } else {
 
                         account.setEnabled(false);
-                        account.setStatus(downloadLink.getLinkStatus().getErrorMessage());
+                        account.setStatus(downloadLink.getLinkStatus().getLongErrorMessage());
                         getPluginConfig().save();
-                        logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getErrorMessage());
+                        logger.severe("Premium Account " + account.getUser() + ":" + downloadLink.getLinkStatus().getLongErrorMessage());
                     }
 
                 } else {
@@ -681,6 +683,19 @@ public abstract class PluginForHost extends Plugin {
 
         HOSTER_WAIT_TIMES.put(this.getClass(), milliSeconds);
         HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), System.currentTimeMillis() + milliSeconds);
+
+    }
+
+    public int getTimegapBetweenConnections() {
+        return 0;
+    }
+
+    public void waitForNextConnectionAllowed() throws InterruptedException {
+        synchronized (LAST_CONNECTION_TIME) {
+            long time = Math.max(0, getTimegapBetweenConnections() - (System.currentTimeMillis() - LAST_CONNECTION_TIME));
+            Thread.sleep(time);
+            LAST_CONNECTION_TIME = System.currentTimeMillis();
+        }
 
     }
 

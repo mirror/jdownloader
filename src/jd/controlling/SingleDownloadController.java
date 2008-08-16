@@ -88,7 +88,8 @@ public class SingleDownloadController extends Thread {
      * Bricht den Downloadvorgang ab.
      */
     public SingleDownloadController abortDownload() {
-//        linkStatus.setStatusText(JDLocale.L("controller.status.termination", "termination..."));
+        // linkStatus.setStatusText(JDLocale.L("controller.status.termination",
+        // "termination..."));
         // aborted = true;
 
         // if (currentPlugin != null) currentPlugin.abort();
@@ -124,8 +125,8 @@ public class SingleDownloadController extends Thread {
 
                 downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Fehler"));
                 downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.containererror", "Container Fehler"));
-                
-                 downloadLink.setEnabled(false);
+
+                downloadLink.setEnabled(false);
                 // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
                 fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink);
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_FAILED, this);
@@ -157,7 +158,7 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
 
             } catch (Exception e) {
-
+e.printStackTrace();
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
 
@@ -266,7 +267,7 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
         logger.severe(" The PLugin for " + currentPlugin.getHost() + " seems to be out of date. Please inform the Support-team http://jdownloader.org/support.");
-        logger.severe(downloadLink2.getLinkStatus().getErrorMesage());
+        logger.severe(downloadLink2.getLinkStatus().getErrorMessage());
 
         downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
         downloadLink2.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.pluindefekt", "Plugin out of date"));
@@ -314,13 +315,12 @@ public class SingleDownloadController extends Thread {
          * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
          * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
          * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
-         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial, Helvetica,
-         * sans-serif\">Die Allgemeinen Geschäftsbedingungen
-         * (AGB)</font></strong><font size=\"2\" face=\"Verdana, Arial,
-         * Helvetica, sans-serif\"><br> wurden nicht gelesen und
-         * akzeptiert.</font></font></p><p><font size=\"2\" face=\"Verdana,
-         * Arial, Helvetica, sans-serif\"><br> Anbieter:
-         * </font></p>")+plugin.getHost(); String
+         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
+         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font
+         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
+         * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
+         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
+         * Anbieter: </font></p>")+plugin.getHost(); String
          * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
          * JDUtilities.getGUI().showHelpMessage(title, message, url); }
          */
@@ -343,12 +343,21 @@ public class SingleDownloadController extends Thread {
 
     private void retry(DownloadLink downloadLink, PluginForHost plugin) {
         int r;
+
+        if (downloadLink.getLinkStatus().getValue() > 0) {
+
+            downloadLink.getLinkStatus().setStatusText(null);
+        }
         if ((r = downloadLink.getLinkStatus().getRetryCount()) <= plugin.getMaxRetries()) {
             downloadLink.getLinkStatus().reset();
             downloadLink.getLinkStatus().setRetryCount(r + 1);
+            downloadLink.getLinkStatus().setErrorMessage(null);
             try {
-                plugin.sleep(2000, downloadLink);
+                plugin.sleep(Math.max((int) downloadLink.getLinkStatus().getValue(), 2000), downloadLink);
+
             } catch (InterruptedException e) {
+                downloadLink.getLinkStatus().setStatusText(null);
+                return;
             }
 
         } else {
@@ -360,10 +369,16 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
-        if (linkStatus.getErrorMesage() == null) {
+        if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(JDLocale.L("plugins.error.downloadfailed", "Download failed"));
         }
-
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        retry(downloadLink, plugin);
     }
 
     private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {
@@ -436,7 +451,7 @@ public class SingleDownloadController extends Thread {
     // Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT),
     // // this);
     // //
-    //Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
+    // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
     // // this);
     // Reconnecter.requestReconnect();
     // // if (Reconnecter.waitForNewIP(0)) {
@@ -505,7 +520,7 @@ public class SingleDownloadController extends Thread {
         linkStatus.setWaitTime(milliSeconds);
 
         downloadLink.setEnabled(false);
-        if (linkStatus.getErrorMesage() == null) {
+        if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(JDLocale.L("controller.status.connectionproblems", "Connection lost."));
         }
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
@@ -586,7 +601,7 @@ public class SingleDownloadController extends Thread {
         Reconnecter.requestReconnect();
         // while (status.getRemainingWaittime() > 0) {
         //
-        //fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
+        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
         // downloadLink);
         // try {
         // Thread.sleep(1000);

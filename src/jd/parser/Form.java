@@ -45,6 +45,8 @@ public class Form {
     public static Form[] getForms(Object requestInfo) {
         return Form.getForms(requestInfo, ".*");
     }
+
+    private String[] submitValues;
 public boolean equals(Form f){
     return this.toString().equalsIgnoreCase(f.toString());
 }
@@ -61,9 +63,18 @@ public boolean equals(Form f){
         while (formmatcher.find()) {
             String formPropertie = formmatcher.group(1);
             String inForm = formmatcher.group(2);
+           
             // System.out.println(inForm);
             if (inForm.matches("(?s)" + matcher)) {
                 Form form = new Form();
+                String[] submits= new Regex(inForm,"<input.*?type=[\"|']submit[\"|'].*?>").getColumn(-1);
+                form.submitValues=new String[submits.length];
+                int i=0;
+                for(String submit:submits){
+                    String submitvalue=new Regex(submit,"value=[\"|'](\\w+)[\"|']").getMatch(0);
+                    form.submitValues[i++]=submitvalue;
+                    
+                }
                 // form.baseRequest = requestInfo;
                 form.method = METHOD_GET;
                 Pattern patternfp = Pattern.compile(" ([^\\s]+)\\=[\"'](.*?)[\"']", Pattern.CASE_INSENSITIVE);
@@ -124,6 +135,8 @@ public boolean equals(Form f){
      */
     public String action;
 
+    
+
     /**
      * Fals es eine Uploadform ist, kann man hier die Dateien setzen die
      * hochgeladen werden sollen
@@ -151,7 +164,13 @@ public boolean equals(Form f){
      */
     private HashMap<String, String> vars = new HashMap<String, String>();
 
-
+    public boolean hasSubmitValue(String value){
+        for(String submit:this.submitValues){
+            if(submit.equals(value))return true;
+        }
+        return false;
+        
+    }
 
     public String getAction(String baseURL) {
         URL baseurl = null;
@@ -350,5 +369,8 @@ public boolean equals(Form f){
 
     public File getFileToPost() {
         return fileToPost;
+    }
+    public String[] getSubmitValues() {
+        return submitValues;
     }
 }

@@ -193,7 +193,7 @@ public class LinkStatus implements Serializable {
 
     }
 
-    String getErrorMessage() {
+    public String getLongErrorMessage() {
         String ret = errorMessage;
         if (ret == null) {
             ret = getDefaultErrorMessage();
@@ -240,7 +240,7 @@ public class LinkStatus implements Serializable {
 
         }
 
-        if (isFailed()) { return getErrorMessage(); }
+        if (isFailed()) { return getLongErrorMessage(); }
       
 
         // String ret = "";
@@ -344,6 +344,7 @@ public class LinkStatus implements Serializable {
         statusText = null;
         retryCount = 0;
         totalWaitTime = 0;
+        value=0;
         resetWaitTime();
 
     }
@@ -480,13 +481,14 @@ public class LinkStatus implements Serializable {
 
     }
 
-    public String getErrorMesage() {
 
-        return errorMessage;
-    }
 
     public String getStatusText() {
         return statusText;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
 }

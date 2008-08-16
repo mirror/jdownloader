@@ -577,7 +577,7 @@ public class HTTPLiveHeader extends Interaction {
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
         // ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request,
         // "%%%°%%%", 1);
-        String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(-1);
+        String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
         if (params.length > 0) {
             String req;
             if (request.startsWith(params[0])) {

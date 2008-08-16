@@ -213,7 +213,8 @@ public class HTTPConnection {
     public boolean isOK() {
 
         try {
-            if (connection.getResponseCode() > -2 && connection.getResponseCode() < 500)
+        
+            if (connection.getResponseCode() > -2 && connection.getResponseCode() < 400)
                 return true;
             else
                 return false;
