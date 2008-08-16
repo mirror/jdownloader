@@ -738,7 +738,7 @@ public class JDUtilities {
                 cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
 
                 // fileSize = file.length();
-
+ 
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 return 0;
