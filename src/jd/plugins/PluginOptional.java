@@ -24,7 +24,7 @@ import jd.event.ControlListener;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
-    public static final int ADDON_INTERFACE_VERSION = 0;
+    public static final int ADDON_INTERFACE_VERSION = 1;
 
 //    public static int VERSION_ID = 0;
 //

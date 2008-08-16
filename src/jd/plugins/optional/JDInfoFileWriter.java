@@ -51,7 +51,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     public static final String VERSION = "$Revision$";
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("JDInfoFileWriter");

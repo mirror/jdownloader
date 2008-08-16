@@ -42,7 +42,7 @@ public class JDShutdown extends PluginOptional {
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     @Override

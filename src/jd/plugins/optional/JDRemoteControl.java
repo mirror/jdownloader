@@ -848,7 +848,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private DecimalFormat f = new DecimalFormat("#0.00");

@@ -49,7 +49,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("FOLDERWATCH");

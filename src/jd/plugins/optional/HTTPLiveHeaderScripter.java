@@ -80,7 +80,7 @@ import org.xml.sax.SAXException;
 
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     public static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {

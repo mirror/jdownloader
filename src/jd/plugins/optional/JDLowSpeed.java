@@ -26,7 +26,7 @@ public class JDLowSpeed extends PluginOptional {
     private static final String PROPERTY_RAPIDSHAREONLY = "PROPERTY_RAPIDSHAREONLY";
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private boolean isRunning = false;

@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
 
 public class StreamingShareTool extends PluginOptional {
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private JFrame frame;

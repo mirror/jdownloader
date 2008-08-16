@@ -102,7 +102,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String USERLIST_STYLE = JDUtilities.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private boolean changed;

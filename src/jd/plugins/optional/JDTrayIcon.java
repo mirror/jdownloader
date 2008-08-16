@@ -105,7 +105,7 @@ public class JDTrayIcon extends PluginOptional {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private JCheckBoxMenuItem clipboard;

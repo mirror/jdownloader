@@ -12,7 +12,7 @@ import jd.utils.JDUtilities;
 
 public class Schedule extends PluginOptional implements ControlListener {
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     ScheduleControl sControl = new ScheduleControl();

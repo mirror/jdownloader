@@ -213,7 +213,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     private static final String PROPERTY_FEEDS = "PROPERTY_FEEDS";
 
     public static int getAddonInterfaceVersion() {
-        return 0;
+        return 1;
     }
 
     private JList aboList;
