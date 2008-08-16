@@ -60,6 +60,8 @@ public class PackageCreaterRS {
         String uid = "jdown3";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
         for (String p : packages) {
+            
+            if (JOptionPane.showConfirmDialog(frame, "Upload " + p) != JOptionPane.OK_OPTION)continue;
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
@@ -82,7 +84,7 @@ public class PackageCreaterRS {
             zip.fillSize = 5 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
             try {
                 zip.zip();
-                if (JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                if (true||JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
                         System.out.println(Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
                         // sb.append("<package>");
@@ -117,7 +119,7 @@ public class PackageCreaterRS {
 
             try {
                 zip.zip();
-                if (JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                if (true||JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
                         System.out.println(Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
                         // sb.append("<package>");

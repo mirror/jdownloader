@@ -58,7 +58,7 @@ public final class Sniffy {
             if (Regex.matches(prem, "could be a sniffer") && !Regex.matches(list, whiteList)) {
 
                 JDUtilities.getLogger().warning("Sniffy:1");
-                check1 = true;
+//                check1 = true;
 
             }
 

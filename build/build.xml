@@ -70,7 +70,7 @@
 			<attribute name="Main-Class" value="jd.update.Main" />
 		
 	    </manifest>
-        <jar jarfile="${dist}/JDLightTray.jar" manifest="Manifest.MF">
+        <jar jarfile="${dist}/plugins/JDLightTray.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name="jd/plugins/optional/JDLightTray*" />    
             	<include name="jd/plugins/optional/TrayIconPopup*" />   
@@ -86,7 +86,7 @@
 			<attribute name="Created-By" value="Botzi" />
 			<attribute name="Main-Class" value="jd.update.Main" />
 	    </manifest>
-        <jar jarfile="${dist}/JDTrayIcon.jar" manifest="Manifest.MF">
+        <jar jarfile="${dist}/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name="jd/plugins/optional/JDTrayIcon*" />                
               </fileset>
@@ -100,7 +100,7 @@
 			<attribute name="Created-By" value="Tudels" />
 			<attribute name="Main-Class" value="jd.update.Main" />
 	    </manifest>
-        <jar jarfile="${dist}/schedule.jar" manifest="Manifest.MF">
+        <jar jarfile="${dist}/plugins/schedule.jar" manifest="Manifest.MF">
             <fileset dir="${cls}">
                 <include name="jd/plugins/optional/schedule/**" />                
               </fileset>
@@ -113,7 +113,7 @@
 				<attribute name="Created-By" value="jiaz" />
 				<attribute name="Main-Class" value="jd.update.Main" />
 		    </manifest>
-	        <jar jarfile="${dist}/JDWebinterface.jar" manifest="Manifest.MF">
+	        <jar jarfile="${dist}/plugins/JDWebinterface.jar" manifest="Manifest.MF">
 	            <fileset dir="${cls}">
 	                <include name="jd/plugins/optional/webinterface/**" />        
 	            </fileset>
@@ -128,7 +128,7 @@
 						<attribute name="Created-By" value="JD-Team" />
 						<attribute name="Main-Class" value="jd.update.Main" />
 				    </manifest>
-			        <jar jarfile="${dist}/JDChat.jar" manifest="Manifest.MF">
+			        <jar jarfile="${dist}/plugins/JDChat.jar" manifest="Manifest.MF">
 			            <fileset dir="${cls}">
 			                <include name="jd/plugins/optional/jdchat/**" />        
 			            </fileset>
@@ -142,7 +142,7 @@
 				<attribute name="Created-By" value="Scr4ve" />
 				<attribute name="Main-Class" value="jd.update.Main" />
 		    </manifest>
-	        <jar jarfile="${dist}/JDRemoteControl.jar" manifest="Manifest.MF">
+	        <jar jarfile="${dist}/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
 	            <fileset dir="${cls}">
 	                <include name="jd/plugins/optional/JDRemoteControl*" />                
 	              </fileset>
@@ -155,7 +155,7 @@
 					<attribute name="Created-By" value="Scr4ve" />
 					<attribute name="Main-Class" value="jd.update.Main" />
 			    </manifest>
-		        <jar jarfile="${dist}/JDNewsfeeds.jar" manifest="Manifest.MF">
+		        <jar jarfile="${dist}/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
 		            <fileset dir="${cls}">
 		                <include name="jd/plugins/optional/Newsfeeds*" />                
 		              </fileset>
@@ -168,7 +168,7 @@
 				<attribute name="Created-By" value="JD-Team" />
 				<attribute name="Main-Class" value="jd.update.Main" />
 		    </manifest>
-	        <jar jarfile="${dist}/JDLowSpeed.jar" manifest="Manifest.MF">
+	        <jar jarfile="${dist}/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
 	            <fileset dir="${cls}">
 	                <include name="jd/plugins/optional/JDLowSpeed*" />                
 	              </fileset>
@@ -179,7 +179,7 @@
 				<attribute name="Created-By" value="JD-Team" />
 				<attribute name="Main-Class" value="jd.update.Main" />
 		    </manifest>
-	        <jar jarfile="${dist}/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
+	        <jar jarfile="${dist}/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
 	            <fileset dir="${cls}">
 	                <include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />                
 	              </fileset>
@@ -190,7 +190,7 @@
 					<attribute name="Created-By" value="JD-Team" />
 					<attribute name="Main-Class" value="jd.update.Main" />
 			    </manifest>
-		        <jar jarfile="${dist}/JDLangFileEditor.jar" manifest="Manifest.MF">
+		        <jar jarfile="${dist}/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
 		            <fileset dir="${cls}">
 		                <include name="jd/plugins/optional/LangFileEditor*" />                
 		              </fileset>
@@ -201,7 +201,7 @@
 					<attribute name="Created-By" value="JD-Team" />
 					<attribute name="Main-Class" value="jd.update.Main" />
 			    </manifest>
-		        <jar jarfile="${dist}/JDInfoFileWriter.jar" manifest="Manifest.MF">
+		        <jar jarfile="${dist}/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
 		            <fileset dir="${cls}">
 		                <include name="jd/plugins/optional/JDInfoFileWriter*" />                
 		              </fileset>
@@ -212,12 +212,23 @@
 						<attribute name="Created-By" value="JD-Team" />
 						<attribute name="Main-Class" value="jd.update.Main" />
 				    </manifest>
-			        <jar jarfile="${dist}/JDFolderWatch.jar" manifest="Manifest.MF">
+			        <jar jarfile="${dist}/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
 			            <fileset dir="${cls}">
 			                <include name="jd/plugins/optional/JDFolderWatch*" />                
 			              </fileset>
 						 
 			        </jar>
+		
+		<manifest file="Manifest.MF">
+							<attribute name="Created-By" value="JD-Team" />
+							<attribute name="Main-Class" value="jd.update.Main" />
+					    </manifest>
+				        <jar jarfile="${dist}/plugins/JDShutdown.jar" manifest="Manifest.MF">
+				            <fileset dir="${cls}">
+				                <include name="jd/plugins/optional/JDShutdown*" />                
+				              </fileset>
+							 
+				        </jar>
 		
     </target>
 	<target name="jarContainer">
