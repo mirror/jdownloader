@@ -36,7 +36,7 @@ public class SeCurNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String layerLinks[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+        String layerLinks[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(layerLinks.length);
         for (String element : layerLinks) {
             String link = new Regex(br.getPage("http://se-cur.net/out.php?d=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);

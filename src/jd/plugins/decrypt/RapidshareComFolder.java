@@ -82,8 +82,8 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
     private void getLinks(String source) {
         RequestInfo reqhelp;
-        String folders[] = new Regex(source, "font\\-size:12pt\\;\" href=\"javascript:folderoeffnen\\('(\\d+?)'\\);").getColumn(-1);
-        String[] links = new Regex(source, "<a style=\"font-size:12pt;\" target=\"_blank\" href=\"http://rapidshare.com/files/(.*?)\">").getColumn(-1);
+        String folders[] = new Regex(source, "font\\-size:12pt\\;\" href=\"javascript:folderoeffnen\\('(\\d+?)'\\);").getColumn(0);
+        String[] links = new Regex(source, "<a style=\"font-size:12pt;\" target=\"_blank\" href=\"http://rapidshare.com/files/(.*?)\">").getColumn(0);
         for (String element : folders) {
 
             try {

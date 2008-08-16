@@ -416,7 +416,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             }
 
-            String[] matches = requestInfo.getRegexp(patEntry).getColumn(-1);
+            String[] matches = requestInfo.getRegexp(patEntry).getColumn(0);
 
             for (String match : matches) {
 

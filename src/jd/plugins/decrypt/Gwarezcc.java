@@ -77,7 +77,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
                     /* DLC Suchen */
-                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);  
                     if (dlc.length == 1) {
                         decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
                         dlc_found = true;
@@ -88,7 +88,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (dlc_found == false) {
                     /* Mirrors suchen (Verschlüsselt) */
-                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
                     for (int i = 0; i < mirror_pages.length; i++) {
                         /* Mirror Page zur weiteren Verarbeitung adden */
                         decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));

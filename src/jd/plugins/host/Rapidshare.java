@@ -816,7 +816,7 @@ public class Rapidshare extends PluginForHost {
         // }
         // Vector<String> serverids = getAllSimpleMatches(ticketCode,
         // patternForServer, 3);
-        String[] serverstrings = new Regex(ticketCode, PATTERN_FIND_MIRROR_URLS).getColumn(-1);
+        String[] serverstrings = new Regex(ticketCode, PATTERN_FIND_MIRROR_URLS).getColumn(0);
 
         // logger.info(ticketCode);
         logger.info("wished Mirror #1 Server " + serverAbb);
@@ -1160,13 +1160,13 @@ public class Rapidshare extends PluginForHost {
         Browser br = new Browser();
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
-        HTTPConnection con = br.getRequest().getHttpConnection();
+       
         if (account.getUser().equals("") || account.getPass().equals("") || br.containsHTML("Your Premium Account has not been found")) {
             ai.setValid(false);
             return ai;
         }
         logger.info(br + "");
-        String validUntil = br.getRegex("<td>(Expire date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getMatch(1).trim();
+        String validUntil = br.getRegex("<td>(Expiration date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getMatch(1).trim();
 
         String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getMatch(1);
         String files = br.getRegex("<td>(Files:|Dateien:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();

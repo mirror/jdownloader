@@ -49,7 +49,7 @@ public class Sexuriacom extends PluginForDecrypt {
 
         if (new Regex(cryptedLink, patternSupported_Main).matches()) {
             String page = br.getPage(cryptedLink);
-            String Links[] = new Regex(page, "href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE).getColumn(-1);
+            String Links[] = new Regex(page, "href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE).getColumn(0);
             for (String link : Links) {
                 decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + link));
             }

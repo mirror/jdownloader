@@ -120,7 +120,7 @@ public class Cryptlinkws extends PluginForDecrypt {
             }
 
             if (do_continue == true) {
-                String[] links = br.getRegex("href=\"crypt\\.php\\?file=(.*?)\"").getColumn(-1);
+                String[] links = br.getRegex("href=\"crypt\\.php\\?file=(.*?)\"").getColumn(0);
                 progress.setRange(links.length);
                 for (String element : links) {
                     decryptedLinks.add(createDownloadlink("http://www.cryptlink.ws/crypt.php?file=" + element));

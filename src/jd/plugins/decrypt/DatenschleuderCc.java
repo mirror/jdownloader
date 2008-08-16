@@ -41,7 +41,7 @@ public class DatenschleuderCc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
-            String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+            String[] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"http://www\\.datenschleuder\\.cc/redir\\.php\\?id=(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
                 reqinfo = HTTP.getRequest(new URL("http://www.datenschleuder.cc/redir.php?id=" + element));

@@ -38,7 +38,7 @@ public class Hubuploadcom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String links[] = new Regex(br.getPage(parameter), Pattern.compile("<form action=\"(.*?)\"><input type=\"submit\" class=\"dlbutton\"", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+        String links[] = new Regex(br.getPage(parameter), Pattern.compile("<form action=\"(.*?)\"><input type=\"submit\" class=\"dlbutton\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             String link = Encoding.htmlDecode(new Regex(br.getPage(element), Pattern.compile("<iframe src=\"(.*?)\" id=\"hub\"", Pattern.CASE_INSENSITIVE)).getMatch(0));

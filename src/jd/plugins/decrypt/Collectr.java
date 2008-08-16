@@ -52,7 +52,7 @@ public class Collectr extends PluginForDecrypt {
             br.submitForm(forms[0]);
         }
 
-        String links[] = br.getRegex("<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getColumn(-1);
+        String links[] = br.getRegex("<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getColumn(0);
         progress.setRange(links.length);
 
         for (String element : links) {

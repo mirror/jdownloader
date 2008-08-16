@@ -80,6 +80,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
+        if(data==null)return false;
         data = data.replaceAll("http://vote.serienjunkies.org/?", "");
         if (data.contains("serienjunkies.org") && (data.contains("/?cat=") || data.contains("/?p="))) {
             cat = getSerienJunkiesCat(data.contains("/?p=")) != sCatNoThing;

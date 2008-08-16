@@ -44,7 +44,7 @@ public class FalinksCom extends PluginForDecrypt {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
             String pw = new Regex(reqinfo.getHtmlCode(), "</form>\npw: (.*?)\n.*?</td>", Pattern.CASE_INSENSITIVE).getMatch(0);
-            String[] links = new Regex(reqinfo.getHtmlCode(), "\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(-1);
+            String[] links = new Regex(reqinfo.getHtmlCode(), "\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(0);
             progress.setRange(links.length);
             for (String link : links) {
                 DownloadLink dlLink = createDownloadlink(link);

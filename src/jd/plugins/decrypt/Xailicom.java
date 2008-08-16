@@ -38,7 +38,7 @@ public class Xailicom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String links[] = new Regex(br.getPage(parameter), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+        String links[] = new Regex(br.getPage(parameter), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             String link = new Regex(br.getPage("http://www.xaili.com/include/get.php?link=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);

@@ -61,7 +61,7 @@ public class Stealth extends PluginForDecrypt {
             }
         }
 
-        String[] links = br.getRegex("popup.php\\?id=(\\d+?)\"\\,'dl'").getColumn(-1);
+        String[] links = br.getRegex("popup.php\\?id=(\\d+?)\"\\,'dl'").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(new Regex(br.cloneBrowser().getPage("http://stealth.to/popup.php?id=" + element), Pattern.compile("frame src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0))));

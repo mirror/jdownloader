@@ -39,7 +39,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
 
         Browser.clearCookies(host);
         br.getPage(parameter);
-        String[] links = br.getRegex("src=\"(.*?)\"").getColumn(-1);
+        String[] links = br.getRegex("src=\"(.*?)\"").getColumn(0);
         progress.setRange(links.length);
 
         for (String element : links) {
