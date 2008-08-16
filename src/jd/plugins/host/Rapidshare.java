@@ -112,13 +112,13 @@ public class Rapidshare extends PluginForHost {
 
     // private CESClient ces;
 
-    private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("expired");
+    private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("(expired|abgelaufen)");
 
-    private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("You have exceeded the download limit");
+    private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)");
 
     private static final Pattern PATTERN_MATCHER_PREMIUM_OVERLAP = Pattern.compile("IP");
 
-    private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minutes)");
+    private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minute)");
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
@@ -1161,7 +1161,7 @@ public class Rapidshare extends PluginForHost {
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
        
-        if (account.getUser().equals("") || account.getPass().equals("") || br.containsHTML("Your Premium Account has not been found")) {
+        if (account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches()) {
             ai.setValid(false);
             return ai;
         }
