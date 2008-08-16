@@ -162,6 +162,26 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
 
+        String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
+        if (error == null) {
+            error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
+        }
+        if (error != null) {
+            if(error.equalsIgnoreCase("error_traffic")){
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.uploadedto.premiumtrafficreached","Traffic limit reached"));
+                linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
+                linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                return;
+                
+            }
+            String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.setErrorMessage(message);
+            return;
+
+        }
+        
+        
         if (br.getRedirectLocation() == null) {
 
             Form form = br.getForm("Download");
