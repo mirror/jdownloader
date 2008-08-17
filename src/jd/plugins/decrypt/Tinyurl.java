@@ -16,22 +16,17 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Tinyurl extends PluginForDecrypt {
 
     static private String host = "tinyurl.com";
-    private Pattern patternLink = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/.*");
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/(preview\\.php\\?num\\=[a-zA-Z0-9]{6}|[a-zA-Z0-9]{6})", Pattern.CASE_INSENSITIVE);
+    Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+", Pattern.CASE_INSENSITIVE);
 
     public Tinyurl() {
         super();
@@ -39,27 +34,16 @@ public class Tinyurl extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            if (!parameter.matches("http://.*?tinyurl\\.com/preview\\.php\\?num\\=[a-zA-Z0-9]{6}")) {
-                parameter = parameter.replaceFirst("tinyurl\\.com/", "tinyurl.com/preview.php?num=");
-            }
 
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-
-            // Besonderen Link herausfinden
-            if (parameter.matches(patternLink.toString())) {
-                String[] result = parameter.split("/");
-                reqinfo = HTTP.getRequest(new URL("http://tinyurl.com/" + result[result.length - 1]));
-            }
-
-            // Link der Liste hinzufügen
-            decryptedLinks.add(createDownloadlink(new Regex(reqinfo.getHtmlCode(), "id=\"redirecturl\" href=\"(.*?)\">Proceed to", Pattern.CASE_INSENSITIVE).getMatch(0)));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        if (parameter.contains("preview")) {
+            parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
         }
+
+        br.getPage(parameter);
+        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+
         return decryptedLinks;
     }
 
