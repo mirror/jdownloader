@@ -37,12 +37,13 @@ public class RurlDe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        br.getPage(parameter);
-        String link = br.getRegex("<A HREF=\"(.*?)\">").getMatch(0);
+        String fileId = new Regex(parameter, ".*/([^/]*)").getMatch(0);
 
-        br.getPage(link);
+        if (fileId == null) { return null; }
+
+        br.getPage("http://rurl.de/go_rurl.php?id=" + fileId);
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-        
+
         return decryptedLinks;
     }
 
