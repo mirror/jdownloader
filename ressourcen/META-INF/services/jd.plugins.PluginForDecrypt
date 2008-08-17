@@ -67,7 +67,8 @@ jd.plugins.decrypt.RsLayerCom
 jd.plugins.decrypt.RsprotectCom
 jd.plugins.decrypt.Rsprotectfreehosterch
 jd.plugins.decrypt.RsXXXBlog
-jd.plugins.decrypt.Rurl
+jd.plugins.decrypt.RurlDe
+jd.plugins.decrypt.RurlOrg
 jd.plugins.decrypt.SAUGUS
 jd.plugins.decrypt.SaveRaidrushWs
 jd.plugins.decrypt.ScumIn

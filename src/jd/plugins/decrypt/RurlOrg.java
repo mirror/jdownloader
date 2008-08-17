@@ -23,13 +23,13 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-public class Rurl extends PluginForDecrypt {
+public class RurlOrg extends PluginForDecrypt {
 
     static private final String host = "rurl.org";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rurl\\.org/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public Rurl() {
+    public RurlOrg() {
         super();
     }
 
