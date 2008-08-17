@@ -76,7 +76,7 @@ public class UCMS extends PluginForDecrypt {
 
             String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (pass != null) {
-                if (pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-")) {
+                if (pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-") || pass.equals("-No Pass-")) {
                     pass = null;
                 }
             }
@@ -130,8 +130,9 @@ public class UCMS extends PluginForDecrypt {
                 }
                 String links[][] = null;
                 if (reqinfo.containsHTML("unescape")) {
-                    String temp = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0))));
-                    links = new Regex(temp, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                    String temp = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\([\"']{1}(.*?)[\"']{1}", Pattern.CASE_INSENSITIVE)).getMatch(0))));
+                    String temp2 = reqinfo.getHtmlCode() + temp;
+                    links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 } else {
                     links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 }
