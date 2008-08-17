@@ -244,7 +244,7 @@ public class Serienjunkies extends PluginForDecrypt {
                     String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
                     String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
                     for (String element2 : sp) {
-                        String size = new Regex(element2, "[\\d]+").getMatch(-1);
+                        String size = new Regex(element2, "(\\d]+)").getMatch(0);
                         String[][] links = new Regex(element2, "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
                         for (String[] element3 : links) {
                             String[] links2 = HTMLParser.getHttpLinks(element3[1], parameter);
@@ -336,7 +336,7 @@ public class Serienjunkies extends PluginForDecrypt {
             String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
             String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
             for (String element2 : sp) {
-                String size = new Regex(element2, "[\\d]+").getMatch(0);
+                String size = new Regex(element2, "(\\d+)").getMatch(0);
                 String[][] links = new Regex(element2.replaceAll("<a href=\"http://vote.serienjunkies.org.*?</a>", ""), "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
 
                 for (String[] element3 : links) {
