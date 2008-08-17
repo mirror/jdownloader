@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 public class XrlUs extends PluginForDecrypt {
 
@@ -38,6 +39,23 @@ public class XrlUs extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         br.getPage(parameter);
+
+        if (br.containsHTML("That url is protected by a secret.")) {
+            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+                String password = JDUtilities.getGUI().showUserInputDialog("Passwort?");
+
+                if (password == null) {
+                    /* Auf "Abbruch" geklickt */
+                    return decryptedLinks;
+                }
+
+                br.getPage(parameter + "-" + password);
+                if (!br.containsHTML("That url is protected by a secret.")) {
+                    break;
+                }
+            }
+        }
+
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
         return decryptedLinks;
