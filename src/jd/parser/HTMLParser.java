@@ -146,6 +146,7 @@ public class HTMLParser {
      * @return Linkliste aus data extrahiert
      */
     public static String[] getHttpLinks(String data, String url) {
+
         String[] protocols = new String[] { "h.{2,3}", "https", "ccf", "dlc", "ftp" };
         String protocolPattern = "(";
         for (int i = 0; i < protocols.length; i++) {
@@ -212,24 +213,27 @@ public class HTMLParser {
         }
         data = data.replaceAll("(?s)<.*?>", "");
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
-        m = Pattern.compile("www\\.[^\\s\"]*", Pattern.CASE_INSENSITIVE).matcher(data);
+        m = Pattern.compile("www\\.[^\\s\"]*(.{0,20}\\.html?|.{0,20}\\.php|.{0,20}\\.cgi)?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
-            link = "http://" + m.group();
+            link = "http://" + m.group(0);
             link = Encoding.htmlDecode(link);
             link = link.replaceAll(protocols[0] + "://", "http://");
             if (!set.contains(link)) {
                 set.add(link);
             }
         }
-        m = Pattern.compile(protocolPattern + "://[^\\s\"]*", Pattern.CASE_INSENSITIVE).matcher(data);
+        m = Pattern.compile(protocolPattern + "://[^\\s\"]*(.{0,20}\\.html?|.{0,20}\\.php|.{0,20}\\.cgi)?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
-            link = m.group();
+            link = m.group(0);
             link = Encoding.htmlDecode(link);
+            
             link = link.replaceAll(protocols[0] + "://", "http://");
             if (!set.contains(link)) {
                 set.add(link);
             }
         }
+        String[] ret = set.toArray(new String[set.size()]);
+
         return set.toArray(new String[set.size()]);
     }
 
