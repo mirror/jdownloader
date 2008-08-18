@@ -54,7 +54,7 @@ public class Netloadin extends PluginForHost {
     static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
     static private final String HOST = "netload.in";
 
-    static private long LAST_FILE_STARTED = 0;
+//    static private long LAST_FILE_STARTED = 0;
     static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
     static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
     static private final Pattern PAT_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*|http://.*?netload\\.in/(?!index\\.php).*/.*)", Pattern.CASE_INSENSITIVE);
@@ -69,7 +69,7 @@ public class Netloadin extends PluginForHost {
 
     private static int RUNNING_FREE_DOWNLOADS;
 
-    private static long LAST_FREE_DOWNLOAD_START=0;
+//    private static long LAST_FREE_DOWNLOAD_START=0;
 
     public Netloadin() {
         setConfigElements();
@@ -83,13 +83,13 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LAST_FREE_DOWNLOAD_START=System.currentTimeMillis();
+//        LAST_FREE_DOWNLOAD_START=System.currentTimeMillis();
         RUNNING_FREE_DOWNLOADS++;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
 
         Browser.clearCookies(HOST);
-        LAST_FILE_STARTED = System.currentTimeMillis();
+//        LAST_FILE_STARTED = System.currentTimeMillis();
 
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink, linkStatus);

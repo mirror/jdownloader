@@ -191,10 +191,6 @@ public abstract class Plugin implements ActionListener {
         return buffer.toString();
     }
 
-    public static void main(String args[]) {
-
-    }
-
     /**
      * Gibt einen Cookie mit Hilfe der cookies.txt von Mozilla bzw. FireFox aus
      * 

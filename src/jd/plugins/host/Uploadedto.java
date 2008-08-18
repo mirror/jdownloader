@@ -130,7 +130,7 @@ public class Uploadedto extends PluginForHost {
         Browser.setCookie("http://uploaded.to/", "lang", "de");
 
         String user = account.getUser();
-        String pass = account.getPass();
+//        String pass = account.getPass();
 
         logger.info("login");
         br.setFollowRedirects(true);

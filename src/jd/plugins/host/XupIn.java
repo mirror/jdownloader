@@ -48,7 +48,7 @@ public class XupIn extends PluginForHost {
     private static final String DOWNLOAD_SIZE = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
     private static final String HOST = "xup.in";
 
-    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
+//    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
     private static final String NAME_FROM_URL = "http://.*?xup\\.in/dl,[0-9]+/(.*?)";
     private static final String NOT_FOUND = "File does not exist";
     private static final String PASSWORD_PROTECTED = "Bitte Passwort eingeben";

@@ -43,7 +43,7 @@ public class YourFilesBiz extends PluginForHost {
     private static final String DOWNLOAD_SIZE = "  <tr class=tdrow1>°<td align=left><b>Dateigr°e:</b></td>°<td align=left>°</td>°</tr>";
     private static final String HOST = "yourfiles.biz";
 
-    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
+//    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
 
     private static final String PLUGIN_NAME = HOST;

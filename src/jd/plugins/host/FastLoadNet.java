@@ -52,7 +52,7 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String HOST = "fast-load.net";
 
-    private static final int MAX_SIMULTAN_DOWNLOADS = 8;
+//    private static final int MAX_SIMULTAN_DOWNLOADS = 8;
 
     private static final String NOT_FOUND = "Datei existiert nicht";
 
