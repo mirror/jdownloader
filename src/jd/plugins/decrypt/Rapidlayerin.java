@@ -16,18 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -44,35 +39,22 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            String link = null;
-            URL url = new URL(cryptedLink);
-            RequestInfo requestInfo = HTTP.getRequest(url);
 
-            /* DownloadLink entschlüsseln */
-            String fun_id = new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)\\(", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String all = "function " + new Regex(requestInfo.getHtmlCode(), Pattern.compile("function (.*?)a=", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String dec = new Regex(requestInfo.getHtmlCode(), Pattern.compile("a=(.*?);document.write", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String page = br.getPage(parameter);
+        String fun_id = new Regex(page, Pattern.compile("function (.*?)\\(", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String all = "function " + new Regex(page, Pattern.compile("function (.*?)a=", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String dec = new Regex(page, Pattern.compile("a=(.*?);document.write", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
-            Context cx = Context.enter();
-            Scriptable scope = cx.initStandardObjects();
-            String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
-            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-            if ((link = Encoding.htmlDecode(Context.toString(result))) != null) {
-                decryptedLinks.add(createDownloadlink(link));
-            } else {
-                return null;
-            }
-            Context.exit();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        Context cx = Context.enter();
+        Scriptable scope = cx.initStandardObjects();
+        String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
+        Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+        String link = Encoding.htmlDecode(Context.toString(result));
+        decryptedLinks.add(createDownloadlink(link));
+        Context.exit();
+
         return decryptedLinks;
     }
 

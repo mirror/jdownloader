@@ -1,15 +1,11 @@
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class RapidRace extends PluginForDecrypt {
     static private final String HOST = "rapidrace.org";
@@ -23,29 +19,22 @@ public class RapidRace extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            String finalUrl = "";
-            String quellcode = "";
-            RequestInfo reqinfo = HTTP.getRequest(url, null, null, false);
-            quellcode = reqinfo.getHtmlCode();
-            while (quellcode.indexOf("http://www.rapidrace.org/load.php?ID") != -1) {
-                finalUrl = "";
-                quellcode = quellcode.substring(quellcode.indexOf("http://www.rapidrace.org/load.php?ID"));
-                String tmp = quellcode.substring(0, quellcode.indexOf("\""));
-                reqinfo = HTTP.getRequest(new URL(tmp), null, null, true);
-                tmp = reqinfo.getHtmlCode().substring(reqinfo.getHtmlCode().indexOf("document.write(fu('") + 19);
-                tmp = tmp.substring(0, tmp.indexOf("'"));
-                for (int i = 0; i < tmp.length(); i += 2) {
-                    finalUrl = finalUrl + (char) (Integer.parseInt(tmp.substring(i, i + 2), 16) ^ i / 2);
-                }
-                decryptedLinks.add(createDownloadlink(finalUrl));
-                quellcode = quellcode.substring(20);
+
+        String finalUrl = "";
+        String page = br.getPage(parameter);
+        while (page.indexOf("http://www.rapidrace.org/load.php?ID") != -1) {
+            finalUrl = "";
+            page = page.substring(page.indexOf("http://www.rapidrace.org/load.php?ID"));
+            String subPage = br.getPage(page.substring(0, page.indexOf("\"")));
+            String tmp = subPage.substring(subPage.indexOf("document.write(fu('") + 19);
+            tmp = tmp.substring(0, tmp.indexOf("'"));
+            for (int i = 0; i < tmp.length(); i += 2) {
+                finalUrl = finalUrl + (char) (Integer.parseInt(tmp.substring(i, i + 2), 16) ^ i / 2);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            decryptedLinks.add(createDownloadlink(finalUrl));
+            page = page.substring(20);
         }
+
         return decryptedLinks;
     }
 

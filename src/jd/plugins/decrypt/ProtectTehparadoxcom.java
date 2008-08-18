@@ -16,18 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class ProtectTehparadoxcom extends PluginForDecrypt {
 
@@ -41,26 +36,11 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            String downloadid = new Regex(url.getFile(), "/([a-zA-Z0-9]+)\\!").getMatch(0);
-            url = new URL("http://protect.tehparadox.com/getdata.php");
-            RequestInfo requestInfo = HTTP.postRequest(url, null, cryptedLink, null, "id=" + downloadid, false);
-            String downloadlink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<iframe name=\"ifram\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (downloadlink != null) {
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadlink)));
-            } else {
-                return null;
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        String downloadlink = new Regex(br.postPage("http://protect.tehparadox.com/getdata.php", "id=" + parameter.substring(parameter.lastIndexOf("/") + 1, parameter.length() - 1)), Pattern.compile("<iframe name=\"ifram\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadlink)));
+
         return decryptedLinks;
     }
 
