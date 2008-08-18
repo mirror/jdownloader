@@ -1,6 +1,3 @@
-/**
- * 
- */
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -20,8 +17,8 @@ package jd.plugins;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 
+import jd.http.Browser;
 import jd.parser.Regex;
 
 /**
@@ -31,8 +28,10 @@ import jd.parser.Regex;
 public class TempEmail {
     public String emailname = System.currentTimeMillis() + "jd";
     private String[][] emails = null;
+    private Browser br;
 
     public TempEmail() {
+        br = new Browser();
     }
 
     /**
@@ -45,9 +44,9 @@ public class TempEmail {
     }
 
     public String getFilteredMail(MailFilter mailFilter) throws MalformedURLException, IOException {
-        if (getEmailAdress() == null) { return null; }
+        if (getEmailAdress() == null) return null;
         for (int i = 0; i < emails.length; i++) {
-            if (mailFilter.fromAdress(emails[i])) { return getMail(i); }
+            if (mailFilter.fromAdress(emails[i])) return getMail(i);
         }
         return null;
     }
@@ -57,30 +56,22 @@ public class TempEmail {
      * 
      * @param index
      * @return
-     * @throws IOException
-     * @throws MalformedURLException
-     * @throws MalformedURLException
-     * @throws IOException
+     * @throws IOException 
      */
-    public String getMail(int index) throws MalformedURLException, IOException {
-        if (getEmailAdress() == null || emails.length <= index) { return null; }
-        RequestInfo requestInfo = HTTP.getRequest(new URL("http://mailin8r.com" + emails[index][1].replaceFirst("showmail", "showmail2")));
-        return requestInfo.getHtmlCode();
+    public String getMail(int index) throws IOException {
+        if (getEmailAdress() == null || emails.length <= index) return null;
+        return br.getPage("http://mailin8r.com" + emails[index][1].replaceFirst("showmail", "showmail2"));
     }
 
     /**
      * new String[][] {{"From", "TargetURL", "Subject"}};
      * 
      * @return
-     * @throws IOException
-     * @throws MalformedURLException
-     * @throws IOException
-     * @throws MalformedURLException
+     * @throws IOException 
      */
-    public String[][] getMailInfos() throws MalformedURLException, IOException {
-        if (emails != null) { return emails; }
-        RequestInfo requestInfo = HTTP.getRequest(new URL("http://mailin8r.com/maildir.jsp?email=" + emailname));
-        emails = new Regex(requestInfo.getHtmlCode(), "<tr><td bgcolor=\\#EEEEFF><b>(.*?)</b></td><td bgcolor=\\#EEEEFF align=center><a href=(.*?)>(.*?)</a></td></tr>").getMatches();
+    public String[][] getMailInfos() throws IOException {
+        if (emails != null) return emails;
+        emails = new Regex(br.getPage("http://mailin8r.com/maildir.jsp?email=" + emailname), "<tr><td bgcolor=\\#EEEEFF><b>(.*?)</b></td><td bgcolor=\\#EEEEFF align=center><a href=(.*?)>(.*?)</a></td></tr>").getMatches();
         return emails;
     }
 }
