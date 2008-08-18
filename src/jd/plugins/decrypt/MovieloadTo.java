@@ -16,16 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class MovieloadTo extends PluginForDecrypt {
     final static String host = "movieload.to";
@@ -39,20 +35,15 @@ public class MovieloadTo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("; popup_dl\\((.*?)\\)\" ")).getMatches();
-            progress.setRange(links.length);
-            for (String[] element : links) {
-                progress.increase(1);
-                reqinfo = HTTP.getRequest(new URL("http://movieload.to/v2/protector/futsch.php?i=" + element[0]));
-                decryptedLinks.add(createDownloadlink(reqinfo.getLocation()));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String links[] = new Regex(br.getPage(parameter), Pattern.compile("; popup_dl\\((.*?)\\)\" ")).getColumn(0);
+        progress.setRange(links.length);
+        for (String element : links) {
+            br.getPage("http://movieload.to/v2/protector/futsch.php?i=" + element);
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

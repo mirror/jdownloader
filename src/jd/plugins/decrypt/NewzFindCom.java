@@ -16,18 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class NewzFindCom extends PluginForDecrypt {
 
@@ -42,26 +37,15 @@ public class NewzFindCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        try {
+        default_password.addAll(HTMLParser.findPasswords(br.getPage(parameter)));
 
-            String url = "http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1);
-            RequestInfo reqinfo = HTTP.getRequest(new URL(url));
-            String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<link title=\"(.*?)\"")).getMatches();
-
-            reqinfo = HTTP.getRequest(new URL(parameter));
-            Vector<String> pws = HTMLParser.findPasswords(reqinfo.getHtmlCode());
-            default_password.addAll(pws);
-
-            progress.setRange(links.length);
-
-            for (String[] element : links) {
-                decryptedLinks.add(createDownloadlink(element[0]));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        String links[] = new Regex(br.getPage("http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1)), Pattern.compile("<link title=\"(.*?)\"")).getColumn(0);
+        progress.setRange(links.length);
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink(element));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

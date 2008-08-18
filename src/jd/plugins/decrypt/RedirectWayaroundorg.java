@@ -16,17 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class RedirectWayaroundorg extends PluginForDecrypt {
 
@@ -40,23 +35,11 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(cryptedLink);
-            RequestInfo requestInfo = HTTP.getRequest(url);
-            if (requestInfo.getLocation() != null) {
-                decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
-            } else {
-                return null;
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        br.getPage(parameter);
+        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+
         return decryptedLinks;
     }
 
