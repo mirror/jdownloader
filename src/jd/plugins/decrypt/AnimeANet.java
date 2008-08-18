@@ -39,22 +39,16 @@ public class AnimeANet extends PluginForDecrypt {
         parameter = parameter.replaceAll(" ", "+");
 
         if (patternSupported_Series.matcher(parameter).matches()) {
-            logger.info(parameter + " gematcht Nr1");
             String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"/download/(.*?)\\.html\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             progress.setRange(links.length);
-            logger.info(links.length + "");
             for (String element : links) {
-                logger.info(element);
                 decryptedLinks.add(createDownloadlink("http://www.animea.net/download/" + element + ".html"));
                 progress.increase(1);
             }
         } else {
-            logger.info(parameter + " gematcht Nr2");
-            String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"(.*?)\" rel=\"nofollow\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            String[] links = new Regex(br.getPage(parameter), Pattern.compile("/><a href=\"(.*?)\" rel=\"nofollow\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             progress.setRange(links.length);
-            logger.info(links.length + "");
             for (String element : links) {
-                logger.info(element);
                 decryptedLinks.add(createDownloadlink(element));
                 progress.increase(1);
             }
