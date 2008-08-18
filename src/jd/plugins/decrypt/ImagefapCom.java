@@ -16,16 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class ImagefapCom extends PluginForDecrypt {
     static private final String host = "imagefap.com";
@@ -38,24 +34,18 @@ public class ImagefapCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-            if (!parameter.contains("view=2")) {
-                parameter += "&view=2";
-            }
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String links[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("image\\.php\\?id=(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatches();
-            progress.setRange(links.length);
-            for (String[] element : links) {
-                DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element[0]);
-                decryptedLinks.add(link);
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
+        if (!parameter.contains("view=2")) parameter += "&view=2";
+
+        String links[] = new Regex(br.getPage(parameter), Pattern.compile("image\\.php\\?id=(.*?)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        progress.setRange(links.length);
+        for (String element : links) {
+            DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
+            decryptedLinks.add(link);
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

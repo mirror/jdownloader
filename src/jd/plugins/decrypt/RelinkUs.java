@@ -29,9 +29,7 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -51,10 +49,10 @@ public class RelinkUs extends PluginForDecrypt {
         setConfigElements();
     }
 
-    private void add_relinkus_container(RequestInfo reqinfo, String cryptedLink, String ContainerFormat) throws IOException {
-        String container_link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + ContainerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE)).getMatch(0);
+    private void add_relinkus_container(String page, String cryptedLink, String containerFormat) throws IOException {
+        String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + containerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (container_link != null) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + ContainerFormat);
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             URL container_url = new URL("http://relink.us/" + Encoding.htmlDecode(container_link));
             HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
             container_con.setRequestProperty("Referer", cryptedLink);
@@ -63,12 +61,11 @@ public class RelinkUs extends PluginForDecrypt {
         }
     }
 
-    private void add_relinkus_links(RequestInfo reqinfo, ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        String links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(0);
+    private void add_relinkus_links(String page, ArrayList<DownloadLink> decryptedLinks) throws IOException {
+        String links[] = new Regex(page, Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.addToMax(links.length);
         for (String link : links) {
-            reqinfo = HTTP.postRequest(new URL("http://relink.us/" + Encoding.htmlDecode(link)), "submit=Open");
-            String dl_link = new Regex(reqinfo.getHtmlCode(), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"\n?(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);
+            String dl_link = new Regex(br.postPage("http://relink.us/" + Encoding.htmlDecode(link), "submit=Open"), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"\n?(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(dl_link)));
             progress.increase(1);
         }
@@ -76,33 +73,26 @@ public class RelinkUs extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
 
-            if (getPluginConfig().getBooleanProperty(USE_RSDF, true)) {
-                add_relinkus_container(reqinfo, cryptedLink, "rsdf");
-            }
-            if (getPluginConfig().getBooleanProperty(USE_CCF, true)) {
-                add_relinkus_container(reqinfo, cryptedLink, "ccf");
-            }
-            if (getPluginConfig().getBooleanProperty(USE_DLC, true)) {
-                add_relinkus_container(reqinfo, cryptedLink, "dlc");
-            }
+        String page = br.getPage(parameter);
 
-            add_relinkus_links(reqinfo, decryptedLinks);
-            String more_links[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<a href=\"(go\\.php\\?id=\\d+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            for (String link : more_links) {
-                url = new URL("http://relink.us/" + link);
-                reqinfo = HTTP.getRequest(url);
-                add_relinkus_links(reqinfo, decryptedLinks);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        if (getPluginConfig().getBooleanProperty(USE_RSDF, true)) {
+            add_relinkus_container(page, parameter, "rsdf");
         }
+        if (getPluginConfig().getBooleanProperty(USE_CCF, true)) {
+            add_relinkus_container(page, parameter, "ccf");
+        }
+        if (getPluginConfig().getBooleanProperty(USE_DLC, true)) {
+            add_relinkus_container(page, parameter, "dlc");
+        }
+
+        add_relinkus_links(page, decryptedLinks);
+        String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=\\d+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        for (String link : more_links) {
+            add_relinkus_links(br.getPage("http://relink.us/" + link), decryptedLinks);
+        }
+
         return decryptedLinks;
     }
 
