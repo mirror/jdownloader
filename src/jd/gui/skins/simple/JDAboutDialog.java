@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 
 import javax.swing.AbstractAction;
 import javax.swing.JFrame;
@@ -20,7 +19,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableColumn;
 
 import jd.gui.skins.simple.Link.JLinkButton;
-import jd.plugins.HTTP;
+import jd.http.Browser;
 import jd.utils.JDLocale;
 
 import org.jdesktop.swingx.JXHyperlink;
@@ -120,8 +119,8 @@ public class JDAboutDialog {
             @Override
             public void run() {
                 try {
-
-                    final String txt = HTTP.getRequest(new URL(JDLocale.L("gui.dialog.about.sourceurl", "http://jdservice.ath.cx/html/about_en.html"))).getHtmlCode();
+                    Browser br = new Browser();
+                    final String txt = br.getPage(JDLocale.L("gui.dialog.about.sourceurl", "http://jdservice.ath.cx/html/about_en.html"));
                     // JDUtilities.getGUI().showHTMLDialog(JDLocale.L(
                     // "gui.dialog.about.title","About JDownloader"), txt);
                     SwingUtilities.invokeLater(new Runnable() {
@@ -129,10 +128,8 @@ public class JDAboutDialog {
                             textPane.setText(txt);
                         }
                     });
-                } catch (MalformedURLException e2) {
-                    e2.printStackTrace();
-                } catch (IOException e2) {
-                    e2.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         };

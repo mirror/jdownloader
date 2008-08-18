@@ -226,13 +226,13 @@ public class HTMLParser {
         while (m.find()) {
             link = m.group(0);
             link = Encoding.htmlDecode(link);
-            
+
             link = link.replaceAll(protocols[0] + "://", "http://");
             if (!set.contains(link)) {
                 set.add(link);
             }
         }
-        String[] ret = set.toArray(new String[set.size()]);
+        // String[] ret = set.toArray(new String[set.size()]);
 
         return set.toArray(new String[set.size()]);
     }
