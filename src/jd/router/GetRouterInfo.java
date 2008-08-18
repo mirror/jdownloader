@@ -20,10 +20,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.Socket;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -33,8 +31,7 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.ProgressDialog;
-import jd.plugins.HTTP;
-import jd.plugins.RequestInfo;
+import jd.http.Browser;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
@@ -230,68 +227,53 @@ public class GetRouterInfo {
     }
 
     public Vector<String[]> getRouterDatas() {
-        if (routerDatas != null) { return routerDatas; }
+        if (routerDatas != null) return routerDatas;
+        if (getAdress() == null) return null;
 
-        if (getAdress() == null) { return null; }
         try {
             // progress.setStatusText("Load possible RouterDatas");
             Authenticator.setDefault(new InternalAuthenticator(loginUser, loginPass));
 
-            RequestInfo request = HTTP.getRequest(new URL("http://" + adress));
-            String html = request.getHtmlCode().toLowerCase();
+            Browser br = new Browser();
+            String html = br.getPage("http://" + adress).toLowerCase();
             Vector<String[]> routerData = new HTTPLiveHeader().getLHScripts();
             Vector<String[]> retRouterData = new Vector<String[]>();
             for (int i = 0; i < routerData.size(); i++) {
                 String[] dat = routerData.get(i);
-                try {
-                    if (html.contains(dat[0].toLowerCase()) || html.contains(dat[1].toLowerCase()) || html.matches(dat[3])) {
-                        retRouterData.add(dat);
-                    }
-                } catch (Exception e) {
-                    // e.printStackTrace();
+                if (html.contains(dat[0].toLowerCase()) || html.contains(dat[1].toLowerCase()) || html.matches(dat[3])) {
+                    retRouterData.add(dat);
                 }
             }
             routerDatas = retRouterData;
             return retRouterData;
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
         } catch (IOException e) {
-
             e.printStackTrace();
         }
-        return null;
 
+        return null;
     }
 
     private boolean isEmpty(String arg) {
-        if (arg == null || arg.matches("[\\s]*")) { return true; }
-        return false;
-
+        return (arg == null || arg.matches("[\\s]*"));
     }
 
     public void setLoginPass(String text) {
         loginPass = text;
-
     }
 
     public void setLoginUser(String text) {
         loginUser = text;
-
     }
 
     private void setProgress(int val) {
-
         if (progressBar != null) {
             progressBar.setValue(val);
-
         } else {
             logger.info(val + "%");
         }
     }
 
     private void setProgressText(String text) {
-
         if (progressBar != null) {
             progressBar.setString(text);
             progressBar.setStringPainted(true);
