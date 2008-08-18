@@ -16,16 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class RockHouseIn extends PluginForDecrypt {
     final static String host = "rock-house.in";
@@ -38,20 +35,16 @@ public class RockHouseIn extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String links[][] = new Regex(reqinfo.getHtmlCode(), "<td><a href=\'(.*?)\' target=\'_blank\'>", Pattern.CASE_INSENSITIVE).getMatches();
-            String pw = jd.http.Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), "<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE).getMatch(0));
-            for (String[] element : links) {
-                DownloadLink link = createDownloadlink(element[0].replaceAll("\n", ""));
-                link.addSourcePluginPassword(pw);
-                decryptedLinks.add(link);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String page = br.getPage(parameter);
+        String links[][] = new Regex(page, Pattern.compile("<td><a href=\'(.*?)\' target=\'_blank\'>", Pattern.CASE_INSENSITIVE)).getMatches();
+        String pw = Encoding.htmlDecode(new Regex(page, Pattern.compile("<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        for (String[] element : links) {
+            DownloadLink link = createDownloadlink(element[0].replaceAll("\n", ""));
+            link.addSourcePluginPassword(pw);
+            decryptedLinks.add(link);
         }
+
         return decryptedLinks;
     }
 

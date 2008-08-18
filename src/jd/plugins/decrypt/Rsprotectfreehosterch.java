@@ -16,17 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Rsprotectfreehosterch extends PluginForDecrypt {
 
@@ -40,16 +36,10 @@ public class Rsprotectfreehosterch extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String link = new Regex(reqinfo.getHtmlCode(), "<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE).getMatch(0);
-            if (link == null) { return null; }
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        String link = new Regex(br.getPage(parameter), "<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE).getMatch(0);
+        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+
         return decryptedLinks;
     }
 

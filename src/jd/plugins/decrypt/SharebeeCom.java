@@ -16,16 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class SharebeeCom extends PluginForDecrypt {
 
@@ -40,21 +36,14 @@ public class SharebeeCom extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqInfo = HTTP.getRequest(url);
 
-            String[] g = new Regex(reqInfo.getHtmlCode(), Pattern.compile("u=(.*?)\'\\);return false;\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            progress.setRange(g.length);
-
-            for (String element : g) {
-                decryptedLinks.add(createDownloadlink(element));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        String[] links = new Regex(br.getPage(parameter), Pattern.compile("u=(.*?)\'\\);return false;\">(.*?)</a>", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        progress.setRange(links.length);
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink(element));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 

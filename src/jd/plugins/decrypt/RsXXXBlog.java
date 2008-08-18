@@ -16,16 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class RsXXXBlog extends PluginForDecrypt {
     static private final String host = "rs.xxx-blog.org";
@@ -41,15 +37,11 @@ public class RsXXXBlog extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            parameter = parameter.substring(parameter.lastIndexOf("http://"));
-            URL url = new URL(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
-            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(url, null, null, false);
-            decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        parameter = parameter.substring(parameter.lastIndexOf("http://"));
+        br.getPage(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
+        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+
         return decryptedLinks;
     }
 
