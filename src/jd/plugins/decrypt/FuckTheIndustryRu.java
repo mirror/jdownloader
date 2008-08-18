@@ -17,8 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -27,9 +25,7 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class FuckTheIndustryRu extends PluginForDecrypt {
@@ -50,41 +46,33 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            // logger.info(reqinfo.getHtmlCode());
-            String name = new Regex(reqinfo.getHtmlCode(), patternDLC).getMatch(1);
-            String link = new Regex(reqinfo.getHtmlCode(), patternDLC).getMatch(0);
-            String pass = new Regex(reqinfo.getHtmlCode(), patternPW).getMatch(0);
-            logger.info(name + " - " + link + " - " + pass);
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            Vector<DownloadLink> links = null;
-            if (Browser.download(container, link)) {
-                links = JDUtilities.getController().getContainerLinks(container);
 
+        String page = br.getPage(parameter);
+        String name = new Regex(page, patternDLC).getMatch(1);
+        String link = new Regex(page, patternDLC).getMatch(0);
+        String pass = new Regex(page, patternPW).getMatch(0);
+        logger.info(name + " - " + link + " - " + pass);
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        Vector<DownloadLink> links = null;
+        if (Browser.download(container, link)) {
+            links = JDUtilities.getController().getContainerLinks(container);
+        }
+
+        if (links != null) {
+            FilePackage fp = new FilePackage();
+            fp.setName(name);
+            fp.setPassword(pass);
+            fp.setComment("from " + parameter);
+            for (DownloadLink dLink : links) {
+                dLink.setSourcePluginComment("from " + parameter);
+                fp.add(dLink);
             }
-
-            if (links != null) {
-                FilePackage fp = new FilePackage();
-                fp.setName(name);
-                fp.setPassword(pass);
-                fp.setComment("from " + parameter);
-                for (DownloadLink dLink : links) {
-                    dLink.setSourcePluginComment("from " + parameter);
-                    fp.add(dLink);
-                }
-                decryptedLinks.addAll(links);
-
-            } else {
-                return null;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+            decryptedLinks.addAll(links);
+        } else {
             return null;
         }
+
         return decryptedLinks;
     }
 

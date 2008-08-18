@@ -16,17 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class LeecherWs extends PluginForDecrypt {
 
@@ -41,27 +37,21 @@ public class LeecherWs extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        RequestInfo reqinfo;
+
         String outLinks[][] = null;
-        try {
-            if (parameter.indexOf("out") != -1) {
-                outLinks = new String[1][1];
-                outLinks[0][0] = parameter.substring(parameter.lastIndexOf("leecher.ws/out/") + 15);
-            } else {
-                reqinfo = HTTP.getRequest(new URL(parameter));
-                outLinks = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://www\\.leecher\\.ws/out/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
-            }
-            progress.setRange(outLinks.length);
-            for (String[] element : outLinks) {
-                reqinfo = HTTP.getRequest(new URL("http://leecher.ws/out/" + element[0]));
-                String cryptedLink = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<iframe src=\"(.?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(cryptedLink)));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        if (parameter.indexOf("out") != -1) {
+            outLinks = new String[1][1];
+            outLinks[0][0] = parameter.substring(parameter.lastIndexOf("leecher.ws/out/") + 15);
+        } else {
+            outLinks = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://www\\.leecher\\.ws/out/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
         }
+        progress.setRange(outLinks.length);
+        for (String[] element : outLinks) {
+            String cryptedLink = new Regex(br.getPage("http://leecher.ws/out/" + element[0]), Pattern.compile("<iframe src=\"(.?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(cryptedLink)));
+            progress.increase(1);
+        }
+
         return decryptedLinks;
     }
 

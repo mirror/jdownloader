@@ -16,16 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Linkshield extends PluginForDecrypt {
 
@@ -39,18 +35,10 @@ public class Linkshield extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter), null, null, true);
-            String link = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<frame src=(?!blank)(.*?)>")).getMatch(0);
-            if (link != null) {
-                decryptedLinks.add(createDownloadlink(link));
-            } else {
-                return null;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+
+        String link = new Regex(br.getPage(parameter), Pattern.compile("<frame src=(?!blank)(.*?)>")).getMatch(0);
+        decryptedLinks.add(createDownloadlink(link));
+
         return decryptedLinks;
     }
 

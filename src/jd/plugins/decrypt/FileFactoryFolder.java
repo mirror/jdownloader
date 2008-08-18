@@ -16,16 +16,12 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class FileFactoryFolder extends PluginForDecrypt {
 
@@ -39,18 +35,14 @@ public class FileFactoryFolder extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-            String ids[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("href=\"http://www.filefactory.com/file/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
-            progress.setRange(ids.length);
-            for (String[] element : ids) {
-                decryptedLinks.add(createDownloadlink("http://www.filefactory.com/file/" + element[0]));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+        String links[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://www.filefactory.com/file/(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        progress.setRange(links.length);
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink("http://www.filefactory.com/file/" + element));
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
