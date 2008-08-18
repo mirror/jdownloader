@@ -16,21 +16,18 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.parser.XPath;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class AnimeANet extends PluginForDecrypt {
     final static String host = "animea.net";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+/.*", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported_Series = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported_Episode = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile(patternSupported_Series.pattern() + "|" + patternSupported_Episode.pattern(), Pattern.CASE_INSENSITIVE);
 
     public AnimeANet() {
         super();
@@ -40,23 +37,29 @@ public class AnimeANet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         parameter = parameter.replaceAll(" ", "+");
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String[] links = reqinfo.getRegexp("onclick=\"reqLink\\(\'(.*?)\'\\)").getColumn(0);
+
+        if (patternSupported_Series.matcher(parameter).matches()) {
+            logger.info(parameter + " gematcht Nr1");
+            String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"/download/(.*?)\\.html\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             progress.setRange(links.length);
+            logger.info(links.length + "");
             for (String element : links) {
-                reqinfo = HTTP.getRequest(new URL("http://www.animea.net/download_link.php?e_id=" + element));
-                ArrayList<String> erg = new XPath(reqinfo.getHtmlCode(), "//td[1]/a").getAttributeMatches("href");
-                for (int j = 0; j < erg.size(); j++) {
-                    decryptedLinks.add(createDownloadlink(erg.get(j)));
-                }
+                logger.info(element);
+                decryptedLinks.add(createDownloadlink("http://www.animea.net/download/" + element + ".html"));
                 progress.increase(1);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        } else {
+            logger.info(parameter + " gematcht Nr2");
+            String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"(.*?)\" rel=\"nofollow\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            progress.setRange(links.length);
+            logger.info(links.length + "");
+            for (String element : links) {
+                logger.info(element);
+                decryptedLinks.add(createDownloadlink(element));
+                progress.increase(1);
+            }
         }
+
         return decryptedLinks;
     }
 
