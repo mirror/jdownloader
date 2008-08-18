@@ -32,9 +32,7 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class FilePackage extends Property implements Serializable {
-    /**
-     * 
-     */
+
     /**
      * Zählt die instanzierungen durch um eine ID zu erstellen
      */
@@ -80,7 +78,6 @@ public class FilePackage extends Property implements Serializable {
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
         downloadLinks = new Vector<DownloadLink>();
-
     }
 
     /**
@@ -89,7 +86,6 @@ public class FilePackage extends Property implements Serializable {
      */
 
     public void add(DownloadLink link) {
-
         if (!downloadLinks.contains(link)) {
             downloadLinks.add(link);
         }
@@ -97,13 +93,11 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void add(int index, DownloadLink link) {
-
         link.setFilePackage(this);
         if (downloadLinks.contains(link)) {
             downloadLinks.remove(link);
         }
         downloadLinks.add(index, link);
-        JDUtilities.getLogger().info("");
     }
 
     public void addAll(Vector<DownloadLink> links) {
@@ -218,7 +212,7 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public String getName() {
-        if (name == null) { return ""; }
+        if (name == null) return "";
         return name;
     }
 
@@ -338,20 +332,16 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public int indexOf(DownloadLink link) {
-
         return downloadLinks.indexOf(link);
     }
 
     public DownloadLink lastElement() {
-
         return downloadLinks.lastElement();
     }
 
     public boolean remove(DownloadLink link) {
         boolean ret = downloadLinks.remove(link);
-        if (ret) {
-            link.setFilePackage(null);
-        }
+        if (ret) link.setFilePackage(null);
         return ret;
     }
 
@@ -382,7 +372,6 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public int size() {
-
         return downloadLinks.size();
     }
 
