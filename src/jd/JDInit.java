@@ -305,7 +305,7 @@ public class JDInit {
                     } else {
 
                         try {
-                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + packages.size()) + " update(s) available. Start Webupdater now?" + "</font>");
+                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + packages.size()) + " update(s) available. Start Webupdater now?" + "</font>",-1);
                             d.getBtn3().setText("Cancel");
                             d.getBtn1().setText("Show changes");
                             d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));

@@ -63,12 +63,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
     public static int showHelpMessage(JFrame parent, String title, String message, final URL url, String helpText) {
 
         title = title == null ? JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe") : title;
-        // int buttons = JOptionPane.YES_NO_OPTION;
-        // int messageType = JOptionPane.INFORMATION_MESSAGE;
-        // String[] options = { JDLocale.L("gui.dialogs.helpDialog.btn.ok",
-        // "OK"),
-        // JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen") };
-        JHelpDialog d = new JHelpDialog(parent, title, message);
+        JHelpDialog d = new JHelpDialog(parent, title, message, -1);
         d.getBtn3().setVisible(false);
         d.getBtn1().setText(helpText);
         d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"));
@@ -90,7 +85,6 @@ public class JHelpDialog extends JDialog implements ActionListener {
     private JButton btn1;
     private JButton btn2;
     private JButton btn3;
-    private JButton btn4;
 
     private JTextPane htmlArea;
     protected Insets insets = new Insets(5, 5, 5, 5);
@@ -102,49 +96,6 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
     private Thread countdownThread;
     private boolean stopTimer = false;
-    
-    public JHelpDialog(JFrame frame, String title, String html) {
-        super(frame);
-        parentFrame = frame;
-        setLayout(new GridBagLayout());
-        this.setModal(false);
-        setBtn1(new JButton("UNSET"));
-        setBtn2(new JButton("UNSET"));
-        setBtn3(new JButton("UNSET"));
-
-        getBtn1().addActionListener(this);
-        getBtn2().addActionListener(this);
-        getBtn3().addActionListener(this);
-        getBtn4().addActionListener(this);
-
-        setTitle(title);
-        htmlArea = new JTextPane();
-
-        htmlArea.setEditable(false);
-        htmlArea.setContentType("text/html");
-
-        htmlArea.setText(html);
-        htmlArea.setOpaque(false);
-        htmlArea.requestFocusInWindow();
-        setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
-        Icon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.config.tip")));
-
-        JDUtilities.addToGridBag(this, new JLabel(imageIcon), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-
-        JDUtilities.addToGridBag(this, htmlArea, 1, 0, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
-        JDUtilities.addToGridBag(this, getBtn1(), 1, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        JDUtilities.addToGridBag(this, getBtn2(), 2, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        JDUtilities.addToGridBag(this, getBtn3(), 3, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-
-        pack();
-
-        // setLocation(JDUtilities.getCenterOfComponent(null, this));
-        getRootPane().setDefaultButton(getBtn1());
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        // this.setLocationRelativeTo(null);
-
-    }
 
     public JHelpDialog(JFrame frame, final String title, String html, final int countdown) {
         super(frame);
@@ -154,13 +105,11 @@ public class JHelpDialog extends JDialog implements ActionListener {
         setBtn1(new JButton("UNSET"));
         setBtn2(new JButton("UNSET"));
         setBtn3(new JButton("UNSET"));
-        setBtn4(new JButton("Stop Timer"));
-        
+
         getBtn1().addActionListener(this);
         getBtn2().addActionListener(this);
         getBtn3().addActionListener(this);
-        getBtn4().addActionListener(this);
-        
+
         setTitle(title);
         htmlArea = new JTextPane();
 
@@ -180,8 +129,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, getBtn1(), 2, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn2(), 3, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn3(), 4, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        JDUtilities.addToGridBag(this, getBtn4(), 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        
+
         pack();
 
         countdownThread = new Thread() {
@@ -201,23 +149,19 @@ public class JHelpDialog extends JDialog implements ActionListener {
                     if (!isVisible()) return;
 
                 }
-                if (stopTimer == false) { 
-                	dispose(); 
+                if (stopTimer == false) {
+                    dispose();
                 } else {
-                	setTitle(title);
+                    setTitle(title);
                 }
             }
 
         };
-        countdownThread.start();
-        
-        // setLocation(JDUtilities.getCenterOfComponent(null, this));
+        if (countdown > 0) countdownThread.start();
         getRootPane().setDefaultButton(getBtn1());
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        // this.setLocationRelativeTo(null);
-
     }
-    
+
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() == getBtn1()) {
@@ -241,9 +185,6 @@ public class JHelpDialog extends JDialog implements ActionListener {
             } else {
                 dispose();
             }
-        } else if (e.getSource() == getBtn4()) {
-        	stopTimer = true;
-        	getBtn4().setVisible(false);
         } else {
             dispose();
         }
@@ -270,13 +211,6 @@ public class JHelpDialog extends JDialog implements ActionListener {
         return btn3;
     }
 
-    /**
-     * @return the btn3
-     */
-    public JButton getBtn4() {
-        return btn4;
-    }
-    
     /**
      * @return the status
      */
@@ -308,15 +242,6 @@ public class JHelpDialog extends JDialog implements ActionListener {
         this.btn3 = btn3;
     }
 
-    /**
-     * @param btn3
-     *            the btn3 to set
-     */
-    public void setBtn4(JButton btn4) {
-        this.btn4 = btn4;
-    }
-
-    
     /**
      * @param status
      *            the status to set
