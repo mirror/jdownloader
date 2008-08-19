@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.http;
 
 import java.io.IOException;
@@ -12,18 +28,17 @@ import sun.misc.BASE64Encoder;
 
 import jd.utils.HTMLEntities;
 
-
 public class Encoding {
 
     /**
-     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;" ;
-     * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
+     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;"
+     * ; Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
      * 
      * @param str
      * @return decoded string
      */
     public static String htmlDecode(String str) {
-        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) { return null; }
@@ -38,7 +53,7 @@ public class Encoding {
                 }
             }
         }
-    
+
         pattern = "\\&\\#(\\d+)\\;?";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
@@ -50,7 +65,7 @@ public class Encoding {
                 }
             }
         }
-    
+
         pattern = "\\%([a-f0-9A-F]{2})";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL | Pattern.CASE_INSENSITIVE).matcher(str); r.find();) {
             if (r.group(1).length() > 0) {
@@ -87,13 +102,13 @@ public class Encoding {
          * 
          * 
          * if (str == null) return str; String allowed =
-         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;" ;
-         * String ret = ""; String l; int i; for (i = 0; i < str.length(); i++) {
-         * char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0) { ret +=
-         * letter; } else { l = Integer.toString(letter, 16); ret += "%" +
-         * (l.length() == 1 ? "0" + l : l); } }
+         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;"
+         * ; String ret = ""; String l; int i; for (i = 0; i < str.length();
+         * i++) { char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0)
+         * { ret += letter; } else { l = Integer.toString(letter, 16); ret +=
+         * "%" + (l.length() == 1 ? "0" + l : l); } }
          */
-    
+
     }
 
     /**
@@ -137,11 +152,11 @@ public class Encoding {
     }
 
     public static String Base64Encode(String plain) {
-    
+
         if (plain == null) { return null; }
         String base64 = new BASE64Encoder().encode(plain.getBytes());
         base64 = Encoding.filterString(base64, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/");
-    
+
         return base64;
     }
 
@@ -165,7 +180,7 @@ public class Encoding {
      */
     public static String filterString(String str, String filter) {
         if (str == null || filter == null) { return ""; }
-    
+
         byte[] org = str.getBytes();
         byte[] mask = filter.getBytes();
         byte[] ret = new byte[org.length];
