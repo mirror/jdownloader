@@ -79,7 +79,7 @@ public class EinsKhDe extends PluginForDecrypt {
                 }
             }
 
-            String[] links = br.getRegex("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"").getColumn(-1);
+            String[] links = br.getRegex("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"").getColumn(0);
             progress.setRange(links.length);
 
             for (String element : links) {
