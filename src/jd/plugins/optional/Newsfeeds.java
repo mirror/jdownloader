@@ -241,9 +241,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     private JList subscribedList;
 
-    public Newsfeeds() {
-    }
-
     public void actionPerformed(ActionEvent e) {
 
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
@@ -385,7 +382,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     private Vector<String[]> getEntries(final String url, final String filter) {

@@ -1455,6 +1455,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // frame.toFront();
 
         captchaDialog.setVisible(true);
+        captchaDialog.toFront();
         logger.info("Returned: " + captchaDialog.getCaptchaText());
         return captchaDialog.getCaptchaText();
     }

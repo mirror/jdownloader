@@ -211,7 +211,7 @@ public class JDTrayIcon extends PluginOptional {
     }
 
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
    public String getPluginName() {
