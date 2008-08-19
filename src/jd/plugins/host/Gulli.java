@@ -106,7 +106,6 @@ public class Gulli extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo;
         String name = downloadLink.getName();
         if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
@@ -162,16 +161,7 @@ public class Gulli extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 1;
-        }
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -186,11 +176,6 @@ public class Gulli extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    // 
-    // public URLConnection getURLConnection() {
-    // // XXX: ???
-    // return null;
-    // }
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
@@ -198,18 +183,13 @@ public class Gulli extends PluginForHost {
         String dlUrl = null;
 
         DownloadLink downloadLink = parameter;
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_GET_CAPTCHA_FILE:
-        // con.setRequestProperty("Cookie",
-        // Plugin.joinMap(cookieMap,"=","; "));
+
         requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
         if (Regex.matches(requestInfo, "Fehler")) {
-            //String errorid = new Regex(requestInfo, "<h1>Fehler (.*?)</h1>.{1,10}<p>(.*?)<\\/p>").getMatch(0);
             String errortext = new Regex(requestInfo, "<h1>Fehler (.*?)</h1>.{1,10}<p>(.*?)<\\/p>").getMatch(1);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(errortext);
             return;
-
         }
         fileId = new Regex(requestInfo.getHtmlCode(), PAT_FILE_ID).getMatch(1 - 1);
         String captchaLocalUrl = new Regex(requestInfo.getHtmlCode(), PAT_CAPTCHA).getMatch(1 - 1);
@@ -217,9 +197,7 @@ public class Gulli extends PluginForHost {
 
         File file = this.getLocalCaptchaFile(this);
         if (captchaLocalUrl == null) {
-
             logger.severe("Download for your Ip Temp. not available");
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(30 * 1000);
             return;
@@ -231,16 +209,11 @@ public class Gulli extends PluginForHost {
 
             if (!Browser.download(file, captchaUrl) || !file.exists()) {
                 logger.severe("Captcha Download fehlgeschlagen: " + captchaUrl);
-                // this.sleep(nul,downloadLink);
-                // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-                // ImageIO
-                // Error");
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 return;
             }
 
         }
-        // case PluginStep.STEP_WAIT_TIME:
 
         String captchaTxt = this.getCaptchaCode(file, downloadLink);
 
@@ -251,7 +224,6 @@ public class Gulli extends PluginForHost {
 
         if (dlUrl == null) {
             logger.finest("Error Page");
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
@@ -274,21 +246,18 @@ public class Gulli extends PluginForHost {
         }
         logger.info("abbruch bei :" + red);
         if (waittime != null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(Integer.parseInt(waittime) * 60 * 1000);
             return;
         } else if (error != null) {
             logger.info("Error: " + error);
             if (error.indexOf("ticket") > 0) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException e) {
                 }
             } else {
-                // step.setStatus(PluginStep.STATUS_ERROR);
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             }
         } else {
@@ -297,7 +266,6 @@ public class Gulli extends PluginForHost {
             finalDownloadConnection = requestInfo.getConnection();
         }
 
-        // case PluginStep.STEP_DOWNLOAD:
         logger.info("dl " + finalDownloadURL);
 
         dl = new RAFDownload(this, downloadLink, finalDownloadConnection);
@@ -311,7 +279,6 @@ public class Gulli extends PluginForHost {
         cookie = null;
         finalDownloadURL = null;
         finalDownloadConnection = null;
-        // serverIPChecked = false;
     }
 
     @Override

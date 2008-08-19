@@ -152,7 +152,8 @@ public class Serienjunkies extends PluginForHost {
                                         logger.severe("OK letter: " + i + ": JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER: " + capTxt.substring(i, i + 1));
                                     } else {
 
-                                        logger.severe("Unknown letter: // " + i + ":  JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER:  " + capTxt.substring(i, i + 1)); // Pixelstring.
+                                        logger.severe("Unknown letter: // " + i + ":  JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER:  " + capTxt.substring(i, i + 1)); // Pixelstring
+                                                                                                                                                                                                      // .
                                         // getB()
                                         // ist
                                         // immer
@@ -260,7 +261,8 @@ public class Serienjunkies extends PluginForHost {
                                         logger.severe("OK letter: " + i + ": JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER: " + capTxt.substring(i, i + 1));
                                     } else {
 
-                                        logger.severe("Unknown letter: // " + i + ":  JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER:  " + capTxt.substring(i, i + 1)); // Pixelstring.
+                                        logger.severe("Unknown letter: // " + i + ":  JAC:" + lcs[i].getDecodedValue() + "(" + lcs[i].getValityPercent() + ") USER:  " + capTxt.substring(i, i + 1)); // Pixelstring
+                                                                                                                                                                                                      // .
                                         // getB()
                                         // ist
                                         // immer
@@ -396,7 +398,6 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return true;
     }
 
@@ -404,11 +405,7 @@ public class Serienjunkies extends PluginForHost {
         return HOST;
     }
 
-    /*public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
-
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -422,8 +419,6 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
         handle0(downloadLink);
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
         return;
@@ -431,8 +426,6 @@ public class Serienjunkies extends PluginForHost {
 
     public void handle0(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        // switch (step.getStep()) {
 
         String link = (String) downloadLink.getProperty("link");
         String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
@@ -442,13 +435,11 @@ public class Serienjunkies extends PluginForHost {
 
         if (dls.size() < 1) {
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
             logger.warning("SJ returned no Downloadlinks");
             return;
         }
 
-        // if (aborted) return null;
         FilePackage fp = downloadLink.getFilePackage();
         int index = fp.indexOf(downloadLink);
         fp.remove(downloadLink);
@@ -463,7 +454,6 @@ public class Serienjunkies extends PluginForHost {
                 DownloadLink downloadLink3 = (DownloadLink) it2.next();
                 if (downloadLink3.isAvailable()) {
                     fp.add(index, downloadLink3);
-
                     online = true;
                 } else {
                     down.add(i);
@@ -479,7 +469,6 @@ public class Serienjunkies extends PluginForHost {
                 if (down.size() > 0) {
                     try {
                         dls = getDLinks(element);
-                        // if (aborted) { return null; }
 
                         Iterator<Integer> iter = down.iterator();
                         while (iter.hasNext()) {
@@ -513,7 +502,6 @@ public class Serienjunkies extends PluginForHost {
         if (down.size() > 0) {
             fp.add(downloadLink);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
             return;
         }
@@ -521,15 +509,12 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public void reset() {
-        // TODO Automatisch erstellter Methoden-Stub
     }
 
     public void resetPluginGlobals() {
-        // TODO Automatisch erstellter Methoden-Stub
     }
 
     public boolean useUserinputIfCaptchaUnknown() {
-
         return false;
     }
 }

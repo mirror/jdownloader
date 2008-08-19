@@ -32,9 +32,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
-//http://archiv.to/Get/?System=Download&Hash=FILE4799F3EC23328
-// http://archiv.to/?Module=Details&HashID=FILE4799F3EC23328
-
 public class ArchivTo extends PluginForHost {
 
     static private final String FILENAME = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
@@ -45,17 +42,14 @@ public class ArchivTo extends PluginForHost {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
 
-    //
-
     public ArchivTo() {
         super();
-
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
-    } // kein BotCheck
+    }
 
     @Override
     public String getAGBLink() {
@@ -70,11 +64,11 @@ public class ArchivTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         Browser.clearCookies(HOST);
-        
+
         try {
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
-           
+
             downloadLink.setName(br.getRegex(FILENAME).getMatch(0));
             if (!br.containsHTML(":  Bytes (~ 0 MB)")) {
                 downloadLink.setDownloadSize(Integer.parseInt(br.getRegex(FILESIZE).getMatch(0)));
@@ -118,10 +112,8 @@ public class ArchivTo extends PluginForHost {
             String url = downloadLink.getDownloadURL();
 
             br.getPage(url);
-            
-           //ownloadLink.setName(br.getRegex(FILENAME).getMatch(0));
-           String s = br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getMatch(0);
-                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getMatch(0)));
+
+            downloadLink.setDownloadSize(Integer.parseInt(br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getMatch(0)));
             RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getMatch(0)), null, url, true);
 
             HTTPConnection urlConnection = requestInfo.getConnection();
@@ -138,9 +130,8 @@ public class ArchivTo extends PluginForHost {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        // step.setStatus(PluginStep.STATUS_ERROR);
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 
+        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
         return;
     }
 

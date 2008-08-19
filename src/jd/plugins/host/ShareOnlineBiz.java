@@ -77,14 +77,12 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         url = downloadLink.getDownloadURL();
         for (int i = 1; i < 3; i++) {
             try {
                 Thread.sleep(1000);/*
-                 * Sicherheitspause, sonst gibts 403
-                 * Response
-                 */
+                                    * Sicherheitspause, sonst gibts 403 Response
+                                    */
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo != null && requestInfo.getLocation() == null) {
                     String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -105,7 +103,6 @@ public class ShareOnlineBiz extends PluginForHost {
                     return true;
                 }
             } catch (Exception e) {
-
                 e.printStackTrace();
             }
         }
@@ -119,12 +116,7 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -147,9 +139,9 @@ public class ShareOnlineBiz extends PluginForHost {
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
+
         /* Captcha File holen */
         captchaFile = getLocalCaptchaFile(this);
         HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.share-online.biz/captcha.php").openConnection());
@@ -158,16 +150,12 @@ public class ShareOnlineBiz extends PluginForHost {
         if (!captcha_con.getContentType().contains("text") && !Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
             /* Fehler beim Captcha */
             logger.severe("Captcha Download fehlgeschlagen!");
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-            // ImageIO
-            // Error");
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
 
         /* CaptchaCode holen */
         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
@@ -190,10 +178,10 @@ public class ShareOnlineBiz extends PluginForHost {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
             }
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
+
         /* Downloadlimit erreicht */
         if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -201,6 +189,7 @@ public class ShareOnlineBiz extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
+
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
         /* DownloadLink holen, thx @dwd */
@@ -221,7 +210,6 @@ public class ShareOnlineBiz extends PluginForHost {
         HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
@@ -236,7 +224,6 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-
     }
 
 }

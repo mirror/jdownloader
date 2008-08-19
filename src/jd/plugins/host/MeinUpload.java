@@ -51,10 +51,7 @@ public class MeinUpload extends PluginForHost {
     // private static final int MAX_SIMULTAN_DOWNLOADS = 1;
 
     public MeinUpload() {
-
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
-        setConfigElements();
         this.enablePremium();
     }
 
@@ -89,6 +86,7 @@ public class MeinUpload extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
         dl.startDownload();
     }
+
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
@@ -99,31 +97,31 @@ public class MeinUpload extends PluginForHost {
         login.put("user", account.getUser());
         login.put("pass", account.getPass());
         br.submitForm(login);
-        
+
         br.getPage("http://meinupload.com/account.html?aktion=status");
-        
-        
-        String expire=br.getRegex("Account g&uuml;ltig bis: </td><td align=.*?>(.*?)</td>").getMatch(0);
-        if(expire==null){
+
+        String expire = br.getRegex("Account g&uuml;ltig bis: </td><td align=.*?>(.*?)</td>").getMatch(0);
+        if (expire == null) {
             ai.setValid(false);
             ai.setStatus("Account invalid. Logins wrong?");
             return ai;
         }
-        String trafficLeft=br.getRegex("Verbleibender Traffic: </td><td align=.*?>(.*?)/td>").getMatch(0);
-        String points=br.getRegex("<td>Gesammelte Punkte: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
-        String cash=br.getRegex(" <td><b>Guthaben:</b> </td>.*?<td align=.*?><b>([\\d]*?) \\&euro\\;</b></td>").getMatch(0);
-        String files=br.getRegex("<td>Hochgeladene Dateien: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
-        
+        String trafficLeft = br.getRegex("Verbleibender Traffic: </td><td align=.*?>(.*?)/td>").getMatch(0);
+        String points = br.getRegex("<td>Gesammelte Punkte: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
+        String cash = br.getRegex(" <td><b>Guthaben:</b> </td>.*?<td align=.*?><b>([\\d]*?) \\&euro\\;</b></td>").getMatch(0);
+        String files = br.getRegex("<td>Hochgeladene Dateien: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
+
         ai.setStatus("Account is ok.");
-        ai.setValidUntil(Regex.getMilliSeconds(expire,"dd.MM.yyyy",null));
-        
+        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", null));
+
         ai.setTrafficLeft(Regex.getSize(trafficLeft));
         ai.setPremiumPoints(Integer.parseInt(points));
-        ai.setAccountBalance(Integer.parseInt(cash)*100);
+        ai.setAccountBalance(Integer.parseInt(cash) * 100);
         ai.setFilesNum(Integer.parseInt(files));
-        
-     return ai;   
+
+        return ai;
     }
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         String user = account.getUser();
@@ -167,7 +165,7 @@ public class MeinUpload extends PluginForHost {
             // http://dl2.MeinUpload.com/download.api?user=23729405&pass=0865
             // a2801d938ce3e59024b4ef1d6d30&id=3407292519
             // GET
-            // /download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
+            ///download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
             // id=9923945611
             // HTTP/1.1
             // v
@@ -214,8 +212,6 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
         try {
             String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (id == null) { return false;
@@ -243,7 +239,6 @@ public class MeinUpload extends PluginForHost {
 
         // unbekannter fehler
         return false;
-
     }
 
     @Override
@@ -252,16 +247,7 @@ public class MeinUpload extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-            return 20;
-        } else {
-            return 2;
-        }
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -283,11 +269,6 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private void setConfigElements() {
-   
-
     }
 
 }

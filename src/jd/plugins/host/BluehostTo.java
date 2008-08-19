@@ -31,36 +31,21 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class BluehostTo extends PluginForHost {
-    // http://bluehost.to/dl=uScPWKtIN
 
-    // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "0.1";
-    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
     static private final String HOST = "bluehost.to";
-    // http://bluehost.to/file/uScPWKtIN/rnt-cckw.r07
-    // http://bluehost.to/file/uScPWKtIN/
-    // http://bluehost.to/file/uScPWKtIN
-    // http://bluehost.to/?dl=0DEH7n9A8
+
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", Pattern.CASE_INSENSITIVE);
 
     public BluehostTo() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
-        // setConfigElements();
-
     }
 
     private void correctUrl(DownloadLink downloadLink) {
         String url = downloadLink.getDownloadURL();
-
         url = url.replaceFirst("\\?dl=", "dl=");
         downloadLink.setUrlDownload(url);
-
-        // http://bluehost.to/?dl=kmuevIKM7
-
     }
 
     @Override
@@ -73,7 +58,6 @@ public class BluehostTo extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         String page = null;
-
         Browser br = new Browser();
 
         correctUrl(downloadLink);
@@ -82,34 +66,22 @@ public class BluehostTo extends PluginForHost {
         String[] dat = page.split("\\, ");
 
         if (dat.length != 5) {
-
-            // step.setStatus(PluginStep.STATUS_ERROR);
-
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
-        //int wait = Integer.parseInt(dat[4].trim());
-
-        // if (wait == 0) {
 
         br.getPage("http://bluehost.to/fetchinfo");
-        // }
         br.getPage(downloadLink.getDownloadURL());
         if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(60 * 60 * 1000);
-            // step.setParameter(60*60*1000l);
             logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
             return;
         }
         Form[] forms = br.getForms();
         HTTPConnection con = br.openFormConnection(forms[2]);
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setParameter(60*60*1000l);
-
             return;
         }
 
@@ -122,7 +94,6 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-
         return "http://bluehost.to/agb.php";
     }
 
@@ -133,7 +104,6 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             correctUrl(downloadLink);
             String page;
@@ -153,7 +123,6 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
@@ -161,8 +130,6 @@ public class BluehostTo extends PluginForHost {
     public String getHost() {
         return HOST;
     }
-
-  
 
     @Override
     public String getPluginName() {
@@ -179,24 +146,6 @@ public class BluehostTo extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
-
-    // private void setConfigElements() {
-    // ConfigEntry cfg;
-    // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,
-    // getProperties(), PROPERTY_PREMIUM_USER,
-    // JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));
-    // cfg.setDefaultValue("Kundennummer");
-    // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD,
-    // getProperties(), PROPERTY_PREMIUM_PASS,
-    // JDLocale.L("plugins.hoster.rapidshare.de.premiumPass", "Premium Pass")));
-    // cfg.setDefaultValue("Passwort");
-    // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-    // getProperties(), PROPERTY_USE_PREMIUM,
-    // JDLocale.L("plugins.hoster.rapidshare.de.usePremium", "Premium Account
-    // verwenden")));
-    // cfg.setDefaultValue(false);
-    //
-    // }
 
     @Override
     public void reset() {

@@ -55,7 +55,6 @@ public class SpeedySharecom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
@@ -70,10 +69,8 @@ public class SpeedySharecom extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-
             e.printStackTrace();
         } catch (IOException e) {
-
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -86,12 +83,7 @@ public class SpeedySharecom extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -110,15 +102,13 @@ public class SpeedySharecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_PAGE:
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
+
         /* Link holen */
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
         postdata = "act=" + Encoding.urlEncode(submitvalues.get("act"));
@@ -131,25 +121,19 @@ public class SpeedySharecom extends PluginForHost {
             }
         }
 
-        // case PluginStep.STEP_PENDING:
         /* Zwangswarten, 30seks */
         sleep(30000, downloadLink);
 
-        // case PluginStep.STEP_DOWNLOAD:
         /* Datei herunterladen */
         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), null, url, postdata, false);
         HTTPConnection urlConnection = requestInfo.getConnection();
-        //String filename = Plugin.getFileNameFormHeader(urlConnection);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
         if (requestInfo.getHeaders().get("Content-Type").get(0).contains("text")) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             downloadLink.getLinkStatus().setErrorMessage("Wrong Password");
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            // step.setParameter("Wrong Password");
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
