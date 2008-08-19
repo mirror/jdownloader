@@ -74,30 +74,16 @@ public class Wiireloaded extends PluginForDecrypt {
         progress.addToMax(ids.length);
         for (String[] element : ids) {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
-            String calc_page = br.getPage(u);
-            String rechnung[][] = new Regex(calc_page, Pattern.compile("\\((\\w+) (\\+|\\-) (\\w+) = \\?\\)", Pattern.CASE_INSENSITIVE)).getMatches();
-
-            if (rechnung.length > 0) {
-                Integer calc_result;
-                if (rechnung[0][1].contains("+")) {
-                    calc_result = RomanToInt(rechnung[0][0]) + RomanToInt(rechnung[0][2]);
-                } else {
-                    calc_result = RomanToInt(rechnung[0][0]) - RomanToInt(rechnung[0][2]);
-                }
-                Form form = br.getForms()[0];
-                form.setVariable(0, calc_result.toString());
-                br.submitForm(form);
-                if (br.getRedirectLocation() != null) {
-                    DownloadLink link = createDownloadlink(br.getRedirectLocation());
-                    link.setSourcePluginPasswords(link_passwds);
-                    decryptedLinks.add(link);
-                }
-                progress.increase(1);
-            } else {
-
-                br.getPage("http://wii-reloaded.ath.cx/protect/load.php");
-
+            br.getPage(u);
+            Form form = br.getForms()[0];
+            form.setVariable(0, "23");
+            br.submitForm(form);
+            if (br.getRedirectLocation() != null) {
+                DownloadLink link = createDownloadlink(br.getRedirectLocation());
+                link.setSourcePluginPasswords(link_passwds);
+                decryptedLinks.add(link);
             }
+            progress.increase(1);
         }
         progress.increase(1);
         return decryptedLinks;
@@ -127,51 +113,5 @@ public class Wiireloaded extends PluginForDecrypt {
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
-    }
-
-    public int RomanToInt(String roman) {
-        char[] chars = roman.toCharArray();
-        char lastChar = ' ';
-        int value = 0;
-
-        for (int i = chars.length - 1; i >= 0; i--) {
-            switch (chars[i]) {
-            case 'I':
-                if (lastChar == 'X' || lastChar == 'V') {
-                    value -= 1;
-                } else {
-                    value += 1;
-                }
-                break;
-            case 'V':
-                value += 5;
-                break;
-            case 'X':
-                if (lastChar == 'C' || lastChar == 'L') {
-                    value -= 10;
-                } else {
-                    value += 10;
-                }
-                break;
-            case 'L':
-                value += 50;
-                break;
-            case 'C':
-                if (lastChar == 'M' || lastChar == 'D') {
-                    value -= 100;
-                } else {
-                    value += 100;
-                }
-                break;
-            case 'D':
-                value += 500;
-                break;
-            case 'M':
-                value += 1000;
-                break;
-            }
-            lastChar = chars[i];
-        }
-        return value;
     }
 }
