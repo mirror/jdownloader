@@ -2164,7 +2164,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         JDTheme.setTheme("default");
-        final JHelpDialog d = new JHelpDialog(new JFrame(), JDLocale.LF("system.update.message.title", "Update to version %s", version), html + "");
+        final JHelpDialog d = new JHelpDialog(new JFrame(), JDLocale.LF("system.update.message.title", "Update to version %s", version), html + "", 60);
         Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
         int minWidth = Math.min(d.getPreferredSize().width, (int) (size.width * .50));
         int minHeight = Math.min(d.getPreferredSize().height, (int) (size.height * .75));
