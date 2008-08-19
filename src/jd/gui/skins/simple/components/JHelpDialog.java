@@ -85,6 +85,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
     private JButton btn1;
     private JButton btn2;
     private JButton btn3;
+    private JButton btn4;
 
     private JTextPane htmlArea;
     protected Insets insets = new Insets(5, 5, 5, 5);
@@ -105,10 +106,12 @@ public class JHelpDialog extends JDialog implements ActionListener {
         setBtn1(new JButton("UNSET"));
         setBtn2(new JButton("UNSET"));
         setBtn3(new JButton("UNSET"));
+        setBtn4(new JButton("Stop Timer"));
 
         getBtn1().addActionListener(this);
         getBtn2().addActionListener(this);
         getBtn3().addActionListener(this);
+        getBtn4().addActionListener(this);
 
         setTitle(title);
         htmlArea = new JTextPane();
@@ -129,7 +132,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, getBtn1(), 2, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn2(), 3, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn3(), 4, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-
+        if (countdown > 0) JDUtilities.addToGridBag(this, getBtn4(), 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         pack();
 
         countdownThread = new Thread() {
@@ -185,6 +188,9 @@ public class JHelpDialog extends JDialog implements ActionListener {
             } else {
                 dispose();
             }
+        } else if (e.getSource() == getBtn4()) {
+            stopTimer = true;
+            getBtn4().setVisible(false);
         } else {
             dispose();
         }
@@ -209,6 +215,10 @@ public class JHelpDialog extends JDialog implements ActionListener {
      */
     public JButton getBtn3() {
         return btn3;
+    }
+
+    public JButton getBtn4() {
+        return btn4;
     }
 
     /**
@@ -240,6 +250,10 @@ public class JHelpDialog extends JDialog implements ActionListener {
      */
     public void setBtn3(JButton btn3) {
         this.btn3 = btn3;
+    }
+
+    public void setBtn4(JButton btn4) {
+        this.btn4 = btn4;
     }
 
     /**
