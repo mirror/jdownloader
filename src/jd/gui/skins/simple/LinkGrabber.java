@@ -22,7 +22,6 @@ import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.datatransfer.DataFlavor;
@@ -619,7 +618,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     table.tableChanged(new TableModelEvent(table.getModel()));
                     onPackageNameChanged(PackageTab.this);
 
-                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+                    __this.setTitle();
                 }
             });
         }
@@ -720,9 +719,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public static final String PROPERTY_POSITION = "PROPERTY_POSITION";
 
-    protected static int REL = GridBagConstraints.RELATIVE;
-
-    protected static int REM = GridBagConstraints.REMAINDER;
+    protected LinkGrabber __this;
 
     private static final long serialVersionUID = 4974425479842618402L;
 
@@ -794,6 +791,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      */
     public LinkGrabber(SimpleGUI parent, final DownloadLink[] linkList) {
         super();
+        __this = this;
         guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.add")));
         parentFrame = parent;
@@ -1632,7 +1630,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         tabbedPane.add(title + "(" + tab.getLinkList().size() + ")", tab);
 
                     }
-                    setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+                    __this.setTitle();
 
                 }
 
