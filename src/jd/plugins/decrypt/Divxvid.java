@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
@@ -38,7 +39,7 @@ public class Divxvid extends PluginForDecrypt {
     private Pattern outputlocation = Pattern.compile("rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)", Pattern.CASE_INSENSITIVE);
 
     private Pattern premiumdownload = Pattern.compile("value=\"download\" onclick=\"javascript:download", Pattern.CASE_INSENSITIVE);
-
+    private static Vector<String> passwords = new Vector<String>();
     /*
      * ist leider notwendig da wir das Dateiformat nicht kennen!
      */
@@ -46,12 +47,12 @@ public class Divxvid extends PluginForDecrypt {
 
     public Divxvid() {
         super();
-        default_password.add("dxd-tivi");
-        default_password.add("dxp.divxvid.org");
-        default_password.add("dxp");
-        default_password.add("dxp-tivi");
-        default_password.add("DivXviD");
-        default_password.add("dxd.dl.am");
+        passwords.add("dxd-tivi");
+        passwords.add("dxp.divxvid.org");
+        passwords.add("dxp");
+        passwords.add("dxp-tivi");
+        passwords.add("DivXviD");
+        passwords.add("dxd.dl.am");
     }
 
     /*
@@ -87,7 +88,9 @@ public class Divxvid extends PluginForDecrypt {
                 requestInfo = HTTP.postRequestWithoutHtmlCode((new URL(SimpleMatches.getFirstMatch(HTTP.getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
                 if (requestInfo != null) {
                     progress.increase(1);
-                    decryptedLinks.add(createDownloadlink(requestInfo.getLocation()));
+                    DownloadLink dl_link = createDownloadlink(requestInfo.getLocation());
+                    dl_link.addSourcePluginPasswords(passwords);
+                    decryptedLinks.add(dl_link);
                 }
             }
             progress.finalize();

@@ -29,7 +29,6 @@ public class MovieloadTo extends PluginForDecrypt {
 
     public MovieloadTo() {
         super();
-        default_password.add("movieload.to");
     }
 
     @Override
@@ -40,7 +39,9 @@ public class MovieloadTo extends PluginForDecrypt {
         progress.setRange(links.length);
         for (String element : links) {
             br.getPage("http://movieload.to/v2/protector/futsch.php?i=" + element);
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            DownloadLink dl_link = createDownloadlink(br.getRedirectLocation());
+            dl_link.addSourcePluginPassword("movieload.to");
+            decryptedLinks.add(dl_link);
             progress.increase(1);
         }
 

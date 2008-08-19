@@ -218,9 +218,7 @@ public class JDInit {
         }
 
         JDUtilities.getResourceFile("links.linkbackup").delete();
-
-        JDUtilities.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);
-        logger.info("hallo " + JDUtilities.getResourceFile("links.linkbackup"));
+        JDUtilities.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);        
     }
 
     public void doWebupdate(final int oldCid, final boolean guiCall) {

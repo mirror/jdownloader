@@ -34,7 +34,7 @@ public class DreiDlAm extends PluginForDecrypt {
 
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+)" + "|(http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/)" + "|(http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html)", Pattern.CASE_INSENSITIVE);
-
+    private String password;
     public DreiDlAm() {
         super();
     }
@@ -52,10 +52,10 @@ public class DreiDlAm extends PluginForDecrypt {
             // passwort auslesen
             if (request.getHtmlCode().indexOf("<b>Passwort:</b></td><td><input type='text' value='") != -1) {
 
-                String password = SimpleMatches.getBetween(request.getHtmlCode(), "<b>Passwort:</b></td><td><input type='text' value='", "'");
+                password = SimpleMatches.getBetween(request.getHtmlCode(), "<b>Passwort:</b></td><td><input type='text' value='", "'");
 
-                if (!password.contains("kein") && !password.contains("kein P")) {
-                    default_password.add(password);
+                if (password.contains("kein") || password.contains("kein P")) {
+                    password=null;
                 }
 
             }
@@ -108,7 +108,9 @@ public class DreiDlAm extends PluginForDecrypt {
             for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
                 link = decryptFromLink(links.get(i));
-                decryptedLinks.add(createDownloadlink(link));
+                DownloadLink dl_link=createDownloadlink(link);
+                dl_link.addSourcePluginPassword(password);
+                decryptedLinks.add(dl_link);
             }
         } else if (parameter.indexOf("3dl.am/link/") != -1) {
             progress.setRange(1);
@@ -123,7 +125,9 @@ public class DreiDlAm extends PluginForDecrypt {
             for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
                 link2 = decryptFromLink(links.get(i));
-                decryptedLinks.add(createDownloadlink(link2));
+                DownloadLink dl_link=createDownloadlink(link2);
+                dl_link.addSourcePluginPassword(password);
+                decryptedLinks.add(dl_link);
             }
         }
         return decryptedLinks;

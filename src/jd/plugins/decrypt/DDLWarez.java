@@ -105,7 +105,6 @@ public class DDLWarez extends PluginForDecrypt {
 
     public DDLWarez() {
         super();
-        default_password.add("ddl-warez");
     }
 
     @Override
@@ -123,6 +122,7 @@ public class DDLWarez extends PluginForDecrypt {
 
                 String pass = br.getRegex(Pattern.compile("<td>Passwort:</td>.*?<td style=\"padding-left:10px;\">(.*?)</td>.*?</tr>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                 Vector<String> passwords = new Vector<String>();
+                passwords.add("ddl-warez");
                 if (pass != null && !pass.equals("kein Passwort")) {
                     passwords.add(pass);
                 }

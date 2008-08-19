@@ -30,8 +30,6 @@ public class RsXXXBlog extends PluginForDecrypt {
 
     public RsXXXBlog() {
         super();
-        default_password.add("xxx-blog.dl.am");
-        default_password.add("xxx-blog.org");
     }
 
     @Override
@@ -40,8 +38,11 @@ public class RsXXXBlog extends PluginForDecrypt {
 
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
         br.getPage(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
-        if (br.getRedirectLocation()==null) return null;
-        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+        if (br.getRedirectLocation() == null) return null;
+        DownloadLink dl_link = createDownloadlink(br.getRedirectLocation());
+        dl_link.addSourcePluginPassword("xxx-blog.dl.am");
+        dl_link.addSourcePluginPassword("xxx-blog.org");
+        decryptedLinks.add(dl_link);
 
         return decryptedLinks;
     }

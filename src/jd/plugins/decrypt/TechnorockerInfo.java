@@ -29,8 +29,7 @@ public class TechnorockerInfo extends PluginForDecrypt {
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
     public TechnorockerInfo() {
-        super();
-        default_password.add("technorocker");
+        super();        
     }
 
     @Override
@@ -39,7 +38,9 @@ public class TechnorockerInfo extends PluginForDecrypt {
 
         String link = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"(.*?)\"><b>here</b>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (link == null) return null;
-        decryptedLinks.add(createDownloadlink(link));
+        DownloadLink dl_link=createDownloadlink(link);
+        dl_link.addSourcePluginPassword("technorocker");
+        decryptedLinks.add(dl_link);
 
         return decryptedLinks;
     }

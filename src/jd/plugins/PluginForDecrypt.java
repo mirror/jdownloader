@@ -36,9 +36,7 @@ import jd.parser.Regex;
  */
 @SuppressWarnings("unchecked")
 public abstract class PluginForDecrypt extends Plugin implements Comparable {
-    private String cryptedLink = null;
-
-    protected Vector<String> default_password = new Vector<String>();
+    private String cryptedLink = null;    
 
     protected ProgressController progress;
 
@@ -201,18 +199,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
             }
         }
         return hits;
-    }
-
-    // /**
-    // * Deligiert den doStep Call weiter und ändert dabei nur den parametertyp.
-    // */
-    // public void handle( Object parameter) {
-    // return doStep(step, (String) parameter);
-    // }
-
-    public Vector<String> getDefaultPassswords() {
-        return default_password;
-
     }
 
     /**

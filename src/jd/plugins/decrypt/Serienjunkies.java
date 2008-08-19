@@ -70,17 +70,18 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private boolean scatChecked = false;
 
+    private static Vector<String> passwords = new Vector<String>();
+
     public Serienjunkies() {
         super();
         setConfigElements();
-        default_password.add("serienjunkies.dl.am");
-        default_password.add("serienjunkies.org");
-
+        passwords.add("serienjunkies.dl.am");
+        passwords.add("serienjunkies.org");
     }
 
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
-        if(data==null)return false;
+        if (data == null) return false;
         data = data.replaceAll("http://vote.serienjunkies.org/?", "");
         if (data.contains("serienjunkies.org") && (data.contains("/?cat=") || data.contains("/?p="))) {
             cat = getSerienJunkiesCat(data.contains("/?p=")) != sCatNoThing;
@@ -153,6 +154,7 @@ public class Serienjunkies extends PluginForDecrypt {
             title = Encoding.htmlDecode(info[3]);
             mirrors = getMirrors(parameter, info[2]);
         }
+        if (title == null) title = "";
         try {
             linkName = ((title.length() > 10 ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
         } catch (Exception e) {
@@ -166,6 +168,7 @@ public class Serienjunkies extends PluginForDecrypt {
         DownloadLink dlink = new DownloadLink(null, name, getHost(), "http://sjdownload.org/" + hostname + "/" + linkName, true);
         dlink.setProperty("link", parameter);
         dlink.setProperty("mirrors", mirrors);
+        dlink.addSourcePluginPasswords(passwords);
         if (name != null) {
             dlink.setSourcePluginComment(title + " ::: " + name);
             dlink.setDownloadSize(size * 1024 * 1024);
@@ -217,7 +220,9 @@ public class Serienjunkies extends PluginForDecrypt {
                 lastHtmlCode = br + "";
                 String[] links = HTMLParser.getHttpLinks(bet[1], br.getRequest().getUrl().toString());
                 for (String element : links) {
-                    decryptedLinks.add(createDownloadlink(element));
+                    DownloadLink dl_link=createDownloadlink(element);
+                    dl_link.addSourcePluginPasswords(passwords);
+                    decryptedLinks.add(dl_link);
                 }
                 return decryptedLinks;
             } else if (catst == sCatGrabb) {
@@ -242,23 +247,15 @@ public class Serienjunkies extends PluginForDecrypt {
                 for (String element : titles) {
 
                     String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
-                    String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
+                    String[] sp = element.split("<strong>Größe:</strong>[\\s]*");
                     for (String element2 : sp) {
-                        String size = new Regex(element2, "(\\d]+)").getMatch(0);
+                        String size = new Regex(element2, "(\\d+)").getMatch(0);
                         String[][] links = new Regex(element2, "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
                         for (String[] element3 : links) {
                             String[] links2 = HTMLParser.getHttpLinks(element3[1], parameter);
                             for (String element4 : links2) {
                                 if (canHandle(element4)) {
-                                    // if (getPluginConfig().getBooleanProperty(
-                                    // "USE_DIREKTDECRYPT", false)) {
-                                    // decryptedLinks.addAll((new
-                                    // jd.plugins.host
-                                    // .Serienjunkies()).getDLinks(element4));
-                                    // } else {
                                     decryptedLinks.add(createdl(element4, new String[] { size, element3[0], element3[1], title }));
-                                    // }
-
                                 }
 
                             }
@@ -271,11 +268,6 @@ public class Serienjunkies extends PluginForDecrypt {
                 return decryptedLinks;
             }
         }
-        // if (getPluginConfig().getBooleanProperty("USE_DIREKTDECRYPT", false))
-        // {
-        // // step.setParameter((new
-        // // jd.plugins.host.Serienjunkies()).getDLinks(parameter));
-        // } else {
 
         String[] info = getLinkName(parameter);
 
@@ -287,7 +279,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
         decryptedLinks.add(createdl(parameter, info));
 
-        // }
         return decryptedLinks;
     }
 
@@ -518,11 +509,6 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private void setConfigElements() {
         ConfigEntry cfg;
-        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // getPluginConfig(), "USE_DIREKTDECRYPT",
-        // JDLocale.L("plugins.SerienJunkies.decryptImmediately",
-        // "Decrypt immediately")));
-        // cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.decrypt.general.hosterSelection", "Hoster selection")));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_RAPIDSHARE_V2", "Rapidshare.com"));

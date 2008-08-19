@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
@@ -26,13 +27,14 @@ import jd.plugins.PluginForDecrypt;
 public class CryptGetMoviesOrg extends PluginForDecrypt {
     static private final String host = "crypt.get-movies.org";
     private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/\\d+", Pattern.CASE_INSENSITIVE);
+    private static Vector<String> passwords = new Vector<String>();
 
     public CryptGetMoviesOrg() {
         super();
-        default_password.add("www.get-movies.6x.to");
-        default_password.add("get-movies.6x.to");
-        default_password.add("get-movies.org");
-        default_password.add("www.get-movies.org");
+        passwords.add("www.get-movies.6x.to");
+        passwords.add("get-movies.6x.to");
+        passwords.add("get-movies.org");
+        passwords.add("www.get-movies.org");
     }
 
     @Override
@@ -41,7 +43,9 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
 
         String link = new Regex(br.getPage(parameter), Pattern.compile("frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (link == null) return null;
-        decryptedLinks.add(createDownloadlink(link.trim()));
+        DownloadLink dl_link = createDownloadlink(link.trim());
+        dl_link.addSourcePluginPasswords(passwords);
+        decryptedLinks.add(dl_link);
 
         return decryptedLinks;
     }
