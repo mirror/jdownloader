@@ -21,35 +21,24 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class RelinkUs extends PluginForDecrypt {
 
     final static String host = "relink.us";
-
-    private static final String USE_CCF = "USE_CCF";
-
-    private static final String USE_DLC = "USE_DLC";
-
-    private static final String USE_RSDF = "USE_RSDF";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
     public RelinkUs() {
         super();
-        setConfigElements();
     }
 
-    private void add_relinkus_container(String page, String cryptedLink, String containerFormat) throws IOException {
+    private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat) throws IOException {
         String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + containerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
@@ -58,14 +47,16 @@ public class RelinkUs extends PluginForDecrypt {
             container_con.setRequestProperty("Referer", cryptedLink);
             Browser.download(container, container_con);
             JDUtilities.getController().loadContainerFile(container);
+            return true;
         }
+        return false;
     }
 
     private void add_relinkus_links(String page, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String links[] = new Regex(page, Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.addToMax(links.length);
         for (String link : links) {
-            String dl_link = new Regex(br.postPage("http://relink.us/" + Encoding.htmlDecode(link), "submit=Open"), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"\n?(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);
+            String dl_link = new Regex(br.postPage("http://relink.us/" + Encoding.htmlDecode(link), "submit=Open"), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"[\n\r]*?(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(dl_link)));
             progress.increase(1);
         }
@@ -76,21 +67,18 @@ public class RelinkUs extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         String page = br.getPage(parameter);
-
-        if (getPluginConfig().getBooleanProperty(USE_RSDF, true)) {
-            add_relinkus_container(page, parameter, "rsdf");
-        }
-        if (getPluginConfig().getBooleanProperty(USE_CCF, true)) {
-            add_relinkus_container(page, parameter, "ccf");
-        }
-        if (getPluginConfig().getBooleanProperty(USE_DLC, true)) {
-            add_relinkus_container(page, parameter, "dlc");
-        }
-
+        progress.setRange(0);
         add_relinkus_links(page, decryptedLinks);
         String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=\\d+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String link : more_links) {
             add_relinkus_links(br.getPage("http://relink.us/" + link), decryptedLinks);
+        }
+        if (decryptedLinks.size() == 0) {
+            if (!add_relinkus_container(page, parameter, "dlc")) {
+                if (!add_relinkus_container(page, parameter, "ccf")) {
+                    add_relinkus_container(page, parameter, "rsdf");
+                }
+            }
         }
 
         return decryptedLinks;
@@ -120,11 +108,5 @@ public class RelinkUs extends PluginForDecrypt {
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
-    }
-
-    private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_RSDF, JDLocale.L("plugins.decrypt.relinkus.usersdf", "Use RSDF Container")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_CCF, JDLocale.L("plugins.decrypt.relinkus.useccf", "Use CCF Container")).setDefaultValue(true));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_DLC, JDLocale.L("plugins.decrypt.relinkus.usedlc", "Use DLC Container")).setDefaultValue(true));
     }
 }
