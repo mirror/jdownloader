@@ -32,9 +32,9 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.gui.skins.simple.LocationListener;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
@@ -100,7 +100,7 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
         this.addComponentListener(list);
         this.addWindowListener(list);
 
-        SimpleGUI.restoreWindow(null, null, this);
+        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
         this.setVisible(false);
         this.setModal(true);
         this.setVisible(true);
