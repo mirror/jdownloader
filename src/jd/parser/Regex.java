@@ -25,26 +25,25 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Die Regexklasse
- * Diese Klasse wird in JD zum Parsen über Regluar Expressions verwendet. Andere Konstrukte wie getBetween und Co sollten wenn möglich nicht verwendet werden.
- * Zum Parsen wird der Klasse der Text (Heuhaufen) und das Pattern übergeben. Das Pattern kann mehrmals im Text vorkommen und kann selbst mehrere "Platzhalter" enhalten. 
- * daraus ergibt sich ein Tabellenartiges 2-D Trefferfeld. Die Reihen dieser Tabelle sind dabei Die TrefferGruppen.
+ * Die Regexklasse Diese Klasse wird in JD zum Parsen über Regluar Expressions
+ * verwendet. Andere Konstrukte wie getBetween und Co sollten wenn möglich nicht
+ * verwendet werden. Zum Parsen wird der Klasse der Text (Heuhaufen) und das
+ * Pattern übergeben. Das Pattern kann mehrmals im Text vorkommen und kann
+ * selbst mehrere "Platzhalter" enhalten. daraus ergibt sich ein Tabellenartiges
+ * 2-D Trefferfeld. Die Reihen dieser Tabelle sind dabei Die TrefferGruppen.
  * 
- * Beispiel: Sind 3 Platzhalter im Pattern (..) So hat jede Reihe 3 Einträge. Es gibt soviele Reihen wie das Pattern im Text vorkommt.
+ * Beispiel: Sind 3 Platzhalter im Pattern (..) So hat jede Reihe 3 Einträge. Es
+ * gibt soviele Reihen wie das Pattern im Text vorkommt.
  * 
- * Der Zugriff auf die Treffer erfolgt über Reihen und Spalten. 
+ * Der Zugriff auf die Treffer erfolgt über Reihen und Spalten.
  * 
- *  _______X
- * |
- * |
- * |
- * Y
+ * _______X | | | Y
  * 
- * Der Erste Treffer, bzw die erste Treffergruppe haben immer den Index 0. Mit Index -1 wird jeweils der Komplette Match angesprochen. 
- * Beispiel:  "http://(.*?)\\.(.*?)"  auf a href="http://www.google.de"  
- * Index 0 z.B. getMatch(0,0);  gibt www.google zurück
- * Index 1      getMatch(1,0);  gibt de zurück
- * index -1     getMatch(-1,0); gibt "http://www.google.de" zurück.
+ * Der Erste Treffer, bzw die erste Treffergruppe haben immer den Index 0. Mit
+ * Index -1 wird jeweils der Komplette Match angesprochen. Beispiel:
+ * "http://(.*?)\\.(.*?)" auf a href="http://www.google.de" Index 0 z.B.
+ * getMatch(0,0); gibt www.google zurück Index 1 getMatch(1,0); gibt de zurück
+ * index -1 getMatch(-1,0); gibt "http://www.google.de" zurück.
  */
 public class Regex {
     public static String[] getLines(String arg) {
@@ -166,17 +165,6 @@ public class Regex {
         return c;
     }
 
-    // /**
-    // * gibt den ersten Treffer einer group aus
-    // */
-    // public String getFirstMatchOfRow(int group) {
-    // if (matcher == null) { return null; }
-    // Matcher matchertmp = matcher;
-    // matcher.reset();
-    // if (matchertmp.find()) { return matchertmp.group(group); }
-    // return null;
-    // }
-
     public String getMatch(int group) {
         if (matcher == null) { return null; }
         Matcher matchertmp = matcher;
@@ -297,59 +285,6 @@ public class Regex {
         return Math.round(res);
 
     }
-
-    // public static void main(String args[]) throws IOException {
-    // Browser br= new Browser();
-    // br.getPage("http://www.google.de/search?q=jdownloader");
-    // //Pattern mit 2 Platzhaltern. Jede Reihe wird also 2 TReffer lang sein
-    // Regex regex = new Regex(br,
-    // "<h2 class=r><a href=\"(.*?)\" class=l onmousedown=.*?\">(.*?)</a></h2>"
-    // );
-    //       
-    // //Holt das ganze 2D Treffer feld
-    // String[][] matches2D = regex.getMatches();
-    //       
-    //       
-    // /*
-    // * Spalten abrufen
-    // */
-    // //Holt sich aus jeder Gruppe nur den ersten. Das entspricht Nur den
-    // Seitenurls.
-    // String[] urls=regex.getColumn(0);
-    // //Holt sich nur die Seitentitel
-    // String[] title=regex.getColumn(1);
-    // //Holt sich den Kompletten "Match"
-    // String[] complete=regex.getColumn(-1);
-    //       
-    // /*
-    // * Gruppen bzw Reihen abrufen
-    // */
-    // //Holt sich den 1. Treffer
-    // String[] first= regex.getRow(0);
-    //       
-    // /*
-    // * Gezielt auf Treffer abfragen
-    // */
-    // //Gibt den namen des 3. Treffers zurück
-    //       
-    // String name3= regex.getMatch(1, 2);
-    //       
-    //       
-    //       
-    // /*
-    // * Abkürzungen.
-    // * Manche oft verwendete konstrukte sind abgekürzt
-    // */
-    //       
-    // //ZUgriff auf die Treffer der erste gruppe.
-    //       
-    // String bestUrl=regex.getMatch(0);
-    // String bestTitle=regex.getMatch(1);
-    // String bestCompleteMatch=regex.getMatch(-1);
-    //
-    // regex=regex;
-    //
-    // }
 
     public static long getMilliSeconds(String expire, String timeformat, Locale l) {
         SimpleDateFormat dateFormat;

@@ -39,6 +39,7 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         String downloadlink = new Regex(br.postPage("http://protect.tehparadox.com/getdata.php", "id=" + parameter.substring(parameter.lastIndexOf("/") + 1, parameter.length() - 1)), Pattern.compile("<iframe name=\"ifram\" src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (downloadlink == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(downloadlink)));
 
         return decryptedLinks;

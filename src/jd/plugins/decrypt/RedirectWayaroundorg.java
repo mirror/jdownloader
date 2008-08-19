@@ -38,6 +38,7 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         br.getPage(parameter);
+        if (br.getRedirectLocation()==null) return null;
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
         return decryptedLinks;

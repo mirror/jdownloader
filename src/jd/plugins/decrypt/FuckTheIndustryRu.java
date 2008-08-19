@@ -36,10 +36,7 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
     private Pattern patternDLC = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
     private Pattern patternPW = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
 
-    // <input readonly id="pw_2_copy" class="boxes-inactive"
-    // onclick="className='boxes-active'" onblur="className='boxes-inactive'"
-    // type="text" value="passcomeshere">
-    // http://92.241.164.63/file.php?id=123456
+
     public FuckTheIndustryRu() {
         super();
     }
@@ -51,8 +48,7 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         String page = br.getPage(parameter);
         String name = new Regex(page, patternDLC).getMatch(1);
         String link = new Regex(page, patternDLC).getMatch(0);
-        String pass = new Regex(page, patternPW).getMatch(0);
-        logger.info(name + " - " + link + " - " + pass);
+        String pass = new Regex(page, patternPW).getMatch(0);        
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         if (Browser.download(container, link)) {

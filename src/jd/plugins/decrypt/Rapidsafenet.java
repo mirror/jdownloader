@@ -39,6 +39,7 @@ public class Rapidsafenet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         String link = new Regex(br.getPage(parameter), Pattern.compile("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (link==null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;

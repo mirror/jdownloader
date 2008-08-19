@@ -232,7 +232,6 @@ public class HTMLParser {
                 set.add(link);
             }
         }
-        // String[] ret = set.toArray(new String[set.size()]);
 
         return set.toArray(new String[set.size()]);
     }

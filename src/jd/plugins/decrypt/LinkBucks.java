@@ -38,6 +38,7 @@ public class LinkBucks extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         String link = new Regex(br.getPage(parameter), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getMatch(0);
+        if (link==null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;

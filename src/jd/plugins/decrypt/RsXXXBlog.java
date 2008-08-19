@@ -40,6 +40,7 @@ public class RsXXXBlog extends PluginForDecrypt {
 
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
         br.getPage(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
+        if (br.getRedirectLocation()==null) return null;
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
         return decryptedLinks;

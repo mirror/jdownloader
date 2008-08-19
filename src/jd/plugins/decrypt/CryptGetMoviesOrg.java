@@ -40,6 +40,7 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         String link = new Regex(br.getPage(parameter), Pattern.compile("frameborder=\"no\" width=\"100%\" src=\"(.*?)\"></iframe>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link.trim()));
 
         return decryptedLinks;

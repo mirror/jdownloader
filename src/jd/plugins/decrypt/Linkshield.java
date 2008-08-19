@@ -37,6 +37,7 @@ public class Linkshield extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         String link = new Regex(br.getPage(parameter), Pattern.compile("<frame src=(?!blank)(.*?)>")).getMatch(0);
+        if (link==null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
