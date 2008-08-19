@@ -18,11 +18,9 @@ package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -30,7 +28,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -38,7 +35,6 @@ import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
@@ -46,9 +42,7 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class HTMLDialog extends JDialog implements ActionListener, HyperlinkListener {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -7741748123426268439L;
 
     public static boolean showDialog(JFrame frame, String title, String question) {
@@ -63,86 +57,67 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
         return tda.success;
     }
 
-    private JButton btnCancel;
-
     private JButton btnOk;
 
-    private JTextPane htmlArea;
-
-    /**
-     * 
-     */
-
-    protected Insets insets = new Insets(0, 0, 0, 0);
-
-    // private JLabel lblText;
-
-    protected Logger logger = JDUtilities.getLogger();
-
-    // private String text=null;
-
-    private JScrollPane scrollPane;
+    private JButton btnCancel;
 
     private boolean success = false;
 
     private HTMLDialog(JFrame frame, String title, String html) {
         super(frame);
 
-        setLayout(new BorderLayout());
-        setName(title);
+        this.setLayout(new BorderLayout());
+        this.setName(title);
+        this.setTitle(title);
+
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
         btnCancel.addActionListener(this);
+
         btnOk = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOk.addActionListener(this);
-        setTitle(title);
-        htmlArea = new JTextPane();
-        scrollPane = new JScrollPane(htmlArea);
+
+        JTextPane htmlArea = new JTextPane();
         htmlArea.setEditable(false);
         htmlArea.setContentType("text/html");
         htmlArea.setText(html);
         htmlArea.requestFocusInWindow();
         htmlArea.addHyperlinkListener(this);
 
+        JScrollPane scrollPane = new JScrollPane(htmlArea);
         this.add(scrollPane, BorderLayout.CENTER);
+
         JPanel p = new JPanel();
         p.add(btnOk);
         p.add(btnCancel);
         this.add(p, BorderLayout.SOUTH);
 
-        pack();
+        this.pack();
 
-        // setLocation(JDUtilities.getCenterOfComponent(null, this));
-        getRootPane().setDefaultButton(btnOk);
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        // this.setLocationRelativeTo(null);
-        setVisible(true);
+        this.getRootPane().setDefaultButton(btnOk);
+        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        this.setVisible(true);
         LocationListener list = new LocationListener();
-        addComponentListener(list);
-        addWindowListener(list);
+        this.addComponentListener(list);
+        this.addWindowListener(list);
 
         SimpleGUI.restoreWindow(null, null, this);
-        setVisible(false);
-        setModal(true);
-        setVisible(true);
+        this.setVisible(false);
+        this.setModal(true);
+        this.setVisible(true);
 
     }
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOk) {
             success = true;
-            dispose();
-        } else {
-            dispose();
         }
+        dispose();
     }
 
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-
             JLinkButton.openURL(e.getURL());
-
         }
-
     }
 
 }

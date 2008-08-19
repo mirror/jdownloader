@@ -28,7 +28,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
-import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -51,7 +50,7 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
     }
 
     private JButton btnOk;
-    
+
     private JButton btnCancel;
 
     private String text = null;
@@ -62,6 +61,7 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
         super(frame);
 
         this.setLayout(new BorderLayout());
+        this.setName(title);
         this.setTitle(title);
 
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
@@ -73,8 +73,10 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
         textArea = new JTextPane();
         textArea.setEditable(true);
         textArea.requestFocusInWindow();
-        
+
         JScrollPane scrollPane = new JScrollPane(textArea);
+        this.add(scrollPane, BorderLayout.CENTER);
+
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         this.setPreferredSize(new Dimension((int) (screenSize.width * 0.9), (int) (screenSize.height * 0.9)));
 
@@ -87,18 +89,19 @@ public class TextAreaDialogWithHtmlMsg extends JDialog implements ActionListener
             this.add(msg, BorderLayout.NORTH);
         }
         if (def != null) textArea.setText(def);
-        
-        this.add(scrollPane, BorderLayout.CENTER);
+
         JPanel p = new JPanel();
         p.add(btnOk);
         p.add(btnCancel);
-        this.setVisible(true);
-        this.pack();
-        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
-        this.getRootPane().setDefaultButton(btnOk);
-        this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         this.add(p, BorderLayout.SOUTH);
 
+        this.pack();
+
+        this.getRootPane().setDefaultButton(btnOk);
+        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        this.setVisible(true);
+
+        this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
         this.setVisible(false);
         this.setModal(true);
         this.setVisible(true);
