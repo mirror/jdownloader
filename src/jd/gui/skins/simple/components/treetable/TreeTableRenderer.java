@@ -127,8 +127,8 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         label.setOpaque(false);
         miniBar = new MiniBar();
         progress = new JProgressBar();
-       Dimension dim = progress.getPreferredSize();
-       dim.width=Math.max(dim.width, 300);
+        Dimension dim = progress.getPreferredSize();
+        dim.width = Math.max(dim.width, 300);
         progress.setPreferredSize(dim);
         progress.setMinimumSize(dim);
         if (JDUtilities.getJavaVersion() >= 1.6) {
@@ -147,19 +147,19 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         column = this.table.getColumn(column).getModelIndex();
         if (column == DownloadTreeTableModel.COL_STATUS && value instanceof FilePackage) {
             String label = "";
-            FilePackage filePackage = (FilePackage) value;
-            if (filePackage.getLinksInProgress() > 0) {
-                label = filePackage.getLinksInProgress() + "/" + filePackage.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
+            fp = (FilePackage) value;
+            if (fp.getLinksInProgress() > 0) {
+                label = fp.getLinksInProgress() + "/" + fp.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
             }
-            if (filePackage.getTotalDownloadSpeed() > 0) {
-                label = "[" + filePackage.getLinksInProgress() + "/" + filePackage.size() + "] " + "ETA " + JDUtilities.formatSeconds(filePackage.getETA()) + " @ " + JDUtilities.formatKbReadable(filePackage.getTotalDownloadSpeed() / 1024) + "/s";
+            if (fp.getTotalDownloadSpeed() > 0) {
+                label = "[" + fp.getLinksInProgress() + "/" + fp.size() + "] " + "ETA " + JDUtilities.formatSeconds(fp.getETA()) + " @ " + JDUtilities.formatKbReadable(fp.getTotalDownloadSpeed() / 1024) + "/s";
             }
             miniBar.setText(label);
-            miniBar.setPercent(filePackage.getPercent() / 100.0);
+            miniBar.setPercent(fp.getPercent() / 100.0);
             return miniBar;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            if (dLink.getLinkStatus().getRemainingWaittime() == 0&& dLink.getPlugin().getRemainingHosterWaittime() <=0&& (int) dLink.getDownloadCurrent() > 0) {
+            if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
 
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     progress.setString("");
@@ -190,13 +190,13 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                         ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
                     }
                     progress.setValue(dLink.getPercent());
-                    String str=c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize())) + ")";
+                    String str = c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize())) + ")";
                     progress.setString(str);
 
                 }
 
                 return progress;
-            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)&&dLink.getPlugin().getRemainingHosterWaittime() > 0) {
+            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) {
                 progress.setMaximum((int) dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
@@ -207,7 +207,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 progress.setValue((int) dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
                 return progress;
-            }else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)&&dLink.getLinkStatus().getRemainingWaittime() > 0) {
+            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0) {
                 progress.setMaximum((int) dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
@@ -243,7 +243,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
                 }
                 progress.setValue(fp.getTotalKBLoaded());
-                String str=c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")";
+                String str = c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")";
                 progress.setString(str);
             }
             return progress;
