@@ -35,7 +35,6 @@ public class FileBaseTo extends PluginForHost {
 
     public FileBaseTo() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -59,20 +58,19 @@ public class FileBaseTo extends PluginForHost {
         try {
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
-     
+
             String[] helpurl = url.split("/");
             downloadLink.setName(helpurl[helpurl.length - 1]);
-            if ( br.containsHTML("Angeforderte Datei herunterladen")) {
-              
+            if (br.containsHTML("Angeforderte Datei herunterladen")) {
+
                 br.getPage(url + "&dl=1");
             }
 
             if (br.containsHTML("Vielleicht wurde der Eintrag")) {
-               
-                return false;
-            }
-            
-            String size=br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getMatch(0);
+
+            return false; }
+
+            String size = br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getMatch(0);
             downloadLink.setDownloadSize(Regex.getSize(size));
 
             return true;
@@ -87,12 +85,7 @@ public class FileBaseTo extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    /*
-     * public int getMaxSimultanDownloadNum() { return Integer.MAX_VALUE; }
-     * 
-     * @Override
-     */public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -113,7 +106,6 @@ public class FileBaseTo extends PluginForHost {
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 

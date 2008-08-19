@@ -45,9 +45,7 @@ public class Uploadedto extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
 
-    public Uploadedto() {
-
-        setConfigElements();
+    public Uploadedto() {        
         this.enablePremium();
         setMaxConnections(20);
     }
@@ -330,7 +328,5 @@ public class Uploadedto extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    private void setConfigElements() {
 
-    }
 }

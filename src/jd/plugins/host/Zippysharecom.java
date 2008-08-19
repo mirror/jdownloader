@@ -27,9 +27,7 @@ public class Zippysharecom extends PluginForHost {
     //
 
     public Zippysharecom() {
-        super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        super();        
     }
 
     @Override
@@ -48,8 +46,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) {        
         try {
             String url = downloadLink.getDownloadURL();
             for (int i = 1; i < 3; i++) {
@@ -70,8 +67,7 @@ public class Zippysharecom extends PluginForHost {
         } catch (InterruptedException e) {
 
             e.printStackTrace();
-        }
-        downloadLink.setAvailable(false);
+        }        
         return false;
     }
 
@@ -83,10 +79,9 @@ public class Zippysharecom extends PluginForHost {
     @Override
     /*public int getMaxSimultanDownloadNum() {
         return Integer.MAX_VALUE;
-    }
+    }*/
 
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -103,27 +98,21 @@ public class Zippysharecom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_PAGE:
+        LinkStatus linkStatus = downloadLink.getLinkStatus();        
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);            
             return;
         }
-
-        // case PluginStep.STEP_DOWNLOAD:
+        
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
         HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);            
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
@@ -137,5 +126,4 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 }

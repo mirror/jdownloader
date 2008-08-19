@@ -39,7 +39,6 @@ public class ImageFap extends PluginForHost {
 
     public ImageFap() {
         super();
-
     }
 
     private String DecryptLink(String code) {
@@ -101,13 +100,6 @@ public class ImageFap extends PluginForHost {
                 gallery_name = gallery_name.trim();
             }
             if (picture_name != null) {
-                // String imagelink = DecryptLink(new Regex(br,
-                // Pattern.compile("return lD\\('(\\S+?)'\\);",
-                // Pattern.CASE_INSENSITIVE)).getMatch(0));
-                // br.setConnectTimeout(1000);
-                // HTTPConnection con = br.openGetConnection(imagelink);
-                // logger.info("GOT connection");
-                // if(con!=null)downloadLink.setDownloadMax(con.getContentLength());
                 FilePackage fp = new FilePackage();
                 fp.setName(uploader_name);
                 downloadLink.setName(gallery_name + " + " + picture_name);
@@ -125,13 +117,7 @@ public class ImageFap extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return 50;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -145,9 +131,11 @@ public class ImageFap extends PluginForHost {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
+
     public int getMaxSimultanFreeDownloadNum() {
         return 15;
     }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();

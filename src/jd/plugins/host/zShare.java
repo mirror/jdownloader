@@ -18,12 +18,10 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.util.regex.Pattern;
-
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
@@ -32,21 +30,17 @@ public class zShare extends PluginForHost {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*", Pattern.CASE_INSENSITIVE);
 
-    //
-
     public zShare() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
-    } // kein BotCheck
+    }
 
     @Override
     public String getAGBLink() {
-
         return "http://www.zshare.net/TOS.html";
     }
 
@@ -57,7 +51,6 @@ public class zShare extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        
         try {
             Browser.clearCookies(HOST);
             br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
@@ -90,13 +83,7 @@ public class zShare extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -113,22 +100,14 @@ public class zShare extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        // if (aborted) {
-        // logger.warning("Plugin abgebrochen");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        // }
         Browser.clearCookies(HOST);
-        logger.info(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
-       
+
         br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
 
         Regex reg = br.getRegex("<img src=\"(http://[^\"]*?/download/[a-f0-9]*?/[\\d]*?/[\\d]*?/.*?)\"");
 
         String url = reg.getMatches()[0][0];
-    
+
         HTTPConnection urlConnection = br.openGetConnection(url);
         dl = new RAFDownload(this, downloadLink, urlConnection);
 
