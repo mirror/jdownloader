@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -22,22 +38,14 @@ public class Upsharenet extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?upshare\\.(net|eu)/download\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
-
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
     private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
     private String passCode = null;
-    
 
     public Upsharenet() {
         super();
-
     }
 
     @Override
@@ -57,15 +65,15 @@ public class Upsharenet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        
+
         /* .eu zu .net weiterleitung */
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("upshare\\.(net|eu)", "upshare\\.net"));
-Browser.clearCookies(HOST);
+        Browser.clearCookies(HOST);
 
         downloadurl = downloadLink.getDownloadURL();
         try {
             br.getPage(downloadurl);
-      
+
             if (!br.containsHTML("Your requested file is not found")) {
                 String linkinfo[][] = new Regex(br, Pattern.compile("<b>File size:</b></td>[\\r\\n\\s]*<td align=left>([0-9\\.]*) ([GKMB]*)</td>", Pattern.CASE_INSENSITIVE)).getMatches();
 
@@ -91,12 +99,7 @@ Browser.clearCookies(HOST);
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -121,11 +124,11 @@ Browser.clearCookies(HOST);
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        
+
         Form form = br.getForms()[1];
         /* Captcha File holen */
         captchaFile = getLocalCaptchaFile(this);
-   
+
         if (!br.downloadFile(captchaFile, "http://www.upshare.net/captcha.php") || !captchaFile.exists()) {
             /* Fehler beim Captcha */
             logger.severe("Captcha Download fehlgeschlagen!");
@@ -154,7 +157,7 @@ Browser.clearCookies(HOST);
         }
         /* Pass/Captcha check */
         br.submitForm(form);
-      
+
         if (br.containsHTML("<span>Password Error</span>")) {
             /* PassCode war falsch, also Löschen */
             downloadLink.setProperty("pass", null);
@@ -182,7 +185,7 @@ Browser.clearCookies(HOST);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-       br.openGetConnection(link);
+        br.openGetConnection(link);
         if (br.getRedirectLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);

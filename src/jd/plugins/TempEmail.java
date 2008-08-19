@@ -13,6 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins;
 
 import java.io.IOException;
@@ -56,7 +57,7 @@ public class TempEmail {
      * 
      * @param index
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public String getMail(int index) throws IOException {
         if (getEmailAdress() == null || emails.length <= index) return null;
@@ -67,7 +68,7 @@ public class TempEmail {
      * new String[][] {{"From", "TargetURL", "Subject"}};
      * 
      * @return
-     * @throws IOException 
+     * @throws IOException
      */
     public String[][] getMailInfos() throws IOException {
         if (emails != null) return emails;

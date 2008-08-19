@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -22,19 +38,11 @@ public class SharedZillacom extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharedzilla\\.com/(en|ru)/get\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
-
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
-    private static final String PLUGIN_NAME = HOST;
     private String passCode = "";
     private RequestInfo requestInfo;
 
     public SharedZillacom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -54,7 +62,6 @@ public class SharedZillacom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
             if (!requestInfo.containsHTML("Upload not found")) {
@@ -67,7 +74,6 @@ public class SharedZillacom extends PluginForHost {
                 return true;
             }
         } catch (Exception e) {
-
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -80,13 +86,8 @@ public class SharedZillacom extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
-        return PLUGIN_NAME;
+    public String getPluginName() {
+        return HOST;
     }
 
     @Override
@@ -107,7 +108,6 @@ public class SharedZillacom extends PluginForHost {
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
         /* ID holen */
@@ -131,7 +131,6 @@ public class SharedZillacom extends PluginForHost {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
             }
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
@@ -142,14 +141,13 @@ public class SharedZillacom extends PluginForHost {
         HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);/*
-         * bei dem speed lohnen mehrere chunks nicht, da es
-         * nicht schneller wird
-         */
+                           * bei dem speed lohnen mehrere chunks nicht, da es
+                           * nicht schneller wird
+                           */
         dl.setResume(true);
         dl.startDownload();
     }

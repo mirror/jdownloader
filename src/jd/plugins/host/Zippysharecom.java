@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -24,10 +40,8 @@ public class Zippysharecom extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    //
-
     public Zippysharecom() {
-        super();        
+        super();
     }
 
     @Override
@@ -46,7 +60,7 @@ public class Zippysharecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {        
+    public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             String url = downloadLink.getDownloadURL();
             for (int i = 1; i < 3; i++) {
@@ -59,15 +73,12 @@ public class Zippysharecom extends PluginForHost {
                 Thread.sleep(250);
             }
         } catch (MalformedURLException e) {
-
             e.printStackTrace();
         } catch (IOException e) {
-
             e.printStackTrace();
         } catch (InterruptedException e) {
-
             e.printStackTrace();
-        }        
+        }
         return false;
     }
 
@@ -77,10 +88,6 @@ public class Zippysharecom extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }*/
-
     public String getPluginName() {
         return HOST;
     }
@@ -98,21 +105,21 @@ public class Zippysharecom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();        
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);            
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        
+
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
         HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);            
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);

@@ -1,18 +1,18 @@
-//jDownloader - Downloadmanager
-//Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
-//This program is free software: you can redistribute it and/or modify
-//it under the terms of the GNU General Public License as published by
-//the Free Software Foundation, either version 3 of the License, or
-//(at your option) any later version.
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
 //
-//This program is distributed in the hope that it will be useful,
-//but WITHOUT ANY WARRANTY; without even the implied warranty of
-//MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-//GNU General Public License for more details.
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
 //
-//You should have received a copy of the GNU General Public License
-//along with this program.  If not, see <http://gnu.org/licenses/>.
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
 
@@ -36,7 +36,6 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
     private Pattern patternDLC = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
     private Pattern patternPW = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
 
-
     public FuckTheIndustryRu() {
         super();
     }
@@ -48,7 +47,7 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         String page = br.getPage(parameter);
         String name = new Regex(page, patternDLC).getMatch(1);
         String link = new Regex(page, patternDLC).getMatch(0);
-        String pass = new Regex(page, patternPW).getMatch(0);        
+        String pass = new Regex(page, patternPW).getMatch(0);
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         if (Browser.download(container, link)) {

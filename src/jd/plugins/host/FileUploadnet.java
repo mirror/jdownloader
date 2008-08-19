@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -23,7 +39,6 @@ public class FileUploadnet extends PluginForHost {
 
     static private final Pattern PAT_Member = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
     static private final Pattern PAT_SUPPORTED = Pattern.compile(PAT_Download.pattern() + "|" + PAT_VIEW.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE);
-    private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
 
     public FileUploadnet() {
@@ -79,7 +94,6 @@ public class FileUploadnet extends PluginForHost {
                 }
             }
         } catch (Exception e) {
-
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -91,8 +105,9 @@ public class FileUploadnet extends PluginForHost {
         return HOST;
     }
 
+    @Override
     public String getPluginName() {
-        return PLUGIN_NAME;
+        return HOST;
     }
 
     @Override

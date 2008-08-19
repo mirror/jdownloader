@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -27,13 +43,8 @@ public class UploadServiceinfo extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    //
-
     public UploadServiceinfo() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -53,7 +64,6 @@ public class UploadServiceinfo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
@@ -66,10 +76,8 @@ public class UploadServiceinfo extends PluginForHost {
                 return true;
             }
         } catch (MalformedURLException e) {
-
             e.printStackTrace();
         } catch (IOException e) {
-
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -82,12 +90,7 @@ public class UploadServiceinfo extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 

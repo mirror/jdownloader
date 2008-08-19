@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -65,9 +81,7 @@ public class HTTPAllgemein extends PluginForHost {
                 this.contentType = urlConnection.getContentType();
                 return true;
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
-
             }
         }
 
@@ -77,11 +91,7 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     @Override
-    /*
-     * public int getMaxSimultanDownloadNum() { return Integer.MAX_VALUE; }
-     * 
-     * @Override
-     */public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -100,20 +110,15 @@ public class HTTPAllgemein extends PluginForHost {
     public void handle(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_PAGE:
-
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
         HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
 
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
@@ -134,13 +139,11 @@ public class HTTPAllgemein extends PluginForHost {
 
     @Override
     public String getHost() {
-        // TODO Auto-generated method stub
         return HOST;
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        // TODO Auto-generated method stub
 
     }
 

@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -25,14 +41,8 @@ public class Shareplacecom extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    //
-
     public Shareplacecom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // //steps.add(new PluginStep(PluginStep.STEP_PENDING, null));/*geht
-        // wohl auch ohne warten*/
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -52,7 +62,6 @@ public class Shareplacecom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         try {
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
@@ -85,12 +94,7 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -109,8 +113,6 @@ public class Shareplacecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_PAGE:
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -120,17 +122,14 @@ public class Shareplacecom extends PluginForHost {
         /* Link holen */
         url = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
-        // case PluginStep.STEP_PENDING:
         /* Zwangswarten, 20seks */
         sleep(20000, downloadLink);
 
-        // case PluginStep.STEP_DOWNLOAD:
         /* Datei herunterladen */
         requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
         HTTPConnection urlConnection = requestInfo.getConnection();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);

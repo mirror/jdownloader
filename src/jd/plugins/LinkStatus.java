@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins;
 
 import java.io.Serializable;
@@ -121,7 +137,7 @@ public class LinkStatus implements Serializable {
     public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static final int VALUE_ID_PREMIUM_DISABLE = 1;
     private DownloadLink downloadLink;
-    private  String errorMessage;
+    private String errorMessage;
 
     private int lastestStatus = TODO;
     private int status = TODO;
@@ -210,11 +226,10 @@ public class LinkStatus implements Serializable {
     }
 
     public long getRemainingWaittime() {
-            long now = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
         long ab = waitUntil - now;
         return Math.max(0l, ab);
     }
-
 
     /**
      * Erstellt den Statustext, fügt eine eventl Wartezeit hzin und gibt diesen
@@ -230,11 +245,11 @@ public class LinkStatus implements Serializable {
         return JDLocale.L("gui.downloadlink.finished", "[finished]"); }
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
-            if(downloadLink.isAborted()){
+            if (downloadLink.isAborted()) {
                 ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]");
-            }else{
-            ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
-            
+            } else {
+                ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
+
             }
 
             if (errorMessage != null) {
@@ -244,9 +259,8 @@ public class LinkStatus implements Serializable {
             return ret;
 
         }
-     
+
         if (isFailed()) { return getLongErrorMessage(); }
-      
 
         // String ret = "";
 
@@ -260,10 +274,8 @@ public class LinkStatus implements Serializable {
             }
             return ret;
         }
-        
-        if(downloadLink.getPlugin()!=null&&downloadLink.getPlugin().getRemainingHosterWaittime()>0){
-            return  JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]");
-        }
+
+        if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) { return JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
 
         // + "sek)"; }
         if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
@@ -288,17 +300,15 @@ public class LinkStatus implements Serializable {
 
             }
         }
-        if(downloadLink.isAvailabilityChecked() && !downloadLink.isAvailable()){
-            return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]");
-        }
-        if(this.errorMessage!=null)return errorMessage;
+        if (downloadLink.isAvailabilityChecked() && !downloadLink.isAvailable()) { return JDLocale.L("gui.download.onlinecheckfailed", "[Not available]"); }
+        if (this.errorMessage != null) return errorMessage;
         if (statusText != null) { return statusText; }
         return "";
 
     }
 
     public long getTotalWaitTime() {
-     
+
         return totalWaitTime;
     }
 
@@ -345,25 +355,24 @@ public class LinkStatus implements Serializable {
     public void reset() {
         setStatus(TODO);
 
-//        errorMessage = null;
+        // errorMessage = null;
         statusText = null;
         retryCount = 0;
         totalWaitTime = 0;
-        value=0;
+        value = 0;
         resetWaitTime();
 
     }
 
     public void resetWaitTime() {
 
-   
         totalWaitTime = 0;
         waitUntil = 0;
-       
+
     }
 
     public void setErrorMessage(String string) {
-        if(downloadLink.isAborted()&&string!=null)return;
+        if (downloadLink.isAborted() && string != null) return;
         errorMessage = string;
 
     }
@@ -386,7 +395,7 @@ public class LinkStatus implements Serializable {
     public void setStatus(int status) {
         this.status = status;
         lastestStatus = status;
-    
+
     }
 
     public void setStatusText(String l) {
@@ -414,9 +423,7 @@ public class LinkStatus implements Serializable {
                 int value;
                 try {
                     value = field.getInt(null);
-                    if (value == status) {
-                        return field.getName();
-                    }
+                    if (value == status) { return field.getName(); }
 
                 } catch (IllegalArgumentException e) {
                     // TODO Auto-generated catch block
@@ -486,8 +493,6 @@ public class LinkStatus implements Serializable {
         return retryCount;
 
     }
-
-
 
     public String getStatusText() {
         return statusText;

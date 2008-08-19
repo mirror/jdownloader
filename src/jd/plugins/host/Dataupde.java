@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -18,17 +34,10 @@ public class Dataupde extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?dataup\\.de/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
-
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
-    private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
+
     public Dataupde() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -48,7 +57,6 @@ public class Dataupde extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-
         try {
             downloadurl = downloadLink.getDownloadURL();
             br.getPage(downloadurl);
@@ -61,7 +69,6 @@ public class Dataupde extends PluginForHost {
                 return true;
             }
         } catch (Exception e) {
-
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -73,10 +80,9 @@ public class Dataupde extends PluginForHost {
         return HOST;
     }
 
-
     @Override
     public String getPluginName() {
-        return PLUGIN_NAME;
+        return HOST;
     }
 
     @Override
@@ -97,7 +103,6 @@ public class Dataupde extends PluginForHost {
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
@@ -105,45 +110,26 @@ public class Dataupde extends PluginForHost {
         // this.sleep(10000, downloadLink);
         /* DownloadLink holen */
         Form form = br.getForms()[2];
-       
+
         br.setFollowRedirects(false);
         HTTPConnection urlConnection = br.openFormConnection(form);
 
         /* DownloadLimit? */
         if (br.getRedirectLocation() != null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setValue(120000L);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
 
         /* Datei herunterladen */
-
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
         dl.setResume(false);
         dl.startDownload();
-        //           
-        // \r\n if (!dl.startDownload() && step.getStatus() !=
-        // PluginStep.STATUS_ERROR && step.getStatus() !=
-        // PluginStep.STATUS_TODO) {
-        // linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        // //step.setStatus(PluginStep.STATUS_ERROR);
-        // return;
-        // }
-        // return;
-        // } catch (Exception e) {
-        // 
-        // e.printStackTrace();
-        // }
-        // //step.setStatus(PluginStep.STATUS_ERROR);
-        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        // return;
     }
 
     @Override

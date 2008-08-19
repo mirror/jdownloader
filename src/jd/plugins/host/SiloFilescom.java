@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -20,19 +36,11 @@ public class SiloFilescom extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?silofiles\\.com/file/\\d+/.*?", Pattern.CASE_INSENSITIVE);
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
-
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
-    private static final String PLUGIN_NAME = HOST;
     private String downloadurl;
     private RequestInfo requestInfo;
 
     public SiloFilescom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -52,7 +60,6 @@ public class SiloFilescom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadurl = downloadLink.getDownloadURL();
         try {
             requestInfo = HTTP.getRequest(new URL(downloadurl));
@@ -81,13 +88,8 @@ public class SiloFilescom extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return 1;
-    }
-
-    @Override
-   */ public String getPluginName() {
-        return PLUGIN_NAME;
+    public String getPluginName() {
+        return HOST;
     }
 
     @Override

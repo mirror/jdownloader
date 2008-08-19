@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -20,22 +36,12 @@ public class ShareNownet extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html", Pattern.CASE_INSENSITIVE);
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "1.0.0.0";
-
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
-    private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
-    
- 
 
     public ShareNownet() {
         super();
-
     }
 
     @Override
@@ -55,8 +61,8 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-    Browser.clearCookies(HOST);
-    br.setFollowRedirects(false);
+        Browser.clearCookies(HOST);
+        br.setFollowRedirects(false);
         downloadurl = downloadLink.getDownloadURL();
         try {
             br.getPage(downloadurl);
@@ -88,13 +94,8 @@ public class ShareNownet extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
-        return PLUGIN_NAME;
+    public String getPluginName() {
+        return HOST;
     }
 
     @Override
@@ -118,15 +119,14 @@ public class ShareNownet extends PluginForHost {
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-       
-        Form form =  br.getForm(1);
-    
+
+        Form form = br.getForm(1);
+
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */
             captchaFile = getLocalCaptchaFile(this);
-            
-            
+
             if (!br.downloadFile(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download")) || !captchaFile.exists()) {
                 /* Fehler beim Captcha */
                 logger.severe("Captcha Download fehlgeschlagen!");
@@ -144,13 +144,13 @@ public class ShareNownet extends PluginForHost {
         }
         /* DownloadLink holen/Captcha check */
         HTTPConnection con = br.openFormConnection(form);
-        if (br.getRedirectLocation()!= null) {
+        if (br.getRedirectLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         /* Datei herunterladen */
- 
+
         if (con.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             // step.setStatus(PluginStep.STATUS_ERROR);
