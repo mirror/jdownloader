@@ -48,12 +48,12 @@ public class UCMS extends PluginForDecrypt {
     static private Pattern create_patternSupported() {
         String Complete_Pattern = "";
         String[] List = { "saugking.net", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "oxygen-warez.com", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz",
-                "xwebb.extra.hu/1dl", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "lister.hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms" };
+                "xwebb.extra.hu/1dl", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "lister.hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms","fickdiehure.com" };
         for (String Pattern : List) {
             if (Complete_Pattern.length() > 0) {
                 Complete_Pattern += "|";
             }
-            Complete_Pattern += "(http://[\\w\\.]*?" + Pattern.replaceAll("\\.", "\\\\.") + "/(\\?id=.+|category/.+/.+\\.html|download/.+/.+\\.html))";
+            Complete_Pattern += "(http://[\\w\\.]*?" + Pattern.replaceAll("\\.", "\\\\.") + "/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))";
         }
         logger.finest("UCMS: " + List.length + " Pattern added!");
         return Pattern.compile(Complete_Pattern, Pattern.CASE_INSENSITIVE);
@@ -76,7 +76,7 @@ public class UCMS extends PluginForDecrypt {
 
             String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (pass != null) {
-                if (pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-") || pass.equals("-No Pass-") || pass.equals("ohne PW")) {
+                if (pass.equals("N/A") || pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-") || pass.equals("-No Pass-") || pass.equals("ohne PW")) {
                     pass = null;
                 }
             }
@@ -129,10 +129,14 @@ public class UCMS extends PluginForDecrypt {
                     }
                 }
                 String links[][] = null;
-                if (reqinfo.containsHTML("unescape")) {
-                    String temp = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\([\"']{1}(.*?)[\"']{1}", Pattern.CASE_INSENSITIVE)).getMatch(0))));
-                    String temp2 = reqinfo.getHtmlCode() + temp;
-                    links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                if (reqinfo.containsHTML("unescape(unescape(unescape")) {
+                    String temp[]= new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                    String temp2= Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(temp[0])));                    
+                    links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();                    
+                } else if (reqinfo.containsHTML("unescape(unescape")) {
+                    String temp[]= new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                    String temp2= Encoding.htmlDecode(Encoding.htmlDecode(temp[0]));                    
+                    links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();                    
                 } else {
                     links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 }
