@@ -1,5 +1,3 @@
-package jd;
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -15,6 +13,8 @@ package jd;
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd;
 
 import java.awt.BorderLayout;
 import java.util.Locale;
@@ -32,7 +32,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
- * Der Installer erscheint nur beim ersten mal STarten der Webstartversion und
+ * Der Installer erscheint nur beim ersten mal Starten der Webstartversion und
  * beim neuinstallieren der webstartversion der User kann Basiceinstellungen
  * festlegen
  * 

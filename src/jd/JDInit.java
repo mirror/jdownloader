@@ -1,5 +1,3 @@
-package jd;
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -15,6 +13,8 @@ package jd;
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd;
 
 import java.awt.HeadlessException;
 import java.awt.Toolkit;

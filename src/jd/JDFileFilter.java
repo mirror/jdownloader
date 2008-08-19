@@ -1,5 +1,3 @@
-package jd;
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -14,6 +12,8 @@ package jd;
 //    GNU General Public License for more details.
 //
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package jd;
 
 import java.io.File;
 import java.io.FileFilter;
