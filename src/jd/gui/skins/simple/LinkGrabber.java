@@ -25,7 +25,6 @@ import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
-import java.awt.Point;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.dnd.DropTarget;
@@ -58,6 +57,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -83,7 +83,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.ComboBrowseFile;
-import jd.gui.skins.simple.components.ContextMenu;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -269,6 +268,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private JTextField txtPassword;
 
+        private JMenuItem mContextDelete;
+
+        private JMenuItem mContextDeleteOthers;
+
+        private JMenuItem mContextAcceptSelection;
+
+        private JMenuItem mContextNewPackage;
+
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
             _this = this;
@@ -276,8 +283,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         public void actionPerformed(ActionEvent e) {
-
-            if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"))) {
+            if (e.getSource() == mContextDelete) {
                 int[] rows = table.getSelectedRows();
 
                 for (int i = rows.length - 1; i >= 0; i--) {
@@ -285,7 +291,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 }
 
                 refreshTable();
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package"))) {
+            } else if (e.getSource() == mContextNewPackage) {
                 PackageTab newTab = addTab();
                 int[] rows = table.getSelectedRows();
                 if (0 < rows.length) {
@@ -298,18 +304,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     newTab.addLinks(linksToTransfer);
                     refreshTable();
                 }
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"))) {
+            } else if (e.getSource() == mContextDeleteOthers) {
                 int[] rows = table.getSelectedRows();
 
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
-                for (int element : rows) {
-                    list.add(linkList.remove(element));
+                for (int i = rows.length - 1; i >= 0; --i) {
+                    list.add(linkList.remove(rows[i]));
                 }
 
                 totalLinkList.removeAll(linkList);
                 linkList = list;
                 refreshTable();
-            } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"))) {
+            } else if (e.getSource() == mContextAcceptSelection) {
                 int[] rows = table.getSelectedRows();
 
                 Vector<DownloadLink> list = new Vector<DownloadLink>();
@@ -418,8 +424,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             table.addKeyListener(this);
             table.setModel(internalTableModel);
 
-            // table.setAutoCreateRowSorter(true);
-            // table.setUpdateSelectionOnSort(true);
             table.setGridColor(Color.BLUE);
             table.setAutoCreateColumnsFromModel(true);
             table.setModel(internalTableModel);
@@ -579,9 +583,24 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 sortOn();
             } else if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                Point point = e.getPoint();
+                JPopupMenu popup = new JPopupMenu();
 
-                new ContextMenu(table, point, new String[] { JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"), JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues package") }, this);
+                mContextDelete = new JMenuItem(JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"));
+                mContextDeleteOthers = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"));
+                mContextAcceptSelection = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"));
+                mContextNewPackage = new JMenuItem(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Paket"));
+
+                mContextDelete.addActionListener(this);
+                mContextDeleteOthers.addActionListener(this);
+                mContextAcceptSelection.addActionListener(this);
+                mContextNewPackage.addActionListener(this);
+
+                popup.add(mContextDelete);
+                popup.add(mContextDeleteOthers);
+                popup.add(mContextAcceptSelection);
+                popup.add(mContextNewPackage);
+
+                popup.show(table, e.getX(), e.getY());
             }
 
         }
@@ -725,6 +744,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JCheckBoxMenuItem mHostSelectionPackageOnly;
 
     private JCheckBoxMenuItem mHostSelectionRemove;
+
+    private JMenuItem mContextDelete;
+
+    private JMenuItem mContextNewPackage;
 
     private JMenuItem mMerge;
 
@@ -952,12 +975,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         } else if (e.getSource() == mRemoveEmptyPackages) {
             removeEmptyPackages();
             emptyCheck();
-        } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"))) {
-            Point loc = ((ContextMenu) ((JMenuItem) e.getSource()).getParent()).getPoint();
-            int destID = tabbedPane.getUI().tabForCoordinate(tabbedPane, (int) loc.getX(), (int) loc.getY());
-            removePackageAt(destID);
+        } else if (e.getSource() == mContextDelete) {
+            removePackage((PackageTab) tabbedPane.getSelectedComponent());
             emptyCheck();
-        } else if (e.getActionCommand().equals(JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket"))) {
+        } else if (e.getSource() == mContextNewPackage) {
             addTab();
         } else if (e.getSource() == insertAtPosition) {
             guiConfig.setProperty(PROPERTY_POSITION, insertAtPosition.getSelectedIndex());
@@ -1495,8 +1516,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            Point point = e.getPoint();
-            new ContextMenu(tabbedPane, point, new String[] { JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"), JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket") }, this);
+            JPopupMenu popup = new JPopupMenu();
+
+            mContextDelete = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"));
+            mContextNewPackage = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket"));
+
+            mContextDelete.addActionListener(this);
+            mContextNewPackage.addActionListener(this);
+
+            popup.add(mContextDelete);
+            popup.add(mContextNewPackage);
+
+            popup.show(tabbedPane, e.getX(), e.getY());
         }
 
     }
