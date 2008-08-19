@@ -130,7 +130,6 @@ public class Uploadedto extends PluginForHost {
         Browser.setCookie("http://uploaded.to/", "lang", "de");
 
         String user = account.getUser();
-//        String pass = account.getPass();
 
         logger.info("login");
         br.setFollowRedirects(true);
@@ -142,7 +141,6 @@ public class Uploadedto extends PluginForHost {
 
         br.submitForm(login);
         if (br.containsHTML("Login failed!")) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setErrorMessage("Login Error: " + user);
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
@@ -167,12 +165,12 @@ public class Uploadedto extends PluginForHost {
             error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
         }
         if (error != null) {
-            if(error.equalsIgnoreCase("error_traffic")){
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.uploadedto.premiumtrafficreached","Traffic limit reached"));
+            if (error.equalsIgnoreCase("error_traffic")) {
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.uploadedto.premiumtrafficreached", "Traffic limit reached"));
                 linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
                 linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 return;
-                
+
             }
             String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -180,8 +178,7 @@ public class Uploadedto extends PluginForHost {
             return;
 
         }
-        
-        
+
         if (br.getRedirectLocation() == null) {
 
             Form form = br.getForm("Download");
@@ -253,13 +250,7 @@ public class Uploadedto extends PluginForHost {
         return HOST;
     }
 
-    /*
-     * public int getMaxSimultanDownloadNum() { if
-     * (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
-     * true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-     * return 20; } else { return 1; } }
-     * 
-     */public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -278,8 +269,6 @@ public class Uploadedto extends PluginForHost {
         Browser.setCookie("http://uploaded.to/", "lang", "de");
         correctURL(downloadLink);
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_WAIT_TIME:
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
 
@@ -302,7 +291,6 @@ public class Uploadedto extends PluginForHost {
 
         }
 
-        // http://uploaded.to/?id=ild5m8
         br.setFollowRedirects(false);
 
         Form form = br.getForm("Download");
@@ -333,7 +321,6 @@ public class Uploadedto extends PluginForHost {
         dl.setResume(true);
         dl.startDownload();
 
-        // }
     }
 
     public void reset() {

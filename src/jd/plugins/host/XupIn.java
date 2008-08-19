@@ -35,12 +35,8 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-// http://www.xup.in/dl,43227676/YourFilesBiz.java/
-
 public class XupIn extends PluginForHost {
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "0.2.0";
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "jD-Team";
     private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
@@ -48,7 +44,6 @@ public class XupIn extends PluginForHost {
     private static final String DOWNLOAD_SIZE = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
     private static final String HOST = "xup.in";
 
-//    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
     private static final String NAME_FROM_URL = "http://.*?xup\\.in/dl,[0-9]+/(.*?)";
     private static final String NOT_FOUND = "File does not exist";
     private static final String PASSWORD_PROTECTED = "Bitte Passwort eingeben";
@@ -63,14 +58,7 @@ public class XupIn extends PluginForHost {
     private String vtime = "";
 
     public XupIn() {
-
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        /*
-         * //steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-         * haben aktuell keine captchas
-         */
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -139,13 +127,7 @@ public class XupIn extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -164,20 +146,7 @@ public class XupIn extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        // if (aborted) {
-        //    		
-        // logger.warning("Plugin aborted");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        //            
-        // }
-
         URL downloadUrl = new URL(downloadLink.getDownloadURL());
-
-        // switch (step.getStep()) {
-
-        // case PluginStep.STEP_PAGE:
 
         RequestInfo requestInfo = HTTP.getRequest(downloadUrl);
 
@@ -186,8 +155,7 @@ public class XupIn extends PluginForHost {
             if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0) != null) {
                 downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0));
             }
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);            
             return;
 
         }
@@ -208,19 +176,17 @@ public class XupIn extends PluginForHost {
 
         } catch (Exception e) {
 
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);            
             return;
 
         }
 
         cookie = requestInfo.getCookie();
 
-        if (JDUtilities.getController().getLinkThatBlocks(downloadLink)!=null) {
+        if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
 
             logger.severe("File already is in progress: " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);            
             return;
 
         }
@@ -228,8 +194,7 @@ public class XupIn extends PluginForHost {
         if (new File(downloadLink.getFileOutput()).exists()) {
 
             logger.severe("File already exists: " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);            
             return;
 
         }
@@ -238,7 +203,7 @@ public class XupIn extends PluginForHost {
         vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
         captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
 
-        // case PluginStep.STEP_GET_CAPTCHA_FILE:
+        
 
         File file = this.getLocalCaptchaFile(this);
 
@@ -246,17 +211,12 @@ public class XupIn extends PluginForHost {
 
         if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
 
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-            // this.sleep(nul,downloadLink);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-            // ImageIO
-            // Error");
+            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);            
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
 
         }
-
-        // case PluginStep.STEP_DOWNLOAD:
+        
 
         String vchep = this.getCaptchaCode(file, downloadLink);
 
@@ -271,8 +231,7 @@ public class XupIn extends PluginForHost {
         if (urlConnection.getContentType().contains("text/html")) {
 
             logger.severe("Captcha code or password wrong");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);            
             return;
 
         }

@@ -43,25 +43,14 @@ public class YourFilesBiz extends PluginForHost {
     private static final String DOWNLOAD_SIZE = "  <tr class=tdrow1>°<td align=left><b>Dateigr°e:</b></td>°<td align=left>°</td>°</tr>";
     private static final String HOST = "yourfiles.biz";
 
-//    private static final int MAX_SIMULTAN_DOWNLOADS = Integer.MAX_VALUE;
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
 
     private static final String PLUGIN_NAME = HOST;
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "0.1.0";
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     private String downloadURL = "";
     private HTTPConnection urlConnection;
 
     public YourFilesBiz() {
-
         super();
-
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-
     }
 
     @Override
@@ -149,13 +138,7 @@ public class YourFilesBiz extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return MAX_SIMULTAN_DOWNLOADS;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -176,17 +159,12 @@ public class YourFilesBiz extends PluginForHost {
 
         URL downloadUrl = new URL(downloadLink.getDownloadURL());
 
-        // switch (step.getStep()) {
-
-        // case PluginStep.STEP_PAGE:
-
         RequestInfo requestInfo = HTTP.getRequest(downloadUrl);
 
         // serverantwort leer (weiterleitung) -> download nicht verfügbar
         if (requestInfo.getHtmlCode().equals("")) {
             logger.severe("download not found");
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
@@ -198,20 +176,15 @@ public class YourFilesBiz extends PluginForHost {
             downloadLink.setDownloadSize(length);
         } catch (Exception e) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
         // downloadLink auslesen
         downloadURL = "http://" + Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
 
-        // case PluginStep.STEP_WAIT_TIME:
-
         // Download vorbereiten
         downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
         urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
-
-        // case PluginStep.STEP_DOWNLOAD:
 
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);

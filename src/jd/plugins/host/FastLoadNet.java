@@ -44,15 +44,7 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "0.2.0";
-
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
     private static final String HOST = "fast-load.net";
-
-//    private static final int MAX_SIMULTAN_DOWNLOADS = 8;
 
     private static final String NOT_FOUND = "Datei existiert nicht";
 
@@ -63,11 +55,7 @@ public class FastLoadNet extends PluginForHost {
     private String cookie = "";
 
     public FastLoadNet() {
-
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
 
     }
 
@@ -147,12 +135,7 @@ public class FastLoadNet extends PluginForHost {
         return HOST;
     }
 
-    @Override
-    /*
-     * public int getMaxSimultanDownloadNum() { return MAX_SIMULTAN_DOWNLOADS; }
-     * 
-     * @Override
-     */public String getPluginName() {
+    public String getPluginName() {
         return PLUGIN_NAME;
     }
 
@@ -171,10 +154,6 @@ public class FastLoadNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        // switch (step.getStep()) {
-
-        // case PluginStep.STEP_PAGE:
-
         downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
 
         RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
@@ -183,7 +162,6 @@ public class FastLoadNet extends PluginForHost {
         if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
         }
@@ -191,7 +169,6 @@ public class FastLoadNet extends PluginForHost {
         if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
         }
@@ -208,12 +185,10 @@ public class FastLoadNet extends PluginForHost {
 
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.exceptionToErrorMessage(e);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
         }
 
-        // case PluginStep.STEP_GET_CAPTCHA_FILE:
         int maxCaptchaTries = 10;
         while (true) {
             File file = this.getLocalCaptchaFile(this);
@@ -223,17 +198,12 @@ public class FastLoadNet extends PluginForHost {
             if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
 
                 logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
-                // step.setParameter(null);
-                // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
-                // ImageIO
-                // Error");
+
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.captchadownloaderror", "Captcha could not be downloaded"));
                 return;
 
             }
-
-            // case PluginStep.STEP_DOWNLOAD:
 
             String code = getCaptchaCode(file, downloadLink);
             if (code == null) {
@@ -275,7 +245,6 @@ public class FastLoadNet extends PluginForHost {
                         logger.info("System overload: Retry in 20 seconds");
                         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         linkStatus.setErrorMessage(requestInfo.getHtmlCode());
-                        // step.setStatus(PluginStep.STATUS_ERROR);
                         linkStatus.setValue(20000l);
                         return;
 
@@ -283,7 +252,6 @@ public class FastLoadNet extends PluginForHost {
 
                         logger.severe("Unknown error page - [Length: " + length + "]");
                         linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                        // step.setStatus(PluginStep.STATUS_ERROR);
                         return;
 
                     }
@@ -304,16 +272,17 @@ public class FastLoadNet extends PluginForHost {
 
                 logger.severe("Couldn't get HTTP connection");
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                // step.setStatus(PluginStep.STATUS_ERROR);
                 return;
 
             }
         }
 
     }
+
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }
+
     @Override
     public void reset() {
         cookie = "";
