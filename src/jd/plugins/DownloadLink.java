@@ -29,6 +29,7 @@ import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
 import jd.http.Encoding;
 import jd.plugins.download.DownloadInterface;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -753,7 +754,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         downloadCurrent = 0;
         linkStatus.reset();
         linkStatus = new LinkStatus(this);
-
+        if (!new File(this.getFileOutput()).delete()) {            
+            logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));            
+        }
     }
 
 
