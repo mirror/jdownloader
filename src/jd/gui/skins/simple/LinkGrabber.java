@@ -268,6 +268,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private JTextField txtPassword;
 
+        private JPopupMenu mContextTabPopup;
+
         private JMenuItem mContextDelete;
 
         private JMenuItem mContextDeleteOthers;
@@ -487,6 +489,26 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             add(north, BorderLayout.NORTH);
             add(new JScrollPane(table), BorderLayout.CENTER);
 
+            buildMenu();
+        }
+
+        private void buildMenu() {
+            mContextTabPopup = new JPopupMenu();
+
+            mContextDelete = new JMenuItem(JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"));
+            mContextDeleteOthers = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"));
+            mContextAcceptSelection = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"));
+            mContextNewPackage = new JMenuItem(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Paket"));
+
+            mContextDelete.addActionListener(this);
+            mContextDeleteOthers.addActionListener(this);
+            mContextAcceptSelection.addActionListener(this);
+            mContextNewPackage.addActionListener(this);
+
+            mContextTabPopup.add(mContextDelete);
+            mContextTabPopup.add(mContextDeleteOthers);
+            mContextTabPopup.add(mContextAcceptSelection);
+            mContextTabPopup.add(mContextNewPackage);
         }
 
         public String getComment() {
@@ -583,24 +605,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 sortOn();
             } else if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-                JPopupMenu popup = new JPopupMenu();
-
-                mContextDelete = new JMenuItem(JDLocale.L("gui.linkgrabber.packagetab.table.context.delete", "Entfernen"));
-                mContextDeleteOthers = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.deleteOthers", "Alle anderen Entfernen"));
-                mContextAcceptSelection = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.acceptSelection", "Auswahl übernehmen"));
-                mContextNewPackage = new JMenuItem(JDLocale.L("gui.linkgrabber.packagetab.table.context.newpackage", "Neues Paket"));
-
-                mContextDelete.addActionListener(this);
-                mContextDeleteOthers.addActionListener(this);
-                mContextAcceptSelection.addActionListener(this);
-                mContextNewPackage.addActionListener(this);
-
-                popup.add(mContextDelete);
-                popup.add(mContextDeleteOthers);
-                popup.add(mContextAcceptSelection);
-                popup.add(mContextNewPackage);
-
-                popup.show(table, e.getX(), e.getY());
+                mContextTabPopup.show(table, e.getX(), e.getY());
             }
 
         }
@@ -744,6 +749,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private JCheckBoxMenuItem mHostSelectionPackageOnly;
 
     private JCheckBoxMenuItem mHostSelectionRemove;
+
+    private JPopupMenu mContextPopup;
 
     private JMenuItem mContextDelete;
 
@@ -1199,6 +1206,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         setJMenuBar(menuBar);
+
+        // Create Context Menü
+        mContextPopup = new JPopupMenu();
+
+        mContextDelete = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"));
+        mContextNewPackage = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket"));
+
+        mContextDelete.addActionListener(this);
+        mContextNewPackage.addActionListener(this);
+
+        mContextPopup.add(mContextDelete);
+        mContextPopup.add(mContextNewPackage);
     }
 
     private int comparePackages(String a, String b) {
@@ -1516,20 +1535,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            JPopupMenu popup = new JPopupMenu();
-
-            mContextDelete = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.delete", "Entfernen"));
-            mContextNewPackage = new JMenuItem(JDLocale.L("gui.linkgrabber.tabs.context.newpackage", "Neues Paket"));
-
-            mContextDelete.addActionListener(this);
-            mContextNewPackage.addActionListener(this);
-
-            popup.add(mContextDelete);
-            popup.add(mContextNewPackage);
-
-            popup.show(tabbedPane, e.getX(), e.getY());
+            mContextPopup.show(tabbedPane, e.getX(), e.getY());
         }
-
     }
 
     public void mouseReleased(MouseEvent e) {
