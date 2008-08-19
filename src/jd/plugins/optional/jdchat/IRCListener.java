@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.optional.jdchat;
 
 import java.util.logging.Logger;
@@ -121,26 +137,22 @@ class IRCListener implements IRCEventListener {
         if (user == null) { return; }
 
         if (user.rank == User.RANK_OP && msg.trim().matches("\\!getteamviewer[\\s]+" + owner.getNick())) {
-        	
+
             new Thread(new Runnable() {
 
                 public void run() {
-                	
-                	String[] data = TeamViewer.handleTeamviewer();
-                	if(new Regex(data[0],"^[\\s]*$").matches())
-                	{
-                		owner.sendMessage(user.name, owner.getNick() + " hat den Teamviewer Dialog geschlossen.");
-                	}
-                	else
-                	{
-                		owner.sendMessage(user.name, "Teamviewerdaten von " + owner.getNick() + ": ID: " + data[0] + " PW: " + data[1]);               		
-                	}
-                	logger.info("Teamviewer-Daten: [" + data[0] + "] [" + data[1] + "]");
+
+                    String[] data = TeamViewer.handleTeamviewer();
+                    if (new Regex(data[0], "^[\\s]*$").matches()) {
+                        owner.sendMessage(user.name, owner.getNick() + " hat den Teamviewer Dialog geschlossen.");
+                    } else {
+                        owner.sendMessage(user.name, "Teamviewerdaten von " + owner.getNick() + ": ID: " + data[0] + " PW: " + data[1]);
+                    }
+                    logger.info("Teamviewer-Daten: [" + data[0] + "] [" + data[1] + "]");
                 }
 
             }).start();
-        
-            
+
         } else if (msg.trim().startsWith("ACTION ")) {
             owner.addToText(null, JDChat.STYLE_ACTION, user.getNickLink("pmnick") + " " + Utils.prepareMsg(msg.trim().substring(6).trim()));
 

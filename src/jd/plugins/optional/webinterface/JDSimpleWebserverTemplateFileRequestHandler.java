@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.optional.webinterface;
 
 import java.io.File;
@@ -82,9 +98,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h_info.put("info_var", i + ". " + next.getName());
                 h_info.put("info_value", JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
                 h_info.put("download_id", i - 1);/*
-                 * von 0 anfangen für js
-                 * skripte
-                 */
+                                                  * von 0 anfangen für js
+                                                  * skripte
+                                                  */
                 v_info.addElement(h_info);
             }
             t.setParam("all_infos", v_info);
@@ -229,9 +245,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                     h_info.put("info_value", JDUtilities.formatKbReadable((int) next.getBytesPerSecond() / 1024) + "/s " + f.format(next.getPercent() / 100.0) + " %");
                     h_info.put("info_percent", f.format(percent));
                     h_info.put("download_id", i - 1);/*
-                     * von 0 anfangen für js
-                     * skripte
-                     */
+                                                      * von 0 anfangen für js
+                                                      * skripte
+                                                      */
                     v_info.addElement(h_info);
                 }
 
@@ -242,10 +258,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     }
 
     /*
-     * private void addEntryandPercent(String var, String value, double percent) {
-     * Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
+     * private void addEntryandPercent(String var, String value, double percent)
+     * { Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
      * h_info.put("info_var", var); h_info.put("info_value", value);
-     * h_info.put("info_percent", f.format(percent)); v_info.addElement(h_info); }
+     * h_info.put("info_percent", f.format(percent)); v_info.addElement(h_info);
+     * }
      */
     private void add_status_page(Template t, HashMap<String, String> requestParameter) {
         Vector<Object> v, v2 = new Vector<Object>();

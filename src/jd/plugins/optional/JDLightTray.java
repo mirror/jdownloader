@@ -57,7 +57,7 @@ public class JDLightTray extends PluginOptional implements MouseListener {
 
     @Override
     public String getCoder() {
-        return "jD-Team";
+        return "JD-Team";
     }
 
     @Override

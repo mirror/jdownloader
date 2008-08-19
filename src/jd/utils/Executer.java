@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.utils;
 
 import java.io.BufferedReader;
@@ -98,14 +114,15 @@ public class Executer extends Thread {
         params.add(command);
         params.addAll(parameter);
 
-//      r.info("RUN: " + params);
+        // r.info("RUN: " + params);
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
                 pb.directory(new File(runIn));
             } else {
                 if (new File(params.get(0)).getParentFile().exists()) {
-//                    logger.info("Run in: " + new File(params.get(0)).getParentFile());
+                    // logger.info("Run in: " + new
+                    // File(params.get(0)).getParentFile());
                     pb.directory(new File(params.get(0)).getParentFile());
                 } else {
                     logger.severe("Working drectory " + runIn + " does not exist!");
