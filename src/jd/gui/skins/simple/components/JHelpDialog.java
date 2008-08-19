@@ -106,7 +106,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         setBtn1(new JButton("UNSET"));
         setBtn2(new JButton("UNSET"));
         setBtn3(new JButton("UNSET"));
-        btn4 = new JButton("Stop Timer");
+        btn4 = new JButton(JDLocale.L("gui.dialogs.helpDialog.btn.stopTimer", "Stop Timer"));
 
         getBtn1().addActionListener(this);
         getBtn2().addActionListener(this);
@@ -132,35 +132,38 @@ public class JHelpDialog extends JDialog implements ActionListener {
         JDUtilities.addToGridBag(this, getBtn1(), 2, 1, 1, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn2(), 3, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
         JDUtilities.addToGridBag(this, getBtn3(), 4, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        if (countdown > 0) JDUtilities.addToGridBag(this, btn4, 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        pack();
+        if (countdown > 0) {
+            JDUtilities.addToGridBag(this, btn4, 1, 1, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
 
-        countdownThread = new Thread() {
+            countdownThread = new Thread() {
 
-            @Override
-            public void run() {
-                int c = countdown;
+                @Override
+                public void run() {
+                    int c = countdown;
 
-                while (--c >= 0 && stopTimer == false) {
-                    if (countdownThread == null) return;
-                    setTitle(title + " [" + JDUtilities.formatSeconds(c) + "]");
+                    while (--c >= 0 && stopTimer == false) {
+                        if (countdownThread == null) return;
+                        setTitle(title + " [" + JDUtilities.formatSeconds(c) + "]");
 
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                        }
+                        if (!isVisible()) return;
+
                     }
-                    if (!isVisible()) return;
-
+                    if (stopTimer == false) {
+                        dispose();
+                    } else {
+                        setTitle(title);
+                    }
                 }
-                if (stopTimer == false) {
-                    dispose();
-                } else {
-                    setTitle(title);
-                }
-            }
 
-        };
-        if (countdown > 0) countdownThread.start();
+            };
+
+            countdownThread.start();
+        }
+        pack();
         getRootPane().setDefaultButton(getBtn1());
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
     }

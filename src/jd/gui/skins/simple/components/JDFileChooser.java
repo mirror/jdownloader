@@ -27,12 +27,10 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  * 
- * EinWrapper um JFileChooser
+ *         Ein Wrapper um JFileChooser
  */
 public class JDFileChooser extends JFileChooser {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 3315263822025280362L;
     private String fcID;
     private Logger logger;
@@ -60,13 +58,6 @@ public class JDFileChooser extends JFileChooser {
 
     }
 
-    // public int showOpenDialog(JFrame frame){
-    // int ret= super.showOpenDialog(frame);
-    //    
-    // return ret;
-    //    
-    //    
-    // }
     @Override
     public File getSelectedFile() {
 
