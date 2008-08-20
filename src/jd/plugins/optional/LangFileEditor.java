@@ -17,6 +17,8 @@
 package jd.plugins.optional;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -37,6 +39,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
+import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -46,6 +49,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -54,6 +58,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
@@ -77,16 +82,21 @@ public class LangFileEditor extends PluginOptional {
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
     private static final String PROPERTY_FOLDER = "PROPERTY_FOLDER";
     private static final String PROPERTY_FILE = "PROPERTY_FILE";
+    private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
+    private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
+    private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
+    private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
 
     private JFrame frame;
     private File sourceFolder, languageFile;
     private JTextField txtFolder, txtFile;
     private JLabel lblEntriesCount;
     private JButton btnBrowseFile, btnBrowseFolder;
-    private JMenu mnuFile, mnuKey, mnuEntries;
+    private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
     private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuDownloadSource, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
-    private JMenuItem mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
+    private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
+    private JRadioButtonMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JTable table;
     private MyTableModel tableModel;
 
@@ -94,6 +104,10 @@ public class LangFileEditor extends PluginOptional {
     private Vector<String> oldEntries = new Vector<String>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
+
+    public static void main(String args[]) {
+        new LangFileEditor().showGui();
+    }
 
     private void showGui() {
 
@@ -109,6 +123,7 @@ public class LangFileEditor extends PluginOptional {
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
+        table.setDefaultRenderer(String.class, new MyTableCellRenderer());
 
         JPanel main = new JPanel(new BorderLayout(5, 5));
         main.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -238,6 +253,8 @@ public class LangFileEditor extends PluginOptional {
         mnuEntries = new JMenu(JDLocale.L("plugins.optional.langfileeditor.entries", "Entries"));
         mnuEntries.setEnabled(false);
 
+        mnuEntries.add(mnuColorize = new JMenu(JDLocale.L("plugins.optional.langfileeditor.colorize", "Colorize")));
+        mnuEntries.addSeparator();
         mnuEntries.add(mnuSelectMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.selectMissing", "Select Missing Entries")));
         mnuEntries.add(mnuSelectOld = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.selectOld", "Select Old Entries")));
         mnuEntries.addSeparator();
@@ -245,10 +262,28 @@ public class LangFileEditor extends PluginOptional {
         mnuEntries.addSeparator();
         mnuEntries.add(mnuSort = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.sortEntries", "Sort Entries")));
 
+        mnuSelectMissing.setEnabled(!subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false));
+        mnuSelectOld.setEnabled(!subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false));
+
         mnuSelectMissing.addActionListener(this);
         mnuSelectOld.addActionListener(this);
         mnuShowDupes.addActionListener(this);
         mnuSort.addActionListener(this);
+
+        // Colorize Menü
+        mnuColorize.add(mnuColorizeMissing = new JRadioButtonMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeMissing", "Colorize Missing Entries")));
+        mnuColorize.add(mnuPickMissingColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries")));
+        mnuColorize.addSeparator();
+        mnuColorize.add(mnuColorizeOld = new JRadioButtonMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
+        mnuColorize.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
+
+        mnuColorizeMissing.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false));
+        mnuColorizeOld.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false));
+
+        mnuColorizeMissing.addActionListener(this);
+        mnuPickMissingColor.addActionListener(this);
+        mnuColorizeOld.addActionListener(this);
+        mnuPickOldColor.addActionListener(this);
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(mnuFile);
@@ -325,15 +360,10 @@ public class LangFileEditor extends PluginOptional {
         } else if (e.getSource() == mnuDelete) {
 
             int[] rows = table.getSelectedRows();
-            
-//            String tmp = "Loesche Zeilen (" + table.getSelectedRowCount() + ") : ";
-//            for (int i : rows) tmp = tmp + i + ", ";
-//            logger.finer(tmp.substring(0, tmp.length() - 2));
-            
+
             for (int i = rows.length - 1; i >= 0; --i) {
                 int cur = rows[i];
                 String temp = data.remove(cur)[0];
-//                logger.info("Loesche Zeile " + cur + ": " + temp);
                 oldEntries.remove(temp);
                 for (int j = dupes.size() - 1; j >= 0; --j) {
                     if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
@@ -394,6 +424,38 @@ public class LangFileEditor extends PluginOptional {
             table.clearSelection();
             for (int i = 0; i < table.getRowCount(); i++) {
                 if (oldEntries.contains(table.getValueAt(i, 0))) table.getSelectionModel().addSelectionInterval(i, i);
+            }
+
+        } else if (e.getSource() == mnuColorizeMissing) {
+
+            subConfig.setProperty(PROPERTY_COLORIZE_MISSING, mnuColorizeMissing.isSelected());
+            subConfig.save();
+            mnuSelectMissing.setEnabled(!mnuColorizeMissing.isSelected());
+            tableModel.fireTableDataChanged();
+
+        } else if (e.getSource() == mnuColorizeOld) {
+
+            subConfig.setProperty(PROPERTY_COLORIZE_OLD, mnuColorizeOld.isSelected());
+            subConfig.save();
+            mnuSelectOld.setEnabled(!mnuColorizeOld.isSelected());
+            tableModel.fireTableDataChanged();
+
+        } else if (e.getSource() == mnuPickMissingColor) {
+
+            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries"), (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.red));
+            if (newColor != null) {
+                subConfig.setProperty(PROPERTY_MISSING_COLOR, newColor);
+                subConfig.save();
+                tableModel.fireTableDataChanged();
+            }
+
+        } else if (e.getSource() == mnuPickOldColor) {
+
+            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries"), (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.orange));
+            if (newColor != null) {
+                subConfig.setProperty(PROPERTY_OLD_COLOR, newColor);
+                subConfig.save();
+                tableModel.fireTableDataChanged();
             }
 
         } else if (e.getSource() == mnuShowDupes) {
@@ -574,11 +636,10 @@ public class LangFileEditor extends PluginOptional {
 
     private Vector<String[]> getLanguageFileEntries(File file) {
 
-        String content = JDUtilities.getLocalFile(file);
         Vector<String[]> entries = new Vector<String[]>();
         Vector<String> keys = new Vector<String>();
 
-        String[][] matches = new Regex(Pattern.compile("(.*?)=(.*?)[\\r]?\\n").matcher(content)).getMatches();
+        String[][] matches = new Regex(Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n").matcher(JDUtilities.getLocalFile(file))).getMatches();
 
         for (String[] match : matches) {
 
@@ -599,11 +660,10 @@ public class LangFileEditor extends PluginOptional {
 
     private Vector<String[]> getSourceEntries(File dir) {
 
-        Vector<String> fileContents = getFileContents(dir, "java");
         Vector<String[]> entries = new Vector<String[]>();
         Vector<String> keys = new Vector<String>();
 
-        for (String file : fileContents) {
+        for (String file : getSourceFiles(dir)) {
 
             String[][] matches = new Regex(Pattern.compile("JDLocale[\\s]*?\\.L[F]?[\\s]*?\\([\\s]*?\"(.*?)\"[\\s]*?,[\\s]*?\"(.*?)\"[\\s]*?[,\\)]").matcher(file)).getMatches();
 
@@ -624,23 +684,20 @@ public class LangFileEditor extends PluginOptional {
 
     }
 
-    private Vector<String> getFileContents(File directory, String filter) {
+    private Vector<String> getSourceFiles(File directory) {
 
         Vector<String> fileContents = new Vector<String>();
-        File[] entries = directory.listFiles();
 
-        for (int i = 0; i < entries.length; i++) {
+        for (File entry : directory.listFiles()) {
 
-            if (entries[i].isDirectory()) {
+            if (entry.isDirectory()) {
 
-                fileContents.addAll(getFileContents(entries[i], filter));
+                fileContents.addAll(getSourceFiles(entry));
 
-            } else if (entries[i].isFile()) {
+            } else if (entry.isFile()) {
 
-                String extension = JDUtilities.getFileExtension(entries[i]);
-
-                if (extension.equals(filter)) {
-                    fileContents.add(JDUtilities.getLocalFile(entries[i]));
+                if (JDUtilities.getFileExtension(entry).equals("java")) {
+                    fileContents.add(JDUtilities.getLocalFile(entry));
                 }
 
             }
@@ -648,6 +705,30 @@ public class LangFileEditor extends PluginOptional {
         }
 
         return fileContents;
+
+    }
+
+    private class MyTableCellRenderer extends DefaultTableCellRenderer {
+
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+            String[] r = data.get(row);
+
+            if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false) && r[2].equals("")) {
+                c.setBackground((Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.red));
+            } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false) && oldEntries.contains(r[0])) {
+                c.setBackground((Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.orange));
+            } else {
+                c.setBackground(Color.white);
+            }
+
+            return c;
+        }
 
     }
 
@@ -682,7 +763,7 @@ public class LangFileEditor extends PluginOptional {
 
         public void setValueAt(Object value, int row, int col) {
             data.get(row)[col] = (String) value;
-            this.fireTableCellUpdated(row, col);
+            this.fireTableRowsUpdated(row, row);
             setInfoLabels();
         }
 
