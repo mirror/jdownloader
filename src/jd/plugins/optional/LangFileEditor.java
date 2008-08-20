@@ -26,6 +26,10 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -49,6 +53,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -78,7 +83,7 @@ import jd.utils.JDUtilities;
  * @author eXecuTe|Greeny
  */
 
-public class LangFileEditor extends PluginOptional {
+public class LangFileEditor extends PluginOptional implements KeyListener, MouseListener {
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
     private static final String PROPERTY_FOLDER = "PROPERTY_FOLDER";
@@ -97,9 +102,10 @@ public class LangFileEditor extends PluginOptional {
     private JButton btnBrowseFile, btnBrowseFolder;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
     private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuDownloadSource, mnuReload, mnuSave, mnuSaveAs, mnuClose;
-    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
+    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JRadioButtonMenuItem mnuColorizeMissing, mnuColorizeOld;
+    private JPopupMenu mnuContextPopup;
 
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String> oldEntries = new Vector<String>();
@@ -122,6 +128,8 @@ public class LangFileEditor extends PluginOptional {
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
+        table.addKeyListener(this);
+        table.addMouseListener(this);
         table.setDefaultRenderer(String.class, new MyTableCellRenderer());
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setRowSelectionAllowed(true);
@@ -232,10 +240,11 @@ public class LangFileEditor extends PluginOptional {
         mnuKey.setEnabled(false);
 
         mnuKey.add(mnuAdd = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.addKey", "Add Key")));
+        mnuKey.add(mnuEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
         mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteSelectedKeys", "Delete Selected Key(s)")));
         mnuKey.addSeparator();
-        mnuKey.add(mnuEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
-        mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearAllValues", "Clear All Values")));
+        mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
+        mnuKey.add(mnuClearAll = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearAllValues", "Clear All Values")));
         mnuKey.addSeparator();
         mnuKey.add(mnuAdopt = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults", "Adopt Default(s)")));
         mnuKey.add(mnuAdoptMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
@@ -243,9 +252,10 @@ public class LangFileEditor extends PluginOptional {
         mnuKey.add(mnuTranslateMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate.missing", "Translate Missing Entries with Google")));
 
         mnuAdd.addActionListener(this);
-        mnuDelete.addActionListener(this);
         mnuEdit.addActionListener(this);
+        mnuDelete.addActionListener(this);
         mnuClear.addActionListener(this);
+        mnuClearAll.addActionListener(this);
         mnuAdopt.addActionListener(this);
         mnuAdoptMissing.addActionListener(this);
         mnuTranslate.addActionListener(this);
@@ -292,6 +302,17 @@ public class LangFileEditor extends PluginOptional {
         menuBar.add(mnuKey);
         menuBar.add(mnuEntries);
         frame.setJMenuBar(menuBar);
+
+        // Context Menü
+        mnuContextPopup = new JPopupMenu();
+        mnuContextPopup.add(mnuEdit);
+        mnuContextPopup.add(mnuDelete);
+        mnuContextPopup.addSeparator();
+        mnuContextPopup.add(mnuClear);
+        mnuContextPopup.addSeparator();
+        mnuContextPopup.add(mnuAdopt);
+        mnuContextPopup.add(mnuTranslate);
+
     }
 
     @Override
@@ -361,19 +382,7 @@ public class LangFileEditor extends PluginOptional {
 
         } else if (e.getSource() == mnuDelete) {
 
-            int[] rows = table.getSelectedRows();
-
-            for (int i = rows.length - 1; i >= 0; --i) {
-                int cur = rows[i];
-                String temp = data.remove(cur)[0];
-                oldEntries.remove(temp);
-                for (int j = dupes.size() - 1; j >= 0; --j) {
-                    if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
-                }
-                tableModel.fireTableRowsDeleted(cur, cur);
-            }
-
-            setInfoLabels();
+            deleteSelectedKeys();
 
         } else if (e.getSource() == mnuAdd) {
 
@@ -409,6 +418,16 @@ public class LangFileEditor extends PluginOptional {
             }
 
         } else if (e.getSource() == mnuClear) {
+
+            int[] rows = table.getSelectedRows();
+
+            for (int row : rows) {
+                tableModel.setValueAt("", row, 2);
+            }
+
+            setInfoLabels();
+
+        } else if (e.getSource() == mnuClearAll) {
 
             for (int i = 0; i < table.getRowCount(); i++) {
                 tableModel.setValueAt("", i, 2);
@@ -485,7 +504,7 @@ public class LangFileEditor extends PluginOptional {
                     if (!def.equals("")) {
                         logger.finer("Working on " + data.get(i)[0] + ":");
                         String result = JDLocale.translate(lngKey, def);
-                        logger.finer("Default: \"" + def + "\" == Google: \"" + result + "\"");
+                        logger.finer("Google translated \"" + def + "\" to \"" + result + "\" with LanguageKey " + lngKey);
                         tableModel.setValueAt(result, i, 2);
                     }
 
@@ -538,6 +557,22 @@ public class LangFileEditor extends PluginOptional {
 
         }
 
+    }
+
+    private void deleteSelectedKeys() {
+        int[] rows = table.getSelectedRows();
+
+        for (int i = rows.length - 1; i >= 0; --i) {
+            int cur = rows[i];
+            String temp = data.remove(cur)[0];
+            oldEntries.remove(temp);
+            for (int j = dupes.size() - 1; j >= 0; --j) {
+                if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
+            }
+            tableModel.fireTableRowsDeleted(cur, cur);
+        }
+
+        setInfoLabels();
     }
 
     private boolean isSupportedLanguageKey(String lngKey) {
@@ -708,6 +743,49 @@ public class LangFileEditor extends PluginOptional {
 
         return fileContents;
 
+    }
+
+    @Override
+    public void keyPressed(KeyEvent e) {
+    }
+
+    @Override
+    public void keyReleased(KeyEvent e) {
+        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
+            deleteSelectedKeys();
+        }
+    }
+
+    @Override
+    public void keyTyped(KeyEvent e) {
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+            int row = table.rowAtPoint(e.getPoint());
+            if (!table.isRowSelected(row)) {
+                table.clearSelection();
+                table.getSelectionModel().addSelectionInterval(row, row);
+            }
+            mnuContextPopup.show(table, e.getX(), e.getY());
+        }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
     }
 
     private class MyTableCellRenderer extends DefaultTableCellRenderer {
