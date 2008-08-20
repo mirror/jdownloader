@@ -114,7 +114,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.unrar.UnZip;
@@ -1357,11 +1356,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // Adds the menus form the plugins
         JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins", "Plugins"));
         JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
-        JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt", "Decrypter"));
+        // JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt",
+        // "Decrypter"));
         JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
 
         menPlugins.add(helpHost);
-        menPlugins.add(helpDecrypt);
+        // menPlugins.add(helpDecrypt);
         menPlugins.add(helpContainer);
 
         for (Iterator<PluginForHost> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
@@ -1407,42 +1407,44 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             helpHost.setEnabled(false);
         }
 
-        for (Iterator<PluginForDecrypt> it = JDUtilities.getPluginsForDecrypt().iterator(); it.hasNext();) {
-            final Plugin helpplugin = it.next();
-            if (helpplugin.createMenuitems() != null) {
-                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-
-                mi = SimpleGUI.getJMenuItem(m);
-                if (mi != null) {
-                    helpDecrypt.add(mi);
-
-                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                    ((JMenu) mi).addMenuListener(new MenuListener() {
-                        public void menuCanceled(MenuEvent e) {
-                        }
-
-                        public void menuDeselected(MenuEvent e) {
-                        }
-
-                        public void menuSelected(MenuEvent e) {
-                            JMenu m = (JMenu) e.getSource();
-                            m.removeAll();
-                            for (MenuItem menuItem : helpplugin.createMenuitems()) {
-                                m.add(SimpleGUI.getJMenuItem(menuItem));
-
-                            }
-
-                        }
-
-                    });
-                } else {
-                    helpDecrypt.addSeparator();
-                }
-            }
-        }
-        if (helpDecrypt.getItemCount() == 0) {
-            helpDecrypt.setEnabled(false);
-        }
+        // for (Iterator<PluginForDecrypt> it =
+        // JDUtilities.getPluginsForDecrypt().iterator(); it.hasNext();) {
+        // final Plugin helpplugin = it.next();
+        // if (helpplugin.createMenuitems() != null) {
+        // MenuItem m = new MenuItem(MenuItem.CONTAINER,
+        // helpplugin.getPluginName(), 0);
+        //
+        // mi = SimpleGUI.getJMenuItem(m);
+        // if (mi != null) {
+        // helpDecrypt.add(mi);
+        //
+        // ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+        // ((JMenu) mi).addMenuListener(new MenuListener() {
+        // public void menuCanceled(MenuEvent e) {
+        // }
+        //
+        // public void menuDeselected(MenuEvent e) {
+        // }
+        //
+        // public void menuSelected(MenuEvent e) {
+        // JMenu m = (JMenu) e.getSource();
+        // m.removeAll();
+        // for (MenuItem menuItem : helpplugin.createMenuitems()) {
+        // m.add(SimpleGUI.getJMenuItem(menuItem));
+        //
+        // }
+        //
+        // }
+        //
+        // });
+        // } else {
+        // helpDecrypt.addSeparator();
+        // }
+        // }
+        // }
+        // if (helpDecrypt.getItemCount() == 0) {
+        // helpDecrypt.setEnabled(false);
+        // }
 
         for (Iterator<PluginForContainer> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
             final Plugin helpplugin = it.next();
