@@ -325,13 +325,20 @@ public class LangFileEditor extends PluginOptional {
         } else if (e.getSource() == mnuDelete) {
 
             int[] rows = table.getSelectedRows();
+            
+//            String tmp = "Loesche Zeilen (" + table.getSelectedRowCount() + ") : ";
+//            for (int i : rows) tmp = tmp + i + ", ";
+//            logger.finer(tmp.substring(0, tmp.length() - 2));
+            
             for (int i = rows.length - 1; i >= 0; --i) {
-                String temp = data.remove(rows[i])[0];
+                int cur = rows[i];
+                String temp = data.remove(cur)[0];
+//                logger.info("Loesche Zeile " + cur + ": " + temp);
                 oldEntries.remove(temp);
-                for (int j = dupes.size() - 1; i >= 0; --i) {
+                for (int j = dupes.size() - 1; j >= 0; --j) {
                     if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
                 }
-                tableModel.fireTableRowsDeleted(rows[i], rows[i]);
+                tableModel.fireTableRowsDeleted(cur, cur);
             }
 
             setInfoLabels();
@@ -353,9 +360,6 @@ public class LangFileEditor extends PluginOptional {
 
                 if (data.get(i)[2].equals("")) {
                     String def = data.get(i)[1];
-                    // if (!def.equals("") && !def.equals(JDLocale.L(
-                    // "plugins.optional.langfileeditor.noDefaultValue",
-                    // "<no default value>"))) tableModel.setValueAt(def, i, 2);
                     if (!def.equals("")) tableModel.setValueAt(def, i, 2);
                 }
 
@@ -369,9 +373,6 @@ public class LangFileEditor extends PluginOptional {
 
             for (int i : table.getSelectedRows()) {
                 String def = tableModel.getValueAt(i, 1);
-                // if (!def.equals("") && !def.equals(JDLocale.L(
-                // "plugins.optional.langfileeditor.noDefaultValue",
-                // "<no default value>"))) tableModel.setValueAt(def, i, 2);
                 if (!def.equals("")) tableModel.setValueAt(def, i, 2);
             }
 
@@ -417,9 +418,6 @@ public class LangFileEditor extends PluginOptional {
 
                     String def = data.get(i)[1];
 
-                    // if (!def.equals("") && !def.equals(JDLocale.L(
-                    // "plugins.optional.langfileeditor.noDefaultValue",
-                    // "<no default value>"))) {
                     if (!def.equals("")) {
                         logger.finer("Working on " + data.get(i)[0] + ":");
                         String result = JDLocale.translate(lngKey, def);
@@ -447,9 +445,6 @@ public class LangFileEditor extends PluginOptional {
 
                 String def = tableModel.getValueAt(i, 1);
 
-                // if (!def.equals("") && !def.equals(JDLocale.L(
-                // "plugins.optional.langfileeditor.noDefaultValue",
-                // "<no default value>"))) {
                 if (!def.equals("")) {
                     logger.finer("Working on " + data.get(i)[0] + ":");
                     String result = JDLocale.translate(lngKey, def);
@@ -610,20 +605,16 @@ public class LangFileEditor extends PluginOptional {
 
         for (String file : fileContents) {
 
-            String pattern1 = "JDLocale\\.L\\(\"(.*?)\",[\\s]?\"(.*?)\"\\)";
-            String pattern2 = "JDLocale\\.LF\\(\"(.*?)\",[\\s]?\"(.*?)\",";
-            String[][] matches = new Regex(Pattern.compile(pattern1 + "|" + pattern2).matcher(file)).getMatches();
+            String[][] matches = new Regex(Pattern.compile("JDLocale[\\s]*?\\.L[F]?[\\s]*?\\([\\s]*?\"(.*?)\"[\\s]*?,[\\s]*?\"(.*?)\"[\\s]*?[,\\)]").matcher(file)).getMatches();
 
-            int start;
             for (String[] match : matches) {
 
-                start = (match[0] != null) ? 0 : 2;
-                match[start] = match[start].trim();
-                match[start + 1] = match[start + 1].trim() + ((match[start + 1].endsWith(" ")) ? " " : "");
-                if (!keys.contains(match[start])) {
+                match[0] = match[0].trim();
+                match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
+                if (!keys.contains(match[0])) {
 
-                    keys.add(Encoding.UTF8Decode(match[start]));
-                    entries.add(new String[] { Encoding.UTF8Decode(match[start]), Encoding.UTF8Decode(match[start + 1]) });
+                    keys.add(Encoding.UTF8Decode(match[0]));
+                    entries.add(new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) });
 
                 }
             }
