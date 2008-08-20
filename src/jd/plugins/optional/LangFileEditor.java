@@ -120,10 +120,10 @@ public class LangFileEditor extends PluginOptional {
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
+        table.setDefaultRenderer(String.class, new MyTableCellRenderer());
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
-        table.setDefaultRenderer(String.class, new MyTableCellRenderer());
 
         JPanel main = new JPanel(new BorderLayout(5, 5));
         main.setBorder(new EmptyBorder(10, 10, 10, 10));
@@ -442,7 +442,7 @@ public class LangFileEditor extends PluginOptional {
 
         } else if (e.getSource() == mnuPickMissingColor) {
 
-            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries"), (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.red));
+            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries"), (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED));
             if (newColor != null) {
                 subConfig.setProperty(PROPERTY_MISSING_COLOR, newColor);
                 subConfig.save();
@@ -451,7 +451,7 @@ public class LangFileEditor extends PluginOptional {
 
         } else if (e.getSource() == mnuPickOldColor) {
 
-            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries"), (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.orange));
+            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries"), (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE));
             if (newColor != null) {
                 subConfig.setProperty(PROPERTY_OLD_COLOR, newColor);
                 subConfig.save();
@@ -719,12 +719,14 @@ public class LangFileEditor extends PluginOptional {
 
             String[] r = data.get(row);
 
-            if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false) && r[2].equals("")) {
-                c.setBackground((Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.red));
+            if (table.isRowSelected(row)) {
+                c.setBackground(Color.LIGHT_GRAY);
+            } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false) && r[2].equals("")) {
+                c.setBackground((Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED));
             } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false) && oldEntries.contains(r[0])) {
-                c.setBackground((Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.orange));
+                c.setBackground((Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE));
             } else {
-                c.setBackground(Color.white);
+                c.setBackground(Color.WHITE);
             }
 
             return c;
