@@ -37,6 +37,12 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.unrar.JUnrar;
+
+import jd.plugins.Plugin;
+
+import jd.plugins.FilePackage;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
@@ -345,7 +351,9 @@ public class Serienjunkies extends PluginForDecrypt {
 							.getMatch(0);
 					String[] sp = element
 							.split("<strong>Größe:</strong>[\\s]*");
+					int b = 1;
 					for (String element2 : sp) {
+
 						String size = "0";
 						try {
 							String[] dsize = new Regex(element2,
@@ -361,7 +369,10 @@ public class Serienjunkies extends PluginForDecrypt {
 						} catch (Exception e) {
 							// TODO: handle exception
 						}
-
+						FilePackage fp = new FilePackage();
+						fp.setName(title + (b>1? " "+b:"" ));
+						b++;
+						fp.setPassword(JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
 						String[][] links = new Regex(element2,
 								"<p><strong>(.*?)</strong>(.*?)</p>")
 								.getMatches();
@@ -378,14 +389,17 @@ public class Serienjunkies extends PluginForDecrypt {
 											bb, parameter);
 									for (String element4 : links2) {
 										if (canHandle(element4)) {
+											DownloadLink dl = createdl(
+													element4,
+													new String[] {
+															size,
+															element3[0],
+															element3[1],
+															title });
+											dl.setFilePackage(fp);
+												
 											decryptedLinks
-													.add(createdl(
-															element4,
-															new String[] {
-																	size,
-																	element3[0],
-																	element3[1],
-																	title }));
+													.add(dl);
 										}
 
 									}
@@ -413,6 +427,7 @@ public class Serienjunkies extends PluginForDecrypt {
 																getHostname(element4))
 														.getMaxSimultanDownloadNum(
 																dl) > 1) {
+													dl.setFilePackage(fp);
 													decryptedLinks.add(dl);
 													breakit = true;
 												}
@@ -438,14 +453,16 @@ public class Serienjunkies extends PluginForDecrypt {
 												if (!mirrors.containsKey(hostn)) {
 													mirrors.put(hostn, 1);
 													link = null;
+													DownloadLink dl = createdl(
+															element4,
+															new String[] {
+																	size,
+																	element3[0],
+																	element3[1],
+																	title });
+													dl.setFilePackage(fp);
 													decryptedLinks
-															.add(createdl(
-																	element4,
-																	new String[] {
-																			size,
-																			element3[0],
-																			element3[1],
-																			title }));
+															.add(dl);
 													breakit = true;
 													break;
 												} else {
@@ -469,14 +486,16 @@ public class Serienjunkies extends PluginForDecrypt {
 										mirrors.put(lastHost, (mirrors
 												.get(lastHost) + 1));
 										for (String element4 : link) {
+											DownloadLink dl = createdl(
+													element4,
+													new String[] {
+															size,
+															element3[0],
+															element3[1],
+															title });
+											dl.setFilePackage(fp);
 											decryptedLinks
-													.add(createdl(
-															element4,
-															new String[] {
-																	size,
-																	element3[0],
-																	element3[1],
-																	title }));
+													.add(dl);
 										}
 
 									}
