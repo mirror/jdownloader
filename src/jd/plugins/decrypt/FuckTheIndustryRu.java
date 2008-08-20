@@ -52,6 +52,7 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         Vector<DownloadLink> links = null;
         if (Browser.download(container, link)) {
             links = JDUtilities.getController().getContainerLinks(container);
+            container.delete();
         }
 
         if (links != null) {

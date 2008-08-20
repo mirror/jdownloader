@@ -77,7 +77,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
                     /* DLC Suchen */
-                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);  
+                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
                     if (dlc.length == 1) {
                         decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
                         dlc_found = true;
@@ -123,8 +123,12 @@ public class Gwarezcc extends PluginForDecrypt {
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", cryptedLink);
-                Browser.download(container, dlc_con);
-                JDUtilities.getController().loadContainerFile(container);
+                if (Browser.download(container, dlc_con)) {
+                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                    container.delete();
+                } else {
+                    return null;
+                }
             }
 
         } catch (MalformedURLException e) {

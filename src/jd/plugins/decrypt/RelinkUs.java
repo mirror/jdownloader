@@ -47,6 +47,7 @@ public class RelinkUs extends PluginForDecrypt {
             container_con.setRequestProperty("Referer", cryptedLink);
             Browser.download(container, container_con);
             JDUtilities.getController().loadContainerFile(container);
+            container.delete();
             return true;
         }
         return false;

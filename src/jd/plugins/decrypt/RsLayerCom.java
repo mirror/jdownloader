@@ -48,6 +48,7 @@ public class RsLayerCom extends PluginForDecrypt {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
             if (Browser.download(container, br.openGetConnection(container_link))) {
                 JDUtilities.getController().loadContainerFile(container);
+                container.delete();
                 return true;
             }
         }
