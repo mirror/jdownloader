@@ -167,22 +167,17 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             return (JLinkButton) value;
         }
-
     }
 
     private static final long serialVersionUID = 1L;
 
-    // private Configuration configuration;
-    // private SubConfiguration config;
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
     private JTable table;
 
     public SubPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        // this.configuration = configuration;
         initPanel();
-
         load();
     }
 
@@ -192,7 +187,6 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
             packageData.get(i).setUpdating(false);
         }
         table.tableChanged(new TableModelEvent(table.getModel()));
-
     }
 
     @Override
@@ -202,21 +196,18 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     @Override
     public void initPanel() {
-        setPreferredSize(new Dimension(650, 350));
+        this.setPreferredSize(new Dimension(650, 350));
 
         packageData = new PackageManager().getPackageData();
 
         Collections.sort(packageData, new Comparator<PackageData>() {
 
-            public int compare(PackageData o1, PackageData o2) {
-                if (o1.getSortID() > o2.getSortID()) return 1;
-                if (o1.getSortID() < o2.getSortID()) return -1;
-                return 0;
-
+            public int compare(PackageData a, PackageData b) {
+                return ((Integer) a.getSortID()).compareTo((Integer) b.getSortID());
             }
+
         });
 
-        ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
         table = new JTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -227,7 +218,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
         table.getColumn(table.getColumnName(2)).setCellEditor(new JLinkButtonEditor());
 
         TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+        for (int c = 0; c < internalTableModel.getColumnCount(); ++c) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
@@ -252,16 +243,13 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
                 column.setMinWidth(60);
                 break;
             }
-
         }
 
-        // add(scrollPane);
-        // list = new JList();
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
         JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(panel, new GUIConfigEntry(ce), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        add(panel, BorderLayout.CENTER);
+        JDUtilities.addToGridBag(panel, new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"))), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        this.add(panel, BorderLayout.CENTER);
     }
 
     @Override
@@ -271,41 +259,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     @Override
     public void save() {
-        // logger.info("save");
         saveConfigEntries();
         CFGConfig.getConfig("JDU").save();
     }
 
-    // private class InternalTableCellRenderer extends DefaultTableCellRenderer
-    // {
-    // /**
-    // * serialVersionUID
-    // */
-    // private static final long serialVersionUID = -3912572910439565199L;
-    //     
-    // public Component getTableCellRendererComponent(JTable table, Object
-    // value, boolean isSelected, boolean hasFocus, int row, int column) {
-    // if (value instanceof JCheckBox) return
-    // super.getTableCellRendererComponent(table, value, isSelected, hasFocus,
-    // row, column);
-    // if (value instanceof JLinkButton) return (JLinkButton) value;
-    // Component c = super.getTableCellRendererComponent(table, value,
-    // isSelected, hasFocus, row, column);
-    // if (!isSelected) {
-    //            
-    // PluginForHost plugin = pluginsForHost.get(row);
-    // if (plugin.getConfig().getEntries().size()==0) {
-    // c.setBackground(new Color(0,0,0,10));
-    // c.setForeground(new Color(0,0,0,70));
-    // }else{
-    // c.setBackground(Color.WHITE);
-    // c.setForeground(Color.BLACK);
-    // }
-    //               
-    //                
-    // }
-    // // logger.info("jj");
-    // return c;
-    // }
-    // }
 }
