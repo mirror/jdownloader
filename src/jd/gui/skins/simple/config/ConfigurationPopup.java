@@ -29,6 +29,7 @@ import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
@@ -36,17 +37,12 @@ import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
 /**
- * Parentklasse für ein 2. Popupfenster. Wird momentan zur Konfiguration der
- * Interactions verwendet
+ * Parentklasse für ein 2. Popupfenster.
  * 
  * @author JD-Team
- * 
  */
 public class ConfigurationPopup extends JDialog implements ActionListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 3815946152967454931L;
 
     private JButton btnCancel;
@@ -65,56 +61,50 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
      * Erstellt einen Neuen Dialog
      * 
      * @param parent
-     *            (Parent FEnster)
+     *            (Parent Fenster)
      * @param panel
-     *            (ConfigPanel (panel inkl. ok/close buttons etc)
+     *            (ConfigPanel)
      * @param jpanel
-     *            (panel des eigentlichen Konfigfenster)
+     *            (Panel des eigentlichen Konfigfenster)
      * @param uiinterface
      * @param configuration
      */
     public ConfigurationPopup(Frame parent, ConfigPanel panel, JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
         super(parent);
         this.uiinterface = uiinterface;
-        setTitle(JDLocale.L("gui.config.popup.title", "Konfiguration"));
-        setModal(true);
-        setLayout(new GridBagLayout());
         this.configuration = configuration;
-
         this.panel = panel;
+
+        this.setTitle(JDLocale.L("gui.config.popup.title", "Konfiguration"));
+        this.setModal(true);
+        this.setLayout(new GridBagLayout());
+
         btnSave = new JButton(JDLocale.L("gui.config.popup.btn_ok", "OK"));
         btnSave.addActionListener(this);
         btnCancel = new JButton(JDLocale.L("gui.config.popup.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
-        // Insets insets = new Insets(5, 5, 5, 5);
-        //
-        // JDUtilities.addToGridBag(this, new JScrollPane(jpanel), 0, 0, 2, 1,
-        // 1, 1, null, GridBagConstraints.BOTH,
-        // GridBagConstraints.FIRST_LINE_START);
-        // JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, insets,
-        // GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        // JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 0, 0, insets,
-        // GridBagConstraints.NONE, GridBagConstraints.NORTHEAST);
-        // setLocation(JDUtilities.getCenterOfComponent(parent, this));
-
-        Container cpanel = new JPanel(new BorderLayout());
         Container bpanel = new JPanel(new MigLayout("", "[grow][]"));
-        // bpanel .add(new JSeparator(), "spanx, pushx, growx, gapbottom 5");
         bpanel.add(btnSave, "w pref!, align right, tag ok right");
         bpanel.add(btnCancel, "w pref!, tag cancel, wrap");
 
-        cpanel.add(jpanel);
+        Container cpanel = new JPanel(new BorderLayout());
+        cpanel.add(new JSeparator());
         cpanel.add(bpanel, BorderLayout.SOUTH);
-        Dimension minSize = panel.getMinimumSize();
-        setContentPane(new JScrollPane(cpanel));
-        pack();
+
+        Container dpanel = new JPanel(new BorderLayout());
+        dpanel.add(jpanel);
+        dpanel.add(cpanel, BorderLayout.SOUTH);
+
+        setContentPane(new JScrollPane(dpanel));
+        this.pack();
         Dimension ps = getPreferredSize();
         Dimension available = Toolkit.getDefaultToolkit().getScreenSize();
-        setPreferredSize(new Dimension(Math.min(available.width, ps.width), Math.min(available.height, ps.height)));
-        pack();
-        panel.setPreferredSize(minSize);
-        setLocationRelativeTo(null);
+        this.setPreferredSize(new Dimension(Math.min(available.width, ps.width), Math.min(available.height, ps.height)));
+        this.setMinimumSize(getPreferredSize());
+        this.pack();
+        panel.setPreferredSize(panel.getMinimumSize());
+        this.setLocationRelativeTo(null);
     }
 
     public void actionPerformed(ActionEvent e) {
