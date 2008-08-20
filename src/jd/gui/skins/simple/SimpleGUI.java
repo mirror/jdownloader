@@ -957,12 +957,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnPause.setEnabled(false);
         btnPause.setSelected(false);
         btnReconnect = createMenuButton(doReconnect);
-
-        btnClipBoard = createMenuButton(actionClipBoard);
         btnReconnect.setSelected(false);
+        btnClipBoard = createMenuButton(actionClipBoard);
         btnClipBoard.setSelected(false);
 
         toolBar.setFloatable(false);
+        toolBar.setRollover(true);
         toolBar.add(btnStartStop);
         toolBar.add(btnPause);
         toolBar.add(createMenuButton(actionItemsAdd));
@@ -986,19 +986,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.setBorder(new EmptyBorder(n, 0, n, 0));
         n = 5;
         panel.setBorder(new EmptyBorder(0, n, 0, n));
-        JPanel toolbar2 = new JPanel(new BorderLayout(n, n));
         n = 3;
         statusBar.setBorder(new EmptyBorder(n, 0, n, 0));
         frame.setContentPane(panel);
 
-        JLabel advert = new JLabel(JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.jd_logo"), -1, 32));
-        advert.setOpaque(true);
-        toolbar2.setOpaque(true);
-        advert.setBackground(Color.orange);
-        advert.setBorder(new EmptyBorder(0, n, 0, n));
-        toolbar2.setBackground(Color.orange);
-        toolbar2.add(toolBar, BorderLayout.CENTER);
-        panel.add(toolbar2, BorderLayout.NORTH);
+        panel.add(toolBar, BorderLayout.NORTH);
         panel.add(splitpane, BorderLayout.CENTER);
         panel.add(statusBar, BorderLayout.SOUTH);
 
@@ -1607,9 +1599,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         statusBar.setSpinnerSpeed(speed);
     }
 
-    public boolean showConfirmDialog(String string) {
+    public boolean showConfirmDialog(String message) {
         // logger.info("ConfirmDialog");
-        return JOptionPane.showConfirmDialog(frame, string, "", JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION;
+        return JOptionPane.showConfirmDialog(frame, message, "", JOptionPane.YES_NO_OPTION) == JOptionPane.OK_OPTION;
     }
 
     public boolean showCountdownConfirmDialog(String string, int sec) {
