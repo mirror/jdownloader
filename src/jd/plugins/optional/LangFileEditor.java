@@ -68,6 +68,7 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -88,6 +89,8 @@ public class LangFileEditor extends PluginOptional {
     private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
 
     private JFrame frame;
+    private JTable table;
+    private MyTableModel tableModel;
     private File sourceFolder, languageFile;
     private JTextField txtFolder, txtFile;
     private JLabel lblEntriesCount;
@@ -97,8 +100,6 @@ public class LangFileEditor extends PluginOptional {
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JRadioButtonMenuItem mnuColorizeMissing, mnuColorizeOld;
-    private JTable table;
-    private MyTableModel tableModel;
 
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String> oldEntries = new Vector<String>();
@@ -114,6 +115,7 @@ public class LangFileEditor extends PluginOptional {
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor"));
+        frame.setIconImage(JDTheme.I("gui.images.jd_logo"));
         frame.setMinimumSize(new Dimension(800, 500));
         frame.setPreferredSize(new Dimension(1200, 700));
         frame.setName("LANGFILEEDIT");
