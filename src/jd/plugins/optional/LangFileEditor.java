@@ -758,6 +758,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     }
 
     public void mouseClicked(MouseEvent e) {
+        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
+            int row = table.rowAtPoint(e.getPoint());
+            if (!table.isRowSelected(row)) {
+                table.getSelectionModel().setSelectionInterval(row, row);
+            }
+            mnuContextPopup.show(table, e.getX(), e.getY());
+        }
     }
 
     public void mouseEntered(MouseEvent e) {
@@ -767,14 +774,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     }
 
     public void mousePressed(MouseEvent e) {
-        if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-            int row = table.rowAtPoint(e.getPoint());
-            if (!table.isRowSelected(row)) {
-                table.clearSelection();
-                table.getSelectionModel().addSelectionInterval(row, row);
-            }
-            mnuContextPopup.show(table, e.getX(), e.getY());
-        }
     }
 
     public void mouseReleased(MouseEvent e) {

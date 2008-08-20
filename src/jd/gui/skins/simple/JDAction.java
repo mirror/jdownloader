@@ -53,7 +53,6 @@ public class JDAction extends AbstractAction {
     public static final int APP_SHOW_LOG = 11;
     public static final int APP_START_STOP_DOWNLOADS = 10;
     public static final int APP_STOP_DOWNLOADS = 12;
-    public static final int APP_TESTER = 25;
     public static final int APP_UNRAR = 26;
     public static final int APP_UPDATE = 20;
 

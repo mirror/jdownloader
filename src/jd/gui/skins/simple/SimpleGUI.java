@@ -583,8 +583,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionStartStopDownload;
 
-    private JDAction actionTester;
-
     private JDAction actionUnrar;
 
     private JDAction actionUpdate;
@@ -762,11 +760,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             btnPause.setSelected(!btnPause.isSelected());
             fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
             btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
-            break;
-        case JDAction.APP_TESTER:
-            logger.finer("Test trigger pressed");
-            displayMiniWarning(JDLocale.L("interaction.trigger.testtrigger.shortWarn", "Testtrigger wurde ausgelöst"), JDLocale.L("interaction.trigger.testtrigger.toolTip", "Der Testauslöser für den Eventmanager wurde manuell ausgelöst."), 5000);
-            Interaction.handleInteraction(Interaction.INTERACTION_TESTTRIGGER, false);
             break;
         case JDAction.APP_UNRAR:
             logger.finer("Unrar");
@@ -1277,7 +1270,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
-        actionTester = new JDAction(this, null, "action.tester", JDAction.APP_TESTER);
         actionUnrar = new JDAction(this, null, "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
         actionPasswordlist = new JDAction(this, null, "action.passwordlist", JDAction.APP_PASSWORDLIST);
@@ -1493,7 +1485,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menFile.add(SimpleGUI.createMenuItem(actionExit));
 
         menExtra.add(menViewLog);
-        menExtra.add(SimpleGUI.createMenuItem(actionTester));
         menExtra.add(SimpleGUI.createMenuItem(actionConfig));
         menExtra.add(SimpleGUI.createMenuItem(actionDnD));
         menExtra.add(SimpleGUI.createMenuItem(actionUnrar));
