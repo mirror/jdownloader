@@ -43,6 +43,7 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -158,20 +159,12 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             } catch (Exception ec) {
             }
         }
-
     }
 
     private void editEntry() {
-        PluginOptional plugin = getSelectedPlugin();
-        ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.optional.dialogname", "%s Configuration", plugin.getPluginName()));
-
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(new JPanel(), BorderLayout.NORTH);
-        panel.add(config, BorderLayout.CENTER);
-
-        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
-        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
-        pop.setVisible(true);
+        int index = table.getSelectedRow();
+        if (index < 0) return;
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), uiinterface, configuration, plugins.elementAt(index));
     }
 
     public void fireTableChanged() {
@@ -188,12 +181,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     @Override
     public String getName() {
         return JDLocale.L("gui.config.plugin.optional.name", "Optional Plugins");
-    }
-
-    private PluginOptional getSelectedPlugin() {
-        int index = table.getSelectedRow();
-        if (index < 0) return null;
-        return plugins.elementAt(index);
     }
 
     @Override

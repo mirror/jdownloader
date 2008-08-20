@@ -139,7 +139,7 @@ public class Installer {
         JPanel topPanel = new JPanel();
         panel.add(topPanel, BorderLayout.NORTH);
         panel.add(cpanel, BorderLayout.CENTER);
-        ConfigurationPopup pop = new ConfigurationPopup(null, cpanel, panel, SimpleGUI.CURRENTGUI, JDUtilities.getConfiguration());
+        ConfigurationPopup pop = new ConfigurationPopup(null, cpanel, panel);
         pop.setModal(true);
         pop.setAlwaysOnTop(true);
         pop.setLocation(JDUtilities.getCenterOfComponent(null, pop));

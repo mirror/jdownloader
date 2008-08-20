@@ -22,6 +22,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -102,7 +103,10 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationDialog;
+import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -1656,6 +1660,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return TwoTextFieldDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
     }
 
+    public static void showPluginConfigDialog(Frame parent, UIInterface uiinterface, Configuration configuration, Plugin plugin) {
+        // logger.info("PluginConfigDialog");
+        ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.dialogname", "%s Configuration", plugin.getPluginName()));
+
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(new JPanel(), BorderLayout.NORTH);
+        panel.add(config, BorderLayout.CENTER);
+
+        ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
+        pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
+        pop.setVisible(true);
+    }
+
     public void startStopDownloads() {
         btnStartStop.setEnabled(false);
         btnPause.setEnabled(true);
@@ -1834,4 +1851,5 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         d.showDialog();
 
     }
+
 }

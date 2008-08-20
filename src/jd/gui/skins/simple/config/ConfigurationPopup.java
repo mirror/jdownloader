@@ -31,8 +31,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 
-import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 import net.miginfocom.swing.MigLayout;
 
@@ -49,13 +47,7 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
 
     private JButton btnSave;
 
-    @SuppressWarnings("unused")
-    private Configuration configuration;
-
     private ConfigPanel panel;
-
-    @SuppressWarnings("unused")
-    private UIInterface uiinterface;
 
     /**
      * Erstellt einen Neuen Dialog
@@ -66,13 +58,9 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
      *            (ConfigPanel)
      * @param jpanel
      *            (Panel des eigentlichen Konfigfenster)
-     * @param uiinterface
-     * @param configuration
      */
-    public ConfigurationPopup(Frame parent, ConfigPanel panel, JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
+    public ConfigurationPopup(Frame parent, ConfigPanel panel, JPanel jpanel) {
         super(parent);
-        this.uiinterface = uiinterface;
-        this.configuration = configuration;
         this.panel = panel;
 
         this.setTitle(JDLocale.L("gui.config.popup.title", "Konfiguration"));

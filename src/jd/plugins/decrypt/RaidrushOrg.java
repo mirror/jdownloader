@@ -27,7 +27,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class RaidrushOrg extends PluginForDecrypt {
 
-    static private final String host = "save.raidrush.ws";
+    static private final String host = "raidrush.org";
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 

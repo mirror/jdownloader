@@ -20,7 +20,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Vector;
 
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
@@ -34,8 +33,7 @@ import jd.parser.Regex;
  * 
  * @author astaldo
  */
-@SuppressWarnings("unchecked")
-public abstract class PluginForDecrypt extends Plugin implements Comparable {
+public abstract class PluginForDecrypt extends Plugin {
     private String cryptedLink = null;    
 
     protected ProgressController progress;
@@ -56,18 +54,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
     public PluginForDecrypt() {
         br = new Browser();
     }
-
-    // private String decrypterDefaultPassword = null;
-
-    // private String decrypterDefaultComment = null;
-
-    /**
-     * vergleicht Decryptplugins anhand des Hostnamens wird zur Sortierung
-     * benötigt
-     */
-    public int compareTo(Object o) {
-        return getHost().toLowerCase().compareTo(((PluginForDecrypt) o).getHost().toLowerCase());
-    };
 
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.htmlDecode(link), true);
@@ -125,26 +111,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
             logger.severe("Decrypter out of date: " + this);
             return new ArrayList<DownloadLink>();
         }
-        // FilePackage fp= new FilePackage();
-        // String pn=null;
-        // for(DownloadLink link:tmpLinks){
-        // if(link.getFilePackage()==JDUtilities.getController().
-        // getDefaultFilePackage()){
-        //                
-        // link.setFilePackage(fp);
-        //                
-        // if(pn==null){
-        // pn=link.getName();
-        // }else{
-        // pn=JDUtilities.getSimString(pn, link.getName());
-        // }
-        // }
-        //           
-        //            
-        // }
-        // if(pn==null||pn.length()<=3)pn=JDLocale.L(
-        // "plugins.decrypt.packagename.various","various");
-        // fp.setName(pn);
 
         if (tmpLinks == null) {
             logger.severe("WARNING! Decrypt Plugins should return a ArrayList<DownloadLink> !");
@@ -181,8 +147,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
      * @return
      */
     public String[] getDecryptableLinks(String data) {
-        // Vector<String> hits = SimpleMatches.getMatches(data,
-        // getSupportedLinks());
         String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
         if (hits != null && hits.length > 0) {
 
@@ -213,7 +177,6 @@ public abstract class PluginForDecrypt extends Plugin implements Comparable {
         try {
             return new URL(cryptedLink).getFile();
         } catch (MalformedURLException e) {
-            // e.printStackTrace();
             return "";
         }
     }

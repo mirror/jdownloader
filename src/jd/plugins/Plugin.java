@@ -54,28 +54,8 @@ import jd.utils.JDUtilities;
  * Alle Plugins verfügen über einen Event Mechanismus
  */
 public abstract class Plugin implements ActionListener {
-    // protected static final String END_OF_LINK = "[^\"]*";
-    public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
-    // public static final int DOWNLOAD_ERROR_INVALID_OUTPUTFILE = 0;
-    //
-    // public static final int DOWNLOAD_ERROR_OUTPUTFILE_ALREADYEXISTS = 2;
-    //
-    // public static final int DOWNLOAD_ERROR_DOWNLOAD_INCOMPLETE = 3;
-    //
-    // public static final int DOWNLOAD_ERROR_RENAME_FAILED = 4;
-    //
-    // public static final int DOWNLOAD_SUCCESS = 5;
-    //
-    // public static final int DOWNLOAD_ERROR_FILENOTFOUND = 6;
-    //
-    // public static final int DOWNLOAD_ERROR_SECURITY = 7;
-    //
-    // public static final int DOWNLOAD_ERROR_UNKNOWN = 8;
-    //
-    // public static final int DOWNLOAD_ERROR_OUTPUTFILE_IN_PROGRESS = 9;
-    //
-    // // private static final int DOWNLOAD_ERROR_0_BYTE_TOLOAD = 10;
+    public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
     public static final int CAPTCHA_JAC = 0;
 
@@ -87,38 +67,6 @@ public abstract class Plugin implements ActionListener {
      * Ein Logger, um Meldungen darzustellen
      */
     public static Logger logger = JDUtilities.getLogger();
-
-    // /**
-    // * Versionsinformationen
-    // */
-    // public static final String VERSION = "$Revision$";
-
-    /**
-     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-     * wenn er fehler feststellt
-     */
-//    public static final String PROPERTY_PREMIUM_PASS = "PREMIUM_PASS";
-//    public static final String PROPERTY_PREMIUM_MESSAGE = "PREMIUM_MESSAGE";
-//
-//    /**
-//     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-//     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-//     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-//     * wenn er fehler feststellt
-//     */
-//    public static final String PROPERTY_PREMIUM_USER = "PREMIUM_USER";
-//
-//    /**
-//     * Property name für die Config. Diese sollten möglichst einheitlich sein.
-//     * Einheitliche Properties erlauben einheitliches umspringen mit Plugins.
-//     * Beispielsweise kann so der JDController die Premiumnutzung abschalten
-//     * wenn er fehler feststellt
-//     */
-//    public static final String PROPERTY_USE_PREMIUM = "USE_PREMIUM";
-
-    // public boolean aborted = false;
 
     /**
      * Gibt die Passwörter als String aus bsp. {"Passwort1","Passwort2"}
@@ -157,9 +105,7 @@ public abstract class Plugin implements ActionListener {
         }
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
-        // File dest = JDUtilities.getResourceFile("captchas/" +
-        // plugin.getPluginName() + "/captcha_" + (new Date().getTime()) +
-        // ".jpg");
+
         File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);
         return dest;
     }
@@ -248,20 +194,15 @@ public abstract class Plugin implements ActionListener {
 
     private Captcha lastCaptcha;
 
-
     @Deprecated
     protected RequestInfo requestInfo;
 
-    /**
-     * Properties zum abspeichern der einstellungen
-     */
-    // private Property properties;
     private String statusText;
 
     protected Plugin() {
 
         initTime = System.currentTimeMillis();
-        // steps = new Vector<PluginStep>();
+
         config = new ConfigContainer(this);
         // Lädt die Konfigurationseinstellungen aus der Konfig
         if (getPluginName() == null) {
@@ -305,29 +246,6 @@ public abstract class Plugin implements ActionListener {
         return true;
     }
 
-    // /**
-    // * Führt den aktuellen Schritt aus
-    // *
-    // * @param step
-    // * @param parameter
-    // * @return der gerade ausgeführte Schritt
-    // */
-    // public abstract PluginStep doStep( Object parameter);
-
-    // /**
-    // * Hier werden alle notwendigen Schritte des Plugins hinterlegt
-    // */
-    // protected Vector<PluginStep> steps;
-
-    // /**
-    // * Enthält den aktuellen Schritt des Plugins
-    // */
-    // protected PluginStep //currentStep = null;
-
-    // private void firePluginDataChanged() {
-    // JDUtilities.getController().fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_DOWNLOADLINKS_CHANGED));
-    // }
     /**
      * Create MenuItems erlaubt es den Plugins eine MenuItemliste zurückzugeben.
      * Die Gui kann diese Menüpunkte dann darstellen. Die Gui muss das Menu bei
@@ -388,108 +306,6 @@ public abstract class Plugin implements ActionListener {
      * @return Der Author des Plugins
      */
     public abstract String getCoder();
-
-    // /**
-    // * Gibt ausgehend vom aktuellen step den nächsten zurück
-    // *
-    // * @param currentStep
-    // * Der aktuelle Schritt
-    // * @return nächster step
-    // */
-    // public void nextStep(PluginStep currentStep) {
-    //
-    // if (steps != null && steps.size() > 0) {
-    //
-    // if (//currentStep == null) {
-    // //currentStep = steps.firstElement();
-    //
-    // } else {
-    // int index = steps.indexOf(currentStep) + 1;
-    // if (steps.size() > index) {
-    // //currentStep = steps.elementAt(index);
-    //
-    // } else {
-    // //currentStep = null;
-    // }
-    // }
-    // } else {
-    // //currentStep = null;
-    // }
-    //
-    // logger.finer("next: " + this.currentStep + "->" + currentStep);
-    // return (this.//currentStep = currentStep);
-    //
-    // }
-
-    // /**
-    // * Gibt den nächsten schritt zurück OHNE dabei den internen Stepzähler zu
-    // * ändern.
-    // *
-    // * @param step
-    // * @return
-    // */
-    // public void getNextStep(PluginStep step) {
-    // if (steps != null && steps.size() > 0) {
-    //
-    // if (//currentStep == null) {
-    // return steps.firstElement();
-    //
-    // } else {
-    // int index = steps.indexOf(currentStep) + 1;
-    // if (steps.size() > index) {
-    // return steps.elementAt(index);
-    //
-    // } else {
-    // return null;
-    // }
-    // }
-    // } else {
-    // return null;
-    // }
-    //
-    // }
-
-    // /**
-    // * Gibt ausgehend von übergebenem Schritt den vorherigen zurück
-    // *
-    // * @param currentStep
-    // * @return Gibt den vorherigen step relativ zu currentstep zurück
-    // */
-    // public void previousStep(PluginStep currentStep) {
-    //
-    // if (steps != null || steps.size() > 0) {
-    //
-    // if (//currentStep == null) {
-    // //currentStep = steps.lastElement();
-    //
-    // } else {
-    // int index = steps.indexOf(currentStep) - 1;
-    // if (index >= 0) {
-    // //currentStep = steps.elementAt(index);
-    //
-    // } else {
-    // //currentStep = null;
-    // }
-    // }
-    // } else {
-    // //currentStep = null;
-    // }
-    //
-    // logger.info("previous: " + currentStep + "<-" + this.currentStep);
-    // return (this.//currentStep = currentStep);
-    // }
-
-    // /**
-    // * @author JD-Team Setzt den Pluginfortschritt zurück. Wird Gebraucht um
-    // * einen Download nochmals zu starten, z.B. nach dem reconnect
-    // */
-    // public void resetSteps() {
-    // //currentStep = null;
-    // for (int i = 0; i < steps.size(); i++) {
-    // steps.elementAt(i).setStatus(PluginStep.STATUS_TODO);
-    // }
-    // // firePluginDataChanged();
-    // }
 
     /**
      * Gibt das Konfigurationsobjekt der INstanz zurück. Die Gui kann daraus
@@ -559,37 +375,6 @@ public abstract class Plugin implements ActionListener {
     public Captcha getLastCaptcha() {
         return lastCaptcha;
     }
-
-    //
-    // /**
-    // * Diese Methode erstellt einen einzelnen String aus einer HashMap mit
-    // * Parametern für ein Post-Request.
-    // *
-    // * @param parameters
-    // * HashMap mit den Parametern
-    // * @return Codierter String
-    // */
-    // protected String createPostParameterFromHashMap(HashMap<String, String>
-    // parameters) {
-    // StringBuffer parameterLine = new StringBuffer();
-    // String parameter;
-    // Iterator<String> iterator = parameters.keySet().iterator();
-    // String key;
-    // while (iterator.hasNext()) {
-    // key = iterator.next();
-    // parameter = parameters.get(key);
-    // try {
-    // if (parameter != null) parameter = URLEncoder.encode(parameter,
-    // "US-ASCII");
-    // } catch (UnsupportedEncodingException e) {
-    // }
-    // parameterLine.append(key);
-    // parameterLine.append("=");
-    // parameterLine.append(parameter);
-    // if (iterator.hasNext()) parameterLine.append("&");
-    // }
-    // return parameterLine.toString();
-    // }
 
     /**
      * 
@@ -669,30 +454,14 @@ public abstract class Plugin implements ActionListener {
     public abstract String getVersion();
 
     /**
-     * Zeigt, daß diese Plugin gestoppt werden soll
-     */
-    // public void abort() {
-    // aborted = true;
-    //
-    // }
-    // public boolean hasBeenInterrupted(){
-    //    
-    // if(Thread.currentThread().isInterrupted()){
-    // Thread.currentThread().interrupt();
-    // return true;
-    // }
-    // return false;
-    // }
-    /**
      * Initialisiert das Plugin vor dem ersten Gebrauch
      */
     public void init() {
-        // //currentStep = null;
+
     }
 
     public void setCaptchaDetectID(int captchaJac) {
         captchaDetectionID = captchaJac;
-
     }
 
     public void setCaptchaDetectionID(int captchaDetectionID) {
@@ -701,7 +470,6 @@ public abstract class Plugin implements ActionListener {
 
     public void setLastCaptcha(Captcha captcha) {
         lastCaptcha = captcha;
-
     }
 
     /**
@@ -723,9 +491,5 @@ public abstract class Plugin implements ActionListener {
     public boolean useUserinputIfCaptchaUnknown() {
         return true;
     }
-
-    // public Vector<PluginStep> getSteps() {
-    // return steps;
-    // }
 
 }

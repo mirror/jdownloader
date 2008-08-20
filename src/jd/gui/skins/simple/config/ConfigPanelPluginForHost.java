@@ -35,7 +35,6 @@ import java.util.Vector;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -50,6 +49,7 @@ import javax.swing.table.TableColumn;
 
 import jd.config.Configuration;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -227,27 +227,14 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry() {
-        PluginForHost plugin = getSelectedPlugin();
-        ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.host.dialogname", "%s Configuration", plugin.getPluginName()));
-
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(new JPanel(), BorderLayout.NORTH);
-        panel.add(config, BorderLayout.CENTER);
-
-        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
-        pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
-        pop.setVisible(true);
+        int index = table.getSelectedRow();
+        if (index < 0) return;
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), uiinterface, configuration, pluginsForHost.elementAt(index));
     }
 
     @Override
     public String getName() {
         return JDLocale.L("gui.config.plugin.host.name", "Host Plugins");
-    }
-
-    private PluginForHost getSelectedPlugin() {
-        int index = table.getSelectedRow();
-        if (index < 0) return null;
-        return pluginsForHost.elementAt(index);
     }
 
     @Override

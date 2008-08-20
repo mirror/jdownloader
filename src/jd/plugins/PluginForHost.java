@@ -81,7 +81,7 @@ public abstract class PluginForHost extends Plugin {
             JPanel panel = new JPanel(new BorderLayout());
             panel.add(new JPanel(), BorderLayout.NORTH);
             panel.add(cpanel, BorderLayout.CENTER);
-            ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel, SimpleGUI.CURRENTGUI, JDUtilities.getConfiguration());
+            ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel);
             pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
             pop.setVisible(true);
         }

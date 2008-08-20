@@ -108,6 +108,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     private JButton btnTrigger;
 
+    @SuppressWarnings("unused")
     private Configuration configuration;
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS);
@@ -321,7 +322,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         if (config != null) {
             JDUtilities.addToGridBag(panel, config, 0, 2, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         }
-        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
+        ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
     }
