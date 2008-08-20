@@ -272,10 +272,42 @@ public class Serienjunkies extends PluginForDecrypt {
 				lastHtmlCode = br + "";
 				String[] links = HTMLParser.getHttpLinks(bet[1], br
 						.getRequest().getUrl().toString());
+				if (getPluginConfig().getStringProperty(
+						"SJ_MIRRORMANAGEMENT", mirrorManagement[0])
+						.equals(mirrorManagement[2])) {
 				for (String element : links) {
 					DownloadLink dl_link = createDownloadlink(element);
 					dl_link.addSourcePluginPasswords(passwords);
 					decryptedLinks.add(dl_link);
+				}
+				}
+				else
+				{
+					boolean got = false;
+					for (String element : links) {
+						DownloadLink dl_link = createDownloadlink(element);
+						if (JDUtilities
+								.getPluginForHost(
+										getHostname(element))
+								.getMaxSimultanDownloadNum(
+										dl_link) > 1) {
+						dl_link.addSourcePluginPasswords(passwords);
+						decryptedLinks.add(dl_link);
+						got = true;
+						break;
+						}
+						
+					}
+					if(!got)
+					{
+						for (String element : links) {
+							DownloadLink dl_link = createDownloadlink(element);
+							dl_link.addSourcePluginPasswords(passwords);
+							decryptedLinks.add(dl_link);
+							break;
+							
+						}
+					}
 				}
 				return decryptedLinks;
 			} else if (catst == sCatGrabb) {
