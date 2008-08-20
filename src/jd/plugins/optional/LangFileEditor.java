@@ -745,34 +745,27 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    @Override
     public void keyPressed(KeyEvent e) {
     }
 
-    @Override
     public void keyReleased(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_DELETE) {
             deleteSelectedKeys();
         }
     }
 
-    @Override
     public void keyTyped(KeyEvent e) {
     }
 
-    @Override
     public void mouseClicked(MouseEvent e) {
     }
 
-    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
-    @Override
     public void mouseExited(MouseEvent e) {
     }
 
-    @Override
     public void mousePressed(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
             int row = table.rowAtPoint(e.getPoint());
@@ -784,7 +777,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         }
     }
 
-    @Override
     public void mouseReleased(MouseEvent e) {
     }
 
