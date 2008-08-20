@@ -59,7 +59,7 @@ public class FileFactory extends PluginForHost {
 
     private static Pattern patternForCaptcha = Pattern.compile("src=\"(/securimage/securimage_show.php\\?[^\"]*)\" alt=");
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("sjdp://filefactory\\.com.*|http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
 
     private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/dlp/[a-z0-9]+/.*?)\"";
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
@@ -85,6 +85,11 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
+       	if(parameter.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(parameter);
+   		return;
+   		}
         LinkStatus linkStatus = parameter.getLinkStatus();
         parameter.setUrlDownload(parameter.getDownloadURL().replaceAll(".com//", ".com/"));
         parameter.setUrlDownload(parameter.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
@@ -254,6 +259,12 @@ public class FileFactory extends PluginForHost {
     // by eXecuTe
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+    	
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(downloadLink);
+   		return;
+   		}
         String user = account.getUser();
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -322,6 +333,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
@@ -367,6 +379,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
+    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return super.getFileInformationString(downloadLink);
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 

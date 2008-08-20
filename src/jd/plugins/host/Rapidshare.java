@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -120,7 +121,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minute)");
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
     // private static final String PROPERTY_USE_SSL = "USE_SSL";
 
@@ -267,11 +268,20 @@ public class Rapidshare extends PluginForHost {
             if (urls == null) { return null; }
             boolean[] ret = new boolean[urls.length];
             int c = 0;
+            ArrayList<Integer> sjlinks  = new ArrayList<Integer>();
             while (true) {
                 String post = "";
                 int i = 0;
+                boolean isRSCom = false;
                 for (i = c; i < urls.length; i++) {
-
+                	if(urls[i].getDownloadURL().matches("sjdp://rapidshare\\.com.*")) 
+                		{
+                		sjlinks.add(i);
+                		ret[i]=true;
+                		}
+                	else
+                	{
+                		isRSCom=true;
                     if (!canHandle(urls[i].getDownloadURL())) { return null; }
 
                     if (urls[i].getDownloadURL().contains("://ssl.") || !urls[i].getDownloadURL().startsWith("http://rapidshare.com")) {
@@ -282,9 +292,10 @@ public class Rapidshare extends PluginForHost {
                         break;
                     }
                     post += urls[i].getDownloadURL() + "%0a";
+                	}
 
                 }
-
+                if(!isRSCom)return ret;
                 PostRequest r = new PostRequest("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi");
                 r.setPostVariable("urls", post);
                 r.setPostVariable("toolmode", "1");
@@ -300,6 +311,10 @@ public class Rapidshare extends PluginForHost {
                      * 1: Normal online -1: date nicht gefunden 3: Drect
                      * download
                      */
+                    while(sjlinks.contains(c))
+                    {
+                    	c++;
+                    }
                     ret[c] = true;
                     if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) {
                         ret[c] = false;
@@ -334,6 +349,11 @@ public class Rapidshare extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(downloadLink);
+   		return;
+   		}
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // if (ddl)this.doPremium(downloadLink);
         Rapidshare.correctURL(downloadLink);
@@ -599,6 +619,11 @@ public class Rapidshare extends PluginForHost {
      */
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(downloadLink);
+   		return;
+   		}
         String user = account.getUser();
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -855,6 +880,7 @@ public class Rapidshare extends PluginForHost {
 
     public boolean getFileInformation(DownloadLink downloadLink) {
         // LinkStatus linkStatus = downloadLink.getLinkStatus();
+    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);

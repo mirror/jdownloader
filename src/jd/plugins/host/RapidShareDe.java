@@ -40,7 +40,7 @@ import jd.utils.JDUtilities;
 public class RapidShareDe extends PluginForHost {
     private static final String HOST = "rapidshare.de";
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("sjdp://rapidshare\\.de.*|http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
 
 
     //
@@ -64,6 +64,11 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(downloadLink);
+   		return;
+   		}
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
@@ -166,6 +171,11 @@ br.setFollowRedirects(false);
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(downloadLink);
+   		return;
+   		}
         String user = account.getUser();
         String pass = account.getPass();
         Browser.clearCookies(HOST);
@@ -238,6 +248,7 @@ br.setFollowRedirects(false);
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         try {
         Browser.clearCookies(HOST);
         br.setFollowRedirects(false);

@@ -43,7 +43,7 @@ public class Uploadedto extends PluginForHost {
 
     static private final String HOST = "uploaded.to";
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
 
     public Uploadedto() {        
         this.enablePremium();
@@ -121,6 +121,11 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(downloadLink);
+   		return;
+   		}
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         correctURL(downloadLink);
@@ -220,6 +225,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Browser.clearCookies(HOST);
         correctURL(downloadLink);
@@ -262,6 +268,11 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies().handleFree(downloadLink);
+   		return;
+   		}
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Browser.clearCookies(HOST);
         Browser.setCookie("http://uploaded.to/", "lang", "de");
