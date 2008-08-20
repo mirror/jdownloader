@@ -166,10 +166,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.optional.dialogname", "%s Configuration", plugin.getPluginName()));
 
         JPanel panel = new JPanel(new BorderLayout());
-
-        JPanel topPanel = new JPanel();
-        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(new JPanel(), BorderLayout.NORTH);
         panel.add(config, BorderLayout.CENTER);
+
         ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel, uiinterface, configuration);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
@@ -265,7 +264,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && table.getSelectedRow() != -1 && plugins.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) editEntry();
+        if (e.getClickCount() > 1 && table.getSelectedRow() != -1 && plugins.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+            editEntry();
+        }
     }
 
     public void mouseEntered(MouseEvent e) {
