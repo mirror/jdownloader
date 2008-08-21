@@ -106,6 +106,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JRadioButtonMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
+    private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextEdit, mnuContextTranslate;
 
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
@@ -301,13 +302,20 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         // Context Menü
         mnuContextPopup = new JPopupMenu();
-        mnuContextPopup.add(mnuEdit);
-        mnuContextPopup.add(mnuDelete);
+
+        mnuContextPopup.add(mnuContextEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
+        mnuContextPopup.add(mnuContextDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteSelectedKeys", "Delete Selected Key(s)")));
         mnuContextPopup.addSeparator();
-        mnuContextPopup.add(mnuClear);
+        mnuContextPopup.add(mnuContextClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
         mnuContextPopup.addSeparator();
-        mnuContextPopup.add(mnuAdopt);
-        mnuContextPopup.add(mnuTranslate);
+        mnuContextPopup.add(mnuContextAdopt = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults", "Adopt Default(s)")));
+        mnuContextPopup.add(mnuContextTranslate = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate", "Translate with Google")));
+
+        mnuContextEdit.addActionListener(this);
+        mnuContextDelete.addActionListener(this);
+        mnuContextClear.addActionListener(this);
+        mnuContextAdopt.addActionListener(this);
+        mnuContextTranslate.addActionListener(this);
 
     }
 
@@ -367,7 +375,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) saveLanguageFile(chooser.getSelectedFile());
 
-        } else if (e.getSource() == mnuEdit) {
+        } else if (e.getSource() == mnuEdit || e.getSource() == mnuContextEdit) {
 
             int[] rows = table.getSelectedRows();
 
@@ -376,7 +384,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 if (dialog.value != null) tableModel.setValueAt(dialog.value, rows[i], 2);
             }
 
-        } else if (e.getSource() == mnuDelete) {
+        } else if (e.getSource() == mnuDelete || e.getSource() == mnuContextDelete) {
 
             deleteSelectedKeys();
 
@@ -406,14 +414,14 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             initList();
 
-        } else if (e.getSource() == mnuAdopt) {
+        } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
 
             for (int i : table.getSelectedRows()) {
                 String def = tableModel.getValueAt(i, 1);
                 if (!def.equals("")) tableModel.setValueAt(def, i, 2);
             }
 
-        } else if (e.getSource() == mnuClear) {
+        } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
 
             int[] rows = table.getSelectedRows();
 
@@ -506,7 +514,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             }
 
-        } else if (e.getSource() == mnuTranslate) {
+        } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
 
             if (lngKey == null) {
                 String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
