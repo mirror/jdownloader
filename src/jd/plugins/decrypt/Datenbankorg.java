@@ -39,11 +39,14 @@ public class Datenbankorg extends PluginForDecrypt {
 
         if (patternSupported_Info.matcher(parameter).matches()) {
             String page = br.getPage(parameter);
-            String links_page = new Regex(page, Pattern.compile("Head'>OneClick-Hoster<(.*?)class='Head'>Sample", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            String password = new Regex(page, Pattern.compile("class='Value Password'>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String links_page = new Regex(page, Pattern.compile("Head'>OneClick-Hoster<(.+)(class='Head'>Sample)?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String links[] = new Regex(links_page, Pattern.compile("href='/go/(\\d+)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
             if (links == null) return null;
             for (String link : links) {
-                decryptedLinks.add(createDownloadlink("http://daten-bank.org/go/" + link + "/"));
+                DownloadLink dl_link = createDownloadlink("http://daten-bank.org/go/" + link + "/");
+                dl_link.addSourcePluginPassword(password);
+                decryptedLinks.add(dl_link);
             }
         } else {
             br.getPage(parameter);
