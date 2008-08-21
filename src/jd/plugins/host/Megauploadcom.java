@@ -20,8 +20,11 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
+
+import jd.http.PostRequest;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -166,37 +169,10 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) {
-        RequestInfo requestInfo;
-
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("/de", ""));
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), "l=de; v=1; ve_view=1", null, true);
-            if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
-                downloadLink.getLinkStatus().setStatusText("Temp. not available");
-                logger.info("Temp. unavailable");
-                tempUnavailable = true;
-                return false;
-            }
-            if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
-                downloadLink.getLinkStatus().setStatusText("File Not Found");
-                return false;
-            }
-
-            String fileName = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_NAME, 1));
-            String fileSize = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_FILE_SIZE, 1);
-            if (fileName == null || fileSize == null) { return false; }
-            downloadLink.setName(fileName.trim());
-            if (fileSize.indexOf("KB") > 0) {
-                downloadLink.setDownloadSize((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024));
-            }
-            if (fileSize.indexOf("MB") > 0) {
-                downloadLink.setDownloadSize((int) (Double.parseDouble(fileSize.trim().split(" ")[0].trim()) * 1024 * 1024));
-            }
-        } catch (MalformedURLException e) {
-            return false;
-        } catch (IOException e) {
-            return false;
-        }
+    	try {
+    		return checkLinks(new DownloadLink[] {downloadLink})[0];
+		} catch (Exception e) {
+		}
         return true;
     }
 
@@ -329,7 +305,56 @@ public class Megauploadcom extends PluginForHost {
         dl.startDownload();
 
     }
+    /**
+     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
+     * kann das über diese Funktion gemacht werden. Beir s.com istd as derzeitd
+     * eaktiviert, weild er Linkchecker nicht mehr über ssl erreichbar ist.
+     */
+    public boolean[] checkLinks(DownloadLink[] urls) {
+        try {
+            if (urls == null) { return null; }
+            boolean[] ret = new boolean[urls.length];     
+                HashMap<String, String> post = new HashMap<String, String>();
+                for (int j = 0; j < urls.length; j++) {
+                    if (!canHandle(urls[j].getDownloadURL())) { return null; }
+                	post.put("id"+j, new Regex(urls[j].getDownloadURL(),".*?\\?d\\=(.{8})").getMatch(0));
+				}
+                Browser b = new Browser();
+                Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l", "de");
+                Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar", "1");
+                String pag = b.postPage("http://www.megaupload.com/mgr_linkcheck.php", post).replaceFirst("0=www.megaupload.com&1=www.megarotic.com&", "").replaceFirst("id[\\d]+=", "").trim();
+                String[] pg = pag.split("&id[\\d]+=");
+                for (int j = 0; j < pg.length; j++) {
+        			try {
+            			String[] infos = pg[j].split("&[sdn]=");
+            			if(infos.length<4 || !infos[0].equals("0"))
+            			{
+            				ret[j]=false;
+            			}
+            			else
+            			{
+            				ret[j]=true;
+                            urls[j].setDownloadSize(Integer.parseInt(infos[1]));
+                            urls[j].setName(infos[3].trim());
+            			}
+					} catch (Exception e) {
+						ret[j]=false;
+					}
+					
+				}
+                return ret;
 
+        } catch (MalformedURLException e) {
+
+            e.printStackTrace();
+            return null;
+        } catch (Exception e) {
+
+            e.printStackTrace();
+            return null;
+        }
+
+    }
     public void reset() {
         captchaPost = null;
         captchaURL = null;
