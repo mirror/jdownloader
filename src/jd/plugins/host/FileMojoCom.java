@@ -21,7 +21,6 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.HTTPConnection;
-import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -32,8 +31,7 @@ public class FileMojoCom extends PluginForHost {
 
     private static final String HOST = "filemojo.com";
 
-    //static private final Pattern patternSupported = Pattern.compile(".*filemojo\\.com.*", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filemojo\\.com/[0-9]+/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filemojo\\.com/\\d+(/.+)?", Pattern.CASE_INSENSITIVE);
 
     public FileMojoCom() {
         super();
@@ -57,21 +55,20 @@ public class FileMojoCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            
             Browser.clearCookies(HOST);
-            
+
             String url = downloadLink.getDownloadURL();
-            
-            String fileId = new Regex(url, "filemojo\\.com/(.*?)/.*").getMatch(0);
+
+            String fileId = new Regex(url, "filemojo\\.com/(\\d+)").getMatch(0);
             url = "http://www.filemojo.com/l.php?flink=" + fileId + "&fx=";
-            
+
             br.getPage(url);
-            
+
+            if (br.containsHTML("Sorry File Not Found")) return false;
             String size = br.getRegex("(\\d+\\.\\d+) (MB|KB)").getMatch(-1);
             downloadLink.setDownloadSize(Regex.getSize(size));
-            
-            
-            String name = br.getRegex("<b>File Name.*?size=\"2\">(\r\n|\n)(.*?)<br>").getMatch(1);
+
+            String name = br.getRegex("<b>File Name.*?size=\"2\">[\r\n]*(.*?)<br>").getMatch(0);
             downloadLink.setName(name);
 
             return true;
