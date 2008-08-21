@@ -33,6 +33,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
@@ -66,22 +67,17 @@ public class DownloadInfo extends JFrame {
     public DownloadInfo(JFrame frame, DownloadLink dlink) {
         super(JDLocale.L("gui.linkinformation.title", "Link Information: ") + dlink.getName());
         downloadLink = dlink;
-        // setModal(true);
         setLayout(new BorderLayout(2, 2));
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
         setResizable(false);
         setAlwaysOnTop(true);
-
-        // this.getContentPane().setBackground(Color.WHITE);
-        // this.getContentPane().setForeground(Color.WHITE);
-
         new Thread() {
             @Override
             public void run() {
                 do {
 
                     try {
-                        Thread.sleep(1500);
+                        Thread.sleep(5000);
                     } catch (InterruptedException e) {
 
                         e.printStackTrace();
@@ -141,23 +137,15 @@ public class DownloadInfo extends JFrame {
         this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
         addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
         addEntry(null, (String) null);
-        if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getPassword() != null) {
-            addEntry(JDLocale.L("linkinformation.password.name", "Passwort"), downloadLink.getFilePackage().getPassword());
+        if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasPassword()) {
+            addEntry(JDLocale.L("linkinformation.password.name", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
         }
-        if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().getComment() != null) {
+        if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasComment()) {
             addEntry(JDLocale.L("linkinformation.comment.name", "Kommentar"), downloadLink.getFilePackage().getComment());
         }
         if (downloadLink.getFilePackage() != null) {
             addEntry(JDLocale.L("linkinformation.package.name", "Packet"), downloadLink.getFilePackage().toString());
         }
-        // if (downloadLink.getFilePackage() != null) {
-        // addEntry("doUnrar",
-        // downloadLink.getFilePackage().isUnPack()?"Yes":"No");
-        // }
-        // if (downloadLink.getFilePackage() != null) {
-        // addEntry("writeInfoFile",
-        // downloadLink.getFilePackage().isWriteInfoFile()?"Yes":"No");
-        // }
         if (downloadLink.getDownloadSize() > 0) {
             addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
         }
