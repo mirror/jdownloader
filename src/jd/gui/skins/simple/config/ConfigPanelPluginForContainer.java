@@ -118,9 +118,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     private void editEntry() {
-        int index = table.getSelectedRow();
-        if (index < 0) return;
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), uiinterface, configuration, pluginsForContainer.elementAt(index));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForContainer.elementAt(table.getSelectedRow()));
     }
 
     @Override
@@ -177,7 +175,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && table.getSelectedRow() != -1 && pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }

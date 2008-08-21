@@ -129,9 +129,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     private void editEntry() {
-        int index = table.getSelectedRow();
-        if (index < 0) return;
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), uiinterface, configuration, pluginsForDecrypt.elementAt(index));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForDecrypt.elementAt(table.getSelectedRow()));
     }
 
     @Override
@@ -189,7 +187,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && table.getSelectedRow() != -1 && pluginsForDecrypt.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }

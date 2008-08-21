@@ -1654,7 +1654,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return TwoTextFieldDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
     }
 
-    public static void showPluginConfigDialog(Frame parent, UIInterface uiinterface, Configuration configuration, Plugin plugin) {
+    public static void showPluginConfigDialog(Frame parent, Plugin plugin) {
         // logger.info("PluginConfigDialog");
         ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.dialogname", "%s Configuration", plugin.getPluginName()));
 

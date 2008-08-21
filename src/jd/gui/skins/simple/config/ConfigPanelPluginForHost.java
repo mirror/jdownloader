@@ -227,9 +227,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry() {
-        int index = table.getSelectedRow();
-        if (index < 0) return;
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), uiinterface, configuration, pluginsForHost.elementAt(index));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForHost.elementAt(table.getSelectedRow()));
     }
 
     @Override
@@ -307,7 +305,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && table.getSelectedRow() != -1 && pluginsForHost.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }

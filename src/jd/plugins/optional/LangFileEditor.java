@@ -108,7 +108,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JPopupMenu mnuContextPopup;
 
     private Vector<String[]> data = new Vector<String[]>();
-    private Vector<String> oldEntries = new Vector<String>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
 
@@ -204,7 +203,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         }
 
-        lblEntriesCount.setText(JDLocale.LF("plugins.optional.langfileeditor.entriesCount.extended", "Entries Count:     [Sourcecode] %s     [Language File] %s     [Missing] %s     [Not found / no Default] %s     [Probably old] %s     [Probably dupes] %s", numSource, numFile, numMissing, numOld, oldEntries.size(), dupes.size()));
+        lblEntriesCount.setText(JDLocale.LF("plugins.optional.langfileeditor.entriesCount.extended", "Entries Count:     [Sourcecode] %s     [Language File] %s     [Missing] %s     [Not found / Probably old] %s     [Probably dupes] %s", numSource, numFile, numMissing, numOld, dupes.size()));
 
     }
 
@@ -273,9 +272,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuSort = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.sortEntries", "Sort Entries")));
-
-        mnuSelectMissing.setEnabled(!subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false));
-        mnuSelectOld.setEnabled(!subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false));
 
         mnuSelectMissing.addActionListener(this);
         mnuSelectOld.addActionListener(this);
@@ -444,21 +440,19 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             table.clearSelection();
             for (int i = 0; i < table.getRowCount(); i++) {
-                if (oldEntries.contains(table.getValueAt(i, 0))) table.getSelectionModel().addSelectionInterval(i, i);
+                if (tableModel.getValueAt(i, 1).equals("")) table.getSelectionModel().addSelectionInterval(i, i);
             }
 
         } else if (e.getSource() == mnuColorizeMissing) {
 
             subConfig.setProperty(PROPERTY_COLORIZE_MISSING, mnuColorizeMissing.isSelected());
             subConfig.save();
-            mnuSelectMissing.setEnabled(!mnuColorizeMissing.isSelected());
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuColorizeOld) {
 
             subConfig.setProperty(PROPERTY_COLORIZE_OLD, mnuColorizeOld.isSelected());
             subConfig.save();
-            mnuSelectOld.setEnabled(!mnuColorizeOld.isSelected());
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuPickMissingColor) {
@@ -565,7 +559,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         for (int i = rows.length - 1; i >= 0; --i) {
             int cur = rows[i];
             String temp = data.remove(cur)[0];
-            oldEntries.remove(temp);
             for (int j = dupes.size() - 1; j >= 0; --j) {
                 if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
             }
@@ -609,7 +602,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         String[] temp;
         Vector<String[]> dupeHelp = new Vector<String[]>();
         data.clear();
-        oldEntries.clear();
         dupes.clear();
         lngKey = null;
 
@@ -634,15 +626,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             if (getValue(data, entry[0]) == null) {
 
-                temp = new String[] { entry[0], "", entry[1] };
-
-                data.add(temp);
-                oldEntries.add(temp[0]);
-                if (temp[2] != "") {
-                    value = getValue(dupeHelp, temp[2]);
-                    if (value != null) dupes.add(new String[] { temp[2], temp[0], value });
-                    dupeHelp.add(new String[] { temp[2], temp[0] });
-                }
+                data.add(new String[] { entry[0], "", entry[1] });
 
             }
 
@@ -790,11 +774,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             String[] r = data.get(row);
 
-            if (table.isRowSelected(row)) {
+            if (isSelected) {
                 c.setBackground(Color.LIGHT_GRAY);
             } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false) && r[2].equals("")) {
                 c.setBackground((Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED));
-            } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false) && oldEntries.contains(r[0])) {
+            } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false) && r[1].equals("")) {
                 c.setBackground((Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE));
             } else {
                 c.setBackground(Color.WHITE);

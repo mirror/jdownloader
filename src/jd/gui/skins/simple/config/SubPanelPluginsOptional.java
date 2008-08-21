@@ -162,9 +162,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     private void editEntry() {
-        int index = table.getSelectedRow();
-        if (index < 0) return;
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), uiinterface, configuration, plugins.elementAt(index));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), plugins.elementAt(table.getSelectedRow()));
     }
 
     public void fireTableChanged() {
@@ -251,7 +249,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && table.getSelectedRow() != -1 && plugins.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && plugins.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }
