@@ -331,7 +331,7 @@ public class Megauploadcom extends PluginForHost {
             			{
             				ret[j]=true;
                             urls[j].setDownloadSize(Integer.parseInt(infos[1]));
-                            urls[j].setName(infos[3].trim());
+                            urls[j].setName(Encoding.htmlDecode(infos[3].trim()));
             			}
 					} catch (Exception e) {
 						ret[j]=false;
