@@ -136,7 +136,7 @@ public class DownloadInfo extends JFrame {
         }
         this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
         addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
-        addEntry(null, (String) null);
+        //addEntry(null, (String) null);
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasPassword()) {
             addEntry(JDLocale.L("linkinformation.password.name", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
         }

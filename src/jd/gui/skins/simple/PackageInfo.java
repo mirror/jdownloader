@@ -90,13 +90,14 @@ public class PackageInfo extends JDialog {
     }
 
     private void addEntry(String string, JComponent value) {
+
         JLabel key;
         JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
         JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
 
-        key.setBorder(new EmptyBorder(0, 0, 0, 5));
-        value.setBorder(new EmptyBorder(0, 5, 0, 0));
         i++;
 
     }
@@ -128,10 +129,8 @@ public class PackageInfo extends JDialog {
             this.remove(sp);
         }
         this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
-        addEntry("name", fp.getName());
-        addEntry(null, (String) null);
-        if (fp.hasPassword()) addEntry("password", new JTextField(fp.getPassword()));
-        addEntry(null, (String) null);
+        addEntry("name", fp.getName());        
+        if (fp.hasPassword()) addEntry("password", new JTextField(fp.getPassword()));        
         if (fp.hasComment()) addEntry("comment", fp.getComment());
         addEntry("dldirectory", fp.getDownloadDirectory());
         addEntry("packagesize", JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " " + fp.getTotalEstimatedPackageSize() + " KB");
