@@ -183,12 +183,18 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     @Override
     public void initPanel() {
-        setLayout(new BorderLayout(10, 10));
+        this.setLayout(new BorderLayout());
+
         table = new JTable();
         InternalTableModel internalTableModel = new InternalTableModel();
-
-        table.setModel(new InternalTableModel());
+        table.setModel(internalTableModel);
+        table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                btnEdit.setEnabled(plugins.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
+            }
+        });
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
@@ -204,23 +210,13 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             }
         }
 
-        table.addMouseListener(this);
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
         btnEdit = new JButton(JDLocale.L("gui.config.plugin.optional.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                if (table.getSelectedRow() != -1 && plugins.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
-                    btnEdit.setEnabled(true);
-                } else {
-                    btnEdit.setEnabled(false);
-                }
-            }
-        });
-
         btnEdit.addActionListener(this);
+
         enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus", "An/Aus"));
         enableDisable.addActionListener(this);
 
@@ -230,18 +226,17 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         int n = 5;
         JPanel contentPanel = new JPanel(new BorderLayout(n, n));
         contentPanel.setBorder(new EmptyBorder(0, n, 0, n));
-        String text = JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!");
-        contentPanel.add(new JLabel(text), BorderLayout.NORTH);
+        contentPanel.add(new JLabel(JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!")), BorderLayout.NORTH);
         contentPanel.add(scrollpane, BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(5, 5, FlowLayout.LEFT));
-        buttonPanel.add(btnEdit);
-        buttonPanel.add(enableDisable);
-        buttonPanel.add(openPluginDir);
-        buttonPanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        bpanel.add(btnEdit);
+        bpanel.add(enableDisable);
+        bpanel.add(openPluginDir);
+        bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
 
-        add(contentPanel, BorderLayout.CENTER);
-        add(buttonPanel, BorderLayout.SOUTH);
+        this.add(contentPanel);
+        this.add(bpanel, BorderLayout.SOUTH);
     }
 
     @Override

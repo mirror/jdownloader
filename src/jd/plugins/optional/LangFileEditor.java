@@ -660,7 +660,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         Vector<String[]> entries = new Vector<String[]>();
         Vector<String> keys = new Vector<String>();
 
-        String[][] matches = new Regex(Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n").matcher(JDUtilities.getLocalFile(file))).getMatches();
+        String[][] matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n")).getMatches();
 
         for (String[] match : matches) {
 
@@ -686,12 +686,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         for (String file : getSourceFiles(dir)) {
 
-            String[][] matches = new Regex(Pattern.compile("JDLocale[\\s]*?\\.L[F]?[\\s]*?\\([\\s]*?\"(.*?)\"[\\s]*?,[\\s]*?\"(.*?)\"[\\s]*?[,\\)]").matcher(file)).getMatches();
+            String[][] matches = new Regex(file, Pattern.compile("JDLocale[\\s]*?\\.L[F]?[\\s]*?\\([\\s]*?\"(.*?)\"[\\s]*?,[\\s]*?\"(.*?)\"[\\s]*?[,\\)]")).getMatches();
 
             for (String[] match : matches) {
 
                 match[0] = match[0].trim();
-                match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
+                // match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " "
+                // : "");
                 if (!keys.contains(match[0])) {
 
                     keys.add(Encoding.UTF8Decode(match[0]));

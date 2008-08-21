@@ -18,7 +18,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.Vector;
 
 import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -165,9 +166,11 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(panel, btnEdit, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        add(panel, BorderLayout.CENTER);
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+        bpanel.add(btnEdit);
+
+        this.add(scrollpane);
+        this.add(bpanel, BorderLayout.SOUTH);
     }
 
     @Override
