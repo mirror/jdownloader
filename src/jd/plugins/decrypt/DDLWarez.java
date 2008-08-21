@@ -161,7 +161,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "Jiaz";
+        return "JD-Team";
     }
 
     @Override
