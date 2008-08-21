@@ -159,6 +159,7 @@ public class PackageInfo extends JFrame {
         this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
         addEntry("name", fp.getName());
         addEntry(null, (String) null);
+        if (fp.hasPassword()) addEntry("password", fp.getPassword());
         addEntry("comment", fp.getComment());
         addEntry("dldirectory", fp.getDownloadDirectory());
         addEntry("packagesize", JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " " + fp.getTotalEstimatedPackageSize() + " KB");
