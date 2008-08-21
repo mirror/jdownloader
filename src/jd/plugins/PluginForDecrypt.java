@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.awt.Color;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,7 +35,7 @@ import jd.parser.Regex;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
-    private String cryptedLink = null;    
+    private String cryptedLink = null;
 
     protected ProgressController progress;
 
@@ -109,12 +110,9 @@ public abstract class PluginForDecrypt extends Plugin {
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
-            return new ArrayList<DownloadLink>();
-        }
-
-        if (tmpLinks == null) {
-            logger.severe("WARNING! Decrypt Plugins should return a ArrayList<DownloadLink> !");
-            progress.finalize();
+            progress.setStatusText("Decrypter out of date: " + this.getHost());
+            progress.setColor(Color.RED);
+            progress.finalize(15000l);
             return new ArrayList<DownloadLink>();
         }
 
@@ -125,7 +123,6 @@ public abstract class PluginForDecrypt extends Plugin {
 
         progress.finalize();
         return tmpLinks;
-
     }
 
     public ArrayList<DownloadLink> decryptLinks(String[] cryptedLinks) {

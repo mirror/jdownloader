@@ -16,6 +16,8 @@
 
 package jd.controlling;
 
+import java.awt.Color;
+
 import jd.event.ControlEvent;
 import jd.utils.JDUtilities;
 
@@ -30,51 +32,72 @@ import jd.utils.JDUtilities;
 public class ProgressController {
 
     private static int idCounter = 0;
-    private int currentValue;
+    private long currentValue;
     private boolean finished;
 
     private int id;
 
-    private int max;
+    private long max;
 
     private Object source;
     private String statusText;
+    private Color progresscolor;
 
     public ProgressController(String name) {
-        this(name, 100);
+        this(name, 100l);
     }
 
-    public ProgressController(String name, int max) {
+    public ProgressController(String name, long max) {
         id = idCounter++;
         this.max = max;
         statusText = "init " + name;
         currentValue = 0;
         finished = false;
+        progresscolor = null;
         fireChanges();
     }
 
-    public void addToMax(int length) {
-        setRange(max + length);
-
+    public void setColor(Color color) {
+        progresscolor = color;
     }
 
-    public void decrease(int i) {
-        setStatus(currentValue - 1);
+    public Color getColor() {
+        return progresscolor;
+    }
 
+    public void addToMax(long length) {
+        setRange(max + length);
+    }
+
+    public void decrease(long i) {
+        setStatus(currentValue - 1);
     }
 
     @Override
     public void finalize() {
-        // JDUtilities.getLogger().info("FINALIZE
-        // "+this.toString()+this.getLinkStatus().getStatusText());
         finished = true;
         currentValue = max;
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
 
     }
 
+    public void finalize(long timer) {
+        this.setRange(timer);
+        while (timer > 0) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+
+            }
+            timer -= 1000;
+            this.increase(1000l);
+        }
+        finished = true;
+        currentValue = max;
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
+    }
+
     public void fireChanges() {
-        // JDUtilities.getLogger().info("FIRE "+this);
         if (!isFinished()) {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_PROGRESS, source));
         }
@@ -84,16 +107,15 @@ public class ProgressController {
         return id;
     }
 
-    public int getMax() {
+    public long getMax() {
         return max;
 
     }
 
     public double getPercent() {
-        int range = max;
-        int current = currentValue;
+        long range = max;
+        long current = currentValue;
         return (double) current / (double) range;
-
     }
 
     public Object getSource() {
@@ -104,24 +126,21 @@ public class ProgressController {
         return statusText;
     }
 
-    public int getValue() {
+    public long getValue() {
         return currentValue;
     }
 
-    public void increase(int i) {
-        // JDUtilities.getLogger().info(this.toString());
+    public void increase(long i) {
         setStatus(currentValue + i);
-
     }
 
     public boolean isFinished() {
         return finished;
     }
 
-    public void setRange(int max) {
+    public void setRange(long max) {
 
         this.max = max;
-        // JDUtilities.getLogger().info(this.toString());
         setStatus(currentValue);
     }
 
@@ -130,7 +149,7 @@ public class ProgressController {
         fireChanges();
     }
 
-    public void setStatus(int value) {
+    public void setStatus(long value) {
         if (value < 0) {
             value = 0;
         }
@@ -138,13 +157,11 @@ public class ProgressController {
             value = max;
         }
         currentValue = value;
-        // JDUtilities.getLogger().info(this.toString());
         fireChanges();
     }
 
     public void setStatusText(String statusText) {
         this.statusText = statusText;
-        // JDUtilities.getLogger().info(this.toString());
         fireChanges();
     }
 

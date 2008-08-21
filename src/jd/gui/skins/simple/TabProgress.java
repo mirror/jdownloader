@@ -190,9 +190,10 @@ public class TabProgress extends JPanel implements ActionListener {
     public synchronized void addController(ProgressController source) {
 
         JProgressBar progressBar = new JProgressBar();
-        progressBar.setMaximum(source.getMax());
-        progressBar.setValue(source.getValue());
+        progressBar.setMaximum((int) source.getMax());
+        progressBar.setValue((int) source.getValue());
         progressBar.setStringPainted(true);
+        if (source.getColor() != null) progressBar.setForeground(source.getColor());
         bars.add(0, progressBar);
         controllers.add(0, source);
         updateController(source);
@@ -233,8 +234,9 @@ public class TabProgress extends JPanel implements ActionListener {
                     flickerTimer.stop();
                 }
                 if (controllers.indexOf(source) < bars.size()) {
-                    bars.get(controllers.indexOf(source)).setMaximum(source.getMax());
-                    bars.get(controllers.indexOf(source)).setValue(source.getValue());
+                    bars.get(controllers.indexOf(source)).setMaximum((int) source.getMax());
+                    bars.get(controllers.indexOf(source)).setValue((int) source.getValue());
+                    if (source.getColor()!=null) bars.get(controllers.indexOf(source)).setForeground(source.getColor());
                 }
 
             }

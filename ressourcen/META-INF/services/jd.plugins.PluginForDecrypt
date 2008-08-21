@@ -8,6 +8,7 @@ jd.plugins.decrypt.Collectr
 jd.plugins.decrypt.CryptItCom
 jd.plugins.decrypt.Cryptlinkws
 #jd.plugins.decrypt.DatenschleuderCc
+jd.plugins.decrypt.Datenbankorg
 jd.plugins.decrypt.DDLMusicOrg
 jd.plugins.decrypt.DDLWarez
 jd.plugins.decrypt.Divxvid
