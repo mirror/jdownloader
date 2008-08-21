@@ -65,10 +65,6 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String SIMPLEPATTERN_CAPTCHA_URl = " <img src=\"/capgen.php?°\">";
 
-    static private final String SIMPLEPATTERN_FILE_NAME = "Dateiname°</b>°</div>";
-
-    static private final String SIMPLEPATTERN_FILE_SIZE = "Dateigr°</b>°</div>";
-
     static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK = "var ° = String.fromCharCode(Math.abs(°));°var ° = '°' + String.fromCharCode(Math.sqrt(°));";
 
     static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK = "Math.sqrt(°));°document.getElementById(\"°\").innerHTML = '<a href=\"°' ° '°\"°onclick=\"loadingdownload()";
