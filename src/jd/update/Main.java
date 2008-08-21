@@ -377,7 +377,7 @@ public class Main {
 
                 StackTraceElement[] trace = e.getStackTrace();
                 for (int i = 0; i < trace.length; i++)
-                    Main.log(log, "\tat " + trace[i]+"\r\n");
+                    Main.log(log, "\tat " + trace[i] + "\r\n");
 
                 zip.delete();
                 zip.deleteOnExit();
@@ -385,13 +385,22 @@ public class Main {
                 pa.setInstalled(true);
                 pa.setUpdating(false);
                 pa.setDownloaded(false);
-            
-                
+
             }
 
         }
         jdus.save();
-
+        File afile[] = (new File("packages")).listFiles();
+        if (afile != null) {
+            for (int l = 0; l < afile.length; l++) {
+                File jdu = afile[l];
+                if (jdu.getName().toLowerCase().endsWith("jdu")) {
+                    jdu.delete();
+                    jdu.deleteOnExit();
+                    log(log, (new StringBuilder("delete: ")).append(jdu).toString());
+                }
+            }
+        }
         Main.trace(updater.getLogger().toString());
         Main.trace("End Webupdate");
         logWindow.setText(log.toString());
