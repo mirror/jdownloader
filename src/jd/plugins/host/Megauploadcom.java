@@ -17,14 +17,10 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
-
-import jd.http.PostRequest;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
