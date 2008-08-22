@@ -25,7 +25,6 @@ import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -218,7 +217,7 @@ public class JDInit {
         }
 
         JDUtilities.getResourceFile("links.linkbackup").delete();
-        JDUtilities.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);        
+        JDUtilities.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);
     }
 
     public void doWebupdate(final int oldCid, final boolean guiCall) {
@@ -303,7 +302,7 @@ public class JDInit {
                     } else {
 
                         try {
-                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + packages.size()) + " update(s) available. Start Webupdater now?" + "</font>",-1);
+                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, "Update!", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + (files.size() + packages.size()) + " update(s) available. Start Webupdater now?" + "</font>", -1);
                             d.getBtn3().setText("Cancel");
                             d.getBtn1().setText("Show changes");
                             d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
@@ -357,12 +356,6 @@ public class JDInit {
     }
 
     public JDController initController() {
-        // try {
-        // splashScreen.setText("init Controller");
-        // splashScreen.increase(2);
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
         return new JDController();
     }
 
@@ -377,13 +370,7 @@ public class JDInit {
     public void initPlugins() {
         try {
             logger.info("Lade Plugins");
-            // try {
-            // splashScreen.setText("Load Plugins");
-            // splashScreen.increase(3);
-            // } catch (Exception e) {
-            // // TODO: handle exception
-            // }
-            // JDController controller = JDUtilities.getController();
+
             JDUtilities.setPluginForDecryptList(loadPluginForDecrypt());
             JDUtilities.setPluginForHostList(loadPluginForHost());
             JDUtilities.setPluginForContainerList(loadPluginForContainer());
@@ -393,20 +380,12 @@ public class JDInit {
                 e1.printStackTrace();
             }
 
-            HashMap<String, PluginOptional> pluginsOptional = JDUtilities.getPluginsOptional();
-
-            Iterator<String> iterator = pluginsOptional.keySet().iterator();
-            String key;
-
-            while (iterator.hasNext()) {
-                key = iterator.next();
-                PluginOptional plg = pluginsOptional.get(key);
+            for (PluginOptional plg : JDUtilities.getPluginsOptional()) {
                 if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
                     try {
-                        if (!pluginsOptional.get(key).initAddon()) {
+                        if (!plg.initAddon()) {
                             logger.severe("Error loading Optional Plugin: FALSE");
                         }
-
                     } catch (Throwable e2) {
                         logger.severe("Error loading Optional Plugin: " + e2.getMessage());
                         e2.printStackTrace();
@@ -493,12 +472,7 @@ public class JDInit {
 
             }
         }
-        // try {
-        // splashScreen.setText("Configuration loaded");
-        // splashScreen.increase(5);
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
+
         afterConfigIsLoaded();
         return JDUtilities.getConfiguration();
     }
@@ -523,12 +497,7 @@ public class JDInit {
     public void loadImages() {
         ClassLoader cl = JDUtilities.getJDClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
-        // try {
-        // splashScreen.increase();
-        // splashScreen.setText("Load images");
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
+
         File dir = JDUtilities.getResourceFile("jd/img/");
 
         String[] images = dir.list();
@@ -539,11 +508,7 @@ public class JDInit {
         for (String element : images) {
             if (element.toLowerCase().endsWith(".png") || element.toLowerCase().endsWith(".gif")) {
                 File f = new File(element);
-                // try {
-                // splashScreen.increase(2);
-                // } catch (Exception e) {
-                // // TODO: handle exception
-                // }
+
                 logger.finer("Loaded image: " + f.getName().split("\\.")[0] + " from " + cl.getResource("jd/img/" + f.getName()));
                 JDUtilities.addImage(f.getName().split("\\.")[0], toolkit.getImage(cl.getResource("jd/img/" + f.getName())));
             }
@@ -623,14 +588,9 @@ public class JDInit {
     }
 
     @SuppressWarnings("unchecked")
-    public HashMap<String, PluginOptional> loadPluginOptional() {
-        // try {
-        // splashScreen.setText("Load Optional Plugins");
-        // splashScreen.increase();
-        // } catch (Exception e) {
-        // // TODO: handle exception
-        // }
-        HashMap<String, PluginOptional> pluginsOptional = new HashMap<String, PluginOptional>();
+    public Vector<PluginOptional> loadPluginOptional() {
+
+        Vector<PluginOptional> pluginsOptional = new Vector<PluginOptional>();
         class optionalPluginsVersions {
             public String name;
             public double version;
@@ -689,17 +649,9 @@ public class JDInit {
 
                     if (id != PluginOptional.ADDON_INTERFACE_VERSION) {
                         logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
-
                     } else {
-
                         PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
-                        pluginsOptional.put(p.getPluginName(), p);
-                        // try {
-                        // splashScreen.setText(p.getPluginName());
-                        // splashScreen.increase(2);
-                        // } catch (Exception e) {
-                        // // TODO: handle exception
-                        // }
+                        pluginsOptional.add(p);
                         logger.finer("Successfull!. Loaded " + cl);
                     }
                 } catch (Exception e) {

@@ -46,7 +46,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -1301,18 +1300,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // add menus to parents
 
         // Adds the menus form the Addons
-        HashMap<String, PluginOptional> addons = JDUtilities.getPluginsOptional();
 
-        Iterator<String> e = addons.keySet().iterator();
         JMenuItem mi;
 
-        while (e.hasNext()) {
-            final PluginOptional helpplugin = addons.get(e.next());
+        for (final PluginOptional plg : JDUtilities.getPluginsOptional()) {
 
-            if (helpplugin.createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + helpplugin.getPluginName(), false)) {
+            if (plg.createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
 
-                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-                m.setItems(helpplugin.createMenuitems());
+                MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPluginName(), 0);
+                m.setItems(plg.createMenuitems());
                 mi = SimpleGUI.getJMenuItem(m);
                 if (mi != null) {
                     menAddons.add(mi);
@@ -1329,7 +1325,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                             JMenu m = (JMenu) e.getSource();
 
                             m.removeAll();
-                            for (MenuItem menuItem : helpplugin.createMenuitems()) {
+                            for (MenuItem menuItem : plg.createMenuitems()) {
                                 m.add(SimpleGUI.getJMenuItem(menuItem));
 
                             }

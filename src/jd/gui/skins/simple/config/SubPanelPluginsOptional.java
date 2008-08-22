@@ -121,7 +121,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     public SubPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
-        pluginsOptional = new Vector<PluginOptional>(JDUtilities.getPluginsOptional().values());
+        pluginsOptional = JDUtilities.getPluginsOptional();
         Collections.sort(pluginsOptional);
         initPanel();
         load();

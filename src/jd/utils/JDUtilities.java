@@ -201,7 +201,7 @@ public class JDUtilities {
 
     private static Vector<PluginForHost> pluginsForHost = null;
 
-    private static HashMap<String, PluginOptional> pluginsOptional = null;
+    private static Vector<PluginOptional> pluginsOptional = null;
 
     /**
      * RessourceBundle für Texte
@@ -737,7 +737,7 @@ public class JDUtilities {
                 cis = new CheckedInputStream(new FileInputStream(file), new CRC32());
 
                 // fileSize = file.length();
- 
+
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
                 return 0;
@@ -988,7 +988,7 @@ public class JDUtilities {
 
                 }
             }
-         return "offline";
+            return "offline";
         }
 
         catch (Exception e1) {
@@ -1438,8 +1438,8 @@ public class JDUtilities {
      * 
      * @return Alle optionalen Plugins
      */
-    public static HashMap<String, PluginOptional> getPluginsOptional() {
-        if (pluginsOptional == null) pluginsOptional = new HashMap<String, PluginOptional>();
+    public static Vector<PluginOptional> getPluginsOptional() {
+        if (pluginsOptional == null) pluginsOptional = new Vector<PluginOptional>();
         return pluginsOptional;
     }
 
@@ -1458,74 +1458,6 @@ public class JDUtilities {
         }
         return result;
     }
-
-    // public static String runTestCommand(String command, String[] parameter,
-    // String runIn, int waitForReturn, boolean returnValue) {
-    // if (command == null || command.trim().length() == 0) {
-    // logger.severe("Execute Parameter error: No Command");
-    // return "";
-    // }
-    // if (parameter == null) parameter = new String[] {};
-    // String[] params = new String[parameter.length + 1];
-    // params[0] = command;
-    // System.arraycopy(parameter, 0, params, 1, parameter.length);
-    // Vector<String> tmp = new Vector<String>();
-    // String par = "";
-    // for (int i = 0; i < params.length; i++) {
-    // if (params[i] != null && params[i].trim().length() > 0) {
-    // par += params[i] + " ";
-    // tmp.add(params[i].trim());
-    // }
-    // }
-    // params = tmp.toArray(new String[] {});
-    // logger.info("RUN: " + tmp);
-    // ProcessBuilder pb = new ProcessBuilder(params);
-    // if (runIn != null && runIn.length() > 0) {
-    // if (new File(runIn).exists()) {
-    // pb.directory(new File(runIn));
-    // } else {
-    // logger.severe("Working drectory " + runIn + " does not exist!");
-    // }
-    // }
-    //
-    // Process process;
-    //
-    // try {
-    // logger.finer("Start " + par + " in " + runIn + " wait " + waitForReturn +
-    // " trace: " + returnValue);
-    // process = pb.start();
-    // if (waitForReturn > 0 || waitForReturn < 0) {
-    // long t = System.currentTimeMillis();
-    // while (true) {
-    // try {
-    // process.exitValue();
-    // break;
-    // } catch (Exception e) {
-    // if (waitForReturn > 0 && System.currentTimeMillis() - t > waitForReturn *
-    // 1000) {
-    // logger.severe(command + ": Prozess ist nach " + waitForReturn + "
-    // Sekunden nicht beendet worden. Breche ab.");
-    // process.destroy();
-    // }
-    // }
-    // }
-    // String ret = "";
-    // if (returnValue) {
-    // Scanner s = new Scanner(process.getInputStream()).useDelimiter("\\Z");
-    //
-    // while (s.hasNext())
-    // ret += s.next();
-    // }
-    // return ret;
-    // }
-    // return null;
-    // } catch (Exception e) {
-    // e.printStackTrace();
-    // logger.severe("Error executing " + command + ": " +
-    // e.getLocalizedMessage());
-    // return null;
-    // }
-    // }
 
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
@@ -1671,64 +1603,6 @@ public class JDUtilities {
         return pluginsForHost;
     }
 
-    // /**
-    // * Fügt einen PluginListener hinzu
-    // *
-    // * @param listener
-    // */
-    // public static void registerListenerPluginsForDecrypt(PluginListener
-    // listener) {
-    // Iterator<PluginForDecrypt> iterator = pluginsForDecrypt.iterator();
-    // while (iterator.hasNext()) {
-    // iterator.next().addPluginListener(listener);
-    // }
-    // }
-    // /**
-    // * Fügt einen PluginListener hinzu
-    // *
-    // * @param listener
-    // */
-    // public static void registerListenerPluginsForHost(PluginListener
-    // listener) {
-    // Iterator<PluginForHost> iterator = pluginsForHost.iterator();
-    // while (iterator.hasNext()) {
-    // iterator.next().addPluginListener(listener);
-    // }
-    // }
-    // /**
-    // * Fügt einen PluginListener hinzu
-    // *
-    // * @param listener TODO: unused
-    // */
-    // public static void registerListenerPluginsForSearch(PluginListener
-    // listener) {
-    // Iterator<PluginForSearch> iterator = pluginsForSearch.iterator();
-    // while (iterator.hasNext()) {
-    // iterator.next().addPluginListener(listener);
-    // }
-    // }
-    // /**
-    // * Fügt einen PluginListener hinzu TODO: unused
-    // *
-    // * @param listener
-    // */
-    // public static void registerListenerPluginsForContainer(PluginListener
-    // listener) {
-    // Iterator<PluginForContainer> iterator = pluginsForContainer.iterator();
-    // while (iterator.hasNext()) {
-    // iterator.next().addPluginListener(listener);
-    // }
-    // }
-    // /*
-    // * TODO: unused
-    // */
-    // public static void registerListenerPluginsOptional(PluginListener
-    // listener) {
-    // Iterator<String> iterator = pluginsOptional.keySet().iterator();
-    // while (iterator.hasNext()) {
-    // pluginsOptional.get(iterator.next()).addPluginListener(listener);
-    // }
-    // }
     /**
      * Lädt ein Objekt aus einer Datei
      * 
@@ -1847,30 +1721,6 @@ public class JDUtilities {
 
         return dir.delete();
     }
-
-    // public static boolean initFileLogger() {
-    // try {
-    // if (getConfiguration().getBooleanProperty(Configuration.PARAM_WRITE_LOG,
-    // true)) {
-    // Handler file_handler = new
-    // FileHandler(getConfiguration().getStringProperty(Configuration.
-    // PARAM_WRITE_LOG_PATH,
-    // getResourceFile("jd_log.txt").getAbsolutePath()));
-    // logger.addHandler(file_handler);
-    // logger.info("File Logger active: " +
-    // getConfiguration().getStringProperty(Configuration.PARAM_WRITE_LOG_PATH,
-    // getResourceFile("jd_log.txt").getAbsolutePath()));
-    // return true;
-    // }
-    // }
-    // catch (SecurityException e) {
-    // e.printStackTrace();
-    // }
-    // catch (IOException e) {
-    // e.printStackTrace();
-    // }
-    // return false;
-    // }
 
     /**
      * Ersetzt die Platzhalter in einem String
@@ -2091,18 +1941,6 @@ public class JDUtilities {
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
     }
 
-    /**
-     * Setzt das Homedirectory und erstellt es notfalls neu
-     * 
-     * @param homeDirectory
-     */
-    // public static void setHomeDirectory(String homeDirectory) {
-    // JDUtilities.homeDirectory = homeDirectory;
-    // homeDirectoryFile = new File(homeDirectory);
-    // if (!homeDirectoryFile.exists()) {
-    // homeDirectoryFile.mkdirs();
-    // }
-    // }
     public static void setLocale(Locale locale) {
         JDUtilities.locale = locale;
     }
@@ -2122,7 +1960,7 @@ public class JDUtilities {
 
     }
 
-    public static void setPluginOptionalList(HashMap<String, PluginOptional> loadPlugins) {
+    public static void setPluginOptionalList(Vector<PluginOptional> loadPlugins) {
         pluginsOptional = loadPlugins;
 
     }
@@ -2210,37 +2048,6 @@ public class JDUtilities {
             }
         }
     }
-
-    // /**
-    // * Schreibt das Home Verzeichnis in den Webstart Cache
-    // *
-    // * @param newHomeDir
-    // * Das neue JD-HOME
-    // */
-    // @SuppressWarnings("unchecked")
-    // public static void writeJDHomeDirectoryToWebStartCookie(String
-    // newHomeDir) {
-    // try {
-    // Class webStartHelper = Class.forName("jd.JDWebStartHelper");
-    // Method method =
-    // webStartHelper.getDeclaredMethod("writeJDHomeDirectoryToWebStartCookie",
-    // new Class[] { String.class });
-    // String homeDir = (String) method.invoke(webStartHelper, newHomeDir);
-    // JDUtilities.setHomeDirectory(homeDir);
-    // } catch (ClassNotFoundException e) {
-    // e.printStackTrace();
-    // } catch (SecurityException e) {
-    // e.printStackTrace();
-    // } catch (NoSuchMethodException e) {
-    // e.printStackTrace();
-    // } catch (IllegalArgumentException e) {
-    // e.printStackTrace();
-    // } catch (IllegalAccessException e) {
-    // e.printStackTrace();
-    // } catch (InvocationTargetException e) {
-    // e.printStackTrace();
-    // }
-    // }
 
     /**
      * Schreibt content in eine Lokale textdatei
