@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -35,6 +34,7 @@ public class DreiDlAm extends PluginForDecrypt {
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+)" + "|(http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/)" + "|(http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html)", Pattern.CASE_INSENSITIVE);
     private String password;
+
     public DreiDlAm() {
         super();
     }
@@ -46,16 +46,16 @@ public class DreiDlAm extends PluginForDecrypt {
             parameter.replace("&quot;", "\"");
 
             RequestInfo request = HTTP.getRequest(new URL(parameter));
-            String layer = SimpleMatches.getBetween(request.getHtmlCode(), "<form action=\"http://3dl.am/download/start/", "/\"");
+            String layer = new Regex(request.getHtmlCode(), Pattern.compile("<form action=\"http://3dl\\.am/download/start/(.*?)/\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             link = "http://3dl.am/download/start/" + layer + "/";
 
             // passwort auslesen
             if (request.getHtmlCode().indexOf("<b>Passwort:</b></td><td><input type='text' value='") != -1) {
 
-                password = SimpleMatches.getBetween(request.getHtmlCode(), "<b>Passwort:</b></td><td><input type='text' value='", "'");
+                password = new Regex(request.getHtmlCode(), Pattern.compile("<b>Passwort:</b></td><td><input type='text' value='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
                 if (password.contains("kein") || password.contains("kein P")) {
-                    password=null;
+                    password = null;
                 }
 
             }
@@ -70,7 +70,7 @@ public class DreiDlAm extends PluginForDecrypt {
         String link = new String();
         try {
             RequestInfo request = HTTP.getRequest(new URL(parameter));
-            String layer = SimpleMatches.getBetween(request.getHtmlCode(), "<frame src=\"", "\" width=\"100%\"");
+            String layer = new Regex(request.getHtmlCode(), Pattern.compile("<frame src=\"(.*?)\" width=\"100%\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             link = layer;
         } catch (IOException e) {
             e.printStackTrace();
@@ -80,14 +80,13 @@ public class DreiDlAm extends PluginForDecrypt {
     }
 
     private ArrayList<String> decryptFromStart(String parameter) {
-        ArrayList<ArrayList<String>> links = new ArrayList<ArrayList<String>>();
         ArrayList<String> linksReturn = new ArrayList<String>();
         try {
             RequestInfo request = HTTP.getRequest(new URL(parameter));
-            links = SimpleMatches.getAllSimpleMatches(request.getHtmlCode(), "value='http://3dl.am/link/°/'");
+            String[] links = new Regex(request.getHtmlCode(), Pattern.compile("value='http://3dl\\.am/link/(.*?)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
 
-            for (int i = 0; i < links.size(); i++) {
-                linksReturn.add("http://3dl.am/link/" + links.get(i).get(0) + "/");
+            for (int i = 0; i < links.length; i++) {
+                linksReturn.add("http://3dl.am/link/" + links[i] + "/");
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,7 +107,7 @@ public class DreiDlAm extends PluginForDecrypt {
             for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
                 link = decryptFromLink(links.get(i));
-                DownloadLink dl_link=createDownloadlink(link);
+                DownloadLink dl_link = createDownloadlink(link);
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
             }
@@ -125,7 +124,7 @@ public class DreiDlAm extends PluginForDecrypt {
             for (int i = 0; i < links.size(); i++) {
                 progress.increase(1);
                 link2 = decryptFromLink(links.get(i));
-                DownloadLink dl_link=createDownloadlink(link2);
+                DownloadLink dl_link = createDownloadlink(link2);
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
             }

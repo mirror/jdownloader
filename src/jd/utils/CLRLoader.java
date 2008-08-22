@@ -21,20 +21,20 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.SimpleMatches;
+import jd.parser.Regex;
 import jd.plugins.HTTP;
 import jd.plugins.RequestInfo;
 
@@ -200,19 +200,19 @@ public class CLRLoader {
             RequestInfo ri = HTTP.getRequest(new URL("http://cryptload.info/clr/"));
 
             logger.info("" + ri);
-            ArrayList<ArrayList<String>> matches = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<option value=\"°\">°</option>");
+            String[][] matches = new Regex(ri.getHtmlCode(), Pattern.compile("<option value=\"(.*?)\">(.*?)</option>", Pattern.CASE_INSENSITIVE)).getMatches();
 
-            for (int i = matches.size() - 1; i >= 0; i--) {
-                ArrayList<String> next = matches.get(i);
-                if (IDS.contains(next.get(0))) {
+            for (int i = matches.length - 1; i >= 0; i--) {
+                String[] next = matches[i];
+                if (IDS.contains(next[0])) {
                     continue;
                 }
-                ri = HTTP.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next.get(0) + "&submit=myRouter.clr+herunterladen");
+                ri = HTTP.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next[0] + "&submit=myRouter.clr+herunterladen");
 
-                String[] ret = CLRLoader.createLiveHeader(ri.getHtmlCode(), next.get(0), next.get(1));
+                String[] ret = CLRLoader.createLiveHeader(ri.getHtmlCode(), next[0], next[1]);
                 if (ret != null) {
                     res.add(ret);
-                    IDS.add(next.get(0));
+                    IDS.add(next[0]);
                 }
             }
         } catch (MalformedURLException e) {
