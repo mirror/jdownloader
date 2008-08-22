@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Set;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.crypt.AESdecrypt;
@@ -34,7 +33,6 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
@@ -47,10 +45,6 @@ import jd.utils.JDUtilities;
 public class CryptItCom extends PluginForDecrypt {
 
     static private final String HOST = "crypt-it.com";
-
-    private static final String PATTERN_PACKAGENAME = "class=\"folder\">°</";
-
-    private static final String PATTERN_PASSWORD = "<b>Password:</b>°<";
 
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
 
@@ -194,11 +188,11 @@ public class CryptItCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             String url = parameter;
-            if (!url.endsWith("/")) {
-                url += "/";
-            }
-            String mode = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 0);
-            String folder = SimpleMatches.getSimpleMatch(url, "http://crypt-it.com/°/°/", 1);
+            if (!url.endsWith("/")) url += "/";
+
+            String[] temp = new Regex(url, Pattern.compile("http://crypt-it.com/(.*?)/(.*?)/", Pattern.CASE_INSENSITIVE)).getRow(0);
+            String mode = temp[0];
+            String folder = temp[1];
             RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
             String pass = "";
             if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
@@ -216,41 +210,36 @@ public class CryptItCom extends PluginForDecrypt {
                 }
             }
             String cookie = ri.getCookie();
-            String packagename = SimpleMatches.getSimpleMatch(ri, PATTERN_PACKAGENAME, 0);
-            String password = SimpleMatches.getSimpleMatch(ri, PATTERN_PASSWORD, 0);
-            if (password != null) {
-                password = password.trim();
-            }
+            String packagename = new Regex(ri.getHtmlCode(), Pattern.compile("class=\"folder\">(.*?)</", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String password = new Regex(ri.getHtmlCode(), Pattern.compile("<b>Password:</b>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (password != null) password = password.trim();
+
             HashMap<String, String> header = new HashMap<String, String>();
             header.put("Content-Type", "application/x-amf");
-            // alt: byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00,
-            // 0x01, 0x00, 0x10, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74,
-            // 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00,
-            // 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x0e, 0x0a, 0x00, 0x00,
-            // 0x00, 0x01, 0x02, 0x00, 0x06 };
+
             byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
             byte[] b2 = new byte[] { 0x02, 0x00 };
             ri = HTTP.postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass, false);
-            ArrayList<String> ciphers = SimpleMatches.getAllSimpleMatches(ri, "url°size", 1);
-            progress.setRange(ciphers.size());
-            Vector<String> p = new Vector<String>();
+            String[] ciphers = new Regex(ri.getHtmlCode(), Pattern.compile("url(.*?)size", Pattern.CASE_INSENSITIVE)).getColumn(0);
+
             FilePackage fp = new FilePackage();
             fp.setName(packagename);
             fp.setPassword(password);
-            p.add(password);
+
+            progress.setRange(ciphers.length);
             for (String string : ciphers) {
                 String cipher = Encoding.filterString(string, "1234567890abcdefABCDEF");
                 String linktext = decrypt(cipher);
-                progress.increase(1);
-                String[] links;
-                links = HTMLParser.getHttpLinks(linktext, null);
+
+                String[] links = HTMLParser.getHttpLinks(linktext, null);
                 if (links.length > 0 && links[0].startsWith("http")) {
                     DownloadLink link = createDownloadlink(links[0]);
-                    link.setSourcePluginPasswords(p);
+                    link.addSourcePluginPassword(password);
                     link.setSourcePluginComment(packagename);
                     fp.add(link);
                     decryptedLinks.add(link);
                 }
+                progress.increase(1);
             }
             if (decryptedLinks.size() == 0) { return containerStep(parameter); }
         } catch (Exception e) {

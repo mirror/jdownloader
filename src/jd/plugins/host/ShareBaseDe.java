@@ -25,7 +25,6 @@ import java.util.regex.Pattern;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -36,25 +35,25 @@ import jd.plugins.download.RAFDownload;
 public class ShareBaseDe extends PluginForHost {
 
     private static final String CODER = "JD-Team";
+
     private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
+
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
-    /*
-     * Suchmasken
-     */
     private static final String FILENAME = "<title>(.*?)</title>";
 
     private static final String FILESIZE = "<span class=\"f1\">.*?\\((.*?)\\)</span></td>";
 
     private static final String HOST = "sharebase.de";
+
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
+
     private static final String PLUGIN_NAME = HOST;
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "1.0.1";
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
+
     private static final String SIM_DL = "Das gleichzeitige Downloaden";
-    private static final String WAIT = "Du musst noch °:°:° warten!";
+
+    private static final Pattern WAIT = Pattern.compile("Du musst noch (.*?):(.*?):(.*?) warten!", Pattern.CASE_INSENSITIVE);
+
     private String cookies = "";
 
     /*
@@ -169,9 +168,10 @@ public class ShareBaseDe extends PluginForHost {
         // Download-Limit erreicht
         if (requestInfo.getHtmlCode().contains(DL_LIMIT)) {
 
-            String hours = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 0);
-            String minutes = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 1);
-            String seconds = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), WAIT, 2);
+            String[] temp = new Regex(requestInfo.getHtmlCode(), WAIT).getRow(0);
+            String hours = temp[0];
+            String minutes = temp[1];
+            String seconds = temp[2];
             int waittime = 0;
 
             if (hours != null && minutes != null && seconds != null) {
