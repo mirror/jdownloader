@@ -17,7 +17,6 @@
 package jd.parser;
 
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -146,31 +145,6 @@ public class SimpleMatches {
     }
 
     /**
-     * Die Regex ist default Pattern.DOTALL also einfach
-     * startPattern(.*?)lastPattern
-     * 
-     * Hier kann man den Text zwischen zwei Suchmustern ausgeben lassen
-     * Zeilenumbrueche werden dabei auch unterstuetzt
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param startPattern
-     *            der Pattern, bei dem die Suche beginnt
-     * @param lastPattern
-     *            der Pattern, bei dem die Suche endet
-     * 
-     * @return der Text zwischen den gefundenen stellen oder, falls nichts
-     *         gefunden wurde, der vollständige Text
-     */
-    public @Deprecated
-    static String getBetween(String data, String startPattern, String lastPattern) {
-        Pattern p = Pattern.compile("(?s)" + startPattern + "(.*?)" + lastPattern, Pattern.CASE_INSENSITIVE);
-        Matcher match = p.matcher(data);
-        if (match.find()) { return match.group(1); }
-        return data;
-    }
-
-    /**
      * Regexp.getFirstMatch(int group) verwenden
      * 
      * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
@@ -196,35 +170,6 @@ public class SimpleMatches {
             }
         }
         return hit;
-    }
-
-    /**
-     * Regexp.getMatches(0) verwenden
-     * 
-     * Diese Methode findet alle Vorkommnisse des Pluginpatterns in dem Text,
-     * und gibt die Treffer als Vector zurück
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Muster, nach dem gesucht werden soll
-     * @return Alle Treffer in dem Text
-     */
-    public @Deprecated
-    static Vector<String> getMatches(String data, Pattern pattern) {
-        Vector<String> hits = null;
-        if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
-            if (matcher.find()) {
-                hits = new Vector<String>();
-                int position = 0;
-                while (matcher.find(position)) {
-                    hits.add(matcher.group());
-                    position = matcher.start() + matcher.group().length();
-                }
-            }
-        }
-        return hits;
     }
 
     /**
