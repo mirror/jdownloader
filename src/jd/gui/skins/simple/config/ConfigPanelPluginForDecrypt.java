@@ -24,7 +24,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -103,22 +102,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         super(uiinterface);
         this.configuration = configuration;
         pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
-        Collections.sort(pluginsForDecrypt, new Comparator<PluginForDecrypt>() {
-            public int compare(PluginForDecrypt a, PluginForDecrypt b) {
-                return a.getPluginName().compareToIgnoreCase(b.getPluginName());
-            }
-        });
-        Vector<PluginForDecrypt> pltmp = new Vector<PluginForDecrypt>();
-        Vector<PluginForDecrypt> pltmp2 = new Vector<PluginForDecrypt>();
-        for (PluginForDecrypt plg : pluginsForDecrypt) {
-            if (plg.getConfig().getEntries().size() != 0) {
-                pltmp.add(plg);
-            } else {
-                pltmp2.add(plg);
-            }
-        }
-        pltmp.addAll(pltmp2);
-        pluginsForDecrypt = pltmp;
+        Collections.sort(pluginsForDecrypt);
         initPanel();
         load();
     }
@@ -153,6 +137,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
                 btnEdit.setEnabled(pluginsForDecrypt.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
             }
         });
+        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<PluginForDecrypt>(pluginsForDecrypt));
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {

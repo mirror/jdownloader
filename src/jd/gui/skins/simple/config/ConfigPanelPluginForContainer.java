@@ -24,7 +24,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Vector;
 
 import javax.swing.JButton;
@@ -103,11 +102,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         super(uiinterface);
         this.configuration = configuration;
         pluginsForContainer = JDUtilities.getPluginsForContainer();
-        Collections.sort(pluginsForContainer, new Comparator<PluginForContainer>() {
-            public int compare(PluginForContainer a, PluginForContainer b) {
-                return a.getPluginName().compareToIgnoreCase(b.getPluginName());
-            }
-        });
+        Collections.sort(pluginsForContainer);
         initPanel();
         load();
     }
@@ -142,6 +137,8 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
                 btnEdit.setEnabled(pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
             }
         });
+        // table.setDefaultRenderer(Object.class, new
+        // PluginTableCellRenderer<PluginForContainer>(pluginsForContainer));
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {

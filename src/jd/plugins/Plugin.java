@@ -53,7 +53,7 @@ import jd.utils.JDUtilities;
  * 
  * Alle Plugins verfügen über einen Event Mechanismus
  */
-public abstract class Plugin implements ActionListener {
+public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
@@ -492,4 +492,12 @@ public abstract class Plugin implements ActionListener {
         return true;
     }
 
+    /**
+     * Vergleicht das aktuelle Plugin mit einem anderen Plugin. Wird zum
+     * Sortieren für die Konfiguration benötigt.
+     */
+    @Override
+    public int compareTo(Plugin plg) {
+        return getPluginName().compareToIgnoreCase(plg.getPluginName());
+    }
 }

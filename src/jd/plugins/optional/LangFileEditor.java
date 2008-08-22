@@ -68,7 +68,7 @@ import javax.swing.table.DefaultTableCellRenderer;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.Link.JLinkButton;
-import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -97,11 +97,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JTable table;
     private MyTableModel tableModel;
     private File sourceFolder, languageFile;
-    private JTextField txtFolder, txtFile;
+    private ComboBrowseFile cmboFolder, cmboFile;
     private JLabel lblEntriesCount;
-    private JButton btnBrowseFile, btnBrowseFolder;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
-    private JMenuItem mnuBrowseFile, mnuBrowseFolder, mnuDownloadSource, mnuReload, mnuSave, mnuSaveAs, mnuClose;
+    private JMenuItem mnuDownloadSource, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JRadioButtonMenuItem mnuColorizeMissing, mnuColorizeOld;
@@ -147,19 +146,18 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         top.add(top2, BorderLayout.PAGE_END);
 
         top1.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder: ")), BorderLayout.LINE_START);
-        sourceFolder = (File) subConfig.getProperty(PROPERTY_FOLDER);
-        top1.add(txtFolder = new JTextField((sourceFolder != null) ? sourceFolder.getAbsolutePath() : JDLocale.L("plugins.optional.langfileeditor.sourceFolder.select", "<Please select the Source Folder!>")), BorderLayout.CENTER);
-        top1.add(btnBrowseFolder = new JButton(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse")), BorderLayout.EAST);
-        txtFolder.setEditable(false);
-        btnBrowseFolder.addActionListener(this);
-        frame.getRootPane().setDefaultButton(btnBrowseFolder);
+        top1.add(cmboFolder = new ComboBrowseFile("LANGFILEEDITOR_FOLDER"));
+        cmboFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        cmboFolder.setText(((sourceFolder = (File) subConfig.getProperty(PROPERTY_FOLDER)) != null) ? sourceFolder.getAbsolutePath() : "");
+        cmboFolder.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
+        cmboFolder.addActionListener(this);
 
         top2.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File: ")), BorderLayout.LINE_START);
-        languageFile = (File) subConfig.getProperty(PROPERTY_FILE);
-        top2.add(txtFile = new JTextField((languageFile != null) ? languageFile.getAbsolutePath() : JDLocale.L("plugins.optional.langfileeditor.languageFile.select", "<Please select a Language File!>")), BorderLayout.CENTER);
-        top2.add(btnBrowseFile = new JButton(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse")), BorderLayout.EAST);
-        txtFile.setEditable(false);
-        btnBrowseFile.addActionListener(this);
+        top2.add(cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE"));
+        cmboFile.setFileFilter(new LngFileFilter());
+        cmboFile.setText(((languageFile = (File) subConfig.getProperty(PROPERTY_FILE)) != null) ? languageFile.getAbsolutePath() : "");
+        cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
+        cmboFile.addActionListener(this);
 
         main.add(top, BorderLayout.PAGE_START);
         main.add(new JScrollPane(table), BorderLayout.CENTER);
@@ -212,9 +210,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         // File Menü
         mnuFile = new JMenu(JDLocale.L("plugins.optional.langfileeditor.file", "File"));
 
-        mnuFile.add(mnuBrowseFolder = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.browseSourceFolder", "Browse Source Folder")));
-        mnuFile.add(mnuBrowseFile = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.browseLanguageFile", "Browse Language File")));
-        mnuFile.addSeparator();
         mnuFile.add(mnuReload = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.reload", "Reload")));
         mnuFile.addSeparator();
         mnuFile.add(mnuSave = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.save", "Save")));
@@ -224,8 +219,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuFile.addSeparator();
         mnuFile.add(mnuClose = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close", "Close")));
 
-        mnuBrowseFolder.addActionListener(this);
-        mnuBrowseFile.addActionListener(this);
         mnuReload.addActionListener(this);
         mnuReload.setEnabled(false);
         mnuSave.addActionListener(this);
@@ -330,35 +323,26 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 frame.toFront();
             }
 
-        } else if (e.getSource() == btnBrowseFolder || e.getSource() == mnuBrowseFolder) {
+        } else if (e.getSource() == cmboFolder) {
 
-            JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_SRC");
-
-            chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-
-            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION && chooser.getSelectedFile().isDirectory()) {
-                sourceFolder = chooser.getSelectedFile();
-                txtFolder.setText(sourceFolder.getAbsolutePath());
+            File sourceFolder = cmboFolder.getCurrentPath();
+            if (sourceFolder != this.sourceFolder && sourceFolder != null) {
+                this.sourceFolder = sourceFolder;
                 initList();
 
                 subConfig.setProperty(PROPERTY_FOLDER, sourceFolder);
                 subConfig.save();
-                frame.getRootPane().setDefaultButton(btnBrowseFile);
             }
 
-        } else if (e.getSource() == btnBrowseFile || e.getSource() == mnuBrowseFile) {
+        } else if (e.getSource() == cmboFile) {
 
-            JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_LNG");
-            chooser.setFileFilter(new LngFileFilter());
-
-            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
-                languageFile = chooser.getSelectedFile();
-                txtFile.setText(languageFile.getAbsolutePath());
+            File languageFile = cmboFile.getCurrentPath();
+            if (languageFile != this.languageFile && languageFile != null) {
+                this.languageFile = languageFile;
                 initList();
 
                 subConfig.setProperty(PROPERTY_FILE, languageFile);
                 subConfig.save();
-                frame.getRootPane().setDefaultButton(btnBrowseFolder);
             }
 
         } else if (e.getSource() == mnuSave) {
@@ -533,7 +517,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 if (!def.equals("")) {
                     logger.finer("Working on " + data.get(i)[0] + ":");
                     String result = JDLocale.translate(lngKey, def);
-                    logger.finer("Default: \"" + def + "\" == Google: \"" + result + "\"");
+                    logger.finer("Google translated \"" + def + "\" to \"" + result + "\" with LanguageKey " + lngKey);
                     tableModel.setValueAt(result, i, 2);
                 }
 
@@ -778,7 +762,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             String[] r = data.get(row);

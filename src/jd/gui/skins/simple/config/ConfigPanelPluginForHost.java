@@ -196,6 +196,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         super(uiinterface);
         this.configuration = configuration;
         pluginsForHost = JDUtilities.getPluginsForHost();
+        // Collections.sort(pluginsForHost);
         initPanel();
         load();
     }
@@ -251,6 +252,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 btnEdit.setEnabled(pluginsForHost.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
             }
         });
+        // table.setDefaultRenderer(Object.class, new
+        // PluginTableCellRenderer<PluginForHost>(pluginsForHost));
         table.setDragEnabled(true);
         new DropTarget(table, this);
 
