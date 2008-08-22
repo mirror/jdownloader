@@ -21,13 +21,10 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
@@ -261,19 +258,11 @@ public class Secured extends PluginForDecrypt {
 
     static private final String HOST = "secured.in";
 
-    // static private final String PLUGIN_NAME = "secured.in";
-
-    // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "2.0";
-
-    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
     static private final String JS_URL = "http://secured.in/scripts/main_final.js";
 
     static private final Pattern PAT_CAPTCHA = Pattern.compile("<img src=\"(captcha-[^\"]*)");
 
-    static private final String PAT_DOWNLOAD_CMD = "if (alreadyClicked == 0) {°alreadyClicked = 1;°document.getElementById('img-'+file_id).src = \"http://secured.in/images/file_loading.png\";°new Ajax.Request('ajax-handler.php',°method:'post',°parameters: {cmd: '°', download_id: dl_id},";
+    static private final String PAT_DOWNLOAD_CMD = "if \\(alreadyClicked == 0\\) \\{(.*?)alreadyClicked = 1;(.*?)document\\.getElementById\\('img-'\\+file_id\\)\\.src = \"http://secured\\.in/images/file_loading\\.png\";(.*?)new Ajax\\.Request\\('ajax-handler\\.php',(.*?)method:'post',(.*?)parameters: \\{cmd: '(.*?)', download_id: dl_id\\},";
 
     static private final Pattern PAT_FILE_ID = Pattern.compile("accessDownload\\([^']*'([^']*)");
 
@@ -306,13 +295,12 @@ public class Secured extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        logger.finest("Decrypt: " + cryptedLink);
-        this.cryptedLink = cryptedLink;
+
+        this.cryptedLink = parameter;
         try {
             RequestInfo requestInfo = HTTP.getRequest(new URL(JS_URL));
-            DOWNLOAD_CMD = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD, 0, 5);
+            DOWNLOAD_CMD = new Regex(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD).getMatch(5, 0);
 
             progress.setRange(1);
             URL url = new URL(cryptedLink);
@@ -321,48 +309,38 @@ public class Secured extends PluginForDecrypt {
             String html = requestInfo.getHtmlCode();
             File captchaFile = null;
             String capTxt = null;
-            for (;;) { // for() läuft bis kein Captcha mehr abgefragt
-                // wird
-                Matcher matcher = PAT_CAPTCHA.matcher(html);
-
-                if (matcher.find()) {
-                    if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
-                    }
-
-                    logger.finest("Captcha Protected");
-                    String capHash = matcher.group(1).substring(8);
-                    capHash = capHash.substring(0, capHash.length() - 4);
-                    String captchaAdress = "http://" + HOST + "/" + matcher.group(1);
-                    captchaFile = getLocalCaptchaFile(this);
-                    Browser.download(captchaFile, captchaAdress);
-
-                    capTxt = Plugin.getCaptchaCode(captchaFile, this);
-                    String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;
-
-                    requestInfo = HTTP.postRequest(url, postData);
-                    html = requestInfo.getHtmlCode();
-                } else {
-                    if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
-                    }
-                    break;
+            while (new Regex(html, PAT_CAPTCHA).matches()) {
+                if (captchaFile != null && capTxt != null) {
+                    JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                 }
+
+                logger.finest("Captcha Protected");
+                String captcha = new Regex(html, PAT_CAPTCHA).getMatch(0);
+                String capHash = captcha.substring(8);
+                capHash = capHash.substring(0, capHash.length() - 4);
+                String captchaAdress = "http://" + HOST + "/" + captcha;
+                captchaFile = getLocalCaptchaFile(this);
+                Browser.download(captchaFile, captchaAdress);
+
+                capTxt = Plugin.getCaptchaCode(captchaFile, this);
+                String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;
+
+                requestInfo = HTTP.postRequest(url, postData);
+                html = requestInfo.getHtmlCode();
+            }
+            if (captchaFile != null && capTxt != null) {
+                JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
             }
 
             // Alle File ID aus dem HTML-Code ziehen
-            Matcher matcher = PAT_FILE_ID.matcher(html);
-            Vector<String> ids = new Vector<String>();
-            while (matcher.find()) {
-                ids.add(matcher.group(1));
-            }
-            progress.setRange(ids.size());
-            while (ids.size() > 0) {
-                String fileUrl = decryptId(ids.remove(0));
+            String[] ids = new Regex(html, PAT_FILE_ID).getColumn(0);
+            progress.setRange(ids.length);
+            for (String id : ids) {
+                String fileUrl = decryptId(id);
                 if (fileUrl != null) {
                     fileUrl = fileUrl.trim();
                 } else {
-                    fileUrl = null;
+                    continue;
                 }
                 decryptedLinks.add(createDownloadlink(fileUrl));
                 progress.increase(1);

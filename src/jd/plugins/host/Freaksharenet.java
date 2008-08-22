@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -28,7 +27,6 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -71,13 +69,13 @@ public class Freaksharenet extends PluginForHost {
             requestInfo = HTTP.getRequest(new URL(url));
 
             if (!requestInfo.containsHTML("<span class=\"txtbig\">Fehler</span>")) {
-                ArrayList<ArrayList<String>> filename = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
-                downloadLink.setName(filename.get(0).get(1));
-                ArrayList<ArrayList<String>> filesize = SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)(MB|KB)(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL));
-                if (filesize.get(0).get(3).contains("MB")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024 * 1024);
-                } else if (filesize.get(0).get(3).contains("KB")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize.get(0).get(2))) * 1024);
+                String[][] filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+                downloadLink.setName(filename[0][1]);
+                String[][] filesize = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)(MB|KB)(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+                if (filesize[0][3].contains("MB")) {
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize[0][2])) * 1024 * 1024);
+                } else if (filesize[0][3].contains("KB")) {
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize[0][2])) * 1024);
                 }
                 return true;
             }
