@@ -50,7 +50,7 @@ public abstract class PluginForHost extends Plugin {
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
 
-    private static HashMap<Class<? extends PluginForHost>, Integer> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Integer>();
+    private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
     private static HashMap<Class<? extends PluginForHost>, Long> HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
 
     public static final String PARAM_MAX_RETRIES = "MAX_RETRIES";
@@ -434,7 +434,7 @@ public abstract class PluginForHost extends Plugin {
     public abstract void reset();
 
     public void resetHosterWaitTime() {
-        HOSTER_WAIT_TIMES.put(this.getClass(), 0);
+        HOSTER_WAIT_TIMES.put(this.getClass(), 0l);
         HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), 0l);
 
     }
@@ -466,7 +466,7 @@ public abstract class PluginForHost extends Plugin {
         currentConnections = CurrentConnections;
     }
 
-    public void setHosterWaittime(int milliSeconds) {
+    public void setHosterWaittime(long milliSeconds) {
 
         HOSTER_WAIT_TIMES.put(this.getClass(), milliSeconds);
         HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), System.currentTimeMillis() + milliSeconds);
@@ -490,7 +490,7 @@ public abstract class PluginForHost extends Plugin {
         this.maxConnections = maxConnections;
     }
 
-    public void sleep(int i, DownloadLink downloadLink) throws InterruptedException {
+    public void sleep(long i, DownloadLink downloadLink) throws InterruptedException {
         while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
 
             i -= 1000;
@@ -508,7 +508,7 @@ public abstract class PluginForHost extends Plugin {
      * hostercontrollvariablen zurückgesetzt.
      */
     public static void resetStatics() {
-        HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Integer>();
+        HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
         HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
 
     }

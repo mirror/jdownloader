@@ -158,7 +158,7 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
 
             } catch (Exception e) {
-e.printStackTrace();
+                e.printStackTrace();
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
 
@@ -173,9 +173,9 @@ e.printStackTrace();
             if (linkStatus.isFailed()) {
                 logger.severe("\r\nError occured- " + downloadLink.getLinkStatus());
             }
-if(aborted){
-    linkStatus.setErrorMessage(null);
-}
+            if (aborted) {
+                linkStatus.setErrorMessage(null);
+            }
             switch (linkStatus.getLatestStatus()) {
 
             case LinkStatus.ERROR_IP_BLOCKED:
@@ -232,24 +232,6 @@ if(aborted){
                 }
             }
 
-            // if (linkStatus.isStatus(LinkStatus.TODO) &&
-            // currentPlugin.getRetryCount() < currentPlugin.getMaxRetries() &&
-            // !downloadLink.isWaitingForReconnect()) {
-            //
-            // onErrorRetry(downloadLink, currentPlugin);
-            // }
-
-            // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
-            // "controller.status.finished",
-            // "Fertig"));
-            // if (resultPluginStatus != PluginStep.STATUS_ERROR &&
-            // resultLinkStatus != LinkStatus.FINISHED) {
-            // logger.severe("Pluginerror: resultStep returned null and
-            // Downloadlink status != STATUS_DONE. retry Link");
-            // this.onErrorRetry(downloadLink, currentPlugin);
-            // return;
-            // }
-
         } catch (Exception e) {
             e.printStackTrace();
 
@@ -304,28 +286,9 @@ if(aborted){
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) {
 
-        downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
+        downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
 
         new AgbDialog(downloadLink2, 30);
-
-        /*
-         * 
-         * if(JDController.FLAGS.getIntegerProperty("AGBMESSAGESIGNED_"+plugin.getHost
-         * (), 0)==0){
-         * 
-         * JDController.FLAGS.setProperty("AGBMESSAGESIGNED_"+plugin.getHost(),
-         * 1); String title=JDLocale.L("gui.dialogs.agb_tos_warning_title",
-         * "Allgemeinen Geschäftsbedingungen nicht aktzeptiert"); String
-         * message=JDLocale.L("gui.dialogs.agb_tos_warning_text", "<p><font
-         * size=\"3\"><strong><font size=\2\" face=\"Verdana, Arial,
-         * Helvetica, sans-serif\">Die Allgemeinen Geschäftsbedingungen (AGB)</font></strong><font
-         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-         * wurden nicht gelesen und akzeptiert.</font></font></p><p><font
-         * size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\"><br>
-         * Anbieter: </font></p>")+plugin.getHost(); String
-         * url="http://www.the-lounge.org/viewtopic.php?f=222&t=8842";
-         * JDUtilities.getGUI().showHelpMessage(title, message, url); }
-         */
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
@@ -371,6 +334,7 @@ if(aborted){
     }
 
     private void onErrorChunkloadFailed(DownloadLink downloadLink, PluginForHost plugin) {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(JDLocale.L("plugins.error.downloadfailed", "Download failed"));
         }
@@ -421,98 +385,12 @@ if(aborted){
         logger.severe("File not found :" + downloadLink);
     }
 
-    // /**
-    // * Wird aufgerufen wenn Das Plugin eine Immer gleiche Wartezeit meldet.
-    // z.B.
-    // * bei unbekannter Wartezeit
-    // *
-    // * @param downloadLink
-    // * @param plugin
-    // * @param step
-    // */
-    // private void onErrorStaticWaittime(DownloadLink downloadLink,
-    // PluginForHost plugin) {
-    // logger.severe("Error occurred: Static Wait Time " + step);
-    // long milliSeconds;
-    // if (step.getParameter() != null) {
-    // milliSeconds = (Long) step.getParameter();
-    // } else {
-    // milliSeconds = 10000;
-    // }
-    // downloadLink.setEndOfWaittime(System.currentTimeMillis() + milliSeconds);
-    // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
-    // "controller.status.reconnect",
-    // "Reconnect "));
-    // // downloadLink.setInProgress(true);
-    // fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-    // // Download Zeit. Versuch durch eine Interaction einen reconnect
-    // // zu machen. wenn das klappt nochmal versuchen
-    //
-    // //
-    // Interaction.handleInteraction((Interaction.INTERACTION_NEED_RECONNECT),
-    // // this);
-    // //
-    // Interaction.handleInteraction((Interaction.INTERACTION_DOWNLOAD_WAITTIME),
-    // // this);
-    // Reconnecter.requestReconnect();
-    // // if (Reconnecter.waitForNewIP(0)) {
-    // // linkStatus.addStatus(LinkStatus.TODO);
-    // // downloadLink.setEndOfWaittime(0);
-    // // }
-    // // while (downloadLink.getRemainingWaittime() > 0 && !aborted) {
-    // // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
-    // // downloadLink);
-    // // try {
-    // // Thread.sleep(5000);
-    // // } catch (InterruptedException e) {
-    // // }
-    // //
-    // // }
-    // linkStatus.addStatus(LinkStatus.TODO);
-    //
-    // downloadLink.getLinkStatus().setStatusText("");
-    // }
-
     private void onErrorIncomplete(DownloadLink downloadLink, PluginForHost plugin) {
 
         retry(downloadLink, plugin);
 
     }
 
-    // /**
-    // * Wird aufgerufen wenn eine Datei nicht fertig upgeloaded wurde
-    // *
-    // * @param downloadLink
-    // * @param plugin
-    // * @param step
-    // */
-    // private void onErrorNotUploaded(DownloadLink downloadLink, PluginForHost
-    // plugin) {
-    // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
-    // "controller.status.incompleteUpload",
-    // "File not full uploaded"));
-    // linkStatus.addStatus(LinkStatus.TODO);
-    // fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-    // }
-
-    // /**
-    // * Wird aufgerufen wenn das Captchabild nicht geladen werden konnte
-    // *
-    // * @param downloadLink
-    // * @param plugin
-    // * @param step
-    // */
-    // private void onErrorCaptchaImage(DownloadLink downloadLink, PluginForHost
-    // plugin) {
-    // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
-    // "controller.status.captchaError",
-    // "Captcha Fehler"));
-    //
-    // fireControlEvent(new ControlEvent(this,
-    // ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
-    // }
 
     private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -538,9 +416,8 @@ if(aborted){
      * @param step
      */
     private void onErrorPremium(DownloadLink downloadLink, PluginForHost plugin) {
-
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         linkStatus.reset();
-
     }
 
     /**
@@ -553,9 +430,7 @@ if(aborted){
      */
     private void onErrorTemporarilyUnavailable(DownloadLink downloadLink, PluginForHost plugin) {
         logger.severe("Error occurred: Temporarily unavailably: " + downloadLink.getLinkStatus().getValue() + " ms");
-        // long milliSeconds = (Long) step.getParameter();
-        // downloadLink.setEndOfWaittime(System.currentTimeMillis() +
-        // milliSeconds);
+
         LinkStatus status = downloadLink.getLinkStatus();
         status.setErrorMessage(JDLocale.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
 
@@ -565,7 +440,7 @@ if(aborted){
          * Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
         if (status.getValue() > 0) {
-            status.setWaitTime((int) status.getValue());
+            status.setWaitTime(status.getValue());
         } else {
             status.resetWaitTime();
         }
@@ -589,28 +464,14 @@ if(aborted){
 
         if (milliSeconds <= 0) {
             logger.severe("Es wurde vom PLugin keine Wartezeit übergeben");
-            status.addStatus(LinkStatus.ERROR_FATAL);
-            status.setErrorMessage(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));
-            return;
+            logger.severe("Nutze Default-Wartezeit: 60 mins");
+            logger.severe(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));            
+            milliSeconds = 3600000l;
         }
-        status.setWaitTime((int) milliSeconds);
-        plugin.setHosterWaittime((int) milliSeconds);
+        status.setWaitTime(milliSeconds);
+        plugin.setHosterWaittime(milliSeconds);
 
-        // blockiert bis zu einem erfolgreichem recionnect
-        // if (Reconnecter.waitForNewIP(0)) {
-        // linkStatus.reset();
-        // }
         Reconnecter.requestReconnect();
-        // while (status.getRemainingWaittime() > 0) {
-        //
-        // fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED,
-        // downloadLink);
-        // try {
-        // Thread.sleep(1000);
-        // } catch (InterruptedException e) {
-        // break;
-        // }
-        // }
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
 
