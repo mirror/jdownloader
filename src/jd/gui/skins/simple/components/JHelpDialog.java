@@ -166,6 +166,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         pack();
         getRootPane().setDefaultButton(getBtn1());
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        this.setAlwaysOnTop(true);
     }
 
     public void actionPerformed(ActionEvent e) {
