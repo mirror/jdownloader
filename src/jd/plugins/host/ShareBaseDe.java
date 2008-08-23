@@ -183,11 +183,13 @@ public class ShareBaseDe extends PluginForHost {
                     waittime += Integer.parseInt(hours) * 3600;
 
                 } catch (Exception Exc) {
+                	waittime = 600;
                 }
 
             }
 
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            linkStatus.setValue(waittime * 1000);
             return;
         }
 
