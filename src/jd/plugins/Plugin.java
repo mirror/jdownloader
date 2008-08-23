@@ -496,7 +496,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * Vergleicht das aktuelle Plugin mit einem anderen Plugin. Wird zum
      * Sortieren für die Konfiguration benötigt.
      */
-    @Override
     public int compareTo(Plugin plg) {
         return getPluginName().compareToIgnoreCase(plg.getPluginName());
     }
