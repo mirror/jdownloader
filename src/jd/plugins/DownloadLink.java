@@ -123,8 +123,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private boolean isEnabled;
 
-
-
     private boolean isMirror = false;
 
     /**
@@ -173,7 +171,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private transient PluginForContainer pluginForContainer;
 
-//    public LinkedList<Object> saveObjects = new LinkedList<Object>();
+    // public LinkedList<Object> saveObjects = new LinkedList<Object>();
 
     private String sourcePluginComment = null;
 
@@ -423,10 +421,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Erweiterter "Dateiname"
      */
     public String getFileInfomationString() {
-    
-            return  getPlugin().getFileInformationString(this);
-      
-        
+
+        return getPlugin().getFileInformationString(this);
+
     }
 
     /**
@@ -704,7 +701,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         try {
             available = ((PluginForHost) getPlugin()).getFileInformation(this);
         } catch (Exception e) {
-            available=false;
+            available = false;
             return false;
         }
         return available;
@@ -748,18 +745,18 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         downloadMax = 0;
- 
+
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;
         linkStatus.reset();
         linkStatus = new LinkStatus(this);
-        if (!new File(this.getFileOutput()).delete()) {            
-            logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));            
+        if (new File(this.getFileOutput()).exists()) {
+            if (!new File(this.getFileOutput()).delete()) {
+                logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
+            }
         }
     }
-
-
 
     /**
      * kann mit setAborted(true) den Download abbrechen
@@ -869,7 +866,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         }
         if (isEnabled == true) {
-            
+
             setAborted(false);
             if (host != null && plugin == null) {
                 logger.severe("Es ist kein passendes HostPlugin geladen");
@@ -1069,7 +1066,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return
      */
     public int getPercent() {
-        if(Math.min(downloadCurrent, downloadMax)<=0)return 0;
+        if (Math.min(downloadCurrent, downloadMax) <= 0) return 0;
         return (int) (10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
     }
 
