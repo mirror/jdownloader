@@ -1166,7 +1166,7 @@ public class JDUtilities {
      * @author JD-Team
      * @param f
      * @return Hashstring Md5
-     */
+     */ 
     public static String getLocalHash(File f) {
         try {
             if (!f.exists()) { return null; }
