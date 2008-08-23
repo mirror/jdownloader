@@ -739,6 +739,7 @@ if(form==null)return null;
     public static boolean downloadBinary(String filepath, String fileurl) {
 
         try {
+            fileurl=fileurl.replaceAll(" ", "%20");
             fileurl = Encoding.urlEncode(fileurl.replaceAll("\\\\", "/"));
             File file = new File(filepath);
             if (file.isFile()) {
