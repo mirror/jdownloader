@@ -146,27 +146,12 @@ public class JDUtilities {
      */
     public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
 
-    // /**
-    // * Das JD-Home Verzeichnis. Dieses wird nur gesetzt, wenn es aus dem
-    // * WebStart Cookie gelesen wurde. Diese Variable kann nämlich im
-    // * KonfigDialog geändert werden
-    // */
-    // private static String homeDirectory = null;
-
-    /**
-     * Das ist das File Objekt, daß das HomeDirectory darstellt
-     */
-    // private static File homeDirectoryFile = null;
     /**
      * Alle verfügbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
 
     public static final String JD_REVISION = "$Id$";
-
-    // private static final int OS_TYPE = -1;
-
-    // private static Vector<PluginForSearch> pluginsForSearch = null;
 
     /**
      * Versionsstring der Applikation
@@ -191,13 +176,10 @@ public class JDUtilities {
      * Der Logger für Meldungen
      */
     public static Logger logger = JDUtilities.getLogger();
-    /**
-     * Loggername
-     */
 
     private static Vector<PluginForContainer> pluginsForContainer = null;
 
-    private static Vector<PluginForDecrypt> pluginsForDecrypt;
+    private static Vector<PluginForDecrypt> pluginsForDecrypt = null;
 
     private static Vector<PluginForHost> pluginsForHost = null;
 

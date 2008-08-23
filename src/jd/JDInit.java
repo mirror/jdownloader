@@ -368,44 +368,31 @@ public class JDInit {
     }
 
     public void initPlugins() {
-        try {
-            logger.info("Lade Plugins");
+        logger.info("Lade Plugins");
 
-            JDUtilities.setPluginForDecryptList(loadPluginForDecrypt());
-            JDUtilities.setPluginForHostList(loadPluginForHost());
-            JDUtilities.setPluginForContainerList(loadPluginForContainer());
+        JDUtilities.setPluginForDecryptList(loadPluginForDecrypt());
+        JDUtilities.setPluginForHostList(loadPluginForHost());
+        JDUtilities.setPluginForContainerList(loadPluginForContainer());
+        JDUtilities.setPluginOptionalList(loadPluginOptional());
+
+        
+        for (PluginOptional plg : JDUtilities.getPluginsOptional()) {
             try {
-                JDUtilities.setPluginOptionalList(loadPluginOptional());
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-
-            for (PluginOptional plg : JDUtilities.getPluginsOptional()) {
-                if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
-                    try {
-                        if (!plg.initAddon()) {
-                            logger.severe("Error loading Optional Plugin: FALSE");
-                        }
-                    } catch (Throwable e2) {
-                        logger.severe("Error loading Optional Plugin: " + e2.getMessage());
-                        e2.printStackTrace();
-                    }
+                if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false) && !plg.initAddon()) {
+                    logger.severe("Error loading Optional Plugin: FALSE");
                 }
+            } catch (Throwable e) {
+                logger.severe("Error loading Optional Plugin: " + e.getMessage());
+                e.printStackTrace();
             }
-        } catch (Throwable e2) {
-            logger.severe("Error loading Optional Plugin: " + e2.getMessage());
-            e2.printStackTrace();
         }
     }
 
     public boolean installerWasVisible() {
-
         return installerVisible;
     }
 
     public Configuration loadConfiguration() {
-        // boolean allOK = true;
-
         Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
 
         if (obj == null) {
