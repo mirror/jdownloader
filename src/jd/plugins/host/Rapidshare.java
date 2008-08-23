@@ -189,7 +189,7 @@ public class Rapidshare extends PluginForHost {
     private static String getCorrectedURL(String link) {
         if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
-        }
+        } 
         return link;
     }
 
@@ -638,8 +638,9 @@ public class Rapidshare extends PluginForHost {
         br.setFollowRedirects(false);
         setMaxConnections(35);
 
-        user = Encoding.urlEncode(user.trim());
-        pass = Encoding.urlEncode(pass.trim());
+        user = user.trim();
+        pass = pass.trim();
+        
         // String encodePass = rawUrlEncode(pass);
 
         long headLength;
@@ -1192,10 +1193,11 @@ public class Rapidshare extends PluginForHost {
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
        
-        if (account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches()) {
+        if (account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches()) {
             ai.setValid(false);
             return ai;
         }
+        
         logger.info(br + "");
         String validUntil = br.getRegex("<td>(Expiration date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getMatch(1).trim();
 
