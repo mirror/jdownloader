@@ -113,9 +113,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
          * 
          */
         private class InternalTable extends JTable {
-            /**
-             * serialVersionUID
-             */
+
             private static final long serialVersionUID = 4424930948374806098L;
 
             private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
@@ -451,7 +449,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     break;
                 case 2:
                     col.setMinWidth(50);
-                    col.setMaxWidth(250);
                     col.setPreferredWidth(150);
                     break;
                 case 3:
