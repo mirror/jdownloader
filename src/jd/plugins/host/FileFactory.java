@@ -61,7 +61,7 @@ public class FileFactory extends PluginForHost {
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
     static private final Pattern patternSupported = Pattern.compile("sjdp://filefactory\\.com.*|http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
 
-    private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/dlp/[a-z0-9]+/.*?)\"";
+    private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/(cache/)?dlp/[a-z0-9]+/.*?)\"";
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
     private String actionString;
@@ -112,8 +112,7 @@ public class FileFactory extends PluginForHost {
             return;
         }
 
-        String newURL = "http://" + requestInfo.getConnection().getURL().getHost() + new Regex(requestInfo.getHtmlCode(), baseLink).getMatch(0);
-        logger.info(newURL);
+        String newURL = "http://" + requestInfo.getConnection().getURL().getHost() + new Regex(requestInfo.getHtmlCode(), baseLink).getMatch(0);        
 
         if (newURL != null) {
 
@@ -175,17 +174,17 @@ public class FileFactory extends PluginForHost {
 
                 if (unit.equals("minutes")) {
                     wait = Integer.parseInt(waitTime);
-                    logger.info("wait" + " " + String.valueOf(wait + 1) + " minutes");
+                    logger.severe("wait" + " " + String.valueOf(wait + 1) + " minutes");
                     wait = wait * 60000 + 60000;
                 } else if (unit.equals("seconds")) {
                     wait = Integer.parseInt(waitTime);
-                    logger.info("wait" + " " + String.valueOf(wait + 5) + " seconds");
+                    logger.severe("wait" + " " + String.valueOf(wait + 5) + " seconds");
                     wait = wait * 1000 + 5000;
                 }
 
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                 linkStatus.setValue(wait);
-                logger.info("Traffic Limit reached....");
+                logger.severe("Traffic Limit reached....");
 
                 return;
 
@@ -208,7 +207,7 @@ public class FileFactory extends PluginForHost {
                 linkStatus.setValue(60000l);
                 return;
             }
-            logger.info(requestInfo.getHtmlCode());
+            logger.severe(requestInfo.getHtmlCode());
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }

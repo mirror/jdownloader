@@ -630,8 +630,7 @@ public class Rapidshare extends PluginForHost {
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
             if (Sniffy.hasSniffer()) throw new SnifferException();
         }
-        Rapidshare.correctURL(downloadLink);
-        logger.info(downloadLink.getDownloadURL());
+        Rapidshare.correctURL(downloadLink);        
 
         Browser br = new Browser();
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
@@ -1198,7 +1197,7 @@ public class Rapidshare extends PluginForHost {
             return ai;
         }
         
-        logger.info(br + "");
+        
         String validUntil = br.getRegex("<td>(Expiration date|G\\&uuml\\;ltig bis)\\:</td><td style=.*?><b>(.*?)</b></td>").getMatch(1).trim();
 
         String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getMatch(1);
@@ -1233,7 +1232,7 @@ public class Rapidshare extends PluginForHost {
         if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
             ai.setExpired(true);
         }
-        logger.info(ai + "");
+        
 
         return ai;
     }
