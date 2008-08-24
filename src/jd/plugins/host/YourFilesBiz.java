@@ -18,36 +18,19 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class YourFilesBiz extends PluginForHost {
-
-    private static final String CODER = "eXecuTe";
-    private static final String DOWNLOAD_LINK = "value='http://°'>";
-    private static final String DOWNLOAD_NAME = "<td align=left width=20%><b>Dateiname:</b></td>\n       <td align=left width=80%>°</td>";
-
-    // Suchmasken
-    private static final String DOWNLOAD_SIZE = "  <tr class=tdrow1>°<td align=left><b>Dateigr°e:</b></td>°<td align=left>°</td>°</tr>";
     private static final String HOST = "yourfiles.biz";
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
-
-    private static final String PLUGIN_NAME = HOST;
-    private String downloadURL = "";
-    private HTTPConnection urlConnection;
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+");
 
     public YourFilesBiz() {
         super();
@@ -65,72 +48,17 @@ public class YourFilesBiz extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        String page = br.getPage(downloadLink.getDownloadURL());
 
-        try {
+        downloadLink.setName(new Regex(page, Pattern.compile("<td align=left width=20%><b>Dateiname:</b></td>[\\s]*?<td align=left width=80%>(.*?)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        downloadLink.setDownloadSize(Regex.getSize(new Regex(page, Pattern.compile("<td align=left><b>Dateigr..e:</b></td>[\\s]*?<td align=left>(.*?)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
 
-            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-
-            if (requestInfo.getHtmlCode().equals("")) {
-                logger.severe("download not found");
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return false;
-            }
-
-            String fileName = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
-            Integer length = getFileSize(requestInfo.getHtmlCode());
-
-            // downloadinfos gefunden? -> download verfügbar
-            if (fileName != null && length != null) {
-
-                downloadLink.setName(fileName);
-
-                try {
-                    downloadLink.setDownloadSize(length);
-                } catch (Exception e) {
-                }
-
-                return true;
-
-            }
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // unbekannter fehler
-        return false;
-
-    }
-
-    private int getFileSize(String source) {
-
-        int size = 0;
-        String sizeString = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(source, DOWNLOAD_SIZE, 3));
-        if (sizeString == null) {
-            sizeString = "";
-        }
-
-        if (sizeString.contains("MB")) {
-            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° MB", 0);
-            size = (int) Math.round(Double.parseDouble(sizeString) * 1024 * 1024);
-        } else if (sizeString.contains("KB")) {
-            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° KB", 0);
-            size = (int) Math.round(Double.parseDouble(sizeString) * 1024);
-        } else if (sizeString.contains("Byte")) {
-            sizeString = SimpleMatches.getSimpleMatch(sizeString, "° Byte", 0);
-            size = (int) Math.round(Double.parseDouble(sizeString));
-        }
-
-        return size;
-
+        return true;
     }
 
     @Override
@@ -138,13 +66,14 @@ public class YourFilesBiz extends PluginForHost {
         return HOST;
     }
 
+    @Override
     public String getPluginName() {
-        return PLUGIN_NAME;
+        return HOST;
     }
 
     @Override
     public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
+        return patternSupported;
     }
 
     @Override
@@ -154,51 +83,21 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        URL downloadUrl = new URL(downloadLink.getDownloadURL());
-
-        RequestInfo requestInfo = HTTP.getRequest(downloadUrl);
-
-        // serverantwort leer (weiterleitung) -> download nicht verfügbar
-        if (requestInfo.getHtmlCode().equals("")) {
-            logger.severe("download not found");
+        if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
 
-        String fileName = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_NAME, 0));
-        downloadLink.setName(fileName);
-
-        try {
-            int length = getFileSize(requestInfo.getHtmlCode());
-            downloadLink.setDownloadSize(length);
-        } catch (Exception e) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-        }
-
-        // downloadLink auslesen
-        downloadURL = "http://" + Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), DOWNLOAD_LINK, 0));
-
-        // Download vorbereiten
-        downloadLink.getLinkStatus().setStatusText("Verbindung aufbauen");
-        urlConnection = new HTTPConnection(new URL(downloadURL).openConnection());
-
-        // Download starten
+        HTTPConnection urlConnection = br.openGetConnection("http://" + new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("value='http://(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         dl = new RAFDownload(this, downloadLink, urlConnection);
-
         dl.startDownload();
-
     }
 
     @Override
     public void reset() {
-
-        downloadURL = "";
-        urlConnection = null;
-
     }
 
     @Override

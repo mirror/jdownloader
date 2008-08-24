@@ -18,39 +18,31 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
     private static final String HOST = "uploadstube.de";
 
-    static private final Pattern patternSupported = Pattern.compile("http://.*?uploadstube\\.de/download.php\\?file=.*", Pattern.CASE_INSENSITIVE);
-
-    //
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*", Pattern.CASE_INSENSITIVE);
 
     public UploadStube() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
-    } // kein BotCheck
+    }
 
     @Override
     public String getAGBLink() {
-
         return "http://www.uploadstube.de/regeln.php";
     }
 
@@ -60,28 +52,13 @@ public class UploadStube extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws MalformedURLException, IOException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        String page = br.getPage(downloadLink.getDownloadURL());
 
-      
-            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            downloadLink.setName(new Regex(requestInfo.getHtmlCode(), "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
+        downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
+        downloadLink.setDownloadSize(Regex.getSize(new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>").getMatch(0)));
 
-         
-                String[] fileSize = new Regex(requestInfo.getHtmlCode(), "<b>Dateigr..e:</b> ([0-9\\.]*) (.*?)<br>").getMatches()[0];
-                double length = Double.parseDouble(fileSize[0].trim());
-                int bytes;
-                String type = fileSize[1].toLowerCase();
-                if (type.equalsIgnoreCase("kb")) {
-                    bytes = (int) (length * 1024);
-                } else if (type.equalsIgnoreCase("mb")) {
-                    bytes = (int) (length * 1024 * 1024);
-                } else {
-                    bytes = (int) length;
-                }
-                downloadLink.setDownloadSize(bytes);
-         
-            return true;
-      
+        return true;
     }
 
     @Override
@@ -90,12 +67,7 @@ public class UploadStube extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -111,37 +83,24 @@ public class UploadStube extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        // if (aborted) {
-        // logger.warning("Plugin abgebrochen");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        // }
 
-        RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-        String dlurl = new Regex(requestInfo.getHtmlCode(), "onClick=\"window.location=..(http://www.uploadstube.de/.*?)..\">.;").getMatch(0);
-        if (dlurl == null) {
-            logger.severe("Datei nicht gefunden");
-            linkStatus.setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(dlurl), requestInfo.getCookie(), downloadLink.getDownloadURL(), true);
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        dl = new RAFDownload(this, downloadLink, urlConnection);
 
+        HTTPConnection urlConnection = br.openGetConnection(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
     }
 
     @Override
     public void reset() {
-        // TODO Automatisch erstellter Methoden-Stub
     }
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Automatisch erstellter Methoden-Stub
     }
 }
