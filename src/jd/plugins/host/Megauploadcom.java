@@ -31,7 +31,6 @@ import jd.http.HTTPConnection;
 import jd.http.Request;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -45,7 +44,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Megauploadcom extends PluginForHost {
-    static private final String CODER = "JD-Team";
 
     static private final String COOKIE = "l=de; v=1; ve_view=1";
 
@@ -61,13 +59,13 @@ public class Megauploadcom extends PluginForHost {
 
     static private final int PENDING_WAITTIME = 45000;
 
-    static private final String SIMPLEPATTERN_CAPTCHA_POST_URL = "<form method=\"POST\" action=\"°\" target";
+    static private final String SIMPLEPATTERN_CAPTCHA_POST_URL = "<form method=\"POST\" action=\"(.*?)\" target";
 
-    static private final String SIMPLEPATTERN_CAPTCHA_URl = " <img src=\"/capgen.php?°\">";
+    static private final String SIMPLEPATTERN_CAPTCHA_URl = " <img src=\"/capgen\\.php?(.*?)\">";
 
-    static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK = "var ° = String.fromCharCode(Math.abs(°));°var ° = '°' + String.fromCharCode(Math.sqrt(°));";
+    static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK = "var (.*?) = String\\.fromCharCode\\(Math\\.abs\\((.*?)\\)\\);(.*?)var (.*?) = '(.*?)' \\+ String\\.fromCharCode\\(Math\\.sqrt\\((.*?)\\)\\);";
 
-    static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK = "Math.sqrt(°));°document.getElementById(\"°\").innerHTML = '<a href=\"°' ° '°\"°onclick=\"loadingdownload()";
+    static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK = "Math\\.sqrt\\((.*?)\\)\\);(.*?)document\\.getElementById\\(\"(.*?)\"\\)\\.innerHTML = '<a href=\"(.*?)' (.*?) '(.*?)\"(.*?)onclick=\"loadingdownload\\(\\)";
 
     private String captchaPost;
 
@@ -157,14 +155,14 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) {
-    	try {
-    		return checkLinks(new DownloadLink[] {downloadLink})[0];
-		} catch (Exception e) {
-		}
+        try {
+            return checkLinks(new DownloadLink[] { downloadLink })[0];
+        } catch (Exception e) {
+        }
         return true;
     }
 
@@ -202,7 +200,6 @@ public class Megauploadcom extends PluginForHost {
             try {
                 link = "http://" + new URL(link).getHost() + "/" + countryID + "/?d=" + link.substring(link.indexOf("?d=") + 3);
             } catch (MalformedURLException e) {
-
                 e.printStackTrace();
             }
 
@@ -220,9 +217,9 @@ public class Megauploadcom extends PluginForHost {
             return;
         }
 
-        captchaURL = "http://" + new URL(link).getHost() + "/capgen.php?" + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0);
+        captchaURL = "http://" + new URL(link).getHost() + "/capgen.php" + new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl).getMatch(0);
         fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "checkverificationform", "passwordhtml");
-        captchaPost = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_POST_URL, 0);
+        captchaPost = new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_POST_URL).getMatch(0);
 
         if (captchaURL.endsWith("null") || captchaPost == null) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -239,7 +236,7 @@ public class Megauploadcom extends PluginForHost {
         String code = this.getCaptchaCode(file, downloadLink);
 
         requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code, true);
-        if (SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl, 0) != null) {
+        if (new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl).getMatch(0) != null) {
 
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
@@ -273,9 +270,11 @@ public class Megauploadcom extends PluginForHost {
         }
         sleep(PENDING_WAITTIME, downloadLink);
 
-        Character l = (char) Math.abs(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 1).trim()));
-        String i = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 4) + (char) Math.sqrt(Integer.parseInt(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK, 5).trim()));
-        String url = Encoding.htmlDecode(SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 3) + i + l + SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK, 5));
+        String[] tmp = new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
+        Character l = (char) Math.abs(Integer.parseInt(tmp[1].trim()));
+        String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
+        tmp = new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
+        String url = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
         if (!requestInfo.isOK()) {
@@ -297,44 +296,42 @@ public class Megauploadcom extends PluginForHost {
         dl.startDownload();
 
     }
+
     /**
-     * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
-     * kann das über diese Funktion gemacht werden. Beir s.com istd as derzeitd
-     * eaktiviert, weild er Linkchecker nicht mehr über ssl erreichbar ist.
+     * Bietet der hoster eine Möglichkeit mehrere Links gleichzeitig zu prüfen,
+     * kann das über diese Funktion gemacht werden. Bei RS.com ist das derzeit
+     * deaktiviert, weil der Linkchecker nicht mehr über SSL erreichbar ist.
      */
     public boolean[] checkLinks(DownloadLink[] urls) {
         try {
             if (urls == null) { return null; }
-            boolean[] ret = new boolean[urls.length];     
-                HashMap<String, String> post = new HashMap<String, String>();
-                for (int j = 0; j < urls.length; j++) {
-                    if (!canHandle(urls[j].getDownloadURL())) { return null; }
-                	post.put("id"+j, new Regex(urls[j].getDownloadURL(),".*?\\?d\\=(.{8})").getMatch(0));
-				}
-                Browser b = new Browser();
-                Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l", "de");
-                Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar", "1");
-                String pag = b.postPage("http://www.megaupload.com/mgr_linkcheck.php", post).replaceFirst("0=www.megaupload.com&1=www.megarotic.com&", "").replaceFirst("id[\\d]+=", "").trim();
-                String[] pg = pag.split("&id[\\d]+=");
-                for (int j = 0; j < pg.length; j++) {
-        			try {
-            			String[] infos = pg[j].split("&[sdn]=");
-            			if(infos.length<4 || !infos[0].equals("0"))
-            			{
-            				ret[j]=false;
-            			}
-            			else
-            			{
-            				ret[j]=true;
-                            urls[j].setDownloadSize(Integer.parseInt(infos[1]));
-                            urls[j].setName(Encoding.htmlDecode(infos[3].trim()));
-            			}
-					} catch (Exception e) {
-						ret[j]=false;
-					}
-					
-				}
-                return ret;
+            boolean[] ret = new boolean[urls.length];
+            HashMap<String, String> post = new HashMap<String, String>();
+            for (int j = 0; j < urls.length; j++) {
+                if (!canHandle(urls[j].getDownloadURL())) { return null; }
+                post.put("id" + j, new Regex(urls[j].getDownloadURL(), ".*?\\?d\\=(.{8})").getMatch(0));
+            }
+            Browser b = new Browser();
+            Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l", "de");
+            Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar", "1");
+            String pag = b.postPage("http://www.megaupload.com/mgr_linkcheck.php", post).replaceFirst("0=www.megaupload.com&1=www.megarotic.com&", "").replaceFirst("id[\\d]+=", "").trim();
+            String[] pg = pag.split("&id[\\d]+=");
+            for (int j = 0; j < pg.length; j++) {
+                try {
+                    String[] infos = pg[j].split("&[sdn]=");
+                    if (infos.length < 4 || !infos[0].equals("0")) {
+                        ret[j] = false;
+                    } else {
+                        ret[j] = true;
+                        urls[j].setDownloadSize(Integer.parseInt(infos[1]));
+                        urls[j].setName(Encoding.htmlDecode(infos[3].trim()));
+                    }
+                } catch (Exception e) {
+                    ret[j] = false;
+                }
+
+            }
+            return ret;
 
         } catch (MalformedURLException e) {
 
@@ -347,6 +344,7 @@ public class Megauploadcom extends PluginForHost {
         }
 
     }
+
     public void reset() {
         captchaPost = null;
         captchaURL = null;

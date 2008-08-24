@@ -18,14 +18,12 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
@@ -33,59 +31,36 @@ import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
-/**
- * HostPlugin für gullishare TODO: Erzwungene Wartezeit (gibt es die überhaupt
- * noch?)
- */
 public class Gulli extends PluginForHost {
-    static private final String CODER = "JD-Team";
 
     static private final String DOWNLOAD_URL = "http://share.gulli.com/download";
 
     static private final String HOST = "share.gulli.com";
 
     static private final String HOST_URL = "http://share.gulli.com/";
+
     static private final Pattern PAT_CAPTCHA = Pattern.compile("<img src=\"(/captcha[^\"]*)");
+
     static private final Pattern PAT_DOWNLOAD_ERROR = Pattern.compile("share.gulli.com/error([^\"]*)");
 
     static private final Pattern PAT_DOWNLOAD_LIMIT = Pattern.compile("timeLeft=([^\"]*)&");
-
-    private static final String PAT_DOWNLOAD_SIZE_B = "div id=\"share_download\">°<h1>° (° B)</h1>";
-
-    private static final String PAT_DOWNLOAD_SIZE_KB = "div id=\"share_download\">°<h1>° (° KB)</h1>";
-
-    static private final String PAT_DOWNLOAD_SIZE_MB = "div id=\"share_download\">°<h1>° (° MB)</h1>";
 
     static private final Pattern PAT_DOWNLOAD_URL = Pattern.compile("<form action=\"/(download[^\"]*)");
 
     static private final Pattern PAT_FILE_ID = Pattern.compile("<input type=\"hidden\" name=\"file\" value=\"([^\"]*)");
 
-    // http://share.gulli.com/files/819611887
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://share\\.gulli\\.com/files/[\\d]+.*", Pattern.CASE_INSENSITIVE);
-
-    // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "0";
-
-    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
 
     private String cookie;
 
-    /**
-     * ID des Files bei gulli
-     */
     private String fileId;
 
     private HTTPConnection finalDownloadConnection;
 
     private String finalDownloadURL;
 
-    // private boolean serverIPChecked;
-
     public Gulli() {
-        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
+        super();
     }
 
     @Override
@@ -101,58 +76,18 @@ public class Gulli extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        RequestInfo requestInfo;
-        String name = downloadLink.getName();
-        if (name.toLowerCase().matches(".*\\..{1,5}\\.html$")) {
-            name = name.replaceFirst("\\.html$", "");
-        }
-        downloadLink.setName(name);
-        try {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, false);
-            if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) { return false; }
-            requestInfo = HTTP.readFromURL(requestInfo.getConnection());
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        Browser.clearCookies(HOST);
+        String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<h1>(.*?) \\((.*?)\\)</h1>", Pattern.CASE_INSENSITIVE)).getRow(0);
 
-            if (Regex.matches(requestInfo, "Fehler 404")) { return false; }
-            int filesize = 0;
-            String size;
-            size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_B, 2);
+        downloadLink.setName(infos[0]);
+        downloadLink.setDownloadSize(Regex.getSize(infos[1]));
 
-            if (size != null) {
-                filesize = (int) Double.parseDouble(size);
-            }
-
-            if (size == null) {
-
-                size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_KB, 2);
-
-                if (size != null) {
-                    filesize = (int) (Double.parseDouble(size.replaceAll(",", ".")) * 1024);
-                }
-            }
-            if (size == null) {
-                size = SimpleMatches.getSimpleMatch(requestInfo.getHtmlCode(), PAT_DOWNLOAD_SIZE_MB, 2);
-
-                if (size != null) {
-                    filesize = (int) (Double.parseDouble(size.replaceAll(",", ".")) * 1024 * 1024);
-                } else {
-
-                }
-
-            }
-            if (filesize > 0) {
-                downloadLink.setDownloadSize(filesize);
-            }
-
-            return true;
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-        return false;
+        return true;
     }
 
     @Override
@@ -177,12 +112,10 @@ public class Gulli extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink parameter) throws Exception {
-        LinkStatus linkStatus = parameter.getLinkStatus();
+    public void handleFree(DownloadLink downloadLink) throws IOException {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         RequestInfo requestInfo = null;
         String dlUrl = null;
-
-        DownloadLink downloadLink = parameter;
 
         requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
         if (Regex.matches(requestInfo, "Fehler")) {
@@ -239,7 +172,7 @@ public class Gulli extends PluginForHost {
         String url = HOST_URL + dlUrl;
         // Redirect folgen und dabei die Cookies weitergeben
         // share.gulli.com/error
-        while ((red = requestInfo.getConnection().getHeaderField("Location")) != null && (waittime = SimpleMatches.getFirstMatch(red, PAT_DOWNLOAD_LIMIT, 1)) == null && (error = SimpleMatches.getFirstMatch(red, PAT_DOWNLOAD_ERROR, 1)) == null) {
+        while ((red = requestInfo.getConnection().getHeaderField("Location")) != null && (waittime = new Regex(red, PAT_DOWNLOAD_LIMIT).getMatch(0)) == null && (error = new Regex(red, PAT_DOWNLOAD_ERROR).getMatch(0)) == null) {
             logger.info("red: " + red + " cookie: " + cookie);
             url = red;
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(red), cookie, null, false);
@@ -283,6 +216,5 @@ public class Gulli extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-
     }
 }
