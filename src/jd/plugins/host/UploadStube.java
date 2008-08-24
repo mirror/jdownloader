@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -53,6 +54,7 @@ public class UploadStube extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        Browser.clearCookies(HOST);
         String page = br.getPage(downloadLink.getDownloadURL());
 
         downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
@@ -85,6 +87,7 @@ public class UploadStube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        Browser.clearCookies(HOST);
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

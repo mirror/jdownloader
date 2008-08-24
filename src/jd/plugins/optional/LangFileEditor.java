@@ -148,14 +148,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         top1.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder: ")), BorderLayout.LINE_START);
         top1.add(cmboFolder = new ComboBrowseFile("LANGFILEEDITOR_FOLDER"));
         cmboFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        cmboFolder.setText(((sourceFolder = (File) subConfig.getProperty(PROPERTY_FOLDER)) != null) ? sourceFolder.getAbsolutePath() : "");
+        sourceFolder = (File) subConfig.getProperty(PROPERTY_FOLDER);
+        if (sourceFolder != null) cmboFolder.setText(sourceFolder.getAbsolutePath());
         cmboFolder.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFolder.addActionListener(this);
 
         top2.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File: ")), BorderLayout.LINE_START);
         top2.add(cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE"));
         cmboFile.setFileFilter(new LngFileFilter());
-        cmboFile.setText(((languageFile = (File) subConfig.getProperty(PROPERTY_FILE)) != null) ? languageFile.getAbsolutePath() : "");
+        languageFile = (File) subConfig.getProperty(PROPERTY_FILE);
+        if (languageFile != null) cmboFile.setText(languageFile.getAbsolutePath());
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 

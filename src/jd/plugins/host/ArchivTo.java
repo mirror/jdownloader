@@ -18,26 +18,18 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class ArchivTo extends PluginForHost {
-
-    static private final String FILENAME = "<td width=\".*\">Original-Dateiname</td>\n	<td width=\".*\">: <a href=\".*\" style=\".*\">(.*?)</a></td>";
-
-    static private final String FILESIZE = "<td width=\".*\">: ([0-9]+) Byte";
-
     private static final String HOST = "archiv.to";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
@@ -62,24 +54,14 @@ public class ArchivTo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         Browser.clearCookies(HOST);
+        String page = br.getPage(downloadLink.getDownloadURL());
 
-        try {
-            String url = downloadLink.getDownloadURL();
-            br.getPage(url);
+        downloadLink.setName(new Regex(page, Pattern.compile("<td width=\"23%\">Original-Dateiname</td>[\\s]*?<td width=\"77%\">: <a href=\"(.*?)\" style=\"Color: #5FB8E0\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE)).getMatch(1));
+        downloadLink.setDownloadSize(Long.parseLong(new Regex(page, Pattern.compile("<td width=\"23%\">Dateigr..e</td>[\\s]*?<td width=\"77%\">: (.*?) Bytes \\(~ (.*?)\\)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
 
-            downloadLink.setName(br.getRegex(FILENAME).getMatch(0));
-            if (!br.containsHTML(":  Bytes (~ 0 MB)")) {
-                downloadLink.setDownloadSize(Integer.parseInt(br.getRegex(FILESIZE).getMatch(0)));
-            } else {
-                return false;
-            }
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+        return true;
     }
 
     @Override
@@ -105,34 +87,17 @@ public class ArchivTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         Browser.clearCookies(HOST);
-        try {
-            String url = downloadLink.getDownloadURL();
 
-            br.getPage(url);
-
-            downloadLink.setDownloadSize(Integer.parseInt(br.getRegex("<td width=.*?>: ([\\d]*?) Bytes").getMatch(0)));
-            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://archiv.to/Get/?System=Download&Hash=" + new Regex(url, ".*HashID=(.*)").getMatch(0)), null, url, true);
-
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            if (!getFileInformation(downloadLink)) {
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return;
-            }
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-            dl.startDownload();
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
-        linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        return;
+        HTTPConnection urlConnection = br.openGetConnection("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"\\./(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.startDownload();
     }
 
     @Override
