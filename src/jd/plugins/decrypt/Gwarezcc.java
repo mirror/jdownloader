@@ -38,13 +38,12 @@ import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
     static private final String host = "gwarez.cc";
-    private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
 
-    private static final Pattern patternLink_Details_Main = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Mirror_Check = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Main.pattern() + "|" + patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
     private static final String PREFER_DLC = "PREFER_DLC";
 
     public Gwarezcc() {
@@ -60,12 +59,7 @@ public class Gwarezcc extends PluginForDecrypt {
             RequestInfo requestInfo;
             boolean dlc_found = false;
 
-            if (cryptedLink.matches(patternLink_Details_Main.pattern())) {
-                /* Link aus der Übersicht */
-                String downloadid = url.getFile().substring(1);
-                /* weiterleiten zur Download Info Seite */
-                decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "#details"));
-            } else if (cryptedLink.matches(patternLink_Details_Mirror_Check.pattern())) {
+            if (cryptedLink.matches(patternLink_Details_Mirror_Check.pattern())) {
                 /* Link aus der Mirror Check Seite */
                 String downloadid = url.getFile().replaceAll("check", "parts");
                 /* weiterleiten zur Mirror Parts Seite */
@@ -73,11 +67,11 @@ public class Gwarezcc extends PluginForDecrypt {
             } else if (cryptedLink.matches(patternLink_Details_Download.pattern())) {
                 /* Link auf die Download Info Seite */
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)").getMatch(0);
+                String downloadid = new Regex(url.getFile(), "\\/([\\d].*)").getMatch(0);
 
                 if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
                     /* DLC Suchen */
-                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
                     if (dlc.length == 1) {
                         decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
                         dlc_found = true;
@@ -88,7 +82,7 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 if (dlc_found == false) {
                     /* Mirrors suchen (Verschlüsselt) */
-                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"img/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
                     for (int i = 0; i < mirror_pages.length; i++) {
                         /* Mirror Page zur weiteren Verarbeitung adden */
                         decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));
@@ -104,7 +98,7 @@ public class Gwarezcc extends PluginForDecrypt {
                 /* Passwort suchen */
                 url = new URL("http://gwarez.cc/" + downloadid + "#details");
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<td width=\"110\" height=\"20\" style=\"background\\-image\\:url\\(img\\/\\/table_ad920f_bg\\.jpg\\)\\;\">\n(.*?)<\\/td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                 if (password == null) {
                     logger.severe("Please Update Gwarez Plugin(PW Pattern)");
                 } else {
@@ -142,7 +136,7 @@ public class Gwarezcc extends PluginForDecrypt {
     }
 
     public String getCoder() {
-        return "JD-Team, Scikes";
+        return "JD-Team";
     }
 
     public String getHost() {
