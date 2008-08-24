@@ -17,9 +17,11 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,7 +33,8 @@ public class RomHustlerNet extends PluginForHost {
 
     private static final String HOST = "romhustler.net";
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?romhustler\\.net/rom/.*?/\\d+/.*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?romhustler\\.net/download/.*?/\\d+", Pattern.CASE_INSENSITIVE);
+    private String downloadUrl;
 
     public RomHustlerNet() {
         super();
@@ -56,27 +59,13 @@ public class RomHustlerNet extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             Browser.clearCookies(HOST);
-            
-            String url = downloadLink.getDownloadURL();
-            
-            String filePlatform = new Regex(url, "romhustler\\.net/rom/(.*?)/\\d+/.*?").getMatch(0);
-            String fileId = new Regex(url, "romhustler\\.net/rom/.*?/(\\d+)/.*?").getMatch(0);
-            
-            br.getPage(url);
-            
-            String name = br.getRegex("ROM Filename:.*info\">(.*?)</span>").getMatch(0);
+            br.getPage(downloadLink.getDownloadURL());
+            downloadUrl = decodeurl(br.getRegex(Pattern.compile("link_enc=new Array\\((.*?)\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            if (downloadUrl == null) return false;
+            String name = Encoding.htmlDecode(downloadUrl.replaceAll("^.*/", ""));
             downloadLink.setName(name);
-            
-            br.getPage("http://romhustler.net/download/" + filePlatform + "/" + fileId);
-            
-            String downloadUrl = br.getRegex("link_enc=new Array\\((.*?)\\);").getMatch(0);
-            
-            downloadUrl = downloadUrl.replace("'", "");
-            downloadUrl = downloadUrl.replace(",", "");
-            
-            downloadLink.setUrlDownload(downloadUrl);
+            return true;
         } catch (Exception e) {
-            e.printStackTrace();
         }
         return false;
     }
@@ -104,14 +93,11 @@ public class RomHustlerNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-
-        HTTPConnection urlConnection = br.openFormConnection(1);
-        downloadLink.setDownloadSize(urlConnection.getContentLength());
+        HTTPConnection urlConnection = br.openGetConnection(downloadUrl);
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(false);
         dl.setChunkNum(1);
@@ -124,5 +110,20 @@ public class RomHustlerNet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private static String decodeurl(String page) {
+        if (page == null) return null;
+        StringBuffer sb = new StringBuffer();
+        String pattern = "('.'),?";
+        Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(page);
+        while (r.find()) {
+            if (r.group(1).length() > 0) {
+                String content = r.group(1).replaceAll("'|,", "");
+                r.appendReplacement(sb, content);
+            }
+        }
+        r.appendTail(sb);
+        return sb.toString();
     }
 }
