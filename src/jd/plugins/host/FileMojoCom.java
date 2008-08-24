@@ -108,7 +108,6 @@ public class FileMojoCom extends PluginForHost {
         }
 
         HTTPConnection urlConnection = br.openFormConnection(1);
-        downloadLink.setDownloadSize(urlConnection.getContentLength());
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(false);
         dl.setChunkNum(1);
