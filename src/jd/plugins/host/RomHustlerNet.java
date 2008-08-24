@@ -26,6 +26,7 @@ import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
@@ -98,8 +99,9 @@ public class RomHustlerNet extends PluginForHost {
             return;
         }
         HTTPConnection urlConnection = br.openGetConnection(downloadUrl);
+        logger.info(Plugin.getFileNameFormHeader(urlConnection));
         dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(false);
+        dl.setResume(true);
         dl.setChunkNum(1);
         dl.startDownload();
     }

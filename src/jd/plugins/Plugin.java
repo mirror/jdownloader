@@ -22,9 +22,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -41,6 +39,7 @@ import jd.config.MenuItem;
 import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
+import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.unrar.JUnrar;
@@ -336,17 +335,13 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         while (ret.endsWith("\"") || ret.endsWith("'") || ret.endsWith(";")) {
             ret = ret.substring(0, ret.length() - 1);
         }
-        try {
-            ret = URLDecoder.decode(ret, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-        }
-
+        ret = Encoding.htmlDecode(ret);
         return ret;
     }
 
     static public String getFileNameFormURL(URL url) {
         int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
-        return url.getFile().substring(index + 1);
+        return Encoding.htmlDecode(url.getFile().substring(index + 1));
     }
 
     /**
