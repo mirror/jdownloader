@@ -54,13 +54,18 @@ public class UploadStube extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        Browser.clearCookies(HOST);
-        String page = br.getPage(downloadLink.getDownloadURL());
+        try {
+            Browser.clearCookies(HOST);
+            String page = br.getPage(downloadLink.getDownloadURL());
 
-        downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
-        downloadLink.setDownloadSize(Regex.getSize(new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>").getMatch(0)));
+            downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
+            downloadLink.setDownloadSize(Regex.getSize(new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>").getMatch(0)));
 
-        return true;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override

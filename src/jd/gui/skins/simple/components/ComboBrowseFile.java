@@ -66,7 +66,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
             e.printStackTrace();
             list = new Vector<String>();
         }
-        files = list;
+        setFiles(list);
 
         this.setName(string);
         initGUI();
@@ -75,7 +75,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     public ComboBrowseFile(Vector<String> files) {
         super();
         if (files == null) files = new Vector<String>();
-        this.files = files;
+        setFiles(files);
         initGUI();
     }
 
@@ -235,6 +235,13 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      */
     public void setFileFilter(FileFilter fileFilter) {
         this.fileFilter = fileFilter;
+    }
+
+    private void setFiles(Vector<String> files) {
+        for (int i = files.size() - 1; i >= 0; --i) {
+            if (!new File(files.get(i)).exists()) files.remove(i);
+        }
+        this.files = files;
     }
 
     /**

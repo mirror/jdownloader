@@ -47,25 +47,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public static final int LINKTYPE_NORMAL = 0;
 
     /**
-     * Hierhin soll die Datei gespeichert werden.
-     */
-    // private String fileOutput;
-    /**
      * Logger für Meldungen
      */
     private static Logger logger = JDUtilities.getLogger();
-    private static final long serialVersionUID = 1981079856214268373L;
 
-    // public static final int STATUS_ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK =
-    // 24;
+    private static final long serialVersionUID = 1981079856214268373L;
 
     public static final String UNKNOWN_FILE_NAME = "unknownFileName.file";
 
-    /**
-     * Statustext der von der GUI abgefragt werden kann
-     */
-    // private transient boolean aborted = false;
-    // private transient String statusText = "";
     private transient Boolean available = null;
 
     private long[] chunksProgress = null;
@@ -103,14 +92,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private String browserurl = null;
 
-    // /**
-    // * Zeigt, ob dieser DownloadLink grad heruntergeladen wird
-    // */
-    // private transient boolean inProgress = false;
-
-    /**
-     * serialVersionUID
-     */
     private FilePackage filePackage;
 
     /**
@@ -129,21 +110,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Lokaler Pfad zum letzten captchafile
      */
     private File latestCaptchaFile = null;
-
-    // /**
-    // * Status des DownloadLinks
-    // */
-    // private int status = LinkStatus.TODO;
-
-    // /**
-    // * Timestamp bis zu dem die Wartezeit läuft
-    // */
-    // private transient long mustWaitTil = 0;
-    //
-    // /**
-    // * Ursprüngliche Wartezeit
-    // */
-    // private transient long waittime = 0;
 
     private boolean limited = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
 
@@ -170,8 +136,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * geladen wurde
      */
     private transient PluginForContainer pluginForContainer;
-
-    // public LinkedList<Object> saveObjects = new LinkedList<Object>();
 
     private String sourcePluginComment = null;
 
@@ -244,27 +208,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     }
 
-    /**
-     * Über diese funktion kann das plugin den link benachrichten dass neue
-     * bytes geladen worden sind. dadurchw ird der interne speedmesser
-     * aktualisiert
-     * 
-     * @param bytes
-     */
-    // public void addBytes(int bytes, int difftime) {
-    //
-    // this.getSpeedMeter().addSpeedValue(bytes/difftime);
-    //
-    // }
     public void addSpeedValue(int speed) {
         getSpeedMeter().addSpeedValue(speed);
     }
 
     public int compareTo(DownloadLink o) {
-
         return getDownloadURL().compareTo(o.getDownloadURL());
-        // return
-        // extractFileNameFromURL().compareTo(o.extractFileNameFromURL());
     }
 
     /**
@@ -301,25 +250,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public DownloadInterface getDownloadInstance() {
         return downloadInstance;
     }
-
-    // // /**
-    // // * Liefert den Status dieses Downloads zurück
-    // // *
-    // // * @return Status des Downloads
-    // // */
-    // public int getStatus() {
-    // return status;
-    // }
-
-    // /**
-    // * Zeigt, ob dieser Download grad in Bearbeitung ist
-    // *
-    // * @return wahr, wenn diese Download in bearbeitung ist. Plugin aktivitäen
-    // * hinzugezählt
-    // */
-    // public boolean isPluginActive() {
-    // return inProgress;
-    // }
 
     public SingleDownloadController getDownloadLinkController() {
         return downloadLinkController;
@@ -380,36 +310,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         browserurl = url;
     }
 
-    // /**
-    // * Kennzeichnet den Download als in Bearbeitung oder nicht Im gegensatz zu
-    // * link.setStatus(inPROGRESS) zeigt dieser wert an ob der link in
-    // * bearbeitung ist. über getStatus kann nur abgerufen werden ob der
-    // download
-    // * gerade läuft
-    // *
-    // * @param inProgress
-    // * wahr, wenn die Datei als in Bearbeitung gekennzeichnet werden
-    // * soll
-    // */
-    // public void setInProgress(boolean inProgress) {
-    // this.inProgress = inProgress;
-    // }
-
-    // /**
-    // * Setzt den Status des Downloads
-    // *
-    // * @param status
-    // * Der neue Status des Downloads
-    // */
-    // public void setStatus(int status) {
-    // this.status = status;
-    // if (status != LinkStatus.DOWNLOAD_IN_PROGRESS) {
-    // speedMeter = null;
-    //
-    // }
-    //
-    // }
-
     /**
      * Gibt den Darstellbaren Dateinamen zurück. Dabei handelt es sich nicht
      * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
@@ -453,21 +353,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
     }
 
-    // /*
-    // * (non-Javadoc)
-    // *
-    // * @see java.lang.Object#equals(java.lang.Object)
-    // */
-    // 
-    // public boolean equals(Object obj) {
-    //
-    // if (obj instanceof DownloadLink && this.getName() != null &&
-    // ((DownloadLink) obj).getName() != null)
-    // return this.getName().equals(((DownloadLink) obj).getName());
-    // else
-    // return super.equals(obj);
-    // }
-
     /**
      * Gibt das Filepacket des Links zurück. Kann auch null sein!! (Gui
      * abhängig)
@@ -500,16 +385,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return latestCaptchaFile;
     }
 
-    // /**
-    // * Setzt den Statustext der in der GUI angezeigt werden kann
-    // *
-    // * @param text
-    // */
-    // public void setStatusText(String text) {
-    //
-    // statusText = text;
-    // }
-
     public LinkStatus getLinkStatus() {
         if (linkStatus == null) {
             linkStatus = new LinkStatus(this);
@@ -521,60 +396,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return linkType;
     }
 
-    // /**
-    // * Setzt die zeit in ms ab der die Wartezeit vorbei ist.
-    // *
-    // * @param l
-    // */
-    // public void setEndOfWaittime(long l) {
-    // this.mustWaitTil = l;
-    // waittime = l - System.currentTimeMillis();
-    // if (waittime <= 0) {
-    // ((PluginForHost) this.getPlugin()).resetPlugin();
-    // }
-    //
-    // }
-    //
-    // /**
-    // * Gibt die wartezeit des Downloads zurück
-    // *
-    // * @return Totale Wartezeit
-    // */
-    // public int getWaitTime() {
-    // return (int) waittime;
-    // }
-
-    // /**
-    // * Gibt die Verbleibende Wartezeit zurück
-    // *
-    // * @return verbleibende wartezeit
-    // */
-    // public long getRemainingWaittime() {
-    // return Math.max(0, this.mustWaitTil - System.currentTimeMillis());
-    // }
-
-    // /**
-    // * Gibt zurück ob dieser download gerade auf einen reconnect wartet
-    // *
-    // * @return true/False
-    // */
-    // public boolean isWaitingForReconnect() {
-    // return getRemainingWaittime() > 0;
-    // }
-
     public int getMaximalspeed() {
-        // return 5000000/40;
-
-        // int maxspeed =
-        // JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.
-        // PARAM_DOWNLOAD_MAX_SPEED,
-        // 0) * 1024;
-        //
-        // if (maxspeed == 0) maxspeed = Integer.MAX_VALUE;
-        // maxspeed = Math.max(1, maxspeed / (Math.max(1,
-        // JDUtilities.getController().getRunningDownloadNum())));
-
-        // return 800 * 1024;
         if (maximalspeed <= 0) {
             maximalspeed = Integer.MAX_VALUE;
         }
@@ -601,11 +423,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public int getPartByName() {
-        // if(partID<0){
-        // this.setName(this.extractFileNameFromURL());
-        // }
         return partID;
-
     }
 
     /**
@@ -896,11 +714,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             this.filePackage.remove(this);
         }
         this.filePackage = filePackage;
-        // if (filePackage == null && this.filePackage != null) {
-        // setDownloadPath(this.filePackage.getDownloadDirectory());
-        // } else {
-        // setDownloadPath(null);
-        // }
+
         if (filePackage != null && !filePackage.contains(this)) {
             filePackage.add(this);
         }

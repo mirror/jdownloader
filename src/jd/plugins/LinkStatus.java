@@ -262,9 +262,6 @@ public class LinkStatus implements Serializable {
 
         if (isFailed()) { return getLongErrorMessage(); }
 
-        // String ret = "";
-
-        //    
         if (hasStatus(ERROR_IP_BLOCKED) && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
             if (errorMessage == null) {
                 ret = String.format(JDLocale.L("gui.download.waittime_status", "Wait %s min"), JDUtilities.formatSeconds((downloadLink.getPlugin().getRemainingHosterWaittime() / 1000)));
@@ -277,7 +274,6 @@ public class LinkStatus implements Serializable {
 
         if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) { return JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
 
-        // + "sek)"; }
         if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
             removeStatus(DOWNLOADINTERFACE_IN_PROGRESS);
         }
@@ -355,7 +351,6 @@ public class LinkStatus implements Serializable {
     public void reset() {
         setStatus(TODO);
 
-        // errorMessage = null;
         statusText = null;
         retryCount = 0;
         totalWaitTime = 0;
@@ -426,10 +421,8 @@ public class LinkStatus implements Serializable {
                     if (value == status) { return field.getName(); }
 
                 } catch (IllegalArgumentException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
 
@@ -463,10 +456,8 @@ public class LinkStatus implements Serializable {
                         }
                     }
                 } catch (IllegalArgumentException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
 
@@ -491,7 +482,6 @@ public class LinkStatus implements Serializable {
 
     public int getRetryCount() {
         return retryCount;
-
     }
 
     public String getStatusText() {

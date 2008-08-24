@@ -375,7 +375,6 @@ public class JDInit {
         JDUtilities.setPluginForContainerList(loadPluginForContainer());
         JDUtilities.setPluginOptionalList(loadPluginOptional());
 
-        
         for (PluginOptional plg : JDUtilities.getPluginsOptional()) {
             try {
                 if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false) && !plg.initAddon()) {
@@ -610,9 +609,7 @@ public class JDInit {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         Double version = JDUtilities.getJavaVersion();
-        Iterator<optionalPluginsVersions> iter = optionalPluginsVersionsArray.iterator();
-        while (iter.hasNext()) {
-            optionalPluginsVersions cl = (optionalPluginsVersions) iter.next();
+        for (optionalPluginsVersions cl : optionalPluginsVersionsArray) {
             if (version < cl.version) {
                 logger.finer("Plugin " + cl + " requires Java Version " + cl.version + " your Version is: " + version);
                 continue;
@@ -637,13 +634,11 @@ public class JDInit {
                     if (id != PluginOptional.ADDON_INTERFACE_VERSION) {
                         logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :Addon:" + id + " : Interface: " + PluginOptional.ADDON_INTERFACE_VERSION);
                     } else {
-                        PluginOptional p = (PluginOptional) con.newInstance(new Object[] {});
-                        pluginsOptional.add(p);
-                        logger.finer("Successfull!. Loaded " + cl);
+                        pluginsOptional.add((PluginOptional) con.newInstance(new Object[] {}));
+                        logger.finer("Successfully loaded " + cl);
                     }
                 } catch (Exception e) {
                     logger.severe("Addon " + cl + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
-
                 }
 
             } catch (Throwable e) {

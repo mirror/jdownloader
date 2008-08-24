@@ -55,13 +55,18 @@ public class ArchivTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        Browser.clearCookies(HOST);
-        String page = br.getPage(downloadLink.getDownloadURL());
+        try {
+            Browser.clearCookies(HOST);
+            String page = br.getPage(downloadLink.getDownloadURL());
 
-        downloadLink.setName(new Regex(page, Pattern.compile("<td width=\"23%\">Original-Dateiname</td>[\\s]*?<td width=\"77%\">: <a href=\"(.*?)\" style=\"Color: #5FB8E0\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE)).getMatch(1));
-        downloadLink.setDownloadSize(Long.parseLong(new Regex(page, Pattern.compile("<td width=\"23%\">Dateigr..e</td>[\\s]*?<td width=\"77%\">: (.*?) Bytes \\(~ (.*?)\\)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+            downloadLink.setName(new Regex(page, Pattern.compile("<td width=\"23%\">Original-Dateiname</td>[\\s]*?<td width=\"77%\">: <a href=\"(.*?)\" style=\"Color: #5FB8E0\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE)).getMatch(1));
+            downloadLink.setDownloadSize(Long.parseLong(new Regex(page, Pattern.compile("<td width=\"23%\">Dateigr..e</td>[\\s]*?<td width=\"77%\">: (.*?) Bytes \\(~ (.*?)\\)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
 
-        return true;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override

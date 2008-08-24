@@ -81,13 +81,18 @@ public class Gulli extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        Browser.clearCookies(HOST);
-        String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<h1>(.*?) \\((.*?)\\)</h1>", Pattern.CASE_INSENSITIVE)).getRow(0);
+        try {
+            Browser.clearCookies(HOST);
+            String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<h1>(.*?) \\((.*?)\\)</h1>", Pattern.CASE_INSENSITIVE)).getRow(0);
 
-        downloadLink.setName(infos[0]);
-        downloadLink.setDownloadSize(Regex.getSize(infos[1]));
+            downloadLink.setName(infos[0]);
+            downloadLink.setDownloadSize(Regex.getSize(infos[1]));
 
-        return true;
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
