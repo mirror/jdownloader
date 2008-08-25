@@ -48,6 +48,8 @@ public abstract class PluginForContainer extends Plugin {
 
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
+    private ContainerStatus containerStatus;
+
     protected Vector<String> downloadLinksURL;
 
     protected Vector<String> EXTENSIONS = new Vector<String>();
@@ -169,7 +171,7 @@ public abstract class PluginForContainer extends Plugin {
                 logger.severe("Could not copy file to homedir");
             }
 
-            callDecryption(res);
+            containerStatus = callDecryption(res);
         }
         return;
     }
