@@ -769,7 +769,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             ClipboardHandler.getClipboard().toggleActivation();
             break;
         case JDAction.APP_PASSWORDLIST:
-            new jdUnrarPasswordListDialog(((SimpleGUI) JDUtilities.getController().getUiInterface()).getFrame()).setVisible(true);
+            new jdUnrarPasswordListDialog(frame).setVisible(true);
             break;
         case JDAction.APP_START_STOP_DOWNLOADS:
             logger.finer("Start Stop Downloads");
@@ -1473,11 +1473,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menFile.add(SimpleGUI.createMenuItem(actionExit));
 
         menExtra.add(menViewLog);
-        menExtra.add(SimpleGUI.createMenuItem(actionConfig));
         menExtra.add(SimpleGUI.createMenuItem(actionDnD));
-        menExtra.add(SimpleGUI.createMenuItem(actionUnrar));
         menExtra.addSeparator();
         menExtra.add(SimpleGUI.createMenuItem(actionPasswordlist));
+        menExtra.add(SimpleGUI.createMenuItem(actionUnrar));
+        menExtra.addSeparator();
+        menExtra.add(SimpleGUI.createMenuItem(actionConfig));
 
         menHelp.add(SimpleGUI.createMenuItem(actionHelp));
         menHelp.add(SimpleGUI.createMenuItem(actionWiki));

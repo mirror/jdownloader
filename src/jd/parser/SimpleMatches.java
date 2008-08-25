@@ -30,30 +30,30 @@ import jd.http.Encoding;
  */
 public class SimpleMatches {
 
-    /**
-     * Regexp.count() verwenden
-     * 
-     * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Pattern, daß im Text gefunden werden soll
-     * @return Anzahl der Treffer
-     */
-    public @Deprecated
-    static int countOccurences(String data, Pattern pattern) {
-        int position = 0;
-        int occurences = 0;
-        if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
-            while (matcher.find(position)) {
-                occurences++;
-                position = matcher.start() + matcher.group().length();
-            }
-        }
-        return occurences;
-    }
+//    /**
+//     * Regexp.count() verwenden
+//     * 
+//     * Zählt, wie oft das Pattern des Plugins in dem übergebenen Text vorkommt
+//     * 
+//     * @param data
+//     *            Der zu durchsuchende Text
+//     * @param pattern
+//     *            Das Pattern, daß im Text gefunden werden soll
+//     * @return Anzahl der Treffer
+//     */
+//    public @Deprecated
+//    static int countOccurences(String data, Pattern pattern) {
+//        int position = 0;
+//        int occurences = 0;
+//        if (pattern != null) {
+//            Matcher matcher = pattern.matcher(data);
+//            while (matcher.find(position)) {
+//                occurences++;
+//                position = matcher.start() + matcher.group().length();
+//            }
+//        }
+//        return occurences;
+//    }
 
     /**
      * Regexp.getMatches() verwenden
@@ -83,25 +83,25 @@ public class SimpleMatches {
         return ret;
     }
 
-    /**
-     * Regexp.getMatches(int group) verwenden
-     * 
-     * @param source
-     * @param pattern
-     * @param id
-     * @return
-     */
-    public @Deprecated
-    static ArrayList<String> getAllSimpleMatches(Object source, Pattern pattern, int id) {
-
-        ArrayList<String> ret = new ArrayList<String>();
-        for (Matcher r = pattern.matcher(source.toString()); r.find();) {
-            if (id <= r.groupCount()) {
-                ret.add(r.group(id).trim());
-            }
-        }
-        return ret;
-    }
+//    /**
+//     * Regexp.getMatches(int group) verwenden
+//     * 
+//     * @param source
+//     * @param pattern
+//     * @param id
+//     * @return
+//     */
+//    public @Deprecated
+//    static ArrayList<String> getAllSimpleMatches(Object source, Pattern pattern, int id) {
+//
+//        ArrayList<String> ret = new ArrayList<String>();
+//        for (Matcher r = pattern.matcher(source.toString()); r.find();) {
+//            if (id <= r.groupCount()) {
+//                ret.add(r.group(id).trim());
+//            }
+//        }
+//        return ret;
+//    }
 
     /**
      * Regexp.getMatches() verwenden
@@ -121,56 +121,56 @@ public class SimpleMatches {
         return SimpleMatches.getAllSimpleMatches(source.toString(), Pattern.compile(SimpleMatches.getPattern(pattern), Pattern.DOTALL));
     }
 
-    /**
-     * Regexp.getMatches(int group) verwenden
-     * 
-     * Gibt von allen treffer von pattern in source jeweils den id-ten Match
-     * einem vector zurück. Als pattern kommt ein Simplepattern zum einsatz
-     * 
-     * @param source
-     * @param pattern
-     * @param id
-     * @return Matchlist
-     */
-    public @Deprecated
-    static ArrayList<String> getAllSimpleMatches(Object source, String pattern, int id) {
-        pattern = SimpleMatches.getPattern(pattern);
-        ArrayList<String> ret = new ArrayList<String>();
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source.toString()); r.find();) {
-            if (id <= r.groupCount()) {
-                ret.add(r.group(id).trim());
-            }
-        }
-        return ret;
-    }
+//    /**
+//     * Regexp.getMatches(int group) verwenden
+//     * 
+//     * Gibt von allen treffer von pattern in source jeweils den id-ten Match
+//     * einem vector zurück. Als pattern kommt ein Simplepattern zum einsatz
+//     * 
+//     * @param source
+//     * @param pattern
+//     * @param id
+//     * @return Matchlist
+//     */
+//    public @Deprecated
+//    static ArrayList<String> getAllSimpleMatches(Object source, String pattern, int id) {
+//        pattern = SimpleMatches.getPattern(pattern);
+//        ArrayList<String> ret = new ArrayList<String>();
+//        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source.toString()); r.find();) {
+//            if (id <= r.groupCount()) {
+//                ret.add(r.group(id).trim());
+//            }
+//        }
+//        return ret;
+//    }
 
-    /**
-     * Regexp.getFirstMatch(int group) verwenden
-     * 
-     * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
-     * eine Untergruppe zurück
-     * 
-     * @param data
-     *            Der zu durchsuchende Text
-     * @param pattern
-     *            Das Muster, nach dem gesucht werden soll
-     * @param group
-     *            Die Gruppe, die zurückgegeben werden soll. 0 ist der
-     *            vollständige Treffer.
-     * @return Der Treffer
-     */
-    public @Deprecated
-    static String getFirstMatch(String data, Pattern pattern, int group) {
-        String hit = null;
-        if (data == null) { return null; }
-        if (pattern != null) {
-            Matcher matcher = pattern.matcher(data);
-            if (matcher.find() && group <= matcher.groupCount()) {
-                hit = matcher.group(group);
-            }
-        }
-        return hit;
-    }
+//    /**
+//     * Regexp.getFirstMatch(int group) verwenden
+//     * 
+//     * Findet ein einzelnes Vorkommen und liefert den vollständigen Treffer oder
+//     * eine Untergruppe zurück
+//     * 
+//     * @param data
+//     *            Der zu durchsuchende Text
+//     * @param pattern
+//     *            Das Muster, nach dem gesucht werden soll
+//     * @param group
+//     *            Die Gruppe, die zurückgegeben werden soll. 0 ist der
+//     *            vollständige Treffer.
+//     * @return Der Treffer
+//     */
+//    public @Deprecated
+//    static String getFirstMatch(String data, Pattern pattern, int group) {
+//        String hit = null;
+//        if (data == null) { return null; }
+//        if (pattern != null) {
+//            Matcher matcher = pattern.matcher(data);
+//            if (matcher.find() && group <= matcher.groupCount()) {
+//                hit = matcher.group(group);
+//            }
+//        }
+//        return hit;
+//    }
 
     /**
      * Das ergibt eigentlich wenig Sinn und ist nicht Standartkonform
@@ -219,24 +219,24 @@ public class SimpleMatches {
         return null;
     }
 
-    /**
-     * Regexp.getMatches(int x)[y] verwenden
-     * 
-     * Gibt über die simplepattern alle den x/y ten treffer aus dem 2D-matches
-     * array zurück
-     * 
-     * @param source
-     * @param pattern
-     * @param x
-     * @param y
-     * @return treffer an der stelle x/y im 2d treffer array
-     */
-    public @Deprecated
-    static String getSimpleMatch(String source, String pattern, int x, int y) {
-        ArrayList<ArrayList<String>> ret = SimpleMatches.getAllSimpleMatches(source, pattern);
-        if (ret.get(x) != null && ret.get(x).get(y) != null) { return ret.get(x).get(y); }
-        return null;
-    }
+//    /**
+//     * Regexp.getMatches(int x)[y] verwenden
+//     * 
+//     * Gibt über die simplepattern alle den x/y ten treffer aus dem 2D-matches
+//     * array zurück
+//     * 
+//     * @param source
+//     * @param pattern
+//     * @param x
+//     * @param y
+//     * @return treffer an der stelle x/y im 2d treffer array
+//     */
+//    public @Deprecated
+//    static String getSimpleMatch(String source, String pattern, int x, int y) {
+//        ArrayList<ArrayList<String>> ret = SimpleMatches.getAllSimpleMatches(source, pattern);
+//        if (ret.get(x) != null && ret.get(x).get(y) != null) { return ret.get(x).get(y); }
+//        return null;
+//    }
 
     /**
      * Regexp.getMatches() verwenden
@@ -269,23 +269,23 @@ public class SimpleMatches {
         }
     }
 
-    /**
-     * Gibt die matches ohne Dublikate als arraylist aus
-     * 
-     * @param data
-     * @param pattern
-     * @return StringArray mit den Matches
-     */
-    public @Deprecated
-    static String[] getUniqueMatches(String data, Pattern pattern) {
-        ArrayList<String> set = new ArrayList<String>();
-        Matcher m = pattern.matcher(data);
-        while (m.find()) {
-            if (!set.contains(m.group())) {
-                set.add(m.group());
-            }
-        }
-        return set.toArray(new String[set.size()]);
-    }
+//    /**
+//     * Gibt die matches ohne Dublikate als arraylist aus
+//     * 
+//     * @param data
+//     * @param pattern
+//     * @return StringArray mit den Matches
+//     */
+//    public @Deprecated
+//    static String[] getUniqueMatches(String data, Pattern pattern) {
+//        ArrayList<String> set = new ArrayList<String>();
+//        Matcher m = pattern.matcher(data);
+//        while (m.find()) {
+//            if (!set.contains(m.group())) {
+//                set.add(m.group());
+//            }
+//        }
+//        return set.toArray(new String[set.size()]);
+//    }
 
 }

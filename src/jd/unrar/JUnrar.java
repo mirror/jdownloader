@@ -237,7 +237,7 @@ public class JUnrar {
                 passwordlist.add(passwords[i]);
             }
         }
-        JUnrar.makePasswordListUnique();
+        // JUnrar.makePasswordListUnique();
         JUnrar.savePasswordList();
     }
 
@@ -258,25 +258,10 @@ public class JUnrar {
 
     @SuppressWarnings("unchecked")
     private static void loadPasswordlist() {
-        // private int maxFilesize = 500000;
-        // public boolean overwriteFiles = false, autoDelete = true;
         if (passwordlist != null) { return; }
         passwordlist = (LinkedList<String>) configPasswords.getProperty(PROPERTY_PASSWORDLIST, null);
         if (passwordlist == null) {
             passwordlist = new LinkedList<String>();
-        }
-    }
-
-    public static void makePasswordListUnique() {
-        LinkedList<String> pwList = new LinkedList<String>();
-        Iterator<String> iter = passwordlist.iterator();
-        while (iter.hasNext()) {
-            String string = (String) iter.next();
-            if (!pwList.contains(string)) {
-                pwList.add(string);
-            } else {
-                iter.remove();
-            }
         }
     }
 
@@ -316,7 +301,7 @@ public class JUnrar {
                 return ((Comparable) ((Map.Entry) o1).getValue()).compareTo(((Map.Entry) o2).getValue());
             }
         });
-        // logger.info(list);
+
         Map result = new LinkedHashMap();
         for (Iterator it = list.iterator(); it.hasNext();) {
             Map.Entry entry = (Map.Entry) it.next();
@@ -354,9 +339,7 @@ public class JUnrar {
             logger.severe(file.getAbsolutePath() + " is empty");
             return ret;
         }
-        // boolean PARAM_USE_PACKETNAME_AS_SUBFOLDER =
-        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER,
-        // false);
+
         for (File element : list) {
             // Unterordner werden mitaufgelistet
             // Das wird eigentlich nichtmehr benoetigt ist aus
@@ -466,7 +449,7 @@ public class JUnrar {
                 passwordlist.add(passwords[i]);
             }
         }
-        JUnrar.makePasswordListUnique();
+        // JUnrar.makePasswordListUnique();
         JUnrar.savePasswordList();
     }
 
@@ -678,10 +661,13 @@ public class JUnrar {
 
         if (pass != null && !pass.matches("[\\s]*")) {
             String[] passwords = JUnrar.getPasswordArray(pass);
-            for (String element : passwords) {
-                passwordlist.addFirst(element);
+            for (int i = 0; i < passwords.length; i++) {
+                if (passwords[i] != null && !passwords[i].matches("[\\s]*") && !passwordlist.contains(passwords[i])) {
+                    passwordlist.add(passwords[i]);
+                }
             }
-            JUnrar.makePasswordListUnique();
+            // JUnrar.makePasswordListUnique();
+            JUnrar.savePasswordList();
         }
 
         String[] z = getProtectedFiles(file, null);
@@ -1129,11 +1115,11 @@ public class JUnrar {
      * (InterruptedException e) { e.printStackTrace(); } if (file.isFile()) {
      * long size = file.length() - tempfs;
      * 
-     * int st = (int) (size / std); if (st > 0) { tempfs += (std * st); step -=
+     * int st = (int) (size / std); if (st > 0) { tempfs += (std st); step -=
      * st; progress.increase(st); } } } }
      * 
-     * }); } /* /** gibt den Inhalt von stderr eines Processes als String aus
-     * bei unrar kann man mit -ierr alle Nachrichten in stderr umleichten wenn
+     * }); } / / gibt den Inhalt von stderr eines Processes als String aus bei
+     * unrar kann man mit -ierr alle Nachrichten in stderr umleichten wenn
      * password incorrect in stderr auftaucht bricht er den Prozess sofort ab
      * und löscht die entpackten Dateien
      * 
