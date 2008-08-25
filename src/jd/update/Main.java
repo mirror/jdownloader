@@ -155,7 +155,7 @@ public class Main {
         SubConfiguration guiConfig = SubConfiguration.getSubConfig("WEBUPDATE");
         String paf = guiConfig.getStringProperty("PLAF", null);
         boolean plafisSet = false;
-        log.append("Webupdater 13.8.2008 21:42 started\r\n\r\n");
+        // log.append("Webupdater 13.8.2008 21:42 started\r\n\r\n");
 
         log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
         System.out.println(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
@@ -266,6 +266,7 @@ public class Main {
         progressload.setStringPainted(true);
         final JTextArea logWindow = new JTextArea(30, 120);
         JScrollPane scrollPane = new JScrollPane(logWindow);
+        scrollPane.setAutoscrolls(true);
         logWindow.setEditable(true);
 
         Main.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);

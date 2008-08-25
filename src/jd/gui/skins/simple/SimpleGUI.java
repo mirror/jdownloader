@@ -29,16 +29,13 @@ import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -880,15 +877,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             showChangelogDialog();
             break;
         case JDAction.ITEMS_ADD:
-            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             String cb = "";
             try {
-                cb = (String) clipboard.getData(DataFlavor.stringFlavor);
-            } catch (UnsupportedFlavorException e1) {
-            } catch (IOException e1) {
+                cb = (String) Toolkit.getDefaultToolkit().getSystemClipboard().getData(DataFlavor.stringFlavor);
+            } catch (Exception e1) {
             }
-            LinkInputDialog inputDialog = new LinkInputDialog(frame, cb.trim());
-            String data = inputDialog.getLinksString();
+            String data = LinkInputDialog.showDialog(frame, cb.trim());
             if (data != null) {
                 fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
             }
