@@ -43,6 +43,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -54,7 +55,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
@@ -103,7 +103,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JMenuItem mnuDownloadSource, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
-    private JRadioButtonMenuItem mnuColorizeMissing, mnuColorizeOld;
+    private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextEdit, mnuContextTranslate;
 
@@ -275,14 +275,17 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuSort.addActionListener(this);
 
         // Colorize Menü
-        mnuColorize.add(mnuColorizeMissing = new JRadioButtonMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeMissing", "Colorize Missing Entries")));
+        mnuColorize.add(mnuColorizeMissing = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeMissing", "Colorize Missing Entries")));
         mnuColorize.add(mnuPickMissingColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries")));
         mnuColorize.addSeparator();
-        mnuColorize.add(mnuColorizeOld = new JRadioButtonMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
+        mnuColorize.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
         mnuColorize.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
 
         mnuColorizeMissing.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false));
         mnuColorizeOld.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false));
+
+        mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
+        mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
 
         mnuColorizeMissing.addActionListener(this);
         mnuPickMissingColor.addActionListener(this);
@@ -441,12 +444,15 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             subConfig.setProperty(PROPERTY_COLORIZE_MISSING, mnuColorizeMissing.isSelected());
             subConfig.save();
+            mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
+
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuColorizeOld) {
 
             subConfig.setProperty(PROPERTY_COLORIZE_OLD, mnuColorizeOld.isSelected());
             subConfig.save();
+            mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuPickMissingColor) {
