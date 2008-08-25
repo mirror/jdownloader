@@ -99,11 +99,6 @@ public class LinkStatus implements Serializable {
      */
     public final static int ERROR_RETRY = 1 << 2;
 
-    // /**
-    // * Ein unbekannter Fehler ist aufgetreten. Der Download Soll wiederholt
-    // * werden
-    // */
-
     /**
      * PLugins Der download ist zur Zeit nicht möglich
      */
@@ -126,9 +121,6 @@ public class LinkStatus implements Serializable {
      */
     public static final int PLUGIN_IN_PROGRESS = 1 << 18;
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 3885661829491436448L;
     /**
      * Controlling: Link muß noch bearbeitet werden.
@@ -149,7 +141,6 @@ public class LinkStatus implements Serializable {
 
     public LinkStatus(DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
-
     }
 
     /**
@@ -161,14 +152,10 @@ public class LinkStatus implements Serializable {
     public void addStatus(int status) {
         this.status |= status;
         lastestStatus = status;
-
-        System.out.println("");
-
     }
 
     public void exceptionToErrorMessage(Exception e) {
         setErrorMessage(JDUtilities.convertExceptionReadable(e));
-
     }
 
     private String getDefaultErrorMessage() {
@@ -176,34 +163,27 @@ public class LinkStatus implements Serializable {
 
         case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
             return JDLocale.L("downloadlink.status.incomplete", "Incomplete");
-
         case LinkStatus.ERROR_AGB_NOT_SIGNED:
             return JDLocale.L("downloadlink.status.error.agb_not_signed", "TOCs not signed");
         case LinkStatus.ERROR_ALREADYEXISTS:
             return JDLocale.L("downloadlink.status.error.file_exists", "File exists");
-
         case LinkStatus.ERROR_CAPTCHA:
             return JDLocale.L("downloadlink.status.error.captcha_wrong", "Captcha wrong");
         case LinkStatus.ERROR_DOWNLOAD_FAILED:
             return JDLocale.L("downloadlink.status.error.downloadfailed", "Download failed");
         case LinkStatus.ERROR_IP_BLOCKED:
             return JDLocale.L("downloadlink.status.error.download_limit", "Download Limit reached");
-
         case LinkStatus.ERROR_FILE_NOT_FOUND:
             return JDLocale.L("downloadlink.status.error.file_not_found", "File not found");
         case LinkStatus.ERROR_TIMEOUT_REACHED:
         case LinkStatus.ERROR_NO_CONNECTION:
             return JDLocale.L("downloadlink.status.error.no_connection", "No Connection");
-
         case LinkStatus.ERROR_PREMIUM:
             return JDLocale.L("downloadlink.status.error.premium", "Premium Error");
-
         case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
             return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
-
         case LinkStatus.ERROR_FATAL:
             return JDLocale.L("downloadlink.status.error.fatal", "Fatal Error");
-
         }
         return null;
 
@@ -221,7 +201,6 @@ public class LinkStatus implements Serializable {
     }
 
     public int getLatestStatus() {
-
         return lastestStatus;
     }
 
@@ -237,7 +216,6 @@ public class LinkStatus implements Serializable {
      * 
      * @return Statusstring mit eventl Wartezeit
      */
-
     public String getStatusString() {
         String ret = "";
         if (hasStatus(LinkStatus.FINISHED)) {
@@ -304,7 +282,6 @@ public class LinkStatus implements Serializable {
     }
 
     public long getTotalWaitTime() {
-
         return totalWaitTime;
     }
 
@@ -323,12 +300,10 @@ public class LinkStatus implements Serializable {
      * @return
      */
     public boolean hasStatus(int status) {
-
         return (this.status & status) > 0;
     }
 
     public boolean isFailed() {
-
         return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS);
     }
 
@@ -356,20 +331,16 @@ public class LinkStatus implements Serializable {
         totalWaitTime = 0;
         value = 0;
         resetWaitTime();
-
     }
 
     public void resetWaitTime() {
-
         totalWaitTime = 0;
         waitUntil = 0;
-
     }
 
     public void setErrorMessage(String string) {
         if (downloadLink.isAborted() && string != null) return;
         errorMessage = string;
-
     }
 
     public void setInProgress(boolean b) {
@@ -378,7 +349,6 @@ public class LinkStatus implements Serializable {
         } else {
             removeStatus(PLUGIN_IN_PROGRESS);
         }
-
     }
 
     /**
@@ -390,28 +360,22 @@ public class LinkStatus implements Serializable {
     public void setStatus(int status) {
         this.status = status;
         lastestStatus = status;
-
     }
 
     public void setStatusText(String l) {
         statusText = l;
-
     }
 
     public void setValue(long i) {
         value = i;
-
     }
 
     public void setWaitTime(long milliSeconds) {
-
         waitUntil = System.currentTimeMillis() + milliSeconds;
         totalWaitTime = milliSeconds;
-
     }
 
     public static String toString(int status) {
-
         Field[] fields = LinkStatus.class.getDeclaredFields();
         for (Field field : fields) {
             if (field.getModifiers() == 25) {
@@ -430,7 +394,6 @@ public class LinkStatus implements Serializable {
 
         }
         return null;
-
     }
 
     @Override

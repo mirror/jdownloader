@@ -22,9 +22,6 @@ import jd.config.Property;
 
 public class AccountInfo extends Property {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1825140346023286206L;
     private PluginForHost plugin;
     private Account account;
@@ -44,112 +41,8 @@ public class AccountInfo extends Property {
         this.account = account;
     }
 
-    public void setValid(boolean b) {
-        this.valid = b;
-
-    }
-
-    public void setValidUntil(long time) {
-        validUntil = time;
-
-    }
-
-    public void setTrafficLeft(long size) {
-        this.trafficLeft = size;
-
-    }
-
-    public void setFilesNum(int parseInt) {
-        this.filesNum = parseInt;
-
-    }
-
-    public void setPremiumPoints(int parseInt) {
-        this.premiumPoints = parseInt;
-
-    }
-
-    public void setAccountBalance(int parseInt) {
-        this.accountBalance = parseInt;
-
-    }
-
-    public void setUsedSpace(long size) {
-        usedSpace = size;
-
-    }
-
-    public void setTrafficShareLeft(long size) {
-        this.trafficShareLeft = size;
-
-    }
-
-    public void setExpired(boolean b) {
-        this.expired = b;
-
-    }
-
-    public PluginForHost getPlugin() {
-        return plugin;
-    }
-
-    public void setPlugin(PluginForHost plugin) {
-        this.plugin = plugin;
-    }
-
     public Account getAccount() {
         return account;
-    }
-
-    public void setAccount(Account account) {
-        this.account = account;
-    }
-
-    /**
-     * GIbt zurück ob es sich um einen Gültigen Account handelt, logins richtige
-     * etc.
-     * 
-     * @return
-     */
-    public boolean isValid() {
-        return valid;
-    }
-
-    /**
-     * gibt einen Timestamp zurück zu dem der Account auslaufen wird.bzw
-     * ausgelaufen ist.
-     * 
-     * @return
-     */
-    public long getValidUntil() {
-        return validUntil;
-    }
-
-    /**
-     * Gibt an wieviel Traffic noch frei ist (in bytes)
-     * 
-     * @return
-     */
-    public long getTrafficLeft() {
-        return trafficLeft;
-    }
-
-    /**
-     * Gibt zurück wieviele File sauf dem Account hochgeladen sind
-     * 
-     * @return
-     */
-    public int getFilesNum() {
-        return filesNum;
-    }
-
-    /**
-     * GIbt an wieviel premiumpunkte der Account hat
-     * 
-     * @return
-     */
-    public int getPremiumPoints() {
-        return premiumPoints;
     }
 
     /**
@@ -162,12 +55,38 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Gibt zurück wieviel PLatz (bytes) die uploads auf diesem account belegen
+     * Gibt zurück wieviele Files auf dem Account hochgeladen sind
      * 
      * @return
      */
-    public long getUsedSpace() {
-        return usedSpace;
+    public int getFilesNum() {
+        return filesNum;
+    }
+
+    public PluginForHost getPlugin() {
+        return plugin;
+    }
+
+    /**
+     * GIbt an wieviel PremiumPunkte der Account hat
+     * 
+     * @return
+     */
+    public int getPremiumPoints() {
+        return premiumPoints;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    /**
+     * Gibt an wieviel Traffic noch frei ist (in bytes)
+     * 
+     * @return
+     */
+    public long getTrafficLeft() {
+        return trafficLeft;
     }
 
     /**
@@ -182,6 +101,25 @@ public class AccountInfo extends Property {
     }
 
     /**
+     * Gibt zurück wieviel PLatz (bytes) die uploads auf diesem account belegen
+     * 
+     * @return
+     */
+    public long getUsedSpace() {
+        return usedSpace;
+    }
+
+    /**
+     * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw.
+     * ausgelaufen ist.
+     * 
+     * @return
+     */
+    public long getValidUntil() {
+        return validUntil;
+    }
+
+    /**
      * Gibt zurück ob der accoun abgelaufen ist
      * 
      * @return
@@ -190,13 +128,64 @@ public class AccountInfo extends Property {
         return expired || this.getValidUntil() < new Date().getTime();
     }
 
+    /**
+     * Gibt zurück ob es sich um einen Gültigen Account handelt, logins richtige
+     * etc.
+     * 
+     * @return
+     */
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
+
+    public void setAccountBalance(int parseInt) {
+        this.accountBalance = parseInt;
+    }
+
+    public void setExpired(boolean b) {
+        this.expired = b;
+
+    }
+
+    public void setFilesNum(int parseInt) {
+        this.filesNum = parseInt;
+    }
+
+    public void setPlugin(PluginForHost plugin) {
+        this.plugin = plugin;
+    }
+
+    public void setPremiumPoints(int parseInt) {
+        this.premiumPoints = parseInt;
+    }
+
     public void setStatus(String string) {
         this.status = string;
 
     }
 
-    public String getStatus() {
-        return status;
+    public void setTrafficLeft(long size) {
+        this.trafficLeft = size;
+    }
+
+    public void setTrafficShareLeft(long size) {
+        this.trafficShareLeft = size;
+    }
+
+    public void setUsedSpace(long usedSpace) {
+        this.usedSpace = usedSpace;
+    }
+
+    public void setValid(boolean b) {
+        this.valid = b;
+    }
+
+    public void setValidUntil(long validUntil) {
+        this.validUntil = validUntil;
     }
 
 }

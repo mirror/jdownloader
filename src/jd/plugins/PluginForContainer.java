@@ -40,15 +40,13 @@ public abstract class PluginForContainer extends Plugin {
 
     private static HashMap<String, Vector<String>> CONTAINERLINKS = new HashMap<String, Vector<String>>();
 
-    // private static final int STATUS_SUCCESS = 2;
-
     private static HashMap<String, PluginForContainer> PLUGINS = new HashMap<String, PluginForContainer>();
-    private static final int STATUS_ERROR_EXTRACTING = 1;
+
     private static final int STATUS_NOTEXTRACTED = 0;
 
-    protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
+    private static final int STATUS_ERROR_EXTRACTING = 1;
 
-    private ContainerStatus containerStatus;
+    protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
     protected Vector<String> downloadLinksURL;
 
@@ -64,7 +62,6 @@ public abstract class PluginForContainer extends Plugin {
 
     @Override
     public synchronized boolean canHandle(String data) {
-
         if (data == null) { return false; }
         if (getExtensions().contains(JDUtilities.getFileExtension(new File(data.toLowerCase())))) { return true; }
 
@@ -86,17 +83,12 @@ public abstract class PluginForContainer extends Plugin {
      */
     private void decryptLinkProtectorLinks() {
         Vector<DownloadLink> tmpDlink = new Vector<DownloadLink>();
-        ;
         Vector<String> tmpURL = new Vector<String>();
 
         int i = 0;
         int c = 0;
-        // Vector<DownloadLink> containedLinks = new
-        // Vector<DownloadLink>(this.containedLinks);
-        // Vector<String> downloadLinksURL = new
-        // Vector<String>(this.downloadLinksURL);
+
         progress.addToMax(downloadLinksURL.size());
-        // logger.info("PRE: "+downloadLinksURL);
         for (String string : downloadLinksURL) {
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt", "Decrypt link %s"), "" + i));
@@ -107,7 +99,7 @@ public abstract class PluginForContainer extends Plugin {
             DownloadLink srcLink = containedLinks.get(i);
             Iterator<DownloadLink> it = links.iterator();
             progress.addToMax(links.size());
-            // while(it.hasNext())it.next().setDownloadPath(JDUtilities.getResourceFile("packages").getAbsolutePath());
+
             while (it.hasNext()) {
                 progress.increase(1);
                 DownloadLink next = it.next();
@@ -116,7 +108,6 @@ public abstract class PluginForContainer extends Plugin {
 
                 next.setContainerFile(srcLink.getContainerFile());
                 next.setContainerIndex(c++);
-
                 next.setName(srcLink.getName());
 
                 if (next.getDownloadSize() < 10) {
@@ -136,7 +127,6 @@ public abstract class PluginForContainer extends Plugin {
                     }
                 }
                 next.setSourcePluginComment(comment);
-
                 next.setLoadedPluginForContainer(this);
                 next.setFilePackage(srcLink.getFilePackage());
                 next.setUrlDownload(null);
@@ -171,19 +161,15 @@ public abstract class PluginForContainer extends Plugin {
 
         String extension = JDUtilities.getFileExtension(f);
         if (f.exists()) {
-
             File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension);
             if (!res.exists()) {
                 JDUtilities.copyFile(f, res);
-
             }
             if (!res.exists()) {
                 logger.severe("Could not copy file to homedir");
-
             }
 
-            containerStatus = callDecryption(res);
-
+            callDecryption(res);
         }
         return;
     }
@@ -198,7 +184,6 @@ public abstract class PluginForContainer extends Plugin {
      *            Der DownloadLink, dessen URL zurückgegeben werden soll
      * @return Die URL als String
      */
-
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
         // logger.info("EXTRACT " + downloadLink);
         if (downloadLinksURL == null) {
@@ -234,7 +219,6 @@ public abstract class PluginForContainer extends Plugin {
      * @return Ein Vector mit DownloadLinks
      */
     public Vector<DownloadLink> getContainedDownloadlinks() {
-
         return containedLinks == null ? new Vector<DownloadLink>() : containedLinks;
     }
 
@@ -261,11 +245,8 @@ public abstract class PluginForContainer extends Plugin {
             PLUGINS.put(containerFile, newPlugin);
             return newPlugin;
         } catch (InstantiationException e) {
-
-            e.printStackTrace();
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
             e.printStackTrace();
         }
         return null;
@@ -284,9 +265,7 @@ public abstract class PluginForContainer extends Plugin {
             }
 
             downloadLinksURL = CONTAINERLINKS.get(filename);
-
             return;
-
         }
 
         if (containedLinks == null || containedLinks.size() == 0) {
