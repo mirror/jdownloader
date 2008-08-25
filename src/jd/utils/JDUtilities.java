@@ -1166,7 +1166,7 @@ public class JDUtilities {
      * @author JD-Team
      * @param f
      * @return Hashstring Md5
-     */ 
+     */
     public static String getLocalHash(File f) {
         try {
             if (!f.exists()) { return null; }
@@ -1971,17 +1971,6 @@ public class JDUtilities {
             }
         });
 
-    }
-
-    public static String sprintf(String pattern, String[] inset) {
-
-        for (String element : inset) {
-            int ind = pattern.indexOf("%s");
-            pattern = pattern.substring(0, ind) + element + pattern.substring(ind + 2);
-
-        }
-
-        return pattern;
     }
 
     /**

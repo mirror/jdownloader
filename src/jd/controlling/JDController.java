@@ -645,7 +645,7 @@ public class JDController implements ControlListener, UIListener {
             break;
 
         case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
-            // Interaction interaction = (Interaction) event.getParameter();
+            Interaction.handleInteraction(Interaction.INTERACTION_LINKLIST_STRUCTURE_CHANGED, null);
             saveDownloadLinks();
             break;
 
@@ -1548,7 +1548,7 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public void pauseDownloads(boolean value) {
-        if(watchdog==null)return;
+        if (watchdog == null) return;
         watchdog.pause(value);
 
     }
@@ -2012,28 +2012,24 @@ public class JDController implements ControlListener, UIListener {
             // saveDownloadLinks(JDUtilities.getResourceFile("links.dat"));
             break;
         case UIEvent.UI_INTERACT_RECONNECT:
-             if (getRunningDownloadNum() > 0) {
-             logger.info(
-             "Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
-             stopDownloads();
-             }
-            
-             // Interaction.handleInteraction(Interaction.
-             // INTERACTION_NEED_RECONNECT,
-             // this);
-             if (Reconnecter.waitForNewIP(1)) {
-             uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success",
-             "Reconnect erfolgreich"));
-            
-             } else {
-            
-             uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed",
-             "Reconnect fehlgeschlagen"));
-            
-             }
-            //if(this.getDownloadStatus()!=JDController.DOWNLOAD_RUNNING){
-          
-         
+            if (getRunningDownloadNum() > 0) {
+                logger.info("Es laufen noch Downloads. Breche zum reconnect Downloads ab!");
+                stopDownloads();
+            }
+
+            // Interaction.handleInteraction(Interaction.
+            // INTERACTION_NEED_RECONNECT,
+            // this);
+            if (Reconnecter.waitForNewIP(1)) {
+                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.success", "Reconnect erfolgreich"));
+
+            } else {
+
+                uiInterface.showMessageDialog(JDLocale.L("gui.reconnect.failed", "Reconnect fehlgeschlagen"));
+
+            }
+            // if(this.getDownloadStatus()!=JDController.DOWNLOAD_RUNNING){
+
             // uiInterface.setDownloadLinks(downloadLinks);
             break;
         case UIEvent.UI_INTERACT_UPDATE:

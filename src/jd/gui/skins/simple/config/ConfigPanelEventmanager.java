@@ -154,7 +154,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             if (event == null) { return; }
 
             Interaction[] interacts = Interaction.getInteractionList();
-            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, JDUtilities.sprintf(JDLocale.L("gui.config.eventmanager.new.selectAction.title", "Aktion auswählen für \"%s\""), new String[] { event.getName() }), JDLocale.L("gui.config.eventmanager.new.selectAction.desc", "Welche Aktion soll ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, interacts, null);
+            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, JDLocale.LF("gui.config.eventmanager.new.selectAction.title", "Aktion auswählen für \"%s\"", event.getName()), JDLocale.L("gui.config.eventmanager.new.selectAction.desc", "Welche Aktion soll ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, interacts, null);
 
             if (interaction == null) { return; }
 

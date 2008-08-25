@@ -86,8 +86,7 @@ public class BatchReconnect extends Interaction implements Serializable {
             afterIP = "offline";
         }
         logger.finer("Ip after: " + afterIP);
-        String pattern = JDLocale.L("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s");
-        progress.setStatusText(JDUtilities.sprintf(pattern, new String[] { afterIP, preIp }));
+        progress.setStatusText(JDLocale.LF("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s", afterIP, preIp));
         long endTime = System.currentTimeMillis() + waitForIp * 1000;
         logger.info("Wait " + waitForIp + " sek for new ip");
 
@@ -97,8 +96,7 @@ public class BatchReconnect extends Interaction implements Serializable {
             } catch (InterruptedException e) {
             }
             afterIP = JDUtilities.getIPAddress();
-            pattern = JDLocale.L("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s");
-            progress.setStatusText(JDUtilities.sprintf(pattern, new String[] { afterIP, preIp }));
+            progress.setStatusText(JDLocale.LF("interaction.batchreconnect.progress.3_ipcheck", "BatchReconnect New IP: %s / %s", afterIP, preIp));
             logger.finer("Ip Check: " + afterIP);
         }
         if (!afterIP.equals(preIp) && !afterIP.equals("offline")) {
