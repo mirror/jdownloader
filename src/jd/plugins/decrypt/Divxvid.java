@@ -17,14 +17,12 @@
 package jd.plugins.decrypt;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -34,15 +32,9 @@ public class Divxvid extends PluginForDecrypt {
     static private final String host = "dxp.divxvid.org";
 
     static private final Pattern patternSupported = Pattern.compile("http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html", Pattern.CASE_INSENSITIVE);
-    private Pattern gate = Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);", Pattern.CASE_INSENSITIVE);
 
-    private Pattern outputlocation = Pattern.compile("rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)", Pattern.CASE_INSENSITIVE);
-
-    private Pattern premiumdownload = Pattern.compile("value=\"download\" onclick=\"javascript:download", Pattern.CASE_INSENSITIVE);
     private static Vector<String> passwords = new Vector<String>();
-    /*
-     * ist leider notwendig da wir das Dateiformat nicht kennen!
-     */
+
     private Pattern premiumdownloadlocation = Pattern.compile("form name=\"dxp\" action=\"(.*)\" method=\"post\"", Pattern.CASE_INSENSITIVE);
 
     public Divxvid() {
@@ -61,31 +53,25 @@ public class Divxvid extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        URL url;
         try {
-            url = new URL(cryptedLink);
+            URL url = new URL(parameter);
 
             String cookie = HTTP.postRequestWithoutHtmlCode(url, null, null, null, false).getCookie();
 
             String hash = url.getFile();
             hash = hash.substring(1, hash.lastIndexOf("."));
-            RequestInfo requestInfo = HTTP.getRequest((new URL("http://dxp.divxvid.org/script/old_loader.php")), cookie, cryptedLink, false);
+            RequestInfo requestInfo = HTTP.getRequest((new URL("http://dxp.divxvid.org/script/old_loader.php")), cookie, parameter, false);
 
-            String input = requestInfo.getHtmlCode();
-            String strgate = SimpleMatches.getFirstMatch(input, gate, 1);
-            String outl = SimpleMatches.getFirstMatch(input, outputlocation, 1);
+            String strgate = new Regex(requestInfo.getHtmlCode(), Pattern.compile("httpRequestObject.open.'POST', '([^\\s\"]*)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String outl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("rsObject = window.open.\"([/|.|a-zA-Z0-9|_|-]*)", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
-            requestInfo = HTTP.postRequest((new URL("http://dxp.divxvid.org/" + strgate)), null, cryptedLink, null, "hash=" + hash, false);
+            requestInfo = HTTP.postRequest((new URL("http://dxp.divxvid.org/" + strgate)), null, parameter, null, "hash=" + hash, false);
 
-            /*
-             * es werden dank divxvid.org hier nur die menge der links gezaehlt
-             */
-            int countHits = SimpleMatches.countOccurences(requestInfo.getHtmlCode(), premiumdownload);
+            int countHits = new Regex(requestInfo.getHtmlCode(), Pattern.compile("value=\"download\" onclick=\"javascript:download", Pattern.CASE_INSENSITIVE)).count();
             progress.setRange(countHits);
             for (int i = 0; i < countHits; i++) {
-                requestInfo = HTTP.postRequestWithoutHtmlCode((new URL(SimpleMatches.getFirstMatch(HTTP.getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, cryptedLink, true).getHtmlCode(), premiumdownloadlocation, 1))), null, null, null, false);
+                requestInfo = HTTP.postRequestWithoutHtmlCode((new URL(new Regex(HTTP.getRequest((new URL("http://dxp.divxvid.org" + outl + "," + i + ",1," + hash + ".rs")), cookie, parameter, true).getHtmlCode(), premiumdownloadlocation).getMatch(0))), null, null, null, false);
                 if (requestInfo != null) {
                     progress.increase(1);
                     DownloadLink dl_link = createDownloadlink(requestInfo.getLocation());
@@ -93,10 +79,6 @@ public class Divxvid extends PluginForDecrypt {
                     decryptedLinks.add(dl_link);
                 }
             }
-            progress.finalize();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
         } catch (IOException e) {
             e.printStackTrace();
             return null;
