@@ -31,7 +31,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.CellEditorListener;
-import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
@@ -127,7 +126,6 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
         public void actionPerformed(ActionEvent e) {
             stop = true;
-            table.tableChanged(new TableModelEvent(table.getModel()));
         }
 
         public void addCellEditorListener(CellEditorListener l) {
@@ -175,6 +173,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     private JTable table;
 
+    private InternalTableModel tableModel;
+
     public SubPanelRessources(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         initPanel();
@@ -182,11 +182,11 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        for (int i = 0; i < packageData.size(); i++) {
-            packageData.get(i).setInstalledVersion(0);
-            packageData.get(i).setUpdating(false);
+        for (PackageData pkg : packageData) {
+            pkg.setInstalledVersion(0);
+            pkg.setUpdating(false);
         }
-        table.tableChanged(new TableModelEvent(table.getModel()));
+        tableModel.fireTableDataChanged();
     }
 
     @Override
@@ -208,17 +208,13 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
         });
 
-        table = new JTable();
+        tableModel = new InternalTableModel();
+        table = new JTable(tableModel);
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(internalTableModel);
-        table.getColumn(table.getColumnName(2)).setCellRenderer(new JLinkButtonRenderer());
-        table.getColumn(table.getColumnName(2)).setCellEditor(new JLinkButtonEditor());
-
         TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); ++c) {
+        for (int c = 0; c < tableModel.getColumnCount(); ++c) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
@@ -230,6 +226,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
                 break;
             case 2:
                 column.setPreferredWidth(50);
+                column.setCellRenderer(new JLinkButtonRenderer());
+                column.setCellEditor(new JLinkButtonEditor());
                 break;
             case 3:
                 column.setPreferredWidth(30);

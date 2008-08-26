@@ -25,7 +25,6 @@ import java.io.File;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
@@ -95,6 +94,8 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     private JTable table;
 
+    private InternalTableModel tableModel;
+
     public ConfigPanelCaptcha(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
@@ -113,16 +114,15 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         setLayout(new BorderLayout());
 
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
+        tableModel = new InternalTableModel();
         table = new JTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(internalTableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setEditingRow(0);
         table.addMouseListener(this);
 
         TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+        for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
@@ -145,7 +145,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     public void mouseClicked(MouseEvent e) {
         configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), !configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), true));
-        table.tableChanged(new TableModelEvent(table.getModel()));
+        tableModel.fireTableCellUpdated(table.getSelectedRow(), table.getSelectedRow());
     }
 
     public void mouseEntered(MouseEvent e) {

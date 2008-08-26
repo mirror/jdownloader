@@ -42,7 +42,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
@@ -138,7 +137,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         public void actionPerformed(ActionEvent e) {
             stop = true;
-            table.tableChanged(new TableModelEvent(table.getModel()));
         }
 
         public void addCellEditorListener(CellEditorListener l) {
@@ -192,6 +190,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JTable table;
 
+    private InternalTableModel tableModel;
+
     public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
@@ -219,7 +219,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         int id = table.rowAtPoint(e.getLocation());
         pluginsForHost.remove(draggedPlugin);
         pluginsForHost.add(id, draggedPlugin);
-        table.tableChanged(new TableModelEvent(table.getModel(), Math.min(oldId, id), Math.max(oldId, id)));
+        tableModel.fireTableRowsUpdated(Math.min(oldId, id), Math.max(oldId, id));
         table.getSelectionModel().setSelectionInterval(id, id);
     }
 
@@ -243,9 +243,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         this.setLayout(new BorderLayout());
         this.setPreferredSize(new Dimension(650, 350));
 
-        table = new JTable();
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(internalTableModel);
+        tableModel = new InternalTableModel();
+        table = new JTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
@@ -259,7 +258,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         new DropTarget(table, this);
 
         TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+        for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
