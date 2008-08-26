@@ -453,6 +453,21 @@ public class JUnrar {
         JUnrar.savePasswordList();
     }
 
+    public void pushPasswordToTop(String password) {
+        if (passwordlist == null || passwordlist.size() < 1) {
+            JUnrar.loadPasswordlist();
+        }
+        String[] passwords = JUnrar.getPasswordArray(password);
+        for (int i = 0; i < passwords.length; i++) {
+            passwords[i] = passwords[i].trim();
+            if (passwords[i] != null && !passwords[i].matches("[\\s]*")) {
+                passwordlist.remove(passwords[i]);
+                passwordlist.push(passwords[i]);
+            }
+        }
+        JUnrar.savePasswordList();
+    }
+
     private void addToToExtractList(File file, String password) {
         if (useToextractlist) {
             if (toExtractlist == null) {
@@ -635,6 +650,8 @@ public class JUnrar {
                 }
 
             }
+            pushPasswordToTop(password);
+            
             return str;
 
         } catch (Exception e) {
