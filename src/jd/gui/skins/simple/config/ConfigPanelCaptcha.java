@@ -112,7 +112,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         setupContainer();
         setLayout(new BorderLayout());
 
-        this.add(cep = new ConfigEntriesPanel(container, "Captcha"), BorderLayout.NORTH);
+        this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         table = new JTable();
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         InternalTableModel internalTableModel = new InternalTableModel();

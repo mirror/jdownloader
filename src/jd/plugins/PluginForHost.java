@@ -76,7 +76,7 @@ public abstract class PluginForHost extends Plugin {
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
-            ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config, "Select where filesdownloaded with JDownloader should be stored.");
+            ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config);
 
             JPanel panel = new JPanel(new BorderLayout());
             panel.add(new JPanel(), BorderLayout.NORTH);
@@ -320,27 +320,18 @@ public abstract class PluginForHost extends Plugin {
     @SuppressWarnings("unchecked")
     public void handle(DownloadLink downloadLink) throws Exception {
         if (!isAGBChecked()) {
-
             logger.severe("AGB not signed : " + getPluginID());
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
             downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("plugins.hoster.error.agb", "TOC not signed"));
             return;
         }
 
-        if (true) {
-
-            // downloadLink.getLinkStatus().addStatus(LinkStatus.
-            // ERROR_TEMPORARILY_UNAVAILABLE);
-            // downloadLink.getLinkStatus().setErrorMessage("bla und so");
-            // downloadLink.getLinkStatus().setValue(0);
-            // return;
-        }
         Long t = 0l;
 
         if (HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) {
             t = HOSTER_WAIT_UNTIL_TIMES.get(this.getClass());
         }
-        // RequestInfo requestInfo;
+
         if (!enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) {
 
             if (t > 0) {

@@ -67,7 +67,7 @@ public class DownloadFolder extends DefaultWizardPage {
         ConfigEntry ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
         configContainer.addEntry(ce);
 
-        cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
+        cpanel = new ConfigEntriesPanel(configContainer);
         for (Component c : cpanel.getComponents()) {
             System.out.println(c);
         }

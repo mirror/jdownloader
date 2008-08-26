@@ -34,9 +34,6 @@ import jd.utils.JDUtilities;
  */
 public class ConfigPanelAddons extends ConfigPanel {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 4145243293360008779L;
 
     private ConfigEntriesPanel cep;
@@ -47,15 +44,11 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     public ConfigPanelAddons(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-
         initPanel();
-
         load();
-
     }
 
     public String getName() {
-
         return JDLocale.L("gui.config.addons.name", "Netzwerk/Download");
     }
 
@@ -63,34 +56,28 @@ public class ConfigPanelAddons extends ConfigPanel {
         setupContainer();
         setLayout(new BorderLayout());
 
-        add(cep = new ConfigEntriesPanel(container, "Download"), BorderLayout.CENTER);
-        cep.getSubPanels().get(0).add(new SubPanelPluginsOptional(JDUtilities.getConfiguration(),JDUtilities.getGUI()));
-        cep.getSubPanels().get(1).add(new SubPanelRessources(JDUtilities.getConfiguration(),JDUtilities.getGUI()));
+        add(cep = new ConfigEntriesPanel(container), BorderLayout.CENTER);
+        cep.getSubPanels().get(0).add(new SubPanelPluginsOptional(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
+        cep.getSubPanels().get(1).add(new SubPanelRessources(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
     }
 
     public void load() {
         loadConfigEntries();
-
     }
 
     public void save() {
         logger.info("save");
         cep.save();
-        // this.saveConfigEntries();
         config.save();
         CFGConfig.getConfig("JDU").save();
         new PackageManager().interact(this);
     }
 
     public void setupContainer() {
-        container = new ConfigContainer(this);
         config = JDUtilities.getSubConfig("DOWNLOAD");
-        ConfigContainer settings = new ConfigContainer(this, JDLocale.L("gui.config.addons.settings.tab", "Settings"));
-        ConfigContainer install = new ConfigContainer(this, JDLocale.L("gui.config.addons.install.tab", "Installation & updates"));
-
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, settings));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, install));
-
+        container = new ConfigContainer(this);
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.settings.tab", "Settings"))));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.install.tab", "Installation & updates"))));
     }
 
 }

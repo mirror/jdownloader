@@ -190,22 +190,22 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     private void editEntry() {
         currentInteraction = interactions.elementAt(table.getSelectedRow());
-        ConfigPanel config = new ConfigEntriesPanel(currentInteraction.getConfig(), JDLocale.LF("gui.config.plugin.interaction.dialogname", "%s Configuration", currentInteraction.getInteractionName()));
+        ConfigPanel config = new ConfigEntriesPanel(currentInteraction.getConfig());
 
         JPanel tpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
         tpanel.add(btnTrigger = new JButton(JDLocale.L("gui.config.eventmanager.trigger.btn", "Trigger ändern")));
         tpanel.add(new JLabel(currentInteraction.getTrigger().toString()));
-        
+
         btnTrigger.addActionListener(this);
-        
+
         JPanel npanel = new JPanel(new BorderLayout());
         npanel.add(tpanel);
         npanel.add(new JSeparator(), BorderLayout.SOUTH);
-        
+
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(npanel, BorderLayout.NORTH);
         if (config != null) panel.add(config);
-        
+
         ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);

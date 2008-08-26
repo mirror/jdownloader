@@ -80,60 +80,10 @@ public class Installer {
             return;
         }
         JDUtilities.saveConfig();
-        //        
-        // File downloadPath = JDUtilities.getJDHomeDirectoryFromEnvironment();
-        // File installPath = downloadPath;
-        // setModal(true);
-        // setLayout(new BorderLayout());
-        //
-        // setTitle(JDLocale.L("installer.title", "JDownloader Installation"));
-        // setAlwaysOnTop(true);
-        //
-        // setLocation(20, 20);
-        // panel = new JPanel(new GridBagLayout());
-        //
-        // homeDir = new BrowseFile();
-        // homeDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        // homeDir.setEditable(true);
-        // homeDir.setText(installPath.getAbsolutePath());
-        //
-        // downloadDir = new BrowseFile();
-        // downloadDir.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        // downloadDir.setEditable(true);
-        // downloadDir.setText(downloadPath.getAbsolutePath());
-        // addWindowListener(this);
-        // // JDUtilities.addToGridBag(panel, new
-        // // JLabel(JDLocale.L("installer.installDir","Install Directory")),
-        // // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // // GridBagConstraints.RELATIVE, 1, 0, 0, insets,
-        // // GridBagConstraints.NONE, GridBagConstraints.WEST);
-        // // JDUtilities.addToGridBag(panel, homeDir,
-        // GridBagConstraints.RELATIVE,
-        // // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1,
-        // 0,
-        // // insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        // JDUtilities.addToGridBag(panel, new
-        // JLabel(JDLocale.L("installer.downloadDir", "Downloaddirectory")),
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.RELATIVE, 1, 0, 0, insets,
-        // GridBagConstraints.NONE, GridBagConstraints.WEST);
-        // JDUtilities.addToGridBag(panel, downloadDir,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.REMAINDER, 1, 1, 0, insets,
-        // GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        // btnOK = new JButton(JDLocale.L("gui.btn_continue", "Continue..."));
-        // btnOK.addActionListener(this);
-        // JDUtilities.addToGridBag(panel, btnOK, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0,
-        // insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        // this.add(panel, BorderLayout.CENTER);
-        // pack();
-        //
-        // setVisible(true);
     }
 
     private void showPanel(ConfigContainer configContainer) {
-        ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer, "Select where filesdownloaded with JDownloader should be stored.");
+        ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer);
 
         JPanel panel = new JPanel(new BorderLayout());
         JPanel topPanel = new JPanel();

@@ -1644,7 +1644,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static void showPluginConfigDialog(Frame parent, Plugin plugin) {
         // logger.info("PluginConfigDialog");
-        ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig(), JDLocale.LF("gui.config.plugin.dialogname", "%s Configuration", plugin.getPluginName()));
+        ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig());
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JPanel(), BorderLayout.NORTH);

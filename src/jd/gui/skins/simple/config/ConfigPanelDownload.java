@@ -50,7 +50,7 @@ public class ConfigPanelDownload extends ConfigPanel {
     }
 
     public void initPanel() {
-        this.add(cep = new ConfigEntriesPanel(setupContainer(), "Download"));
+        this.add(cep = new ConfigEntriesPanel(setupContainer()));
     }
 
     public void load() {

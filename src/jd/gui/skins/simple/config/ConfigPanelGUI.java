@@ -57,7 +57,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     @Override
     public void initPanel() {
-        this.add(cep = new ConfigEntriesPanel(setupConfiguration(), "GUI"));
+        this.add(cep = new ConfigEntriesPanel(setupConfiguration()));
     }
 
     @Override

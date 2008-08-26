@@ -28,49 +28,42 @@ import javax.swing.SwingConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -7983057329558110899L;
 
     private ConfigContainer container = null;
 
-    /**
-     * serialVersionUID
-     */
     private Logger logger = JDUtilities.getLogger();
 
     private Vector<ConfigEntriesPanel> subPanels = null;
 
     private JTabbedPane tabbedPane = null;
 
-    private String title;
+    // private String title;
 
-    public ConfigEntriesPanel(ConfigContainer container, String title) {
+    public ConfigEntriesPanel(ConfigContainer container) {
         super(JDUtilities.getGUI());
         this.container = container;
-        this.title = title;
+        // this.title = title;
         initPanel();
         load();
     }
 
     public void actionPerformed(ActionEvent e) {
-
     }
 
     private void addTabbedPanel(String title, ConfigEntriesPanel configPanelPlugin) {
         subPanels.add(configPanelPlugin);
         tabbedPane.add(title, configPanelPlugin);
-
     }
 
     @Override
     public String getName() {
-
-        return title;
+        return JDLocale.L("config.entriespanel.defaultname", "Configuration");
     }
 
     public Vector<ConfigEntriesPanel> getSubPanels() {
@@ -81,16 +74,9 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
     public void initPanel() {
         if (container.getContainerNum() == 0) {
             Vector<ConfigEntry> entries = container.getEntries();
-            ConfigEntry entry;
-            for (int i = 0; i < entries.size(); i++) {
-                entry = entries.elementAt(i);
-
-                GUIConfigEntry ce = null;
-                ce = new GUIConfigEntry(entry);
-                if (ce != null) {
-                    addGUIConfigEntry(ce);
-                }
-
+            for (ConfigEntry cfgEntry : entries) {
+                GUIConfigEntry ce = new GUIConfigEntry(cfgEntry);
+                if (ce != null) addGUIConfigEntry(ce);
             }
             add(panel, BorderLayout.PAGE_START);
         } else {
@@ -104,19 +90,18 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
             Vector<ConfigContainer> container = new Vector<ConfigContainer>();
             ConfigContainer general = new ConfigContainer(this);
             container.add(general);
-            for (int i = 0; i < entries.size(); i++) {
-                if (entries.elementAt(i).getContainer() == null) {
-                    general.addEntry(entries.elementAt(i));
+            for (ConfigEntry cfgEntry : entries) {
+                if (cfgEntry.getContainer() == null) {
+                    general.addEntry(cfgEntry);
                 } else {
-                    container.add(entries.elementAt(i).getContainer());
+                    container.add(cfgEntry.getContainer());
                 }
             }
             if (general.getEntries().size() == 0) {
                 container.remove(0);
             }
-            for (int i = 0; i < container.size(); i++) {
-                addTabbedPanel(container.get(i).getTitle(), new ConfigEntriesPanel(container.get(i), container.get(i).getTitle()));
-
+            for (ConfigContainer cfg : container) {
+                addTabbedPanel(cfg.getTitle(), new ConfigEntriesPanel(cfg));
             }
             add(tabbedPane, BorderLayout.CENTER);
         }
@@ -126,7 +111,6 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
     @Override
     public void load() {
         loadConfigEntries();
-
     }
 
     @Override
@@ -134,19 +118,17 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
         if (subPanels != null) {
             for (int i = 0; i < subPanels.size(); i++) {
                 logger.info("Saved tab " + i);
-
                 subPanels.get(i).save();
-
             }
-
         }
+
         if (container != null) {
             logger.info("Save " + container.getTitle());
         } else {
             logger.info("Save normal panel" + this);
         }
-        saveConfigEntries();
 
+        saveConfigEntries();
     }
 
 }
