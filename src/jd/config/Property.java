@@ -190,6 +190,15 @@ public class Property implements Serializable {
     public long getSaveCount() {
         return saveCount;
     }
+    
+    /**
+     * Gibt die Anzahl der gespeicherten Einträge zurück
+     * 
+     * @return Zahl der Elemente
+     */
+    public long getCount() {
+    	return properties.size();
+    }
 
     /**
      * Gibt einen String zu key zurück. Es wird versuchtden Wert zu einem

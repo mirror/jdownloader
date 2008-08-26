@@ -397,26 +397,22 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public abstract String getPluginName();
 
-    /**
+    /**p
      * gibt das interne properties objekt zurück indem die Plugineinstellungen
      * gespeichert werden
      * 
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
-
-        if (!JDUtilities.getResourceFile("config/" + getPluginName() + ".cfg").exists()) {
-            SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
+        SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
+        if(cfg.getCount() <= 1) {
             if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName()) != null) {
                 cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName())).getProperties());
                 cfg.save();
                 return cfg;
             }
-            return JDUtilities.getSubConfig(getPluginName());
-        } else {
-            return JDUtilities.getSubConfig(getPluginName());
         }
-
+    	return cfg;
     }
 
     /**
