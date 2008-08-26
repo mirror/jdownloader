@@ -99,7 +99,6 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
