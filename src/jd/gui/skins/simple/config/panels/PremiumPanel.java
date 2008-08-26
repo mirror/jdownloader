@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -34,6 +35,11 @@ import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import org.jfree.chart.*;
+import org.jfree.chart.plot.PiePlot;
+import org.jfree.data.general.DefaultPieDataset;
+import org.jfree.data.general.PieDataset;
 
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.config.GUIConfigEntry;
@@ -59,7 +65,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
-
+    private JFreeChart freeTrafficChart;
+    private ChartPanel freeTrafficChartPanel;
+    
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
         this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
@@ -105,9 +113,65 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             statiLabels[i].setEnabled(enables[i].isSelected());
             i++;
         }
+        JFreeChart freeTrafficChart = createChart(createDataset());
+        freeTrafficChartPanel = new ChartPanel(freeTrafficChart);
+        add(freeTrafficChartPanel, "spanx, spany, growx, pushx, h 200");
 
     }
 
+    /**
+     * Creates the Dataset.
+     * 
+     * @param dataset  the dataset.
+     * 
+     * @return A chart.
+     */
+    @SuppressWarnings("unchecked")
+	private PieDataset createDataset() {
+    	DefaultPieDataset dataset = new DefaultPieDataset();
+    	ArrayList<Account> accounts = (ArrayList<Account>) getAccounts();
+    	for(Account acc : accounts) {
+    		if (acc.getUser().length() > 0){
+	    		PluginForHost Plugin = (PluginForHost) configEntry.getActionListener();
+	    		try {
+	    			Long tleft = Plugin.getAccountInformation(acc).getTrafficLeft();
+	    			dataset.setValue("Premium Account " + acc.getUser(), tleft);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+    		}
+    	}
+        return dataset;        
+    }
+    
+    /**
+     * Creates a chart.
+     * 
+     * @param dataset  the dataset.
+     * 
+     * @return A chart.
+     */
+    private JFreeChart createChart(PieDataset dataset) {
+        
+        JFreeChart chart = ChartFactory.createPieChart(
+            "Free Traffic Summary",  // chart title
+            dataset,             // data
+            false,               // include legend
+            true,
+            false
+        );
+
+        PiePlot plot = (PiePlot) chart.getPlot();
+        plot.setSectionOutlinesVisible(false);
+        plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 12));
+        plot.setNoDataMessage("No data available");
+        plot.setCircular(true);
+        plot.setLabelGap(0.02);
+        return chart;
+        
+    }
+    
     private void createPanel() {
 
         int accountNum = configEntry.getEnd();
@@ -121,7 +185,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         statiLabels = new JLabel[accountNum];
         stati = new JTextField[accountNum];
         checkBtns = new JButton[accountNum];
-        ArrayList<Account> list = new ArrayList<Account>();;
+        ArrayList<Account> list = new ArrayList<Account>();
+        
         for (int i = 1; i <= accountNum; i++) {
             list.add(new Account("",""));
             final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i));
@@ -173,9 +238,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             // stati[i - 1] = status;
             // status.setEditable(false);
             // add(status, "span, gapbottom :10:push");
-        }
-        
-      
+        }    
 
     }
 
