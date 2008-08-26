@@ -215,10 +215,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void dragOver(DropTargetDragEvent e) {
+        int oldId = pluginsForHost.indexOf(draggedPlugin);
         int id = table.rowAtPoint(e.getLocation());
         pluginsForHost.remove(draggedPlugin);
         pluginsForHost.add(id, draggedPlugin);
-        table.tableChanged(new TableModelEvent(table.getModel()));
+        table.tableChanged(new TableModelEvent(table.getModel(), Math.min(oldId, id), Math.max(oldId, id)));
         table.getSelectionModel().setSelectionInterval(id, id);
     }
 
