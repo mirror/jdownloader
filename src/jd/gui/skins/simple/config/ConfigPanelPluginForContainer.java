@@ -134,7 +134,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled(pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
             }
         });
         // table.setDefaultRenderer(Object.class, new

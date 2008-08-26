@@ -35,7 +35,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
@@ -118,6 +117,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     private JTable table;
 
+    private InternalTableModel tableModel;
+
     public SubPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
@@ -134,7 +135,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             int rowIndex = table.getSelectedRow();
             boolean b = configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex)), false);
             configuration.setProperty(getConfigParamKey(pluginsOptional.get(rowIndex)), !b);
-            fireTableChanged();
+            tableModel.fireTableRowsUpdated(rowIndex, rowIndex);
+            table.getSelectionModel().setSelectionInterval(rowIndex, rowIndex);
         } else if (e.getSource() == openPluginDir) {
             try {
                 new GetExplorer().openExplorer(JDUtilities.getResourceFile("plugins"));
@@ -145,13 +147,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     private void editEntry() {
         SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsOptional.elementAt(table.getSelectedRow()));
-    }
-
-    public void fireTableChanged() {
-        int rowIndex = table.getSelectedRow();
-
-        table.tableChanged(new TableModelEvent(table.getModel()));
-        table.getSelectionModel().addSelectionInterval(rowIndex, rowIndex);
     }
 
     private String getConfigParamKey(PluginOptional pluginOptional) {
@@ -167,21 +162,20 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     public void initPanel() {
         this.setLayout(new BorderLayout());
 
-        table = new JTable();
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(internalTableModel);
+        tableModel = new InternalTableModel();
+        table = new JTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled(pluginsOptional.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
             }
         });
         // table.setDefaultRenderer(Object.class, new
         // PluginTableCellRenderer<PluginOptional>(pluginsOptional));
 
         TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+        for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
@@ -190,7 +184,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             case 1:
                 column.setPreferredWidth(300);
                 break;
-
             }
         }
 
