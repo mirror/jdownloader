@@ -323,7 +323,7 @@ public class Secured extends PluginForDecrypt {
                 Browser.download(captchaFile, captchaAdress);
 
                 capTxt = Plugin.getCaptchaCode(captchaFile, this);
-                String postData = "captcha_key=" + capTxt + "&captcha_hash=" + capHash;
+                String postData = "captcha_key=" + ((capTxt != null) ? capTxt.toUpperCase() : capTxt) + "&captcha_hash=" + capHash;
 
                 requestInfo = HTTP.postRequest(url, postData);
                 html = requestInfo.getHtmlCode();

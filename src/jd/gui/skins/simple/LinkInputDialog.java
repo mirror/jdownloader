@@ -64,8 +64,8 @@ public class LinkInputDialog extends JDialog implements ActionListener {
      *            Text in der Zwischenablage
      */
     public static String showDialog(JFrame owner, String clipboard) {
-        LinkInputDialog tda = new LinkInputDialog(owner, clipboard);
-        return tda.getText();
+        LinkInputDialog lid = new LinkInputDialog(owner, clipboard);
+        return lid.getText();
     }
 
     private LinkInputDialog(JFrame owner, String clipboard) {
