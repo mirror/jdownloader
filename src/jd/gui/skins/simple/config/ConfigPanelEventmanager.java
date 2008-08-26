@@ -19,9 +19,6 @@ package jd.gui.skins.simple.config;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
@@ -192,21 +189,23 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     }
 
     private void editEntry() {
-        ConfigPanel config = new ConfigEntriesPanel(interactions.elementAt(table.getSelectedRow()).getConfig(), JDLocale.LF("gui.config.plugin.interaction.dialogname", "%s Configuration", interactions.elementAt(table.getSelectedRow())));
-
-        JPanel panel = new JPanel(new GridBagLayout());
-
         currentInteraction = interactions.elementAt(table.getSelectedRow());
+        ConfigPanel config = new ConfigEntriesPanel(currentInteraction.getConfig(), JDLocale.LF("gui.config.plugin.interaction.dialogname", "%s Configuration", currentInteraction.getInteractionName()));
 
-        btnTrigger = new JButton(JDLocale.L("gui.config.eventmanager.trigger.btn", "Trigger ändern"));
+        JPanel tpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        tpanel.add(btnTrigger = new JButton(JDLocale.L("gui.config.eventmanager.trigger.btn", "Trigger ändern")));
+        tpanel.add(new JLabel(currentInteraction.getTrigger().toString()));
+        
         btnTrigger.addActionListener(this);
-
-        JDUtilities.addToGridBag(panel, btnTrigger, 0, 0, 1, 1, 0, 0, new Insets(5, 10, 5, 5), GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JLabel(currentInteraction.getTrigger().toString()), 1, 0, 1, 1, 1, 0, new Insets(5, 0, 5, 5), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 1, 2, 1, 1, 0, new Insets(0, 0, 0, 0), GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-
-        if (config != null) JDUtilities.addToGridBag(panel, config, 0, 2, 2, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
+        
+        JPanel npanel = new JPanel(new BorderLayout());
+        npanel.add(tpanel);
+        npanel.add(new JSeparator(), BorderLayout.SOUTH);
+        
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(npanel, BorderLayout.NORTH);
+        if (config != null) panel.add(config);
+        
         ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
