@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 import javax.swing.AbstractAction;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -106,6 +107,8 @@ public class JDAboutDialog {
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel();
+        links.add(new JButton("ViperbOy"));
+        links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction("Homepage", "http://jdownloader.net/index_en.php")));
         links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction("Supportboard", "http://jdownloader.net/support_en.php")));
