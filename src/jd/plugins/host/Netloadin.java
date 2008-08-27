@@ -61,7 +61,7 @@ public class Netloadin extends PluginForHost {
 
     private static String getID(String link) {
 
-        return new Regex(link, "\\/datei([a-fA-F0-9]{32})").getMatch(0);
+        return new Regex(link, "\\/datei([a-fA-F0-9]+)").getMatch(0);
 
     }
 
