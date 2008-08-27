@@ -1207,6 +1207,7 @@ public class Rapidshare extends PluginForHost {
         String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
+        ai.setTrafficMax(30 * 1000*1000*1000l);
         ai.setFilesNum(Integer.parseInt(files));
         ai.setPremiumPoints(Integer.parseInt(rapidPoints));
         ai.setUsedSpace(Regex.getSize(usedSpace));
