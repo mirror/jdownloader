@@ -462,7 +462,7 @@ public class Serienjunkies extends PluginForHost {
                         Iterator<Integer> iter = down.iterator();
                         while (iter.hasNext()) {
                             Integer integer = (Integer) iter.next();
-                            DistributeData distributeData = new DistributeData(dls.get(down.get(integer)).getDownloadURL());
+                            DistributeData distributeData = new DistributeData(dls.get(integer).getDownloadURL());
                             Vector<DownloadLink> links = distributeData.findLinks();
                             Iterator<DownloadLink> it2 = links.iterator();
                             boolean online = false;
