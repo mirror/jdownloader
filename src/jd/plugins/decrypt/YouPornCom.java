@@ -30,10 +30,10 @@ import jd.plugins.RequestInfo;
 
 public class YouPornCom extends PluginForDecrypt {
     private static final String HOST = "youporn.com";
-    private static final Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.*/?", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.+/?", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Other = Pattern.compile("http://[\\w\\.]*?youporn\\.com/(.*?page=\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternSupported_File.pattern() + "|" + patternSupported_Other.pattern(), Pattern.CASE_INSENSITIVE);
-    private static final Pattern DOWNLOADFILE = Pattern.compile("download\\.youporn\\.com/download/\\d+/flv/[^\\?]*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern DOWNLOADFILE = Pattern.compile("(download\\.youporn\\.com/download/\\d+/flv/[^\\?]*)", Pattern.CASE_INSENSITIVE);
 
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
