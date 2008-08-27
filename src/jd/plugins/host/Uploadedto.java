@@ -237,7 +237,7 @@ public class Uploadedto extends PluginForHost {
             return true;
         }
 
-        Regex info = br.getRegex("Dateiname:.*?</td><td><b>(.*?)</b></td></tr>.*?<tr><td style=\"padding-left:4px;\">Dateityp:(.*?)</td><td>.*?</td></tr>.*?<tr><td style=\"padding-left:4px;\">Dateig.*?</td><td>(.*?)</td>");
+        Regex info = br.getRegex("Dateiname:.*?</td><td><b>(.*?)</b></td></tr>.*?<tr><td style=\"padding-left:4px;\">Dateityp:.*?</td><td>(.*?)</td></tr>.*?<tr><td style=\"padding-left:4px;\">Dateig.*?</td><td>(.*?)</td>");
 
         String fileName = Encoding.htmlDecode(info.getMatch(0));
         if (fileName == null) return false;
