@@ -1725,7 +1725,7 @@ public class JDUtilities {
     }
 
     public static void restartJD(String[] jdArgs) {
-
+        JDUtilities.getDatabaseConnector().shutdownDatabase();
         String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
         String[] finalArgs = new String[jdArgs.length + javaArgs.length];
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
@@ -1756,10 +1756,6 @@ public class JDUtilities {
     }
 
     public static void saveConfig() {
-        // JDUtilities.saveObject(null, JDUtilities.getConfiguration(),
-        // JDUtilities.getJDHomeDirectoryFromEnvironment(),
-        // JDUtilities.CONFIG_PATH.split("\\.")[0], "." +
-        // JDUtilities.CONFIG_PATH.split("\\.")[1], Configuration.saveAsXML);
         JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
     }
 
