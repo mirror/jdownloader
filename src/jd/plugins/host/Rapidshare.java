@@ -420,6 +420,7 @@ public class Rapidshare extends PluginForHost {
             logger.warning("Too many users are currently downloading this file. Wait 2 Minutes and try again");
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(120 * 1000l);
             return;
         } else if (new Regex(br, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
             logger.severe("Already downloading. Wait 2 min. or reconnect");
@@ -429,7 +430,7 @@ public class Rapidshare extends PluginForHost {
             // step.setStatus(PluginStep.STATUS_ERROR);
             // setDownloadLimitTime(waitTime);
 
-            linkStatus.setValue(120 * 1000);
+            linkStatus.setValue(120 * 1000l);
             return;
         } else if ((error = findError(br + "")) != null) {
 

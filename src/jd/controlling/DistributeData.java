@@ -227,7 +227,7 @@ public class DistributeData extends ControlBroadcaster {
                             dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
                             dLinks.get(c).setProperties(decrypted.getProperties());
                             dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
-                            dLinks.get(c).setDownloadSize((int) decrypted.getDownloadSize());
+                            dLinks.get(c).setDownloadSize(decrypted.getDownloadSize());
 
                         }
 
