@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -44,13 +43,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.PiePlot;
-import org.jfree.data.general.DefaultPieDataset;
-import org.jfree.data.general.PieDataset;
-
 public class PremiumPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
 
     private static final Color ACTIVE = new Color(0x7cd622);
@@ -67,7 +59,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
-    private ChartPanel freeTrafficChartPanel;
 
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
@@ -114,61 +105,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             statiLabels[i].setEnabled(enables[i].isSelected());
             i++;
         }
-        JFreeChart freeTrafficChart = createChart(createDataset());
-        freeTrafficChartPanel = new ChartPanel(freeTrafficChart);
-        add(freeTrafficChartPanel, "spanx, spany, growx, pushx, h 200");
-
-    }
-
-    /**
-     * Creates the Dataset.
-     * 
-     * @param dataset
-     *            the dataset.
-     * 
-     * @return A chart.
-     */
-    @SuppressWarnings("unchecked")
-    private PieDataset createDataset() {
-        DefaultPieDataset dataset = new DefaultPieDataset();
-        ArrayList<Account> accounts = (ArrayList<Account>) getAccounts();
-        for (Account acc : accounts) {
-            if (acc.getUser().length() > 0) {
-                PluginForHost Plugin = (PluginForHost) configEntry.getActionListener();
-                try {
-                    Long tleft = Plugin.getAccountInformation(acc).getTrafficLeft();
-                    dataset.setValue("Premium Account " + acc.getUser(), tleft);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return dataset;
-    }
-
-    /**
-     * Creates a chart.
-     * 
-     * @param dataset
-     *            the dataset.
-     * 
-     * @return A chart.
-     */
-    private JFreeChart createChart(PieDataset dataset) {
-
-        JFreeChart chart = ChartFactory.createPieChart("Free Traffic Summary", // chart
-                                                                               // title
-                dataset, // data
-                false, // include legend
-                true, false);
-
-        PiePlot plot = (PiePlot) chart.getPlot();
-        plot.setSectionOutlinesVisible(false);
-        plot.setLabelFont(new Font("SansSerif", Font.PLAIN, 12));
-        plot.setNoDataMessage("No data available");
-        plot.setCircular(true);
-        plot.setLabelGap(0.02);
-        return chart;
 
     }
 
@@ -185,10 +121,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         statiLabels = new JLabel[accountNum];
         stati = new JTextField[accountNum];
         checkBtns = new JButton[accountNum];
-        ArrayList<Account> list = new ArrayList<Account>();
-
+        ArrayList<Account> list = new ArrayList<Account>();;
         for (int i = 1; i <= accountNum; i++) {
-            list.add(new Account("", ""));
+            list.add(new Account("",""));
             final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i));
             active.setForeground(INACTIVE);
             active.addItemListener(new ItemListener() {
@@ -225,9 +160,10 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             // add(passwords[i - 1] = new JPasswordField(""), "wrap");
             add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 40:40:push");
             passwords[i - 1].addFocusListener(this);
-
-            for (JCheckBox e : enables) {
-                if (e != null) e.setSelected(false);
+            
+          
+            for(JCheckBox e:enables){
+                if(e!=null)                e.setSelected(false);
             }
             // add(statiLabels[i - 1] = new
             // JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last
@@ -238,6 +174,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             // status.setEditable(false);
             // add(status, "span, gapbottom :10:push");
         }
+        
+      
 
     }
 
