@@ -42,12 +42,6 @@ public class ShareOnlineBiz extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "2.0.0.0";
-
-    // private static final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-
     private static final String PLUGIN_NAME = HOST;
     private String captchaCode;
     private File captchaFile;
@@ -57,7 +51,6 @@ public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
     }
 
     @Override
@@ -81,8 +74,9 @@ public class ShareOnlineBiz extends PluginForHost {
         for (int i = 1; i < 3; i++) {
             try {
                 Thread.sleep(1000);/*
-                                    * Sicherheitspause, sonst gibts 403 Response
-                                    */
+                                     * Sicherheitspause, sonst gibts 403
+                                     * Response
+                                     */
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo != null && requestInfo.getLocation() == null) {
                     String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -106,7 +100,6 @@ public class ShareOnlineBiz extends PluginForHost {
                 e.printStackTrace();
             }
         }
-        downloadLink.setAvailable(false);
         return false;
     }
 
@@ -184,9 +177,8 @@ public class ShareOnlineBiz extends PluginForHost {
 
         /* Downloadlimit erreicht */
         if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            sleep(60 * 60 * 1000, downloadLink);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            linkStatus.setValue(3600000l);
             return;
         }
 
