@@ -45,7 +45,7 @@ public class Netloadin extends PluginForHost {
     static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
     static private final String DOWNLOAD_START = "download_load.tpl";
-    static private String LINK_PASS = null;
+    private String LINK_PASS = null;
 
     static private final Pattern DOWNLOAD_WAIT_TIME = Pattern.compile("countdown\\(([0-9]*),'change", Pattern.CASE_INSENSITIVE);
 

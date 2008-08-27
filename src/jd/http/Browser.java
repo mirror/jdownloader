@@ -684,8 +684,7 @@ if(form==null)return null;
 
     public String loadConnection(HTTPConnection con) throws IOException {
         checkContentLengthLimit(request);
-        if (con == null) return request.read();
-        if (con == null) return null;
+        if (con == null) return request.read();        
         return Request.read(con);
 
     }
