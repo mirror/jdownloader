@@ -28,6 +28,7 @@ public class AccountInfo extends Property {
     private boolean valid = true;
     private long validUntil = -1;
     private long trafficLeft = -1;
+    private long trafficMax = -1;
     private int filesNum = -1;
     private int premiumPoints = -1;
     private int accountBalance = -1;
@@ -187,5 +188,13 @@ public class AccountInfo extends Property {
     public void setValidUntil(long validUntil) {
         this.validUntil = validUntil;
     }
+
+	public long getTrafficMax() {
+		return trafficMax;
+	}
+
+	public void setTrafficMax(long trafficMax) {
+		this.trafficMax = trafficMax;
+	}
 
 }
