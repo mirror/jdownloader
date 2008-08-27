@@ -149,7 +149,7 @@ public class QshareCom extends PluginForHost {
         if (br.getRegex("Du hast die maximal zulässige Anzahl").matches()) {
             logger.severe("There is already a download running with our ip");
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(60000l);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 

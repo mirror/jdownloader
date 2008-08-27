@@ -115,6 +115,7 @@ public class Moosharede extends PluginForHost {
         HTTPConnection urlConnection = br.openGetConnection(null);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);

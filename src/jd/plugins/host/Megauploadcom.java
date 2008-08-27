@@ -208,8 +208,8 @@ public class Megauploadcom extends PluginForHost {
         RequestInfo requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
         if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            tempUnavailable = true;
-            sleep(60 * 30, downloadLink);
+            linkStatus.setValue(20 * 60 * 1000l);
+            tempUnavailable = true;            
             return;
         }
         if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {

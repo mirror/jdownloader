@@ -138,7 +138,7 @@ public class YourFileSendercom extends PluginForHost {
         // String filename = Plugin.getFileNameFormHeader(urlConnection);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);

@@ -104,7 +104,8 @@ public class Netloadin extends PluginForHost {
         if (br.containsHTML(FILE_DAMAGED)) {
             linkStatus.setErrorMessage("File is on a damaged server");
 
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);          
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
@@ -119,7 +120,8 @@ public class Netloadin extends PluginForHost {
         if (br.containsHTML(FILE_DAMAGED)) {
             linkStatus.setErrorMessage("File is on a damaged server");
 
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);            
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
@@ -161,7 +163,8 @@ public class Netloadin extends PluginForHost {
         if (br.containsHTML(FILE_DAMAGED)) {
             logger.warning("File is on a damaged server");
 
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);            
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
@@ -215,6 +218,7 @@ public class Netloadin extends PluginForHost {
         // falls falsch abbruch
         if (br.containsHTML("download_password")) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             linkStatus.setErrorMessage(JDLocale.L("plugins.netload.downloadPassword_wrong", "Linkpassword is wrong"));
             return;
         }
@@ -292,6 +296,7 @@ public class Netloadin extends PluginForHost {
                 linkStatus.setErrorMessage("File is on a damaged server");
 
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setValue(20 * 60 * 1000l);
                 return;
             }
 

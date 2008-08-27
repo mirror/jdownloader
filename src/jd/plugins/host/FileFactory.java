@@ -105,10 +105,12 @@ public class FileFactory extends PluginForHost {
 
         } else if (requestInfo.containsHTML(SERVER_DOWN)) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
 
         } else if (requestInfo.containsHTML(NO_SLOT)) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
@@ -290,6 +292,7 @@ public class FileFactory extends PluginForHost {
             return;
         } else if (greq.containsHTML(SERVER_DOWN)) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         } else {
             String link = "http://www.filefactory.com" + greq.getLocation();

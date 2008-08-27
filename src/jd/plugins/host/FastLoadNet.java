@@ -95,6 +95,7 @@ public class FastLoadNet extends PluginForHost {
             if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
 
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setValue(20 * 60 * 1000l);
                 downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
                 return false;
 
@@ -169,6 +170,7 @@ public class FastLoadNet extends PluginForHost {
         if (requestInfo.getHtmlCode().contains(HARDWARE_DEFECT)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
 
         }
@@ -245,7 +247,7 @@ public class FastLoadNet extends PluginForHost {
                         logger.info("System overload: Retry in 20 seconds");
                         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                         linkStatus.setErrorMessage(requestInfo.getHtmlCode());
-                        linkStatus.setValue(20000l);
+                        linkStatus.setValue(20 * 60 * 1000l);
                         return;
 
                     } else {

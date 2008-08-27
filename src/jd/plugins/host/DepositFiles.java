@@ -116,6 +116,7 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML(DOWNLOAD_NOTALLOWED)) {
             logger.severe("Download not possible now");
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
@@ -254,6 +255,7 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML(DOWNLOAD_NOTALLOWED)) {
             logger.severe("Download not possible now");
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
