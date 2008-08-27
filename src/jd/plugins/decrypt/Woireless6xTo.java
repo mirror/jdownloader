@@ -43,6 +43,7 @@ public class Woireless6xTo extends PluginForDecrypt {
         if (link == null) return null;
         DownloadLink dl_link = createDownloadlink(link);
         dl_link.addSourcePluginPassword(password.trim());
+        dl_link.setDecrypterPassword("woireless.6x.to");
         decryptedLinks.add(dl_link);
         return decryptedLinks;
     }

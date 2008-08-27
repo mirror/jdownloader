@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import jd.event.ControlEvent;
 import jd.parser.HTMLParser;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -143,8 +144,12 @@ public class DistributeData extends ControlBroadcaster {
                     try {
                         pDecrypt = pDecrypt.getClass().newInstance();
 
-                        String[] decryptableLinks = pDecrypt.getDecryptableLinks(url);
+                        CryptedLink[] decryptableLinks = pDecrypt.getDecryptableLinks(url);
                         url = pDecrypt.cutMatches(url);
+                        /*reicht die Decrypter Passwörter weiter*/
+                        for (CryptedLink clink:decryptableLinks){
+                            clink.setDecrypterPassword(link.getDecrypterPassword());
+                        }
                         ArrayList<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
 
                         // Reicht die passwörter weiter
@@ -223,6 +228,7 @@ public class DistributeData extends ControlBroadcaster {
                             dLinks.get(c).addSourcePluginPasswords(foundpassword);
                             dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
                             dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
+                            dLinks.get(c).setName(decrypted.getName());
                             dLinks.get(c).setStaticFileName(decrypted.getStaticFileName());
                             dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
                             dLinks.get(c).setProperties(decrypted.getProperties());
@@ -295,7 +301,7 @@ public class DistributeData extends ControlBroadcaster {
                 try {
                     pDecrypt = pDecrypt.getClass().newInstance();
 
-                    String[] decryptableLinks = pDecrypt.getDecryptableLinks(data);
+                    CryptedLink[] decryptableLinks = pDecrypt.getDecryptableLinks(data);
                     data = pDecrypt.cutMatches(data);
 
                     decryptedLinks.addAll(pDecrypt.decryptLinks(decryptableLinks));

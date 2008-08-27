@@ -33,6 +33,7 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
@@ -90,7 +91,8 @@ public class CryptItCom extends PluginForDecrypt {
         super();
     }
 
-    private ArrayList<DownloadLink> containerStep(String parameter) {
+    private ArrayList<DownloadLink> containerStep(CryptedLink param) {
+        String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         parameter = parameter.replace("/s/", "/d/");
@@ -106,7 +108,7 @@ public class CryptItCom extends PluginForDecrypt {
                 String cookie = requestInfo.getCookie();
                 if (requestInfo.containsHTML(PATTERN_PW)) {
 
-                    String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+                    String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword());
                     String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
                     requestInfo = HTTP.postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
                     if (requestInfo.containsHTML(PATTERN_PW)) {
@@ -184,29 +186,32 @@ public class CryptItCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
-            String url = parameter;
+            String url = param.toString();
             if (!url.endsWith("/")) url += "/";
 
             String[] temp = new Regex(url, Pattern.compile("http://crypt-it.com/(.*?)/(.*?)/", Pattern.CASE_INSENSITIVE)).getRow(0);
             String mode = temp[0];
             String folder = temp[1];
             RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
-            String pass = "";
+            String pass = param.getDecrypterPassword();
             if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                    pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"));
                     if (pass == null) {
-                        /* auf abbruch geklickt */
-                        return null;
+                        pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword());
+                        if (pass == null) {
+                            /* auf abbruch geklickt */
+                            return null;
+                        }
                     }
                     String post = "a=pw&pw=" + Encoding.urlEncode(pass);
                     ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
                     if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                         break;
                     }
+                    pass = null;
                 }
             }
             String cookie = ri.getCookie();
@@ -241,7 +246,7 @@ public class CryptItCom extends PluginForDecrypt {
                 }
                 progress.increase(1);
             }
-            if (decryptedLinks.size() == 0) { return containerStep(parameter); }
+            if (decryptedLinks.size() == 0) { return containerStep(param); }
         } catch (Exception e) {
             e.printStackTrace();
             return null;

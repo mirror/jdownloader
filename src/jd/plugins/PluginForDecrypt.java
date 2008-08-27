@@ -35,7 +35,7 @@ import jd.parser.Regex;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
-    private String cryptedLink = null;
+    private CryptedLink cryptedLink = null;
 
     protected ProgressController progress;
 
@@ -72,16 +72,21 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * Diese Methode arbeitet die unterschiedlichen schritte ab. und gibt den
-     * gerade abgearbeiteten Schritt jeweisl zurück.
-     * 
-     * @param step
-     * @param parameter
-     * @return gerade abgeschlossener Schritt
-     * @throws Exception
-     *             TODO
+     * VERALTETES decryptIt Interface, bitte NICHT mehr verwenden
      */
-    public abstract ArrayList<DownloadLink> decryptIt(String parameter) throws Exception;
+    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+        logger.severe(this.getPluginName()+" has no decryptIt function!");
+        return new ArrayList<DownloadLink>();
+    }
+
+    /**
+     * NEUES decryptIt Interface, bitte AB JETZT nur noch dieses verwenden!!
+     * Muss vom Plugin implementiert werden!!
+     */
+    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter) throws Exception {
+        logger.info(this.getPluginName()+" uses deprecated decryptIt Interface!!!");
+        return decryptIt(parameter.toString());
+    }
 
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
@@ -93,7 +98,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * 
      * @return Ein Vector mit Klartext-links
      */
-    public ArrayList<DownloadLink> decryptLink(String cryptedLink) {
+    public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
         this.cryptedLink = cryptedLink;
         if (progress != null && !progress.isFinished()) {
             progress.finalize();
@@ -125,10 +130,10 @@ public abstract class PluginForDecrypt extends Plugin {
         return tmpLinks;
     }
 
-    public ArrayList<DownloadLink> decryptLinks(String[] cryptedLinks) {
+    public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        for (String element : cryptedLinks) {
+        for (CryptedLink element : cryptedLinks) {
             decryptedLinks.addAll(decryptLink(element));
         }
 
@@ -143,8 +148,9 @@ public abstract class PluginForDecrypt extends Plugin {
      * @param data
      * @return
      */
-    public String[] getDecryptableLinks(String data) {
+    public CryptedLink[] getDecryptableLinks(String data) {
         String[] hits = new Regex(data, getSupportedLinks()).getColumn(-1);
+        ArrayList<CryptedLink> chits = new ArrayList<CryptedLink>();
         if (hits != null && hits.length > 0) {
 
             for (int i = hits.length - 1; i >= 0; i--) {
@@ -158,8 +164,12 @@ public abstract class PluginForDecrypt extends Plugin {
                 hits[i] = file;
 
             }
+
+            for (String hit : hits) {
+                chits.add(new CryptedLink(hit));
+            }
         }
-        return hits;
+        return chits.toArray((new CryptedLink[chits.size()]));
     }
 
     /**
@@ -172,7 +182,7 @@ public abstract class PluginForDecrypt extends Plugin {
     public String getLinkName() {
         if (cryptedLink == null) return "";
         try {
-            return new URL(cryptedLink).getFile();
+            return new URL(cryptedLink.toString()).getFile();
         } catch (MalformedURLException e) {
             return "";
         }

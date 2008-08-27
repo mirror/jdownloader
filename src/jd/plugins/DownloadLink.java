@@ -158,6 +158,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Von hier soll de Download stattfinden
      */
     private String urlDownload;
+    
+    /**
+     * Password welches einem weiteren Decrypter-Plugin übergeben werden soll (zb FolderPassword)
+     */
+    private String decrypterPassword;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -882,6 +887,22 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public int getPercent() {
         if (Math.min(downloadCurrent, downloadMax) <= 0) return 0;
         return (int) (10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
+    }
+    
+    /**
+     * gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
+     * kann (zb. FolderPassword)
+     */
+    public String getDecrypterPassword() {
+        return this.decrypterPassword;
+    }
+
+    /**
+     * setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
+     * FolderPassword)
+     */
+    public void setDecrypterPassword(String pw) {
+        this.decrypterPassword = pw;
     }
 
 }
