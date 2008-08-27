@@ -18,8 +18,6 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -29,7 +27,7 @@ public class Woireless6xTo extends PluginForDecrypt {
     static private final String host = "chaoz.ws";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?chaoz\\.ws/woireless/page/album_\\d+\\.html", Pattern.CASE_INSENSITIVE);
-    
+
     public Woireless6xTo() {
         super();
     }
@@ -37,17 +35,15 @@ public class Woireless6xTo extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
-        Browser.clearCookies(host);
         br.getPage(parameter);
-        
         String fileId = new Regex(parameter, "album_(\\d+)\\.html").getMatch(0);
         String password = br.getRegex("Passwort:(.*?)<br />").getMatch(0);
-        
         br.getPage("http://chaoz.ws/woireless/page/page/crypt.php?a=" + fileId + "&part=0&mirror=a");
-        
-        decryptedLinks.add(createDownloadlink(br.getRegex("src=\"(.*?)\"").getMatch(0)).addSourcePluginPassword(password.trim()));
-        
+        String link = br.getRegex("src=\"(.*?)\"").getMatch(0);
+        if (link == null) return null;
+        DownloadLink dl_link = createDownloadlink(link);
+        dl_link.addSourcePluginPassword(password.trim());
+        decryptedLinks.add(dl_link);
         return decryptedLinks;
     }
 
