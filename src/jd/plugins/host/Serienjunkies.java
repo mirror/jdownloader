@@ -50,7 +50,7 @@ public class Serienjunkies extends PluginForHost {
     private final static String HOST = "Serienjunkies.org";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sjdownload.org.*", Pattern.CASE_INSENSITIVE);
-    private String dynamicCaptcha = "<FORM ACTION=\".*?\" METHOD=\"post\"(?s).*?(?-s)<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"([\\w]*)\">(?s).*?(?-s)<IMG SRC=\"([^\"]*)\"";
+    private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
     private static boolean active = false;
@@ -204,8 +204,11 @@ public class Serienjunkies extends PluginForHost {
             url = "http://" + url;
         }
         try {
+        	if(!url.matches(".*sa[fv]e/f.*"))
+        	{
             url = url.replaceAll("safe/", "safe/f");
             url = url.replaceAll("save/", "save/f");
+        	}
             RequestInfo reqinfo = HTTP.getRequest(new URL(url));
             File captchaFile = null;
             String capTxt = null;
@@ -216,7 +219,7 @@ public class Serienjunkies extends PluginForHost {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
-                    String captchaAdress = "http://serienjunki.es" + matcher.group(2);
+                    String captchaAdress = "http://serienjunkies.org" + matcher.group(2);
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
                     fileDownloaded = Browser.download(captchaFile, captchaAdress);
                     logger.info("captchafile: " + fileDownloaded);
