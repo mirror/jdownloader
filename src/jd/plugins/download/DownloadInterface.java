@@ -797,7 +797,10 @@ abstract public class DownloadInterface {
                     }
                 }
                 connection = copyConnection(connection);
-
+if(connection.getContentLength()==startByte){
+    //schon fertig
+    return;
+}
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
 
@@ -806,45 +809,13 @@ abstract public class DownloadInterface {
                     return;
                 }
 
-                // sun.net.www.MessageHeader@a1a199{GET
-                // /files/120598559/Lunar_Strain.rar HTTP/1.1: null}{User-Agent:
-                // Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET
-                // CLR 1.1.4322; .NET CLR 2.0.50727)}{Authorization: Basic
-                // NDkxMjM4MDpUNFN6N2YySjZK}{Accept-Language: de, en-gb;q=0.9,
-                // en;q=0.8}{Referer:
-                // http://rapidshare.com/files/120598559/Lunar_Strain.rar}{Range:
-                // bytes=26282889-}{Host: rs305tl2.rapidshare.com}{Accept:
-                // text/html, image/gif, image/jpeg, *; q=.2, */*;
-                // q=.2}{Connection: keep-alive}{null: null}{null: null}{null:
-                // null}
-                // sun.net.www.MessageHeader@751d58{
-                // null: HTTP/1.1 200 OK}{
-                // Date: Sun, 08 Jun 2008 17:15:18 GMT}{
-                // Connection: close}{
-                // Content-Type: application/octet-stream}{
-                // Accept-Ranges: bytes}{
-                // Content-Disposition: Attachment; filename=Lunar_Strain.rar}{
-                // Content-Length
-                // 26282889
-                // : 26282889}{null: null}
-                // }
-                // if ((startByte + getPreBytes(this)) > 0 &&
-                // (connection.getHeaderField("Content-Range") == null ||
-                // connection.getHeaderField("Content-Range").length() == 0)) {
-                // if (connection.getHeaderField("Content-Length") == null &&
-                // Integer.parseInt(connection.getHeaderField("Content-Length"))
-                // < startByte) {
-                //
-                // error(ERROR_CHUNKLOAD_FAILED);
-                // logger.severe("ERROR Chunk (no range header response)" +
-                // chunks.indexOf(this));
-                // }
-                // return;
-                //
-                // }
+              
             } else if (startByte > 0) {
                 connection = copyConnection(connection);
-
+                if(connection.getContentLength()==startByte){
+                    //schon fertig
+                    return;
+                }
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
 
