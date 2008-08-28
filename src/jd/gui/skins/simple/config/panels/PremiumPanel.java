@@ -69,6 +69,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 			
 			if(collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic)));
 			freeTrafficChart.fetchImage();
+		
 		}
 	}
 

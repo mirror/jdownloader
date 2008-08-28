@@ -797,10 +797,7 @@ abstract public class DownloadInterface {
                     }
                 }
                 connection = copyConnection(connection);
-                if (connection.getContentLength() == startByte) {
-                    // schon fertig
-                    return;
-                }
+              
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
 
@@ -811,10 +808,7 @@ abstract public class DownloadInterface {
 
             } else if (startByte > 0) {
                 connection = copyConnection(connection);
-                if (connection.getContentLength() == startByte) {
-                    // schon fertig
-                    return;
-                }
+               
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
 
@@ -841,6 +835,10 @@ abstract public class DownloadInterface {
                 }
 
                 if (range == null && chunkNum > 1) {
+                    if (connection.getContentLength() == startByte) {
+                        // schon fertig
+                        return;
+                    }
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
 
                     logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
