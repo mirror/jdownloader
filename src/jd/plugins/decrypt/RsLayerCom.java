@@ -41,13 +41,13 @@ public class RsLayerCom extends PluginForDecrypt {
         super();
     }
 
-    private boolean add_container(String cryptedLink, String ContainerFormat) throws IOException {
+    private boolean add_container(String cryptedLink, String ContainerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String link_id = new Regex(cryptedLink, patternSupported).getMatch(0);
         String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
         if (br.containsHTML(container_link)) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
             if (Browser.download(container, br.openGetConnection(container_link))) {
-                JDUtilities.getController().loadContainerFile(container);
+                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                 container.delete();
                 return true;
             }
@@ -101,9 +101,9 @@ public class RsLayerCom extends PluginForDecrypt {
             }
             String layerLinks[][] = br.getRegex(linkPattern).getMatches();
             if (layerLinks.length == 0) {
-                if (!add_container(parameter, ".dlc")) {
-                    if (!add_container(parameter, ".rsdf")) {
-                        add_container(parameter, ".ccf");
+                if (!add_container(parameter, ".dlc",decryptedLinks)) {
+                    if (!add_container(parameter, ".rsdf",decryptedLinks)) {
+                        add_container(parameter, ".ccf",decryptedLinks);
                     }
                 }
             } else {

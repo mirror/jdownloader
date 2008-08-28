@@ -38,17 +38,18 @@ public class RelinkUs extends PluginForDecrypt {
         super();
     }
 
-    private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat) throws IOException {
+    private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'images\\/" + containerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             URL container_url = new URL("http://relink.us/" + Encoding.htmlDecode(container_link));
             HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
             container_con.setRequestProperty("Referer", cryptedLink);
-            Browser.download(container, container_con);
-            JDUtilities.getController().loadContainerFile(container);
-            container.delete();
-            return true;
+            if (Browser.download(container, container_con)) {
+                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                container.delete();
+                return true;
+            }            
         }
         return false;
     }
@@ -75,9 +76,9 @@ public class RelinkUs extends PluginForDecrypt {
             add_relinkus_links(br.getPage("http://relink.us/" + link), decryptedLinks);
         }
         if (decryptedLinks.size() == 0) {
-            if (!add_relinkus_container(page, parameter, "dlc")) {
-                if (!add_relinkus_container(page, parameter, "ccf")) {
-                    add_relinkus_container(page, parameter, "rsdf");
+            if (!add_relinkus_container(page, parameter, "dlc", decryptedLinks)) {
+                if (!add_relinkus_container(page, parameter, "ccf", decryptedLinks)) {
+                    add_relinkus_container(page, parameter, "rsdf", decryptedLinks);
                 }
             }
         }
