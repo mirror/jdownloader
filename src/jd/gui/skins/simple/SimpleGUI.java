@@ -112,7 +112,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.unrar.UnZip;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -122,6 +121,8 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTitledSeparator;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+
+import jd.unrar.zip.UnZip;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**

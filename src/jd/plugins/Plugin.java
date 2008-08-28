@@ -33,6 +33,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.unrar.UnrarPassword;
+
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.ConfigContainer;
 import jd.config.MenuItem;
@@ -42,7 +44,6 @@ import jd.event.ControlEvent;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
-import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -75,7 +76,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public static String findPassword(String data) {
         Vector<String> passwords = HTMLParser.findPasswords(data);
-        return JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
+        return UnrarPassword.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
 
     /**

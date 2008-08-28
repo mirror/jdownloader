@@ -37,6 +37,8 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.unrar.UnrarPassword;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
@@ -296,7 +298,7 @@ public class Serienjunkies extends PluginForDecrypt {
                         FilePackage fp = new FilePackage();
                         fp.setName(title + (b > 1 ? " " + b : ""));
                         b++;
-                        fp.setPassword(JUnrar.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
+                        fp.setPassword(UnrarPassword.passwordArrayToString(passwords.toArray(new String[passwords.size()])));
                         String[][] links = new Regex(element2, "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
                         for (String[] element3 : links) {
                             String[] sp2 = element3[1].split("<strong>.*?</strong>");

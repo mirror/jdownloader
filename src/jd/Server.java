@@ -28,6 +28,8 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.unrar.UnrarPassword;
+
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
 import jd.controlling.JDController;
@@ -325,8 +327,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
             } else if (addPasswordsSwitch && !(currentArg.charAt(0) == '-')) {
 
-                JUnrar unrar = new JUnrar(true);
-                unrar.addToPasswordlist(currentArg);
+//                JUnrar unrar = new JUnrar(true);
+                UnrarPassword.addToPasswordlist(currentArg);
                 logger.info("Add password: " + currentArg);
 
             } else if (extractSwitch && !(currentArg.charAt(0) == '-')) {

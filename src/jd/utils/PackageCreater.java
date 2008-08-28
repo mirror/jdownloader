@@ -26,7 +26,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
-import jd.unrar.Zip;
+import jd.unrar.zip.Zip;
+
 
 public class PackageCreater {
     public static void main(String[] args) {

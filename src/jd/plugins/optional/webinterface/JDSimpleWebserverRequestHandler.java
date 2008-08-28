@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.unrar.UnrarPassword;
+
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -35,7 +37,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
-import jd.unrar.JUnrar;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
@@ -149,7 +150,7 @@ public class JDSimpleWebserverRequestHandler {
         return ret;
     }
 
-    @SuppressWarnings("static-access")
+//    @SuppressWarnings("static-access")
     public void handle() {
 
         String request = headers.get(null);
@@ -503,8 +504,8 @@ public class JDSimpleWebserverRequestHandler {
             if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
                 if (requestParameter.containsKey("password_list")) {
                     String password_list = Encoding.htmlDecode(requestParameter.get("password_list"));
-                    JUnrar unrar = new JUnrar(false);
-                    unrar.editPasswordlist(Regex.getLines(password_list));
+//                    JUnrar unrar = new JUnrar(false);
+                    UnrarPassword.editPasswordlist(Regex.getLines(password_list));
                 }
             }
         }

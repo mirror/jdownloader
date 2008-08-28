@@ -30,8 +30,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
+import jd.unrar.UnrarPassword;
+
 import jd.parser.Regex;
-import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -72,7 +73,7 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
      * @param owner
      *            The owning Frame
      */
-    @SuppressWarnings("static-access")
+//    @SuppressWarnings("static-access")
     public jdUnrarPasswordListDialog(JFrame owner) {
         super(owner, JDLocale.L("gui.config.unrar.passwordlist", "Password List"));
         setModal(true);
@@ -95,8 +96,8 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
         pwField = new JTextArea();
         pwScrollPane = new JScrollPane(pwField, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         pwField.setEditable(true);
-        JUnrar unrar = new JUnrar(false);
-        String[] pws = unrar.returnPasswords();
+//        JUnrar unrar = new JUnrar(false);
+        String[] pws = UnrarPassword.returnPasswords();
         for (String element : pws) {
             pwField.append(element + System.getProperty("line.separator"));
         }
@@ -124,11 +125,11 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
      * 
      * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
-    @SuppressWarnings("static-access")
+//    @SuppressWarnings("static-access")
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
-            JUnrar unrar = new JUnrar(false);
-            unrar.editPasswordlist(Regex.getLines(pwField.getText()));
+//            JUnrar unrar = new JUnrar(false);
+            UnrarPassword.editPasswordlist(Regex.getLines(pwField.getText()));
             dispose();
 
         } else {

@@ -22,11 +22,15 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import jd.unrar.hjsplitt.Merge;
+
+
+
+
 import jd.config.Configuration;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.unrar.JUnrar;
-import jd.unrar.Merge;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

@@ -25,6 +25,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.unrar.UnrarPassword;
+
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
@@ -33,7 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.optional.webinterface.template.Template;
-import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -154,7 +155,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     }
 
     private void add_password_list(Template t, HashMap<String, String> requestParameter) {
-        String[] pws = JUnrar.returnPasswords();
+        String[] pws = UnrarPassword.returnPasswords();
         String pwlist = "";
         for (String element : pws) {
             pwlist = pwlist + System.getProperty("line.separator") + element;

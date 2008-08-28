@@ -16,7 +16,8 @@ import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
 
-import jd.unrar.Zip;
+import jd.unrar.zip.Zip;
+
 
 public class UpdateStable {
     private static Logger logger = JDUtilities.getLogger();
