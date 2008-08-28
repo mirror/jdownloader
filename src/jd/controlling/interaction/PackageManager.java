@@ -16,6 +16,7 @@
 
 package jd.controlling.interaction;
 
+import java.io.File;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -153,6 +154,7 @@ public class PackageManager extends Interaction implements Serializable {
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         for (int i = 0; i < data.size(); i++) {
             dat = data.get(i);
+            validate(dat);
 
             if (dat.isSelected() && !dat.isUptodate() && !dat.isUpdating()) {
 
@@ -182,6 +184,19 @@ public class PackageManager extends Interaction implements Serializable {
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
         }
         return true;
+    }
+
+    private void validate(PackageData dat) {
+        //installation fehgeschlagen, oder lokale jdu file von User entfernt
+        if(dat.isDownloaded()&&!new File(dat.getStringProperty("LOCALPATH","")).exists()){
+            dat.setDownloaded(false);
+            dat.setUpdating(false);
+        }
+        //Updatelink wurde vermutlich aus der liste entfernt
+            if(!dat.isDownloaded()&&dat.isUpdating()&&!JDUtilities.getController().hasDownloadLinkURL(dat.getStringProperty("url"))){
+                dat.setUpdating(false);
+            }
+        
     }
 
     @Override

@@ -16,6 +16,7 @@
 
 package jd.config;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -29,17 +30,23 @@ public class CFGConfig extends SubConfiguration implements Serializable {
      */
     private static final long serialVersionUID = 9187069483565313810L;
 
+    /**
+     * Diese Klasse stellt Die Configuration als eine Configfile zur verfügung. Diese infos werden mit Absicht! nicht in der Datenbank gespeichert!
+     * @param name
+     */
     @SuppressWarnings("unchecked")
     private CFGConfig(String name) {
         this.name = name;
-        Object props = JDUtilities.getDatabaseConnector().getData(name);
+        File file;
+        Object props = JDUtilities.loadObject(null, file = JDUtilities.getResourceFile("config/" + name + ".cfg"), false);
+        file.getParentFile().mkdirs();
         if (props != null) {
             setProperties((HashMap<String, Object>) props);
         }
     }
 
     public void save() {
-        JDUtilities.getDatabaseConnector().saveConfiguration(name, getProperties());
+        JDUtilities.saveObject(null, getProperties(), JDUtilities.getResourceFile("config/" + name + ".cfg"), null, null, false);
     }
 
     public static CFGConfig getConfig(String string) {

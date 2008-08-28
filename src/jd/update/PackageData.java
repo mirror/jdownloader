@@ -55,7 +55,7 @@ public class PackageData extends Property {
     }
 
     public int getInstalledVersion() {
-        return this.installedVersion;
+        return Math.max(0,this.installedVersion);
     }
 
     public boolean isUptodate() {
