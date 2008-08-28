@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 
 import javax.swing.AbstractAction;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -80,7 +79,7 @@ public class JDAboutDialog {
         // See how I added myself above. Every string starts with a single white
         // space. This improves the way the entries look in the table
         // (without fiddleing with the tablecellrenderer)
-        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" }, { " Greeny", " greeny@jdownloader.org", " Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" },
+        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" }, { " Greeny", " greeny@jdownloader.org", " Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" },
 
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
@@ -107,8 +106,6 @@ public class JDAboutDialog {
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel();
-        links.add(new JButton("ViperbOy"));
-        links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction("Homepage", "http://jdownloader.net/index_en.php")));
         links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction("Supportboard", "http://jdownloader.net/support_en.php")));
