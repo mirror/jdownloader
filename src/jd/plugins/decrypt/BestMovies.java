@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
@@ -43,11 +44,12 @@ public class BestMovies extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+
         try {
-            URL url = new URL(cryptedLink);
+            URL url = new URL(parameter);
             RequestInfo reqInfo = null;
             Matcher matcher;
             boolean bestmovies_continue = false;
@@ -67,7 +69,7 @@ public class BestMovies extends PluginForDecrypt {
                     File captchaFile = this.getLocalCaptchaFile(this);
                     URL captcha_url = new URL("http://crypt.best-movies.us/captcha.php");
                     HTTPConnection captcha_con = new HTTPConnection(captcha_url.openConnection());
-                    captcha_con.setRequestProperty("Referer", cryptedLink);
+                    captcha_con.setRequestProperty("Referer", parameter);
                     captcha_con.setRequestProperty("Cookie", cookie);
                     if (!Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
@@ -79,7 +81,7 @@ public class BestMovies extends PluginForDecrypt {
                         /* abbruch geklickt */
                         return null;
                     }
-                    reqInfo = HTTP.postRequest(new URL(cryptedLink), cookie, cryptedLink, null, "sicherheitscode=" + captchaCode + "&submit=Submit+Query", false);
+                    reqInfo = HTTP.postRequest(new URL(parameter), cookie, parameter, null, "sicherheitscode=" + captchaCode + "&submit=Submit+Query", false);
                 } else {
                     /* Kein Captcha */
                     bestmovies_continue = true;

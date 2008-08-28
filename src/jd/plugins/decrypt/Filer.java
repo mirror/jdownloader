@@ -19,8 +19,8 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -33,10 +33,10 @@ public class Filer extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
-        Browser.clearCookies(host);
         br.getPage(parameter);
         String[] links = br.getRegex("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>").getColumn(0);
         progress.setRange(links.length);

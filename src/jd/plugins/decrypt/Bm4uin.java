@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -32,8 +33,9 @@ public class Bm4uin extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         String page = br.getPage(parameter);
         String pass = new Regex(page, Pattern.compile("<strong>Password:</strong> <b><font color=red>(.*?)</font></b>", Pattern.CASE_INSENSITIVE)).getMatch(0);

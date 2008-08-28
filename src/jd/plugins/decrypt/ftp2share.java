@@ -23,6 +23,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -38,27 +39,28 @@ public class ftp2share extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         try {
             Browser br = new Browser();
 
-            if (cryptedLink.matches(patternSupported_Folder.pattern())) {
-                if (!cryptedLink.contains("?system")) {
-                    cryptedLink = cryptedLink + "?system=*";
+            if (parameter.matches(patternSupported_Folder.pattern())) {
+                if (!parameter.contains("?system")) {
+                    parameter = parameter + "?system=*";
                 }
 
-                br.getPage(cryptedLink);
+                br.getPage(parameter);
 
                 String links[][] = new Regex(br, Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
                 for (String[] element : links) {
                     String link = Encoding.Base64Decode(Encoding.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
                     decryptedLinks.add(createDownloadlink(link));
                 }
-            } else if (cryptedLink.matches(patternSupported_File.pattern())) {
+            } else if (parameter.matches(patternSupported_File.pattern())) {
 
-                br.getPage(cryptedLink);
+                br.getPage(parameter);
                 Form[] forms = br.getForms();
                 if (forms.length > 1) {
                     br.submitForm(forms[1]);

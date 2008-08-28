@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -32,8 +33,10 @@ public class FileUploadnet extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         String user = new Regex(parameter, "upload\\.net/(.*?)/").getMatch(0);
         String file = new Regex(parameter, user + "/(.*)").getMatch(0);
         String link = "http://www.file-upload.net/member/data3.php?user=" + user + "&name=" + file;

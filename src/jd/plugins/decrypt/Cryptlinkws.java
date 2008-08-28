@@ -21,10 +21,10 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.controlling.DistributeData;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -43,15 +43,13 @@ public class Cryptlinkws extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
-        Browser.clearCookies(host);
-
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
-        if (cryptedLink.matches(patternSupported_File.pattern())) {
+        if (parameter.matches(patternSupported_File.pattern())) {
             /* Einzelne Datei */
-            br.getPage(cryptedLink);
+            br.getPage(parameter);
             String link = br.getRegex("unescape\\(('|\")(.*?)('|\")\\)").getMatch(1);
             link = Encoding.htmlDecode(Encoding.htmlDecode(link));
             br.getPage("http://www.cryptlink.ws/" + link);
@@ -67,12 +65,12 @@ public class Cryptlinkws extends PluginForDecrypt {
                 /* Direkte Weiterleitung */
                 decryptedLinks.add(createDownloadlink(link));
             }
-        } else if (cryptedLink.matches(patternSupported_Folder.pattern())) {
+        } else if (parameter.matches(patternSupported_Folder.pattern())) {
             /* ganzer Ordner */
             boolean do_continue = false;
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
 
-                br.getPage(cryptedLink);
+                br.getPage(parameter);
 
                 Form[] forms = br.getForms();
 

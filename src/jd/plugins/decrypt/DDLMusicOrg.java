@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -39,21 +40,22 @@ public class DDLMusicOrg extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+       
         try {
 
-            if (new Regex(cryptedLink, patternLink_Crypt).matches()) {
+            if (new Regex(parameter, patternLink_Crypt).matches()) {
                 try {
                     Thread.sleep(250);
                 } catch (InterruptedException e) {
                 }
-                RequestInfo reqinfo = HTTP.getRequest(new URL(cryptedLink.replace("ddlm_cr.php", "test2.php")), null, cryptedLink, false);
+                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter.replace("ddlm_cr.php", "test2.php")), null, parameter, false);
                 String link = new Regex(reqinfo.getHtmlCode(), "<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE).getMatch(0);
                 if (link == null) { return null; }
                 decryptedLinks.add(createDownloadlink(link));
-            } else if (new Regex(cryptedLink, patternLink_Main).matches()) {
+            } else if (new Regex(parameter, patternLink_Main).matches()) {
                 RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
                 // passwort auslesen
                 String password = new Regex(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n.*?</tr>\n.*?<tr>\n.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE).getMatch(0);
