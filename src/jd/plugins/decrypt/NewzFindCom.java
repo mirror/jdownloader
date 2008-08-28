@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -35,15 +36,16 @@ public class NewzFindCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         Vector<String> passwords = HTMLParser.findPasswords(br.getPage(parameter));
 
         String links[] = new Regex(br.getPage("http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1)), Pattern.compile("<link title=\"(.*?)\"")).getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
-            DownloadLink dl_link=createDownloadlink(element);
+            DownloadLink dl_link = createDownloadlink(element);
             dl_link.addSourcePluginPasswords(passwords);
             decryptedLinks.add(dl_link);
             progress.increase(1);

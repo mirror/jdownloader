@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -42,18 +43,19 @@ public class rapidsharknet extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         try {
-            URL url = new URL(cryptedLink);
+            URL url = new URL(parameter);
             RequestInfo requestInfo;
 
-            if (cryptedLink.matches(patternLink_direct.pattern())) {
+            if (parameter.matches(patternLink_direct.pattern())) {
                 String downloadid = url.getFile().substring(1);
                 /* weiterleiten zur safephp Seite */
                 decryptedLinks.add(createDownloadlink("http://rapidshark.net/safe.php?id=" + downloadid));
-            } else if (cryptedLink.matches(patternLink_safephp.pattern())) {
+            } else if (parameter.matches(patternLink_safephp.pattern())) {
                 String downloadid = url.getFile().substring(13);
                 requestInfo = HTTP.getRequest(url, null, "http://rapidshark.net/" + downloadid, false);
                 downloadid = new Regex(requestInfo, "src=\"(.*)\"></iframe>").getMatch(0);

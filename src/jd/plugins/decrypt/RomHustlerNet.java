@@ -18,7 +18,9 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -33,8 +35,9 @@ public class RomHustlerNet extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         String file[] = new Regex(parameter, "romhustler\\.net/rom/(.*?)/(\\d+)/.+").getRow(0);
         if (file.length != 2) return null;

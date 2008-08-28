@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -56,9 +57,10 @@ public class RsLayerCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        Browser.clearCookies(host);
+        String parameter = param.toString();
+
         br.getPage(parameter);
         if (parameter.indexOf("/link-") != -1) {
             String link = br.getRegex("<iframe src=\"(.*?)\" ").getMatch(0);
@@ -101,9 +103,9 @@ public class RsLayerCom extends PluginForDecrypt {
             }
             String layerLinks[][] = br.getRegex(linkPattern).getMatches();
             if (layerLinks.length == 0) {
-                if (!add_container(parameter, ".dlc",decryptedLinks)) {
-                    if (!add_container(parameter, ".rsdf",decryptedLinks)) {
-                        add_container(parameter, ".ccf",decryptedLinks);
+                if (!add_container(parameter, ".dlc", decryptedLinks)) {
+                    if (!add_container(parameter, ".rsdf", decryptedLinks)) {
+                        add_container(parameter, ".ccf", decryptedLinks);
                     }
                 }
             } else {

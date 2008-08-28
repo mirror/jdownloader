@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -38,7 +39,8 @@ public class Rlslog extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+        String parameter = param.toString();
         String followcomments = "";
 
         if (parameter.contains("/comment-page")) {
