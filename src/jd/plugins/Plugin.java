@@ -325,7 +325,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Filename aus dem header (content disposition) extrahiert
      */
     static public String getFileNameFormHeader(HTTPConnection urlConnection) {
-
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
 
         String cd = urlConnection.getHeaderField("content-disposition").toLowerCase();
@@ -341,8 +340,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     }
 
     static public String getFileNameFormURL(URL url) {
-        int index = Math.max(url.getFile().lastIndexOf("/"), url.getFile().lastIndexOf("\\"));
-        return Encoding.htmlDecode(url.getFile().substring(index + 1));
+        return extractFileNameFromURL(url.toExternalForm());
     }
 
     /**
@@ -352,9 +350,12 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * 
      * @return Datename des Downloads.
      */
-    static public String extractFileNameFromURL(String url) {
-        int index = Math.max(url.lastIndexOf("/"), url.lastIndexOf("\\"));
-        return url.substring(index + 1);
+    static public String extractFileNameFromURL(String filename) {
+        int index = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
+        filename = filename.substring(index + 1);
+        index = filename.indexOf("?");
+        if (index > 0) filename = filename.substring(0, index);
+        return Encoding.htmlDecode(filename);
     }
 
     /**
@@ -398,22 +399,22 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public abstract String getPluginName();
 
-    /**p
-     * gibt das interne properties objekt zurück indem die Plugineinstellungen
+    /**
+     * p gibt das interne properties objekt zurück indem die Plugineinstellungen
      * gespeichert werden
      * 
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
         SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
-        if(cfg.getCount() <= 1) {
+        if (cfg.getCount() <= 1) {
             if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName()) != null) {
                 cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName())).getProperties());
                 cfg.save();
                 return cfg;
             }
         }
-    	return cfg;
+        return cfg;
     }
 
     /**
