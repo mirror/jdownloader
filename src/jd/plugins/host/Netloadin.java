@@ -308,8 +308,18 @@ public class Netloadin extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 return;
             }
+            
+			con = br.openGetConnection(url);
+            for(int i = 0;i<10 && (!con.isOK());i++)
+            {
+                try {
+					con = br.openGetConnection(url);
+					
+				} catch (Exception e) {
+					Thread.sleep(150);
+				}
+            }
 
-            con = br.openGetConnection(url);
         } else {
             con = br.openGetConnection(null);
         }
