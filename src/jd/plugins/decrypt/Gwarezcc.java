@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
@@ -114,11 +115,25 @@ public class Gwarezcc extends PluginForDecrypt {
                 }
             } else if (cryptedLink.matches(patternLink_Download_DLC.pattern())) {
                 /* DLC laden */
+                String downloadid = new Regex(url.getFile(), "\\/download/dlc/([\\d].*)/").getMatch(0);
+                /* Passwort suchen */
+                url = new URL("http://gwarez.cc/" + downloadid + "#details");
+                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
+                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+                if (password == null) {
+                    logger.severe("Please Update Gwarez Plugin(PW Pattern)");
+                } else {
+                    password = password.trim();
+                }
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", cryptedLink);
                 if (Browser.download(container, dlc_con)) {
-                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                    Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
+                    for (DownloadLink dl_link : dl_links) {
+                        dl_link.addSourcePluginPassword(password);
+                        decryptedLinks.add(dl_link);
+                    }
                     container.delete();
                 } else {
                     return null;
