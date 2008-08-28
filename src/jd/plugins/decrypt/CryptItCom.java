@@ -196,8 +196,9 @@ public class CryptItCom extends PluginForDecrypt {
             String mode = temp[0];
             String folder = temp[1];
             RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
-            String pass = param.getDecrypterPassword();
+            String pass = "";
             if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
+                pass = param.getDecrypterPassword();
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     if (pass == null) {
                         pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword());
@@ -214,9 +215,10 @@ public class CryptItCom extends PluginForDecrypt {
                     pass = null;
                 }
             }
+            if (pass == null) pass = "";/* falls kein passwort korrekt war */
             String cookie = ri.getCookie();
             String packagename = new Regex(ri.getHtmlCode(), Pattern.compile("class=\"folder\">(.*?)</", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String password = new Regex(ri.getHtmlCode(), Pattern.compile("<b>Password:</b>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String password = new Regex(ri.getHtmlCode(), Pattern.compile("<b>Password:</b>(.*?)<", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (password != null) password = password.trim();
 
             HashMap<String, String> header = new HashMap<String, String>();
