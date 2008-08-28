@@ -18,93 +18,47 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
-
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.HTMLEntities;
 
 public class SAUGUS extends PluginForDecrypt {
     final static String host = "saug.us";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
 
     public SAUGUS() {
         super();
-    }
-
-    public String deca1(String input) {
-        final String keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-        String output = "";
-        char type1, type2, type3;
-        char get1, get2 = 0, get3 = 0, get4 = 0;
-        int i = 0;
-
-        // remove all characters that are not A-Z, a-z, 0-9, +, /, or =
-        input = input.replaceAll("[^A-Za-z0-9\\+\\/\\=]", "");
-
-        do {
-            get1 = (char) keyStr.indexOf(input.charAt(i++));
-
-            get2 = (char) keyStr.indexOf(input.charAt(i++));
-
-            get3 = (char) keyStr.indexOf(input.charAt(i++));
-
-            get4 = (char) keyStr.indexOf(input.charAt(i++));
-
-            type1 = (char) (get1 << 2 | get2 >> 4);
-            type2 = (char) ((get2 & 15) << 4 | get3 >> 2);
-            type3 = (char) ((get3 & 3) << 6 | get4);
-
-            output = output + type1;
-
-            if (get3 != 64) {
-                output = output + type2;
-            }
-            if (get4 != 64) {
-                output = output + type3;
-            }
-        } while (i < input.length());
-
-        return output;
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
-        try {
-            br.getPage(parameter);
-
-            if (br.containsHTML("<span style=\"font-size:9pt;\">Dateien offline!")) { return null; }
-            String hst = "http://" + br.getRequest().getUrl().getHost() + "/";
-            String[] crypt = br.getRegex("document.write\\(decb.*?\\(\'(.*?)\'\\)\\)\\;").getColumn(0);
-            progress.setRange(crypt.length);
-
-            for (String string : crypt) {
-                string = deca1(string);
-
-                string = new Regex(string, "\\(deca.*?\\(\'(.*?)\'").getMatch(0);
-                string = deca1(string);
-
-                string = new Regex(string, "\\(dec.*?\\(\'(.*?)\'").getMatch(0);
-                string = deca1(string);
-
-                string = hst + HTMLEntities.unhtmlentities(new Regex(string, "javascript\\:page\\(\'(.*?)\'\\)\\;").getMatch(0));
-                br.getPage(string);
-                string = HTMLEntities.unhtmlentities(new Regex(br.toString().replaceAll("<!--.*?-->", ""), "<iframe src=\"(.*?)\"").getMatch(0)).trim().replaceAll("^[\\s]*", "");
-                if (!string.toLowerCase().matches("http\\:\\/\\/.*")) {
-                    br.getPage(hst + string);
-                    decryptedLinks.add(createDownloadlink(br.getForm(0).getAction("http://saug.us")));
-                } else {
-                    decryptedLinks.add(createDownloadlink(string));
+        String server_folder_id = "";
+        String server_id = "";
+        if (parameter.contains("folder2")) {
+            server_folder_id = "2";
+            server_id = "s2.";
+        }
+        br.getPage(parameter);
+        String folder_id = br.getRegex(Pattern.compile("onload=\"loadFolder\\('(.*?)'\\);\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (folder_id == null) return null;
+        br.postPage("http://" + server_id + "saug.us/folder" + server_folder_id + ".php", "id=" + folder_id);
+        String ids[] = br.getRegex(Pattern.compile("javascript:page\\('.*?\\?url=(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        for (String id : ids) {
+            br.getPage("http://" + server_id + "saug.us/go" + server_folder_id + ".php?url=" + id);
+            String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("</iframe>--><iframe src=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            if (link != null) {
+                if (link.startsWith("http")) {
+                    decryptedLinks.add(this.createDownloadlink(link));
+                } else if (link.startsWith("go_x")) {
+                    br.getPage("http://" + server_id + "saug.us/" + link);
+                    link = br.getRegex(Pattern.compile("<p class=\"downloadlink\">(.*?)<fon", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    if (link != null) decryptedLinks.add(this.createDownloadlink(link));
                 }
-                progress.increase(1);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
         return decryptedLinks;
     }
