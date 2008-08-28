@@ -111,8 +111,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private File latestCaptchaFile = null;
 
-    private boolean limited = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
-
     private LinkStatus linkStatus;
 
     private int linkType = LINKTYPE_NORMAL;
@@ -403,18 +401,54 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return linkType;
     }
 
-    public int getGlobalSpeedLimit() {
-        if (this.globalSpeedLimit <= 0) {
-            this.globalSpeedLimit = Integer.MAX_VALUE;
+    /**
+     * Gibt das SpeedLimit zurück! Beachtet das Lokale Speed Limit!
+     * in bytes/s
+     * @return
+     */
+    public int getSpeedLimit() {
+        if (this.localSpeedLimit <= 0) {
+            if (this.globalSpeedLimit <= 0) {
+                this.globalSpeedLimit = Integer.MAX_VALUE;
+            }
+        } else {
+            this.globalSpeedLimit = this.localSpeedLimit;
         }
         return this.globalSpeedLimit;
     }
 
-    public void setGlobalSpeedLimit(int maximalspeed) {
+    /**
+     * Gibt das Lokale Speed Limit zurück!
+     * in bytes/s
+     * @return
+     */
+    public int getLocalSpeedLimit() {
+        return this.localSpeedLimit;
+    }
+
+    /**
+     * Setzt das Lokale Speed Limit!
+     * in bytes/s
+     * @param maximalspeed
+     */
+    public void setLocalSpeedLimit(int maximalspeed) {
+        if (maximalspeed <= 0) {
+            this.localSpeedLimit = -1;
+        } else {
+            this.localSpeedLimit = maximalspeed;
+        }
+    }
+
+    /**
+     * Setzt das Globale Speed Limit!
+     * in bytes/s
+     * @param maximalspeed
+     */
+    public void setSpeedLimit(int maximalspeed) {
         maximalspeed = Math.max(20, maximalspeed);
-        // logger.info(this+ " LINKSPEED: "+maximalspeed);
-        int diff = this.globalSpeedLimit - maximalspeed;
-        if (diff > 500 || diff < 500) {
+        //logger.info(this + " LINKSPEED: " + maximalspeed);
+        int diff = Math.abs(this.globalSpeedLimit - maximalspeed);
+        if (diff > 500) {
             this.globalSpeedLimit = maximalspeed;
         }
     }
@@ -549,9 +583,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public boolean isEnabled() {
         return isEnabled;
     }
-
+    
+    /**
+     * Zeigt ob der Speed limitiert ist!
+     * @return
+     */
     public boolean isLimited() {
-        return limited;
+        if (this.localSpeedLimit > 0) return true;
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) != 0;
     }
 
     public boolean isMirror() {
@@ -744,10 +783,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void setLatestCaptchaFile(File dest) {
         latestCaptchaFile = dest;
 
-    }
-
-    public void setLimited(boolean limited) {
-        this.limited = limited;
     }
 
     public void setLinkType(int linktypeContainer) {

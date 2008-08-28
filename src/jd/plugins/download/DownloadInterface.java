@@ -646,9 +646,9 @@ abstract public class DownloadInterface {
         public int getMaximalSpeed() {
             try {
                 if (maxSpeed <= 0) {
-                    maxSpeed = downloadLink.getGlobalSpeedLimit() / getRunningChunks();
+                    maxSpeed = downloadLink.getSpeedLimit() / getRunningChunks();
                     if (speedDebug) {
-                        logger.finer("Def speed: " + downloadLink.getGlobalSpeedLimit() + "/" + getRunningChunks() + "=" + maxSpeed);
+                        logger.finer("Def speed: " + downloadLink.getSpeedLimit() + "/" + getRunningChunks() + "=" + maxSpeed);
                     }
 
                 }
@@ -1050,7 +1050,7 @@ abstract public class DownloadInterface {
      */
     private void assignChunkSpeeds() {
         int MAX_ALLOWED_OVERHEAD = 10 * 1024;
-        int allowedLinkSpeed = downloadLink.getGlobalSpeedLimit();
+        int allowedLinkSpeed = downloadLink.getSpeedLimit();
         int mChunk = (int) (allowedLinkSpeed / chunkNum * 0.4);
         int currentSpeed = 0;
 

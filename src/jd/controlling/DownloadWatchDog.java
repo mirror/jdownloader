@@ -493,8 +493,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     for (FilePackage filePackage : fps) {
 
                         Iterator<DownloadLink> iter = filePackage.getDownloadLinks().iterator();
-                        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
-                        boolean isLimited = maxspeed != 0;
+                        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;                        
                         if (maxspeed == 0) {
                             maxspeed = Integer.MAX_VALUE;
                         }
@@ -506,11 +505,10 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                         DownloadLink element;
                         while (iter.hasNext()) {
-                            element = iter.next();
-                            element.setLimited(isLimited);
+                            element = iter.next();                            
                             if (element.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
 
-                                element.setGlobalSpeedLimit(element.getDownloadSpeed() + overhead / inProgress);
+                                element.setSpeedLimit(element.getDownloadSpeed() + overhead / inProgress);
 
                             }
                         }
