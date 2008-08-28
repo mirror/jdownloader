@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -36,9 +37,11 @@ public class YouPornCom extends PluginForDecrypt {
     private static final Pattern DOWNLOADFILE = Pattern.compile("(download\\.youporn\\.com/download/\\d+/flv/[^\\?]*)", Pattern.CASE_INSENSITIVE);
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         RequestInfo loader;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         try {
             if (new Regex(parameter, patternSupported_Other).matches()) {
                 loader = HTTP.getRequest(new URL(parameter), "age_check=1", "", true);

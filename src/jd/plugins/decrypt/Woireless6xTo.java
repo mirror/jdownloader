@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -33,18 +34,24 @@ public class Woireless6xTo extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         br.getPage(parameter);
+        
         String fileId = new Regex(parameter, "album_(\\d+)\\.html").getMatch(0);
         String password = br.getRegex("Passwort:(.*?)<br />").getMatch(0);
+        
         br.getPage("http://chaoz.ws/woireless/page/page/crypt.php?a=" + fileId + "&part=0&mirror=a");
         String link = br.getRegex("src=\"(.*?)\"").getMatch(0);
         if (link == null) return null;
+        
         DownloadLink dl_link = createDownloadlink(link);
         dl_link.addSourcePluginPassword(password.trim());
         dl_link.setDecrypterPassword("woireless.6x.to");
         decryptedLinks.add(dl_link);
+        
         return decryptedLinks;
     }
 
