@@ -23,6 +23,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
@@ -39,8 +40,9 @@ public class LinkBankeu extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         String page = br.getPage(parameter);
         String[][] links = new Regex(page, Pattern.compile("onclick='posli\\(\"([\\d]+)\",\"([\\d]+)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches();

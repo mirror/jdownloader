@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -41,14 +42,15 @@ public class LinksaveIn extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();  
         URL url;
+        
         try {
-            if (cryptedLink.matches(patternSupported.pattern())) {
-                cryptedLink = cryptedLink + ".dlc";
-                url = new URL(cryptedLink);
+            if (parameter.matches(patternSupported.pattern())) {
+                parameter = parameter + ".dlc";
+                url = new URL(parameter);
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");

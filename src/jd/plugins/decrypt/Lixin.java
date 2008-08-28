@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -42,9 +43,10 @@ public class Lixin extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         try {
 
             boolean lix_continue = false;
@@ -52,7 +54,7 @@ public class Lixin extends PluginForDecrypt {
             Form form;
             /* zuerst mal den evtl captcha abarbeiten */
 
-            br.getPage(cryptedLink);
+            br.getPage(parameter);
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 matcher = patternCaptcha.matcher(br + "");
                 if (matcher.find()) {

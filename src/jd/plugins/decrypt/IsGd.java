@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -34,8 +35,9 @@ public class IsGd extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         br.getPage(parameter);
         if (br.getRedirectLocation() == null) return null;

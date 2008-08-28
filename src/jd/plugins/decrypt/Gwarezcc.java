@@ -30,6 +30,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -52,20 +53,21 @@ public class Gwarezcc extends PluginForDecrypt {
         setConfigElements();
     }
 
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = (String) parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         try {
-            URL url = new URL(cryptedLink);
+            URL url = new URL(parameter);
             RequestInfo requestInfo;
             boolean dlc_found = false;
 
-            if (cryptedLink.matches(patternLink_Details_Mirror_Check.pattern())) {
+            if (parameter.matches(patternLink_Details_Mirror_Check.pattern())) {
                 /* Link aus der Mirror Check Seite */
                 String downloadid = url.getFile().replaceAll("check", "parts");
                 /* weiterleiten zur Mirror Parts Seite */
                 decryptedLinks.add(createDownloadlink("http://gwarez.cc" + downloadid));
-            } else if (cryptedLink.matches(patternLink_Details_Download.pattern())) {
+            } else if (parameter.matches(patternLink_Details_Download.pattern())) {
                 /* Link auf die Download Info Seite */
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                 String downloadid = new Regex(url.getFile(), "\\/([\\d].*)").getMatch(0);
@@ -90,7 +92,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     }
                 }
 
-            } else if (cryptedLink.matches(patternLink_Details_Mirror_Parts.pattern())) {
+            } else if (parameter.matches(patternLink_Details_Mirror_Parts.pattern())) {
                 /* Link zu den Parts des Mirrors (Verschlüsselt) */
                 requestInfo = HTTP.getRequest(url, null, url.toString(), false);
                 String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
@@ -113,7 +115,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     link.addSourcePluginPassword(password);
                     decryptedLinks.add(link);
                 }
-            } else if (cryptedLink.matches(patternLink_Download_DLC.pattern())) {
+            } else if (parameter.matches(patternLink_Download_DLC.pattern())) {
                 /* DLC laden */
                 String downloadid = new Regex(url.getFile(), "\\/download/dlc/([\\d].*)/").getMatch(0);
                 /* Passwort suchen */
@@ -127,7 +129,7 @@ public class Gwarezcc extends PluginForDecrypt {
                 }
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
-                dlc_con.setRequestProperty("Referer", cryptedLink);
+                dlc_con.setRequestProperty("Referer", parameter);
                 if (Browser.download(container, dlc_con)) {
                     Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
                     for (DownloadLink dl_link : dl_links) {

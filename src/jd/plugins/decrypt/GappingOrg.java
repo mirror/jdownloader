@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -32,8 +33,9 @@ public class GappingOrg extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         if (parameter.indexOf("index.php") != -1) {
             String links[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://gapping\\.org/file\\.php\\?id=(.*?)\" >", Pattern.CASE_INSENSITIVE)).getColumn(0);
