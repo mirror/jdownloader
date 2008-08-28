@@ -58,7 +58,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 					PluginForHost Plugin =  (PluginForHost) configEntry.getActionListener(); 
 					try { 
 						Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
-						ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1000 / 1000 / 1000 * 100) / 100.0) + " GB]", String.valueOf(tleft));
+						ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft));
 						freeTrafficChart.addEntity(ent); 
 						long rest = 0; 
 						if((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
@@ -68,7 +68,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 				}
 			}
 			
-			if(collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1000 / 1000 / 1000) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic)));
+			if(collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic)));
 			freeTrafficChart.fetchImage();
 		}
 	}
