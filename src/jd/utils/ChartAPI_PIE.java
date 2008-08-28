@@ -21,8 +21,8 @@ import java.awt.Color;
 public class ChartAPI_PIE extends ChartAPI {
 	private static final long serialVersionUID = 7576517180813229367L;
 
-	public ChartAPI_PIE(int width, int height, Color RGB) {
-		super(width, height, RGB);
+	public ChartAPI_PIE(String caption, int width, int height, Color RGB) {
+		super(caption, width, height, RGB);
 	}
 	
 	public String createDataString() {

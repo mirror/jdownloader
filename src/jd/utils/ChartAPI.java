@@ -18,6 +18,7 @@ package jd.utils;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -63,8 +64,10 @@ public abstract class ChartAPI extends JComponent {
 	private Color backgroundColor;
 	private BufferedImage image;
 	private PictureLoader loader;
+	private String caption;
 	
-	public ChartAPI(int width, int height, Color backgroundColor) {
+	public ChartAPI(String caption, int width, int height, Color backgroundColor) {
+		this.caption = caption;
 		this.width = width;
 		this.height = height;
 		this.backgroundColor = backgroundColor;
@@ -148,7 +151,7 @@ public abstract class ChartAPI extends JComponent {
 		return String.valueOf(Float.valueOf(input) / Float.valueOf(getMaxValue()) * 100);
 	}
 	
-	public void downloadImage(String path) { 
+	public void downloadImage(String path) {
         loader = new PictureLoader(path);
         loader.start();
     }
@@ -164,14 +167,17 @@ public abstract class ChartAPI extends JComponent {
     }
 
 	public void paintComponent(Graphics g) {
+		g.setFont(new Font("Arial", Font.BOLD, 12));
 		if(image != null) {
             int x = (getWidth() - image.getWidth())/2;
             int y = (getHeight() - image.getHeight())/2;
             g.drawImage(image, x, y, this);
+            g.drawString(caption, 0, 10);
             return ;
         }
 
 		g.drawImage(image,0,0,null);
+		g.drawString(caption + " loading or not avaible", 0, 10);
 	}
 	
 	public abstract String createDataString();
