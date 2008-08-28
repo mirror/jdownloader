@@ -86,7 +86,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
-    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE(450, 60, this.getBackground());
+    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("Free Traffic Chart", 450, 60, this.getBackground());
     private ChartRefresh loader;
 	
     public PremiumPanel(GUIConfigEntry gce) {
