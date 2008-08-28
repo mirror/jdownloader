@@ -72,21 +72,9 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     /**
-     * VERALTETES decryptIt Interface, bitte NICHT mehr verwenden
+     * Die Methode entschlüsselt einen einzelnen Link.
      */
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        logger.severe(this.getPluginName()+" has no decryptIt function!");
-        return new ArrayList<DownloadLink>();
-    }
-
-    /**
-     * NEUES decryptIt Interface, bitte AB JETZT nur noch dieses verwenden!!
-     * Muss vom Plugin implementiert werden!!
-     */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter) throws Exception {
-        logger.info(this.getPluginName()+" uses deprecated decryptIt Interface!!!");
-        return decryptIt(parameter.toString());
-    }
+    public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter) throws Exception;
 
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
