@@ -120,9 +120,9 @@ public class DepositFiles extends PluginForHost {
             return;
         }
 
-        Form[] forms = br.getForms();
-
-        if (forms.length < 2) {
+      
+Form form = br.getForm("Kostenlosen download");
+        if (form==null) {
             String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/span>").getMatch(0);
             if (wait != null) {
                 linkStatus.setValue(Regex.getMilliSeconds(wait));
@@ -133,9 +133,10 @@ public class DepositFiles extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
-        br.submitForm(forms[1]);
+        br.submitForm(form);
 
         if (br.containsHTML(PASSWORD_PROTECTED)) {
+         // MUss wohl noch angepasst werden
             String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
             br.postPage(finalURL, "go=1&gateway_result=1&file_password=" + password);
         }
@@ -145,27 +146,28 @@ public class DepositFiles extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
-
-        finalURL = new Regex(br, "var dwnsrc = \"(.*?)\";").getMatch(0);
-        if (finalURL == null) {
-            if (br.containsHTML("IP-Addresse")) {
-                if (br.containsHTML("download_limit")) {
+form=br.getForm("Die Datei downloaden");
+HTTPConnection con = br.openFormConnection(form);
+    
+        if (con == null) {
+            if (br.containsHTML("IP-Addresse werden schoneinige Files")) {
+               
                     linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
                     linkStatus.setValue(30000l);
                     return;
-                }
-                return;
+               
+              
             }
-            if (br.containsHTML("download_limit")) {
-                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                linkStatus.setValue(300000l);
-                return;
-            }
+//            if (br.containsHTML("download_limit")) {
+//                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+//                linkStatus.setValue(300000l);
+//                return;
+//            }
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
 
-        HTTPConnection con = br.openGetConnection(finalURL);
+     
         if (con.getHeaderField("Location") != null && con.getHeaderField("Location").indexOf("error") > 0) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;

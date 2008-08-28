@@ -19,6 +19,7 @@ package jd.parser;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -47,9 +48,11 @@ public class Form {
     }
 
     private String[] submitValues;
-public boolean equals(Form f){
-    return this.toString().equalsIgnoreCase(f.toString());
-}
+
+    public boolean equals(Form f) {
+        return this.toString().equalsIgnoreCase(f.toString());
+    }
+
     /**
      * Ein Array mit allen Forms dessen Inhalt dem matcher entspricht. Achtung
      * der Matcher bezieht sich nicht auf die Properties einer Form sondern auf
@@ -63,18 +66,23 @@ public boolean equals(Form f){
         while (formmatcher.find()) {
             String formPropertie = formmatcher.group(1);
             String inForm = formmatcher.group(2);
-           
+
             // System.out.println(inForm);
             if (inForm.matches("(?s)" + matcher)) {
                 Form form = new Form();
-                String[] submits= new Regex(inForm,"<input.*?type=[\"|']submit[\"|'].*?>").getColumn(-1);
-                form.submitValues=new String[submits.length];
-                int i=0;
-                for(String submit:submits){
-                    String submitvalue=new Regex(submit,"value=[\"|'](\\w+)[\"|']").getMatch(0);
-                    form.submitValues[i++]=submitvalue;
-                    
+                String[] submits = new Regex(inForm, "<input.*?>").getColumn(-1);
+                ArrayList<String> tmp = new ArrayList<String>();
+                // 
+                
+            
+                for (String submit : submits) {
+                    if(Regex.matches(submit, "type[ ]*?=[ ]*?[\"|']submit[\"|']")){
+                    String submitvalue = new Regex(submit, "value[ ]*?=[ ]*?[\"|'](.*?)[\"|']").getMatch(0);
+                    tmp.add(submitvalue);
+                    }
+
                 }
+                form.submitValues = tmp.toArray(new String[]{});
                 // form.baseRequest = requestInfo;
                 form.method = METHOD_GET;
                 Pattern patternfp = Pattern.compile(" ([^\\s]+)\\=[\"'](.*?)[\"']", Pattern.CASE_INSENSITIVE);
@@ -135,8 +143,6 @@ public boolean equals(Form f){
      */
     public String action;
 
-    
-
     /**
      * Fals es eine Uploadform ist, kann man hier die Dateien setzen die
      * hochgeladen werden sollen
@@ -164,26 +170,25 @@ public boolean equals(Form f){
      */
     private HashMap<String, String> vars = new HashMap<String, String>();
 
-    public boolean hasSubmitValue(String value){
-        for(String submit:this.submitValues){
-            if(submit.equals(value))return true;
+    public boolean hasSubmitValue(String value) {
+        for (String submit : this.submitValues) {
+            if (submit.equals(value)) return true;
         }
         return false;
-        
+
     }
 
     public String getAction(String baseURL) {
         URL baseurl = null;
-        if(baseURL == null)
-        { baseurl = null; }
-        else
-        {
-        try {
-            baseurl = new URL(baseURL);
-        } catch (MalformedURLException e) {
+        if (baseURL == null) {
+            baseurl = null;
+        } else {
+            try {
+                baseurl = new URL(baseURL);
+            } catch (MalformedURLException e) {
 
-            e.printStackTrace();
-        }
+                e.printStackTrace();
+            }
         }
         String ret = action;
         if (action == null || action.matches("[\\s]*")) {
@@ -218,7 +223,6 @@ public boolean equals(Form f){
         }
         return ret;
     }
-
 
     /**
      * Gibt alle Input fields zurück Object[0]=vars Object[1]=varsWithoutValue
@@ -370,6 +374,7 @@ public boolean equals(Form f){
     public File getFileToPost() {
         return fileToPost;
     }
+
     public String[] getSubmitValues() {
         return submitValues;
     }
