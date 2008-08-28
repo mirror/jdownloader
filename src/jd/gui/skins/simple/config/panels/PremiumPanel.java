@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -39,11 +40,38 @@ import jd.config.ConfigEntry;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
+import jd.utils.ChartAPI_Entity;
+import jd.utils.ChartAPI_PIE;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class PremiumPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
+	class ChartRefresh extends Thread {
+		@SuppressWarnings("unchecked")
+		public void run() {
+			ArrayList<Account> accounts = (ArrayList<Account>) getAccounts(); 
+			Long collectTraffic = new Long(0);
+			freeTrafficChart.clear();
+			for(Account acc : accounts) { 
+				if (acc.getUser().length() > 0 && acc.getPass().length() > 0){ 
+					PluginForHost Plugin =  (PluginForHost) configEntry.getActionListener(); 
+					try { 
+						Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
+						ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1000 / 1000 / 1000 * 100) / 100.0) + " GB]", String.valueOf(tleft));
+						freeTrafficChart.addEntity(ent); 
+						long rest = 0; 
+						if((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
+					} catch (Exception e) {
+						JDUtilities.logger.finest("Not able to load Traffic-Limit for ChartAPI");
+					}
+				}
+			}
+			
+			if(collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1000 / 1000 / 1000) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic)));
+			freeTrafficChart.fetchImage();
+		}
+	}
 
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
@@ -59,7 +87,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
-
+    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE(450, 60, this.getBackground());
+    private ChartRefresh loader;
+	
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
         this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
@@ -105,14 +135,26 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             statiLabels[i].setEnabled(enables[i].isSelected());
             i++;
         }
-
+        createDataset();
     }
 
+    /**
+     * Creates the Dataset.
+     * 
+     * @param nothing
+     * 
+     * @return nothing
+     */
+    @SuppressWarnings("unchecked")
+	private void createDataset() {
+    	loader = new ChartRefresh();
+    	loader.start();
+    }
+      
     private void createPanel() {
 
         int accountNum = configEntry.getEnd();
         // addInstantHelpLink();
-
         enables = new JCheckBox[accountNum];
         usernames = new JTextField[accountNum];
         passwords = new JPasswordField[accountNum];
@@ -121,7 +163,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         statiLabels = new JLabel[accountNum];
         stati = new JTextField[accountNum];
         checkBtns = new JButton[accountNum];
-        ArrayList<Account> list = new ArrayList<Account>();;
+        ArrayList<Account> list = new ArrayList<Account>();
+        
         for (int i = 1; i <= accountNum; i++) {
             list.add(new Account("",""));
             final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i));
@@ -158,7 +201,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             usernames[i - 1].addFocusListener(this);
             add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
             // add(passwords[i - 1] = new JPasswordField(""), "wrap");
-            add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 40:40:push");
+            add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 10:10:push");
             passwords[i - 1].addFocusListener(this);
             
           
@@ -173,10 +216,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             // stati[i - 1] = status;
             // status.setEditable(false);
             // add(status, "span, gapbottom :10:push");
-        }
-        
-      
-
+        }    
+        add(freeTrafficChart, "spanx, spany");
     }
 
     public void stateChanged(ChangeEvent e) {
@@ -191,7 +232,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 statiLabels[i].setEnabled(enables[i].isSelected());
             }
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -212,5 +252,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     }
 
     public void focusLost(FocusEvent e) {
+    	createDataset();
     }
 }
