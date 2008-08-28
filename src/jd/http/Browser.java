@@ -55,7 +55,7 @@ public class Browser {
 
     }
 
-    public static HashMap<String, HashMap<String, String>> COOKIES = new HashMap<String, HashMap<String, String>>();
+    public static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
 
     public static void clearCookies(String string) {
         COOKIES.put(string, null);
@@ -65,18 +65,18 @@ public class Browser {
     public static void forwardCookies(Request request) {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        HashMap<String, String> cookies = COOKIES.get(host);
+        HashMap<String, Cookie> cookies = COOKIES.get(host);
         if (cookies == null) { return; }
 
-        if (cookies.containsKey("expires") && Request.isExpired(cookies.get("expires"))) { return; }
-        for (Iterator<Entry<String, String>> it = cookies.entrySet().iterator(); it.hasNext();) {
-            Entry<String, String> cookie = it.next();
+      
+        for (Iterator<Entry<String, Cookie>> it = cookies.entrySet().iterator(); it.hasNext();) {
+            Cookie cookie = it.next().getValue();
 
             // Pfade sollten verarbeitet werden...TODO
-            if (cookie.getKey().equalsIgnoreCase("path") || cookie.getKey().equalsIgnoreCase("expires") || cookie.getKey().equalsIgnoreCase("domain")) {
+            if (cookie.isExpired()) {
                 continue;
             }
-            request.getCookies().put(cookie.getKey(), cookie.getValue());
+            request.getCookies().add(cookie);
         }
 
     }
@@ -84,7 +84,7 @@ public class Browser {
     public static void forwardCookies(HTTPConnection con) {
         if (con == null) { return; }
         String host = Browser.getHost(con.getURL().toString());
-        HashMap<String, String> cookies = COOKIES.get(host);
+        HashMap<String, Cookie> cookies = COOKIES.get(host);
         String cs = Request.getCookieString(cookies);
         if (cs != null && cs.trim().length() > 0) con.setRequestProperty("Cookie", cs);
     }
@@ -94,8 +94,8 @@ public class Browser {
 
         host = Browser.getHost(url);
 
-        HashMap<String, String> cookies = COOKIES.get(host);
-        return cookies.get(string);
+        HashMap<String, Cookie> cookies = COOKIES.get(host);
+        return cookies.get(string).getValue();
 
     }
 
@@ -103,12 +103,17 @@ public class Browser {
         String host;
 
         host = Browser.getHost(url);
-        HashMap<String, String> cookies;
+        HashMap<String, Cookie> cookies;
         if (!COOKIES.containsKey(host)||(cookies = COOKIES.get(host))==null) {
-            cookies = new HashMap<String, String>();
+            cookies = new HashMap<String, Cookie>();
             COOKIES.put(host, cookies);
         } 
-        cookies.put(key.trim(), value.trim());
+        
+        Cookie cookie= new Cookie();
+        cookie.setHost(host);
+        cookie.setKey(key);
+        cookie.setValue(value);
+        cookies.put(key.trim(), cookie);
 
     }
 
@@ -132,12 +137,15 @@ public class Browser {
     public static void updateCookies(Request request) {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        HashMap<String, String> cookies = COOKIES.get(host);
+        HashMap<String, Cookie> cookies = COOKIES.get(host);
         if (cookies == null) {
-            cookies = new HashMap<String, String>();
+            cookies = new HashMap<String, Cookie>();
             COOKIES.put(host, cookies);
         }
-        cookies.putAll(request.getCookies());
+        for(Cookie cookie:request.getCookies()){
+            cookies.put(cookie.getKey(), cookie);
+        }
+       
 
     }
 

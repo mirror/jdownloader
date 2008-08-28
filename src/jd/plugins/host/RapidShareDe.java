@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Browser;
+import jd.http.Cookie;
 import jd.http.Encoding;
 import jd.http.GetRequest;
 import jd.http.HTTPConnection;
@@ -192,7 +193,7 @@ br.setFollowRedirects(false);
         PostRequest r = new PostRequest("http://rapidshare.de");
         r.setPostVariable("uri", Encoding.urlEncode(path));
         r.setPostVariable("dl.start", "PREMIUM");
-        r.getCookies().put("user", user + "-" + formatPass);
+        r.getCookies().add(new Cookie(HOST,"user", user + "-" + formatPass));
 
         String page = r.load();
         if(page.contains("Premium-Cookie nicht gefunden")){
@@ -215,7 +216,7 @@ br.setFollowRedirects(false);
 
         HTTPConnection urlConnection;
         GetRequest req = new GetRequest(url);
-        r.getCookies().put("user", user + "-" + formatPass);
+        r.getCookies().add(new Cookie(HOST,"user", user + "-" + formatPass));
         req.connect();
         urlConnection = req.getHttpConnection();
         if (urlConnection.getHeaderField("content-disposition") == null) {

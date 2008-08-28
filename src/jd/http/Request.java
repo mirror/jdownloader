@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
@@ -40,8 +42,7 @@ import jd.utils.JDUtilities;
 
 public abstract class Request {
     // public static int MAX_REDIRECTS = 30;
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
-
+   
     /**
      * Gibt eine Hashmap mit allen key:value pairs im query zurück
      * 
@@ -90,7 +91,7 @@ public abstract class Request {
     }
 
     private int connectTimeout;
-    private HashMap<String, String> cookies = null;
+    private ArrayList<Cookie> cookies = null;
     private int followCounter = 0;
     private boolean followRedirects = false;
 
@@ -129,11 +130,17 @@ public abstract class Request {
         Collection<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
         if (cookieHeaders == null) { return; }
         if (cookies == null) {
-            cookies = new HashMap<String, String>();
+            cookies = new ArrayList<Cookie>();
         }
         ;
 
         for (String header : cookieHeaders) {
+        
+         String host=httpConnection.getURL().getHost();
+         String path=null;
+         String expires=null;
+         String domain=null;
+         HashMap<String,String> tmp= new HashMap<String,String>();
             try {
                 StringTokenizer st = new StringTokenizer(header, ";=");
                 while (true) {
@@ -142,8 +149,23 @@ public abstract class Request {
                     String value = null;
                     if (st.hasMoreTokens()) key = st.nextToken().trim();
                     if (st.hasMoreTokens()) value = st.nextToken().trim();
+                    
                     if (key != null) {
-                        cookies.put(key, value);
+                        if(key.equalsIgnoreCase("path")){
+                            path=value;
+                            continue;
+                        }
+                        if(key.equalsIgnoreCase("expires")){
+                            expires=value;
+                            continue;
+                        }
+                        if(key.equalsIgnoreCase("domain")){
+                            domain=value;
+                            continue;
+                        }
+                        
+                        
+                        tmp.put(key, value);
                     } else {
                         break;
                     }
@@ -152,6 +174,20 @@ public abstract class Request {
             } catch (NoSuchElementException e) {
                 // ignore
             }
+            
+            for(Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();){
+                Entry<String, String> next = it.next();
+                Cookie   cookie= new Cookie();
+                cookies.add(cookie);
+                cookie.setHost(host);
+                cookie.setPath(path);
+                cookie.setDomain(domain);
+                cookie.setExpires(expires);
+                cookie.setValue(next.getValue());
+                cookie.setKey(next.getKey());
+            }
+            
+            
         }
 
     }
@@ -215,40 +251,65 @@ public abstract class Request {
         return httpConnection.getContentLength();
     }
 
-    public HashMap<String, String> getCookies() {
+    public ArrayList<Cookie> getCookies() {
         if (cookies == null) {
-            cookies = new HashMap<String, String>();
+            cookies = new ArrayList<Cookie>();
         }
         return cookies;
     }
 
-    public static boolean isExpired(String cookie) {
-        if (cookie == null) return false;
-
-        try {
-            return (new Date().compareTo(DATE_FORMAT.parse(cookie))) > 0;
-        } catch (Exception e) {
-            return false;
-        }
-    }
+//    public static boolean isExpired(String cookie) {
+//        if (cookie == null) return false;
+//
+//        try {
+//            return (new Date().compareTo()) > 0;
+//        } catch (Exception e) {
+//            return false;
+//        }
+//    }
 
     public String getCookieString() {
 
         return getCookieString(cookies);
 
     }
-
-    public static String getCookieString(HashMap<String, String> cookies) {
+    public static String getCookieString(HashMap<String, Cookie> cookies) {
         if (cookies == null) { return null; }
 
         StringBuffer buffer = new StringBuffer();
         boolean first = true;
 
-        if (cookies.containsKey("expires") && isExpired(cookies.get("expires"))) { return ""; }
-        for (Map.Entry<String, String> cookie : cookies.entrySet()) {
+      
+        for (Iterator<Entry<String, Cookie>> it = cookies.entrySet().iterator(); it.hasNext();) {
+           Cookie cookie = it.next().getValue();
 
             // Pfade sollten verarbeitet werden...TODO
-            if (cookie.getKey().equalsIgnoreCase("path") || cookie.getKey().equalsIgnoreCase("expires") || cookie.getKey().equalsIgnoreCase("domain")) {
+            if (cookie.isExpired()) {
+                continue;
+            }
+
+            if (first) {
+                first = false;
+            } else {
+                buffer.append("; ");
+            }
+            buffer.append(cookie.getKey());
+            buffer.append("=");
+            buffer.append(cookie.getValue());
+        }
+        return buffer.toString();
+    }
+    public static String getCookieString(ArrayList<Cookie> cookies) {
+        if (cookies == null) { return null; }
+
+        StringBuffer buffer = new StringBuffer();
+        boolean first = true;
+
+      
+        for (Cookie cookie : cookies) {
+
+            // Pfade sollten verarbeitet werden...TODO
+            if (cookie.isExpired()) {
                 continue;
             }
 
@@ -450,4 +511,6 @@ public abstract class Request {
     public void setHtmlCode(String htmlCode) {
         this.htmlCode = htmlCode;
     }
+
+  
 }

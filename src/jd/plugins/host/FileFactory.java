@@ -284,7 +284,7 @@ public class FileFactory extends PluginForHost {
         req.load();
 
         GetRequest greq = new GetRequest(downloadLink.getDownloadURL());
-        greq.getCookies().putAll(req.getCookies());
+        greq.getCookies().addAll(req.getCookies());
         greq.load();
 
         if (greq.containsHTML(NOT_AVAILABLE)) {
