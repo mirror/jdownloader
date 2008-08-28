@@ -117,7 +117,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private int linkType = LINKTYPE_NORMAL;
 
-    private int maximalspeed = -1;
+    private int globalSpeedLimit = -1;
+    private int localSpeedLimit = -1;
 
     /**
      * Beschreibung des Downloads
@@ -158,9 +159,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Von hier soll de Download stattfinden
      */
     private String urlDownload;
-    
+
     /**
-     * Password welches einem weiteren Decrypter-Plugin übergeben werden soll (zb FolderPassword)
+     * Password welches einem weiteren Decrypter-Plugin übergeben werden soll
+     * (zb FolderPassword)
      */
     private String decrypterPassword;
 
@@ -401,11 +403,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return linkType;
     }
 
-    public int getMaximalspeed() {
-        if (maximalspeed <= 0) {
-            maximalspeed = Integer.MAX_VALUE;
+    public int getGlobalSpeedLimit() {
+        if (this.globalSpeedLimit <= 0) {
+            this.globalSpeedLimit = Integer.MAX_VALUE;
         }
-        return maximalspeed;
+        return this.globalSpeedLimit;
+    }
+
+    public void setGlobalSpeedLimit(int maximalspeed) {
+        maximalspeed = Math.max(20, maximalspeed);
+        // logger.info(this+ " LINKSPEED: "+maximalspeed);
+        int diff = this.globalSpeedLimit - maximalspeed;
+        if (diff > 500 || diff < 500) {
+            this.globalSpeedLimit = maximalspeed;
+        }
     }
 
     /**
@@ -768,15 +779,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         container = pluginForContainer.getHost();
     }
 
-    public void setMaximalSpeed(int maximalspeed) {
-        maximalspeed = Math.max(20, maximalspeed);
-        // logger.info(this+ " LINKSPEED: "+maximalspeed);
-        int diff = this.maximalspeed - maximalspeed;
-        if (diff > 500 || diff < 500) {
-            this.maximalspeed = maximalspeed;
-        }
-    }
-
     public void setMirror(boolean isMirror) {
         this.isMirror = isMirror;
     }
@@ -888,7 +890,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         if (Math.min(downloadCurrent, downloadMax) <= 0) return 0;
         return (int) (10000 * downloadCurrent / Math.max(1, Math.max(downloadCurrent, downloadMax)));
     }
-    
+
     /**
      * gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
      * kann (zb. FolderPassword)

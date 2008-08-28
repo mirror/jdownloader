@@ -63,7 +63,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     private int totalSpeed = 0;
 
     public DownloadWatchDog(JDController controller) {
-this.setName("Downloadwatchdog");
+        this.setName("Downloadwatchdog");
         this.controller = controller;
         controller.addControlListener(this);
     }
@@ -297,17 +297,17 @@ this.setName("Downloadwatchdog");
                         nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                     }
                     if (nextDownloadLink.isEnabled()) {
-                        if (nextDownloadLink.getPlugin().ignoreHosterWaittime(nextDownloadLink)|| nextDownloadLink.getPlugin().getRemainingHosterWaittime() <=0) {  
-                    if (!isDownloadLinkActive(nextDownloadLink)) {
-                        // if (!nextDownloadLink.isAborted()) {
-                        if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
-                            
-                                if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
-                                                                       
-                                            if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < ( nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink)) {
+                        if (nextDownloadLink.getPlugin().ignoreHosterWaittime(nextDownloadLink) || nextDownloadLink.getPlugin().getRemainingHosterWaittime() <= 0) {
+                            if (!isDownloadLinkActive(nextDownloadLink)) {
+                                // if (!nextDownloadLink.isAborted()) {
+                                if (!nextDownloadLink.getLinkStatus().isPluginActive()) {
 
-                                            return nextDownloadLink; }
-                                        
+                                    if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
+
+                                        if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink)) {
+
+                                        return nextDownloadLink; }
+
                                     }
                                 }
                             }
@@ -427,7 +427,7 @@ this.setName("Downloadwatchdog");
             updates.clear();
             // boolean rr = false;
             try {
-                
+
                 // logger.info("I-"+0);
                 for (FilePackage filePackage : fps) {
                     links = filePackage.getDownloadLinks();
@@ -510,7 +510,7 @@ this.setName("Downloadwatchdog");
                             element.setLimited(isLimited);
                             if (element.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
 
-                                element.setMaximalSpeed(element.getDownloadSpeed() + overhead / inProgress);
+                                element.setGlobalSpeedLimit(element.getDownloadSpeed() + overhead / inProgress);
 
                             }
                         }
@@ -552,8 +552,7 @@ this.setName("Downloadwatchdog");
             }
         }
         aborted = true;
-       
-        
+
         logger.info("Wait for termination");
         while (aborting) {
             try {

@@ -646,9 +646,9 @@ abstract public class DownloadInterface {
         public int getMaximalSpeed() {
             try {
                 if (maxSpeed <= 0) {
-                    maxSpeed = downloadLink.getMaximalspeed() / getRunningChunks();
+                    maxSpeed = downloadLink.getGlobalSpeedLimit() / getRunningChunks();
                     if (speedDebug) {
-                        logger.finer("Def speed: " + downloadLink.getMaximalspeed() + "/" + getRunningChunks() + "=" + maxSpeed);
+                        logger.finer("Def speed: " + downloadLink.getGlobalSpeedLimit() + "/" + getRunningChunks() + "=" + maxSpeed);
                     }
 
                 }
@@ -797,10 +797,10 @@ abstract public class DownloadInterface {
                     }
                 }
                 connection = copyConnection(connection);
-if(connection.getContentLength()==startByte){
-    //schon fertig
-    return;
-}
+                if (connection.getContentLength() == startByte) {
+                    // schon fertig
+                    return;
+                }
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
 
@@ -809,11 +809,10 @@ if(connection.getContentLength()==startByte){
                     return;
                 }
 
-              
             } else if (startByte > 0) {
                 connection = copyConnection(connection);
-                if(connection.getContentLength()==startByte){
-                    //schon fertig
+                if (connection.getContentLength() == startByte) {
+                    // schon fertig
                     return;
                 }
                 if (connection == null) {
@@ -1051,7 +1050,7 @@ if(connection.getContentLength()==startByte){
      */
     private void assignChunkSpeeds() {
         int MAX_ALLOWED_OVERHEAD = 10 * 1024;
-        int allowedLinkSpeed = downloadLink.getMaximalspeed();
+        int allowedLinkSpeed = downloadLink.getGlobalSpeedLimit();
         int mChunk = (int) (allowedLinkSpeed / chunkNum * 0.4);
         int currentSpeed = 0;
 
@@ -1114,7 +1113,7 @@ if(connection.getContentLength()==startByte){
         }
         if (fatalErrorOccured) { return; }
         linkStatus.addStatus(id);
-    
+
         linkStatus.setErrorMessage(string);
         switch (id) {
         case LinkStatus.ERROR_RETRY:
