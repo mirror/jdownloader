@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -37,8 +38,9 @@ public class StacheldrahtTo extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
         try {
             RequestInfo ri = HTTP.getRequest(new URL(parameter));

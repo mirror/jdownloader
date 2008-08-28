@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.Plugin;
@@ -294,16 +295,16 @@ public class Secured extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
 
-        this.cryptedLink = parameter;
         try {
             RequestInfo requestInfo = HTTP.getRequest(new URL(JS_URL));
             DOWNLOAD_CMD = new Regex(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD).getMatch(5, 0);
 
             progress.setRange(1);
-            URL url = new URL(cryptedLink);
+            URL url = new URL(parameter);
             requestInfo = HTTP.getRequest(url);
 
             String html = requestInfo.getHtmlCode();

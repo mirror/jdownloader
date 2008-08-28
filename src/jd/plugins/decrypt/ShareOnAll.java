@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -36,12 +37,12 @@ public class ShareOnAll extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         try {
-            Browser.clearCookies(host);
-            String id = new Regex(cryptedLink, patternSupported).getMatch(0);
+            String id = new Regex(parameter, patternSupported).getMatch(0);
             String url = "http://www.shareonall.com/showlinks.php?f=" + id + ".htm";
 
             br.getPage(url);

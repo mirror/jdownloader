@@ -28,6 +28,7 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -50,20 +51,21 @@ public class UrlShieldnet extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        String parameter = param.toString();
+        
         try {
 
             boolean do_continue = true;
             Form form;
             Browser.clearCookies(host);
 
-            br.getPage(cryptedLink);
+            br.getPage(parameter);
             br.setFollowRedirects(false);
             for (int retry = 1; retry < 5; retry++) {
                 if (br.containsHTML("Invalid Password")) {
-                    br.getPage(cryptedLink);
+                    br.getPage(parameter);
                 }
                 if (br.containsHTML("<b>Password</b>")) {
                     do_continue = false;

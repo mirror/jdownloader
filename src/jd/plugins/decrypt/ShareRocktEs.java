@@ -19,8 +19,8 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -30,23 +30,22 @@ public class ShareRocktEs extends PluginForDecrypt {
     private static final Pattern patternSupported_go = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_v = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternSupported_v.pattern() + "|" + patternSupported_go.pattern(), Pattern.CASE_INSENSITIVE);
-    private Browser br;
 
     public ShareRocktEs() {
         super();
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(String parameter) throws Exception {
-        String cryptedLink = parameter;
-        br = new Browser();
-        String page = br.getPage(cryptedLink);
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+        String parameter = param.toString();
+        
+        String page = br.getPage(parameter);
         br.setFollowRedirects(false);
         String[] matches;
-        if (new Regex(cryptedLink, patternSupported_v).matches()) {
+        if (new Regex(parameter, patternSupported_v).matches()) {
             matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getColumn(0);
         } else {
-            String match = new Regex(cryptedLink, patternSupported_go).getMatch(0);
+            String match = new Regex(parameter, patternSupported_go).getMatch(0);
             if (match == null) { return null; }
             matches = new String[] { match };
         }
