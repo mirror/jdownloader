@@ -46,32 +46,32 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class PremiumPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
-	class ChartRefresh extends Thread {
-		@SuppressWarnings("unchecked")
-		public void run() {
-			ArrayList<Account> accounts = (ArrayList<Account>) getAccounts(); 
-			Long collectTraffic = new Long(0);
-			freeTrafficChart.clear();
-			for(Account acc : accounts) { 
-				if (acc.getUser().length() > 0 && acc.getPass().length() > 0){ 
-					PluginForHost Plugin =  (PluginForHost) configEntry.getActionListener(); 
-					try { 
-						Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
-						ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft));
-						freeTrafficChart.addEntity(ent); 
-						long rest = 0; 
-						if((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
-					} catch (Exception e) {
-						JDUtilities.logger.finest("Not able to load Traffic-Limit for ChartAPI");
-					}
-				}
-			}
-			
-			if(collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic)));
-			freeTrafficChart.fetchImage();
-		
-		}
-	}
+    class ChartRefresh extends Thread {
+        @SuppressWarnings("unchecked")
+        public void run() {
+            ArrayList<Account> accounts = (ArrayList<Account>) getAccounts();
+            Long collectTraffic = new Long(0);
+            freeTrafficChart.clear();
+            for (Account acc : accounts) {
+                if (acc.getUser().length() > 0 && acc.getPass().length() > 0) {
+                    PluginForHost Plugin = (PluginForHost) configEntry.getActionListener();
+                    try {
+                        Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
+                        ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft));
+                        freeTrafficChart.addEntity(ent);
+                        long rest = 0;
+                        if ((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
+                    } catch (Exception e) {
+                        JDUtilities.logger.finest("Not able to load Traffic-Limit for ChartAPI");
+                    }
+                }
+            }
+
+            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic)));
+            freeTrafficChart.fetchImage();
+
+        }
+    }
 
     private static final Color ACTIVE = new Color(0x7cd622);
     private static final Color INACTIVE = new Color(0xa40604);
@@ -87,9 +87,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
-    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("Free Traffic Chart", 450, 60, this.getBackground());
+    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE(JDLocale.L("plugins.config.premium.chartapi.caption", "Free Traffic Chart"), 450, 60, this.getBackground());
     private ChartRefresh loader;
-	
+
     public PremiumPanel(GUIConfigEntry gce) {
         this.configEntry = gce.getConfigEntry();
         this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
@@ -145,16 +145,14 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
      * 
      * @return nothing
      */
-    @SuppressWarnings("unchecked")
-	private void createDataset() {
-    	loader = new ChartRefresh();
-    	loader.start();
+    private void createDataset() {
+        loader = new ChartRefresh();
+        loader.start();
     }
-      
+
     private void createPanel() {
 
         int accountNum = configEntry.getEnd();
-        // addInstantHelpLink();
         enables = new JCheckBox[accountNum];
         usernames = new JTextField[accountNum];
         passwords = new JPasswordField[accountNum];
@@ -164,9 +162,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         stati = new JTextField[accountNum];
         checkBtns = new JButton[accountNum];
         ArrayList<Account> list = new ArrayList<Account>();
-        
+
         for (int i = 1; i <= accountNum; i++) {
-            list.add(new Account("",""));
+            list.add(new Account("", ""));
             final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i));
             active.setForeground(INACTIVE);
             active.addItemListener(new ItemListener() {
@@ -200,23 +198,14 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             add(usernames[i - 1] = new JTextField(""));
             usernames[i - 1].addFocusListener(this);
             add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-            // add(passwords[i - 1] = new JPasswordField(""), "wrap");
             add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 10:10:push");
             passwords[i - 1].addFocusListener(this);
-            
-          
-            for(JCheckBox e:enables){
-                if(e!=null)                e.setSelected(false);
+
+            for (JCheckBox e : enables) {
+                if (e != null) e.setSelected(false);
             }
-            // add(statiLabels[i - 1] = new
-            // JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last
-            // Account
-            // Status")));
-            // JTextField status = new JTextField("");
-            // stati[i - 1] = status;
-            // status.setEditable(false);
-            // add(status, "span, gapbottom :10:push");
-        }    
+
+        }
         add(freeTrafficChart, "spanx, spany");
     }
 
@@ -252,6 +241,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     }
 
     public void focusLost(FocusEvent e) {
-    	createDataset();
+        createDataset();
     }
 }
