@@ -137,7 +137,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     public void mousePressed(MouseEvent e) {
         SimpleGUI simplegui = SimpleGUI.CURRENTGUI;
         if (e.getSource() instanceof TrayIcon) {
-            if (e.getClickCount() > 1) {
+            if (e.getClickCount() >= 1) {
                 simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
                 if (simplegui.getFrame().isVisible()) simplegui.getFrame().setState(Frame.NORMAL);
             } else {

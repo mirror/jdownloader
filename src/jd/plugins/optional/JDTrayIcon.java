@@ -393,7 +393,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
                         hideTooltip();
                     }
 
-                    if (e.getClickCount() > 1) {
+                    if (e.getClickCount() >= 1) {
                         simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
                         if (simplegui.getFrame().isVisible()) simplegui.getFrame().setState(Frame.NORMAL);
                     }
