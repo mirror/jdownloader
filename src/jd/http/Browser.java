@@ -168,7 +168,7 @@ public class Browser {
 
     private Request request;
     private boolean snifferDetection = false;
-    private boolean cookiesExclusive;
+    private boolean cookiesExclusive=true;
 
     public Browser() {
 

@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -26,9 +25,7 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.GetRequest;
 import jd.http.HTTPConnection;
-import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
@@ -61,7 +58,6 @@ public class FileFactory extends PluginForHost {
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
     static private final Pattern patternSupported = Pattern.compile("sjdp://filefactory\\.com.*|http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
 
-    private static final String PREMIUM_LINK = "<p style=\"margin:30px 0 20px\"><a href=\"(http://[a-z0-9]+\\.filefactory\\.com/(cache/)?dlp/[a-z0-9]+/.*?)\"";
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
     private String actionString;
@@ -85,11 +81,10 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
-       	if(parameter.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		new Serienjunkies().handleFree(parameter);
-   		return;
-   		}
+        if (parameter.getDownloadURL().matches("sjdp://.*")) {
+            new Serienjunkies().handleFree(parameter);
+            return;
+        }
         LinkStatus linkStatus = parameter.getLinkStatus();
         parameter.setUrlDownload(parameter.getDownloadURL().replaceAll(".com//", ".com/"));
         parameter.setUrlDownload(parameter.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
@@ -114,7 +109,7 @@ public class FileFactory extends PluginForHost {
             return;
         }
 
-        String newURL = "http://" + requestInfo.getConnection().getURL().getHost() + new Regex(requestInfo.getHtmlCode(), baseLink).getMatch(0);        
+        String newURL = "http://" + requestInfo.getConnection().getURL().getHost() + new Regex(requestInfo.getHtmlCode(), baseLink).getMatch(0);
 
         if (newURL != null) {
 
@@ -222,7 +217,8 @@ public class FileFactory extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
 
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
@@ -260,12 +256,11 @@ public class FileFactory extends PluginForHost {
     // by eXecuTe
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-    	
-       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		new Serienjunkies().handleFree(downloadLink);
-   		return;
-   		}
+
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
+            new Serienjunkies().handleFree(downloadLink);
+            return;
+        }
         String user = account.getUser();
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -276,51 +271,38 @@ public class FileFactory extends PluginForHost {
             linkStatus.setStatus(LinkStatus.ERROR_PREMIUM);
             return;
         }
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
+        br.getPage("http://filefactory.com");
 
-        PostRequest req = new PostRequest(downloadLink.getDownloadURL());
-        req.setPostVariable("email", Encoding.urlEncode(user));
-        req.setPostVariable("password", Encoding.urlEncode(pass));
-        req.setPostVariable("login", "Log+In");
-        req.load();
+        Form login = br.getForm("Log in");
+        login.put("email", account.getUser());
+        login.put("password", account.getPass());
+        br.submitForm(login);
+        br.setFollowRedirects(true);
+        HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getHeaderField("Content-Disposition") == null) {
+            br.followConnection();
 
-        GetRequest greq = new GetRequest(downloadLink.getDownloadURL());
-        greq.getCookies().addAll(req.getCookies());
-        greq.load();
+            if (br.containsHTML(NOT_AVAILABLE)) {
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                return;
+            } else if (br.containsHTML(SERVER_DOWN)) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setValue(20 * 60 * 1000l);
+                return;
+            } else {
+                String red = br.getRegex("Description: .*?p style=.*?><a href=\"(.*?)\".*?>.*?Click here to begin your download").getMatch(0);
+                con = br.openGetConnection(red);
 
-        if (greq.containsHTML(NOT_AVAILABLE)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        } else if (greq.containsHTML(SERVER_DOWN)) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        } else {
-            String link = "http://www.filefactory.com" + greq.getLocation();
-            /* falls direct-download eingeschalten ist */
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), greq.getCookieString(), downloadLink.getDownloadURL(), true);
-            if (requestInfo.getHeaders().get("Content-Type").toString().contains("text/html")) {
-                /* falls direct-download ausgeschalten ist */
-                requestInfo = HTTP.getRequest(new URL(link), greq.getCookieString(), downloadLink.getDownloadURL(), true);
-                link = new Regex(requestInfo.getHtmlCode(), Pattern.compile(PREMIUM_LINK, Pattern.CASE_INSENSITIVE)).getMatch(0);
-
-                if (link == null) {
-                    logger.warning("Account Settings invalid");
-                    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                    linkStatus.setErrorMessage("Logins incorrect. Check Login and password");
-                    return;
-
-                }
-
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), greq.getCookieString(), downloadLink.getDownloadURL(), true);
             }
         }
 
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.startDownload();
+        return;
     }
 
     @Override
@@ -334,46 +316,25 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
 
-        try {
-
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
-
-            if (requestInfo.containsHTML(NOT_AVAILABLE)) {
-                return false;
-            } else if (requestInfo.containsHTML(SERVER_DOWN)) {
-                return false;
-            } else {
-
-                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
-                int length = 0;
-                Double fileSize = Double.parseDouble(new Regex(requestInfo.getHtmlCode(), FILESIZE).getMatch(0).replaceAll(",", ""));
-
-                String unit = new Regex(requestInfo.getHtmlCode(), FILESIZE).getMatch(1);
-
-                if (unit.equals("B")) {
-                    length = (int) Math.round(fileSize);
-                }
-                if (unit.equals("KB")) {
-                    length = (int) Math.round(fileSize * 1024);
-                }
-                if (unit.equals("MB")) {
-                    length = (int) Math.round(fileSize * 1024 * 1024);
-                }
-
-                downloadLink.setName(fileName);
-                downloadLink.setDownloadSize(length);
-
-            }
-
-        } catch (MalformedURLException e) {
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML(NOT_AVAILABLE)) {
             return false;
-        } catch (IOException e) {
+        } else if (br.containsHTML(SERVER_DOWN)) {
             return false;
+        } else {
+
+            String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
+            
+            String fileSize = new Regex(br.toString(), FILESIZE).getMatch(-1);
+
+            downloadLink.setName(fileName);
+            downloadLink.setDownloadSize(Regex.getSize(fileSize));
+
         }
 
         return true;
@@ -381,7 +342,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return super.getFileInformationString(downloadLink);
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return super.getFileInformationString(downloadLink);
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
