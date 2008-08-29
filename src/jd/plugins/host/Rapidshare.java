@@ -668,7 +668,7 @@ public class Rapidshare extends PluginForHost {
             }
         }
 
-        logger.info("Loading from: " + link.substring(0, 30));
+        //logger.info("Loading from: " + link.substring(0, 30));
         // HashMap<String, String> ranger = new HashMap<String, String>();
         // ranger.put("Authorization", "Basic " +
         // JDUtilities.Base64Encode(user + ":" +
