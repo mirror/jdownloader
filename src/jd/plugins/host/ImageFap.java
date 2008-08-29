@@ -156,8 +156,7 @@ public class ImageFap extends PluginForHost {
         /* DownloadLink holen */
         String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         HTTPConnection con = br.openGetConnection(imagelink);
-
-        String filename = Plugin.getFileNameFormHeader(con).replaceAll("getimg\\.php\\?img=", "");
+        String filename = Plugin.extractFileNameFromURL(imagelink);
         downloadLink.setStaticFileName(filename);
         downloadLink.setSubdirectory(gallery_name);
         dl = new RAFDownload(this, downloadLink, con);
