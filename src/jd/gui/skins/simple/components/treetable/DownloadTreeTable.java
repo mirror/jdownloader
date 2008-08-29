@@ -674,6 +674,27 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
             }
 
+        } else if (e.getKeyCode() == KeyEvent.VK_UP && e.isControlDown()) {
+            int cur = getSelectedRow();
+            if (e.isAltDown()) {
+                moveSelectedItems(JDAction.ITEMS_MOVE_TOP);
+                getSelectionModel().setSelectionInterval(0, 0);
+            } else {
+                moveSelectedItems(JDAction.ITEMS_MOVE_UP);
+                cur = Math.max(0, cur - 1);
+                getSelectionModel().setSelectionInterval(cur, cur);
+            }
+        } else if (e.getKeyCode() == KeyEvent.VK_DOWN && e.isControlDown()) {
+            int cur = getSelectedRow();
+            int len = getVisibleRowCount();
+            if (e.isAltDown()) {
+                moveSelectedItems(JDAction.ITEMS_MOVE_BOTTOM);
+                getSelectionModel().setSelectionInterval(len, len);
+            } else {
+                moveSelectedItems(JDAction.ITEMS_MOVE_DOWN);
+                cur = Math.min(len, cur + 1);
+                getSelectionModel().setSelectionInterval(cur, cur);
+            }
         }
 
     }
@@ -932,14 +953,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 break;
             case JDAction.ITEMS_MOVE_UP:
                 int i = JDUtilities.getController().getPackages().indexOf(fps.get(0));
-                if (i <= 0) { return; }
+                if (i <= 0) return;
 
                 FilePackage before = JDUtilities.getController().getPackages().get(i - 1);
                 JDUtilities.getController().movePackages(fps, null, before);
                 break;
             case JDAction.ITEMS_MOVE_DOWN:
                 i = JDUtilities.getController().getPackages().indexOf(fps.lastElement());
-                if (i >= JDUtilities.getController().getPackages().size() - 1) { return; }
+                if (i >= JDUtilities.getController().getPackages().size() - 1) return;
 
                 FilePackage after = JDUtilities.getController().getPackages().get(i + 1);
                 JDUtilities.getController().movePackages(fps, after, null);

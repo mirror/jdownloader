@@ -556,7 +556,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private void deleteSelectedKeys() {
         int[] rows = table.getSelectedRows();
 
-        for (int i = rows.length - 1; i >= 0; --i) {
+        int len = rows.length - 1;
+        for (int i = len; i >= 0; --i) {
             int cur = rows[i];
             String temp = data.remove(cur)[0];
             for (int j = dupes.size() - 1; j >= 0; --j) {
@@ -564,6 +565,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             }
             tableModel.fireTableRowsDeleted(cur, cur);
         }
+        int newRow = Math.min(rows[len] - len, data.size() - 1);
+        table.getSelectionModel().setSelectionInterval(newRow, newRow);
 
         setInfoLabels();
     }
