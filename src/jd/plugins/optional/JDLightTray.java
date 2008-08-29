@@ -139,6 +139,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
         if (e.getSource() instanceof TrayIcon) {
             if (e.getClickCount() > 1) {
                 simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
+                if (simplegui.getFrame().isVisible()) simplegui.getFrame().setState(Frame.NORMAL);
             } else {
                 if (popup != null && popup.isShowing()) {
                     popup.dispose();
@@ -188,9 +189,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     }
 
     public void windowStateChanged(WindowEvent arg0) {
-        if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
-            SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-            simplegui.getFrame().setVisible(false);
+        if ((arg0.getOldState() & Frame.ICONIFIED) == 0) {
+            if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
+                SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
+                simplegui.getFrame().setVisible(false);
+            }
         }
     }
 

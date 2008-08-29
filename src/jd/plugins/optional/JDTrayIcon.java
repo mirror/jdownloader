@@ -33,7 +33,6 @@ import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -122,7 +121,6 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     private info i;
     private JPopupMenu popupMenu;
     private JCheckBoxMenuItem reconnect;
-    private JMenuItem showhide;
     private JMenuItem speed1;
     private JMenuItem speed2;
     private JMenuItem speed3;
@@ -140,9 +138,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
 
     public void actionPerformed(ActionEvent e) {
         SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-        if (e.getSource() == showhide) {
-            toggleshowhide();
-        } else if (e.getSource() == exit) {
+        if (e.getSource() == exit) {
             JDUtilities.getController().exit();
 
         } else if (e.getSource() == startstop) {
@@ -281,8 +277,6 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         cfg.setDefaultValue("500");
 
         popupMenu = new JPopupMenu();
-        showhide = createMenuItem(JDLocale.L("plugins.optional.trayIcon.hide", "Hide"));
-        popupMenu.addSeparator();
         update = createMenuItem(JDLocale.L("plugins.optional.trayIcon.update", "Update"));
         configuration = createMenuItem(JDLocale.L("plugins.optional.trayIcon.configuration", "Configuration"));
         popupMenu.addSeparator();
@@ -392,14 +386,16 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         trayIcon.addMouseListener(new MouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
+                SimpleGUI simplegui = SimpleGUI.CURRENTGUI;
                 if (SwingUtilities.isLeftMouseButton(e)) {
 
                     if (toolparent.isVisible()) {
                         hideTooltip();
                     }
 
-                    if (e.getClickCount() == 2) {
-                        toggleshowhide();
+                    if (e.getClickCount() > 1) {
+                        simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
+                        if (simplegui.getFrame().isVisible()) simplegui.getFrame().setState(Frame.NORMAL);
                     }
                 }
                 if (SwingUtilities.isRightMouseButton(e)) {
@@ -428,8 +424,6 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     }
 
     private void showPopup(final Point p) {
-        toggleshowhide();
-        toggleshowhide();
         trayParent.setVisible(true);
         trayParent.toFront();
         hideTooltip();
@@ -480,25 +474,12 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         });
     }
 
-    private void toggleshowhide() {
-        SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-        if (showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.hide", "Hide"))) {
-
-            simplegui.getFrame().setVisible(false);
-            showhide.setText(JDLocale.L("plugins.optional.trayIcon.show", "Show"));
-        } else if (showhide.getText().equals(JDLocale.L("plugins.optional.trayIcon.show", "Show"))) {
-
-            simplegui.getFrame().setVisible(true);
-            showhide.setText(JDLocale.L("plugins.optional.trayIcon.hide", "Hide"));
-            simplegui.getFrame().setState(JFrame.NORMAL);
-        }
-    }
-
     public void windowStateChanged(WindowEvent arg0) {
-        if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
-            SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-            simplegui.getFrame().setVisible(false);
-            showhide.setText(JDLocale.L("plugins.optional.trayIcon.show", "Show"));
+        if ((arg0.getOldState() & Frame.ICONIFIED) == 0) {
+            if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
+                SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
+                simplegui.getFrame().setVisible(false);
+            }
         }
     }
 }
