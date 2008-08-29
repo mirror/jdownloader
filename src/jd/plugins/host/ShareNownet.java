@@ -61,7 +61,7 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setFollowRedirects(false);
         downloadurl = downloadLink.getDownloadURL();
         try {

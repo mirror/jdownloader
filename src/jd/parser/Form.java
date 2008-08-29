@@ -73,16 +73,15 @@ public class Form {
                 String[] submits = new Regex(inForm, "<input.*?>").getColumn(-1);
                 ArrayList<String> tmp = new ArrayList<String>();
                 // 
-                
-            
+
                 for (String submit : submits) {
-                    if(Regex.matches(submit, "type[ ]*?=[ ]*?[\"|']submit[\"|']")){
-                    String submitvalue = new Regex(submit, "value[ ]*?=[ ]*?[\"|'](.*?)[\"|']").getMatch(0);
-                    tmp.add(submitvalue);
+                    if (Regex.matches(submit, "type[ ]*?=[ ]*?[\"|']submit[\"|']")) {
+                        String submitvalue = new Regex(submit, "value[ ]*?=[ ]*?[\"|'](.*?)[\"|']").getMatch(0);
+                        tmp.add(submitvalue);
                     }
 
                 }
-                form.submitValues = tmp.toArray(new String[]{});
+                form.submitValues = tmp.toArray(new String[] {});
                 // form.baseRequest = requestInfo;
                 form.method = METHOD_GET;
                 Pattern patternfp = Pattern.compile(" ([^\\s]+)\\=[\"'](.*?)[\"']", Pattern.CASE_INSENSITIVE);
@@ -172,7 +171,11 @@ public class Form {
 
     public boolean hasSubmitValue(String value) {
         for (String submit : this.submitValues) {
-            if (submit.equals(value)) return true;
+            try {
+                if (submit == value || submit.equals(value)) return true;
+            } catch (NullPointerException e) {
+//                e.printStackTrace();
+            }
         }
         return false;
 

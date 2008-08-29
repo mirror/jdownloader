@@ -82,7 +82,7 @@ public class Gulli extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         try {
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
             String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<h1>(.*?) \\((.*?)\\)</h1>", Pattern.CASE_INSENSITIVE)).getRow(0);
 
             downloadLink.setName(infos[0]);

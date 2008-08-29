@@ -222,7 +222,7 @@ public class FileFactory extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
 
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 

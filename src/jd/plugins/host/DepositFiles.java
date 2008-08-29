@@ -84,7 +84,7 @@ public class DepositFiles extends PluginForHost {
 
         DownloadLink downloadLink = parameter;
         Browser br = new Browser();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
 
         String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
         link = link.replace("com/ru/files/", "com/de/files/");
@@ -186,7 +186,7 @@ HTTPConnection con = br.openFormConnection(form);
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.getPage("http://depositfiles.com/en/");
@@ -224,7 +224,7 @@ HTTPConnection con = br.openFormConnection(form);
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
 
         String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
         link = link.replace("com/ru/files/", "com/de/files/");

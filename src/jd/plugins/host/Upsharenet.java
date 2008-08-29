@@ -68,7 +68,7 @@ public class Upsharenet extends PluginForHost {
 
         /* .eu zu .net weiterleitung */
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("upshare\\.(net|eu)", "upshare\\.net"));
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
 
         downloadurl = downloadLink.getDownloadURL();
         try {

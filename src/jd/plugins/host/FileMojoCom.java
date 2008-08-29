@@ -55,7 +55,7 @@ public class FileMojoCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
 
             String url = downloadLink.getDownloadURL();
 

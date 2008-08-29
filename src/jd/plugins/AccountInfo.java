@@ -19,6 +19,7 @@ package jd.plugins;
 import java.util.Date;
 
 import jd.config.Property;
+import jd.parser.Regex;
 
 public class AccountInfo extends Property {
 
@@ -196,5 +197,24 @@ public class AccountInfo extends Property {
 	public void setTrafficMax(long trafficMax) {
 		this.trafficMax = trafficMax;
 	}
+
+    public void setTrafficLeft(String freeTraffic) {
+       this.setTrafficLeft(Regex.getSize(freeTraffic));
+        
+    }
+
+    public void setPremiumPoints(String string) {
+      this.setPremiumPoints(Integer.parseInt(string.trim()));
+        
+    }
+
+    public void setUsedSpace(String string) {
+       this.setUsedSpace(Regex.getSize(string));
+    }
+
+    public void setAccountBalance(String string) {
+       this.setAccountBalance((int)(Double.parseDouble(string)*100));
+        
+    }
 
 }

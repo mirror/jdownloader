@@ -58,7 +58,7 @@ public class Moosharede extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {

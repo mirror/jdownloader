@@ -81,7 +81,7 @@ public class Uploadedto extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
 
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("http://uploaded.to/login");
@@ -129,8 +129,8 @@ public class Uploadedto extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         correctURL(downloadLink);
-        Browser.clearCookies(HOST);
-        Browser.setCookie("http://uploaded.to/", "lang", "de");
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookie("http://uploaded.to/", "lang", "de");
 
         String user = account.getUser();
 
@@ -227,7 +227,7 @@ public class Uploadedto extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
     	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);
@@ -274,8 +274,8 @@ public class Uploadedto extends PluginForHost {
    		return;
    		}
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        Browser.clearCookies(HOST);
-        Browser.setCookie("http://uploaded.to/", "lang", "de");
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookie("http://uploaded.to/", "lang", "de");
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);

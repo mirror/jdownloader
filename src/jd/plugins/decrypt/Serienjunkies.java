@@ -190,7 +190,8 @@ public class Serienjunkies extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         String parameter = param.toString();
         
-        Browser.clearCookies("serienjunkies.org");
+        br.setCookiesExclusive(true);
+        br.clearCookies("serienjunkies.org");
         br.getPage("http://serienjunkies.org/enter/");
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

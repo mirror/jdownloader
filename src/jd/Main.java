@@ -442,7 +442,6 @@ public class Main {
         logger.info("Revision: " + JDUtilities.getJDTitle());
         logger.info("Runtype: " + JDUtilities.getRunType());
         logger.info("Last author: " + JDUtilities.getLastChangeAuthor());
-        logger.info("Application directory: " + JDUtilities.getCurrentWorkingDirectory(null));
         new Thread("packetmanager") {
             @Override
             public void run() {

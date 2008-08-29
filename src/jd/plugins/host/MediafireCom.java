@@ -62,7 +62,7 @@ public class MediafireCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
  
         try {
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
 
@@ -109,7 +109,7 @@ public class MediafireCom extends PluginForHost {
         // switch (step.getStep()) {
         // case PluginStep.STEP_PAGE:
         url = downloadLink.getDownloadURL();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.getPage(url);
         if (br.getRegex(offlinelink).matches()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

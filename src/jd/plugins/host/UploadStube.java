@@ -55,7 +55,7 @@ public class UploadStube extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         try {
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
             String page = br.getPage(downloadLink.getDownloadURL());
 
             downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0));
@@ -92,7 +92,7 @@ public class UploadStube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

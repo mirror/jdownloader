@@ -39,7 +39,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        Browser.clearCookies(host);
+        br.setCookiesExclusive(true);br.clearCookies(host);
         br.getPage(parameter);
         String[] links = br.getRegex("src=\"(.*?)\"").getColumn(0);
         progress.setRange(links.length);

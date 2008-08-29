@@ -65,7 +65,7 @@ public class QshareCom extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.getPage("http://www.qshare.com");
@@ -119,7 +119,7 @@ public class QshareCom extends PluginForHost {
 
         String page = null;
 
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         // String[][] dat = new Regex(page, "<SPAN
@@ -191,7 +191,7 @@ public class QshareCom extends PluginForHost {
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.getPage("http://www.qshare.com");
         br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
         br.setFollowRedirects(false);
@@ -233,7 +233,7 @@ public class QshareCom extends PluginForHost {
             forms = br.getForms();
             Form premium = forms[forms.length - 1];
 
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
             br.setFollowRedirects(false);
             br.submitForm(premium);
             br.getPage((String) null);

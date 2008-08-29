@@ -54,7 +54,7 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         try {
             String url = downloadLink.getDownloadURL();
             br.getPage(url);

@@ -24,6 +24,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.utils.JDUtilities;
+
 /**
  * Die Regexklasse Diese Klasse wird in JD zum Parsen über Regluar Expressions
  * verwendet. Andere Konstrukte wie getBetween und Co sollten wenn möglich nicht
@@ -301,6 +303,8 @@ public class Regex {
             date = dateFormat.parse(expire);
             return (date.getTime());
         } catch (ParseException e) {
+            JDUtilities.getLogger().severe("Could not format date "+expire+" with formater "+timeformat+": "+dateFormat.format(new Date()));
+            
             e.printStackTrace();
         }
         return -1;

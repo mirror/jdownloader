@@ -87,18 +87,18 @@ public class Megauploadcom extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
 
-        br.getPage("http://www.megaupload.com/xml/premiumstats.php?confirmcode=" + Browser.getCookie("http://megaupload.com", "user") + "&language=en&uniq=" + System.currentTimeMillis());
+        br.getPage("http://www.megaupload.com/xml/premiumstats.php?confirmcode=" + br.getCookie("http://megaupload.com", "user") + "&language=en&uniq=" + System.currentTimeMillis());
         String days = br.getRegex("daysremaining=\"(\\d*?)\"").getMatch(0);
         ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
         if (days == null || days.equals("0")) ai.setExpired(true);
         // /xml/rewardpoints.php?confirmcode=ed4f6c040c12111d9aae6fa0cc046861&
         // language=en&uniq=1218486921448
-        br.getPage("http://www.megaupload.com/xml/rewardpoints.php?confirmcode=" + Browser.getCookie("http://megaupload.com", "user") + "&language=en&uniq=" + System.currentTimeMillis());
+        br.getPage("http://www.megaupload.com/xml/rewardpoints.php?confirmcode=" + br.getCookie("http://megaupload.com", "user") + "&language=en&uniq=" + System.currentTimeMillis());
         String points = br.getRegex("availablepoints=\"(\\d*?)\"").getMatch(0);
         ai.setPremiumPoints(Integer.parseInt(points));
 
@@ -127,7 +127,7 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("X-MUTB", link);
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         br.postPage(url, "login=" + account.getUser() + "&password=" + account.getPass());
-        if (Browser.getCookie(url, "user") == null || Browser.getCookie(url, "user").length() == 0) {
+        if (br.getCookie(url, "user") == null || br.getCookie(url, "user").length() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
         }
 
@@ -136,13 +136,13 @@ public class Megauploadcom extends PluginForHost {
         br.getHeaders().put("TE", "trailers");
         br.getHeaders().put("Connection", "TE");
         br.setFollowRedirects(false);
-        br.getPage("http://" + new URL(link).getHost() + "/mgr_dl.php?d=" + id + "&u=" + Browser.getCookie(url, "user"));
+        br.getPage("http://" + new URL(link).getHost() + "/mgr_dl.php?d=" + id + "&u=" + br.getCookie(url, "user"));
 
         HTTPConnection urlConnection;
         downloadLink.getLinkStatus().setStatusText("Premium");
         urlConnection = br.openGetConnection(br.getRedirectLocation());
         dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(true);
+   
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
         dl.startDownload();
@@ -312,8 +312,8 @@ public class Megauploadcom extends PluginForHost {
                 post.put("id" + j, new Regex(urls[j].getDownloadURL(), ".*?\\?d\\=(.{8})").getMatch(0));
             }
             Browser b = new Browser();
-            Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l", "de");
-            Browser.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar", "1");
+            b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l", "de");
+            b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar", "1");
             String pag = b.postPage("http://www.megaupload.com/mgr_linkcheck.php", post).replaceFirst("0=www.megaupload.com&1=www.megarotic.com&", "").replaceFirst("id[\\d]+=", "").trim();
             String[] pg = pag.split("&id[\\d]+=");
             for (int j = 0; j < pg.length; j++) {

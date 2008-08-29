@@ -84,7 +84,7 @@ public class Netloadin extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
 
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
 
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink, linkStatus);
@@ -350,7 +350,7 @@ public class Netloadin extends PluginForHost {
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
 
             br.setConnectTimeout(15000);
             String id = Netloadin.getID(downloadLink.getDownloadURL());

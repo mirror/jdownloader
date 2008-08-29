@@ -58,7 +58,7 @@ public class FastShareorg extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
             br.setFollowRedirects(false);
             String url = downloadLink.getDownloadURL();
             br.getPage(url);

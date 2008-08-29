@@ -18,17 +18,16 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
-import jd.http.Encoding;
+import jd.http.Browser;
 import jd.http.HTTPConnection;
-import jd.parser.HTMLParser;
+import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
@@ -45,6 +44,7 @@ public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet() {
         super();
+        this.enablePremium();
     }
 
     @Override
@@ -63,28 +63,23 @@ public class Freaksharenet extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
-            if (!requestInfo.containsHTML("<span class=\"txtbig\">Fehler</span>")) {
-                String[][] filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-                downloadLink.setName(filename[0][1]);
-                String[][] filesize = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)(MB|KB)(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-                if (filesize[0][3].contains("MB")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize[0][2])) * 1024 * 1024);
-                } else if (filesize[0][3].contains("KB")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize[0][2])) * 1024);
-                }
-                return true;
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
+        String url = downloadLink.getDownloadURL();
+
+        br.getPage(url);
+        if (!br.containsHTML("<span class=\"txtbig\">Fehler</span>")) {
+            String[][] filename = new Regex(br, Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+            downloadLink.setName(filename[0][1]);
+            String[][] filesize = new Regex(br, Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+
+            downloadLink.setDownloadSize(Regex.getSize(filesize[0][2]));
+
+            return true;
         }
-        downloadLink.setAvailable(false);
+
         return false;
     }
 
@@ -118,27 +113,89 @@ public class Freaksharenet extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        /* Link holen */
-        url = requestInfo.getForms()[1].action;
-        HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-        postdata = "code=" + Encoding.urlEncode(submitvalues.get("code"));
-        postdata = postdata + "&cid=" + Encoding.urlEncode(submitvalues.get("cid"));
-        postdata = postdata + "&userid=" + Encoding.urlEncode(submitvalues.get("userid"));
-        postdata = postdata + "&usermd5=" + Encoding.urlEncode(submitvalues.get("usermd5"));
-        postdata = postdata + "&wait=Download";
 
-        /* Zwangswarten, 10seks, kann man auch weglassen */
-        sleep(10000, downloadLink);
+        Form form = br.getForm(null);
+        form.put("wait", "Download");
 
         /* Datei herunterladen */
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        HTTPConnection urlConnection = br.openFormConnection(form);
+
+        if (urlConnection.getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
+            return;
+        }
+        downloadLink.setLocalSpeedLimit(75 * 1024);
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setChunkNum(1);
+        dl.setResume(false);
+        dl.startDownload();
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
+
+        br.setFollowRedirects(true);
+        br.getPage("http://freakshare.net/");
+        Form form = br.getForm("LOGIN");
+        form.put("fb_username", account.getUser());
+        form.put("fb_password", account.getPass());
+
+        br.submitForm(form);
+
+        String[] dat = br.getRegex("Cash: <b>(.*?) €</b><br>.*?Total Points: <b>(\\d*?)</b><br>.*?Files: <b>(\\d*?) <font color=.*?>\\((.*?)\\)</font></b></font><br>").getRow(0);
+        if (dat == null) {
+            ai.setValid(false);
+            ai.setStatus("Logins incorrect");
+            return ai;
+        }
+        ai.setFilesNum(Integer.parseInt(dat[2]));
+        ai.setAccountBalance(dat[0]);
+        ai.setUsedSpace(dat[3]);
+        ai.setPremiumPoints(dat[1]);
+        String expire = br.getRegex("<td width=.*? align=.*? height=.*? class=\"content_headcontent\">.*?Gültig bis.*?class=\"content_headcontent\".*?<font.*?>(.*?)</font>.*?</td>").getMatch(0);
+        String freeTraffic = br.getRegex("<td width=.*? align=.*? height=.*? class=\"content_headcontent\">.*?Traffic verbleibend.*?class=\"content_headcontent\".*?<font.*?>(.*?)</font>.*?</td>").getMatch(0);
+
+        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", Locale.GERMAN));
+        ai.setTrafficLeft(freeTraffic);
+
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        /* Nochmals das File überprüfen */
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return;
+        }
+        Form form = br.getForm("LOGIN");
+        form.put("fb_username", account.getUser());
+        form.put("fb_password", account.getPass());
+
+        br.submitForm(form);
+
+        /* Datei herunterladen */
+        br.setFollowRedirects(true);
+        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+        if (urlConnection.getContentType().equals("text/html; charset=ISO-8859-1")) {
+            logger.finer("Direct Download disabled");
+            br.followConnection();
+            form = br.getForm("Direkt-Download");
+            urlConnection = br.openFormConnection(form);
+        }
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
+        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
+        // 2));
+        // dl.setResume(true);
         dl.setChunkNum(1);
         dl.setResume(false);
         dl.startDownload();

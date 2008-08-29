@@ -73,7 +73,7 @@ public class RapidShareDe extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
 br.setFollowRedirects(false);
         Form[] forms = br.getForms(downloadLink.getDownloadURL());
         if (forms.length < 2) {
@@ -179,7 +179,7 @@ br.setFollowRedirects(false);
    		}
         String user = account.getUser();
         String pass = account.getPass();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setFollowRedirects(false);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -251,7 +251,7 @@ br.setFollowRedirects(false);
     public boolean getFileInformation(DownloadLink downloadLink) {
     	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         try {
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         Form[] forms = br.getForms();

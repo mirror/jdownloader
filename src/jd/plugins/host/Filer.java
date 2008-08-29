@@ -61,7 +61,7 @@ public class Filer extends PluginForHost {
         String page = null;
 
         Browser br = new Browser();
-        Browser.clearCookies("filer.net");
+        br.clearCookies("filer.net");
         br.getPage(downloadLink.getDownloadURL());
         int tries = 0;
         while (tries < maxCaptchaTries) {

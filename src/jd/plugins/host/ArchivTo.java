@@ -56,7 +56,7 @@ public class ArchivTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         try {
-            Browser.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(HOST);
             String page = br.getPage(downloadLink.getDownloadURL());
 
             downloadLink.setName(new Regex(page, Pattern.compile("<td width=\"23%\">Original-Dateiname</td>[\\s]*?<td width=\"77%\">: <a href=\"(.*?)\" style=\"Color: #5FB8E0\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE)).getMatch(1));
@@ -93,7 +93,7 @@ public class ArchivTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        Browser.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(HOST);
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

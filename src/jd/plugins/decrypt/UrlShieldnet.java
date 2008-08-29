@@ -59,7 +59,7 @@ public class UrlShieldnet extends PluginForDecrypt {
 
             boolean do_continue = true;
             Form form;
-            Browser.clearCookies(host);
+            br.setCookiesExclusive(true);br.clearCookies(host);
 
             br.getPage(parameter);
             br.setFollowRedirects(false);

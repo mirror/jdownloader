@@ -56,19 +56,19 @@ public class Browser {
     }
 
     public static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
+    public HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
 
-    public static void clearCookies(String string) {
-        COOKIES.put(string, null);
+    public void clearCookies(String string) {
+        getCookies().put(string, null);
 
     }
 
-    public static void forwardCookies(Request request) {
+    public void forwardCookies(Request request) {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        HashMap<String, Cookie> cookies = COOKIES.get(host);
+        HashMap<String, Cookie> cookies = getCookies().get(host);
         if (cookies == null) { return; }
 
-      
         for (Iterator<Entry<String, Cookie>> it = cookies.entrySet().iterator(); it.hasNext();) {
             Cookie cookie = it.next().getValue();
 
@@ -81,35 +81,41 @@ public class Browser {
 
     }
 
-    public static void forwardCookies(HTTPConnection con) {
+    public void forwardCookies(HTTPConnection con) {
         if (con == null) { return; }
         String host = Browser.getHost(con.getURL().toString());
-        HashMap<String, Cookie> cookies = COOKIES.get(host);
+        HashMap<String, Cookie> cookies = getCookies().get(host);
         String cs = Request.getCookieString(cookies);
         if (cs != null && cs.trim().length() > 0) con.setRequestProperty("Cookie", cs);
     }
 
-    public static String getCookie(String url, String string) {
+    public String getCookie(String url, String string) {
         String host;
 
         host = Browser.getHost(url);
 
-        HashMap<String, Cookie> cookies = COOKIES.get(host);
+        HashMap<String, Cookie> cookies = getCookies().get(host);
         return cookies.get(string).getValue();
 
     }
 
-    public static void setCookie(String url, String key, String value) {
+    public HashMap<String, HashMap<String, Cookie>> getCookies() {
+
+        if (this.cookiesExclusive) return cookies;
+        return COOKIES;
+    }
+
+    public void setCookie(String url, String key, String value) {
         String host;
 
         host = Browser.getHost(url);
         HashMap<String, Cookie> cookies;
-        if (!COOKIES.containsKey(host)||(cookies = COOKIES.get(host))==null) {
+        if (!getCookies().containsKey(host) || (cookies = getCookies().get(host)) == null) {
             cookies = new HashMap<String, Cookie>();
-            COOKIES.put(host, cookies);
-        } 
-        
-        Cookie cookie= new Cookie();
+            getCookies().put(host, cookies);
+        }
+
+        Cookie cookie = new Cookie();
         cookie.setHost(host);
         cookie.setKey(key);
         cookie.setValue(value);
@@ -134,18 +140,17 @@ public class Browser {
 
     }
 
-    public static void updateCookies(Request request) {
+    public void updateCookies(Request request) {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
-        HashMap<String, Cookie> cookies = COOKIES.get(host);
+        HashMap<String, Cookie> cookies = getCookies().get(host);
         if (cookies == null) {
             cookies = new HashMap<String, Cookie>();
-            COOKIES.put(host, cookies);
+            getCookies().put(host, cookies);
         }
-        for(Cookie cookie:request.getCookies()){
+        for (Cookie cookie : request.getCookies()) {
             cookies.put(cookie.getKey(), cookie);
         }
-       
 
     }
 
@@ -163,6 +168,7 @@ public class Browser {
 
     private Request request;
     private boolean snifferDetection = false;
+    private boolean cookiesExclusive;
 
     public Browser() {
 
@@ -181,9 +187,10 @@ public class Browser {
         return Form.getForms(this);
 
     }
-    public Form getForm(String name){      
-        for(Form f:getForms()){
-            if(f.hasSubmitValue(name))return f;
+
+    public Form getForm(String name) {
+        for (Form f : getForms()) {
+            if (f.hasSubmitValue(name)) return f;
         }
         return null;
     }
@@ -217,7 +224,7 @@ public class Browser {
         GetRequest request = new GetRequest(string);
         request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
-        Browser.forwardCookies(request);
+        forwardCookies(request);
         request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
@@ -229,12 +236,12 @@ public class Browser {
         checkContentLengthLimit(request);
         ret = request.read();
 
-        Browser.updateCookies(request);
+        updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             ret = this.getPage(null);
-        }else{
-        
+        } else {
+
             currentURL = new URL(string);
         }
         return ret;
@@ -269,7 +276,7 @@ public class Browser {
     }
 
     public HTTPConnection openFormConnection(Form form) throws IOException {
-if(form==null)return null;
+        if (form == null) return null;
         String base = null;
         if (request != null) base = request.getUrl().toString();
         String action = form.getAction(base);
@@ -325,7 +332,7 @@ if(form==null)return null;
         }
         request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
-        Browser.forwardCookies(request);
+        forwardCookies(request);
         request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
@@ -333,12 +340,12 @@ if(form==null)return null;
 
         request.connect();
 
-        Browser.updateCookies(request);
+        updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             this.openGetConnection(null);
-        }else{
-            
+        } else {
+
             currentURL = new URL(string);
         }
         return this.request.getHttpConnection();
@@ -375,7 +382,7 @@ if(form==null)return null;
         if (readTimeout > 0) {
             request.setReadTimeout(readTimeout);
         }
-        Browser.forwardCookies(request);
+        forwardCookies(request);
         request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
             request.getPostData().putAll(post);
@@ -388,8 +395,8 @@ if(form==null)return null;
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             this.openGetConnection(null);
-        }else{
-         
+        } else {
+
             currentURL = new URL(url);
         }
         return this.request.getHttpConnection();
@@ -419,9 +426,9 @@ if(form==null)return null;
         if (readTimeout > 0) {
             request.setReadTimeout(readTimeout);
         }
-        Browser.forwardCookies(request);
+        forwardCookies(request);
         request.getHeaders().put("Referer", currentURL.toString());
-        if(post!=null)request.getPostData().putAll(post);
+        if (post != null) request.getPostData().putAll(post);
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
@@ -432,12 +439,12 @@ if(form==null)return null;
         checkContentLengthLimit(request);
         ret = request.read();
 
-        Browser.updateCookies(request);
+        updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             ret = this.getPage(null);
-        }else{
-          
+        } else {
+
             currentURL = new URL(url);
         }
         return ret;
@@ -652,13 +659,13 @@ if(form==null)return null;
             request.getHeaders().putAll(headers);
             request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
             request.setFollowRedirects(doRedirects);
-            Browser.forwardCookies(request);
+            forwardCookies(request);
             request.getHeaders().put("Referer", currentURL.toString());
             String ret = null;
             checkContentLengthLimit(request);
             ret = request.read();
 
-            Browser.updateCookies(request);
+            updateCookies(request);
             this.request = request;
             try {
                 currentURL = new URL(action);
@@ -692,7 +699,7 @@ if(form==null)return null;
 
     public String loadConnection(HTTPConnection con) throws IOException {
         checkContentLengthLimit(request);
-        if (con == null) return request.read();        
+        if (con == null) return request.read();
         return Request.read(con);
 
     }
@@ -746,7 +753,7 @@ if(form==null)return null;
     public static boolean downloadBinary(String filepath, String fileurl) {
 
         try {
-            fileurl=fileurl.replaceAll(" ", "%20");
+            fileurl = fileurl.replaceAll(" ", "%20");
             fileurl = Encoding.urlEncode(fileurl.replaceAll("\\\\", "/"));
             File file = new File(filepath);
             if (file.isFile()) {
@@ -882,10 +889,53 @@ if(form==null)return null;
     }
 
     public String getURL() {
-       if(request==null){
-           return null;
-       }
-       return request.getUrl().toString();
+        if (request == null) { return null; }
+        return request.getUrl().toString();
+
+    }
+
+    public void setCookiesExclusive(boolean b) {
+        if(cookiesExclusive==b)return;
+        this.cookiesExclusive = b;
+        if (b) {
+            this.cookies.clear();
+
+            for (Iterator<Entry<String, HashMap<String, Cookie>>> it = COOKIES.entrySet().iterator(); it.hasNext();) {
+                Entry<String, HashMap<String, Cookie>> next = it.next();
+                HashMap<String, Cookie> tmp;
+                cookies.put(next.getKey(), tmp = new HashMap<String, Cookie>());
+                tmp.putAll(next.getValue());
+
+            }
+
+        } else {
+            this.cookies.clear();
+        }
+
+    }
+
+    public boolean isCookiesExclusive() {
+        return cookiesExclusive;
+    }
+
+    public String followConnection() {
+        String ret = null;
+        try {
+            if(request.getHtmlCode()!=null){
+                JDUtilities.getLogger().warning("Request has already been read");
+                return null;
+            }
+        checkContentLengthLimit(request);
+       
+            ret = request.read();
+        } catch (IOException e) {
+        
+            e.printStackTrace();
+            return null;
+        }    
+      
+      
+        return ret;
         
     }
 
