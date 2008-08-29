@@ -36,11 +36,11 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.ConfigEntry;
+import jd.gui.skins.simple.components.ChartAPI_Entity;
+import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Account;
 import jd.plugins.PluginForHost;
-import jd.utils.ChartAPI_Entity;
-import jd.utils.ChartAPI_PIE;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
