@@ -18,8 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -34,11 +32,9 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -55,15 +51,13 @@ public class DepositFiles extends PluginForHost {
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    private static final String PATTERN_PREMIUM_FINALURL = "var dwnsrc = \"(.*?)\";";
+    private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
 
-    private static final String PATTERN_PREMIUM_REDIRECT = "window.location.href = '(.*?)';";
-
-    private String cookie;
+    private static final String PATTERN_PREMIUM_REDIRECT = "window\\.location\\.href = \"(.*?)\";";
 
     private Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
 
-    private Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr&ouml;&szlig;e: <b>(.*?)</b>");
+    private Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
 
     // Rechtschreibfehler übernommen
     private String PASSWORD_PROTECTED = "<strong>Bitte Password fuer diesem File eingeben</strong>";
@@ -84,7 +78,8 @@ public class DepositFiles extends PluginForHost {
 
         DownloadLink downloadLink = parameter;
         Browser br = new Browser();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
 
         String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
         link = link.replace("com/ru/files/", "com/de/files/");
@@ -120,9 +115,8 @@ public class DepositFiles extends PluginForHost {
             return;
         }
 
-      
-Form form = br.getForm("Kostenlosen download");
-        if (form==null) {
+        Form form = br.getForm("Kostenlosen download");
+        if (form == null) {
             String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/span>").getMatch(0);
             if (wait != null) {
                 linkStatus.setValue(Regex.getMilliSeconds(wait));
@@ -136,7 +130,7 @@ Form form = br.getForm("Kostenlosen download");
         br.submitForm(form);
 
         if (br.containsHTML(PASSWORD_PROTECTED)) {
-         // MUss wohl noch angepasst werden
+            // MUss wohl noch angepasst werden
             String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
             br.postPage(finalURL, "go=1&gateway_result=1&file_password=" + password);
         }
@@ -146,28 +140,26 @@ Form form = br.getForm("Kostenlosen download");
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
-form=br.getForm("Die Datei downloaden");
-HTTPConnection con = br.openFormConnection(form);
-    
+        form = br.getForm("Die Datei downloaden");
+        HTTPConnection con = br.openFormConnection(form);
+
         if (con == null) {
             if (br.containsHTML("IP-Addresse werden schoneinige Files")) {
-               
-                    linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                    linkStatus.setValue(30000l);
-                    return;
-               
-              
+
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                linkStatus.setValue(30000l);
+                return;
+
             }
-//            if (br.containsHTML("download_limit")) {
-//                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-//                linkStatus.setValue(300000l);
-//                return;
-//            }
+            // if (br.containsHTML("download_limit")) {
+            // linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            // linkStatus.setValue(300000l);
+            // return;
+            // }
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
 
-     
         if (con.getHeaderField("Location") != null && con.getHeaderField("Location").indexOf("error") > 0) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
@@ -186,17 +178,23 @@ HTTPConnection con = br.openFormConnection(form);
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.getPage("http://depositfiles.com/en/");
 
-        Form login = br.getForm(1);
+        Form login = br.getForm("enter");
 
         login.put("login", account.getUser());
         login.put("password", account.getPass());
 
         br.submitForm(login);
+        if (br.containsHTML("Your password or login is incorrect")) {
+
+            ai.setValid(false);
+            return ai;
+        }
         br.getPage("http://depositfiles.com/en/gold/");
         String expire = br.getRegex("You have Gold access until: <b>(.*?)</b>").getMatch(0);
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
@@ -220,21 +218,19 @@ HTTPConnection con = br.openFormConnection(form);
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String user = account.getUser();
-        String pass = account.getPass();
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
 
         String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
         link = link.replace("com/ru/files/", "com/de/files/");
         link = link.replace("com/files/", "com/de/files/");
         downloadLink.setUrlDownload(link);
 
-        String finalURL = link;
+        br.getPage(link);
 
-        br.getPage(finalURL);
-        cookie = br.getRequest().getCookieString();
         if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
@@ -260,16 +256,13 @@ HTTPConnection con = br.openFormConnection(form);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
+        Form login = br.getForm("einloggen");
 
-        Form[] forms = br.getForms();
-        Form login = forms[0];
-        login.getVars().put("login", user);
-        login.getVars().put("password", pass);
-        login.getVars().put("x", "30");
-        login.getVars().put("y", "11");
+        login.put("login", account.getUser());
+        login.put("password", account.getPass());
+
         br.submitForm(login);
 
-        cookie += "; " + br.getRequest().getCookieString();
         if (br.containsHTML("Your password or login is incorrect")) {
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
@@ -277,22 +270,23 @@ HTTPConnection con = br.openFormConnection(form);
             return;
 
         }
-        finalURL = br.getRegex(PATTERN_PREMIUM_REDIRECT).getMatch(0);
-        br.getPage(finalURL);
+
+        link = br.getRegex(PATTERN_PREMIUM_REDIRECT).getMatch(0);
+        br.getPage(link);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
-            br.postPage(finalURL, "go=1&gateway_result=1&file_password=" + password);
+            br.postPage(link, "go=1&gateway_result=1&file_password=" + password);
         } else {
-            logger.info(br + "");
+            // logger.info(br + "");
         }
-        finalURL = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
+        link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
 
-        if (finalURL == null) {
+        if (link == null) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
 
-        HTTPConnection con = br.openGetConnection(finalURL);
+        HTTPConnection con = br.openGetConnection(link);
 
         if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -324,45 +318,28 @@ HTTPConnection con = br.openFormConnection(form);
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
-        RequestInfo requestInfo;
         String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
         link = link.replace("/ru/files/", "/de/files/");
 
-        try {
+        br.setFollowRedirects(true);
+        br.getPage(link);
+        // http://depositfiles.com/de/files/6192617
 
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), null, null, false);
+        br.setFollowRedirects(false);
 
-            if (requestInfo.getConnection().getHeaderField("Location") != null && requestInfo.getConnection().getHeaderField("Location").indexOf("error") > 0) {
-                return false;
-            } else {
+        // Datei geloescht?
+        if (br.containsHTML(FILE_NOT_FOUND)) { return false; }
 
-                if (requestInfo.getConnection().getHeaderField("Location") != null) {
-                    requestInfo = HTTP.getRequest(new URL("http://" + HOST + requestInfo.getConnection().getHeaderField("Location")), null, null, true);
-                } else {
-                    requestInfo = HTTP.readFromURL(requestInfo.getConnection());
-                }
+        String fileName = br.getRegex(FILE_INFO_NAME).getMatch(0);
+        downloadLink.setName(fileName);
+        String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
+        int length = (int) Regex.getSize(fileSizeString);
 
-                // Datei geloescht?
-                if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) { return false; }
+        downloadLink.setDownloadSize(length);
 
-                String fileName = new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getMatch(0);
-                downloadLink.setName(fileName);
-                String fileSizeString = new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getMatch(0);
-                int length = (int) Regex.getSize(fileSizeString);
-
-                downloadLink.setDownloadSize(length);
-
-            }
-
-            return true;
-
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-
-        return false;
+        return true;
 
     }
 
