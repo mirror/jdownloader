@@ -861,6 +861,8 @@ public class Browser {
         br.limit = limit;
         br.readTimeout = readTimeout;
         br.request = request;
+        br.cookies=cookies;
+        br.cookiesExclusive=cookiesExclusive;
         return br;
     }
 

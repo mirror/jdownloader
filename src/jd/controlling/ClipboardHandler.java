@@ -114,9 +114,9 @@ public class ClipboardHandler extends Thread {
 
                         data = data.trim();
 
-                        if (olddata == null) {
-                            olddata = data;
-                        }
+//                        if (olddata == null) {
+//                            olddata = data;
+//                        }
                         if (!data.equals(olddata)) {
                             olddata = data;
 

@@ -55,11 +55,11 @@ public class Netloadin extends PluginForHost {
 
     static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
     static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("sjdp://netload\\.in.*|(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*|http://.*?netload\\.in/(?!index\\.php).*/.*)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PAT_SUPPORTED = Pattern.compile("sjdp://[\\w\\.]*?netload\\.in.*|(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*|http://[\\w\\.]*?netload\\.in/(?!index\\.php).*/.*)", Pattern.CASE_INSENSITIVE);
 
     private static String getID(String link) {
-
-        return new Regex(link, "\\/datei([a-fA-F0-9]+)").getMatch(0);
+       
+        return new Regex(link, "\\/datei([a-z0-9]+)").getMatch(0);
 
     }
 
