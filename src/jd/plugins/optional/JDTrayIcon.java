@@ -19,6 +19,7 @@ package jd.plugins.optional;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
@@ -28,7 +29,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
+import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -57,7 +58,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDTrayIcon extends PluginOptional implements WindowListener {
+public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     private class info extends Thread {
         private Point p;
 
@@ -258,8 +259,8 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            logger.info("JD Init complete");
-            SimpleGUI.CURRENTGUI.getFrame().addWindowListener(this);
+            logger.info("JDTrayIcon Init complete");
+            SimpleGUI.CURRENTGUI.getFrame().addWindowStateListener(this);
             return;
         }
         super.controlEvent(event);
@@ -493,44 +494,11 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
         }
     }
 
-    public void windowActivated(WindowEvent e) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void windowClosed(WindowEvent e) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void windowClosing(WindowEvent e) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void windowDeactivated(WindowEvent e) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void windowDeiconified(WindowEvent e) {
-        // TODO Auto-generated method stub
-
-    }
-
-    public void windowIconified(WindowEvent e) {
-        if (e.getSource() == SimpleGUI.CURRENTGUI.getFrame()) {
+    public void windowStateChanged(WindowEvent arg0) {
+        if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
             SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-
             simplegui.getFrame().setVisible(false);
             showhide.setText(JDLocale.L("plugins.optional.trayIcon.show", "Show"));
-
         }
-
-    }
-
-    public void windowOpened(WindowEvent e) {
-        // TODO Auto-generated method stub
-
     }
 }

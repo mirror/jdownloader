@@ -69,6 +69,7 @@ public class JDEventQueue extends EventQueue {
         if (!(ev instanceof MouseEvent)) { return; }
         MouseEvent e = (MouseEvent) ev;
         if (!e.isPopupTrigger()) { return; }
+        if (e.getComponent() == null) return;
         Component c = SwingUtilities.getDeepestComponentAt(e.getComponent(), e.getX(), e.getY());
         if (!(c instanceof JTextComponent)) { return; }
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }

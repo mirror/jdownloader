@@ -18,17 +18,21 @@ package jd.plugins.optional;
 
 import java.awt.AWTException;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
-
 import javax.swing.SwingUtilities;
 
+import jd.Main;
 import jd.config.MenuItem;
+import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -36,7 +40,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDLightTray extends PluginOptional implements MouseListener {
+public class JDLightTray extends PluginOptional implements MouseListener, WindowStateListener {
     public static int getAddonInterfaceVersion() {
         return 1;
     }
@@ -91,6 +95,16 @@ public class JDLightTray extends PluginOptional implements MouseListener {
             logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
             return false;
         }
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            logger.info("JDLightTrayIcon Init complete");
+            SimpleGUI.CURRENTGUI.getFrame().addWindowStateListener(this);
+            return;
+        }
+        super.controlEvent(event);
+
     }
 
     private void initGUI() {
@@ -171,6 +185,13 @@ public class JDLightTray extends PluginOptional implements MouseListener {
             SystemTray.getSystemTray().remove(trayIcon);
         }
 
+    }
+
+    public void windowStateChanged(WindowEvent arg0) {
+        if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
+            SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
+            simplegui.getFrame().setVisible(false);
+        }
     }
 
 }
