@@ -45,6 +45,7 @@ import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
+import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
@@ -148,7 +149,7 @@ public class Main {
         if (!new CheckJava().check()) {
             System.exit(0);
         }
- 
+
         Boolean newInstance = false;
         boolean showSplash = true;
         boolean stop = false;
@@ -404,27 +405,22 @@ public class Main {
             }
         }
 
-    
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
 
-            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
+        init.initPlugins();
+        Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
 
-            init.initPlugins();
-            Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
+        init.initGUI(controller);
+        Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
 
-            init.initGUI(controller);
-            Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
+        init.loadDownloadQueue();
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
 
-            init.loadDownloadQueue();
-            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
+        init.loadModules();
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 
-            init.loadModules();
-            Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
+        init.checkUpdate();
 
-            init.checkUpdate();
-
-         
-
-        
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
 
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
@@ -447,14 +443,14 @@ public class Main {
             public void run() {
 
                 new PackageManager().interact(this);
-                
+
                 try {
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
-                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED&&!JDUtilities.getResourceFile("noupdate.txt").exists()) {
+                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
                     init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
                 }
             }
@@ -475,7 +471,8 @@ public class Main {
                 JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), String.format(JDLocale.L("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."), level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"));
             }
         }
+        // public ControlEvent(Object source, int controlID, Object parameter)
+        JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
     }
-
 }

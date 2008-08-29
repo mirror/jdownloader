@@ -27,9 +27,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -39,11 +42,13 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import jd.Main;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.controlling.ClipboardHandler;
+import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
@@ -52,7 +57,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDTrayIcon extends PluginOptional {
+public class JDTrayIcon extends PluginOptional implements WindowListener {
     private class info extends Thread {
         private Point p;
 
@@ -214,7 +219,7 @@ public class JDTrayIcon extends PluginOptional {
         return "JD-Team";
     }
 
-   public String getPluginName() {
+    public String getPluginName() {
         return JDLocale.L("plugins.optional.trayIcon.name", "TrayIcon");
     }
 
@@ -235,11 +240,13 @@ public class JDTrayIcon extends PluginOptional {
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
             try {
+
                 JDUtilities.getController().addControlListener(this);
                 logger.info("Systemtray OK");
                 initGUI();
                 return true;
             } catch (Exception e) {
+                e.printStackTrace();
                 return false;
             }
 
@@ -247,6 +254,16 @@ public class JDTrayIcon extends PluginOptional {
             logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
             return false;
         }
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            logger.info("JD Init complete");
+            SimpleGUI.CURRENTGUI.getFrame().addWindowListener(this);
+            return;
+        }
+        super.controlEvent(event);
+
     }
 
     private void initGUI() {
@@ -472,7 +489,48 @@ public class JDTrayIcon extends PluginOptional {
 
             simplegui.getFrame().setVisible(true);
             showhide.setText(JDLocale.L("plugins.optional.trayIcon.hide", "Hide"));
+            simplegui.getFrame().setState(JFrame.NORMAL);
         }
     }
 
+    public void windowActivated(WindowEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowClosed(WindowEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowClosing(WindowEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowIconified(WindowEvent e) {
+        if (e.getSource() == SimpleGUI.CURRENTGUI.getFrame()) {
+            SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
+
+            simplegui.getFrame().setVisible(false);
+            showhide.setText(JDLocale.L("plugins.optional.trayIcon.show", "Show"));
+
+        }
+
+    }
+
+    public void windowOpened(WindowEvent e) {
+        // TODO Auto-generated method stub
+
+    }
 }
