@@ -351,10 +351,16 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Datename des Downloads.
      */
     static public String extractFileNameFromURL(String filename) {
-        int index = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
-        filename = filename.substring(index + 1);
-        index = filename.indexOf("?");
+        int index = filename.indexOf("?");
+        /*
+         * erst die Get-Parameter abschneiden
+         */
         if (index > 0) filename = filename.substring(0, index);
+        index = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
+        /*
+         * danach den Filename filtern
+         */
+        filename = filename.substring(index + 1);
         return Encoding.htmlDecode(filename);
     }
 
