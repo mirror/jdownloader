@@ -81,6 +81,8 @@ public class Netloadin extends PluginForHost {
             new Serienjunkies().handleFree(downloadLink);
             return;
         }
+        br.setDebug(true);
+        
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
 
@@ -261,9 +263,9 @@ public class Netloadin extends PluginForHost {
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
-
+br.setDebug(true);
         br.setFollowRedirects(false);
-        br.getPage("http://" + HOST);
+//        br.getPage("http://" + HOST);
         br.postPage("http://" + HOST + "/index.php", "txtuser=" + user + "&txtpass=" + pass + "&txtcheck=login&txtlogin=");
         if (br.getRedirectLocation() == null) {
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
