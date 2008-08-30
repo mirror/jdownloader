@@ -34,7 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class MegasharesCom extends PluginForHost {
-    static private final String AGB_LINK = "http://netload.in/index.php?id=12";
+    static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
 
     static private final String CODER = "JD-Team";
     static private final String HOST = "megashares.com";
