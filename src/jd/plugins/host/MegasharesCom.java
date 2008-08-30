@@ -64,7 +64,7 @@ public class MegasharesCom extends PluginForHost {
         // Sie laden gerade eine datei herunter
         if (br.containsHTML("You already have the maximum")) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(30 * 1000l);
+            linkStatus.setValue(60 * 1000l);
             return;
         }
         // Reconnet/wartezeit check
@@ -105,6 +105,10 @@ public class MegasharesCom extends PluginForHost {
         }
         // Downloadlink
         String url = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
+        if(url==null){
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+            return;
+        }
         // aktuellen Fortschritt prüfen und range Header setzen
         long[] chunkProgress = downloadLink.getChunksProgress();
         if (chunkProgress != null) {

@@ -742,7 +742,7 @@ public class JDUtilities {
     /**
      * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da
      * s gebraucht.
-     * 
+     *  
      * @return
      */
     public static File getCurrentWorkingDirectory(String id) {
