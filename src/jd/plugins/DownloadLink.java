@@ -402,8 +402,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt das SpeedLimit zurück! Beachtet das Lokale Speed Limit!
-     * in bytes/s
+     * Gibt das SpeedLimit zurück! Beachtet das Lokale Speed Limit! in bytes/s
+     * 
      * @return
      */
     public int getSpeedLimit() {
@@ -418,8 +418,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt das Lokale Speed Limit zurück!
-     * in bytes/s
+     * Gibt das Lokale Speed Limit zurück! in bytes/s
+     * 
      * @return
      */
     public int getLocalSpeedLimit() {
@@ -427,8 +427,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt das Lokale Speed Limit!
-     * in bytes/s
+     * Setzt das Lokale Speed Limit! in bytes/s
+     * 
      * @param maximalspeed
      */
     public void setLocalSpeedLimit(int maximalspeed) {
@@ -440,13 +440,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt das Globale Speed Limit!
-     * in bytes/s
+     * Setzt das Globale Speed Limit! in bytes/s
+     * 
      * @param maximalspeed
      */
     public void setSpeedLimit(int maximalspeed) {
         maximalspeed = Math.max(20, maximalspeed);
-        //logger.info(this + " LINKSPEED: " + maximalspeed);
+        // logger.info(this + " LINKSPEED: " + maximalspeed);
         int diff = Math.abs(this.globalSpeedLimit - maximalspeed);
         if (diff > 500) {
             this.globalSpeedLimit = maximalspeed;
@@ -583,9 +583,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public boolean isEnabled() {
         return isEnabled;
     }
-    
+
     /**
      * Zeigt ob der Speed limitiert ist!
+     * 
      * @return
      */
     public boolean isLimited() {
@@ -711,9 +712,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @param downloadPath
      *            der neue downloadPfad
      */
-    public void setSubdirectory(String subdir) {
+    public void addSubdirectory(String subdir) {
         if (subdir != null && name.length() > 0) {
-            subdirectory = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir));
+            if (subdirectory != null) {
+                subdirectory = new StringBuilder(subdirectory).append(File.separator).append(JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir))).toString();
+            } else {
+                subdirectory = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir));
+            }
         } else {
             subdirectory = null;
         }

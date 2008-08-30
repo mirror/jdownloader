@@ -158,7 +158,7 @@ public class ImageFap extends PluginForHost {
         HTTPConnection con = br.openGetConnection(imagelink);
         String filename = Plugin.extractFileNameFromURL(imagelink);
         downloadLink.setStaticFileName(filename);
-        downloadLink.setSubdirectory(gallery_name);
+        downloadLink.addSubdirectory(gallery_name);
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(false);
         dl.setChunkNum(1);
