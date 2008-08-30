@@ -219,6 +219,10 @@ public class FilesTo extends PluginForHost {
         dl.startDownload();
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
         finalURL = null;

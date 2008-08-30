@@ -148,6 +148,11 @@ public class Vipfilecom extends PluginForHost {
         dl.startDownload();
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        /* TODO: Wert prüfen */
+        return 1;
+    }
+    
     @Override
     public void reset() {
     }

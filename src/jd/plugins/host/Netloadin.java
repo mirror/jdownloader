@@ -187,10 +187,6 @@ public class Netloadin extends PluginForHost {
 
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
     private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) throws IOException {
         if (!br.containsHTML("download_password")) return;
         String pass = downloadLink.getStringProperty("LINK_PASSWORD", LINK_PASS);
@@ -429,6 +425,10 @@ public class Netloadin extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
     }

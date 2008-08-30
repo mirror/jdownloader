@@ -501,6 +501,10 @@ public class Serienjunkies extends PluginForHost {
         active = false;
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     public void reset() {
     }
 

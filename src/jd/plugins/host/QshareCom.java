@@ -345,6 +345,10 @@ public class QshareCom extends PluginForHost {
     //
     // }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
 

@@ -223,6 +223,10 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
         cookies = "";

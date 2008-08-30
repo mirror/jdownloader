@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -103,6 +102,10 @@ public class ArchivTo extends PluginForHost {
         HTTPConnection urlConnection = br.openGetConnection("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"\\./(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)));
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
+    }
+
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 
     @Override

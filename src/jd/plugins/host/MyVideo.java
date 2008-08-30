@@ -126,6 +126,11 @@ public class MyVideo extends PluginForHost {
         }
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        /* TODO: Wert nachprüfen */
+        return 1;
+    }
+    
     @Override
     public void reset() {
     }

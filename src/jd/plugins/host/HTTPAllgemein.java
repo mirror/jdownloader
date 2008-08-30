@@ -129,6 +129,11 @@ public class HTTPAllgemein extends PluginForHost {
         dl.startDownload();
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        /* TODO: Wert nachprüfen */
+        return 1;
+    }
+
     @Override
     public void reset() {
     }

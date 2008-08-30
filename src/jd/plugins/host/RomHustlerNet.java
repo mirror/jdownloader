@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -106,6 +105,11 @@ public class RomHustlerNet extends PluginForHost {
         dl.startDownload();
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        /* TODO: Wert nachprüfen */
+        return 1;
+    }
+    
     @Override
     public void reset() {
     }

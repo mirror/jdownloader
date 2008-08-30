@@ -139,6 +139,10 @@ public class SiloFilescom extends PluginForHost {
         dl.startDownload();
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
     }

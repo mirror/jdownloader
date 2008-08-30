@@ -139,6 +139,10 @@ public class Shareplacecom extends PluginForHost {
         dl.startDownload();
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+    
     @Override
     public void reset() {
     }

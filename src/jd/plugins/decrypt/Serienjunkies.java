@@ -40,7 +40,6 @@ import javax.swing.JPanel;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;

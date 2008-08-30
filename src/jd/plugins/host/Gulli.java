@@ -211,6 +211,10 @@ public class Gulli extends PluginForHost {
 
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
         fileId = null;

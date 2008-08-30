@@ -332,8 +332,11 @@ public class Uploadedto extends PluginForHost {
 
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     public void reset() {
-
     }
 
     public void resetPluginGlobals() {

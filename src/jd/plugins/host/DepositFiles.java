@@ -369,6 +369,10 @@ public class DepositFiles extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
     @Override
     public void reset() {
 

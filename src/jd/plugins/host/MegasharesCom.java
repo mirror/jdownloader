@@ -182,10 +182,6 @@ public class MegasharesCom extends PluginForHost {
        return true;
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        return 1;
-    }
-
     public AccountInfo getAccountInformation(Account account) throws Exception {
         return null;
     }
@@ -258,6 +254,10 @@ public class MegasharesCom extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
     }

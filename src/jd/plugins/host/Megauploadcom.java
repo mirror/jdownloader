@@ -345,6 +345,10 @@ public class Megauploadcom extends PluginForHost {
 
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     public void reset() {
         captchaPost = null;
         captchaURL = null;

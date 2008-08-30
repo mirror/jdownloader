@@ -262,6 +262,10 @@ public class MeinUpload extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 2;
+    }
+    
     @Override
     public void reset() {
 

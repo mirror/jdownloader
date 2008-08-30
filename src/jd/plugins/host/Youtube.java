@@ -60,9 +60,6 @@ public class Youtube extends PluginForHost {
     public String getCoder() {
         return CODER;
     }
-    public int getMaxSimultanFreeDownloadNum() {
-        return 20;
-    }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
@@ -130,6 +127,10 @@ public class Youtube extends PluginForHost {
         }
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+    
     @Override
     public void reset() {
     }

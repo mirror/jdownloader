@@ -21,7 +21,6 @@ import java.net.URI;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
-import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Encoding;
 import jd.http.GetRequest;
@@ -298,6 +297,10 @@ br.setFollowRedirects(false);
         return ret == null ? "0.0" : ret;
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+    
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub

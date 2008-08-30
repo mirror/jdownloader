@@ -1143,6 +1143,11 @@ public class Rapidshare extends PluginForHost {
 
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        /* TODO: Wert nachprüfen */
+        return 1;
+    }
+    
     public void reset() {
         // waitTime = 500;
         // captchaAddress = null;

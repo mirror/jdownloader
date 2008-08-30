@@ -132,10 +132,6 @@ public class ImageFap extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        return 15;
-    }
-
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -166,6 +162,10 @@ public class ImageFap extends PluginForHost {
         return;
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 15;
+    }
+    
     @Override
     public void reset() {
     }

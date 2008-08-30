@@ -20,7 +20,6 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -204,6 +203,11 @@ public class Upsharenet extends PluginForHost {
         dl.startDownload();
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        /* TODO: Wert prüfen */
+        return 1;
+    }
+    
     @Override
     public void reset() {
     }

@@ -19,7 +19,6 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -132,6 +131,10 @@ public class FastShareorg extends PluginForHost {
 
     }
 
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
+    }
+    
     @Override
     public void reset() {
     }
