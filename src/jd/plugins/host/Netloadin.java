@@ -58,7 +58,7 @@ public class Netloadin extends PluginForHost {
     static private final Pattern PAT_SUPPORTED = Pattern.compile("sjdp://[\\w\\.]*?netload\\.in.*|(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*)", Pattern.CASE_INSENSITIVE);
 
     private static String getID(String link) {
-       
+
         return new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
 
     }
@@ -84,14 +84,13 @@ public class Netloadin extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
 
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
 
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink, linkStatus);
         if (linkStatus.isFailed()) return;
         String url = br.getRegex("<div class=\"Free_dl\"><a href=\"(.*?)\">").getMatch(0);
-        url = url.replaceAll("\\&amp\\;", "&");
-
         if (br.containsHTML(FILE_NOT_FOUND)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -105,13 +104,13 @@ public class Netloadin extends PluginForHost {
             return;
         }
 
-        if (!br.containsHTML(DOWNLOAD_START)) {
+        if (!br.containsHTML(DOWNLOAD_START) || url == null) {
             linkStatus.setErrorMessage("Download link not found");
 
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
-
+        url = url.replaceAll("\\&amp\\;", "&");
         br.getPage(url);
         if (br.containsHTML(FILE_DAMAGED)) {
             linkStatus.setErrorMessage("File is on a damaged server");
@@ -239,7 +238,7 @@ public class Netloadin extends PluginForHost {
         br.getPage("http://netload.in/index.php?id=2");
 
         // String login =
-        //ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
+        // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
         // 1).trim();
         String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
 
@@ -350,7 +349,8 @@ public class Netloadin extends PluginForHost {
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);
+            br.clearCookies(HOST);
 
             br.setConnectTimeout(15000);
             String id = Netloadin.getID(downloadLink.getDownloadURL());
