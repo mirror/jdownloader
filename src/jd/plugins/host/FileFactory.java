@@ -328,11 +328,13 @@ public class FileFactory extends PluginForHost {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
-
+br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(NOT_AVAILABLE)) {
+            br.setFollowRedirects(false);
             return false;
         } else if (br.containsHTML(SERVER_DOWN)) {
+            br.setFollowRedirects(false);
             return false;
         } else {
 
@@ -344,7 +346,7 @@ public class FileFactory extends PluginForHost {
             downloadLink.setDownloadSize(Regex.getSize(fileSize));
 
         }
-
+        br.setFollowRedirects(false);
         return true;
     }
 
