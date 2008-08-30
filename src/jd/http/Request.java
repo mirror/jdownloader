@@ -118,7 +118,46 @@ public abstract class Request {
         initDefaultHeader();
 
     }
+    public String printHeaders() {
+        StringBuffer sb= new StringBuffer();
+        sb.append("-->"+url+"\r\n");
+        sb.append("----------------Request------------------\r\n");
+        sb.append(httpConnection.getRequestMethod()+" "+url.getPath()+(url.getQuery()!=null?"?"+url.getQuery():"")+ " HTTP/1.1\r\n");
+        for(Iterator<Entry<String, List<String>>> it = httpConnection.getRequestProperties().entrySet().iterator();it.hasNext();){
+            Entry<String, List<String>> next = it.next();
+            String value="";
+            for(String v:next.getValue()){
+                value+=";"+v;
+            }
+            if(value.length()>0)value=value.substring(1);
+            sb.append(next.getKey()+": "+value+"\r\n");
+        }
+        sb.append("\r\n");
+        
+        if(httpConnection.getPostData()!=null){
+            sb.append(httpConnection.getPostData()+"\r\n");
+        }
+        sb.append("----------------Response------------------\r\n");
+        
 
+       
+        for(Iterator<Entry<String, List<String>>> it = httpConnection.getHTTPURLConnection().getHeaderFields().entrySet().iterator();it.hasNext();){
+            Entry<String, List<String>> next = it.next();
+            String value="";
+            for(String v:next.getValue()){
+                value+=";"+v;
+            }
+            if(value.length()>0)value=value.substring(1);
+            if(next.getKey()==null){
+                sb.append(value+"\r\n"); 
+            }else{
+            sb.append(next.getKey()+": "+value+"\r\n");
+            }
+        }
+        sb.append("\r\n");
+       
+        return sb.toString();
+    }
     public Request(HTTPConnection con) {
         httpConnection = con;
         collectCookiesFromConnection();

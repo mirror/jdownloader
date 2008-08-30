@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -32,6 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
@@ -41,6 +44,8 @@ public class MegasharesCom extends PluginForHost {
 
     // http://d01.megashares.com/?d01=ec0acc7
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?megashares\\.com/\\?d.*", Pattern.CASE_INSENSITIVE);
+
+    private static String PLUGIN_PASS = null;
 
     public MegasharesCom() {
 
@@ -54,13 +59,18 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String link = downloadLink.getDownloadURL();
+        br.setDebug(true);
         br.getPage(link);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Cookies holen
         if (br.containsHTML("continue using Free service")) {
             br.getPage(link);
         }
-
+        // Password protection
+       if(! checkPassword(downloadLink)){
+           return;
+       }
+       
         // Sie laden gerade eine datei herunter
         if (br.containsHTML("You already have the maximum")) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -102,10 +112,13 @@ public class MegasharesCom extends PluginForHost {
                 linkStatus.setValue(30 * 1000l);
                 return;
             }
+            if(! checkPassword(downloadLink)){
+                return;
+            }
         }
         // Downloadlink
         String url = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
-        if(url==null){
+        if (url == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
@@ -123,9 +136,50 @@ public class MegasharesCom extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, con);
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
         dl.setFilesize(Regex.getSize(dat[1]));
-        dl.setFilesizeCheck(false);
+//        dl.setFilesizeCheck(false);
         dl.setResume(true);
         dl.startDownload();
+    }
+
+    private boolean checkPassword(DownloadLink link) throws IOException {
+
+       if (br.containsHTML("This link requires a password")) {
+            Form form = br.getForm("Validate Password");
+            String pass = link.getStringProperty("password");
+            if (pass != null) {
+                form.put("passText", pass);
+                br.submitForm(form);
+                if (!br.containsHTML("This link requires a password")) {
+                    return true;
+                }
+            }
+            pass = PLUGIN_PASS;
+            if (pass != null) {
+                form.put("passText", pass);
+                br.submitForm(form);
+                if (!br.containsHTML("This link requires a password")) {
+                    return true;
+                }
+            }
+            int i = 0;
+            while ((i++) < 5) {
+                pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.hoster.passquestion", "Link '%s' is passwordprotected. Enter password:", link.getName()));
+                if (pass != null) {
+                    form.put("passText", pass);
+                    br.submitForm(form);
+                    if (!br.containsHTML("This link requires a password")) {
+                        PLUGIN_PASS = pass;
+                        link.setProperty("password", pass);
+                        return true;
+                    }
+                }
+            }
+            
+            link.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+            link.getLinkStatus().setErrorMessage("Link password wrong");
+            return false;
+        }
+       return true;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -156,6 +210,12 @@ public class MegasharesCom extends PluginForHost {
         }
         if (br.containsHTML("continue using Free service")) {
             br.getPage(link);
+        }
+
+        if (br.containsHTML("This link requires a password")) {
+
+            downloadLink.getLinkStatus().setStatusText("Password protected");
+            return true;
         }
         String[] dat = br.getRegex("<dt>Filename:&nbsp;<strong>(.*?)</strong>&nbsp;&nbsp;&nbsp;(.*?)</dt>").getRow(0);
         if (dat == null) { return false; }

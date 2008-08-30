@@ -199,6 +199,7 @@ public class RAFDownload extends DownloadInterface {
 
         return; }
         try {
+            logger.severe("no errors : rename");
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 
                 logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());

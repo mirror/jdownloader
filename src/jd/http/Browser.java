@@ -57,7 +57,7 @@ public class Browser {
 
     public static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
     public HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
-
+private boolean debug=false;
     public void clearCookies(String string) {
         getCookies().put(string, null);
 
@@ -231,6 +231,7 @@ public class Browser {
         }
 
         request.connect();
+        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
         String ret = null;
 
         checkContentLengthLimit(request);
@@ -339,6 +340,7 @@ public class Browser {
         }
 
         request.connect();
+        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
 
         updateCookies(request);
         this.request = request;
@@ -391,7 +393,7 @@ public class Browser {
             request.getHeaders().putAll(headers);
         }
         request.connect();
-
+        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             this.openGetConnection(null);
@@ -436,6 +438,7 @@ public class Browser {
         String ret = null;
 
         request.connect();
+        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
         checkContentLengthLimit(request);
         ret = request.read();
 
@@ -939,6 +942,14 @@ public class Browser {
       
         return ret;
         
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
     }
 
 }
