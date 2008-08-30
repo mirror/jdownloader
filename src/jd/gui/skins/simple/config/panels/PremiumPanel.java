@@ -57,10 +57,12 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                     PluginForHost Plugin = (PluginForHost) configEntry.getActionListener();
                     try {
                         Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
-                        ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft));
-                        freeTrafficChart.addEntity(ent);
-                        long rest = 0;
-                        if ((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
+                        if(tleft >= 0) {
+	                        ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft));
+	                        freeTrafficChart.addEntity(ent);
+	                        long rest = 0;
+	                        if ((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
+                        }
                     } catch (Exception e) {
                         JDUtilities.logger.finest("Not able to load Traffic-Limit for ChartAPI");
                     }
@@ -87,7 +89,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
-    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE(JDLocale.L("plugins.config.premium.chartapi.caption", "Free Traffic Chart"), 450, 60, this.getBackground());
+    
+    // deactived due to coalados order - private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE(JDLocale.L("plugins.config.premium.chartapi.caption", "Free Traffic Chart"), 450, 60, this.getBackground());
+    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
     private ChartRefresh loader;
 
     public PremiumPanel(GUIConfigEntry gce) {

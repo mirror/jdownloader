@@ -93,6 +93,8 @@ import jd.event.UIEvent;
 import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.ChartAPI_Entity;
+import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -1747,16 +1749,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                 String[] data = new String[] { (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
+                ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 125, 60, panel.getBackground());
+                freeTrafficChart.addEntity(new ChartAPI_Entity("Free", String.valueOf(ai.getTrafficLeft())));
+                freeTrafficChart.addEntity(new ChartAPI_Entity("", String.valueOf(ai.getTrafficMax())));
+                freeTrafficChart.fetchImage();
 
                 for (int j = 0; j < data.length; j++) {
-
                     if (data[j] != null && !data[j].equals("-1")) {
                         panel.add(new JLabel(label[j]), "gapleft 20");
-                        panel.add(new JTextField(data[j]), "wrap");
+                        if(label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
+                            JPanel panel2 = new JPanel();
+                            panel2.add(new JTextField(data[j]));
+                            panel2.add(freeTrafficChart);
+                            panel.add(panel2, "wrap");
+                        } else {
+                            panel.add(new JTextField(data[j]), "wrap");
+                        }
                     }
 
                 }
-
                 JOptionPane.showMessageDialog(null, panel, def, JOptionPane.INFORMATION_MESSAGE);
             }
         }.start();
