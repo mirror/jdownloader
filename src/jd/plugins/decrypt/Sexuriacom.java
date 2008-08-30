@@ -61,7 +61,7 @@ public class Sexuriacom extends PluginForDecrypt {
             String page = br.getPage("http://sexuria.com/Pornos_Kostenlos_info_" + downloadId + ".html");
             password = new Regex(page, "<strong>Passwort: </strong></div></td>.*?bgcolor=\"#EFEFEF\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).getMatch(0);
             page = br.getPage(parameter);
-            String Links[] = new Regex(page, "value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE).getColumn(-1);
+            String Links[] = new Regex(page, "value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE).getColumn(0);
             for (String Link : Links) {
                 br.getPage(Link);
                 DownloadLink dl_link = createDownloadlink(br.getRedirectLocation());
