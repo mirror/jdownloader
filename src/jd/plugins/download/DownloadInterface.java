@@ -221,7 +221,15 @@ abstract public class DownloadInterface {
             }
             long start = startByte + getPreBytes(this);
             String end = (endByte > 0 ? endByte + 1 : "") + "";
-            if (start == 0) { return connection; }
+
+            if (start == 0) {
+                logger.finer("Übernehme 0 Verbindung");
+                return connection;
+            }
+            if (connection.getRange() != null && connection.getRange()[0] == (start)) {
+                logger.finer("Übernehme Verbindung bei " + connection.getRange()[0]);
+                return connection;
+            }
             try {
                 URL link = connection.getURL();
                 HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
@@ -797,7 +805,7 @@ abstract public class DownloadInterface {
                     }
                 }
                 connection = copyConnection(connection);
-              
+
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
 
@@ -808,7 +816,7 @@ abstract public class DownloadInterface {
 
             } else if (startByte > 0) {
                 connection = copyConnection(connection);
-               
+
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
 
@@ -849,7 +857,7 @@ abstract public class DownloadInterface {
                     long gotSB = JDUtilities.filterLong(range[0][0]);
                     long gotEB = JDUtilities.filterLong(range[0][1]);
                     if (gotSB != startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)) {
-                        logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wished start: " + (startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)));
+                        logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + (startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)));
                     }
 
                     if (endByte <= 0) {
@@ -1180,12 +1188,13 @@ abstract public class DownloadInterface {
      * @return
      */
     protected long getFileSize() {
+        if (fileSize > 0) {
+
+            return fileSize; }
         if (connection.getContentLength() > 0) {
 
         return connection.getContentLength(); }
-        if (fileSize > 0) {
-
-        return fileSize; }
+    
         if (downloadLink.getDownloadSize() > 0) {
 
         return downloadLink.getDownloadSize();

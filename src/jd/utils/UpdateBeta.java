@@ -27,10 +27,10 @@ public class UpdateBeta {
         boolean ret = true;
         for (File f : file.listFiles()) {
             if (secureUploadFolder(f, root, test)) {
-                System.out.println("Upload " + f + " successfull");
+//                System.out.println("Upload " + f + " successfull");
             }
             else {
-                System.out.println("Upload " + f + " failed");
+//                System.out.println("Upload " + f + " failed");
                 ret = false;
             }
         }
@@ -45,11 +45,22 @@ public class UpdateBeta {
         String def = ftp.getDir();
         ftp.mkdir(cw);
         ftp.cwdAdd(cw);
+        if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
+        File testFile =new File(file.getName());
+        Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" + file.getName());
+        
         String filename = file.getName() + ".tmp";
         String hash = JDUtilities.getLocalHash(file);
+        
+        String hash1 = JDUtilities.getLocalHash(testFile);
+        if(hash1.equalsIgnoreCase(hash)){
+            ftp.cwd(def);
+            System.out.println(file+" skipped");
+            return true;
+        }
         ftp.remove(filename);
         ftp.stor(new FileInputStream(file), filename);
-        File testFile = new File(filename);
+        testFile = new File(filename);
         if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
         Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" + filename);
         String hash2 = JDUtilities.getLocalHash(testFile);
@@ -57,10 +68,12 @@ public class UpdateBeta {
         ftp.rename(ftp.getDir() + filename, ftp.getDir() + file.getName());
         ftp.cwd(def);
         if (!hash.equals(hash2)) {
+            System.out.println(file+"  failed");
             return false;
         }
         testFile.delete();
         testFile.deleteOnExit();
+        System.out.println(file+" successfull");
         return true;
     }
     public static void main(String args[]) {
@@ -78,7 +91,7 @@ public class UpdateBeta {
     private SimpleFTP       ftp;
     private String webRoot;
     public UpdateBeta() {
-        dir = new File("D:\\Projekte - Java\\eclipseWorkspace\\jdownloader_trunk\\updatebeta");
+        dir = new File("D:\\jd_gc_update_beta\\exp");
         webRoot="http://78.143.20.67/update/beta/";
         if(!update()){
             logger.severe("UPDATE FAILED");

@@ -116,6 +116,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         tableModel = new InternalTableModel();
         table = new JTable();
+        table.setModel(tableModel); 
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setEditingRow(0);

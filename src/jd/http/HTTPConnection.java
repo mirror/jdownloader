@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import jd.config.Configuration;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class HTTPConnection {
@@ -42,6 +43,7 @@ public class HTTPConnection {
     private String postData;
 
     private HashMap<String, List<String>> requestProperties = null;
+    private int[] ranges;
 
     public HTTPConnection(URLConnection openConnection) {
         connection = (HttpURLConnection) openConnection;
@@ -55,10 +57,9 @@ public class HTTPConnection {
             connection.setRequestProperty("Proxy-Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
 
         }
-        
-        
+
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            
+
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
             String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
 
@@ -213,7 +214,7 @@ public class HTTPConnection {
     public boolean isOK() {
 
         try {
-        
+
             if (connection.getResponseCode() > -2 && connection.getResponseCode() < 400)
                 return true;
             else
@@ -223,4 +224,13 @@ public class HTTPConnection {
         }
     }
 
+    public int[] getRange() {
+        String range;
+        if (ranges != null) return ranges;
+        if ((range = this.getHeaderField("Content-Range")) == null) return null;
+        // bytes 174239-735270911/735270912
+        String[] ranges = new Regex(range, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
+        this.ranges = new int[] { Integer.parseInt(ranges[0]), Integer.parseInt(ranges[1]), Integer.parseInt(ranges[2]) };
+        return this.ranges;
+    }
 }

@@ -249,7 +249,15 @@ public class FileFactory extends PluginForHost {
         String pUsable = br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replaceAll("\\,", "");
 
         ai.setPremiumPoints(Integer.parseInt(pThisMonth) + Integer.parseInt(pUsable));
+        
+        br.getPage("http://www.filefactory.com/members/details/premium/usage/");
+        
+      String[] dat = br.getRegex("You have downloaded (.*?) in the last 24 hours.*?Your daily limit is (.*?), and your download usage will be reset ").getRow(0);
 
+      long max = Regex.getSize(dat[1].replace(",", ""));
+      long gone=Regex.getSize(dat[0].replace(",", ""));
+      ai.setTrafficMax(max);
+      ai.setTrafficLeft(max-gone);
         return ai;
     }
 

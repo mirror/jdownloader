@@ -62,7 +62,7 @@ public class PackageCreaterRS {
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
         for (String p : packages) {
             
-            if (JOptionPane.showConfirmDialog(frame, "Upload " + p) != JOptionPane.OK_OPTION)continue;
+            if (false&&JOptionPane.showConfirmDialog(frame, "Upload " + p) != JOptionPane.OK_OPTION)continue;
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
