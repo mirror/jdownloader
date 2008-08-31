@@ -36,7 +36,6 @@ import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
-import jd.plugins.host.PluginException;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

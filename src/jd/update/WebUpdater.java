@@ -119,13 +119,14 @@ public class WebUpdater implements Serializable {
             setListPath(path);
         } else {
 
-            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
-                log("BETA");
-                setListPath("http://jdbetaupdate.ath.cx");
-            } else {
-                log("STABLE");
+//            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
+//                log("BETA");
+//                setListPath("http://jdbetaupdate.ath.cx");
+//            } else {
+//                log("STABLE");
                 setListPath("http://jdupdatescript.ath.cx");
-            }
+                //setListPath("http://jdservice.ath.cx/update/jd");
+//            }
 
         }
         //        

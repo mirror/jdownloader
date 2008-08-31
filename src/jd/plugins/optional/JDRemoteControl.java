@@ -198,8 +198,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/action/save/container/%X%");
                 infovector.add("Save DLC-Container with all Links to %X%<br /> " + "Sample see /action/add/container/%X%");
 
-                commandvec.add("/action/set/beta/(true|false)");
-                infovector.add("Set use beta enabled or not (doesn't restart itself!)");
+//                commandvec.add("/action/set/beta/(true|false)");
+//                infovector.add("Set use beta enabled or not (doesn't restart itself!)");
 
                 commandvec.add("/action/set/clipboard/(true|false)");
                 infovector.add("Set ClipBoard Control enabled or not");
@@ -809,27 +809,27 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 }
             }
 
-            // Set Beta Enabled
-            else if (request.getRequestURI().matches("(?is).*/action/set/beta/.*")) {
-                boolean newbeta = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/beta/(.*)").getMatch(0));
-                logger.fine("RemoteControl - Set Beta: " + newbeta);
-                if (ClipboardHandler.getClipboard().isEnabled() ^ newbeta) /*
-                                                                            * C++
-                                                                            * User
-                                                                            * :^
-                                                                            * is
-                                                                            * equuvalent
-                                                                            * to
-                                                                            * XOR
-                                                                            */
-                {
-                    CFGConfig.getConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA", newbeta);
-                    CFGConfig.getConfig("WEBUPDATE").save();
-                    response.getWriter().println("beta=" + newbeta + " (CHANGED=true)");
-                } else {
-                    response.getWriter().println("beta=" + newbeta + " (CHANGED=false)");
-                }
-            }
+//            // Set Beta Enabled
+//            else if (request.getRequestURI().matches("(?is).*/action/set/beta/.*")) {
+//                boolean newbeta = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/beta/(.*)").getMatch(0));
+//                logger.fine("RemoteControl - Set Beta: " + newbeta);
+//                if (ClipboardHandler.getClipboard().isEnabled() ^ newbeta) /*
+//                                                                            * C++
+//                                                                            * User
+//                                                                            * :^
+//                                                                            * is
+//                                                                            * equuvalent
+//                                                                            * to
+//                                                                            * XOR
+//                                                                            */
+//                {
+//                    CFGConfig.getConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA", newbeta);
+//                    CFGConfig.getConfig("WEBUPDATE").save();
+//                    response.getWriter().println("beta=" + newbeta + " (CHANGED=true)");
+//                } else {
+//                    response.getWriter().println("beta=" + newbeta + " (CHANGED=false)");
+//                }
+//            }
 
             // Set ReconnectEnabled
             else if (request.getRequestURI().matches("(?is).*/action/set/reconnectenabled/.*")) {

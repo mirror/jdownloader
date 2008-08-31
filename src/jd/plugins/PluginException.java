@@ -1,6 +1,5 @@
-package jd.plugins.host;
+package jd.plugins;
 
-import jd.plugins.LinkStatus;
 
 public class PluginException extends Exception {
 

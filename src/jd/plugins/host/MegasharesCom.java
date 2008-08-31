@@ -59,7 +59,7 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String link = downloadLink.getDownloadURL();
-        br.setDebug(true);
+        br.setDebug(false);
         br.getPage(link);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Cookies holen
