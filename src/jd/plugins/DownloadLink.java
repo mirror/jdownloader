@@ -212,7 +212,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
 
     }
-
+    /**
+     * Übernimmt das subdirectory von einem anderen Downloadlink.
+     * Zum erstellen eines eigenen subdirectorys steht addSubdirectory(String s) zur verfügung.
+     * @param downloadLink
+     */
+    public void setSubdirectory(DownloadLink downloadLink){
+    	subdirectory = downloadLink.getSubdirectory();
+    }
     public void addSpeedValue(int speed) {
         getSpeedMeter().addSpeedValue(speed);
     }
