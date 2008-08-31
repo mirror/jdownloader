@@ -250,6 +250,12 @@ public class FastLoadNet extends PluginForHost {
                         linkStatus.setValue(20 * 60 * 1000l);
                         return;
 
+                    } else if (length == 169) {
+
+                        logger.severe("File not found: File is deleted from Server");
+                        linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        return;
+
                     } else {
 
                         logger.severe("Unknown error page - [Length: " + length + "]");
