@@ -105,7 +105,7 @@ public class UnrarPassword {
             passwords[i] = passwords[i].trim();
             if (passwords[i] != null && !passwords[i].matches("[\\s]*")) {
                 passwordlist.remove(passwords[i]);
-                passwordlist.push(passwords[i]);
+                passwordlist.addFirst(passwords[i]);
             }
         }
         UnrarPassword.savePasswordList();
