@@ -82,13 +82,11 @@ public class Netloadin extends PluginForHost {
             return;
         }
         br.setDebug(true);
-        
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
-
         br.setCookiesExclusive(true);
         br.clearCookies(HOST);
-
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink, linkStatus);
         if (linkStatus.isFailed()) return;
@@ -189,7 +187,7 @@ public class Netloadin extends PluginForHost {
 
     }
 
-    private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) throws IOException {
+    private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) throws IOException, PluginException {
         if (!br.containsHTML("download_password")) return;
         String pass = downloadLink.getStringProperty("LINK_PASSWORD", LINK_PASS);
 
@@ -210,11 +208,8 @@ public class Netloadin extends PluginForHost {
             br.submitForm(pw);
         }
         // falls falsch abbruch
-        if (br.containsHTML("download_password")) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.netload.downloadPassword_wrong", "Linkpassword is wrong"));
-            return;
+        if (br.containsHTML("download_password")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.netload.downloadPassword_wrong", "Linkpassword is wrong"), 20 * 60 * 1000l);
+
         }
         // richtiges pw... wird gesoeichert
         if (pass != null) {
@@ -259,48 +254,21 @@ public class Netloadin extends PluginForHost {
             new Serienjunkies().handleFree(downloadLink);
             return;
         }
-        String user = account.getUser();
-        String pass = account.getPass();
+       
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
-br.setDebug(true);
+//        br.setDebug(true);
         br.setFollowRedirects(false);
-//        br.getPage("http://" + HOST);
-        br.postPage("http://" + HOST + "/index.php", "txtuser=" + user + "&txtpass=" + pass + "&txtcheck=login&txtlogin=");
-        if (br.getRedirectLocation() == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-
-            return;
-        }
-
-        br.getPage(downloadLink.getDownloadURL());
+        br.setAuth("netload.in", account.getUser(), account.getPass()); 
+        br.openGetConnection(downloadLink.getDownloadURL());
         HTTPConnection con;
         if (br.getRedirectLocation() == null) {
-
+            br.followConnection();
             checkPassword(downloadLink, linkStatus);
-            if (linkStatus.isFailed()) return;
-            if (br.containsHTML(FILE_NOT_FOUND)) {
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-                return;
-            }
-
-            if (br.containsHTML(FILE_DAMAGED)) {
-                linkStatus.setErrorMessage("File is on a damaged server");
-
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setValue(20 * 60 * 1000l);
-                return;
-            }
-
+            checkErrors(linkStatus);
             String url = br.getRedirectLocation();
             if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
-            if (url == null) {
-                logger.severe("Download link not found");
-
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                return;
-            }
+            if (url == null)throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Download link not found");        
 
             con = br.openGetConnection(url);
             for (int i = 0; i < 10 && (!con.isOK()); i++) {
@@ -319,15 +287,34 @@ br.setDebug(true);
         } else {
             con = br.openGetConnection(null);
         }
-
-        sleep(100, downloadLink);
-
+        
+        
+        if(!con.isContentDisposition()){
+            
+            //Serverfehler
+            if(br.followConnection()==null)throw new PluginException(LinkStatus.ERROR_RETRY, "Server:Could not follow Link");
+            checkPassword(downloadLink, linkStatus);
+            checkErrors(linkStatus);
+            
+            
+        }
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(true);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
-        dl.setLoadPreBytes(1);
         dl.startDownload();
+
+    }
+
+    private void checkErrors(LinkStatus linkStatus) throws PluginException {
+        if (br.containsHTML(FILE_NOT_FOUND)) {
+
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
+        if (br.containsHTML(FILE_DAMAGED)) {
+
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is on a damaged server", 20 * 60 * 1000l);
+
+        }
 
     }
 
@@ -371,15 +358,16 @@ br.setDebug(true);
                 return false;
             }
 
-            String[] entries = Regex.getLines(page);
+            String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);
 
-            if (entries.length < 3) { return false; }
+            if (entries == null || entries.length < 3) { return false; }
 
-            downloadLink.setName(entries[0]);
+            downloadLink.setName(entries[1]);
             fileStatusText = entries[2];
-            downloadLink.setDownloadSize((int) Regex.getSize(entries[1]));
+            downloadLink.setDownloadSize((int) Regex.getSize(entries[2]));
 
-            if (entries[2].equalsIgnoreCase("online")) { return true; }
+            if (entries[3].equalsIgnoreCase("online")) { return true; }
+            downloadLink.setMD5Hash(entries[5].trim());
             return false;
         } catch (Exception e) {
             e.printStackTrace();
@@ -430,7 +418,7 @@ br.setDebug(true);
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

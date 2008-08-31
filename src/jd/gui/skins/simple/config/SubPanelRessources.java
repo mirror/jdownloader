@@ -185,6 +185,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
         for (PackageData pkg : packageData) {
             pkg.setInstalledVersion(0);
             pkg.setUpdating(false);
+            pkg.setDownloaded(false);
         }
         tableModel.fireTableDataChanged();
     }

@@ -36,6 +36,7 @@ import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
+import jd.plugins.host.PluginException;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -339,7 +340,11 @@ public abstract class PluginForHost extends Plugin {
 
                 this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, JDUtilities.getController().getDownloadLinks(this));
             }
-            handleFree(downloadLink);
+            try {
+                handleFree(downloadLink);
+            } catch (PluginException e) {
+                e.fillLinkStatus(downloadLink.getLinkStatus());
+            }
             return;
         }
         Account account = null;
@@ -363,7 +368,11 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         if (account != null) {
-            handlePremium(downloadLink, account);
+            try {
+                handlePremium(downloadLink, account);
+            } catch (PluginException e) {
+                e.fillLinkStatus(downloadLink.getLinkStatus());
+            }
             synchronized (accounts) {
                 if (downloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_PREMIUM)) {
                     if (downloadLink.getLinkStatus().getValue() == LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE) {
@@ -397,7 +406,11 @@ public abstract class PluginForHost extends Plugin {
                 this.resetHosterWaitTime();
                 this.fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, JDUtilities.getController().getDownloadLinks(this));
             }
-            handleFree(downloadLink);
+            try {
+                handleFree(downloadLink);
+            } catch (PluginException e) {
+                e.fillLinkStatus(downloadLink.getLinkStatus());
+            }
             synchronized (accounts) {
                 if (disabled.size() > 0) {
                     int randId = (int) (Math.random() * disabled.size());
@@ -502,6 +515,10 @@ public abstract class PluginForHost extends Plugin {
         HOSTER_WAIT_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
         HOSTER_WAIT_UNTIL_TIMES = new HashMap<Class<? extends PluginForHost>, Long>();
 
+    }
+
+    public Browser getBrowser() {
+       return br;
     }
 
 }

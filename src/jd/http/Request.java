@@ -123,6 +123,7 @@ public abstract class Request {
         sb.append("-->"+url+"\r\n");
         sb.append("----------------Request------------------\r\n");
         sb.append(httpConnection.getRequestMethod()+" "+url.getPath()+(url.getQuery()!=null?"?"+url.getQuery():"")+ " HTTP/1.1\r\n");
+        sb.append("Host: "+url.getHost()+(":"+url.getPort())+"\r\n");
         for(Iterator<Entry<String, List<String>>> it = httpConnection.getRequestProperties().entrySet().iterator();it.hasNext();){
             Entry<String, List<String>> next = it.next();
             String value="";

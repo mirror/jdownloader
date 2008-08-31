@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
+import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -231,11 +232,13 @@ abstract public class DownloadInterface {
                 return connection;
             }
             try {
+                Browser br = plugin.getBrowser().cloneBrowser();
                 URL link = connection.getURL();
-                HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
-                httpConnection.setReadTimeout(getReadTimeout());
-                httpConnection.setConnectTimeout(getRequestTimeout());
-                httpConnection.setInstanceFollowRedirects(false);
+                // HTTPConnection httpConnection = new
+                // HTTPConnection(link.openConnection());
+                br.setReadTimeout(getReadTimeout());
+                br.setConnectTimeout(getRequestTimeout());
+
                 Map<String, List<String>> request = connection.getRequestProperties();
 
                 if (request != null) {
@@ -246,27 +249,28 @@ abstract public class DownloadInterface {
                         Entry<String, List<String>> next = it.next();
 
                         value = next.getValue().toString();
-                        httpConnection.setRequestProperty(next.getKey(), value.substring(1, value.length() - 1));
+                        br.getHeaders().put(next.getKey(), value.substring(1, value.length() - 1));
                     }
                 }
 
-                httpConnection.setRequestProperty("Range", "bytes=" + start + "-" + end);
-
+                br.getHeaders().put("Range", "bytes=" + start + "-" + end);
+                HTTPConnection con;
                 if (connection.getHTTPURLConnection().getDoOutput()) {
-                    httpConnection.setDoOutput(true);
-                    httpConnection.connect();
-                    httpConnection.post(connection.getPostData());
-                    httpConnection.getHTTPURLConnection();
+                    // httpConnection.setDoOutput(true);
+                    // httpConnection.connect();
+                    // httpConnection.post(connection.getPostData());
+                    // httpConnection.getHTTPURLConnection();
+                    con = br.openPostConnection(connection.getURL() + "", connection.getPostData());
 
                 } else {
-                    httpConnection.connect();
+                    con = br.openGetConnection(connection.getURL() + "");
                 }
 
-                if (!httpConnection.isOK()) {
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + httpConnection.getHTTPURLConnection().getResponseMessage());
+                if (!con.isOK()) {
+                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getHTTPURLConnection().getResponseMessage());
                     return null;
                 }
-                if (httpConnection.getHeaderField("Location") != null) {
+                if (con.getHeaderField("Location") != null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
                     return null;
 
@@ -280,7 +284,7 @@ abstract public class DownloadInterface {
                     // ":" + httpConnection.getHeaderFields());
                 }
                 // connection.getHTTPURLConnection().disconnect();
-                return httpConnection;
+                return con;
 
             } catch (Exception e) {
                 addException(e);
@@ -1190,11 +1194,11 @@ abstract public class DownloadInterface {
     protected long getFileSize() {
         if (fileSize > 0) {
 
-            return fileSize; }
+        return fileSize; }
         if (connection.getContentLength() > 0) {
 
         return connection.getContentLength(); }
-    
+
         if (downloadLink.getDownloadSize() > 0) {
 
         return downloadLink.getDownloadSize();

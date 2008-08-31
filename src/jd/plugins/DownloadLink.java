@@ -164,6 +164,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String decrypterPassword;
 
+    
+
+    private String MD5Hash;
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -952,6 +956,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setDecrypterPassword(String pw) {
         this.decrypterPassword = pw;
+    }
+
+    public void setMD5Hash(String string) {
+        this.MD5Hash=string;
+        
+    }
+
+    public String getMD5Hash() {
+        return MD5Hash;
     }
 
 }

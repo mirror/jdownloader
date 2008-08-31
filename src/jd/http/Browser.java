@@ -55,8 +55,9 @@ public class Browser {
 
     }
 
-    public static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
-    public HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
+    private static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
+    private HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
+    private static HashMap<String, Auth> AUTHS = new HashMap<String,Auth>();
 private boolean debug=false;
     public void clearCookies(String string) {
         getCookies().put(string, null);
@@ -223,6 +224,7 @@ private boolean debug=false;
         }
         GetRequest request = new GetRequest(string);
         request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        doAuth(request);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
         request.getHeaders().put("Referer", currentURL.toString());
@@ -247,6 +249,13 @@ private boolean debug=false;
         }
         return ret;
 
+    }
+
+    private void doAuth(Request request) {
+       String host = request.getUrl().getHost();
+       if(!AUTHS.containsKey(host))return;
+       request.getHeaders().put("Authorization", AUTHS.get(host).getAuthHeader());
+        
     }
 
     private void checkContentLengthLimit(Request request) throws BrowserException {
@@ -325,6 +334,7 @@ private boolean debug=false;
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest(string);
+        doAuth(request);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
         }
@@ -376,6 +386,7 @@ private boolean debug=false;
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
+        doAuth(request);
         request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
@@ -420,6 +431,7 @@ private boolean debug=false;
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
+        doAuth(request);
         request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
@@ -866,6 +878,7 @@ private boolean debug=false;
         br.request = request;
         br.cookies=cookies;
         br.cookiesExclusive=cookiesExclusive;
+        br.debug=debug;
         return br;
     }
 
@@ -950,6 +963,14 @@ private boolean debug=false;
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    public void setAuth(String domain, String user, String pass) {
+        if(user==null&&pass==null){
+            AUTHS.remove(domain);
+        }
+        Auth auth=new Auth(domain,user,pass);
+        AUTHS.put(domain, auth);
     }
 
 }

@@ -233,4 +233,9 @@ public class HTTPConnection {
         this.ranges = new int[] { Integer.parseInt(ranges[0]), Integer.parseInt(ranges[1]), Integer.parseInt(ranges[2]) };
         return this.ranges;
     }
+
+    public boolean isContentDisposition() {
+ 
+        return this.getHeaderField("Content-Disposition")!=null;
+    }
 }

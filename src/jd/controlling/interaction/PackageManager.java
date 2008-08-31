@@ -152,6 +152,7 @@ public class PackageManager extends Interaction implements Serializable {
         PackageData dat;
 
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        logger.finer("got packages: "+data.size());
         for (int i = 0; i < data.size(); i++) {
             dat = data.get(i);
             validate(dat);
@@ -166,6 +167,7 @@ public class PackageManager extends Interaction implements Serializable {
                 // getResourceFile("packages").getAbsolutePath());
                 while (it.hasNext()) {
                     DownloadLink next = it.next();
+                    logger.info("Add link "+next+" : "+dat);
                     next.setFilePackage(fp);
                     next.setLinkType(DownloadLink.LINKTYPE_JDU);
                     next.setProperty("JDU", dat);
@@ -189,11 +191,13 @@ public class PackageManager extends Interaction implements Serializable {
     private void validate(PackageData dat) {
         //installation fehgeschlagen, oder lokale jdu file von User entfernt
         if(dat.isDownloaded()&&!new File(dat.getStringProperty("LOCALPATH","")).exists()){
+            logger.info("pm: validate restet1");
             dat.setDownloaded(false);
             dat.setUpdating(false);
         }
         //Updatelink wurde vermutlich aus der liste entfernt
             if(!dat.isDownloaded()&&dat.isUpdating()&&!JDUtilities.getController().hasDownloadLinkURL(dat.getStringProperty("url"))){
+                logger.info("pm: validate restet2");
                 dat.setUpdating(false);
             }
         
@@ -305,6 +309,7 @@ public class PackageManager extends Interaction implements Serializable {
         // File[] list = dir.listFiles(new JDFileFilter(null, ".jdu", false));
         // for( int i=0;i<list.length;i++){
         final PackageData dat = (PackageData) downloadLink.getProperty("JDU");
+        logger.finer("downloaded addon");
         if (dat == null) {
             logger.severe("Dat==null");
             return;
