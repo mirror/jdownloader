@@ -65,7 +65,7 @@ public class LinkProtectIn extends PluginForDecrypt {
 
                     String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
                     File captchaFile = this.getLocalCaptchaFile(this);
-                    if (!br.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
+                    if (!Browser.download(captchaFile, br.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
                         /* Fehler beim Captcha */
                         logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                         return null;

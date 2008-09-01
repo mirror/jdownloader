@@ -46,7 +46,7 @@ public class MeinUpload extends PluginForHost {
     private static final String CODER = "jD-Team";
     private static final String HOST = "meinupload.com";
 
-    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?meinupload.com/{1,}dl/.+/.+", Pattern.CASE_INSENSITIVE);
+    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?meinupload.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)", Pattern.CASE_INSENSITIVE);
 
     // private static final int MAX_SIMULTAN_DOWNLOADS = 1;
 
@@ -211,34 +211,49 @@ public class MeinUpload extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (id == null) { return false;
-            // http://meinupload.com/infos.api?get_id=3794082988
-            }
-
-            String page = new GetRequest("http://meinupload.com/infos.api?get_id=" + id).load();
-
-            String status = new Regex(page, "<status>([\\d]*?)</status>").getMatch(0);
-            String filesize = new Regex(page, "<filesize>([\\d]*?)</filesize>").getMatch(0);
-            String name = new Regex(page, "<name>(.*?)</name>").getMatch(0);
-            if (status == null || !status.equals("1")) { return false; }
-
-            if (filesize == null || name == null) { return false; }
-
-            downloadLink.setDownloadSize(Integer.parseInt(filesize));
-            downloadLink.setName(name);
-            return true;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+   
+        
+        br.getPage(downloadLink.getDownloadURL());
+        
+        if(br.getRedirectLocation()!=null){
+            String error=br.getRegex("code=(.*)").getMatch(0);
+           downloadLink.getLinkStatus().setStatusText(error);
+           return false;
         }
+        String filename=br.getRegex("<title>(.*?)</title>").getMatch(0);
+        downloadLink.setName(filename);
+       Form form = br.getForm("Free");
+      br.submitForm(form);
+      try{
+          String s=br.getRegex("Dateigr.*e:</b></td>.*<td align=left>(.*?[MB|KB|B])</td>").getMatch(0);
+      long size = Regex.getSize(s);
+      if(size>0)downloadLink.setDownloadSize(size);
+      }catch(Exception e ){}
+       return true;
+//            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getMatch(0);
+//            if(id==null){
+//               id= new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/\\?d=(.*)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+//                
+//            }
+//            if (id == null) { return false;
+//            // http://meinupload.com/infos.api?get_id=3794082988
+//            }
+//
+//            String page = new GetRequest("http://meinupload.com/infos.api?get_id=" + id).load();
+//
+//            String status = new Regex(page, "<status>([\\d]*?)</status>").getMatch(0);
+//            String filesize = new Regex(page, "<filesize>([\\d]*?)</filesize>").getMatch(0);
+//            String name = new Regex(page, "<name>(.*?)</name>").getMatch(0);
+//            if (status == null || !status.equals("1")) { return false; }
+//
+//            if (filesize == null || name == null) { return false; }
+//
+//            downloadLink.setDownloadSize(Integer.parseInt(filesize));
+//            downloadLink.setName(name);
+//            return true;
 
-        // unbekannter fehler
-        return false;
+    
     }
 
     @Override
