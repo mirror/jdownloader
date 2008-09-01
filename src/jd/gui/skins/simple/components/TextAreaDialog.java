@@ -110,7 +110,7 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         this.add(p, BorderLayout.SOUTH);
         addWindowListener(new LocationListener());
 
-        SimpleGUI.restoreWindow(null, null, this);
+        SimpleGUI.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
 
@@ -203,7 +203,7 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         addWindowListener(new LocationListener());
 
-        SimpleGUI.restoreWindow(null, null, this);
+        SimpleGUI.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
     }

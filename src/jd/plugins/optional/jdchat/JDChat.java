@@ -1071,7 +1071,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         textField.addMouseMotionListener(ml);
         right.addMouseMotionListener(ml);
         frame.pack();
-        SimpleGUI.restoreWindow(new JFrame(), null, frame);
+        SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
         startAwayObserver();
     }

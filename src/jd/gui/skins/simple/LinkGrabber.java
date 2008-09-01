@@ -799,7 +799,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         addLinks(linkList);
         addWindowListener(new LocationListener());
         pack();
-        SimpleGUI.restoreWindow(null, null, this);
+        SimpleGUI.restoreWindow(null, this);
         setVisible(true);
     }
 

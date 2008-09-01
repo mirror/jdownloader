@@ -67,6 +67,8 @@ import javax.swing.table.DefaultTableCellRenderer;
 
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.gui.skins.simple.LocationListener;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.http.Encoding;
@@ -124,6 +126,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         frame.setMinimumSize(new Dimension(800, 500));
         frame.setPreferredSize(new Dimension(1200, 700));
         frame.setName("LANGFILEEDIT");
+        frame.addWindowListener(new LocationListener());
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
@@ -169,6 +172,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         frame.setResizable(true);
         frame.pack();
+        SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
 
         if (sourceFolder != null || languageFile != null) initList();
@@ -191,7 +195,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         for (String[] entry : data) {
 
-            if (entry[1] != "" && entry[2] != "") {
+            if (!entry[1].equals("") && !entry[2].equals("")) {
                 numSource++;
                 numFile++;
             } else if (entry[1].equals("")) {
@@ -584,7 +588,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         StringBuilder sb = new StringBuilder();
 
         for (String[] entry : data) {
-            if (entry[2] != "") sb.append(entry[0] + " = " + entry[2] + "\n");
+            if (!entry[2].equals("")) sb.append(entry[0] + " = " + entry[2] + "\n");
         }
 
         try {
@@ -617,7 +621,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             if (temp[2] == null) temp[2] = "";
 
             data.add(temp);
-            if (temp[2] != "") {
+            if (!temp[2].equals("")) {
                 value = getValue(dupeHelp, temp[2]);
                 if (value != null) dupes.add(new String[] { temp[2], temp[0], value });
                 dupeHelp.add(new String[] { temp[2], temp[0] });

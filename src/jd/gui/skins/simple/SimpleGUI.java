@@ -448,7 +448,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return JDUtilities.getCenterOfComponent(parent, child);
     }
 
-    public static void restoreWindow(JFrame parent, Object object, Component component) {
+    public static void restoreWindow(JFrame parent, Component component) {
         if (parent == null) {
             parent = CURRENTGUI.getFrame();
         }

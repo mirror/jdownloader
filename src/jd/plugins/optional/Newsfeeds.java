@@ -736,7 +736,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.add(main);
         frame.setResizable(true);
         frame.pack();
-        SimpleGUI.restoreWindow(null, null, frame);
+        SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
 
     }
@@ -783,7 +783,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.add(main);
         frame.setResizable(true);
         frame.pack();
-        SimpleGUI.restoreWindow(null, null, frame);
+        SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
 
     }
@@ -866,7 +866,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         frame.setResizable(true);
         frame.pack();
-        SimpleGUI.restoreWindow(null, null, frame);
+        SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
 
     }

@@ -109,7 +109,7 @@ public class MiniLogDialog extends JFrame implements ActionListener {
         // if (cancel) JDUtilities.addToGridBag(this, btnNOTOK, 3, 3, 1, 1, ok ?
         // 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         try {
-            SimpleGUI.restoreWindow(null, null, this);
+            SimpleGUI.restoreWindow(null, this);
         } catch (Exception e) {
             e.printStackTrace();
         }

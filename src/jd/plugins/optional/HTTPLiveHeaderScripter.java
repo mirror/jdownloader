@@ -543,7 +543,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         frame.add(scrollPane, BorderLayout.CENTER);
 
         frame.pack();
-        SimpleGUI.restoreWindow(null, null, frame);
+        SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
     }
 

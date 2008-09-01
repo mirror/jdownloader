@@ -208,7 +208,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         setLocationRelativeTo(null);
         // pack already calls validate implicitely.
         // this.validate();
-        SimpleGUI.restoreWindow(parent, null, this);
+        SimpleGUI.restoreWindow(parent, this);
 
         setPreferredSize(new Dimension(Math.max(getWidth(), 800), Math.max(getHeight(), 640)));
         pack();
