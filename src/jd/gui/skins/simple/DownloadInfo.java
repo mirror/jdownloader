@@ -65,9 +65,10 @@ public class DownloadInfo extends JFrame {
      * @param dlink
      */
     public DownloadInfo(JFrame frame, DownloadLink dlink) {
-        super(JDLocale.L("gui.linkinformation.title", "Link Information: ") + dlink.getName());
+        super();
         downloadLink = dlink;
         setLayout(new BorderLayout(2, 2));
+        setTitle(JDLocale.L("gui.linkinfo.title", "Link Information: ") + dlink.getName());
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
         setResizable(false);
         setAlwaysOnTop(true);
@@ -115,9 +116,10 @@ public class DownloadInfo extends JFrame {
         }
         JLabel key;
         JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+
         JLabel value;
         JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
         value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
         value.setHorizontalAlignment(SwingConstants.RIGHT);
         value.setForeground(Color.DARK_GRAY);
@@ -136,45 +138,45 @@ public class DownloadInfo extends JFrame {
         }
         this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
         addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
-        //addEntry(null, (String) null);
+        // addEntry(null, (String) null);
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasPassword()) {
-            addEntry(JDLocale.L("linkinformation.password.name", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
+            addEntry(JDLocale.L("gui.linkinfo.password", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
         }
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasComment()) {
-            addEntry(JDLocale.L("linkinformation.comment.name", "Kommentar"), downloadLink.getFilePackage().getComment());
+            addEntry(JDLocale.L("gui.linkinfo.comment", "Kommentar"), downloadLink.getFilePackage().getComment());
         }
         if (downloadLink.getFilePackage() != null) {
-            addEntry(JDLocale.L("linkinformation.package.name", "Packet"), downloadLink.getFilePackage().toString());
+            addEntry(JDLocale.L("gui.linkinfo.package", "Packet"), downloadLink.getFilePackage().toString());
         }
         if (downloadLink.getDownloadSize() > 0) {
-            addEntry(JDLocale.L("linkinformation.filesize.name", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
+            addEntry(JDLocale.L("gui.linkinfo.filesize", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
         }
         if (downloadLink.isAborted()) {
-            addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
         }
         if (downloadLink.isAvailabilityChecked()) {
-            addEntry(JDLocale.L("linkinformation.available.name", "Verfügbar"), downloadLink.isAvailable() ? JDLocale.L("linkinformation.available.ok", "Datei OK") : JDLocale.L("linkinformation.available.error", "Fehler!"));
+            addEntry(JDLocale.L("gui.linkinfo.available", "Verfügbar"), downloadLink.isAvailable() ? JDLocale.L("gui.linkinfo.available.ok", "Datei OK") : JDLocale.L("linkinformation.available.error", "Fehler!"));
         } else {
-            addEntry(JDLocale.L("linkinformation.available.name", "Verfügbar"), JDLocale.L("linkinformation.available.notchecked", "noch nicht überprüft"));
+            addEntry(JDLocale.L("gui.linkinfo.available", "Verfügbar"), JDLocale.L("gui.linkinfo.available.notchecked", "noch nicht überprüft"));
         }
         if (downloadLink.getDownloadSpeed() > 0) {
-            addEntry(JDLocale.L("linkinformation.speed.name", "Geschwindigkeit"), downloadLink.getDownloadSpeed() / 1024 + " kb/s");
+            addEntry(JDLocale.L("gui.linkinfo.speed", "Geschwindigkeit"), downloadLink.getDownloadSpeed() / 1024 + " kb/s");
         }
         if (downloadLink.getFileOutput() != null) {
-            addEntry(JDLocale.L("linkinformation.saveto.name", "Speichern in"), downloadLink.getFileOutput());
+            addEntry(JDLocale.L("gui.linkinfo.saveto", "Speichern in"), downloadLink.getFileOutput());
         }
         if (downloadLink.getLinkStatus().getRemainingWaittime() > 0) {
-            addEntry(JDLocale.L("linkinformation.waittime.name", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
+            addEntry(JDLocale.L("gui.linkinfo.waittime", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
         }
         if (downloadLink.getLinkStatus().isPluginActive()) {
-            addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.underway", " ist in Bearbeitung"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.underway", " ist in Bearbeitung"));
         } else {
-            addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.notunderway", " ist nicht in Bearbeitung"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.notunderway", " ist nicht in Bearbeitung"));
         }
         if (!downloadLink.isEnabled()) {
-            addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.deactivated", " ist deaktiviert"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.deactivated", " ist deaktiviert"));
         } else {
-            addEntry(JDLocale.L("linkinformation.download.name", "Download"), JDLocale.L("linkinformation.download.activated", " ist aktiviert"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.activated", " ist aktiviert"));
         }
 
         addEntry("download.status", downloadLink.getLinkStatus().getStatusString());

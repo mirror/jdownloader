@@ -21,7 +21,6 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.text.DecimalFormat;
-import java.util.Iterator;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
@@ -40,6 +39,7 @@ import javax.swing.border.EmptyBorder;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
@@ -66,8 +66,9 @@ public class PackageInfo extends JDialog {
         super();
         this.fp = fp;
         setLayout(new BorderLayout(2, 2));
-        setResizable(false);        
-        setTitle(JDLocale.L("gui.frame.packageinfo.title", "Package Information: " + fp.getName()));
+        setTitle(JDLocale.L("gui.packageinfo.title", "Package Information: ") + fp.getName());
+        setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
+        setResizable(false);
         setAlwaysOnTop(true);
         new Thread() {
             @Override
@@ -109,14 +110,15 @@ public class PackageInfo extends JDialog {
             return;
         }
         JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(JDLocale.L("gui.frame.packageinfo.entry" + label, label)), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+
         JLabel value;
         JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
         value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
         value.setHorizontalAlignment(SwingConstants.RIGHT);
         value.setForeground(Color.DARK_GRAY);
+
         i++;
     }
 
@@ -130,25 +132,22 @@ public class PackageInfo extends JDialog {
             this.remove(sp);
         }
         this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
-        addEntry("name", fp.getName());        
-        if (fp.hasPassword()) addEntry("password", new JTextField(fp.getPassword()));        
-        if (fp.hasComment()) addEntry("comment", fp.getComment());
-        addEntry("dldirectory", fp.getDownloadDirectory());
-        addEntry("packagesize", JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " " + fp.getTotalEstimatedPackageSize() + " KB");
-        addEntry("loaded", JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " " + fp.getTotalKBLoaded() + " KB");
-        addEntry("links", "");
-        DownloadLink next = null;
+        addEntry(JDLocale.L("gui.packageinfo.name", "Name"), fp.getName());
+        if (fp.hasPassword()) addEntry(JDLocale.L("gui.packageinfo.password", "Password"), new JTextField(fp.getPassword()));
+        if (fp.hasComment()) addEntry(JDLocale.L("gui.packageinfo.comment", "Comment"), fp.getComment());
+        addEntry(JDLocale.L("gui.packageinfo.dldirectory", "Downloaddirectory"), fp.getDownloadDirectory());
+        addEntry(JDLocale.L("gui.packageinfo.packagesize", "Packagesize"), JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " [" + fp.getTotalEstimatedPackageSize() + " KB]");
+        addEntry(JDLocale.L("gui.packageinfo.loaded", "Loaded"), JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " [" + fp.getTotalKBLoaded() + " KB]");
+        addEntry(JDLocale.L("gui.packageinfo.links", "Links"), "");
+
         int i = 1;
-        for (Iterator<DownloadLink> it = fp.getDownloadLinks().iterator(); it.hasNext(); i++) {
-            next = it.next();
+        for (DownloadLink link : fp.getDownloadLinks()) {
             JProgressBar p;
-
-            addEntry(i + ". " + next.getName(), p = new JProgressBar(0, 100));
+            addEntry(i + ". " + link.getName(), p = new JProgressBar(0, 100));
             p.setMaximum(10000);
-            p.setValue(next.getPercent());
+            p.setValue(link.getPercent());
             p.setStringPainted(true);
-            p.setString(JDUtilities.formatKbReadable(next.getDownloadSpeed() / 1024) + "/s " + c.format(next.getPercent() / 100.0) + " %| " + next.getDownloadCurrent() + "/" + next.getDownloadSize() + " bytes");
-
+            p.setString(JDUtilities.formatKbReadable(link.getDownloadSpeed() / 1024) + "/s " + c.format(link.getPercent() / 100.0) + " %| " + link.getDownloadCurrent() + "/" + link.getDownloadSize() + " bytes");
         }
     }
 }
