@@ -43,6 +43,7 @@ import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -294,11 +295,16 @@ public class JDInit {
                     createQueueBackup();
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
+                      CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog","Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL );
+                        if(ccd.result){                         
+                      
+                        
                         Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-
+                       createDLCBackup();
                         JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                         System.exit(0);
+                        }
                     } else {
 
                         try {
@@ -322,7 +328,7 @@ public class JDInit {
 
                             if (d.getStatus() == JHelpDialog.STATUS_ANSWER_2) {
                                 Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-
+                                createDLCBackup();
                                 JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                                 logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                                 System.exit(0);
@@ -341,6 +347,19 @@ public class JDInit {
                     JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
                     JDUtilities.saveConfig();
                 }
+            }
+
+            private void createDLCBackup() {
+                ProgressController p = new ProgressController(JDLocale.L("init.backup.progress", "Queue backup"), 3);
+                
+                File file = JDUtilities.getResourceFile("container/backup_"+System.currentTimeMillis()+".dlc");
+                p.increase(1);
+                JDUtilities.getController().saveDLC(file);
+                p.increase(2);
+                CFGConfig.getConfig("WEBUPDATE").setProperty("LAST_BACKUP", file);
+                CFGConfig.getConfig("WEBUPDATE").save();
+                p.finalize(2000);
+                
             }
 
         }.start();

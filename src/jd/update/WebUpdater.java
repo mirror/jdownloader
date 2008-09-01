@@ -149,7 +149,7 @@ public class WebUpdater implements Serializable {
      * @param fileurl
      * @return true/False
      */
-    private boolean downloadBinary(String filepath, String fileurl) {
+    public boolean downloadBinary(String filepath, String fileurl) {
 
         try {
             
@@ -411,7 +411,7 @@ public class WebUpdater implements Serializable {
         return listPath;
     }
 
-    private String getLocalHash(File f) {
+    public String getLocalHash(File f) {
         try {
             if (!f.exists()) { return null; }
             MessageDigest md;

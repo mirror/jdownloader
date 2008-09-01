@@ -16,9 +16,11 @@
 
 package jd.update;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -43,7 +45,26 @@ public class utils {
         return null;
 
     }
+    public static String getLocalFile(File file) {
+        if (!file.exists()) { return ""; }
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new FileReader(file));
 
+            String line;
+            StringBuffer ret = new StringBuffer();
+            String sep = System.getProperty("line.separator");
+            while ((line = f.readLine()) != null) {
+                ret.append(line + sep);
+            }
+            f.close();
+            return ret.toString();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+        return "";
+    }
     public static void saveObject(Object objectToSave, File fileOutput) {
 
         if (fileOutput != null) {

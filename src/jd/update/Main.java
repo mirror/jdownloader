@@ -31,6 +31,7 @@ import java.util.Vector;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -285,6 +286,8 @@ public class Main {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
+        
+        
         boolean restart = false;
         int runtype = 1;
         for (int i = 0; i < args.length; i++) {
@@ -316,6 +319,46 @@ public class Main {
             }
         }.start();
         WebUpdater updater = new WebUpdater(null);
+        String warnHash=updater.getLocalHash(new File("updatewarnings.html"));
+        
+        updater.downloadBinary("updatewarnings.html", "http://jdservice.ath.cx/update/jd/warning.html");
+        String hash2=updater.getLocalHash(new File("updatewarnings.html"));
+        if(hash2!=null&&!hash2.equals(warnHash)){
+           String str;
+        if( JOptionPane.showConfirmDialog(frame, str=utils.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE)==JOptionPane.NO_OPTION){
+               Main.log(log, "Abort due to warnings "+str);
+               if (restart) {
+                   new File("updatewarnings.html").delete();
+                   new File("updatewarnings.html").deleteOnExit();
+                   if (new File("webcheck.tmp").exists()) {
+                       new File("webcheck.tmp").delete();
+                   }
+                   Main.log(log, "Local: " + new File("").getAbsolutePath());
+                   if (runtype == 2) {
+                       Main.log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
+                       
+                       Main.runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+                       // }
+                   } else if (runtype == 1 && new File("jd/Main.class").exists()) {
+                       Main.log(log, "java Main.class in " + new File("jd/").getAbsolutePath());
+                       Main.runCommand("java", new String[] { "Main.class" }, new File("jd/").getAbsolutePath(), 0);
+                   } else {
+                       Main.log(log, "Start jDownloader.jnlp in " + new File("").getAbsolutePath());
+                       Main.runCommand("javaws", new String[] { "jDownloader.jnlp" }, new File("").getAbsolutePath(), 0);
+
+                   }
+
+               }
+               logWindow.setText(log.toString());
+               Main.writeLocalFile(new File("updateLog.txt"), log.toString());
+               try {
+                   Thread.sleep(2000);
+               } catch (InterruptedException e) {
+               }
+               System.exit(0);
+               return;
+           }
+        }
         updater.setLogger(log);
         updater.setListProgress(progresslist);
         updater.setDownloadProgress(progressload);
@@ -407,22 +450,7 @@ public class Main {
             Main.log(log, "Local: " + new File("").getAbsolutePath());
             if (runtype == 2) {
                 Main.log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
-                // if(SubConfiguration.getSubConfig("OS").getStringProperty(
-                // "RESTART_COMMAND", null)!=null
-                // &&SubConfiguration.getSubConfig
-                // ("OS").getProperty("RESTART_PARAMETER",
-                // null)!=null&&SubConfiguration
-                // .getSubConfig("OS").getStringProperty("RESTART_DIRECTORY",
-                // null)!=null){
-                // runCommand(SubConfiguration.getSubConfig("OS").
-                // getStringProperty("RESTART_COMMAND", null),
-                // (String[])SubConfiguration
-                // .getSubConfig("OS").getProperty("RESTART_PARAMETER", null),
-                // SubConfiguration
-                // .getSubConfig("OS").getStringProperty("RESTART_DIRECTORY",
-                // null), 0);
-                //                      
-                // }else{
+                
                 Main.runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
                 // }
             } else if (runtype == 1 && new File("jd/Main.class").exists()) {
