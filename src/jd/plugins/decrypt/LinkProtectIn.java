@@ -80,14 +80,14 @@ public class LinkProtectIn extends PluginForDecrypt {
                         if (!Browser.download(captchaFile, br2.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            return null;
+                            return decryptedLinks;
                         }
                         
                         br.setCookie(br.getURL(), "PHPSESSID", br2.getCookie(br2.getURL(), "PHPSESSID"));
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                         if (captchaCode == null) {
                             /* abbruch geklickt */
-                            return null;
+                            return decryptedLinks;
                         }
                         captchaCode = captchaCode.toUpperCase();
                         form.put("code", captchaCode);
@@ -107,14 +107,14 @@ public class LinkProtectIn extends PluginForDecrypt {
                     String source = br.toString();
                     form = br.getForm(0);
                     password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein!");
-                    if(password == null) return null;
+                    if(password == null) return decryptedLinks;
                     
                     form.put("pw", password);
                     br.setFollowRedirects(true);
                     br.submitForm(form);
                 } else if(matcherpwwrong.find()) {
                     password = JDUtilities.getController().getUiInterface().showUserInputDialog("Das eingegebene Passwort [" + password + "] ist falsch. Bitte versuche es erneut!");
-                    if(password == null) return null;
+                    if(password == null) return decryptedLinks;
                     
                     form.put("pw", password);
                     br.setFollowRedirects(true);
@@ -148,7 +148,7 @@ public class LinkProtectIn extends PluginForDecrypt {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return decryptedLinks;
         }
         return decryptedLinks;
     }
