@@ -18,6 +18,7 @@ package jd.http;
 
 public class Auth {
 
+    @SuppressWarnings("unused")
     private String domain;
     private String pass;
     private String user;

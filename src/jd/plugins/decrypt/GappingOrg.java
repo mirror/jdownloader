@@ -48,7 +48,7 @@ public class GappingOrg extends PluginForDecrypt {
             parameter = parameter.replace("file.php?id=", "decry.php?fileid=");
             decryptedLinks.add(createDownloadlink(new Regex(br.getPage(parameter), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0).trim()));
         } else {
-            String[] links = new Regex(br.getPage(parameter), Pattern.compile("http://gapping\\.org/d/(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            String[] links = new Regex(br.getPage(parameter), Pattern.compile("http://gapping\\.org/d/(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getColumn(-1);
             progress.setRange(links.length);
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink(new Regex(br.getPage(element), Pattern.compile("src=\"(.*?)\"", Pattern.DOTALL)).getMatch(0).trim()));

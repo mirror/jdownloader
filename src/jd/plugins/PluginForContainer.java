@@ -48,6 +48,7 @@ public abstract class PluginForContainer extends Plugin {
 
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
+    @SuppressWarnings("unused")
     private ContainerStatus containerStatus;
 
     protected Vector<String> downloadLinksURL;
