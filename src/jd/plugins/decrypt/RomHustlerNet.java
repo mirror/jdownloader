@@ -28,7 +28,7 @@ public class RomHustlerNet extends PluginForDecrypt {
 
     static private final String host = "romhustler.net";
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?romhustler\\.net/rom/.*?/\\d+/.+", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("(http://[\\w.]*?romhustler\\.net/rom/.*?/\\d+/.+)|(/rom/.*?/\\d+/.+)", Pattern.CASE_INSENSITIVE);
 
     public RomHustlerNet() {
         super();
@@ -39,7 +39,7 @@ public class RomHustlerNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String file[] = new Regex(parameter, "romhustler\\.net/rom/(.*?)/(\\d+)/.+").getRow(0);
+        String file[] = new Regex(parameter, "/rom/(.*?)/(\\d+)/.+").getRow(0);
         if (file.length != 2) return null;
         decryptedLinks.add(createDownloadlink("http://romhustler.net/download/" + file[0] + "/" + file[1]));
 
