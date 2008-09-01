@@ -20,8 +20,6 @@ import java.awt.Component;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
-import jd.utils.JDUtilities;
-
 public class LocationListener implements WindowListener {
 
     public LocationListener() {
@@ -31,7 +29,8 @@ public class LocationListener implements WindowListener {
         if (src != null) {
             SimpleGUI.saveLastLocation(src, null);
             SimpleGUI.saveLastDimension(src, null);
-            JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+            // Nicht nötig, wird bereits bei saveLastXXX aufgerufen
+            // JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
         }
     }
 

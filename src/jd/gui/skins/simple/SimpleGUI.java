@@ -1758,7 +1758,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     if (data[j] != null && !data[j].equals("-1")) {
                         panel.add(new JLabel(label[j]), "gapleft 20");
                         if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
-                            JPanel panel2 = new JPanel();
+                            JPanel panel2 = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
                             panel2.add(new JTextField(data[j]));
                             panel2.add(freeTrafficChart);
                             panel.add(panel2, "wrap");
