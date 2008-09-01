@@ -1,9 +1,6 @@
 package jd.utils;
 
-// Decompiled by Jad v1.5.8g. Copyright 2001 Pavel Kouznetsov.
-// Jad home page: http://www.kpdus.com/jad.html
-// Decompiler options: packimports(3) 
-// Source File Name:   Runner3.java
+
 import java.awt.HeadlessException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -19,7 +16,23 @@ import javax.swing.JOptionPane;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.http.Browser;
 import jd.update.WebUpdater;
-
+/**
+ * Wie benutze ich diese Klasse.
+ * 
+ * Diese klasse sollte in einem woring directory ausgeführt werden das leer ist. z.B. d:/jd_update
+ * Nach dem Start wird die aktuelle JD version vom bluehost server geladen. anschließend fragt der Updater nach einem ordner in dem sich die neuen files befinden.
+ * Die neuen files werden hochgeladen und auf crc Fehler beim Upload geprüft. Anschließend wird eine neue hashliste erstellt und auf unseren server geladen. 
+ * Die DLC hashes werden ebenfalls aktualisiert.
+ * 
+ * Svn Ordner und files werden ignoriert und übersprungen.
+ * 
+ * Benötigte zugangsdaten:
+ * Bluehost update ftp password:
+ * jdservice.ath.cx ftp logins.
+ * 
+ * @author coalado
+ *
+ */
 public class Update {
     private static Logger logger = JDUtilities.getLogger();
     public boolean secureUploadFolder(File file, File root, String test) throws FileNotFoundException, IOException, InterruptedException {
