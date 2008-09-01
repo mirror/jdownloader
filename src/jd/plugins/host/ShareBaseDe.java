@@ -35,15 +35,9 @@ public class ShareBaseDe extends PluginForHost {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
 
-    private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
-
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
     private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
-
-    // private static final String SIM_DL = "Das gleichzeitige Downloaden";
-
-    private static final Pattern WAIT = Pattern.compile("Du musst noch (.*?):(.*?):(.*?) warten!", Pattern.CASE_INSENSITIVE);
 
     public ShareBaseDe() {
         super();
@@ -104,55 +98,31 @@ public class ShareBaseDe extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-br.setDebug(true);
+        br.setDebug(true);
         br.setFollowRedirects(true);
         String page = br.getPage(downloadLink.getDownloadURL());
         String fileName = Encoding.htmlDecode(new Regex(page, FILEINFO).getMatch(0));
 
-        if (br.containsHTML(DOWLOAD_RUNNING)) {      
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,60 * 1000l);         
-        }
-//
-//        // Download-Limit erreicht
-//        if (br.containsHTML(DL_LIMIT)) {
-//            String[] temp = new Regex(page, WAIT).getRow(0);
-//            int waittime = 0;
-//
-//            if (temp[0] != null && temp[1] != null && temp[2] != null) {
-//                try {
-//                    waittime += Integer.parseInt(temp[2]);
-//                    waittime += Integer.parseInt(temp[1]) * 60;
-//                    waittime += Integer.parseInt(temp[0]) * 60 * 60;
-//                } catch (Exception Exc) {
-//                    waittime = 600;
-//                }
-//            }
-//
-//         
-//            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,waittime * 1000l);
-//         
-//        }
+        if (br.containsHTML(DOWLOAD_RUNNING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l); }
 
         // DownloadInfos nicht gefunden? --> Datei nicht vorhanden
         if (fileName == null) {
-            logger.severe("download not found");         
+            logger.severe("download not found");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-         
+
         }
 
-        Form form = br.getForm("Please Activate Javascript");     
+        Form form = br.getForm("Please Activate Javascript");
         form.setVariable(0, "Download+Now+%21");
         HTTPConnection urlConnection = br.openFormConnection(form);
 
-   if(!urlConnection.isContentDisposition()){
-       br.followConnection();
-       String wait=br.getRegex("Du musst noch <strong>(.*?)</strong> warten!").getMatch(0);
-       if(wait!=null){
-           throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,Regex.getMilliSeconds2(wait));
-       }
-       throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-   }
+        if (!urlConnection.isContentDisposition()) {
+            br.followConnection();
+            String wait = br.getRegex("Du musst noch <strong>(.*?)</strong> warten!").getMatch(0);
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds2(wait)); }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();

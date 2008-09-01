@@ -17,7 +17,6 @@
 package jd.http;
 
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,8 +35,6 @@ public class PostRequest extends Request {
         super(url);
 
     }
-
-  
 
     public HashMap<String, String> getPostData() {
         return postData;
@@ -66,9 +63,9 @@ public class PostRequest extends Request {
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.connect();
             httpConnection.post(parameter);
-           
-        }else{
-            httpConnection.setRequestProperty("Content-Length", "0"); 
+
+        } else {
+            httpConnection.setRequestProperty("Content-Length", "0");
         }
     }
 

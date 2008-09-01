@@ -17,14 +17,11 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -33,7 +30,6 @@ public class RomsZopharNet extends PluginForHost {
 
     private static final String HOST = "roms.zophar.net";//http://roms.zophar.net/download-file/131583
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}", Pattern.CASE_INSENSITIVE);
-    private String downloadUrl;
 
     public RomsZopharNet() {
         super();

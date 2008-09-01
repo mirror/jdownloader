@@ -31,7 +31,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -57,8 +56,7 @@ public class MeinUpload extends PluginForHost {
     }
 
     @Override
-
-    public void handleFree(DownloadLink downloadLink) throws Exception {  
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
@@ -67,8 +65,8 @@ public class MeinUpload extends PluginForHost {
         }
 
         br.submitForm("Free");
-        Form captcha = br.getForms()[1];         
-        String captchaCode = getCaptchaCode("http://meinupload.com/captcha.php", downloadLink);   
+        Form captcha = br.getForms()[1];
+        String captchaCode = getCaptchaCode("http://meinupload.com/captcha.php", downloadLink);
         captcha.put("captchacode", captchaCode);
         br.submitForm(captcha);
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
@@ -79,7 +77,6 @@ public class MeinUpload extends PluginForHost {
 
         dl.startDownload();
     }
-
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
@@ -160,7 +157,7 @@ public class MeinUpload extends PluginForHost {
             // http://dl2.MeinUpload.com/download.api?user=23729405&pass=0865
             // a2801d938ce3e59024b4ef1d6d30&id=3407292519
             // GET
-            // /download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
+            ///download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
             // id=9923945611
             // HTTP/1.1
             // v
@@ -210,7 +207,6 @@ public class MeinUpload extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL());
 
-
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             downloadLink.getLinkStatus().setErrorMessage(error);
@@ -229,37 +225,6 @@ public class MeinUpload extends PluginForHost {
         } catch (Exception e) {
         }
         return true;
-        // String id = new Regex(downloadLink.getDownloadURL(),
-        // Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/",
-        // Pattern.CASE_INSENSITIVE)).getMatch(0);
-        // if(id==null){
-        // id= new Regex(downloadLink.getDownloadURL(),
-        // Pattern.compile("meinupload.com/\\?d=(.*)",
-        // Pattern.CASE_INSENSITIVE)).getMatch(0);
-        //                
-        // }
-        // if (id == null) { return false;
-        // // http://meinupload.com/infos.api?get_id=3794082988
-        // }
-        //
-        // String page = new
-        // GetRequest("http://meinupload.com/infos.api?get_id=" + id).load();
-        //
-        // String status = new Regex(page,
-        // "<status>([\\d]*?)</status>").getMatch(0);
-        // String filesize = new Regex(page,
-        // "<filesize>([\\d]*?)</filesize>").getMatch(0);
-        // String name = new Regex(page, "<name>(.*?)</name>").getMatch(0);
-        // if (status == null || !status.equals("1")) { return false; }
-        //
-        // if (filesize == null || name == null) { return false; }
-        //
-        // downloadLink.setDownloadSize(Integer.parseInt(filesize));
-        // downloadLink.setName(name);
-        // return true;
-
-
- 
     }
 
     @Override
