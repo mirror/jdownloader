@@ -346,4 +346,19 @@ public class Regex {
         }
         return null;
     }
+/**
+ * Formatiert zeitangaben 2h 40 min 2 sek
+ * @param wait
+ */
+    public static int getMilliSeconds2(String wait) {
+       String minutes= new Regex(wait,"(\\d*?)[ ]*m").getMatch(0);
+       String hours= new Regex(wait,"(\\d*?)[ ]*(h|st)").getMatch(0);
+       String seconds= new Regex(wait,"(\\d*?)[ ]*se").getMatch(0);
+       if(minutes==null)minutes="0";
+       if(hours==null)hours="0";
+       if(seconds==null)seconds="0";
+       return Integer.parseInt(hours)*60*60*1000+Integer.parseInt(minutes)*60*1000+Integer.parseInt(seconds)*1000;
+        
+        
+    }
 }

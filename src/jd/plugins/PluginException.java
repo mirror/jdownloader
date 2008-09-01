@@ -39,6 +39,11 @@ public class PluginException extends Exception {
 
     }
 
+    public PluginException(int linkStatus, long value) {
+        this(linkStatus);
+        this.value = value;
+    }
+
     public int getLinkStatus() {
         return linkStatus;
     }
