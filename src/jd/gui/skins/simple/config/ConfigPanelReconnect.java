@@ -26,7 +26,6 @@ import java.util.logging.LogRecord;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.ScrollPaneConstants;
 
@@ -66,14 +65,10 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == box) {
-
             configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, box.getSelectedItem());
             setReconnectType();
-
-        }
-        if (e.getSource() == btn) {
+        } else if (e.getSource() == btn) {
             save();
 
             mld = new MiniLogDialog("Reconnect");
@@ -132,25 +127,18 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     @Override
     public void initPanel() {
-        String reconnectType = configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
-        JPanel p = new JPanel();
-
         box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch") });
+        box.setSelectedItem(configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl")));
         box.addActionListener(this);
-        p.add(new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")));
-        p.add(box);
 
-        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), 0, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, box, 0, 1, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-
-        JDUtilities.addToGridBag(panel, btn = new JButton("Test Reconnect"), 1, 1, 1, 1, 0, 0, new Insets(0, 5, 5, 0), GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 3, 5, 1, 1, 1, new Insets(0, 7, 3, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
+        btn = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test Reconnect"));
         btn.addActionListener(this);
 
-        if (reconnectType != null) {
-            box.setSelectedItem(reconnectType);
-        }
+        JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), 0, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, box, 1, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, btn, 2, 0, 1, 1, 0, 0, new Insets(0, 10, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 3, 5, 1, 1, 1, new Insets(0, 7, 3, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+
         add(panel, BorderLayout.NORTH);
 
         setReconnectType();
