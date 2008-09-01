@@ -34,7 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import jd.JDInit;
-import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -153,6 +152,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
                 commandvec.add("/get/downloads/finishedcount");
                 infovector.add("Get amount of finished Downloads");
+
                 commandvec.add("/get/downloads/finishedlist");
                 infovector.add("Get finished Downloads List");
 
@@ -198,8 +198,9 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/action/save/container/%X%");
                 infovector.add("Save DLC-Container with all Links to %X%<br /> " + "Sample see /action/add/container/%X%");
 
-//                commandvec.add("/action/set/beta/(true|false)");
-//                infovector.add("Set use beta enabled or not (doesn't restart itself!)");
+                // commandvec.add("/action/set/beta/(true|false)");
+                // infovector.add(
+                // "Set use beta enabled or not (doesn't restart itself!)");
 
                 commandvec.add("/action/set/clipboard/(true|false)");
                 infovector.add("Set ClipBoard Control enabled or not");
@@ -792,16 +793,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             else if (request.getRequestURI().matches("(?is).*/action/set/clipboard/.*")) {
                 boolean newclip = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/clipboard/(.*)").getMatch(0));
                 logger.fine("RemoteControl - Set ClipBoard: " + newclip);
-                if (ClipboardHandler.getClipboard().isEnabled() ^ newclip) /*
-                                                                            * C++
-                                                                            * User
-                                                                            * :^
-                                                                            * is
-                                                                            * equuvalent
-                                                                            * to
-                                                                            * XOR
-                                                                            */
-                {
+                if (ClipboardHandler.getClipboard().isEnabled() ^ newclip) {
                     simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
                     response.getWriter().println("clip=" + newclip + " (CHANGED=true)");
                 } else {
@@ -809,27 +801,25 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 }
             }
 
-//            // Set Beta Enabled
-//            else if (request.getRequestURI().matches("(?is).*/action/set/beta/.*")) {
-//                boolean newbeta = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/beta/(.*)").getMatch(0));
-//                logger.fine("RemoteControl - Set Beta: " + newbeta);
-//                if (ClipboardHandler.getClipboard().isEnabled() ^ newbeta) /*
-//                                                                            * C++
-//                                                                            * User
-//                                                                            * :^
-//                                                                            * is
-//                                                                            * equuvalent
-//                                                                            * to
-//                                                                            * XOR
-//                                                                            */
-//                {
-//                    CFGConfig.getConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA", newbeta);
-//                    CFGConfig.getConfig("WEBUPDATE").save();
-//                    response.getWriter().println("beta=" + newbeta + " (CHANGED=true)");
-//                } else {
-//                    response.getWriter().println("beta=" + newbeta + " (CHANGED=false)");
-//                }
-//            }
+            // // Set Beta Enabled
+            // else if
+            // (request.getRequestURI().matches("(?is).*/action/set/beta/.*")) {
+            // boolean newbeta = Boolean.parseBoolean(new
+            // Regex(request.getRequestURI(),
+            // "[\\s\\S]*/action/set/beta/(.*)").getMatch(0));
+            // logger.fine("RemoteControl - Set Beta: " + newbeta);
+            // if (ClipboardHandler.getClipboard().isEnabled() ^ newbeta)
+            // {
+            // CFGConfig.getConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA",
+            // newbeta);
+            // CFGConfig.getConfig("WEBUPDATE").save();
+            // response.getWriter().println("beta=" + newbeta +
+            // " (CHANGED=true)");
+            // } else {
+            // response.getWriter().println("beta=" + newbeta +
+            // " (CHANGED=false)");
+            // }
+            // }
 
             // Set ReconnectEnabled
             else if (request.getRequestURI().matches("(?is).*/action/set/reconnectenabled/.*")) {
@@ -842,17 +832,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 }
                 ;
                 logger.fine("RemoteControl - Set ReConnect: " + disprc);
-                if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false) == newrc) /*
-                                                                                                                                * C++
-                                                                                                                                * User
-                                                                                                                                * :
-                                                                                                                                * ^
-                                                                                                                                * is
-                                                                                                                                * equivalent
-                                                                                                                                * to
-                                                                                                                                * XOR
-                                                                                                                                */
-                {
+                if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false) == newrc) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, newrc);
 
                     JDUtilities.saveConfig();
@@ -867,17 +847,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             else if (request.getRequestURI().matches("(?is).*/action/set/premiumenabled/.*")) {
                 boolean newuseprem = Boolean.parseBoolean(new Regex(request.getRequestURI(), "[\\s\\S]*/action/set/premiumenabled/(.*)").getMatch(0));
                 logger.fine("RemoteControl - Set Premium: " + newuseprem);
-                if (newuseprem ^ JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem)) /*
-                                                                                                                                         * C++
-                                                                                                                                         * User
-                                                                                                                                         * :
-                                                                                                                                         * ^
-                                                                                                                                         * is
-                                                                                                                                         * equivalent
-                                                                                                                                         * to
-                                                                                                                                         * XOR
-                                                                                                                                         */
-                {
+                if (newuseprem ^ JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem)) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
                     JDUtilities.saveConfig();
                     response.getWriter().println("newprem=" + newuseprem + " (CHANGED=true)");

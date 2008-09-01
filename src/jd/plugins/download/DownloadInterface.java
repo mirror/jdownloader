@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -233,7 +232,7 @@ abstract public class DownloadInterface {
             }
             try {
                 Browser br = plugin.getBrowser().cloneBrowser();
-                URL link = connection.getURL();
+                // URL link = connection.getURL();
                 // HTTPConnection httpConnection = new
                 // HTTPConnection(link.openConnection());
                 br.setReadTimeout(getReadTimeout());
@@ -583,7 +582,7 @@ abstract public class DownloadInterface {
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
+            //logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
             // max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {

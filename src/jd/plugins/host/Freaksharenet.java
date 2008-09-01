@@ -30,7 +30,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class Freaksharenet extends PluginForHost {
@@ -38,9 +37,6 @@ public class Freaksharenet extends PluginForHost {
     private static final String HOST = "freakshare.net";
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
-    private String postdata;
-    private RequestInfo requestInfo;
-    private String url;
 
     public Freaksharenet() {
         super();
@@ -193,7 +189,8 @@ public class Freaksharenet extends PluginForHost {
             return;
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
-        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
+        //dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty
+        // (Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
         // 2));
         // dl.setResume(true);
         dl.setChunkNum(1);
@@ -204,7 +201,7 @@ public class Freaksharenet extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

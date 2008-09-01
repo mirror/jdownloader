@@ -18,7 +18,6 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 
-import jd.JDInit;
 import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -26,7 +25,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.UIInterface;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team
@@ -40,7 +38,7 @@ public class ConfigPanelUpdater extends ConfigPanel {
 
     private Configuration configuration;
 
-//    private Boolean beta;
+    // private Boolean beta;
 
     public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -57,12 +55,18 @@ public class ConfigPanelUpdater extends ConfigPanel {
     @Override
     public void initPanel() {
         config = CFGConfig.getConfig("WEBUPDATE");
-//        this.beta = CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false);
+        // this.beta =
+        // CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",
+        // false);
 
         ConfigEntry conditionEntry;
         addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_DISABLE, JDLocale.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false)));
-//        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "WEBUPDATE_BETA", JDLocale.L("gui.config.general.webupdate.beta", "Auf Betaversion aktualisieren(Neustart nötig)")).setDefaultValue(false)));
+        // addGUIConfigEntry(new GUIConfigEntry(new
+        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "WEBUPDATE_BETA",
+        // JDLocale.L("gui.config.general.webupdate.beta",
+        // "Auf Betaversion aktualisieren(Neustart nötig)"
+        // )).setDefaultValue(false)));
         add(panel, BorderLayout.NORTH);
     }
 
@@ -76,9 +80,13 @@ public class ConfigPanelUpdater extends ConfigPanel {
         logger.info("save");
         saveConfigEntries();
         config.save();
-//        if (beta != CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
-//            new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
-//        }
+        // if (beta !=
+        // CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",
+        // false)) {
+        // new
+        //JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty
+        // (Configuration.CID, -1), true);
+        // }
     }
 
 }
