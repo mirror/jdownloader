@@ -51,12 +51,14 @@ public class DatabaseConnector implements Serializable {
     /**
      * Constructor
      */
+    @SuppressWarnings("unused")
     public DatabaseConnector() {
         try {
             logger.info("Loading database");
             
             con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
             con.setAutoCommit(true);
+            con.createStatement().executeUpdate("SET LOGSIZE 1");
             boolean checktables=true;
             try{
             ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = 'dummy'");
@@ -73,7 +75,8 @@ public class DatabaseConnector implements Serializable {
                 
                 PreparedStatement pst = con.prepareStatement("INSERT INTO config VALUES (?,?)");
                 logger.info("Starting database wrapper");
-                File f = null;
+                
+				File f = null;
                 for(String tmppath : new File(configpath).list()) {
                     try {
                         if(tmppath.endsWith(".cfg")) {
@@ -86,8 +89,6 @@ public class DatabaseConnector implements Serializable {
                                 pst.setObject(2, props);
                                 pst.execute();
                             }
-                            
-                            //f.delete();
                         }
                     }
                     catch(Exception e) {
