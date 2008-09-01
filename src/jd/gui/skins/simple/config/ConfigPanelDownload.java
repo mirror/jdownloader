@@ -58,7 +58,6 @@ public class ConfigPanelDownload extends ConfigPanel {
     }
 
     public void save() {
-        logger.info("save");
         cep.save();
         config.save();
     }

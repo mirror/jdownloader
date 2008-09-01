@@ -44,16 +44,11 @@ import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 public class Main {
 
     public static int BOTHRESIZE = GridBagConstraints.BOTH;
-    public static int HORRESIZE = GridBagConstraints.HORIZONTAL;
     public static Insets INSETS = new Insets(5, 5, 5, 5);
     public static int NORESIZE = GridBagConstraints.NONE;
     public static int NORTHWEST = GridBagConstraints.NORTHWEST;
-    /**
-     * @param args
-     */
     public static int REL = GridBagConstraints.RELATIVE;
     public static int REM = GridBagConstraints.REMAINDER;
-    public static int VERRESIZE = GridBagConstraints.VERTICAL;
 
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
@@ -294,8 +289,6 @@ public class Main {
         int runtype = 1;
         for (int i = 0; i < args.length; i++) {
 
-            if (args[i].trim().equalsIgnoreCase("/all")) {
-            }
             if (args[i].trim().equalsIgnoreCase("/restart")) {
                 restart = true;
             }

@@ -29,6 +29,139 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public class Configuration extends Property implements Serializable {
+    public static final String AUTOTRAIN_ERROR_LEVEL = "AUTOTRAIN_ERROR_LEVEL";
+
+    public static final String CID = "CID";
+
+    public static final String CONFIG_INTERACTIONS = "EVENTS";
+
+    public static final String JAC_SHOW_TIMEOUT = "JAC_SHOW_TIMEOUT";
+
+    public static final String LOGGER_FILELOG = "LOGGER_FILELOG";
+
+    public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
+
+    public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE";
+
+    public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
+
+    // public static final String PARAM_HOME_DIRECTORY = "HOME_DIRECTORY";
+
+    public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT";
+
+    public static final String PARAM_DO_CRC = "DO_CRC";
+
+    public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT_V2";
+
+    public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
+
+    public static final String PARAM_DOWNLOAD_MAX_CHUNKS = "DOWNLOAD_MAX_CHUNKS";
+
+    public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
+
+    public static final String PARAM_DOWNLOAD_MAX_SPEED = "DOWNLOAD_MAX_SPEED";
+
+    public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V2";
+
+    public static final String PARAM_FILE_BROWSER = "PARAM_FILE_BROWSER";
+
+    public static final String PARAM_FILE_EXISTS = "FILE_EXISTS";
+
+    // public static final String PARAM_NO_TRAY = "NO_TRAY";
+
+    // public static final String PARAM_MIN_FREE_SPACE = "MIN_FREE_SPACE";
+
+    public static final String PARAM_FILEWRITER_INSTANCE = "FILEWRITER_INSTANCE";
+
+    public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
+
+    public static final String PARAM_GLOBAL_IP_CHECK_SITE = "GLOBAL_IP_CHECK_SITE";
+
+    public static final String PARAM_GLOBAL_IP_DISABLE = "GLOBAL_IP_DISABLE";
+
+    public static final String PARAM_GLOBAL_IP_MASK = "PARAM_GLOBAL_IP_MASK";
+
+    // public static final String PARAM_WEBUPDATE_LOAD_ALL_TOOLS =
+    // "WEBUPDATE_LOAD_ALL_TOOLS";
+
+    public static final String PARAM_GLOBAL_IP_PATTERN = "GLOBAL_IP_PATTERN";
+
+    public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
+
+    // public static final String PARAM_WRITE_LOG = "WRITE_LOG";
+
+    // public static final String PARAM_WRITE_LOG_PATH = "WRITE_LOG_PATH";
+
+    public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
+
+    public static final String PARAM_HTTPSEND_IPCHECKWAITTIME = "HTTPSEND_IPCHECKWAITTIME";
+
+    public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
+
+    public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
+
+    public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
+
+    public static final String PARAM_HTTPSEND_USER = "HTTPSEND_USER";
+
+    public static final String PARAM_HTTPSEND_WAITFORIPCHANGE = "HTTPSEND_WAITFORIPCHANGE";
+
+    public static final String PARAM_INTERACTIONS = "INTERACTIONS";
+
+    public static final String PARAM_JAC_METHODS = "JAC_METHODS";
+
+    // public static final String PARAM_TWEAK_DOWNLOAD_CPU =
+    // "TWEAK_DOWNLOAD_CPU";
+
+    // public static final String PARAM_TWEAK_GUI_INTERVAL =
+    // "TWEAK_GUI_INTERVAL";
+
+    // public static final String PARAM_TWEAK_LOG = "TWEAK_LOG";
+
+    public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL";
+
+    public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
+
+    public static final String PARAM_RELOADCONTAINER = "RELOADCONTAINER";
+
+    public static final String PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW = "SHOW_CONTAINER_ONLOAD_OVERVIEW";
+
+    public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
+
+    // public static final String JAC_USE_CES = "JAC_USE_CES";
+    //
+    // public static final String JAC_CES_LOGIN = "JAC_CES_LOGIN";
+
+    public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
+
+    public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM";
+
+    public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
+
+    public static final String PARAM_WEBUPDATE_AUTO_RESTART = "WEBUPDATE_AUTO_RESTART";
+
+    public static final String PARAM_WEBUPDATE_DISABLE = "WEBUPDATE_DISABLE";
+
+    public static final String PROXY_HOST = "PROXY_HOST";
+
+    public static final String PROXY_PASS = "PROXY_PASS";
+
+    public static final String PROXY_PASS_SOCKS = "PROXY_PASS_SOCKS";
+
+    public static final String PROXY_PORT = "PROXY_PORT";
+
+    public static final String PROXY_USER = "PROXY_USER";
+
+    public static final String PROXY_USER_SOCKS = "PROXY_USER_SOCKS";
+
+    public static final String SOCKS_HOST = "SOCKS_HOST";
+
+    public static final String SOCKS_PORT = "SOCKS_PORT";
+
+    public static final String USE_PROXY = "USE_PROXY";
+
+    public static final String USE_SOCKS = "USE_SOCKS";
+
     /**
      * Gibt an ob die SerializeFunktionen im XMl MOdus Arbeiten oder nocht
      */
@@ -39,148 +172,10 @@ public class Configuration extends Property implements Serializable {
      */
     private static final long serialVersionUID = -2709887320616014389L;
 
-    public static final String CID = "CID";
-
-    public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V2";
-
-    public static final String PARAM_DOWNLOAD_CONNECT_TIMEOUT = "DOWNLOAD_CONNECT_TIMEOUT_V2";
-
-    public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
-
-    public static final String PARAM_DOWNLOAD_MAX_SPEED = "DOWNLOAD_MAX_SPEED";
-
-    public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL";
-
-    public static final String PARAM_HOME_DIRECTORY = "HOME_DIRECTORY";
-
-    public static final String PARAM_DOWNLOAD_DIRECTORY = "DOWNLOAD_DIRECTORY";
-
-    public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
-
-    public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT";
-
-    public static final String PARAM_HTTPSEND_USER = "HTTPSEND_USER";
-
-    public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
-
-    public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
-
-    public static final String PARAM_HTTPSEND_IPCHECKWAITTIME = "HTTPSEND_IPCHECKWAITTIME";
-
-    public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
-
-    public static final String PARAM_HTTPSEND_WAITFORIPCHANGE = "HTTPSEND_WAITFORIPCHANGE";
-
-    public static final String PARAM_NO_TRAY = "NO_TRAY";
-
-    public static final String PARAM_MIN_FREE_SPACE = "MIN_FREE_SPACE";
-
-    public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
-
-    public static final String PARAM_GLOBAL_IP_CHECK_SITE = "GLOBAL_IP_CHECK_SITE";
-
-    public static final String PARAM_GLOBAL_IP_PATTERN = "GLOBAL_IP_PATTERN";
-
-    public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
-
-    public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
-
-    public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE";
-
-    public static final String PARAM_WEBUPDATE_LOAD_ALL_TOOLS = "WEBUPDATE_LOAD_ALL_TOOLS";
-
-    public static final String PARAM_WEBUPDATE_AUTO_RESTART = "WEBUPDATE_AUTO_RESTART";
-
-    public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
-
-    public static final String PARAM_WRITE_LOG = "WRITE_LOG";
-
-    public static final String PARAM_WRITE_LOG_PATH = "WRITE_LOG_PATH";
-
-    public static final String PARAM_FILE_BROWSER = "PARAM_FILE_BROWSER";
-
-    public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
-
-    public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
-
-    public static final String PARAM_JAC_METHODS = "JAC_METHODS";
-
-    public static final String PARAM_FILEWRITER_INSTANCE = "FILEWRITER_INSTANCE";
-
-    public static final String PARAM_GLOBAL_IP_DISABLE = "GLOBAL_IP_DISABLE";
-
-    public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
-
-    public static final String PARAM_CAPTCHA_JAC_DISABLE = "CAPTCHA_JAC_DISBALE";
-
-    public static final String PARAM_WEBUPDATE_DISABLE = "WEBUPDATE_DISABLE";
-
-    public static final String PARAM_TWEAK_DOWNLOAD_CPU = "TWEAK_DOWNLOAD_CPU";
-
-    public static final String PARAM_TWEAK_GUI_INTERVAL = "TWEAK_GUI_INTERVAL";
-
-    public static final String PARAM_TWEAK_LOG = "TWEAK_LOG";
-
-    public static final String CONFIG_INTERACTIONS = "EVENTS";
-
-    public static final String PARAM_INTERACTIONS = "INTERACTIONS";
-
-    public static final String PARAM_RELOADCONTAINER = "RELOADCONTAINER";
-
-    public static final String PARAM_FILE_EXISTS = "FILE_EXISTS";
-
-    public static final String AUTOTRAIN_ERROR_LEVEL = "AUTOTRAIN_ERROR_LEVEL";
-
-//    public static final String JAC_USE_CES = "JAC_USE_CES";
-//
-//    public static final String JAC_CES_LOGIN = "JAC_CES_LOGIN";
-
-    public static final String JAC_SHOW_TIMEOUT = "JAC_SHOW_TIMEOUT";
-
-    public static final String PARAM_DOWNLOAD_MAX_CHUNKS = "DOWNLOAD_MAX_CHUNKS";
-
-    public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM";
-
-    public static final String PARAM_DO_CRC = "DO_CRC";
-
-    public static final String PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW = "SHOW_CONTAINER_ONLOAD_OVERVIEW";
-
-    public static final String USE_PROXY = "USE_PROXY";
-
-    public static final String PROXY_HOST = "PROXY_HOST";
-
-    public static final String PROXY_PORT = "PROXY_PORT";
-
-    public static final String USE_SOCKS = "USE_SOCKS";
-
-    public static final String SOCKS_HOST = "SOCKS_HOST";
-
-    public static final String SOCKS_PORT = "SOCKS_PORT";
-
-    public static final String LOGGER_FILELOG = "LOGGER_FILELOG";
-
-    public static final String PARAM_GLOBAL_IP_MASK = "PARAM_GLOBAL_IP_MASK";
-
-    public static final String PROXY_USER = "PROXY_USER";
-
-    public static final String PROXY_PASS = "PROXY_PASS";
-
-    public static final String PROXY_USER_SOCKS = "PROXY_USER_SOCKS";
-    public static final String PROXY_PASS_SOCKS = "PROXY_PASS_SOCKS";
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */
     private Vector<Interaction> interactions = new Vector<Interaction>();
-
-    /**
-     * Hier sind die Angaben für den Router gespeichert
-     */
-    private RouterData routerData = new RouterData();
-
-    /**
-     * Benutzername für den Router
-     */
-    private String routerUsername = null;
 
     /**
      * Gibt an wie oft Versucht werden soll eine neue IP zu bekommen. (1&1 lässt
@@ -189,16 +184,24 @@ public class Configuration extends Property implements Serializable {
     private int reconnectRetries = 0;
 
     /**
+     * Hier sind die Angaben für den Router gespeichert
+     */
+    private RouterData routerData = new RouterData();
+
+    /**
      * Password für den Router
      */
     private String routerPassword = null;
 
     /**
+     * Benutzername für den Router
+     */
+    private String routerUsername = null;
+
+    /**
      * Wartezeit zwischen reconnect und erstem IP Check
      */
     private int waitForIPCheck = 0;
-
-  
 
     /**
      * Konstruktor für ein Configuration Object
@@ -207,6 +210,53 @@ public class Configuration extends Property implements Serializable {
         // WebUpdate updater=new WebUpdate();
         // updater.setTrigger(Interaction.INTERACTION_APPSTART);
         // interactions.add(updater);
+    }
+
+    public String getDefaultDownloadDirectory() {
+
+        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
+    }
+
+    /**
+     * Gibt die Interactionen zurück. Alle eingestellten Interactionen werden
+     * hier in einem vector zurückgegeben
+     * 
+     * @return Vector<Interaction>
+     */
+    public Vector<Interaction> getInteractions() {
+        return interactions;
+    }
+
+    /**
+     * Gibt den Wert zu key zurück. falls dieser Wert == null ist wird der
+     * defaultValue zurückgegeben
+     * 
+     * @param key
+     * @param defaultValue
+     * @return Wert zu key oder defaultValue
+     */
+    @Override
+    public Object getProperty(String key, Object defaultValue) {
+        if (getProperty(key) == null) { return defaultValue; }
+        return getProperty(key);
+    }
+
+    /**
+     * @return the reconnectRetries
+     */
+    public int getReconnectRetries() {
+        return reconnectRetries;
+    }
+
+    /**
+     * Gibt das routerdata objekt zurück. darin sind alle informationen
+     * gespeichert die aus der routerdata.xml importiert worden sind. (für einen
+     * router)
+     * 
+     * @return Gibt das routerdata objekt zurück
+     */
+    public RouterData getRouterData() {
+        return routerData;
     }
 
     // public HashMap<Integer, Vector<Interaction>> getInteractionMap() { return
@@ -226,14 +276,36 @@ public class Configuration extends Property implements Serializable {
     }
 
     /**
-     * GIbt das routerdata objekt zurück. darin sind alle informationen
-     * gespeichert die aus der routerdata.xml importiert worden sind. (für einen
-     * router)
+     * Wartezeit zwischen reconnect und erstem IP Check
      * 
-     * @return Gibt das routerdata objekt zurück
+     * @return Wartezeit zwischen reconnect und ip-check
      */
-    public RouterData getRouterData() {
-        return routerData;
+    public int getWaitForIPCheck() {
+        return waitForIPCheck;
+    }
+
+    /**
+     * Setzt die Interactionen
+     * 
+     * @param interactions
+     */
+    public void setInteractions(Vector<Interaction> interactions) {
+        this.interactions = interactions;
+    }
+
+    /**
+     * @param reconnectRetries
+     *            the reconnectRetries to set
+     */
+    public void setReconnectRetries(int reconnectRetries) {
+        this.reconnectRetries = reconnectRetries;
+    }
+
+    /**
+     * @param routerData
+     */
+    public void setRouterData(RouterData routerData) {
+        this.routerData = routerData;
     }
 
     /**
@@ -251,38 +323,7 @@ public class Configuration extends Property implements Serializable {
     }
 
     /**
-     * @param routerData
-     */
-    public void setRouterData(RouterData routerData) {
-        this.routerData = routerData;
-    }
-
-    /**
-     * @return the reconnectRetries
-     */
-    public int getReconnectRetries() {
-        return reconnectRetries;
-    }
-
-    /**
-     * @param reconnectRetries
-     *            the reconnectRetries to set
-     */
-    public void setReconnectRetries(int reconnectRetries) {
-        this.reconnectRetries = reconnectRetries;
-    }
-
-    /**
-     * Wartezeit zwischen reconnect und erstem IP Check
-     * 
-     * @return Wartezeit zwischen reconnect und ip-check
-     */
-    public int getWaitForIPCheck() {
-        return waitForIPCheck;
-    }
-
-    /**
-     * Setztd ie Wartezeit zwischen dem Reconnect und dem ersten IP-Check
+     * Setzt die Wartezeit zwischen dem Reconnect und dem ersten IP-Check
      * 
      * @param waitForIPCheck
      */
@@ -291,51 +332,12 @@ public class Configuration extends Property implements Serializable {
     }
 
     /**
-     * Gibt die Interactionen zurück. Alle eingestellten Interactionen werden
-     * hier in einem vector zurückgegeben
-     * 
-     * @return Vector<Interaction>
-     */
-    public Vector<Interaction> getInteractions() {
-        return interactions;
-    }
-
-    /**
-     * Setzt die Interactionen
-     * 
-     * @param interactions
-     */
-    public void setInteractions(Vector<Interaction> interactions) {
-        this.interactions = interactions;
-    }
-
-
-    /**
-     * GIbt alle Properties der Config aus
+     * Gibt alle Properties der Config aus
      * 
      * @return toString
      */
     @Override
     public String toString() {
         return "Configuration " + getProperties() + " Interaction " + interactions;
-    }
-
-    /**
-     * Gibt den Wert zu key zurück. falls dieser Wert == null ist wird der
-     * defaultValue zurückgegeben
-     * 
-     * @param key
-     * @param defaultValue
-     * @return Wert zu key oder defaultValue
-     */
-    @Override
-    public Object getProperty(String key, Object defaultValue) {
-        if (getProperty(key) == null) { return defaultValue; }
-        return getProperty(key);
-    }
-
-    public String getDefaultDownloadDirectory() {
-
-        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
     }
 }

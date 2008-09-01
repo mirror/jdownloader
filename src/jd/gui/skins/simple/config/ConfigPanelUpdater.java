@@ -77,7 +77,6 @@ public class ConfigPanelUpdater extends ConfigPanel {
 
     @Override
     public void save() {
-        logger.info("save");
         saveConfigEntries();
         config.save();
         // if (beta !=

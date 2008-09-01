@@ -35,7 +35,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
- * Konfigurationspanel f�r Unrar
+ * Konfigurationspanel für Unrar
  * 
  * @author DwD
  * 
@@ -64,13 +64,11 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     @Override
     public String getName() {
-
         return JDLocale.L("modules.unrar.name", "RAR extractor");
     }
 
     @Override
     public void initPanel() {
-        GUIConfigEntry ce;
         configuration = JDUtilities.getConfiguration();
         String unrarcmd = JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND");
         if (unrarcmd == null) {
@@ -92,10 +90,8 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         // ENABLED_TYPE_NEVER
         // },"Unrar
         // aktivieren:").setDefaultValue(Unrar.ENABLED_TYPE_LINKGRABBER));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLED, JDLocale.L("gui.config.unrar.enabled", "automatisches entpacken aktivieren")).setDefaultValue(true).setInstantHelp(JDLocale.L("modules.unrar.enabled.instanthelp", "http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal#Module")));
-        addGUIConfigEntry(ce);
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLED, JDLocale.L("gui.config.unrar.enabled", "automatisches entpacken aktivieren")).setDefaultValue(true).setInstantHelp(JDLocale.L("modules.unrar.enabled.instanthelp", "http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal#Module"))));
         if (unrarcmd == null) {
-
             try {
                 JLinkButton bb;
                 if (System.getProperty("os.name").toLowerCase().indexOf("mac") > -1) {
@@ -105,32 +101,20 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
                 }
                 JDUtilities.addToGridBag(panel, bb, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.NORTHWEST);
             } catch (MalformedURLException e) {
-
                 e.printStackTrace();
             }
-
         }
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Unrar.PROPERTY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")).setDefaultValue(unrarcmd));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_AUTODELETE, JDLocale.L("gui.config.unrar.delete", "Delete extracted archives")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_OVERWRITE_FILES, JDLocale.L("gui.config.unrar.overwrite", "Overwrite existing file")).setDefaultValue(false));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_WAIT_FOR_TERMINATION, JDLocale.L("gui.config.unrar.thread", "Erst nach dem Entpacken mit dem Download fortfahren")).setDefaultValue(false));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, Unrar.PROPERTY_EXTRACTFOLDER, JDLocale.L("gui.config.unrar.extractfolder", "Zielordner: ")).setDefaultValue(null));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, JDLocale.L("gui.config.unrar.extractfolderenabled", "Im Zielordner entpacken (Wenn die Dateien nicht im Downloadordner entpackt werden sollen)")).setDefaultValue(false));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_INFOFILE, JDLocale.L("gui.config.unrar.deleteinfofile", "Info-Datei nach erfolgreichem Entpacken l�schen")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.menu.action.passwordlist.name", "Edit list of passwords")));
-        addGUIConfigEntry(ce);
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, configuration, Unrar.PROPERTY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")).setDefaultValue(unrarcmd)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_AUTODELETE, JDLocale.L("gui.config.unrar.delete", "Delete extracted archives")).setDefaultValue(true)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_OVERWRITE_FILES, JDLocale.L("gui.config.unrar.overwrite", "Overwrite existing file")).setDefaultValue(false)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_WAIT_FOR_TERMINATION, JDLocale.L("gui.config.unrar.thread", "Erst nach dem Entpacken mit dem Download fortfahren")).setDefaultValue(false)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, Unrar.PROPERTY_EXTRACTFOLDER, JDLocale.L("gui.config.unrar.extractfolder", "Zielordner: ")).setDefaultValue(null)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, JDLocale.L("gui.config.unrar.extractfolderenabled", "Im Zielordner entpacken (Wenn die Dateien nicht im Downloadordner entpackt werden sollen)")).setDefaultValue(false)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_INFOFILE, JDLocale.L("gui.config.unrar.deleteinfofile", "Info-Datei nach erfolgreichem Entpacken l�schen")).setDefaultValue(true)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.menu.action.passwordlist.name", "Edit list of passwords"))));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR)));
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_USE_HJMERGE, JDLocale.L("gui.config.unrar.usehjmerge", "HJSplit Dateien automatisch zusammenf�gen")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
-        ce = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_MERGEDFILES, JDLocale.L("gui.config.unrar.deletemergedfiles", "Dateiteile nach dem zusammenf�gen l�schen")).setDefaultValue(true));
-        addGUIConfigEntry(ce);
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_USE_HJMERGE, JDLocale.L("gui.config.unrar.usehjmerge", "HJSplit Dateien automatisch zusammenf�gen")).setDefaultValue(true)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_MERGEDFILES, JDLocale.L("gui.config.unrar.deletemergedfiles", "Dateiteile nach dem zusammenf�gen l�schen")).setDefaultValue(true)));
         add(panel, BorderLayout.NORTH);
 
     }
@@ -142,10 +126,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     @Override
     public void save() {
-
         saveConfigEntries();
-
         configuration.setProperty(Configuration.PARAM_UNRAR_INSTANCE, unrar);
-
     }
 }

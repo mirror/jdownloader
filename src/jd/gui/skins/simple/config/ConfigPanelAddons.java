@@ -61,8 +61,8 @@ public class ConfigPanelAddons extends ConfigPanel {
         setLayout(new BorderLayout());
 
         add(cep = new ConfigEntriesPanel(container), BorderLayout.CENTER);
-        cep.getSubPanels().get(0).add(sppo=new SubPanelPluginsOptional(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
-        cep.getSubPanels().get(1).add(spr=new SubPanelRessources(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
+        cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
+        cep.getSubPanels().get(1).add(spr = new SubPanelRessources(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
     }
 
     public void load() {
@@ -70,7 +70,6 @@ public class ConfigPanelAddons extends ConfigPanel {
     }
 
     public void save() {
-        logger.info("save");
         cep.save();
         sppo.save();
         spr.save();

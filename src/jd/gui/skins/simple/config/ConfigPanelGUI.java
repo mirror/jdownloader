@@ -67,7 +67,6 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     @Override
     public void save() {
-        logger.info("save");
         cep.save();
         config.save();
     }
