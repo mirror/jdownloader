@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
@@ -36,23 +35,17 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-// http://www.xup.in/dl,43227676/YourFilesBiz.java/
-
 public class MeinUpload extends PluginForHost {
-    // private static final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "0.1.0";
+
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
-    // 
-    private static final String CODER = "jD-Team";
+
     private static final String HOST = "meinupload.com";
 
-    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?meinupload.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)", Pattern.CASE_INSENSITIVE);
-
-    // private static final int MAX_SIMULTAN_DOWNLOADS = 1;
+    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)", Pattern.CASE_INSENSITIVE);
 
     public MeinUpload() {
         super();
-        this.enablePremium();
+        enablePremium();
     }
 
     @Override
@@ -70,7 +63,6 @@ public class MeinUpload extends PluginForHost {
         r.load();
         Form[] forms = Form.getForms(r.getHtmlCode());
         if (forms.length != 1 || !forms[0].getVars().containsKey("download")) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
@@ -78,7 +70,6 @@ public class MeinUpload extends PluginForHost {
         r = (PostRequest) new PostRequest(forms[0]).connect();
 
         if (r.getResponseHeader("Content-Disposition") == null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
@@ -90,7 +81,8 @@ public class MeinUpload extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);
+        br.clearCookies(HOST);
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("http://meinupload.com/status.html");
         Form login = br.getForm(0);
@@ -207,53 +199,29 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-   
-        
         br.getPage(downloadLink.getDownloadURL());
-        
-        if(br.getRedirectLocation()!=null){
-            String error=br.getRegex("code=(.*)").getMatch(0);
-           downloadLink.getLinkStatus().setStatusText(error);
-           return false;
-        }
-        String filename=br.getRegex("<title>(.*?)</title>").getMatch(0);
-        downloadLink.setName(filename);
-       Form form = br.getForm("Free");
-      br.submitForm(form);
-      try{
-          String s=br.getRegex("Dateigr.*e:</b></td>.*<td align=left>(.*?[MB|KB|B])</td>").getMatch(0);
-      long size = Regex.getSize(s);
-      if(size>0)downloadLink.setDownloadSize(size);
-      }catch(Exception e ){}
-       return true;
-//            String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getMatch(0);
-//            if(id==null){
-//               id= new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/\\?d=(.*)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-//                
-//            }
-//            if (id == null) { return false;
-//            // http://meinupload.com/infos.api?get_id=3794082988
-//            }
-//
-//            String page = new GetRequest("http://meinupload.com/infos.api?get_id=" + id).load();
-//
-//            String status = new Regex(page, "<status>([\\d]*?)</status>").getMatch(0);
-//            String filesize = new Regex(page, "<filesize>([\\d]*?)</filesize>").getMatch(0);
-//            String name = new Regex(page, "<name>(.*?)</name>").getMatch(0);
-//            if (status == null || !status.equals("1")) { return false; }
-//
-//            if (filesize == null || name == null) { return false; }
-//
-//            downloadLink.setDownloadSize(Integer.parseInt(filesize));
-//            downloadLink.setName(name);
-//            return true;
 
-    
+        if (br.getRedirectLocation() != null) {
+            String error = br.getRegex("code=(.*)").getMatch(0);
+            downloadLink.getLinkStatus().setStatusText(error);
+            return false;
+        }
+        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        downloadLink.setName(filename);
+        Form form = br.getForm("Free");
+        br.submitForm(form);
+        try {
+            String s = br.getRegex("Dateigr.*e:</b></td>.*<td align=left>(.*?[MB|KB|B])</td>").getMatch(0);
+            long size = Regex.getSize(s);
+            if (size > 0) downloadLink.setDownloadSize(size);
+        } catch (Exception e) {
+        }
+        return true;
     }
 
     @Override
@@ -280,10 +248,9 @@ public class MeinUpload extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 2;
     }
-    
+
     @Override
     public void reset() {
-
     }
 
     @Override

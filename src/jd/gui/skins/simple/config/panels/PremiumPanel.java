@@ -40,6 +40,7 @@ import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -58,15 +59,16 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                     PluginForHost Plugin = (PluginForHost) configEntry.getActionListener();
                     try {
                         accCounter++;
-                        Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
-                        if(tleft >= 0 && Plugin.getAccountInformation(acc).isExpired() == false) {
-	                        ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft), "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50");
-	                        freeTrafficChart.addEntity(ent);
-	                        long rest = 0;
-	                        if ((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
+                        AccountInfo ai = Plugin.getAccountInformation(acc);
+                        Long tleft = new Long(ai.getTrafficLeft());
+                        if (tleft >= 0 && ai.isExpired() == false) {
+                            ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft), "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50");
+                            freeTrafficChart.addEntity(ent);
+                            long rest = ai.getTrafficMax() - tleft;
+                            if (rest > 0) collectTraffic = collectTraffic + rest;
                         }
                     } catch (Exception e) {
-                        JDUtilities.logger.finest("Not able to load Traffic-Limit for ChartAPI");
+                        JDUtilities.getLogger().finest("Not able to load Traffic-Limit for ChartAPI");
                     }
                 }
             }
@@ -91,8 +93,10 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
-    
-    // deactived due to coalados order - private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE(JDLocale.L("plugins.config.premium.chartapi.caption", "Free Traffic Chart"), 450, 60, this.getBackground());
+
+    // deactived due to coalados order - private ChartAPI_PIE freeTrafficChart =
+    // new ChartAPI_PIE(JDLocale.L("plugins.config.premium.chartapi.caption",
+    // "Free Traffic Chart"), 450, 60, this.getBackground());
     private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
     private ChartRefresh loader;
 
@@ -237,9 +241,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             if (e.getSource() == this.checkBtns[i - 1]) {
                 JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), acc.get(i - 1));
             }
-
         }
-
     }
 
     public void focusGained(FocusEvent e) {
