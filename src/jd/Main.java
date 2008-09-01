@@ -50,6 +50,7 @@ import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.parser.Regex;
 import jd.utils.CheckJava;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -461,7 +462,8 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        // org.apache.log4j.Logger lg = org.apache.log4j.Logger.getLogger("jd");
+        
+       // org.apache.log4j.Logger lg = org.apache.log4j.Logger.getLogger("jd");
         // BasicConfigurator.configure();
         // lg.error("hallo Welt");
         // lg.setLevel(org.apache.log4j.Level.ALL);
