@@ -137,7 +137,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("modules.reconnect.pleaseSelect", "Bitte Methode auswählen:")), 0, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(panel, box, 1, 0, 1, 1, 0, 0, new Insets(0, 7, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(panel, btn, 2, 0, 1, 1, 0, 0, new Insets(0, 10, 5, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 3, 5, 1, 1, 1, new Insets(0, 7, 3, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        JDUtilities.addToGridBag(panel, new JSeparator(), 0, 1, 5, 1, 1, 1, new Insets(0, 7, 3, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
 
         add(panel, BorderLayout.NORTH);
 
@@ -172,15 +172,15 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         switch (box.getSelectedIndex()) {
         case 0:
             lh = new SubPanelLiveHeaderReconnect(uiinterface, new HTTPLiveHeader());
-            JDUtilities.addToGridBag(panel, lh, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, lh, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         case 1:
             er = new ConfigEntriesPanel(new ExternReconnect().getConfig());
-            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         case 2:
             er = new ConfigEntriesPanel(new BatchReconnect().getConfig());
-            JDUtilities.addToGridBag(panel, er, 0, 4, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            JDUtilities.addToGridBag(panel, er, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         }
 
