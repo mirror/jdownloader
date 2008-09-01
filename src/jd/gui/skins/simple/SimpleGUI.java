@@ -1750,8 +1750,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 String[] data = new String[] { (ai.isExpired() ? "[expired] " : "") + formater.format(new Date(ai.getValidUntil())) + "", JDUtilities.formatBytesToMB(ai.getTrafficLeft()), ai.getFilesNum() + "", ai.getPremiumPoints() + "", JDUtilities.formatBytesToMB(ai.getUsedSpace()), ai.getAccountBalance() < 0 ? null : (ai.getAccountBalance() / 100.0) + " €", JDUtilities.formatBytesToMB(ai.getTrafficShareLeft()), ai.getStatus() };
                 panel.add(new JXTitledSeparator(def), "spanx, pushx, growx, gapbottom 15");
                 ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 125, 60, panel.getBackground());
-                freeTrafficChart.addEntity(new ChartAPI_Entity("Free", String.valueOf(ai.getTrafficLeft())));
-                freeTrafficChart.addEntity(new ChartAPI_Entity("", String.valueOf(ai.getTrafficMax())));
+                freeTrafficChart.addEntity(new ChartAPI_Entity("Free", String.valueOf(ai.getTrafficLeft()), "50,200,50"));
+                freeTrafficChart.addEntity(new ChartAPI_Entity("", String.valueOf(ai.getTrafficMax() - ai.getTrafficLeft()), "150,150,150"));
                 freeTrafficChart.fetchImage();
 
                 for (int j = 0; j < data.length; j++) {

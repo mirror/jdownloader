@@ -52,13 +52,15 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             ArrayList<Account> accounts = (ArrayList<Account>) getAccounts();
             Long collectTraffic = new Long(0);
             freeTrafficChart.clear();
+            int accCounter = 0;
             for (Account acc : accounts) {
                 if (acc.getUser().length() > 0 && acc.getPass().length() > 0) {
                     PluginForHost Plugin = (PluginForHost) configEntry.getActionListener();
                     try {
+                        accCounter++;
                         Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
                         if(tleft >= 0) {
-	                        ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft));
+	                        ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft), "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50");
 	                        freeTrafficChart.addEntity(ent);
 	                        long rest = 0;
 	                        if ((rest = Plugin.getAccountInformation(acc).getTrafficMax() - tleft) > 0) collectTraffic = collectTraffic + rest;
@@ -69,7 +71,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 }
             }
 
-            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic)));
+            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic), "150,150,150"));
             freeTrafficChart.fetchImage();
 
         }
