@@ -1238,6 +1238,7 @@ public class Rapidshare extends PluginForHost {
 
         if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
             ai.setExpired(true);
+            ai.setTrafficLeft(0);
         }
         
 

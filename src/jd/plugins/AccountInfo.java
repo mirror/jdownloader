@@ -188,6 +188,10 @@ public class AccountInfo extends Property {
 
     public void setValidUntil(long validUntil) {
         this.validUntil = validUntil;
+        if(validUntil < new Date().getTime()) {
+            setExpired(true); 
+            setTrafficLeft(0);
+        }
     }
 
 	public long getTrafficMax() {

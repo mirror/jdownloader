@@ -59,7 +59,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                     try {
                         accCounter++;
                         Long tleft = new Long(Plugin.getAccountInformation(acc).getTrafficLeft());
-                        if(tleft >= 0) {
+                        if(tleft >= 0 && Plugin.getAccountInformation(acc).isExpired() == false) {
 	                        ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft), "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50");
 	                        freeTrafficChart.addEntity(ent);
 	                        long rest = 0;
