@@ -48,18 +48,15 @@ import net.miginfocom.swing.MigLayout;
 
 public class PremiumPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
     class ChartRefresh extends Thread {
-        @SuppressWarnings("unchecked")
         public void run() {
-            ArrayList<Account> accounts = (ArrayList<Account>) getAccounts();
             Long collectTraffic = new Long(0);
             freeTrafficChart.clear();
             int accCounter = 0;
-            for (Account acc : accounts) {
+            for (Account acc : getAccounts()) {
                 if (acc.getUser().length() > 0 && acc.getPass().length() > 0) {
-                    PluginForHost Plugin = (PluginForHost) configEntry.getActionListener();
                     try {
                         accCounter++;
-                        AccountInfo ai = Plugin.getAccountInformation(acc);
+                        AccountInfo ai = ((PluginForHost) configEntry.getActionListener()).getAccountInformation(acc);
                         Long tleft = new Long(ai.getTrafficLeft());
                         if (tleft >= 0 && ai.isExpired() == false) {
                             ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft), "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50");
@@ -73,7 +70,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 }
             }
 
-            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity("Max. Traffic to collect [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic), "150,150,150"));
+            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic), "150,150,150"));
             freeTrafficChart.fetchImage();
 
         }
@@ -107,11 +104,11 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     }
 
     /**
-     * Muss immer ein ArrayList<Account> mit den neuen daten zurückgeben
+     * Gibt alle aktuellen Accounts zurück
      * 
      * @return
      */
-    public Object getAccounts() {
+    public ArrayList<Account> getAccounts() {
         ArrayList<Account> accounts = new ArrayList<Account>();
         for (int i = 0; i < enables.length; i++) {
             Account a = new Account(usernames[i].getText(), new String(passwords[i].getPassword()));
@@ -233,13 +230,12 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         }
     }
 
-    @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         int accountNum = configEntry.getEnd();
-        ArrayList<Account> acc = (ArrayList<Account>) this.getAccounts();
-        for (int i = 1; i <= accountNum; i++) {
-            if (e.getSource() == this.checkBtns[i - 1]) {
-                JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), acc.get(i - 1));
+        ArrayList<Account> acc = this.getAccounts();
+        for (int i = 0; i < accountNum; i++) {
+            if (e.getSource() == this.checkBtns[i]) {
+                JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), acc.get(i));
             }
         }
     }
