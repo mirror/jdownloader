@@ -28,8 +28,6 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.unrar.UnrarPassword;
-
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
 import jd.controlling.JDController;
@@ -37,6 +35,7 @@ import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.unrar.JUnrar;
+import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 

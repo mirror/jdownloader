@@ -33,8 +33,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.unrar.UnrarPassword;
-
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.ConfigContainer;
 import jd.config.MenuItem;
@@ -44,6 +42,7 @@ import jd.event.ControlEvent;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
+import jd.unrar.UnrarPassword;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

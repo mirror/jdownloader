@@ -25,8 +25,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
 
-import jd.unrar.UnrarPassword;
-
 import jd.config.Configuration;
 import jd.controlling.JDController;
 import jd.plugins.DownloadLink;
@@ -35,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.optional.webinterface.template.Template;
+import jd.unrar.UnrarPassword;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

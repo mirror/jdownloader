@@ -22,8 +22,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.unrar.UnrarPassword;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -37,6 +35,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
+import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 

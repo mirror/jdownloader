@@ -3,10 +3,9 @@ package jd.unrar.hjsplitt;
 import java.io.File;
 import java.io.FileFilter;
 
-import jd.unrar.FileSignatures;
-
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.unrar.FileSignatures;
 
 public class Merge {
 

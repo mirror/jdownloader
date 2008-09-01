@@ -19,7 +19,6 @@ package jd.utils;
 import java.io.File;
 
 import jd.config.Configuration;
-import jd.utils.JDUtilities;
 
 public class GetExplorer {
     /**

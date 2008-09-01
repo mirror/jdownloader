@@ -28,6 +28,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
+
 import javax.swing.SwingUtilities;
 
 import jd.Main;

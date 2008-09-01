@@ -32,10 +32,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.utils.SpaceManager;
-
 import jd.config.SubConfiguration;
 import jd.utils.JDUtilities;
+import jd.utils.SpaceManager;
 
 public class JUnrar {
 	private static final String allOk = "(?s).*[\\s]+All OK[\\s].*";

@@ -23,10 +23,9 @@ import java.net.URLEncoder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.utils.HTMLEntities;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
-
-import jd.utils.HTMLEntities;
 
 public class Encoding {
 
