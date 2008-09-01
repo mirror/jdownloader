@@ -17,113 +17,68 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class ShareBaseDe extends PluginForHost {
 
-    private static final String CODER = "JD-Team";
+    private static final String HOST = "sharebase.de";
+
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
 
     private static final String DL_LIMIT = "Das Downloaden ohne Downloadlimit ist nur mit einem Premium-Account";
 
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
-    private static final String FILENAME = "<title>(.*?)</title>";
+    private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
 
-    private static final String FILESIZE = "<span class=\"f1\">.*?\\((.*?)\\)</span></td>";
-
-    private static final String HOST = "sharebase.de";
-
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
-
-    private static final String PLUGIN_NAME = HOST;
-
-    private static final String SIM_DL = "Das gleichzeitige Downloaden";
+    // private static final String SIM_DL = "Das gleichzeitige Downloaden";
 
     private static final Pattern WAIT = Pattern.compile("Du musst noch (.*?):(.*?):(.*?) warten!", Pattern.CASE_INSENSITIVE);
 
-    private String cookies = "";
-
-    /*
-     * Konstruktor
-     */
     public ShareBaseDe() {
-
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-
     }
 
     @Override
     public boolean doBotCheck(File file) {
         return false;
-    } // kein BotCheck
+    }
 
     @Override
     public String getAGBLink() {
-
         return "http://sharebase.de/pp.html";
     }
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getMatch(0));
-            String fileSize = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILESIZE).getMatch(0));
-            boolean sim_dl = new Regex(requestInfo.getHtmlCode(), SIM_DL).count() > 0;
-            boolean dl_limit = new Regex(requestInfo.getHtmlCode(), DL_LIMIT).count() > 0;
-            // Wurden DownloadInfos gefunden? --> Datei ist vorhanden/online
-            if (fileName != null && fileSize != null) {
+            br.setDebug(true);
 
-                fileName = fileName.trim();
-                fileSize = fileSize.trim();
-                downloadLink.setName(fileName);
+            String page = br.getPage(downloadLink.getDownloadURL());
+            logger.info(page);
+            String[] infos = new Regex(page, FILEINFO).getRow(0);
 
-                try {
-                    String[] fileSizeData = fileSize.split(" ");
+            downloadLink.setName(infos[0].trim());
+            downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
 
-                    double length = Double.parseDouble(fileSizeData[0].trim());
-
-                    if (fileSizeData[1].equals("KB")) {
-                        length *= 1024;
-                    } else if (fileSizeData[1].equals("MB")) {
-                        length *= 1048576;
-                    }
-                    downloadLink.setDownloadSize((int) length);
-                } catch (Exception e) {
-                }
-
-                return true;
-            }
-
-            if (sim_dl || dl_limit) { return true; }
-
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
-        // Datei scheinbar nicht mehr verfuegbar, Fehler?
         return false;
-
     }
 
     @Override
@@ -133,12 +88,12 @@ public class ShareBaseDe extends PluginForHost {
 
     @Override
     public String getPluginName() {
-        return PLUGIN_NAME;
+        return HOST;
     }
 
     @Override
     public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
+        return patternSupported;
     }
 
     @Override
@@ -151,41 +106,30 @@ public class ShareBaseDe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        RequestInfo requestInfo;
+        br.setDebug(true);
+        String page = br.getPage(downloadLink.getDownloadURL());
+        logger.info(page);
+        String fileName = Encoding.htmlDecode(new Regex(page, FILEINFO).getMatch(0));
 
-        URL downloadUrl = new URL(downloadLink.getDownloadURL());
-        String finishURL = null;
-
-        requestInfo = HTTP.getRequest(downloadUrl);
-
-        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILENAME).getMatch(0));
-
-        if (requestInfo.containsHTML(DOWLOAD_RUNNING)) {
+        if (br.containsHTML(DOWLOAD_RUNNING)) {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(60 * 1000);
             return;
         }
-        // Download-Limit erreicht
-        if (requestInfo.getHtmlCode().contains(DL_LIMIT)) {
 
-            String[] temp = new Regex(requestInfo.getHtmlCode(), WAIT).getRow(0);
-            String hours = temp[0];
-            String minutes = temp[1];
-            String seconds = temp[2];
+        // Download-Limit erreicht
+        if (br.containsHTML(DL_LIMIT)) {
+            String[] temp = new Regex(page, WAIT).getRow(0);
             int waittime = 0;
 
-            if (hours != null && minutes != null && seconds != null) {
-
+            if (temp[0] != null && temp[1] != null && temp[2] != null) {
                 try {
-
-                    waittime += Integer.parseInt(seconds);
-                    waittime += Integer.parseInt(minutes) * 60;
-                    waittime += Integer.parseInt(hours) * 3600;
-
+                    waittime += Integer.parseInt(temp[2]);
+                    waittime += Integer.parseInt(temp[1]) * 60;
+                    waittime += Integer.parseInt(temp[0]) * 60 * 60;
                 } catch (Exception Exc) {
-                	waittime = 600;
+                    waittime = 600;
                 }
-
             }
 
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -202,11 +146,12 @@ public class ShareBaseDe extends PluginForHost {
 
         fileName = fileName.trim();
 
-        // SessionId auslesen
-        cookies = requestInfo.getCookie().split("; ")[0];
-
-        requestInfo = HTTP.postRequest(downloadUrl, cookies, downloadLink.getDownloadURL(), null, "doit=Download+starten", false);
-        finishURL = Encoding.htmlDecode(requestInfo.getConnection().getHeaderField("Location"));
+        br.postPage(downloadLink.getDownloadURL(), "doit=Download+starten");
+        logger.info(br.getRedirectLocation());
+        // String finishURL =
+        // Encoding.htmlDecode(requestInfo.getConnection().getHeaderField
+        // ("Location"));
+        String finishURL = Encoding.htmlDecode(br.getRedirectLocation());
 
         if (finishURL == null) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -214,11 +159,12 @@ public class ShareBaseDe extends PluginForHost {
         }
 
         // Download vorbereiten
-        HTTPConnection urlConnection = new HTTPConnection(new URL(finishURL).openConnection());
+        // HTTPConnection urlConnection = new HTTPConnection(new
+        // URL(finishURL).openConnection());
+        HTTPConnection urlConnection = br.openGetConnection(finishURL);
 
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);
-
         dl.startDownload();
 
     }
@@ -226,15 +172,13 @@ public class ShareBaseDe extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
-        cookies = "";
     }
 
     @Override
     public void resetPluginGlobals() {
-
     }
 
 }
