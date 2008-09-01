@@ -34,7 +34,7 @@ import jd.utils.JDUtilities;
 public class LinkProtectIn extends PluginForDecrypt {
 
     static private final String host = "linkprotect.in";
-    
+
     static private final Pattern patternName = Pattern.compile("Ordnername: <b>(.*?)</b>");
     static private final Pattern patternPassword = Pattern.compile("<input type=\"text\" name=\"pw\" class=\"[a-zA-Z0-9]{1,50}\" size=\"[0-9]{1,3}\" />");
     static private final Pattern patternPasswordWrong = Pattern.compile("<b>Passwort falsch!</b>");
@@ -50,17 +50,17 @@ public class LinkProtectIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
 
             boolean lp_continue = false;
             Matcher matcher;
             Matcher matcherpw;
             Matcher matcherpwwrong;
-            
+
             Form form = new Form();
             String password = "";
-            
+
             /* zuerst mal den evtl captcha abarbeiten */
             br.getPage(parameter);
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
@@ -72,9 +72,13 @@ public class LinkProtectIn extends PluginForDecrypt {
                     form = br.getForm(0);
 
                     String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
-                    
-                    /* Ein try Block weil sonst ein Error ausgelöst wird, wenn ein LinkProtectIn Link beim Start von JD in der Zwischenablage exisitiert */
-                    try { 
+
+                    /*
+                     * Ein try Block weil sonst ein Error ausgelöst wird, wenn
+                     * ein LinkProtectIn Link beim Start von JD in der
+                     * Zwischenablage exisitiert
+                     */
+                    try {
                         File captchaFile = this.getLocalCaptchaFile(this);
                         Browser br2 = new Browser();
                         if (!Browser.download(captchaFile, br2.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
@@ -82,7 +86,7 @@ public class LinkProtectIn extends PluginForDecrypt {
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
                             return null;
                         }
-                        
+
                         br.setCookie(br.getURL(), "PHPSESSID", br2.getCookie(br2.getURL(), "PHPSESSID"));
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                         if (captchaCode == null) {
@@ -91,10 +95,13 @@ public class LinkProtectIn extends PluginForDecrypt {
                         }
                         captchaCode = captchaCode.toUpperCase();
                         form.put("code", captchaCode);
-                    
-                        /* Herausfinden ob ein Passwort benötigt wird und ggf. abfragen */
+
+                        /*
+                         * Herausfinden ob ein Passwort benötigt wird und ggf.
+                         * abfragen
+                         */
                         matcher = patternPassword.matcher(source);
-                        if(matcher.find()) {
+                        if (matcher.find()) {
                             password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
                             if (password != null) {
                                 form.put("pw", password);
@@ -102,24 +109,28 @@ public class LinkProtectIn extends PluginForDecrypt {
                                 return decryptedLinks;
                             }
                         }
-                    } catch (Exception e) { return null; }
-                    
+                    } catch (Exception e) {
+                        return null;
+                    }
+
                     br.setFollowRedirects(true);
                     br.submitForm(form);
-                } else if(matcherpw.find()) {
-                    /* Herausfinden ob ein Passwort benötigt wird und ggf. abfragen (Falls nur ein PW ohne Captcha Abfrage!) */
-                    String source = br.toString();
+                } else if (matcherpw.find()) {
+                    /*
+                     * Herausfinden ob ein Passwort benötigt wird und ggf.
+                     * abfragen (Falls nur ein PW ohne Captcha Abfrage!)
+                     */
                     form = br.getForm(0);
                     password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein!");
-                    if(password == null) return decryptedLinks;
-                    
+                    if (password == null) return decryptedLinks;
+
                     form.put("pw", password);
                     br.setFollowRedirects(true);
                     br.submitForm(form);
-                } else if(matcherpwwrong.find()) {
+                } else if (matcherpwwrong.find()) {
                     password = JDUtilities.getController().getUiInterface().showUserInputDialog("Das eingegebene Passwort [" + password + "] ist falsch. Bitte versuche es erneut!");
-                    if(password == null) return decryptedLinks;
-                    
+                    if (password == null) return decryptedLinks;
+
                     form.put("pw", password);
                     br.setFollowRedirects(true);
                     br.submitForm(form);
@@ -134,10 +145,10 @@ public class LinkProtectIn extends PluginForDecrypt {
                 String[] links = jd.parser.HTMLParser.getHttpLinks(br + "", host);
                 FilePackage fp = new FilePackage();
                 matcher = patternName.matcher(br + "");
-                if(matcher.find()) fp.setName(new Regex(br + "", patternName.pattern()).getMatch(0));
+                if (matcher.find()) fp.setName(new Regex(br + "", patternName.pattern()).getMatch(0));
                 br.setFollowRedirects(false);
-                
-                for (int i=0; i <= links.length - 1; i++) {
+
+                for (int i = 0; i <= links.length - 1; i++) {
                     matcher = patternDownload.matcher(links[i]);
                     if (matcher.find()) {
                         /* EinzelLink gefunden */

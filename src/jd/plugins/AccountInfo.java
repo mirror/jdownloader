@@ -150,7 +150,7 @@ public class AccountInfo extends Property {
 
     public void setExpired(boolean b) {
         this.expired = b;
-        if(b == true) setTrafficLeft(0);
+        if (b) this.setTrafficLeft(0);
     }
 
     public void setFilesNum(int parseInt) {
@@ -167,7 +167,6 @@ public class AccountInfo extends Property {
 
     public void setStatus(String string) {
         this.status = string;
-
     }
 
     public void setTrafficLeft(long size) {
@@ -188,36 +187,31 @@ public class AccountInfo extends Property {
 
     public void setValidUntil(long validUntil) {
         this.validUntil = validUntil;
-        if(validUntil < new Date().getTime()) {
-            setExpired(true);
-        }
+        if (validUntil < new Date().getTime()) this.setExpired(true);
     }
 
-	public long getTrafficMax() {
-		return trafficMax;
-	}
+    public long getTrafficMax() {
+        return trafficMax;
+    }
 
-	public void setTrafficMax(long trafficMax) {
-		this.trafficMax = trafficMax;
-	}
+    public void setTrafficMax(long trafficMax) {
+        this.trafficMax = trafficMax;
+    }
 
     public void setTrafficLeft(String freeTraffic) {
-       this.setTrafficLeft(Regex.getSize(freeTraffic));
-        
+        this.setTrafficLeft(Regex.getSize(freeTraffic));
     }
 
     public void setPremiumPoints(String string) {
-      this.setPremiumPoints(Integer.parseInt(string.trim()));
-        
+        this.setPremiumPoints(Integer.parseInt(string.trim()));
     }
 
     public void setUsedSpace(String string) {
-       this.setUsedSpace(Regex.getSize(string));
+        this.setUsedSpace(Regex.getSize(string));
     }
 
     public void setAccountBalance(String string) {
-       this.setAccountBalance((int)(Double.parseDouble(string)*100));
-        
+        this.setAccountBalance((int) (Double.parseDouble(string) * 100));
     }
 
 }
