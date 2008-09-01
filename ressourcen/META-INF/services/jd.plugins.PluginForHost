@@ -1,5 +1,4 @@
 jd.plugins.host.ArchivTo
-#jd.plugins.host.BadOngo
 jd.plugins.host.BluehostTo
 jd.plugins.host.Cocosharecc
 jd.plugins.host.DataHu
@@ -17,7 +16,6 @@ jd.plugins.host.Freaksharenet
 jd.plugins.host.Gulli
 jd.plugins.host.HTTPAllgemein
 jd.plugins.host.ImageFap
-#jd.plugins.host.LoadTo
 jd.plugins.host.MediafireCom
 jd.plugins.host.Megauploadcom
 jd.plugins.host.MeinUpload
@@ -27,7 +25,6 @@ jd.plugins.host.Netloadin
 jd.plugins.host.Odsiebiecom
 jd.plugins.host.Przeslijnet
 jd.plugins.host.QshareCom
-#jd.plugins.host.RamZal
 jd.plugins.host.Rapidshare
 jd.plugins.host.RapidShareDe
 jd.plugins.host.MegasharesCom

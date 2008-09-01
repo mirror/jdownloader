@@ -52,8 +52,6 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String PLUGIN_NAME = HOST;
 
-    private String cookie = "";
-
     public FastLoadNet() {
         super();
 
@@ -158,7 +156,7 @@ public class FastLoadNet extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
 
         RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-        cookie = requestInfo.getCookie();
+        String cookie = requestInfo.getCookie();
 
         if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
@@ -293,7 +291,6 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public void reset() {
-        cookie = "";
     }
 
     @Override
