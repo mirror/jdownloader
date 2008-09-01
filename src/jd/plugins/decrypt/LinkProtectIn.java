@@ -96,9 +96,13 @@ public class LinkProtectIn extends PluginForDecrypt {
                         matcher = patternPassword.matcher(source);
                         if(matcher.find()) {
                             password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                            form.put("pw", password);
+                            if (password != null) {
+                                form.put("pw", password);
+                            } else {
+                                return decryptedLinks;
+                            }
                         }
-                    } catch (Exception e) { }
+                    } catch (Exception e) { return null; }
                     
                     br.setFollowRedirects(true);
                     br.submitForm(form);
