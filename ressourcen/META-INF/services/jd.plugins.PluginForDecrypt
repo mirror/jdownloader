@@ -39,6 +39,7 @@ jd.plugins.decrypt.LeecherWs
 jd.plugins.decrypt.LinkBankeu
 jd.plugins.decrypt.LinkBucks
 jd.plugins.decrypt.LinkProtectorCom
+jd.plugins.decrypt.LinkProtectIn
 jd.plugins.decrypt.LinkSafeWs
 jd.plugins.decrypt.LinksaveIn
 jd.plugins.decrypt.Linkshield
