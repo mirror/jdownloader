@@ -14,25 +14,24 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.config;
+package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
-import jd.unrar.UnrarPassword;
-
 import jd.parser.Regex;
+import jd.unrar.UnrarPassword;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -41,11 +40,8 @@ import jd.utils.JDUtilities;
  * 
  * @author DwD
  */
-public class jdUnrarPasswordListDialog extends JDialog implements ActionListener {
+public class JDUnrarPasswordListDialog extends JDialog implements ActionListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     /**
@@ -62,10 +58,6 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
      * JTextField wo der Passwort Output eingetragen wird
      */
     private JTextArea pwField;
-    /**
-     * JScrollPane fuer das pwField
-     */
-    private JScrollPane pwScrollPane;
 
     /**
      * Primary Constructor
@@ -73,14 +65,10 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
      * @param owner
      *            The owning Frame
      */
-//    @SuppressWarnings("static-access")
-    public jdUnrarPasswordListDialog(JFrame owner) {
+    public JDUnrarPasswordListDialog(Frame owner) {
         super(owner, JDLocale.L("gui.config.unrar.passwordlist", "Password List"));
-        setModal(true);
+        this.setModal(true);
         int n = 10;
-        JPanel panel = new JPanel(new BorderLayout(n, n));
-        panel.setBorder(new EmptyBorder(n, n, n, n));
-        setContentPane(panel);
 
         btnCancel = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.name", "Abbrechen"));
         btnCancel.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.mnem", "a").charAt(0));
@@ -88,53 +76,37 @@ public class jdUnrarPasswordListDialog extends JDialog implements ActionListener
 
         btnSave = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_save.name", "Speichern"));
         btnSave.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_save.mnem", "s").charAt(0));
-
         btnSave.addActionListener(this);
-        getRootPane().setDefaultButton(btnSave);
-        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         pwField = new JTextArea();
-        pwScrollPane = new JScrollPane(pwField, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         pwField.setEditable(true);
-//        JUnrar unrar = new JUnrar(false);
-        String[] pws = UnrarPassword.returnPasswords();
-        for (String element : pws) {
+        for (String element : UnrarPassword.returnPasswords()) {
             pwField.append(element + System.getProperty("line.separator"));
         }
         pwField.setCaretPosition(0);
-        getContentPane().add(pwScrollPane, BorderLayout.CENTER);
-        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
-        getContentPane().add(bpanel, BorderLayout.SOUTH);
-        // JDUtilities.addToGridBag(this, pwScrollPane, 0, 0, 2, 1, 1, 1, null,
-        // GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        // JDUtilities.addToGridBag(this, btnSave, 0, 1, 1, 1, 1, 0, null,
-        // GridBagConstraints.NONE, GridBagConstraints.WEST);
-        // JDUtilities.addToGridBag(this, btnCancel, 1, 1, 1, 1, 1, 0, null,
-        // GridBagConstraints.NONE, GridBagConstraints.WEST);
 
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
         bpanel.add(btnSave);
         bpanel.add(btnCancel);
 
-        setPreferredSize(new Dimension(400, 300));
-        pack();
-        setLocation(JDUtilities.getCenterOfComponent(null, this));
+        JPanel panel = new JPanel(new BorderLayout(n, n));
+        panel.setBorder(new EmptyBorder(n, n, n, n));
+        panel.add(new JScrollPane(pwField), BorderLayout.CENTER);
+        panel.add(bpanel, BorderLayout.SOUTH);
+
+        this.getRootPane().setDefaultButton(btnSave);
+        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        this.setContentPane(panel);
+        this.setPreferredSize(new Dimension(400, 300));
+        this.pack();
+        this.setLocation(JDUtilities.getCenterOfComponent(null, this));
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
-     */
-//    @SuppressWarnings("static-access")
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnSave) {
-//            JUnrar unrar = new JUnrar(false);
             UnrarPassword.editPasswordlist(Regex.getLines(pwField.getText()));
-            dispose();
-
-        } else {
-            dispose();
         }
+        dispose();
     }
 
 }

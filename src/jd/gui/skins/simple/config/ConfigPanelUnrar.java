@@ -28,8 +28,8 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.JDUnrarPasswordListDialog;
 import jd.unrar.JUnrar;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -59,7 +59,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        new jdUnrarPasswordListDialog(((SimpleGUI) uiinterface).getFrame()).setVisible(true);
+        new JDUnrarPasswordListDialog(JDUtilities.getParentFrame(this)).setVisible(true);
     }
 
     @Override

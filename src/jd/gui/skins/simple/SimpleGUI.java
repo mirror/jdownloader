@@ -98,6 +98,7 @@ import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.HTMLDialog;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.components.JDUnrarPasswordListDialog;
 import jd.gui.skins.simple.components.JHelpDialog;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
@@ -105,7 +106,6 @@ import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
-import jd.gui.skins.simple.config.jdUnrarPasswordListDialog;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -114,6 +114,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForContainer;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.unrar.zip.UnZip;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -123,8 +124,6 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTitledSeparator;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-
-import jd.unrar.zip.UnZip;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
@@ -772,7 +771,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             ClipboardHandler.getClipboard().toggleActivation();
             break;
         case JDAction.APP_PASSWORDLIST:
-            new jdUnrarPasswordListDialog(frame).setVisible(true);
+            new JDUnrarPasswordListDialog(frame).setVisible(true);
             break;
         case JDAction.APP_START_STOP_DOWNLOADS:
             logger.finer("Start Stop Downloads");
