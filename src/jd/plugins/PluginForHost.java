@@ -18,6 +18,7 @@ package jd.plugins;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,6 +105,17 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
+    public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
+        File captchaFile = this.getLocalCaptchaFile(this);
+        if (!Browser.download(captchaFile, br.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
+            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+        if (captchaCode == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        return captchaCode;
+        
+    }
     public AccountInfo getAccountInformation(Account account) throws Exception {
         return null;
     }

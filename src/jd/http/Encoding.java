@@ -29,6 +29,18 @@ import sun.misc.BASE64Encoder;
 
 public class Encoding {
 
+    
+    public static byte[] base16Decode(String code){
+        while(code.length()%2>0)code+="0";
+        byte[] res= new byte[code.length()/2];
+       int i=0;
+        while(i<code.length()){
+          res[i/2]=(byte)Integer.parseInt(code.substring(i, i+2), 16);
+          i+=2;
+            
+        }
+        return res;
+    }
     /**
      * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;" ;
      * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um

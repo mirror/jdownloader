@@ -37,6 +37,8 @@ public class PostRequest extends Request {
 
     }
 
+  
+
     public HashMap<String, String> getPostData() {
         return postData;
     }
@@ -63,10 +65,8 @@ public class PostRequest extends Request {
             parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.connect();
-            OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-            wr.write(parameter);
-            wr.flush();
-            wr.close();
+            httpConnection.post(parameter);
+           
         }else{
             httpConnection.setRequestProperty("Content-Length", "0"); 
         }

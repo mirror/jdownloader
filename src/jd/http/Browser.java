@@ -973,4 +973,9 @@ private boolean debug=false;
         AUTHS.put(domain, auth);
     }
 
+    public String submitForm(String formname) throws IOException {
+        return this.submitForm(getForm(formname));
+        
+    }
+
 }
