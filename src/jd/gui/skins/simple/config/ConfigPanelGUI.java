@@ -88,7 +88,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue("default");
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")));
-        ce.setDefaultValue("default");
+        ce.setDefaultValue("noSounds");
 
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
         String[] plafs = new String[info.length];
