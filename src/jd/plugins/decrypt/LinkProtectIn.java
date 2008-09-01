@@ -80,7 +80,7 @@ public class LinkProtectIn extends PluginForDecrypt {
                         if (!Browser.download(captchaFile, br2.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
                             /* Fehler beim Captcha */
                             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                            return decryptedLinks;
+                            return null;
                         }
                         
                         br.setCookie(br.getURL(), "PHPSESSID", br2.getCookie(br2.getURL(), "PHPSESSID"));
