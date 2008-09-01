@@ -150,7 +150,7 @@ public class AccountInfo extends Property {
 
     public void setExpired(boolean b) {
         this.expired = b;
-
+        if(b == true) setTrafficLeft(0);
     }
 
     public void setFilesNum(int parseInt) {
@@ -189,8 +189,7 @@ public class AccountInfo extends Property {
     public void setValidUntil(long validUntil) {
         this.validUntil = validUntil;
         if(validUntil < new Date().getTime()) {
-            setExpired(true); 
-            setTrafficLeft(0);
+            setExpired(true);
         }
     }
 
