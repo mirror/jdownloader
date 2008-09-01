@@ -31,7 +31,7 @@ public class RomsZopharNet extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/(.+)/(.+\\.7z)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternDownload = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/([0-9]{1,})", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternFilesize = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}\"><b>.+</b></a> \\(([0-9]{1,}\\.[0-9]{1,} MB)\\)</p>", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternFilesize = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}\"><b>.+</b></a> \\(([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))\\)</p>", Pattern.CASE_INSENSITIVE);
     
     public RomsZopharNet() {
         super();
