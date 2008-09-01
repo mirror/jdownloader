@@ -27,15 +27,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 public class RomscentralCom extends PluginForDecrypt {
-
-    static private final String host = "romscentral.com"; //http://www.romscentral.com/ps1/zallstartennis2000p1.htm
-
+    static private final String host = "romscentral.com";
+    static private String lastRootCatUrl = "http://www.romscentral.com/<kategorie>/<htmlseite>";
     static private final Pattern patternSupportedWay1 = Pattern.compile("http://[\\w.]*?romscentral\\.com/(.+)/(.+\\.htm)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupportedWay2 = Pattern.compile("onclick=\"return popitup\\('(.+?\\.htm)'\\)", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupportedWay2 = Pattern.compile("onclick=\"return popitup\\('(.+\\.htm)'\\)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile("(" + patternSupportedWay1.pattern() + ")|(" + patternSupportedWay2.pattern() + ")", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternDownload = Pattern.compile("document.getElementById\\(\"rom\"\\)\\.innerHTML = '<a href=\"(.+)\" class=", Pattern.CASE_INSENSITIVE);
-    //static private final Pattern patternRootUrl = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}\"><b>.+</b></a> \\(([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))\\)</p>", Pattern.CASE_INSENSITIVE);
-    
+     
     public RomscentralCom() {
         super();
     }
@@ -53,9 +50,11 @@ public class RomscentralCom extends PluginForDecrypt {
             String file = new Regex(br, patternSupportedWay1.pattern()).getMatch(0);
             decryptedLinks.add(createDownloadlink(file));
         } else if(matcher2.find()) {
-            String rootUrl = JDUtilities.getGUI().showUserInputDialog("Bitte gebe die URL an, von woher du den Quelltext eingefügt hast!", "http://www.romscentral.com/<kategorie>/<htmlseite>");
+            String rootUrl = JDUtilities.getGUI().showUserInputDialog("Bitte gebe die URL an, von woher du den Quelltext eingefügt hast!", lastRootCatUrl);
+   
             matcher = patternSupportedWay1.matcher(rootUrl);
             if(matcher.find() && !rootUrl.equals("http://www.romscentral.com/<kategorie>/<htmlseite>")) {
+                lastRootCatUrl = rootUrl;
                 String rootCat = new Regex(rootUrl, patternSupportedWay1).getMatch(0);
                 String matches[] = new Regex(parameter, patternSupportedWay2.pattern()).getRow(0);
                 for(int i=0; i<= matches.length-1; i++) {
