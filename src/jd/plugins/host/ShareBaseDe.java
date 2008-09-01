@@ -65,10 +65,8 @@ public class ShareBaseDe extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setDebug(true);
-
+            br.setFollowRedirects(true);
             String page = br.getPage(downloadLink.getDownloadURL());
-            logger.info(page);
             String[] infos = new Regex(page, FILEINFO).getRow(0);
 
             downloadLink.setName(infos[0].trim());
@@ -106,9 +104,8 @@ public class ShareBaseDe extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        br.setDebug(true);
+        br.setFollowRedirects(true);
         String page = br.getPage(downloadLink.getDownloadURL());
-        logger.info(page);
         String fileName = Encoding.htmlDecode(new Regex(page, FILEINFO).getMatch(0));
 
         if (br.containsHTML(DOWLOAD_RUNNING)) {
@@ -144,13 +141,9 @@ public class ShareBaseDe extends PluginForHost {
             return;
         }
 
-        fileName = fileName.trim();
-
+        br.setFollowRedirects(false);
         br.postPage(downloadLink.getDownloadURL(), "doit=Download+starten");
-        logger.info(br.getRedirectLocation());
-        // String finishURL =
-        // Encoding.htmlDecode(requestInfo.getConnection().getHeaderField
-        // ("Location"));
+
         String finishURL = Encoding.htmlDecode(br.getRedirectLocation());
 
         if (finishURL == null) {
@@ -159,14 +152,11 @@ public class ShareBaseDe extends PluginForHost {
         }
 
         // Download vorbereiten
-        // HTTPConnection urlConnection = new HTTPConnection(new
-        // URL(finishURL).openConnection());
         HTTPConnection urlConnection = br.openGetConnection(finishURL);
 
         // Download starten
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
-
     }
 
     public int getMaxSimultanFreeDownloadNum() {
