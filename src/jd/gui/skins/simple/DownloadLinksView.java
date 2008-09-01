@@ -75,12 +75,10 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
                 switch (event.getID()) {
                 case ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED:
                     fireTableChanged(REFRESH_SPECIFIED_LINKS, event.getParameter());
-                    // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
                     break;
 
                 case ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED:
                     fireTableChanged(REFRESH_ALL_DATA_CHANGED, null);
-                    // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
                     break;
                 case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
                     if (event.getSource().getClass() == JDController.class) {
@@ -95,61 +93,12 @@ public abstract class DownloadLinksView extends JPanel implements ControlListene
 
     abstract public void fireTableChanged(int id, Object object);
 
-    // /**
-    // * Hier werden Links zu dieser Tabelle hinzugefügt.
-    // *
-    // * @param links Ein Vector mit Downloadlinks, die alle hinzugefügt werden
-    // * sollen
-    // */
-    // public void addLinks(DownloadLink links[]) {
-    // int countAdded = 0;
-    // logger.info("SET LINKS: "+links.length);
-    // for( DownloadLink link : links){
-    // if(null == link) continue;
-    //    		
-    // FilePackage filePackage = link.getFilePackage();
-    //    		
-    // if(filePackage!=null ){
-    //    			
-    // if(! packages.contains(filePackage)){
-    // packages.add(filePackage);
-    // filePackage.setDownloadLinks(new Vector<DownloadLink>());
-    // filePackage.getDownloadLinks().add(link);
-    // }else{
-    // //TODO signed: perfomre some checks...
-    // filePackage.getDownloadLinks().add(link);
-    // }
-    // }else{
-    // logger.severe("DownloadLink has not FilePackage set");
-    // }
-    // allLinks.add( link);
-    // ++countAdded;
-    // }
-    //    	
-    // if( countAdded>0){
-    // logger.info("added " + countAdded + " links");
-    // }
-    //
-    // //checkColumnSize();
-    // int[] ePackages = getExpandedPackeges();
-    // int[] sLinks = this.getSelectedLinks();
-    // fireTableChanged(REFRESH_ID_COMPLETE_REPAINT);
-    // this.setExpandedPackages(ePackages);
-    // this.setSelectedLinks(sLinks);
-    //        
-    // }
-
-    // abstract protected void checkColumnSize();
-
     public Vector<FilePackage> getPackages() {
         return packages;
     }
 
-    // abstract public void moveSelectedItems(int direction);
-    // abstract public void removeSelectedLinks();
-
     private void setPackages(Vector<FilePackage> packages) {
-        this.packages = packages;// new Vector<FilePackage>(packages);
+        this.packages = packages;
     }
 
 }

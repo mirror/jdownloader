@@ -142,21 +142,11 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         addConfigPanel(ConfigPanelReconnect.class, JDTheme.V("gui.images.config.reconnect"), JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"));
         addConfigPanel(ConfigPanelUnrar.class, JDTheme.V("gui.images.config.unrar"), JDLocale.L("gui.config.tabLables.unrar", "Archiv extract settings"));
         addConfigPanel(ConfigPanelCaptcha.class, JDTheme.V("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
-        // this.addConfigPanel(ConfigPanelInfoFileWriter.class,
-        // JDTheme.V("gui.images.config.infoFile", "infoFile"),
-        // JDLocale.L("gui.config.tabLables.infoFileWriter", "'Info File Writer'
-        // settings"));
         addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.V("gui.images.config.host"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.V("gui.images.config.decrypt"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
         addConfigPanel(ConfigPanelAddons.class, JDTheme.V("gui.images.config.packagemanager"), JDLocale.L("gui.config.tabLables.addons", "Addon manager"));
-//        addConfigPanel(SubPanelPluginsOptional.class, JDTheme.V("gui.images.config.addons"), JDLocale.L("gui.config.tabLables.optionalPlugin", "Optional Plugin settings"));
-
-        // this.addConfigPanel(ConfigPanelLinks.class,
-        // JDTheme.V("gui.images.config.tip"),
-        // JDLocale.L("gui.config.tabLables.links", "Wichtige Links"));
         addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.V("gui.images.config.container"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
         addConfigPanel(ConfigPanelEventmanager.class, JDTheme.V("gui.images.config.eventmanager", "eventmanager"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
-
         addConfigPanel(ConfigPanelUpdater.class, JDTheme.V("gui.images.config.updater"), JDLocale.L("gui.config.tabLables.updater", "Update"));
 
         try {
@@ -180,10 +170,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         btnRestart.addActionListener(this);
 
         setLayout(new GridBagLayout());
-        // JDUtilities.addToGridBag(this, tabbedPane,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH,
-        // GridBagConstraints.NORTHWEST);
+
         int n = 5;
         JXPanel cp = new JXPanel(new BorderLayout(n, n));
         int b = 12;
@@ -197,26 +184,10 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         btPanel.add(btnSave);
         btPanel.add(btnCancel);
         sp.add(btPanel, BorderLayout.EAST);
-        // JDUtilities.addToGridBag(this, chbExpert,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.RELATIVE, 1, 0, 0, null,
-        // GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        // JDUtilities.addToGridBag(this, btPanel, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0,
-        // null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+
         cp.add(tabbedPane, BorderLayout.CENTER);
         cp.add(sp, BorderLayout.SOUTH);
 
-        // JDUtilities.addToGridBag(this, btnSave, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 1, 0,
-        // null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        // JDUtilities.addToGridBag(this, btnCancel,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE,
-        // GridBagConstraints.EAST);
-        // JDUtilities.getLogger().info("" +
-        // JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB,
-        // 0));
         tabbedPane.addChangeListener(this);
         if (configClasses.size() <= JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0) || JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0) == 0) {
             paintPanel(0);
@@ -228,9 +199,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         // improve things?
         // pack();
 
-        LocationListener list = new LocationListener();
-        addComponentListener(list);
-        addWindowListener(list);
+        addWindowListener(new LocationListener());
         // questionable if one needs this call to pack since restoreWindow does
         // a similar job. Only way this may hurt is by increasing the time it
         // takes to make the dialog visible.
@@ -284,19 +253,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
     private void addConfigPanel(Class configPanelClass, String img, String title) {
         configClasses.add(configPanelClass);
 
-        // JPanel p = new JPanel(new GridBagLayout());
-        // this.containerPanels.add(p);
-        // configPanels.add(null);
-        // JDUtilities.addToGridBag(p, new JLabel(title, new
-        // ImageIcon(JDUtilities.getImage(img)), SwingConstants.LEFT),
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.REMAINDER, 1, 1, 0, null,
-        // GridBagConstraints.HORIZONTAL, GridBagConstraints.FIRST_LINE_START);
-        // JDUtilities.addToGridBag(p, new JSeparator(),
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.REMAINDER, 1, 1, 0, null,
-        // GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTH);
-
         int n = 10;
         JPanel p = new JPanel(new BorderLayout(n, n));
         p.setBorder(new EmptyBorder(n, n, n, n));
@@ -306,8 +262,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         int m = 2;
         JPanel headerPanel = new JPanel(new BorderLayout(m, m));
         ImageIcon icon = new ImageIcon(JDUtilities.getImage(img));
-        // headerPanel.add(new JLabel(title, icon, SwingConstants.LEFT),
-        // BorderLayout.NORTH);
+
         try {
             JLinkButton linkButton = new JLinkButton(title, icon, new URL(JDLocale.L("gui.configdialog.wikilink.theconfigurationmenu", "http://jdownloader.org/wiki/index.php?title=Konfig:") + title.replaceAll("\\s", "_")));
             linkButton.setBorder(null);
@@ -362,12 +317,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         JScrollPane scrollPane = new JScrollPane(panel);
         scrollPane.setBorder(null);
         scrollPane.getViewport().setBorder(null);
-        // JDUtilities.addToGridBag(container, scrollPane,
-        // GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE,
-        // GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.BOTH,
-        // GridBagConstraints.NORTH);
         container.add(panel, BorderLayout.CENTER);
-        // container.add(scrollPane, BorderLayout.CENTER);
     }
 
     public void stateChanged(ChangeEvent e) {
@@ -377,7 +327,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         paintPanel(index);
         JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
         validate();
-        // pack();
 
     }
 

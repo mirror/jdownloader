@@ -56,9 +56,9 @@ public class StreamingShareTool extends PluginOptional {
     }
 
     private JFrame frame;
-    
+
     private JMenuItem menHelpHelp;
-    
+
     private JMenuItem menOpenList;
 
     private JMenuItem menSaveDLC;
@@ -68,13 +68,13 @@ public class StreamingShareTool extends PluginOptional {
     private JMenuItem menFileValidate;
 
     private JMenuItem menExit;
-  
-    //TODO: Add your Service here:
+
+    // TODO: Add your Service here:
 
     private Pattern DecryptOnlyThese = Pattern.compile("^youtube.com$");
-    
+
     private JTextArea textArea;
-    
+
     private String extension = "sst";
 
     public void actionPerformed(ActionEvent e) {
@@ -87,9 +87,9 @@ public class StreamingShareTool extends PluginOptional {
             File ret = fc.getSelectedFile();
             if (ret == null || !ret.exists()) { return; }
             try {
-                    String open = (String) JDUtilities.loadObject(frame, ret, true);
-                    textArea.setText(open);
-                    
+                String open = (String) JDUtilities.loadObject(frame, ret, true);
+                textArea.setText(open);
+
             } catch (Exception e2) {
                 textArea.setText(JDUtilities.getLocalFile(ret));
             }
@@ -113,28 +113,27 @@ public class StreamingShareTool extends PluginOptional {
             return;
         }
         if (e.getSource() == menFileValidate) {
-        	GetValid(textArea.getText(),true);
+            GetValid(textArea.getText(), true);
             return;
-        }        
+        }
         if (e.getSource() == menSaveDLC) {
-        	saveDLC(textArea.getText());
+            saveDLC(textArea.getText());
             return;
-        }        
-        
+        }
+
         if (e.getSource() == menExit) {
             frame.dispose();
             return;
         }
         if (e.getSource() == menHelpHelp) {
-        	try {
-				JLinkButton.openURL(JDLocale.L("plugins.optional.streamsharingtool.wikiurl", "http://wiki.jdownloader.org/index.php?title=StreamingShare"));
-			} catch (MalformedURLException e1) {
-				e1.printStackTrace();
-			}
+            try {
+                JLinkButton.openURL(JDLocale.L("plugins.optional.streamsharingtool.wikiurl", "http://wiki.jdownloader.org/index.php?title=StreamingShare"));
+            } catch (MalformedURLException e1) {
+                e1.printStackTrace();
+            }
             return;
-        }       
-        
-        
+        }
+
         if (frame == null || !frame.isVisible()) {
             initGUI();
         } else {
@@ -174,53 +173,45 @@ public class StreamingShareTool extends PluginOptional {
 
         return true;
     }
-    
-    private void saveDLC(String text)
-    {
-        JDFileChooser fc= new JDFileChooser("_LOADSAVEDLC");
+
+    private void saveDLC(String text) {
+        JDFileChooser fc = new JDFileChooser("_LOADSAVEDLC");
         fc.setFileFilter(new JDFileFilter(null, ".dlc", true));
         fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
         File ret = fc.getSelectedFile();
         if (ret == null) { return; }
-    	String comment = JDUtilities.getGUI().showTextAreaDialog(JDLocale.L("plugins.optional.streamsharingtool.gui.comment.title", "Enter DLC-Comment:"),JDLocale.L("plugins.optional.streamsharingtool.gui.comment.question", "Please enter your desired DLC-Comment:"), JDLocale.L("plugins.optional.streamsharingtool.gui.comment.defaultcomment", "StreamingShare-DLC"));
-    	
-    	//TODO: Gespeicherter DLC-Uploadername in Defaultcomment einbringen
-    	
-    	if (comment == null) { comment = JDLocale.L("plugins.optional.streamsharingtool.gui.comment.defaultcomment", "StreamingShare-DLC"); }
-        Vector<DownloadLink> links = GetValid(text,false);
-        
+        String comment = JDUtilities.getGUI().showTextAreaDialog(JDLocale.L("plugins.optional.streamsharingtool.gui.comment.title", "Enter DLC-Comment:"), JDLocale.L("plugins.optional.streamsharingtool.gui.comment.question", "Please enter your desired DLC-Comment:"), JDLocale.L("plugins.optional.streamsharingtool.gui.comment.defaultcomment", "StreamingShare-DLC"));
+
+        // TODO: Gespeicherter DLC-Uploadername in Defaultcomment einbringen
+
+        if (comment == null) {
+            comment = JDLocale.L("plugins.optional.streamsharingtool.gui.comment.defaultcomment", "StreamingShare-DLC");
+        }
+        Vector<DownloadLink> links = GetValid(text, false);
+
         Vector<DownloadLink> toSave = new Vector<DownloadLink>();
-        
-        for(int i = 0; i < links.size();i++)
-        {
-        	
-        //TODO: Add your Service here:
-        if(links.get(i).getPlugin().getHost().matches("^youtube\\.com$"))
-        {
-        //toSave.add(links.get(i)); geht nicht, da in DLCs nur Links und keine Objects gespeichert werden
-        	String URL = 
-        		"< streamingshare=\"youtube.com\" " + 
-                "name=\""+ links.get(i).getName() + 
-                "\" dlurl=\"" + links.get(i).getDownloadURL() + 
-                "\" brurl=\"" + links.get(i).getBrowserUrl() + 
-                "\" convertto=\"" + links.get(i).getProperty("convertto").toString() + 
-                "\" comment=\"" + comment + 
-                "\" >";
-        toSave.add(new DownloadLink(null, null, getHost(), Encoding.htmlDecode(URL), true));
 
-        //logger.info(links.get(i).getDownloadURL());
-        //logger.info(links.get(i).getName());
-        //logger.info(links.get(i).getBrowserUrl());
-        //logger.info(links.get(i).getSourcePluginComment());
-        //logger.info(links.get(i).getProperty("convertto").toString());
+        for (int i = 0; i < links.size(); i++) {
 
+            // TODO: Add your Service here:
+            if (links.get(i).getPlugin().getHost().matches("^youtube\\.com$")) {
+                // toSave.add(links.get(i)); geht nicht, da in DLCs nur Links
+                // und keine Objects gespeichert werden
+                String URL = "< streamingshare=\"youtube.com\" " + "name=\"" + links.get(i).getName() + "\" dlurl=\"" + links.get(i).getDownloadURL() + "\" brurl=\"" + links.get(i).getBrowserUrl() + "\" convertto=\"" + links.get(i).getProperty("convertto").toString() + "\" comment=\"" + comment + "\" >";
+                toSave.add(new DownloadLink(null, null, getHost(), Encoding.htmlDecode(URL), true));
+
+                // logger.info(links.get(i).getDownloadURL());
+                // logger.info(links.get(i).getName());
+                // logger.info(links.get(i).getBrowserUrl());
+                // logger.info(links.get(i).getSourcePluginComment());
+                //logger.info(links.get(i).getProperty("convertto").toString());
+
+            }
         }
-        }
-        
-        for(int i = 0; i < toSave.size();i++)
-        {
-        	logger.info(toSave.get(i).getDownloadURL());
-        	//TO-DO: Debuginfo
+
+        for (int i = 0; i < toSave.size(); i++) {
+            logger.info(toSave.get(i).getDownloadURL());
+            // TO-DO: Debuginfo
         }
 
         if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
@@ -230,7 +221,7 @@ public class StreamingShareTool extends PluginOptional {
 
         JDUtilities.getController().saveDLC(ret, toSave);
         JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("plugins.optional.streamsharingtool.action.save.dlc.finished", "StreamingShare DLC ready 2 use!"), 45);
-    	
+
     }
 
     private void initGUI() {
@@ -239,9 +230,7 @@ public class StreamingShareTool extends PluginOptional {
         frame.setIconImage(JDTheme.I("gui.images.config.decrypt"));
         frame.setPreferredSize(new Dimension(600, 600));
         frame.setName("STREAMSHARINGLINKGENERATOR");
-        LocationListener list = new LocationListener();
-        frame.addComponentListener(list);
-        frame.addWindowListener(list);
+        frame.addWindowListener(new LocationListener());
         frame.setLayout(new BorderLayout());
         initMenu();
 
@@ -266,13 +255,10 @@ public class StreamingShareTool extends PluginOptional {
 
         JMenu menFile = new JMenu(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.file", "File"));
         JMenu menHelp = new JMenu(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.help", "Help"));
-        
-        
+
         menuBar.add(menFile);
         menuBar.add(menHelp);
-        
-        
-        
+
         // Filemenu
         menOpenList = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.open.list", "Open List"));
         menSaveDLC = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.save.dlc", "Save DLC"));
@@ -287,13 +273,13 @@ public class StreamingShareTool extends PluginOptional {
         menFileValidate.addActionListener(this);
         menOpenList.addActionListener(this);
         menHelpHelp.addActionListener(this);
-        
-        menSaveDLC.setIcon(JDTheme.II("gui.images.jd_logo",16,16));
-        menSaveList.setIcon(JDTheme.II("gui.images.save",16,16));
-        menOpenList.setIcon(JDTheme.II("gui.images.load",16,16));
-        menExit.setIcon(JDTheme.II("gui.images.exit",16,16));
-        menHelpHelp.setIcon(JDTheme.II("gui.images.help",16,16));
-        
+
+        menSaveDLC.setIcon(JDTheme.II("gui.images.jd_logo", 16, 16));
+        menSaveList.setIcon(JDTheme.II("gui.images.save", 16, 16));
+        menOpenList.setIcon(JDTheme.II("gui.images.load", 16, 16));
+        menExit.setIcon(JDTheme.II("gui.images.exit", 16, 16));
+        menHelpHelp.setIcon(JDTheme.II("gui.images.help", 16, 16));
+
         menFile.add(menFileValidate);
         menFile.add(menOpenList);
         menFile.add(menSaveList);
@@ -313,47 +299,43 @@ public class StreamingShareTool extends PluginOptional {
         ConvertDialog.setKeepineverycase(true);
         Vector<DownloadLink> toReturn = new Vector<DownloadLink>();
         Vector<DownloadLink> links = new DistributeData(script).findLinks(false);
-        
-        if(links.size()==0)
-        {
-            if(showcount)
-            {
-            JDUtilities.getGUI().showCountdownConfirmDialog("0 " + JDLocale.L("plugins.optional.streamsharingtool.action.validate.linksfound", "Link(s) gefunden!"), 60);
+
+        if (links.size() == 0) {
+            if (showcount) {
+                JDUtilities.getGUI().showCountdownConfirmDialog("0 " + JDLocale.L("plugins.optional.streamsharingtool.action.validate.linksfound", "Link(s) gefunden!"), 60);
             }
             return null;
         }
-        logger.info(String.valueOf(links.size())+ " Links found");
-        for(int i = 0; i < links.size();i++)
-        {
-        	if(DecryptOnlyThese.matcher(links.get(i).getPlugin().getHost()).matches())
-            {
-        	toReturn.add(links.get(i));
-        	//TO-DO: Debuginfo
-            //logger.info(links.get(i).getDownloadURL()+ " added to valid Links");
-            /*logger.info(links.get(i).getName());
-            logger.info(links.get(i).getBrowserUrl());
-            logger.info(links.get(i).getSourcePluginComment());
-            logger.info(links.get(i).getProperty("convertto").toString());*/
-            
+        logger.info(String.valueOf(links.size()) + " Links found");
+        for (int i = 0; i < links.size(); i++) {
+            if (DecryptOnlyThese.matcher(links.get(i).getPlugin().getHost()).matches()) {
+                toReturn.add(links.get(i));
+                // TO-DO: Debuginfo
+                // logger.info(links.get(i).getDownloadURL()+
+                // " added to valid Links");
+                /*
+                 * logger.info(links.get(i).getName());
+                 * logger.info(links.get(i).getBrowserUrl());
+                 * logger.info(links.get(i).getSourcePluginComment());
+                 * logger.info
+                 * (links.get(i).getProperty("convertto").toString());
+                 */
+
+            } else {
+                // TO-DO: Debuginfo
+                // logger.info(links.get(i).getDownloadURL()+
+                // " isn't a valid Link");
             }
-        	else
-        	{
-        		//TO-DO: Debuginfo
-        		//logger.info(links.get(i).getDownloadURL()+ " isn't a valid Link");
-        	}
 
         }
-        
+
         ConvertDialog.setKeepformat(false);
         ConvertDialog.setKeepineverycase(false);
-        if(showcount)
-        {
-        JDUtilities.getGUI().showCountdownConfirmDialog(String.valueOf(links.size()) + " " + JDLocale.L("plugins.optional.streamsharingtool.action.validate.linksfound", "Link(s) gefunden!"), 60);
+        if (showcount) {
+            JDUtilities.getGUI().showCountdownConfirmDialog(String.valueOf(links.size()) + " " + JDLocale.L("plugins.optional.streamsharingtool.action.validate.linksfound", "Link(s) gefunden!"), 60);
         }
         return toReturn;
 
     }
 
 }
-
-

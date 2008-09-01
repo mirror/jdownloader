@@ -701,9 +701,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(300, 200));
         frame.setName("ADDON_NEWSFEED_3");
-        LocationListener listener = new LocationListener();
-        frame.addComponentListener(listener);
-        frame.addWindowListener(listener);
+        frame.addWindowListener(new LocationListener());
         frame.setLayout(new BorderLayout(5, 5));
 
         subscribedList = new JList();
@@ -750,9 +748,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(300, 200));
         frame.setName("ADDON_NEWSFEED_2");
-        LocationListener listener = new LocationListener();
-        frame.addComponentListener(listener);
-        frame.addWindowListener(listener);
+        frame.addWindowListener(new LocationListener());
         frame.setLayout(new BorderLayout(5, 5));
 
         aboList = new JList();
@@ -799,9 +795,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
         frame.setPreferredSize(new Dimension(700, 500));
         frame.setName("ADDON_NEWSFEED_1");
-        LocationListener listener = new LocationListener();
-        frame.addComponentListener(listener);
-        frame.addWindowListener(listener);
+        frame.addWindowListener(new LocationListener());
         frame.setLayout(new BorderLayout(5, 5));
 
         list = new JList();

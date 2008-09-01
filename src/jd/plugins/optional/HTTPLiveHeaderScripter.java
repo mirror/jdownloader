@@ -528,9 +528,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         frame.setIconImage(JDTheme.I("gui.images.config.reconnect"));
         frame.setPreferredSize(new Dimension(600, 600));
         frame.setName("HTTPLIVEHEADERCREATER");
-        LocationListener list = new LocationListener();
-        frame.addComponentListener(list);
-        frame.addWindowListener(list);
+        frame.addWindowListener(new LocationListener());
         frame.setLayout(new BorderLayout());
         initMenu();
 

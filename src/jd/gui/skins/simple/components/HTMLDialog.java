@@ -31,7 +31,6 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -96,9 +95,6 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
         this.getRootPane().setDefaultButton(btnOk);
         this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         this.setVisible(true);
-        LocationListener list = new LocationListener();
-        this.addComponentListener(list);
-        this.addWindowListener(list);
 
         this.setLocation(JDUtilities.getCenterOfComponent(frame, this));
         this.setVisible(false);

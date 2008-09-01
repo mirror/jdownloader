@@ -468,6 +468,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             dim.width = Math.min(dim.width, screenSize.width);
             dim.height = Math.min(dim.height, screenSize.height);
             component.setSize(dim);
+            if (component instanceof JFrame) ((JFrame) component).setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE_OF_" + component.getName(), JFrame.NORMAL));
         } else {
             component.validate();
         }
@@ -479,6 +480,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             key = child.getName();
         }
         guiConfig.setProperty("DIMENSION_OF_" + key, child.getSize());
+        if (child instanceof JFrame) guiConfig.setProperty("MAXIMIZED_STATE_OF_" + key, ((JFrame) child).getExtendedState());
         guiConfig.save();
     }
 
@@ -684,7 +686,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setPreferredSize(dim);
         frame.setLocation(SimpleGUI.getLastLocation(null, null, frame));
         frame.pack();
-        frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE", JFrame.NORMAL));
+        frame.setExtendedState(guiConfig.getIntegerProperty("MAXIMIZED_STATE_OF_" + frame.getName(), JFrame.NORMAL));
         frame.setVisible(true);
         // DND
         dragNDrop = new Dropper();
@@ -1701,8 +1703,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (doIt) {
                 SimpleGUI.saveLastLocation(e.getComponent(), null);
                 SimpleGUI.saveLastDimension(e.getComponent(), null);
-                guiConfig.setProperty("MAXIMIZED_STATE", getFrame().getExtendedState());
-                JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
+                guiConfig.save();
                 fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT, null));
             }
         }
@@ -1756,7 +1757,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 for (int j = 0; j < data.length; j++) {
                     if (data[j] != null && !data[j].equals("-1")) {
                         panel.add(new JLabel(label[j]), "gapleft 20");
-                        if(label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
+                        if (label[j].equals(JDLocale.L("plugins.host.premium.info.trafficLeft", "Traffic left"))) {
                             JPanel panel2 = new JPanel();
                             panel2.add(new JTextField(data[j]));
                             panel2.add(freeTrafficChart);

@@ -63,15 +63,9 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
     private JButton btnOk;
 
-    /**
-     * 
-     */
-
     protected Insets insets = new Insets(0, 0, 0, 0);
 
     protected Logger logger = JDUtilities.getLogger();
-
-    // private JLabel lblText;
 
     private JScrollPane scrollPane;
     private JScrollPane optScrollPane;
@@ -94,14 +88,8 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         setTitle(title);
         textArea = new JTextPane();
         scrollPane = new JScrollPane(textArea);
-        // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
         setResizable(true);
-        // int width = screenSize.width;
-        // int height = screenSize.height;
-
-        // this.setPreferredSize(new
-        // Dimension((int)(width*0.9),(int)(height*0.9)));
 
         textArea.setEditable(true);
         textArea.requestFocusInWindow();
@@ -115,19 +103,14 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         JPanel p = new JPanel();
         p.add(btnOk);
         p.add(btnCancel);
-        // this.setVisible(true);
         pack();
 
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         this.add(p, BorderLayout.SOUTH);
-        LocationListener list = new LocationListener();
-        addComponentListener(list);
-        addWindowListener(list);
+        addWindowListener(new LocationListener());
 
-        setVisible(true);
         SimpleGUI.restoreWindow(null, null, this);
-        setVisible(false);
         setModal(true);
         setVisible(true);
 
@@ -151,14 +134,8 @@ public class TextAreaDialog extends JDialog implements ActionListener {
 
         scrollPane = new JScrollPane(textArea);
         optScrollPane = new JScrollPane(optTextArea);
-        // Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
         setResizable(true);
-        // int width = screenSize.width;
-        // int height = screenSize.height;
-
-        // this.setPreferredSize(new
-        // Dimension((int)(width*0.9),(int)(height*0.9)));
 
         textArea.setEditable(true);
         optTextArea.setEditable(true);
@@ -220,18 +197,13 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         c.gridy = 4;
         this.add(btnCancel, c);
 
-        // this.setVisible(true);
         pack();
 
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        LocationListener list = new LocationListener();
-        addComponentListener(list);
-        addWindowListener(list);
+        addWindowListener(new LocationListener());
 
-        setVisible(true);
         SimpleGUI.restoreWindow(null, null, this);
-        setVisible(false);
         setModal(true);
         setVisible(true);
     }
@@ -239,14 +211,11 @@ public class TextAreaDialog extends JDialog implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOk && optTextArea == null) {
             text = textArea.getText();
-            dispose();
         } else if (e.getSource() == btnOk && optTextArea != null) {
             text2[0] = textArea.getText();
             text2[1] = optTextArea.getText();
-            dispose();
-        } else {
-            dispose();
         }
+        dispose();
     }
 
     private String getText() {

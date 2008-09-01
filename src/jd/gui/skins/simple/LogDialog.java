@@ -155,9 +155,7 @@ public class LogDialog extends JFrame implements ActionListener {
         logField = new JTextArea(10, 60);
         logField.setEditable(true);
 
-        LocationListener list = new LocationListener();
-        this.addComponentListener(list);
-        this.addWindowListener(list);
+        this.addWindowListener(new LocationListener());
 
         int n = 10;
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));

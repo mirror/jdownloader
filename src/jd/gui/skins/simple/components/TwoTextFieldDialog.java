@@ -117,13 +117,9 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
 
         getRootPane().setDefaultButton(btnOk);
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        LocationListener list = new LocationListener();
-        addComponentListener(list);
-        addWindowListener(list);
+        addWindowListener(new LocationListener());
 
-        setVisible(true);
         SimpleGUI.restoreWindow(null, null, this);
-        setVisible(false);
         setModal(true);
         setVisible(true);
     }
@@ -132,10 +128,8 @@ public class TwoTextFieldDialog extends JDialog implements ActionListener {
         if (e.getSource() == btnOk) {
             text2[0] = textField.getText();
             text2[1] = textField2.getText();
-            dispose();
-        } else {
-            dispose();
         }
+        dispose();
     }
 
     private String[] getTextArray() {

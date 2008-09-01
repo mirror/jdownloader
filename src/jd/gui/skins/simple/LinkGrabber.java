@@ -78,8 +78,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.text.PlainDocument;
 
-import jd.unrar.UnrarPassword;
-
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
@@ -89,6 +87,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
+import jd.unrar.UnrarPassword;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -798,9 +797,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         initGUI();
 
         addLinks(linkList);
-        LocationListener list = new LocationListener();
-        addComponentListener(list);
-        addWindowListener(list);
+        addWindowListener(new LocationListener());
         pack();
         SimpleGUI.restoreWindow(null, null, this);
         setVisible(true);
@@ -1260,7 +1257,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setName(tab.getPackageName());
         fp.setComment(tab.getComment());
         fp.setPassword(tab.getPassword());
-//        JUnrar unrar = new JUnrar(false);
+        // JUnrar unrar = new JUnrar(false);
         UnrarPassword.addToPasswordlist(tab.getPassword());
         UnrarPassword.pushPasswordToTop(tab.getPassword());
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {

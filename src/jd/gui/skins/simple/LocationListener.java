@@ -17,51 +17,18 @@
 package jd.gui.skins.simple;
 
 import java.awt.Component;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 
 import jd.utils.JDUtilities;
 
-public class LocationListener implements ComponentListener, WindowListener {
-
-    // private SubConfiguration guiConfig;
-    // private Logger logger;
-
-    private Component src;
+public class LocationListener implements WindowListener {
 
     public LocationListener() {
-
-        // this.guiConfig=JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-        // this.logger = JDUtilities.getLogger();
     }
 
-    public void componentHidden(ComponentEvent e) {
-
-        src = e.getComponent();
-    }
-
-    public void componentMoved(ComponentEvent e) {
-
-        src = e.getComponent();
-
-    }
-
-    public void componentResized(ComponentEvent e) {
-
-        src = e.getComponent();
-    }
-
-    public void componentShown(ComponentEvent e) {
-
-        src = e.getComponent();
-
-    }
-
-    public void saveAll() {
+    public void saveAll(Component src) {
         if (src != null) {
-            // JDUtilities.getLogger().info("Loc listener");
             SimpleGUI.saveLastLocation(src, null);
             SimpleGUI.saveLastDimension(src, null);
             JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
@@ -69,46 +36,27 @@ public class LocationListener implements ComponentListener, WindowListener {
     }
 
     public void windowActivated(WindowEvent e) {
-
-        src = e.getComponent();
-
     }
 
     public void windowClosed(WindowEvent e) {
-
-        src = e.getComponent();
-        saveAll();
-
+        saveAll(e.getComponent());
     }
 
     public void windowClosing(WindowEvent e) {
-
-        src = e.getComponent();
-        saveAll();
+        saveAll(e.getComponent());
     }
 
     public void windowDeactivated(WindowEvent e) {
-
-        src = e.getComponent();
-        saveAll();
+        saveAll(e.getComponent());
     }
 
     public void windowDeiconified(WindowEvent e) {
-
-        src = e.getComponent();
-
     }
 
     public void windowIconified(WindowEvent e) {
-
-        src = e.getComponent();
-
     }
 
     public void windowOpened(WindowEvent e) {
-
-        src = e.getComponent();
-
     }
 
 }

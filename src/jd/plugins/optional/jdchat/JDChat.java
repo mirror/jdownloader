@@ -135,8 +135,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/mode ");
         COMMANDS.add("/join");
         COMMANDS.add("/translate ");
-        
-        
+
         COMMANDS.add("/translate artoda ");
         COMMANDS.add("/translate artode ");
         COMMANDS.add("/translate artofi ");
@@ -903,9 +902,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         frame.setIconImage(JDTheme.I("gui.images.config.network_local"));
         frame.setPreferredSize(new Dimension(1000, 600));
         frame.setName("JDCHAT");
-        LocationListener list = new LocationListener();
-        frame.addComponentListener(list);
-        frame.addWindowListener(list);
+        frame.addWindowListener(new LocationListener());
         frame.setLayout(new BorderLayout());
         top = new JLabel();
         textArea = new JTextPane();
