@@ -25,7 +25,6 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -46,31 +45,25 @@ public class CryptingIt extends PluginForDecrypt {
         br.getPage(parameter);
         String id = new Regex(parameter, "id=(\\d+)").getMatch(0);
         String password = br.getRegex("<td valign=\"top\" style=\"border-bottom: 1px dotted #C8C8C8;\"><div align=\"center\">(.*?)</div></td>").getMatch(0, 2);
-        String dlcLink = "http://crypting.it/files/download.php?fileid="+id+"-m1.dlc";
+        String dlcLink = "http://crypting.it/files/download.php?fileid=" + id + "-m1.dlc";
+
         
-        // get DLC
         File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         if (Browser.download(containerFile, dlcLink)) {
             links = JDUtilities.getController().getContainerLinks(containerFile);
             containerFile.delete();
-        }
-
-        if (links != null) {
-            FilePackage fp = new FilePackage();
-            if (password != null) fp.setPassword(password);
-            fp.setComment("from " + parameter);
-            for (DownloadLink dLink : links) {
-                dLink.setSourcePluginComment("from " + parameter);
-                fp.add(dLink);
-            }
-            decryptedLinks.addAll(links);
-            
-            return decryptedLinks;
-        // end DLC
         } else {
             return null;
         }
+
+        if (links != null) {
+            for (DownloadLink dLink : links) {                
+                dLink.addSourcePluginPassword(password);
+                decryptedLinks.add(dLink);
+            }
+        }
+        return decryptedLinks;
     }
 
     @Override
