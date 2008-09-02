@@ -258,7 +258,6 @@ public class Netloadin extends PluginForHost {
        
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
-//        br.setDebug(true);
         br.setFollowRedirects(false);
         br.setAuth("netload.in", account.getUser(), account.getPass()); 
         br.openGetConnection(downloadLink.getDownloadURL());
@@ -388,22 +387,13 @@ public class Netloadin extends PluginForHost {
         return HOST;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.PluginForHost#reset()
-     */
+
 
     @Override
     public String getPluginName() {
         return HOST;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.PluginForHost#checkAvailability(jd.plugins.DownloadLink)
-     */
 
     @Override
     public Pattern getSupportedLinks() {

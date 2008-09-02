@@ -50,7 +50,6 @@ import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
-import jd.parser.Regex;
 import jd.utils.CheckJava;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -462,18 +461,14 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
-        
-       // org.apache.log4j.Logger lg = org.apache.log4j.Logger.getLogger("jd");
-        // BasicConfigurator.configure();
-        // lg.error("hallo Welt");
-        // lg.setLevel(org.apache.log4j.Level.ALL);
+
         Level level = JDUtilities.getLogger().getLevel();
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE))) {
             if (!debug) {
                 JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), String.format(JDLocale.L("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."), level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"));
             }
         }
-        // public ControlEvent(Object source, int controlID, Object parameter)
+
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
     }

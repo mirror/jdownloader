@@ -36,9 +36,7 @@ public class ConfigPanelUpdater extends ConfigPanel {
 
     private SubConfiguration config;
 
-    private Configuration configuration;
-
-    // private Boolean beta;
+    private Configuration configuration;    
 
     public ConfigPanelUpdater(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -55,18 +53,9 @@ public class ConfigPanelUpdater extends ConfigPanel {
     @Override
     public void initPanel() {
         config = CFGConfig.getConfig("WEBUPDATE");
-        // this.beta =
-        // CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",
-        // false);
-
         ConfigEntry conditionEntry;
         addGUIConfigEntry(new GUIConfigEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_DISABLE, JDLocale.L("gui.config.general.webupdate.disable", "Update nur manuell durchführen")).setDefaultValue(false)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Configuration.PARAM_WEBUPDATE_AUTO_RESTART, JDLocale.L("gui.config.general.webupdate.auto", "automatisch, ohne Nachfrage ausführen")).setDefaultValue(false).setEnabledCondidtion(conditionEntry, "==", false)));
-        // addGUIConfigEntry(new GUIConfigEntry(new
-        // ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "WEBUPDATE_BETA",
-        // JDLocale.L("gui.config.general.webupdate.beta",
-        // "Auf Betaversion aktualisieren(Neustart nötig)"
-        // )).setDefaultValue(false)));
         add(panel, BorderLayout.NORTH);
     }
 
@@ -79,13 +68,6 @@ public class ConfigPanelUpdater extends ConfigPanel {
     public void save() {
         saveConfigEntries();
         config.save();
-        // if (beta !=
-        // CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA",
-        // false)) {
-        // new
-        //JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty
-        // (Configuration.CID, -1), true);
-        // }
     }
 
 }

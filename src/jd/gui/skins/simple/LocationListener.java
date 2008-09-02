@@ -29,8 +29,6 @@ public class LocationListener implements WindowListener {
         if (src != null) {
             SimpleGUI.saveLastLocation(src, null);
             SimpleGUI.saveLastDimension(src, null);
-            // Nicht nötig, wird bereits bei saveLastXXX aufgerufen
-            // JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
         }
     }
 

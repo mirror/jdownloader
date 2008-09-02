@@ -120,11 +120,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/get/config");
                 infovector.add("Get Config");
 
-                // commandvec.add("/get/happyhour/gui(0|1)/");
-                // infovector.add(
-                // "Get Happy Hour Status (1: Grafisch aufbereitet /0: Besser auslesbar)"
-                // );
-
                 commandvec.add("/get/version");
                 infovector.add("Get Version");
 
@@ -197,10 +192,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 commandvec.add("/action/save/container/%X%");
                 infovector.add("Save DLC-Container with all Links to %X%<br /> " + "Sample see /action/add/container/%X%");
 
-                // commandvec.add("/action/set/beta/(true|false)");
-                // infovector.add(
-                // "Set use beta enabled or not (doesn't restart itself!)");
-
                 commandvec.add("/action/set/clipboard/(true|false)");
                 infovector.add("Set ClipBoard Control enabled or not");
 
@@ -241,87 +232,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 response.getWriter().println(JDUtilities.getIPAddress());
             }
 
-            // // Get HappyHour
-            // else if (request.getRequestURI().matches(
-            // "[\\s\\S]*?/get/happyhour/gui[01]{1}/[\\s\\S]*")) {
-            //
-            // Integer happyguiint = Integer.parseInt(new
-            // Regex(request.getRequestURI(),
-            // "[\\s\\S]*?/get/happyhour/gui([01]{1})/[\\s\\S]*").getMatch(0));
-            // Boolean happygui = false;
-            // if (happyguiint == 1) {
-            // happygui = true;
-            // }
-            // ;
-            //
-            // RequestInfo ri = HTTP.getRequest(new
-            // URL("http://jdownloader.org/hh.php?txt=1"));
-            //
-            // int sec = 300 -
-            // JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[3]);
-            //
-            // int lastStart =
-            // JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[4]);
-            // int lastEnd =
-            // JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[5]);
-            // Date lastStartDate = new Date(lastStart * 1000L);
-            // lastStartDate.setTime(lastStart * 1000L);
-            //
-            // Date lastEndDate = new Date(lastEnd * 1000L);
-            // lastEndDate.setTime(lastEnd * 1000L);
-            // if (ri.containsHTML("Hour")) {// HappyHour aktiv
-            // int activ =
-            // JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[1]);
-            // Date d = new Date(activ * 1000L);
-            // d.setTime(activ * 1000L);
-            //
-            // SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            // String html = "";
-            // if (!happygui) {
-            // html = String.format(
-            // "<- active=\"1\" active_since=\"%s\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->"
-            // , df.format(d), JDUtilities.formatSeconds(sec),
-            // df.format(lastStartDate), df.format(lastEndDate));
-            // } else {
-            // html = String.format(JDLocale.L(
-            // "plugins.hoster.rapidshare.com.hhactive.html",
-            // "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Aktiv seit %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"
-            // ), df.format(d), JDUtilities.formatSeconds(sec),
-            // df.format(lastStartDate), df.format(lastEndDate));
-            // }
-            //
-            // response.getWriter().println(html);
-            // // JDUtilities.getGUI().showHTMLDialog(JDLocale.L(
-            // "plugins.hoster.rapidshare.com.happyHours",
-            // // "Happy Hour Check"), html);
-            // } else {
-            // int activ =
-            // JDUtilities.filterInt(Regex.getLines(ri.getHtmlCode())[1]);
-            // Date d = new Date(activ * 1000L);
-            // d.setTime(activ * 1000L);
-            //
-            // SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            //
-            // String html = "";
-            // if (!happygui) {
-            // html = String.format(
-            // "<- active=\"0\" last_check_ago=\"%s\" last_happyhour_from=\"%s\" last_happyhour_until=\"%s\" ->"
-            // , JDUtilities.formatSeconds(sec), df.format(lastStartDate),
-            // df.format(lastEndDate));
-            // } else {
-            // html = String.format(JDLocale.L(
-            // "plugins.hoster.rapidshare.com.hhinactive.html",
-            // "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/nhh.jpg' /><br>Die letzte Happy Hour Phase endete am %s<br>Zuletzt überprüft vor %s<br>Letzte Happy Hour von %s bis %s</p></div></body>"
-            // ), df.format(d), JDUtilities.formatSeconds(sec),
-            // df.format(lastStartDate), df.format(lastEndDate));
-            // }
-            //
-            // response.getWriter().println(html);
-            // // JDUtilities.getGUI().showHTMLDialog(JDLocale.L(
-            // "plugins.hoster.rapidshare.com.happyHours",
-            // // "Happy Hour Check"), html);
-            // }
-            // }
 
             // Get Config
             else if (request.getRequestURI().equals("/get/config")) {
@@ -799,26 +709,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     response.getWriter().println("clip=" + newclip + " (CHANGED=false)");
                 }
             }
-
-            // // Set Beta Enabled
-            // else if
-            // (request.getRequestURI().matches("(?is).*/action/set/beta/.*")) {
-            // boolean newbeta = Boolean.parseBoolean(new
-            // Regex(request.getRequestURI(),
-            // "[\\s\\S]*/action/set/beta/(.*)").getMatch(0));
-            // logger.fine("RemoteControl - Set Beta: " + newbeta);
-            // if (ClipboardHandler.getClipboard().isEnabled() ^ newbeta)
-            // {
-            // CFGConfig.getConfig("WEBUPDATE").setProperty("WEBUPDATE_BETA",
-            // newbeta);
-            // CFGConfig.getConfig("WEBUPDATE").save();
-            // response.getWriter().println("beta=" + newbeta +
-            // " (CHANGED=true)");
-            // } else {
-            // response.getWriter().println("beta=" + newbeta +
-            // " (CHANGED=false)");
-            // }
-            // }
 
             // Set ReconnectEnabled
             else if (request.getRequestURI().matches("(?is).*/action/set/reconnectenabled/.*")) {

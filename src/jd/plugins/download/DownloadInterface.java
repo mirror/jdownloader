@@ -232,9 +232,6 @@ abstract public class DownloadInterface {
             }
             try {
                 Browser br = plugin.getBrowser().cloneBrowser();
-                // URL link = connection.getURL();
-                // HTTPConnection httpConnection = new
-                // HTTPConnection(link.openConnection());
                 br.setReadTimeout(getReadTimeout());
                 br.setConnectTimeout(getRequestTimeout());
 
@@ -255,10 +252,6 @@ abstract public class DownloadInterface {
                 br.getHeaders().put("Range", "bytes=" + start + "-" + end);
                 HTTPConnection con;
                 if (connection.getHTTPURLConnection().getDoOutput()) {
-                    // httpConnection.setDoOutput(true);
-                    // httpConnection.connect();
-                    // httpConnection.post(connection.getPostData());
-                    // httpConnection.getHTTPURLConnection();
                     con = br.openPostConnection(connection.getURL() + "", connection.getPostData());
 
                 } else {
@@ -281,8 +274,7 @@ abstract public class DownloadInterface {
                     // ":" + httpConnection.getRequestProperties());
                     // logger.finer("Server chunk Headers: " + this.getID() +
                     // ":" + httpConnection.getHeaderFields());
-                }
-                // connection.getHTTPURLConnection().disconnect();
+                }                
                 return con;
 
             } catch (Exception e) {
@@ -320,12 +312,9 @@ abstract public class DownloadInterface {
                 return;
             }
 
-            // InputStream inputStream = null;
-            // ReadableByteChannel source = null;
+
 
             try {
-                // logger.finer("Set timeouts: "+getReadTimeout()+" -
-                // "+getRequestTimeout());
                 connection.setReadTimeout(getReadTimeout());
                 connection.setConnectTimeout(getRequestTimeout());
 

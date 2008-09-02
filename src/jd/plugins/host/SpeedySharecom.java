@@ -29,13 +29,8 @@ public class SpeedySharecom extends PluginForHost {
     RequestInfo requestInfo;
     private String url;
 
-    //
-
     public SpeedySharecom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -55,18 +50,18 @@ public class SpeedySharecom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws MalformedURLException, IOException {
-   
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (!requestInfo.containsHTML("File Not Found")) {
-                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("File Name:</span>(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-                String filesize = null;
-                filesize = new Regex(requestInfo.getHtmlCode(), "File Size:</span>(.*?)</span>").getMatch(0);
-                    downloadLink.setDownloadSize(Regex.getSize(filesize));
+
+        String url = downloadLink.getDownloadURL();
+        requestInfo = HTTP.getRequest(new URL(url));
+        if (!requestInfo.containsHTML("File Not Found")) {
+            downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("File Name:</span>(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+            String filesize = null;
+            filesize = new Regex(requestInfo.getHtmlCode(), "File Size:</span>(.*?)</span>").getMatch(0);
+            downloadLink.setDownloadSize(Regex.getSize(filesize));
             return true;
-            }
-            return false;
-  
+        }
+        return false;
+
     }
 
     @Override
@@ -136,7 +131,7 @@ public class SpeedySharecom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

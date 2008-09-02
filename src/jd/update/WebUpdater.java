@@ -57,7 +57,9 @@ public class WebUpdater implements Serializable {
     public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
 
     public static String htmlDecode(String str) {
-        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2Br0th3rs.part1.rar
+        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
+        // Br0th3rs.part1.rar
         if (str == null) { return null; }
         String pattern = "\\&\\#x(.*?)\\;";
         for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
@@ -117,20 +119,8 @@ public class WebUpdater implements Serializable {
         if (path != null) {
             setListPath(path);
         } else {
-
-//            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA", false)) {
-//                log("BETA");
-//                setListPath("http://jdbetaupdate.ath.cx");
-//            } else {
-//                log("STABLE");
-                setListPath("http://jdupdatescript.ath.cx");
-                //setListPath("http://jdservice.ath.cx/update/jd");
-//            }
-
+            setListPath("http://jdupdatescript.ath.cx");
         }
-        //        
-        // this.listPath = "http://jdbetaupdate.ath.cx/extern.php";
-        // this.onlinePath = listPath + "/bin";
 
     }
 
@@ -152,13 +142,13 @@ public class WebUpdater implements Serializable {
     public boolean downloadBinary(String filepath, String fileurl) {
 
         try {
-            
+
             log("downloading... You must NOT close the window!");
             fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
-            String org=filepath;
-            filepath = new File(filepath+".tmp").getAbsolutePath();
+            String org = filepath;
+            filepath = new File(filepath + ".tmp").getAbsolutePath();
             File file = new File(filepath);
-            if (file.exists()&&file.isFile()) {
+            if (file.exists() && file.isFile()) {
                 if (!file.delete()) {
                     log("Konnte Datei nicht löschen " + file);
                     return false;
@@ -204,15 +194,15 @@ public class WebUpdater implements Serializable {
             output.close();
             input.close();
 
-            log("Download ok...rename "+file.getName()+"to "+new File(org).getName());
-            if (new File(org).exists()&&new File(org).isFile()) {
+            log("Download ok...rename " + file.getName() + "to " + new File(org).getName());
+            if (new File(org).exists() && new File(org).isFile()) {
                 if (!new File(org).delete()) {
                     log("Could not delete file " + org);
                     return false;
                 }
 
             }
-            
+
             file.renameTo(new File(org));
 
             return true;
@@ -257,14 +247,6 @@ public class WebUpdater implements Serializable {
                 log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                 continue;
             }
-            // if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER,
-            // false)){
-            // if(tmp[0].startsWith("jd/captcha/methods/")&&tmp[0].endsWith("mth")){
-            // log("Autotrain filter: "+tmp[0]);
-            // continue;
-            // }
-            // }
-            // log("OLD: " + files.elementAt(i) + " - " + hash);
             files.removeElementAt(i);
         }
 
@@ -290,15 +272,6 @@ public class WebUpdater implements Serializable {
                     log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                     continue;
                 }
-                // if(SubConfiguration.getSubConfig("JAC").getBooleanProperty(USE_CAPTCHA_EXCHANGE_SERVER,
-                // false)){
-                // if(tmp[0].startsWith("jd/captcha/methods/")&&
-                // tmp[0].endsWith("mth")){
-                // log("Autotrain filter: "+tmp[0]);
-                // continue;
-                // }
-                // }
-                // log("OLD: " + files.elementAt(i) + " - " + hash);
 
                 files.removeElementAt(i);
             }
@@ -325,8 +298,6 @@ public class WebUpdater implements Serializable {
                 progresslist.setValue(20);
             }
 
-            
-           
             if (cid > 0) {
                 source = getRequest(new URL(listPath + "?cid=" + cid));
             } else {

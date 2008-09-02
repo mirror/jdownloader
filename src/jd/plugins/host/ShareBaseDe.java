@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.http.Encoding;
@@ -33,7 +34,7 @@ public class ShareBaseDe extends PluginForHost {
 
     private static final String HOST = "sharebase.de";
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]{10}\\.html", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
 
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
@@ -59,20 +60,17 @@ public class ShareBaseDe extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            br.setFollowRedirects(true);
-            String page = br.getPage(downloadLink.getDownloadURL());
-            String[] infos = new Regex(page, FILEINFO).getRow(0);
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException  {
 
-            downloadLink.setName(infos[0].trim());
-            downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
+        br.setFollowRedirects(true);
+        String page = br.getPage(downloadLink.getDownloadURL());
+        String[] infos = new Regex(page, FILEINFO).getRow(0);
 
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+        downloadLink.setName(infos[0].trim());        
+        downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
+
+        return true;
+
     }
 
     @Override

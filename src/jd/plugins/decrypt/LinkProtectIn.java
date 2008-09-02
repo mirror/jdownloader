@@ -163,7 +163,7 @@ public class LinkProtectIn extends PluginForDecrypt {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            return decryptedLinks;
+            return null;
         }
         return decryptedLinks;
     }

@@ -61,7 +61,6 @@ public class MeinUpload extends PluginForHost {
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
-
         }
 
         br.submitForm("Free");
@@ -136,8 +135,7 @@ public class MeinUpload extends PluginForHost {
             r.getHeaders().put("User-Agent", " MeinUpload Tool - v2.2");
 
             String server = r.load();
-            if (server == null) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
+            if (server == null) {                
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
@@ -161,8 +159,7 @@ public class MeinUpload extends PluginForHost {
             // id=9923945611
             // HTTP/1.1
             // v
-            if (r.getResponseHeader("Content-Disposition") == null) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
+            if (r.getResponseHeader("Content-Disposition") == null) {                
                 linkStatus.addStatus(LinkStatus.ERROR_RETRY);
                 return;
             }
@@ -173,19 +170,14 @@ public class MeinUpload extends PluginForHost {
             dl.startDownload();
             dl.getFile();
             if (dl.getFile().length() < 6000) {
-                String page = JDUtilities.getLocalFile(dl.getFile());
-                // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                // step.setParameter(JDLocale.L("errors.interbalhostererror",
-                // "Internal Hoster Error"));
+                String page = JDUtilities.getLocalFile(dl.getFile());                
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);                
                 logger.severe(page);
                 return;
             }
             return;
         } catch (IOException e) {
-
-            e.printStackTrace();
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            e.printStackTrace();            
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
