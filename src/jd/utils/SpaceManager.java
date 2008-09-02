@@ -42,15 +42,12 @@ public class SpaceManager {
         try {
             reflectOnUsableSpace = File.class.getMethod("getUsableSpace", (Class[]) null);
         } catch (NoSuchMethodException e) {
-            reflectOnUsableSpace = null;
+        	  return -1;
         }
         try {
-        	if(reflectOnUsableSpace!=null)
-        	{
         	Long ret = ((Long) reflectOnUsableSpace.invoke(f));
         	if(ret!=null && ret.longValue()>0)
             return ret.longValue();
-        	}
         } catch (IllegalArgumentException e) {
 
             e.printStackTrace();
