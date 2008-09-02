@@ -31,7 +31,7 @@ public class SpaceManager {
     public static boolean checkPath(File Path, long size) {
         if (size > 0) {
             long space = SpaceManager.getUsableSpace(Path);
-            if (space > 0 && space - size < 1) { return false; }
+            if (space != -1 && space - size < 1) { return false; }
         }
         return true;
     }
@@ -45,7 +45,12 @@ public class SpaceManager {
             reflectOnUsableSpace = null;
         }
         try {
-            return ((Long) reflectOnUsableSpace.invoke(f)).longValue();
+        	if(reflectOnUsableSpace!=null)
+        	{
+        	Long ret = ((Long) reflectOnUsableSpace.invoke(f));
+        	if(ret!=null && ret.longValue()>0)
+            return ret.longValue();
+        	}
         } catch (IllegalArgumentException e) {
 
             e.printStackTrace();
