@@ -47,7 +47,7 @@ public class ScumIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             String cookie = reqinfo.getCookie();
@@ -71,13 +71,15 @@ public class ScumIn extends PluginForDecrypt {
             if (!Browser.download(captchaFile, con) || !captchaFile.exists()) { return null; }
             String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
 
-            reqinfo = HTTP.postRequest(new URL("http://scum.in/plugins/home/links.old.callback.php"), cookie, parameter, null, "id=" + id + "&captcha=" + captchaCode, false);
+            reqinfo = HTTP.postRequest(new URL("http://scum.in/plugins/home/links.callback.php"), cookie, parameter, null, "id=" + id + "&captcha=" + captchaCode, false);
 
             String links[][] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\"", Pattern.CASE_INSENSITIVE).getMatches();
             progress.setRange(links.length);
             for (String[] element : links) {
                 progress.increase(1);
-                decryptedLinks.add(createDownloadlink(element[0]));
+                DownloadLink dl_link = createDownloadlink(element[0]);
+                dl_link.addSourcePluginPassword("scum.in");
+                decryptedLinks.add(dl_link);
             }
         } catch (IOException e) {
             e.printStackTrace();
