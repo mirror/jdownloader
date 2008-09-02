@@ -413,6 +413,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         int stopCounter = 5;
         int currentTotalSpeed = 0;
         int inProgress = 0;
+        Vector<DownloadLink> removes = new Vector<DownloadLink>();
         while (aborted != true) {
 
             hasWaittimeLinks = false;
@@ -435,7 +436,11 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     for (int i = 0; i < links.size(); i++) {
                         link = links.elementAt(i);
                         linkStatus = link.getLinkStatus();
-
+                        if (!link.isEnabled() && link.getLinkType() == DownloadLink.LINKTYPE_JDU && linkStatus.getTotalWaitTime() <= 0) {
+                          
+                            removes.add(link);
+                            continue;
+                        }
                         if (!link.isEnabled() && linkStatus.getTotalWaitTime() > 0) {
 
                             if (linkStatus.getRemainingWaittime() == 0) {
@@ -485,6 +490,11 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                     }
                 }
+                if(removes.size()>0){
+                JDUtilities.getController().removeDownloadLinks(removes);
+                removes.clear();
+                JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this);
+                }
                 // logger.info("I-"+1);
                 Reconnecter.doReconnectIfRequested();
                 if (inProgress > 0) {
@@ -493,7 +503,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     for (FilePackage filePackage : fps) {
 
                         Iterator<DownloadLink> iter = filePackage.getDownloadLinks().iterator();
-                        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;                        
+                        int maxspeed = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0) * 1024;
                         if (maxspeed == 0) {
                             maxspeed = Integer.MAX_VALUE;
                         }
@@ -505,7 +515,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                         DownloadLink element;
                         while (iter.hasNext()) {
-                            element = iter.next();                            
+                            element = iter.next();
                             if (element.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
 
                                 element.setSpeedLimit(element.getDownloadSpeed() + overhead / inProgress);

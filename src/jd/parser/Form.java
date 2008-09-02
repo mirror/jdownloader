@@ -270,7 +270,7 @@ public class Form {
         if (matcher.find()) {
             value = matcher.group(1);
         } else {
-            matcher = Pattern.compile("value=(.*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
+            matcher = Pattern.compile("value=([^ '\"]*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
             if (matcher.find()) {
                 value = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
             }

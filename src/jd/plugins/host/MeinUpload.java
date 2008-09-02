@@ -62,50 +62,57 @@ public class MeinUpload extends PluginForHost {
             String error = br.getRegex("code=(.*)").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
         }
-
-        br.submitForm("Free");
+        br.setDebug(true);
+        Form form = br.getForm("Free");
+        HTTPConnection con;
+        if (form != null) {
+            // Old version 1.9.08
+            br.submitForm(form);
+        
         Form captcha = br.getForms()[1];
         String captchaCode = getCaptchaCode("http://meinupload.com/captcha.php", downloadLink);
         captcha.put("captchacode", captchaCode);
         br.submitForm(captcha);
+        }
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        HTTPConnection con = br.openGetConnection(url);
+        con = br.openGetConnection(url);
+
         dl = new RAFDownload(this, downloadLink, con);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
 
         dl.startDownload();
     }
+private void login(Account account) throws IOException{
+    br.setCookiesExclusive(true);
+    br.setFollowRedirects(true);
+    br.clearCookies(HOST);
 
+    br.getPage("http://meinupload.com");
+    Form login = br.getForm("Login");
+    login.put("user", account.getUser());
+    login.put("pass", account.getPass());
+    br.submitForm(login);
+}
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        Browser br = new Browser();
-        br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
-        br.setAcceptLanguage("en, en-gb;q=0.8");
-        br.getPage("http://meinupload.com/status.html");
-        Form login = br.getForm(0);
-        login.put("user", account.getUser());
-        login.put("pass", account.getPass());
-        br.submitForm(login);
+ 
+        login(account);
 
-        br.getPage("http://meinupload.com/account.html?aktion=status");
-
-        String expire = br.getRegex("Account g&uuml;ltig bis: </td><td align=.*?>(.*?)</td>").getMatch(0);
+        String expire = br.getRegex("<b>Paket l.*?uft ab am</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (expire == null) {
             ai.setValid(false);
             ai.setStatus("Account invalid. Logins wrong?");
             return ai;
         }
-        String trafficLeft = br.getRegex("Verbleibender Traffic: </td><td align=.*?>(.*?)/td>").getMatch(0);
-        String points = br.getRegex("<td>Gesammelte Punkte: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
-        String cash = br.getRegex(" <td><b>Guthaben:</b> </td>.*?<td align=.*?><b>([\\d]*?) \\&euro\\;</b></td>").getMatch(0);
-        String files = br.getRegex("<td>Hochgeladene Dateien: </td>.*?<td align=.*?>([\\d]*?)</td>").getMatch(0);
+
+        String points = br.getRegex("Bonuspunkte insgesamt</b></td>.*?<td align=.*?>(\\d+?)\\&nbsp\\;\\((\\d+?)&#x80;\\)</t").getMatch(0);
+        String cash = br.getRegex("Bonuspunkte insgesamt</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\((\\d+?)&#x80;\\)</t").getMatch(1);
+        String files = br.getRegex("Hochgeladene Dateien</b></td>.*?<td align=.*?>(.*?)  <a href").getMatch(0);
 
         ai.setStatus("Account is ok.");
-        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", null));
+        ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
 
-        ai.setTrafficLeft(Regex.getSize(trafficLeft));
         ai.setPremiumPoints(Integer.parseInt(points));
         ai.setAccountBalance(Integer.parseInt(cash) * 100);
         ai.setFilesNum(Integer.parseInt(files));
@@ -115,72 +122,20 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String user = account.getUser();
-        String pass = account.getPass();
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        login(account);        
+        br.getPage(downloadLink.getDownloadURL());       
+        if (br.getRedirectLocation() != null) {
+            String error = br.getRegex("code=(.*)").getMatch(0);
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
 
-        downloadLink.getLinkStatus().setStatusText(JDLocale.L("downloadstatus.premiumload", "Premiumdownload"));
-        downloadLink.requestGuiUpdate();
-        String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("meinupload.com/{1,}dl/([\\d]*?)/", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (id == null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
         }
-        try {
-            GetRequest r = new GetRequest("http://MeinUpload.com/server.api?id=" + id);
-            r.getHeaders().put("Accept", "text/html, */*");
-            r.getHeaders().put("Accept-Encoding", "identity");
-            r.getHeaders().put("Referer", "http://MeinUpload.com/");
-            r.getHeaders().put("User-Agent", " MeinUpload Tool - v2.2");
 
-            String server = r.load();
-            if (server == null) {                
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                return;
-            }
-            server = server.trim();
-            HeadRequest hr = new HeadRequest(downloadLink.getDownloadURL());
-            hr.getHeaders().put("Accept", "text/html, */*");
-            hr.getHeaders().put("Accept-Encoding", "identity");
-            hr.getHeaders().put("Referer", "http://MeinUpload.com/");
-            hr.getHeaders().put("User-Agent", " MeinUpload Tool - v2.2");
-            hr.load();
-            r = new GetRequest("http://" + server + ".MeinUpload.com/download.api?user=" + user + "&pass=" + JDUtilities.getMD5(pass) + "&id=" + id);
-            r.getHeaders().put("Accept", "text/html, */*");
-            r.getHeaders().put("Accept-Encoding", "identity");
-            r.getHeaders().put("Referer", "http://MeinUpload.com/");
-            r.getHeaders().put("User-Agent", " MeinUpload Tool - v2.2");
-            r.connect();
-            // http://dl2.MeinUpload.com/download.api?user=23729405&pass=0865
-            // a2801d938ce3e59024b4ef1d6d30&id=3407292519
-            // GET
-            ///download.api?user=23729405&pass=0865a2801d938ce3e59024b4ef1d6d30&
-            // id=9923945611
-            // HTTP/1.1
-            // v
-            if (r.getResponseHeader("Content-Disposition") == null) {                
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                return;
-            }
-
-            dl = new RAFDownload(this, downloadLink, r.getHttpConnection());
-            dl.setChunkNum(1);
-            dl.setResume(false);
-            dl.startDownload();
-            dl.getFile();
-            if (dl.getFile().length() < 6000) {
-                String page = JDUtilities.getLocalFile(dl.getFile());                
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);                
-                logger.severe(page);
-                return;
-            }
-            return;
-        } catch (IOException e) {
-            e.printStackTrace();            
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-        }
+        String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
+        HTTPConnection con = br.openGetConnection(url);
+        dl = new RAFDownload(this, downloadLink, con);
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setResume(true);
+        dl.startDownload();
 
     }
 
@@ -209,7 +164,7 @@ public class MeinUpload extends PluginForHost {
         downloadLink.setName(filename);
 
         Form form = br.getForm("Free");
-        br.submitForm(form);
+        if (form != null) br.submitForm(form);
         try {
             String s = br.getRegex("Dateigr.*e:</b></td>.*<td align=left>(.*?[MB|KB|B])</td>").getMatch(0);
             long size = Regex.getSize(s);
