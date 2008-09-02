@@ -117,7 +117,7 @@ public class DepositFiles extends PluginForHost {
 
         Form form = br.getForm("Kostenlosen download");
         if (form == null) {
-            String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/span>").getMatch(0);
+            String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
             if (wait != null) {
                 linkStatus.setValue(Regex.getMilliSeconds(wait));
                 linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -151,11 +151,6 @@ public class DepositFiles extends PluginForHost {
                 return;
 
             }
-            // if (br.containsHTML("download_limit")) {
-            // linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            // linkStatus.setValue(300000l);
-            // return;
-            // }
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
@@ -293,8 +288,6 @@ public class DepositFiles extends PluginForHost {
             return;
         }
 
-        logger.info("Filename: " + Plugin.getFileNameFormHeader(con));
-
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
@@ -325,7 +318,6 @@ public class DepositFiles extends PluginForHost {
 
         br.setFollowRedirects(true);
         br.getPage(link);
-        // http://depositfiles.com/de/files/6192617
 
         br.setFollowRedirects(false);
 
@@ -335,7 +327,7 @@ public class DepositFiles extends PluginForHost {
         String fileName = br.getRegex(FILE_INFO_NAME).getMatch(0);
         downloadLink.setName(fileName);
         String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
-        int length = (int) Regex.getSize(fileSizeString);
+        long length = Regex.getSize(fileSizeString);
 
         downloadLink.setDownloadSize(length);
 

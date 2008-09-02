@@ -166,7 +166,7 @@ function areallchecked(field)
 function adderSubmit(field)
 {
 	if (field.value=="add") {
-		field.form.action="/index.tmpl";
+		field.form.action="index.tmpl";
 	}
 
 	submitForm('jdForm',field.form.action,'do','Submit')
@@ -249,7 +249,7 @@ function countdown(sec, eid) {
 	if (sec > 0) {
 		setTimeout("countdown("+(sec-1)+", '"+eid+"')", 1000);
 	} else {
-		forwardto('/index.tmpl')
+		forwardto('index.tmpl')
 	}
 }
 

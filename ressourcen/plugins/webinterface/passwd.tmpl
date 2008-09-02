@@ -21,23 +21,23 @@
 	<div id="content">
 		<div id="tabs">
 			<ul id="tabmenu">
-				<li class="active"><a href="/" name="Status Page" target="_self">Status Page</a></li>
-				<li><A class="active" href="/passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
-				<li><A href="/link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
+				<li class="active"><a href="index.tmpl" name="Status Page" target="_self">Status Page</a></li>
+				<li><A class="active" href="passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
+				<li><A href="link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
 			</ul>
 		</div>
 
 		<div id="tabcontent">
 
-			<FORM name="jdForm" id="jdForm" action="/passwd.tmpl" target="_parent" method="POST">
+			<FORM name="jdForm" id="jdForm" action="passwd.tmpl" target="_parent" method="POST">
 
 				<div id="toolbar">
 					<div id="toolbarright">
-						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')"></span>
-						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')"></span>
+						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','bye.tmpl', 'close')"></span>
+						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','restart.tmpl', 'restart')"></span>
 					</div>
 					<div id="toolbarleft">
-						<span class="toolbarButton" id="btnSave" title="Save Password-List" onclick="submitForm('jdForm','/passwd.tmpl', 'passwd', 'Save')"></span>
+						<span class="toolbarButton" id="btnSave" title="Save Password-List" onclick="submitForm('jdForm','passwd.tmpl', 'passwd', 'Save')"></span>
 					</div>
 					<div class="toolbarcenter">
 					</div>

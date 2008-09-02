@@ -21,20 +21,20 @@
 	<div id="content">
 		<div id="tabs">
 			<ul id="tabmenu">
-				<li class="active"><a href="/" name="Status Page" target="_self">Status Page</a></li>
-				<li><A href="/passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
-				<li><A class="active" href="/link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
+				<li class="active"><a href="index.tmpl" name="Status Page" target="_self">Status Page</a></li>
+				<li><A href="passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
+				<li><A class="active" href="link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
 			</ul>
 		</div>
 
 		<div id="tabcontent">
 
-			<FORM action="/link_adder.tmpl" name="jd" id="jdForm" method="POST" target="_parent">
+			<FORM action="link_adder.tmpl" name="jd" id="jdForm" method="POST" target="_parent">
 
 				<div id="toolbar">
 					<div id="toolbarright">
-						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')"></span>
-						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')"></span>
+						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','bye.tmpl', 'close')"></span>
+						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','restart.tmpl', 'restart')"></span>
 					</div>
 					<div id="toolbarleft">
 						<div style="height: 30px;"></div>
@@ -90,7 +90,7 @@
 			</FORM>
 
 			<h1>Add Links</h1>
-			<FORM name="add" id="addForm" action="/link_adder.tmpl" target="_parent" method="POST">
+			<FORM name="add" id="addForm" action="link_adder.tmpl" target="_parent" method="POST">
 				<DIV class="linkAddBox">
 					<div style="float:right;">
 					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
@@ -104,9 +104,9 @@
 			</FORM>
 
 			<h1>Upload container file</h1>
-			<form name="upload" id="uploadForm" action="/link_adder.tmpl" method="post" enctype="multipart/form-data">
+			<form name="upload" id="uploadForm" action="link_adder.tmpl" method="post" enctype="multipart/form-data">
 				<div class="linkAddBox">
-					<span style="color: #000; font-weight:bold;">Container upload:</span> <input name="container" type="file" size="50"> <a href="#" class="button" onclick="submitForm('uploadForm','/link_adder.tmpl','do','Upload')">Upload!</a>
+					<span style="color: #000; font-weight:bold;">Container upload:</span> <input name="container" type="file" size="50"> <a href="#" class="button" onclick="submitForm('uploadForm','link_adder.tmpl','do','Upload')">Upload!</a>
 				</div>
 			</form>
 		</div>

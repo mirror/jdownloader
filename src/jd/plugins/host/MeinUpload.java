@@ -21,10 +21,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
-import jd.http.Browser;
-import jd.http.GetRequest;
 import jd.http.HTTPConnection;
-import jd.http.HeadRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;

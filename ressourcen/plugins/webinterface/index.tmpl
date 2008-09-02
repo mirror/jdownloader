@@ -20,31 +20,31 @@
 	<div id="content">
 		<div id="tabs">
 			<ul id="tabmenu">
-				<li class="active"><a class="active" href="/" name="Status Page" target="_self">Status Page</a></li>
-				<li><A href="/passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
-				<li><A href="/link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
+				<li class="active"><a class="active" href="index.tmpl" name="Status Page" target="_self">Status Page</a></li>
+				<li><A href="passwd.tmpl" name="Edit Passwords" target="_self">Edit Password-List</A></li>
+				<li><A href="link_adder.tmpl" name="Link Adder" target="_self">Add Links</A></li>
 			</ul>
 		</div>
 
 		<div id="tabcontent">
 
-			<FORM action="/index.tmpl" name="jd" id="jdForm" method="POST" target="_parent">
+			<FORM action="index.tmpl" name="jd" id="jdForm" method="POST" target="_parent">
 
 				<div id="toolbar">
 					<div id="toolbarright">
-						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','/bye.tmpl', 'close')"></span>
-						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','/restart.tmpl', 'restart')"></span>
+						<span class="toolbarButton" id="btnClose" title="Close JD" onclick="validateandsubmit('Close JD?','jdForm','bye.tmpl', 'close')"></span>
+						<span class="toolbarButton" id="btnRestart" title="Restart JD" onclick="validateandsubmit('Restart JD?','jdForm','restart.tmpl', 'restart')"></span>
 					</div>
 					<div id="toolbarleft">
-						<span class="toolbarButton" id="btnRefresh" title="Refresh Page" onclick="forwardto('/index.tmpl')"></span>
-						<span class="toolbarButton" id="btnDL<tmpl_var config_startstopbutton escape>" title="Start/Stop Downloads" onclick="submitForm('jdForm','/index.tmpl','do', '<tmpl_var config_startstopbutton escape>')"></span>
-						<span class="toolbarButton" id="btnReconnect" title="Reconnect" onclick="submitForm('jdForm','/reconnect.tmpl','do','reconnect')"></span>
-						<span class="toolbarButton" id="btnAutoReconnect<tmpl_var config_autoreconnect escape>" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','/index.tmpl','<tmpl_var config_autoreconnect escape>')"></span>
+						<span class="toolbarButton" id="btnRefresh" title="Refresh Page" onclick="forwardto('index.tmpl')"></span>
+						<span class="toolbarButton" id="btnDL<tmpl_var config_startstopbutton escape>" title="Start/Stop Downloads" onclick="submitForm('jdForm','index.tmpl','do', '<tmpl_var config_startstopbutton escape>')"></span>
+						<span class="toolbarButton" id="btnReconnect" title="Reconnect" onclick="submitForm('jdForm','reconnect.tmpl','do','reconnect')"></span>
+						<span class="toolbarButton" id="btnAutoReconnect<tmpl_var config_autoreconnect escape>" title="Activate/Deactivate Auto-Reconnect" onclick="switchAutoReconnect('jdForm','index.tmpl','<tmpl_var config_autoreconnect escape>')"></span>
 						<div class="hide"><input type="checkbox" name="autoreconnect" id="autoreconnect" value="on" <tmpl_var config_autoreconnect>></div>
 					</div>
 					<div id="toolbarcenter">
 						<span id="deactivatedAutoReloadSpace">&nbsp;</span> <!--Um Spruenge im Design beim IE6 zu vermeiden-->
-						<span id="deactivatedAutoReload"><a href="/index.tmpl">Auto-Reload<br>deactivated</a></span>
+						<span id="deactivatedAutoReload"><a href="index.tmpl">Auto-Reload<br>deactivated</a></span>
 					</div>
 					<br class="clear">
 				</div>
@@ -108,7 +108,7 @@
 
 				<div class="rightDLOptions">
 					Max. Downloads <INPUT type="text" name="maxdls" id="maxdls" value="<tmpl_var config_max_downloads escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> , SpeedLimit <INPUT type="text" name="speed" id="speed" value="<tmpl_var config_max_speed escape>" maxlength="4" size="4" onkeydown="formElementChanged()"> KB/s (Current: <tmpl_var config_current_speed> KB/s)</TD>
-					<a href="#" class="button" onclick="submitForm('jdForm','/index.tmpl','do','submit')">Go!</a>
+					<a href="#" class="button" onclick="submitForm('jdForm','index.tmpl','do','submit')">Go!</a>
 				</div>
 
 				<DIV class="leftDLOptions">
@@ -119,13 +119,13 @@
 					<option>abort</option>
 					<option>remove</option>
 					</SELECT>
-					<a href="#" class="button" onclick="submitForm('jdForm','/index.tmpl','do','submit')">Go!</a>
+					<a href="#" class="button" onclick="submitForm('jdForm','index.tmpl','do','submit')">Go!</a>
 				</DIV>
 				<br>
 			</FORM>
 
 			<h1>Add Links</h1>
-			<FORM name="add" id="addForm" action="/link_adder.tmpl" target="_parent" method="POST">
+			<FORM name="add" id="addForm" action="link_adder.tmpl" target="_parent" method="POST">
 				<DIV class="linkAddBox">
 					<div style="float:right;">
 					<a href="#" onclick="submitForm('addForm','link_adder.tmpl','do','Add')" class="addButton">Add</a>
@@ -139,9 +139,9 @@
 			</FORM>
 
 			<h1>Upload container file</h1>
-			<form name="upload" id="uploadForm" action="/link_adder.tmpl" method="post" enctype="multipart/form-data">
+			<form name="upload" id="uploadForm" action="link_adder.tmpl" method="post" enctype="multipart/form-data">
 				<div class="linkAddBox">
-					<span style="color: #000; font-weight:bold;">Container upload:</span> <input name="container" type="file" size="50" onclick="formElementChanged()"> <a href="#" class="button" onclick="submitForm('uploadForm','/link_adder.tmpl','do','Upload')">Upload!</a>
+					<span style="color: #000; font-weight:bold;">Container upload:</span> <input name="container" type="file" size="50" onclick="formElementChanged()"> <a href="#" class="button" onclick="submitForm('uploadForm','link_adder.tmpl','do','Upload')">Upload!</a>
 				</div>
 			</form>
 		</div>
