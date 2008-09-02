@@ -154,7 +154,7 @@ public class Odsiebiecom extends PluginForHost {
                 downloadcookie = requestInfo.getCookie();
                 referrerurl = downloadurl;
             }
-            if (requestInfo.containsHTML("captcha.php")) {
+            if (new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"(.*?captcha.*?)\">", Pattern.CASE_INSENSITIVE)).matches()) {
                 /* Captcha File holen */
                 String captchaurl = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"(.*?captcha.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 captchaFile = getLocalCaptchaFile(this);
@@ -222,7 +222,7 @@ public class Odsiebiecom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }
