@@ -276,8 +276,8 @@ public class DistributeData extends ControlBroadcaster {
         iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             PluginForHost pHost = iteratorHost.next();
-            if (pHost.canHandle(data)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(data, null);
+            if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (foundpassword.size() > 0) {
                     Iterator<DownloadLink> iter = dl.iterator();
                     while (iter.hasNext()) {
@@ -285,7 +285,11 @@ public class DistributeData extends ControlBroadcaster {
                     }
                 }
                 links.addAll(dl);
-                data = pHost.cutMatches(data);
+                if (pHost.isAcceptOnlyURIs()) {
+                    data = pHost.cutMatches(data);
+                } else {
+                    orgData = pHost.cutMatches(orgData);
+                }
             }
         }
         data = data.replaceAll("httpviajd://", "http://");
