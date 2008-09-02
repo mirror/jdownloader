@@ -54,27 +54,19 @@ public class SpeedySharecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
+    public boolean getFileInformation(DownloadLink downloadLink) throws MalformedURLException, IOException {
+   
             String url = downloadLink.getDownloadURL();
             requestInfo = HTTP.getRequest(new URL(url));
             if (!requestInfo.containsHTML("File Not Found")) {
-                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<b>File Name\\:</b>(.*?)<br>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("File Name:</span>(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
                 String filesize = null;
-                if ((filesize = new Regex(requestInfo.getHtmlCode(), "<b>File Size\\:</b>(.*)Mb<br>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
-                } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "<b>File Size\\:</b>(.*)Kb<br>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
-                }
-                return true;
+                filesize = new Regex(requestInfo.getHtmlCode(), "File Size:</span>(.*?)</span>").getMatch(0);
+                    downloadLink.setDownloadSize(Regex.getSize(filesize));
+            return true;
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        downloadLink.setAvailable(false);
-        return false;
+            return false;
+  
     }
 
     @Override

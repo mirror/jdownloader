@@ -53,18 +53,15 @@ public class YourFilesBiz extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        try {
+     
             br.setCookiesExclusive(true);br.clearCookies(HOST);
-            String page = br.getPage(downloadLink.getDownloadURL());
+             br.getPage(downloadLink.getDownloadURL());
 
-            downloadLink.setName(new Regex(page, Pattern.compile("<td align=left width=20%><b>Dateiname:</b></td>[\\s]*?<td align=left width=80%>(.*?)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            downloadLink.setDownloadSize(Regex.getSize(new Regex(page, Pattern.compile("<td align=left><b>Dateigr..e:</b></td>[\\s]*?<td align=left>(.*?)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+            downloadLink.setName(br.getRegex("<td align=left width=20%><b>Dateiname:</b></td>[\\s]*?<td align=left width=80%>(.*?)</td>").getMatch(0).trim());
+            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<td align=left><b>Dateigr.*?e:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0).trim()));
 
             return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+   
     }
 
     @Override

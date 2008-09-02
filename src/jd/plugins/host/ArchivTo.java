@@ -58,8 +58,9 @@ public class ArchivTo extends PluginForHost {
             br.setCookiesExclusive(true);br.clearCookies(HOST);
             String page = br.getPage(downloadLink.getDownloadURL());
 
-            downloadLink.setName(new Regex(page, Pattern.compile("<td width=\"23%\">Original-Dateiname</td>[\\s]*?<td width=\"77%\">: <a href=\"(.*?)\" style=\"Color: #5FB8E0\">(.*?)</a></td>", Pattern.CASE_INSENSITIVE)).getMatch(1));
-            downloadLink.setDownloadSize(Long.parseLong(new Regex(page, Pattern.compile("<td width=\"23%\">Dateigr..e</td>[\\s]*?<td width=\"77%\">: (.*?) Bytes \\(~ (.*?)\\)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+            downloadLink.setName(new Regex(page, "<td width=.*?>Original\\-Dateiname</td>.*? <a href=\"(.*?)\" style=.*?>(.*?)</a>").getMatch(1));
+            downloadLink.setMD5Hash(new Regex(page, "<td width=.*?>MD5 Code</td>.*?<td width=.*?>: ([a-f0-9]+?)</td>").getMatch(0));
+            downloadLink.setDownloadSize(Long.parseLong(new Regex(page, "<td width=.*?>Dateigr.*?</td>.*?<td width=.*?>: (\\d+?) Bytes \\(.*?\\)</td>").getMatch(0)));
 
             return true;
         } catch (Exception e) {

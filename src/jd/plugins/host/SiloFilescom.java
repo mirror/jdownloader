@@ -17,6 +17,8 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -59,27 +61,20 @@ public class SiloFilescom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws MalformedURLException, IOException {
         downloadurl = downloadLink.getDownloadURL();
-        try {
+     
             requestInfo = HTTP.getRequest(new URL(downloadurl));
             if (requestInfo != null && requestInfo.getLocation() == null) {
-                String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getMatch(0);
+                String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getMatch(0).trim();
                 String filesize;
-                if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)MB</b>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
-                } else if ((filesize = requestInfo.getRegexp("Dateigröße:<b>(.*?)KB</b>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024));
-                }
+               filesize = requestInfo.getRegexp("Dateigr.*?e:<b>(.*?)</b></tr>").getMatch(0);
+         
+                    downloadLink.setDownloadSize(Regex.getSize(filesize));
+                
                 downloadLink.setName(filename);
                 return true;
-            }
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-        downloadLink.setAvailable(false);
-        return false;
+            }return false;
     }
 
     @Override
