@@ -33,6 +33,7 @@ public class Gamezam extends PluginForDecrypt {
 
     public Gamezam() {
         super();
+        this.setAcceptOnlyURIs(false);
     }
 
     @Override

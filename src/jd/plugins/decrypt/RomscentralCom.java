@@ -35,6 +35,7 @@ public class RomscentralCom extends PluginForDecrypt {
      
     public RomscentralCom() {
         super();
+        this.setAcceptOnlyURIs(false);
     }
 
     @Override

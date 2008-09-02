@@ -69,6 +69,8 @@ public class DistributeData extends ControlBroadcaster {
      */
     private boolean startDownload;
 
+    private String orgData;
+
     /**
      * Erstellt einen neuen Thread mit dem Text, der verteilt werden soll. Die
      * übergebenen Daten werden durch einen URLDecoder geschickt.
@@ -146,8 +148,8 @@ public class DistributeData extends ControlBroadcaster {
 
                         CryptedLink[] decryptableLinks = pDecrypt.getDecryptableLinks(url);
                         url = pDecrypt.cutMatches(url);
-                        /*reicht die Decrypter Passwörter weiter*/
-                        for (CryptedLink clink:decryptableLinks){
+                        /* reicht die Decrypter Passwörter weiter */
+                        for (CryptedLink clink : decryptableLinks) {
                             clink.setDecrypterPassword(link.getDecrypterPassword());
                         }
                         ArrayList<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
@@ -199,7 +201,7 @@ public class DistributeData extends ControlBroadcaster {
 
         // Zuerst wird data durch die Such Plugins geschickt.
         // decryptedLinks.addAll(handleSearchPlugins());
-
+        this.orgData = data;
         reformDataString();
 
         // es werden die entschlüsselten Links (soweit überhaupt
@@ -252,8 +254,8 @@ public class DistributeData extends ControlBroadcaster {
         Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             PluginForHost pHost = iteratorHost.next();
-            if (pHost.canHandle(data)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(data, null);
+            if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
+                Vector<DownloadLink> dl = pHost.getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (foundpassword.size() > 0) {
                     Iterator<DownloadLink> iter = dl.iterator();
                     while (iter.hasNext()) {
@@ -261,7 +263,12 @@ public class DistributeData extends ControlBroadcaster {
                     }
                 }
                 links.addAll(dl);
-                data = pHost.cutMatches(data);
+                if (pHost.isAcceptOnlyURIs()) {
+                    data = pHost.cutMatches(data);
+                } else {
+                    orgData = pHost.cutMatches(orgData);
+                }
+
             }
         }
 
@@ -297,13 +304,18 @@ public class DistributeData extends ControlBroadcaster {
         Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
             PluginForDecrypt pDecrypt = iteratorDecrypt.next();
-            if (pDecrypt.canHandle(data)) {
+            if (pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
                     pDecrypt = pDecrypt.getClass().newInstance();
 
-                    CryptedLink[] decryptableLinks = pDecrypt.getDecryptableLinks(data);
-                    data = pDecrypt.cutMatches(data);
+                    CryptedLink[] decryptableLinks = pDecrypt.getDecryptableLinks(pDecrypt.isAcceptOnlyURIs() ? data : orgData);
+                    if (pDecrypt.isAcceptOnlyURIs()) {
+
+                        data = pDecrypt.cutMatches(data);
+                    } else {
+                        orgData = pDecrypt.cutMatches(orgData);
+                    }
 
                     decryptedLinks.addAll(pDecrypt.decryptLinks(decryptableLinks));
 
@@ -326,14 +338,13 @@ public class DistributeData extends ControlBroadcaster {
      */
     private void reformDataString() {
         if (data != null) {
-//            String Temp = HTMLParser.getHttpLinkList(data);
-//
+            String tmp = HTMLParser.getHttpLinkList(data);
             try {
-//                if (Temp == "") {
+                if (tmp == "") {
                     data = URLDecoder.decode(data, "UTF-8");
-//                } else {
-//                    data = URLDecoder.decode(Temp, "UTF-8");
-//                }
+                } else {
+                    data = URLDecoder.decode(tmp, "UTF-8");
+                }
             } catch (Exception e) {
                 logger.warning("text not url decodeable");
             }

@@ -61,7 +61,8 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public static final int CAPTCHA_USER_INPUT = 1;
 
     public static SubConfiguration CONFIGS = null;
-
+ 
+    private boolean acceptOnlyURIs=true;
     /**
      * Ein Logger, um Meldungen darzustellen
      */
@@ -496,5 +497,16 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public int compareTo(Plugin plg) {
         return getPluginName().compareToIgnoreCase(plg.getPluginName());
+    }
+/**
+ * gibt zurück ob das plugin als supportedLinks nur gültige URIs aktzeotiert. Soll ein PLugin  auf andere strings reagieren, z.B. auf Javascript strings, muss setAcceptOnlyURIs(false) gesetzt werden
+ * @return
+ */
+    public boolean isAcceptOnlyURIs() {
+        return acceptOnlyURIs;
+    }
+
+    public void setAcceptOnlyURIs(boolean acceptCompleteLinks) {
+        this.acceptOnlyURIs = acceptCompleteLinks;
     }
 }
