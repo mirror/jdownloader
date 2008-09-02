@@ -249,15 +249,20 @@ public class FileFactory extends PluginForHost {
         String pUsable = br.getMatch("Usable Accumulated Points</h2></td>.*?<td.*?><h2>(.*?)</h2></td>").replaceAll("\\,", "");
 
         ai.setPremiumPoints(Integer.parseInt(pThisMonth) + Integer.parseInt(pUsable));
-        
-        br.getPage("http://www.filefactory.com/members/details/premium/usage/");
-        
-      String[] dat = br.getRegex("You have downloaded (.*?) in the last 24 hours.*?Your daily limit is (.*?), and your download usage will be reset ").getRow(0);
 
-      long max = Regex.getSize(dat[1].replace(",", ""));
-      long gone=Regex.getSize(dat[0].replace(",", ""));
-      ai.setTrafficMax(max);
-      ai.setTrafficLeft(max-gone);
+        br.getPage("http://www.filefactory.com/members/details/premium/usage/");
+
+        String[] dat = br.getRegex("You have downloaded (.*?) in the last 24 hours.*?Your daily limit is (.*?), and your download usage will be reset ").getRow(0);
+        long gone;
+        if (dat == null && Regex.matches(br, "You have not downloaded anything")) {
+
+            gone = 0;
+        } else {
+
+            gone = Regex.getSize(dat[0].replace(",", ""));
+        }
+        ai.setTrafficMax(12 * 1024 * 1024 * 1024l);
+        ai.setTrafficLeft(12 * 1024 * 1024 * 1024l - gone);
         return ai;
     }
 
@@ -328,7 +333,7 @@ public class FileFactory extends PluginForHost {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
-br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(NOT_AVAILABLE)) {
             br.setFollowRedirects(false);
@@ -339,7 +344,7 @@ br.setFollowRedirects(true);
         } else {
 
             String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
-            
+
             String fileSize = new Regex(br.toString(), FILESIZE).getMatch(-1);
 
             downloadLink.setName(fileName);
@@ -383,7 +388,7 @@ br.setFollowRedirects(true);
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
 
