@@ -109,6 +109,8 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_WAIT_WHEN_BOT_DETECTED = "WAIT_WHEN_BOT_DETECTED";
 
+    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER#3";
+
     private static String[] serverList1;
 
     private static String[] serverList2;
@@ -134,6 +136,8 @@ public class Rapidshare extends PluginForHost {
 
     private final String ACCEPT_LANGUAGE = "en-gb, en;q=0.8";
 
+    private String[] serverList3;
+
     // private static boolean FORCE_FREE_USER = true;
 
     public Rapidshare() {
@@ -158,6 +162,8 @@ public class Rapidshare extends PluginForHost {
 
         serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
         serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
+        serverList3 = new String[] { "dt", "l3",  "tg",  "tl", };
+        
         setConfigElements();
         enablePremium();
         this.setMaxConnections(30);
@@ -612,10 +618,12 @@ public class Rapidshare extends PluginForHost {
 
         String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
         String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
+        String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "TeliaSonera");
+        
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
-
-        logger.info("Servers settings: " + server1 + "-" + server2 + " : " + serverAbb + "-" + server2Abb);
+        String server3Abb = serverMap.get(server3);
+        logger.info("Servers settings: " + server1 + "-" + server2+"-" + server3 + " : " + serverAbb + "-" + server2Abb+"-" + server3Abb);
         if (serverAbb == null) {
             serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
             logger.finer("Use Random #1 server " + serverAbb);
@@ -623,6 +631,10 @@ public class Rapidshare extends PluginForHost {
         if (server2Abb == null) {
             server2Abb = serverList2[(int) (Math.random() * (serverList2.length - 1))];
             logger.finer("Use Random #2 server " + server2Abb);
+        }
+        if (server3Abb == null) {
+            server3Abb = serverList3[(int) (Math.random() * (serverList3.length - 1))];
+            logger.finer("Use Random #3 server " + server3Abb);
         }
         // String endServerAbb = "";
         boolean telekom = getPluginConfig().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
@@ -639,6 +651,7 @@ public class Rapidshare extends PluginForHost {
 
         logger.info("wished Mirror #1 Server " + serverAbb);
         logger.info("wished Mirror #2 Server " + server2Abb);
+        logger.info("wished Mirror #3 Server " + server3Abb);
         String selected = new Regex(ticketCode, PATTERN_FIND_PRESELECTED_SERVER).getMatch(0);
         logger.info("Preselected Server: " + selected.substring(0, 30));
         if (preselected) {
@@ -653,6 +666,9 @@ public class Rapidshare extends PluginForHost {
         } else if (ticketCode.indexOf(server2Abb + ".rapidshare.com") >= 0) {
             logger.info("RS.com-free Use Mirror #2 Server: " + getServerName(server2Abb));
             postTarget = getURL(serverstrings, getServerName(server2Abb), postTarget);
+        } else if (ticketCode.indexOf(server3Abb + ".rapidshare.com") >= 0) {
+            logger.info("RS.com-free Use Mirror #3 Server: " + getServerName(server3Abb));
+            postTarget = getURL(serverstrings, getServerName(server3Abb), postTarget);
         } else if (serverstrings.length > 0) {
             logger.severe("Kein Server gefunden 1");
         } else {
@@ -768,17 +784,25 @@ public class Rapidshare extends PluginForHost {
 
         Vector<String> m1 = new Vector<String>();
         Vector<String> m2 = new Vector<String>();
+        Vector<String> m3 = new Vector<String>();
         for (String element : serverList1) {
             m1.add(getServerName(element));
         }
         for (String element : serverList2) {
             m2.add(getServerName(element));
         }
+        for (String element : serverList3) {
+            m3.add(getServerName(element));
+        }
         m1.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
         m2.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
+        m3.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
+        
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
+        
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -806,7 +830,7 @@ public class Rapidshare extends PluginForHost {
         String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         ai.setTrafficLeft(Regex.getSize(trafficLeft + " kb"));
-        ai.setTrafficMax(30 * 1024 * 1024 * 1024l);
+        ai.setTrafficMax(50 * 1024 * 1024 * 1024l);
         ai.setFilesNum(Integer.parseInt(files));
         ai.setPremiumPoints(Integer.parseInt(rapidPoints));
         ai.setUsedSpace(Regex.getSize(usedSpace));
