@@ -79,7 +79,7 @@ public class Reconnecter {
             }
 
             Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, JDUtilities.getController());
-            String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, null);
+            String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
             if (type == null) {
                 IS_RECONNECTING = false;
                 logger.severe("Reconnect is not configured. Config->Reconnect!");
