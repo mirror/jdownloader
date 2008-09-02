@@ -37,7 +37,6 @@ import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
-import jd.http.HeadRequest;
 import jd.http.PostRequest;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -46,6 +45,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -84,12 +84,6 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_TICKET_WAITTIME = Pattern.compile("var c=([\\d]*?);");
 
     private static final Pattern PATTERN_MATCHER_DOWNLOAD_ERRORPAGE = Pattern.compile("(RapidShare)", Pattern.CASE_INSENSITIVE);
-
-    private static final Pattern PATTERN_MATCHER_PREMIUM_EXPIRED = Pattern.compile("(expired|abgelaufen)");
-
-    private static final Pattern PATTERN_MATCHER_PREMIUM_LIMIT_REACHED = Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)");
-
-    private static final Pattern PATTERN_MATCHER_PREMIUM_OVERLAP = Pattern.compile("IP");
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minute)");
 
@@ -142,7 +136,7 @@ public class Rapidshare extends PluginForHost {
 
     public Rapidshare() {
         super();
-
+        setMaxConnections(35);
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
@@ -162,8 +156,8 @@ public class Rapidshare extends PluginForHost {
 
         serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
         serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
-        serverList3 = new String[] { "dt", "l3",  "tg",  "tl", };
-        
+        serverList3 = new String[] { "dt", "l3", "tg", "tl", };
+
         setConfigElements();
         enablePremium();
         this.setMaxConnections(30);
@@ -451,115 +445,67 @@ public class Rapidshare extends PluginForHost {
             new Serienjunkies().handleFree(downloadLink);
             return;
         }
-        String user = account.getUser();
-        String pass = account.getPass();
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
             if (Sniffy.hasSniffer()) throw new SnifferException();
         }
         Rapidshare.correctURL(downloadLink);
+        // Sagt der Browserinstanz, dass cookies nur für diese instanz verwaltet
+        // werden, und nicht Global für ganz JD
+        // Neben cookies werden mit diesem aufruf auch AUTHs infos nur auf diese
+        // Instanz bezogen.
+        br.setCookiesExclusive(true);
 
-        Browser br = new Browser();
+        // Setzt die cookie informationen für diese instanz zurück
+        br.clearCookies("rapidshare.com");
+        // Sprache auf englisch setzen
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
-        br.setFollowRedirects(false);
-        setMaxConnections(35);
-
-        user = user.trim();
-        pass = pass.trim();
-
-        // String encodePass = rawUrlEncode(pass);
-
-        long headLength;
-
-        String link = downloadLink.getDownloadURL();
-        // if (this.getProperties().getBooleanProperty(PROPERTY_USE_SSL,
-        // true)) link = link.replaceFirst("http://", "http://ssl.");
-        HeadRequest hReq = new HeadRequest(link);
-        hReq.load();
-
-        headLength = hReq.getContentLength();
-        if (headLength <= 10000) {
-            // requestInfo = HTTP.getRequest(new URL(link), null, "",
-            // false);
-            String page = br.getPage(link);
-            String error = null;
-
-            if ((error = findError(page)) != null) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
-                logger.severe(error);
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkStatus.setErrorMessage(error);
-                return;
-
-            }
-        }
-
-        HTTPConnection urlConnection;
-        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
+        // Redirects sollen automatisch geladen werden
         br.setFollowRedirects(true);
+        // Setzt die Auths infos fürdiese browserinstanz. domain=null heißt,
+        // dass die logins für alle Verbindungen verwendet werden sollen
+        br.setAuth(null, account.getUser().trim(), account.getPass().trim());
+        // Verbindung aufbauen
+        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+        // prüft ob ein content disposition header geschickt wurde. Falls nicht,
+        // ist es eintweder eine Bilddatei oder eine Fehlerseite. BIldfiles
+        // haben keinen Cache-Control Header
+        if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
+            // Lädt die zuletzt aufgebaute vernindung
+            br.followConnection();
 
-        urlConnection = br.openGetConnection(link);
-        if (Long.parseLong(urlConnection.getHeaderField("Content-Length")) != headLength) {
-
-            String page = br.getRequest().read();
+            // Fehlerbehanldung
             String error;
-            if ((error = findError(page)) != null) {
+            if ((error = findError(br.toString())) != null) {
                 new File(downloadLink.getFileOutput()).delete();
-
                 logger.warning(error);
-                if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_EXPIRED)) {
-                    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                    downloadLink.getLinkStatus().setErrorMessage(error);
-                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                } else if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_LIMIT_REACHED)) {
-                    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                    downloadLink.getLinkStatus().setErrorMessage(error);
-                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if (Regex.matches(error, PATTERN_MATCHER_PREMIUM_OVERLAP)) {
-                    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                    downloadLink.getLinkStatus().setErrorMessage(error);
-                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+                } else if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if (Regex.matches(error, Pattern.compile("IP"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else if (Regex.matches(error, Pattern.compile("(gefunden|Your Premium Account has not been found)"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-                    linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-                    linkStatus.setErrorMessage(error);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, error);
                 }
 
-                return;
             } else {
                 new File(downloadLink.getFileOutput()).delete();
-                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                reportUnknownError(page, 6);
-                return;
+                reportUnknownError(br.toString(), 6);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             }
 
         }
-
+        // Download
         dl = new RAFDownload(this, downloadLink, urlConnection);
-
+        // Premiumdownloads sind resumefähig
         dl.setResume(true);
+        // Premiumdownloads erlauben chunkload
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        if (dl.startDownload()) {
-            // Dieses Konto ist am Mon, 2. Jun 2008 abgelaufen
-
-            if (new File(downloadLink.getFileOutput()).length() < 8000) {
-                String page = JDUtilities.getLocalFile(new File(downloadLink.getFileOutput()));
-                if (Regex.matches(page, PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
-                    new File(downloadLink.getFileOutput()).delete();
-
-                    linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-                    String error = findError(page);
-                    logger.severe(error);
-                    reportUnknownError(page, 5);
-
-                    return;
-                }
-            }
-
-            linkStatus.addStatus(LinkStatus.FINISHED);
-
-            return;
-        }
+        // Download starten
+        dl.startDownload();
 
     }
 
@@ -619,11 +565,11 @@ public class Rapidshare extends PluginForHost {
         String server1 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER, "Level(3)");
         String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "TeliaSonera");
-        
+
         String serverAbb = serverMap.get(server1);
         String server2Abb = serverMap.get(server2);
         String server3Abb = serverMap.get(server3);
-        logger.info("Servers settings: " + server1 + "-" + server2+"-" + server3 + " : " + serverAbb + "-" + server2Abb+"-" + server3Abb);
+        logger.info("Servers settings: " + server1 + "-" + server2 + "-" + server3 + " : " + serverAbb + "-" + server2Abb + "-" + server3Abb);
         if (serverAbb == null) {
             serverAbb = serverList1[(int) (Math.random() * (serverList1.length - 1))];
             logger.finer("Use Random #1 server " + serverAbb);
@@ -797,12 +743,12 @@ public class Rapidshare extends PluginForHost {
         m1.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
         m2.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
         m3.add(JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer.random", "Random"));
-        
+
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.prefferedServer", "Bevorzugte Server")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER, m1.toArray(new String[] {}), "#1").setDefaultValue("Level(3)"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER2, m2.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), PROPERTY_SELECTED_SERVER3, m3.toArray(new String[] {}), "#2").setDefaultValue("TeliaSonera"));
-        
+
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
