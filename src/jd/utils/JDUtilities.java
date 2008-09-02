@@ -1158,7 +1158,7 @@ public class JDUtilities {
             e.printStackTrace();
         }
         return "";
-    }
+    } 
 
     /**
      * public static String getLocalHash(File f) Gibt einen MD% Hash der file
