@@ -84,7 +84,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink(), new Backup() };
+        return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink()};
     }
 
     /**
