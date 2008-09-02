@@ -41,7 +41,7 @@ public class XupInRaidrush extends PluginForHost {
         super();
     }
 
-    @Override
+    @Override 
     public boolean doBotCheck(File file) {
         return false;
     }
