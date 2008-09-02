@@ -29,7 +29,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -76,11 +75,9 @@ public class FastLoadNet extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
-
         try {
 
-            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL() + "&lg=de"));
 
             if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
@@ -153,9 +150,7 @@ public class FastLoadNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL() + "&lg=de");
-
-        RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
+        RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL() + "&lg=de"));
         String cookie = requestInfo.getCookie();
 
         if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
@@ -169,22 +164,6 @@ public class FastLoadNet extends PluginForHost {
 
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
-            return;
-
-        }
-
-        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getMatch(0)).trim();
-        downloadLink.setName(fileName);
-
-        try {
-
-            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_INFO).getMatch(1).trim()) * 1024 * 1024);
-            downloadLink.setDownloadSize(length);
-
-        } catch (Exception e) {
-
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.exceptionToErrorMessage(e);
             return;
 
         }
@@ -263,9 +242,6 @@ public class FastLoadNet extends PluginForHost {
                     }
 
                 }
-
-                downloadLink.setDownloadSize(length);
-                downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
 
                 // Download starten
                 dl = new RAFDownload(this, downloadLink, urlConnection);

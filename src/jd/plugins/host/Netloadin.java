@@ -163,6 +163,13 @@ public class Netloadin extends PluginForHost {
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
+        if (br.containsHTML("Datenbank Fehler")) {
+            logger.warning("Database Error");
+
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
+            return;
+        }
 
         if (br.containsHTML(LIMIT_REACHED) || br.containsHTML(DOWNLOAD_LIMIT)) {
 
@@ -232,7 +239,7 @@ public class Netloadin extends PluginForHost {
         br.getPage("http://netload.in/index.php?id=2");
 
         // String login =
-        // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
+        //ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
         // 1).trim();
         String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
 
@@ -255,11 +262,11 @@ public class Netloadin extends PluginForHost {
             new Serienjunkies().handleFree(downloadLink);
             return;
         }
-       
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
-        br.setAuth("netload.in", account.getUser(), account.getPass()); 
+        br.setAuth("netload.in", account.getUser(), account.getPass());
         br.openGetConnection(downloadLink.getDownloadURL());
         HTTPConnection con;
         if (br.getRedirectLocation() == null) {
@@ -268,7 +275,7 @@ public class Netloadin extends PluginForHost {
             checkErrors(linkStatus);
             String url = br.getRedirectLocation();
             if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
-            if (url == null)throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Download link not found");        
+            if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Download link not found");
 
             con = br.openGetConnection(url);
             for (int i = 0; i < 10 && (!con.isOK()); i++) {
@@ -287,16 +294,14 @@ public class Netloadin extends PluginForHost {
         } else {
             con = br.openGetConnection(null);
         }
-        
-        
-        if(!con.isContentDisposition()){
-            
-            //Serverfehler
-            if(br.followConnection()==null)throw new PluginException(LinkStatus.ERROR_RETRY, "Server:Could not follow Link");
+
+        if (!con.isContentDisposition()) {
+
+            // Serverfehler
+            if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, "Server:Could not follow Link");
             checkPassword(downloadLink, linkStatus);
             checkErrors(linkStatus);
-            
-            
+
         }
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(true);
@@ -387,13 +392,10 @@ public class Netloadin extends PluginForHost {
         return HOST;
     }
 
-
-
     @Override
     public String getPluginName() {
         return HOST;
     }
-
 
     @Override
     public Pattern getSupportedLinks() {
