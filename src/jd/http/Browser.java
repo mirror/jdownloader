@@ -368,6 +368,7 @@ private boolean debug=false;
         if (string == null) string = this.getRedirectLocation();
 
         try {
+        	string = string.replaceAll("\\s", "%20");
             new URL(string);
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
