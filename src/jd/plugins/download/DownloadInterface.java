@@ -274,7 +274,7 @@ abstract public class DownloadInterface {
                     // ":" + httpConnection.getRequestProperties());
                     // logger.finer("Server chunk Headers: " + this.getID() +
                     // ":" + httpConnection.getHeaderFields());
-                }                
+                }
                 return con;
 
             } catch (Exception e) {
@@ -311,8 +311,6 @@ abstract public class DownloadInterface {
 
                 return;
             }
-
-
 
             try {
                 connection.setReadTimeout(getReadTimeout());
@@ -571,7 +569,7 @@ abstract public class DownloadInterface {
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            //logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
+            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
             // max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {
@@ -1444,7 +1442,15 @@ abstract public class DownloadInterface {
         if (fileOutput.exists()) {
 
             logger.severe("File already exists. " + fileOutput);
+            if (this.downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                if (new File(downloadLink.getFileOutput()).delete()) {
+                    logger.severe("--->Overwritten");
+                } else {
 
+                    error(LinkStatus.ERROR_FATAL, JDLocale.L("system.download.errors.couldnotoverwritejdu", "Update Download Error"));
+                    if (!handleErrors()) { return false; }
+                }
+            }
             if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
 
                 if (new File(downloadLink.getFileOutput()).delete()) {

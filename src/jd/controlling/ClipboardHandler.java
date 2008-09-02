@@ -22,7 +22,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.util.List;
 
+import jd.Main;
 import jd.config.Configuration;
+import jd.event.ControlEvent;
+import jd.event.ControlListener;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
 
 /**
@@ -30,7 +34,7 @@ import jd.utils.JDUtilities;
  * 
  * @author astaldo/JD-Team
  */
-public class ClipboardHandler extends Thread {
+public class ClipboardHandler extends Thread implements ControlListener {
     private static ClipboardHandler INSTANCE = null;
 
     public static ClipboardHandler getClipboard() {
@@ -65,7 +69,8 @@ public class ClipboardHandler extends Thread {
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         INSTANCE = this;
         // logger = JDUtilities.getLogger();
-        start();
+        JDUtilities.getController().addControlListener(this);
+    
     }
 
     /**
@@ -169,6 +174,14 @@ public class ClipboardHandler extends Thread {
 
     public void toggleActivation() {
         setEnabled(!isEnabled());
+    }
+
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            this.start();
+            JDUtilities.getController().removeControlListener(this);
+        }
+        
     }
 
 }

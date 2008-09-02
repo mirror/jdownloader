@@ -57,8 +57,10 @@ public class Browser {
 
     private static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
     private HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
-    private static HashMap<String, Auth> AUTHS = new HashMap<String,Auth>();
-private boolean debug=false;
+    private static HashMap<String, Auth> AUTHS = new HashMap<String, Auth>();
+    private HashMap<String, Auth> auths = new HashMap<String, Auth>();
+    private boolean debug = false;
+
     public void clearCookies(String string) {
         getCookies().put(string, null);
 
@@ -169,7 +171,7 @@ private boolean debug=false;
 
     private Request request;
     private boolean snifferDetection = false;
-    private boolean cookiesExclusive=true;
+    private boolean cookiesExclusive = true;
 
     public Browser() {
 
@@ -233,7 +235,7 @@ private boolean debug=false;
         }
 
         request.connect();
-        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
+        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         String ret = null;
 
         checkContentLengthLimit(request);
@@ -252,10 +254,21 @@ private boolean debug=false;
     }
 
     private void doAuth(Request request) {
-       String host = request.getUrl().getHost();
-       if(!AUTHS.containsKey(host))return;
-       request.getHeaders().put("Authorization", AUTHS.get(host).getAuthHeader());
-        
+        String host = request.getUrl().getHost();
+        if (cookiesExclusive) {
+            if (auths.containsKey(host)) {
+                request.getHeaders().put("Authorization", auths.get(host).getAuthHeader());
+            }
+            if (auths.containsKey(null)) {
+                request.getHeaders().put("Authorization", auths.get(null).getAuthHeader());
+            }
+        } else {
+            if (AUTHS.containsKey(host)) {
+                request.getHeaders().put("Authorization", AUTHS.get(host).getAuthHeader());
+            }
+
+        }
+
     }
 
     private void checkContentLengthLimit(Request request) throws BrowserException {
@@ -350,7 +363,7 @@ private boolean debug=false;
         }
 
         request.connect();
-        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
+        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
 
         updateCookies(request);
         this.request = request;
@@ -368,7 +381,7 @@ private boolean debug=false;
         if (string == null) string = this.getRedirectLocation();
 
         try {
-        	string = string.replaceAll("\\s", "%20");
+            string = string.replaceAll("\\s", "%20");
             new URL(string);
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
@@ -405,7 +418,7 @@ private boolean debug=false;
             request.getHeaders().putAll(headers);
         }
         request.connect();
-        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
+        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
             this.openGetConnection(null);
@@ -451,7 +464,7 @@ private boolean debug=false;
         String ret = null;
 
         request.connect();
-        if(isDebug())JDUtilities.getLogger().finest("\r\n"+request.printHeaders());
+        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         checkContentLengthLimit(request);
         ret = request.read();
 
@@ -877,9 +890,10 @@ private boolean debug=false;
         br.limit = limit;
         br.readTimeout = readTimeout;
         br.request = request;
-        br.cookies=cookies;
-        br.cookiesExclusive=cookiesExclusive;
-        br.debug=debug;
+        br.cookies = cookies;
+        br.auths = auths;
+        br.cookiesExclusive = cookiesExclusive;
+        br.debug = debug;
         return br;
     }
 
@@ -914,10 +928,11 @@ private boolean debug=false;
     }
 
     public void setCookiesExclusive(boolean b) {
-        if(cookiesExclusive==b)return;
+        if (cookiesExclusive == b) return;
         this.cookiesExclusive = b;
         if (b) {
             this.cookies.clear();
+            this.auths.clear();
 
             for (Iterator<Entry<String, HashMap<String, Cookie>>> it = COOKIES.entrySet().iterator(); it.hasNext();) {
                 Entry<String, HashMap<String, Cookie>> next = it.next();
@@ -926,6 +941,8 @@ private boolean debug=false;
                 tmp.putAll(next.getValue());
 
             }
+
+            auths.putAll(AUTHS);
 
         } else {
             this.cookies.clear();
@@ -940,22 +957,21 @@ private boolean debug=false;
     public String followConnection() {
         String ret = null;
         try {
-            if(request.getHtmlCode()!=null){
+            if (request.getHtmlCode() != null) {
                 JDUtilities.getLogger().warning("Request has already been read");
                 return null;
             }
-        checkContentLengthLimit(request);
-       
+            checkContentLengthLimit(request);
+
             ret = request.read();
         } catch (IOException e) {
-        
+
             e.printStackTrace();
             return null;
-        }    
-      
-      
+        }
+
         return ret;
-        
+
     }
 
     public boolean isDebug() {
@@ -967,16 +983,18 @@ private boolean debug=false;
     }
 
     public void setAuth(String domain, String user, String pass) {
-        if(user==null&&pass==null){
-            AUTHS.remove(domain);
+        
+        HashMap<String, Auth> auths = this.cookiesExclusive?this.auths:AUTHS;
+        if (user == null && pass == null) {
+            auths.remove(domain);
         }
-        Auth auth=new Auth(domain,user,pass);
-        AUTHS.put(domain, auth);
+        Auth auth = new Auth(domain, user, pass);
+        auths.put(domain, auth);
     }
 
     public String submitForm(String formname) throws IOException {
         return this.submitForm(getForm(formname));
-        
+
     }
 
 }

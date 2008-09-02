@@ -134,6 +134,8 @@ public class SingleDownloadController extends Thread {
                 return;
 
             }
+         
+            
             linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
