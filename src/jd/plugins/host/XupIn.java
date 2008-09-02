@@ -36,7 +36,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class XupIn extends PluginForHost {
-
+//http://xup.raidrush.ws/.*?/
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "jD-Team";
     private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
