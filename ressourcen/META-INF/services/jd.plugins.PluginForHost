@@ -13,7 +13,6 @@ jd.plugins.host.Filer
 jd.plugins.host.FilesTo
 jd.plugins.host.FileUploadnet
 jd.plugins.host.Freaksharenet
-jd.plugins.host.Gulli
 jd.plugins.host.HTTPAllgemein
 jd.plugins.host.ImageFap
 jd.plugins.host.MediafireCom
