@@ -14,6 +14,11 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+/* Der Decrypter funktioniert nicht, weil JD einen bereits gefilterten Parameter an das Plugin übergibt.
+ * Doperoms aber verwendet per Zufall unterschiedliche Steuerzeichen (mal ist es zb. %20 für ein leerzeichen, mal ist es %2025)
+ * dadurch hat das Plugin keine Chance an den Orginallink zu kommen.
+ */
+
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
@@ -45,7 +50,9 @@ public class DoperomsCom extends PluginForDecrypt {
         
         String rootCat = new Regex(parameter, patternSupported).getMatch(0);
         String filename = new Regex(parameter, patternSupported).getMatch(1);
-        br.getPage("http://" + host + "/roms/" + rootCat + "/" + filename+ ".html"); //Encoding.urlEncode(filename));
+        br.getPage("http://doperoms.com/");
+        br.setCookie("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20")+ ".html", "PHPSESSID", br.getCookie(br.getURL(), "PHPSESSID"));
+        br.getPage("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20")+ ".html"); //Encoding.urlEncode(filename));
         
         String file = new Regex(br, "http://[\\w.]*?doperoms\\.com/files/roms/.+" + rootCat + "/" + filename).getMatch(0);
         long filesize = Regex.getSize(new Regex(br, patternFilesize.pattern()).getMatch(0));
