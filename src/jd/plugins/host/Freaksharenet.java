@@ -69,8 +69,7 @@ public class Freaksharenet extends PluginForHost {
         if (!br.containsHTML("<span class=\"txtbig\">Fehler</span>")) {
             String[][] filename = new Regex(br, Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
             downloadLink.setName(filename[0][1]);
-            String[][] filesize = new Regex(br, Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
-
+            String[][] filesize = new Regex(br, Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();            
             downloadLink.setDownloadSize(Regex.getSize(filesize[0][2]));
 
             return true;
@@ -142,7 +141,7 @@ public class Freaksharenet extends PluginForHost {
 
         br.submitForm(form);
 
-        String[] dat = br.getRegex("Cash: <b>(.*?) €</b><br>.*?Total Points: <b>(\\d*?)</b><br>.*?Files: <b>(\\d*?) <font color=.*?>\\((.*?)\\)</font></b></font><br>").getRow(0);
+        String[] dat = br.getRegex("Cash: <b>(.*?) .</b><br>.*?Total Points: <b>(\\d*?)</b><br>.*?Files: <b>(\\d*?) <font color=.*?>\\((.*?)\\)</font></b></font><br>").getRow(0);
         if (dat == null) {
             ai.setValid(false);
             ai.setStatus("Logins incorrect");
@@ -152,7 +151,7 @@ public class Freaksharenet extends PluginForHost {
         ai.setAccountBalance(dat[0]);
         ai.setUsedSpace(dat[3]);
         ai.setPremiumPoints(dat[1]);
-        String expire = br.getRegex("<td width=.*? align=.*? height=.*? class=\"content_headcontent\">.*?Gültig bis.*?class=\"content_headcontent\".*?<font.*?>(.*?)</font>.*?</td>").getMatch(0);
+        String expire = br.getRegex("<td width=.*? align=.*? height=.*? class=\"content_headcontent\">.*?G.ltig bis.*?class=\"content_headcontent\".*?<font.*?>(.*?)</font>.*?</td>").getMatch(0);
         String freeTraffic = br.getRegex("<td width=.*? align=.*? height=.*? class=\"content_headcontent\">.*?Traffic verbleibend.*?class=\"content_headcontent\".*?<font.*?>(.*?)</font>.*?</td>").getMatch(0);
 
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yyyy", Locale.GERMAN));
@@ -188,13 +187,10 @@ public class Freaksharenet extends PluginForHost {
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
+        downloadLink.setLocalSpeedLimit(-1);
         dl = new RAFDownload(this, downloadLink, urlConnection);
-        //dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty
-        // (Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
-        // 2));
-        // dl.setResume(true);
         dl.setChunkNum(1);
-        dl.setResume(false);
+        dl.setResume(false);       
         dl.startDownload();
     }
 

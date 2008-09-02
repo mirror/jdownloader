@@ -1082,11 +1082,7 @@ public class JDUtilities {
         // Configuration.CID, -1);
         if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
             ret += "  " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
-
         }
-        // if
-        // (CFGConfig.getConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_BETA"
-        // , false)) { return "[BETA!] " + ret; }
         return ret;
     }
 
@@ -1158,7 +1154,7 @@ public class JDUtilities {
             e.printStackTrace();
         }
         return "";
-    } 
+    }
 
     /**
      * public static String getLocalHash(File f) Gibt einen MD% Hash der file
