@@ -43,7 +43,9 @@ public class SAUGUS extends PluginForDecrypt {
         String server_id = "";
         if (new Regex(parameter, patternSupported_folder).matches()) {
             if (parameter.contains("folder2")) {
-                server_folder_id = "2";
+                server_folder_id = "2";               
+            }
+            if (parameter.contains("s2.saug.us")){
                 server_id = "s2.";
             }
             br.getPage(parameter);
@@ -65,8 +67,10 @@ public class SAUGUS extends PluginForDecrypt {
                 }
             }
         } else if (new Regex(parameter, patternSupported_go).matches()) {
-            if (parameter.contains("go2")) {
-                server_folder_id = "2";
+            if (parameter.contains("folder2")) {
+                server_folder_id = "2";               
+            }
+            if (parameter.contains("s2.saug.us")){
                 server_id = "s2.";
             }
             br.getPage(parameter);
