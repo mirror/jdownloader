@@ -184,7 +184,7 @@ public class Uploadedto extends PluginForHost {
 
         if (br.getRedirectLocation() == null) {
 
-            Form form = br.getForm("Download");
+            Form form = br.getFormbyValue("Download");
 
             br.openFormConnection(form);
 
@@ -302,7 +302,7 @@ public class Uploadedto extends PluginForHost {
 
         br.setFollowRedirects(false);
 
-        Form form = br.getForm("Download");
+        Form form = br.getFormbyValue("Download");
 
         HTTPConnection con = br.openFormConnection(form);
 

@@ -18,18 +18,18 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
@@ -40,10 +40,12 @@ public class Youtube extends PluginForHost {
     static private final String AGB = "http://youtube.com/t/terms";
 
     static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", Pattern.CASE_INSENSITIVE);
-    private RequestInfo requestInfo;
 
     public Youtube() {
         super();
+        enablePremium(1);
+        br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
     }
 
     @Override
@@ -62,16 +64,11 @@ public class Youtube extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
-            if (requestInfo.getResponseCode() == 200) { return true; }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        if (br.openGetConnection(downloadLink.getDownloadURL()).getResponseCode() == 200) {
+            return true;
+        } else
+            return false;
     }
 
     @Override
@@ -80,12 +77,7 @@ public class Youtube extends PluginForHost {
     }
 
     @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return 50;
-    }
-
-    @Override
-   */ public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -103,12 +95,43 @@ public class Youtube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        br.clearCookies(HOST);
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        HTTPConnection urlConnection = br.getHttpConnection();
+        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl.setChunkNum(1);
+        dl.setResume(false);
+        if (dl.startDownload()) {
+            if (downloadLink.getProperty("convertto") != null) {
+                ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
+                ConversionMode InType = ConversionMode.VIDEOFLV;
+                if (convertto.equals(ConversionMode.VIDEOMP4) || convertto.equals(ConversionMode.VIDEO3GP)) {
+                    InType = convertto;
+                }
+
+                if (!JDMediaConvert.ConvertFile(downloadLink, InType, convertto)) {
+                    logger.severe("Video-Convert failed!");
+                }
+            }
+        }
+    }
+
+    @Override
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        login(account);
+        if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+
+        if (!getFileInformation(downloadLink)) {
+            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+            return;
+        }
+        HTTPConnection urlConnection = br.getHttpConnection();
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
         dl.setResume(false);
@@ -130,12 +153,38 @@ public class Youtube extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    private void login(Account account) throws IOException {
+        br.clearCookies(HOST);
+        br.getPage("http://www.youtube.com/signup?next=/index");
+        Form login = br.getFormbyName("loginForm");
+        login.put("username", account.getUser());
+        login.put("password", account.getPass());
+        br.submitForm(login);
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+
+        login(account);
+        if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) {
+            ai.setValid(false);
+            ai.setStatus("Account invalid. Logins wrong?");
+            return ai;
+        }
+
+        ai.setStatus("Account is ok.");
+        ai.setValidUntil(-1);
+        ai.setValid(true);
+
+        return ai;
     }
 }

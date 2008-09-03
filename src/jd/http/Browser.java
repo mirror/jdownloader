@@ -191,9 +191,16 @@ public class Browser {
 
     }
 
-    public Form getForm(String name) {
+    public Form getFormbyValue(String name) {
         for (Form f : getForms()) {
             if (f.hasSubmitValue(name)) return f;
+        }
+        return null;
+    }
+    
+    public Form getFormbyName(String name) {
+        for (Form f : getForms()) {
+            if (f.formProperties.get("name")!= null && f.formProperties.get("name").equals(name)) return f;
         }
         return null;
     }
@@ -993,7 +1000,7 @@ public class Browser {
     }
 
     public String submitForm(String formname) throws IOException {
-        return this.submitForm(getForm(formname));
+        return this.submitForm(getFormbyValue(formname));
 
     }
 

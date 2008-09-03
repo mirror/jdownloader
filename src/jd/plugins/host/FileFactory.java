@@ -288,7 +288,7 @@ public class FileFactory extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
-        Form login = br.getForm("Log in");
+        Form login = br.getFormbyValue("Log in");
         login.put("email", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);

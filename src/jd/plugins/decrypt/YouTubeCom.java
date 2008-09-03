@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -25,12 +24,14 @@ import java.util.regex.Pattern;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Encoding;
+import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
+import jd.utils.JDUtilities;
 
 public class YouTubeCom extends PluginForDecrypt {
 
@@ -47,6 +48,9 @@ public class YouTubeCom extends PluginForDecrypt {
 
     public YouTubeCom() {
         super();
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
+        br.clearCookies("youtube.com");
     }
 
     private String clean(String s) {
@@ -57,12 +61,28 @@ public class YouTubeCom extends PluginForDecrypt {
         return s;
     }
 
+    private void login(Account account) throws IOException {
+        if (account.isEnabled()) {
+            br.getPage("http://www.youtube.com/signup?next=/index");
+            Form login = br.getFormbyName("loginForm");
+            login.put("username", account.getUser());
+            login.put("password", account.getPass());
+            br.submitForm(login);
+            if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) {
+                logger.severe("Account invalid");
+                account.setEnabled(false);
+            }
+        }
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+        ArrayList<Account> accounts = JDUtilities.getAccountsForHost("youtube.com");
+        if (accounts != null) login(accounts.get(0));
+
         try {
             if (StreamingShareLink.matcher(parameter).matches()) {
                 // StreamingShareLink
@@ -82,11 +102,13 @@ public class YouTubeCom extends PluginForDecrypt {
                 return decryptedLinks;
             }
 
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
+            br.getPage(parameter);
+            if (br.getRegex(Pattern.compile("signup\\?next=/watch")).matches()) { throw new DecrypterException("No Valid Account for Age Check"); }
+            Form f = br.getForms()[2];
+            if (f != null && f.action == null) br.submitForm(f);
             String video_id = "";
             String t = "";
-            String match = new Regex(reqinfo.getHtmlCode(), patternswfArgs).getMatch(0);
+            String match = br.getRegex(patternswfArgs).getMatch(0);
             if (match == null) { return null; }
 
             /* DownloadUrl holen */
@@ -101,12 +123,13 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
             }
             String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
-            String name = Encoding.htmlDecode(new Regex(reqinfo.getHtmlCode(), YT_FILENAME).getMatch(0).trim());
+            String name = Encoding.htmlDecode(br.getRegex(YT_FILENAME).getMatch(0).trim());
             /* Konvertierungsmöglichkeiten adden */
-            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=18"), null, null, true).getResponseCode() == 200) {
+
+            if (br.openGetConnection(link + "&fmt=18").getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEOMP4);
             }
-            if (HTTP.getRequestWithoutHtmlCode(new URL(link + "&fmt=13"), null, null, true).getResponseCode() == 200) {
+            if (br.openGetConnection(link + "&fmt=13").getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEO3GP);
             }
             possibleconverts.add(ConversionMode.AUDIOMP3);

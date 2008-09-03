@@ -60,7 +60,7 @@ public class MeinUpload extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
         }
         br.setDebug(true);
-        Form form = br.getForm("Free");
+        Form form = br.getFormbyValue("Free");
         HTTPConnection con;
         if (form != null) {
             // Old version 1.9.08
@@ -86,7 +86,7 @@ private void login(Account account) throws IOException{
     br.clearCookies(HOST);
 
     br.getPage("http://meinupload.com");
-    Form login = br.getForm("Login");
+    Form login = br.getFormbyValue("Login");
     login.put("user", account.getUser());
     login.put("pass", account.getPass());
     br.submitForm(login);
@@ -160,7 +160,7 @@ private void login(Account account) throws IOException{
         String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         downloadLink.setName(filename);
 
-        Form form = br.getForm("Free");
+        Form form = br.getFormbyValue("Free");
         if (form != null) br.submitForm(form);
         try {
             String s = br.getRegex("Dateigr.*e:</b></td>.*<td align=left>(.*?[MB|KB|B])</td>").getMatch(0);

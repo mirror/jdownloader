@@ -115,7 +115,7 @@ public class DepositFiles extends PluginForHost {
             return;
         }
 
-        Form form = br.getForm("Kostenlosen download");
+        Form form = br.getFormbyValue("Kostenlosen download");
         if (form == null) {
             String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
             if (wait != null) {
@@ -140,7 +140,7 @@ public class DepositFiles extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
-        form = br.getForm("Die Datei downloaden");
+        form = br.getFormbyValue("Die Datei downloaden");
         HTTPConnection con = br.openFormConnection(form);
 
         if (con == null) {
@@ -179,7 +179,7 @@ public class DepositFiles extends PluginForHost {
 
         br.getPage("http://depositfiles.com/en/");
 
-        Form login = br.getForm("enter");
+        Form login = br.getFormbyValue("enter");
 
         login.put("login", account.getUser());
         login.put("password", account.getPass());
@@ -251,7 +251,7 @@ public class DepositFiles extends PluginForHost {
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
-        Form login = br.getForm("einloggen");
+        Form login = br.getFormbyValue("einloggen");
 
         login.put("login", account.getUser());
         login.put("password", account.getPass());

@@ -27,7 +27,7 @@ public class AccountInfo extends Property {
     private PluginForHost plugin;
     private Account account;
     private boolean valid = true;
-    private long validUntil = -1;
+    private long validUntil = 0;
     private long trafficLeft = -1;
     private long trafficMax = -1;
     private int filesNum = -1;
@@ -113,7 +113,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt einen Timestamp zurück zu dem der Account auslaufen wird bzw.
-     * ausgelaufen ist.
+     * ausgelaufen ist.(-1 für Nie)
      * 
      * @return
      */
@@ -127,7 +127,7 @@ public class AccountInfo extends Property {
      * @return
      */
     public boolean isExpired() {
-        return expired || this.getValidUntil() < new Date().getTime();
+        return expired || (this.getValidUntil() != -1 && this.getValidUntil() < new Date().getTime());
     }
 
     /**
@@ -185,9 +185,13 @@ public class AccountInfo extends Property {
         this.valid = b;
     }
 
+    /**
+     * -1 für Niemals ablaufen
+     * @param validUntil
+     */
     public void setValidUntil(long validUntil) {
         this.validUntil = validUntil;
-        if (validUntil < new Date().getTime()) this.setExpired(true);
+        if (validUntil != -1 && validUntil < new Date().getTime()) this.setExpired(true);
     }
 
     public long getTrafficMax() {

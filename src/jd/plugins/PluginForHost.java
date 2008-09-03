@@ -114,8 +114,9 @@ public abstract class PluginForHost extends Plugin {
         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
         if (captchaCode == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         return captchaCode;
-        
+
     }
+
     public AccountInfo getAccountInformation(Account account) throws Exception {
         return null;
     }
@@ -161,13 +162,19 @@ public abstract class PluginForHost extends Plugin {
     public abstract String getAGBLink();
 
     protected void enablePremium() {
+        this.enablePremium(5);
+    }
+
+    protected void enablePremium(int size) {
+        if (size <= 0) return;
+        if (size > 5) size = 5;
         enablePremium = true;
         ConfigEntry cfg;
 
         ConfigContainer premiumConfig = new ConfigContainer(this, JDLocale.L("plugins.hoster.premiumtab", "Premium Einstellungen"));
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, premiumConfig));
 
-        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, getPluginConfig(), PROPERTY_PREMIUM, 5));
+        premiumConfig.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PREMIUMPANEL, getPluginConfig(), PROPERTY_PREMIUM, size));
         cfg.setActionListener(this);
         cfg.setDefaultValue(new ArrayList<Account>());
 
@@ -529,7 +536,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public Browser getBrowser() {
-       return br;
+        return br;
     }
 
 }

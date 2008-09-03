@@ -110,7 +110,7 @@ public class ShareBaseDe extends PluginForHost {
 
         }
 
-        Form form = br.getForm("Please Activate Javascript");
+        Form form = br.getFormbyValue("Please Activate Javascript");
         form.setVariable(0, "Download+Now+%21");
         HTTPConnection urlConnection = br.openFormConnection(form);
 

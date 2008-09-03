@@ -98,6 +98,11 @@ public abstract class PluginForDecrypt extends Plugin {
         ArrayList<DownloadLink> tmpLinks = null;
         try {
             tmpLinks = decryptIt(cryptedLink);
+        } catch (DecrypterException e) {
+            tmpLinks = new ArrayList<DownloadLink>();
+            progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
+            progress.setColor(Color.RED);
+            progress.finalize(15000l);
         } catch (Exception e) {
             e.printStackTrace();
         }

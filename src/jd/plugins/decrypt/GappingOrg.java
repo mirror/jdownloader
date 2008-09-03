@@ -26,7 +26,11 @@ import jd.plugins.PluginForDecrypt;
 
 public class GappingOrg extends PluginForDecrypt {
     final static String host = "gapping.org";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?gapping\\.org/(index\\.php\\?folderid=\\d+|file\\.php\\?id=.+|f/\\d+\\.html)", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported_folder1 = Pattern.compile("http://[\\w\\.]*?gapping\\.org/index\\.php\\?folderid=\\d+", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported_file = Pattern.compile("http://[\\w\\.]*?gapping\\.org/file\\.php\\?id=.+", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported_folder2 = Pattern.compile("http://[\\w\\.]*?gapping\\.org/f/\\d+\\.html", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported_container = Pattern.compile("http://[\\w\\.]*?gapping\\.org/g.*?\\.html", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile(patternSupported_folder1.pattern() + "|" + patternSupported_folder2.pattern() + "|" + patternSupported_file.pattern() + "|" + patternSupported_container.pattern(), Pattern.CASE_INSENSITIVE);
 
     public GappingOrg() {
         super();
@@ -37,21 +41,24 @@ public class GappingOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (parameter.indexOf("index.php") != -1) {
+        if (new Regex(parameter, patternSupported_folder1).matches()) {
             String links[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://gapping\\.org/file\\.php\\?id=(.*?)\" >", Pattern.CASE_INSENSITIVE)).getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink(new Regex(br.getPage("http://gapping.org/decry.php?fileid=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0).trim()));
                 progress.increase(1);
             }
-        } else if (parameter.indexOf("file.php") != -1) {
+        } else if (new Regex(parameter, patternSupported_file).matches()) {
             parameter = parameter.replace("file.php?id=", "decry.php?fileid=");
             decryptedLinks.add(createDownloadlink(new Regex(br.getPage(parameter), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0).trim()));
-        } else {
+        } else if (new Regex(parameter, patternSupported_container).matches()) {
+            logger.info("bla");
+        } else if (new Regex(parameter, patternSupported_folder2).matches()) {
             String[] links = new Regex(br.getPage(parameter), Pattern.compile("http://gapping\\.org/d/(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getColumn(-1);
             progress.setRange(links.length);
             for (String element : links) {
-                decryptedLinks.add(createDownloadlink(new Regex(br.getPage(element), Pattern.compile("src=\"(.*?)\"", Pattern.DOTALL)).getMatch(0).trim()));
+                String dl_link = new Regex(br.getPage(element), Pattern.compile("src=\"(.*?)\"", Pattern.DOTALL)).getMatch(0);
+                decryptedLinks.add(createDownloadlink(dl_link.trim()));
                 progress.increase(1);
             }
         }

@@ -57,6 +57,7 @@ import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -99,6 +100,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.http.Encoding;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LogFormatter;
@@ -1361,6 +1363,16 @@ public class JDUtilities {
             if (pluginsForHost.get(i).getHost().equals(host)) { return pluginsForHost.get(i); }
         }
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static ArrayList<Account> getAccountsForHost(String host) {
+        PluginForHost plugin = JDUtilities.getPluginForHost(host);
+        if (plugin != null) {
+            ArrayList<Account> accounts = (ArrayList<Account>) plugin.getPluginConfig().getProperty(PluginForHost.PROPERTY_PREMIUM, new ArrayList<Account>());
+            return accounts;
+        } else
+            return null;
     }
 
     /**

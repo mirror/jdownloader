@@ -26,7 +26,6 @@ import jd.Main;
 import jd.config.Configuration;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
 
 /**
