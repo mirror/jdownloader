@@ -74,15 +74,15 @@ public class FastLoadNet extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
+        String downloadurl = downloadLink.getDownloadURL() + "&lg=de";
         try {
 
-            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL() + "&lg=de"));
+            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadurl));
 
             if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
 
                 linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
+                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4, downloadurl.length() - 6));
                 return false;
 
             }
@@ -91,7 +91,7 @@ public class FastLoadNet extends PluginForHost {
 
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setValue(20 * 60 * 1000l);
-                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().length() - 6));
+                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4, downloadurl.length() - 6));
                 return false;
 
             }
@@ -112,7 +112,7 @@ public class FastLoadNet extends PluginForHost {
                 return true;
 
             } else {
-                downloadLink.setName(downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4));
+                downloadLink.setName(downloadurl.substring(downloadurl.indexOf("pid=") + 4));
             }
 
         } catch (MalformedURLException e) {
@@ -149,8 +149,9 @@ public class FastLoadNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        String downloadurl = downloadLink.getDownloadURL() + "&lg=de";
 
-        RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL() + "&lg=de"));
+        RequestInfo requestInfo = HTTP.getRequest(new URL(downloadurl));
         String cookie = requestInfo.getCookie();
 
         if (requestInfo.getHtmlCode().contains(NOT_FOUND)) {
@@ -172,7 +173,7 @@ public class FastLoadNet extends PluginForHost {
         while (true) {
             File file = this.getLocalCaptchaFile(this);
 
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
+            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadurl, true);
 
             if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
 
@@ -196,9 +197,9 @@ public class FastLoadNet extends PluginForHost {
                 }
 
             }
-            String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("&"));
+            String pid = downloadurl.substring(downloadurl.indexOf("pid=") + 4, downloadurl.indexOf("&"));
 
-            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"), cookie, downloadLink.getDownloadURL(), "fid=" + pid + "&captcha_code=" + code, true);
+            requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://fast-load.net/download.php"), cookie, downloadurl, "fid=" + pid + "&captcha_code=" + code, true);
 
             // Download vorbereiten
             HTTPConnection urlConnection = requestInfo.getConnection();
