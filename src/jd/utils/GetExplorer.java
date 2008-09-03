@@ -33,7 +33,7 @@ public class GetExplorer {
         } else if (OS.indexOf("mac") >= 0) {
             return new Object[] { "Open", "open", new String[] { "'%%path%%'" } };
         } else {
-            Object[][] programms = new Object[][] { { "nautilus", new String[] { "--browser", "--no-desktop", "%%path%%" } }, { "konqueror", new String[] { "%%path%%" } } };
+            Object[][] programms = new Object[][] { { "dolphin", new String[] { "%%path%%" } }, { "konqueror", new String[] { "%%path%%" } }, { "nautilus", new String[] { "--browser", "--no-desktop", "%%path%%" } } };
             try {
                 String[] charset = System.getenv("PATH").split(":");
                 for (String element : charset) {
@@ -57,6 +57,10 @@ public class GetExplorer {
      * @return
      */
     public Object[] getExplorerCommand() {
+        if (explorer != null) {
+            if (!new File((String) explorer[1]).exists()) explorer = null;
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FILE_BROWSER, null);
+        }
         if (explorer == null) {
             explorer = GetExplorer.autoGetExplorerCommand();
             if (explorer == null) {
