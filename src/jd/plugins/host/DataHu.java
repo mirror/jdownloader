@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -29,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDUtilities;
 
 public class DataHu extends PluginForHost {
 
@@ -36,11 +38,8 @@ public class DataHu extends PluginForHost {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?data.hu/get/.+/.+", Pattern.CASE_INSENSITIVE);
 
-    //
-
     public DataHu() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -84,10 +83,8 @@ public class DataHu extends PluginForHost {
         return HOST;
     }
 
- 
-
     @Override
-  public String getPluginName() {
+    public String getPluginName() {
         return HOST;
     }
 
@@ -105,12 +102,6 @@ public class DataHu extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        // if (aborted) {
-        // logger.warning("Plugin aborted");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        // }
 
         String url = downloadLink.getDownloadURL();
         RequestInfo requestInfo = HTTP.getRequest(new URL(url));
@@ -125,22 +116,13 @@ public class DataHu extends PluginForHost {
         HTTPConnection urlConnection = requestInfo.getConnection();
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
 
         dl = new RAFDownload(this, downloadLink, urlConnection);
-        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").
-        // getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setResume(true);
         dl.startDownload();
-        // if (!dl.startDownload() && step.getStatus() !=
-        // PluginStep.STATUS_ERROR && step.getStatus() !=
-        // PluginStep.STATUS_TODO) {
-        //
-        // linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-        // //step.setStatus(PluginStep.STATUS_ERROR);
-        // return;
-        // }
         return;
 
     }
@@ -148,7 +130,7 @@ public class DataHu extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }
