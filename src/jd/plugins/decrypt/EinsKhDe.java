@@ -23,6 +23,7 @@ import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -58,25 +59,28 @@ public class EinsKhDe extends PluginForDecrypt {
             }
         } else {
             /* ganzer Ordner */
-            if (forms[0].getVars().containsKey("Password")) {
+            boolean valid = true;
+            if (forms != null && forms.length > 0 && forms[0].getVars().containsKey("Password")) {
+                valid = false;
                 /* Ordner ist Passwort geschützt */
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     String password = JDUtilities.getGUI().showUserInputDialog("Ordnerpasswort?");
 
                     if (password == null) {
                         /* Auf "Abbruch" geklickt */
-                        return decryptedLinks;
+                        throw new DecrypterException("No Valid PW");
                     }
 
                     forms[0].put("Password", password);
                     br.submitForm(forms[0]);
 
                     if (!br.containsHTML("Das eingegebene Passwort ist falsch!")) {
+                        valid = true;
                         break;
                     }
                 }
             }
-
+            if (valid == false) throw new DecrypterException("No Valid PW");
             String[] links = br.getRegex("<div class=\"Block3\" ><a id=\"DownloadLink_(\\d+)\"").getColumn(0);
             progress.setRange(links.length);
 
