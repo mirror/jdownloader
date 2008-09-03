@@ -476,8 +476,7 @@ public class Rapidshare extends PluginForHost {
 
             // Fehlerbehanldung
             String error;
-            if ((error = findError(br.toString())) != null) {
-                new File(downloadLink.getFileOutput()).delete();
+            if ((error = findError(br.toString())) != null) {                
                 logger.warning(error);
                 if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
@@ -491,8 +490,7 @@ public class Rapidshare extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, error);
                 }
 
-            } else {
-                new File(downloadLink.getFileOutput()).delete();
+            } else {                
                 reportUnknownError(br.toString(), 6);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }

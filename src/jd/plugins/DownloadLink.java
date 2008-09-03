@@ -164,8 +164,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String decrypterPassword;
 
-    
-
     private String MD5Hash;
 
     /**
@@ -216,14 +214,18 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         }
 
     }
+
     /**
-     * Übernimmt das subdirectory von einem anderen Downloadlink.
-     * Zum erstellen eines eigenen subdirectorys steht addSubdirectory(String s) zur verfügung.
+     * Übernimmt das subdirectory von einem anderen Downloadlink. Zum erstellen
+     * eines eigenen subdirectorys steht addSubdirectory(String s) zur
+     * verfügung.
+     * 
      * @param downloadLink
      */
-    public void setSubdirectory(DownloadLink downloadLink){
-    	subdirectory = downloadLink.getSubdirectory();
+    public void setSubdirectory(DownloadLink downloadLink) {
+        subdirectory = downloadLink.getSubdirectory();
     }
+
     public void addSpeedValue(int speed) {
         getSpeedMeter().addSpeedValue(speed);
     }
@@ -581,7 +583,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             available = ((PluginForHost) getPlugin()).getFileInformation(this);
         } catch (Exception e) {
             e.printStackTrace();
-            available = false;            
+            available = false;
         }
         return available;
     }
@@ -638,6 +640,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         linkStatus = new LinkStatus(this);
         if (new File(this.getFileOutput()).exists()) {
             if (!new File(this.getFileOutput()).delete()) {
+                logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
+            }
+        }
+        if (new File(this.getFileOutput() + ".part").exists()) {
+            if (!new File(this.getFileOutput() + ".part").delete()) {
                 logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
             }
         }
@@ -959,8 +966,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setMD5Hash(String string) {
-        this.MD5Hash=string;
-        
+        this.MD5Hash = string;
+
     }
 
     public String getMD5Hash() {
