@@ -19,6 +19,7 @@ jd.plugins.host.MediafireCom
 jd.plugins.host.Megauploadcom
 jd.plugins.host.MeinUpload
 jd.plugins.host.Moosharede
+jd.plugins.host.MySpaceCom
 jd.plugins.host.MyVideo
 jd.plugins.host.Netloadin
 jd.plugins.host.Odsiebiecom
@@ -26,6 +27,7 @@ jd.plugins.host.Przeslijnet
 jd.plugins.host.QshareCom
 jd.plugins.host.Rapidshare
 jd.plugins.host.RapidShareDe
+jd.plugins.host.RbaDe
 jd.plugins.host.MegasharesCom
 jd.plugins.host.RomHustlerNet
 jd.plugins.host.Serienjunkies

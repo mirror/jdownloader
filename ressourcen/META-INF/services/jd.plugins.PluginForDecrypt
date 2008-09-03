@@ -50,6 +50,7 @@ jd.plugins.decrypt.MediafireFolder
 jd.plugins.decrypt.MirrorItDe
 #jd.plugins.decrypt.MovieloadTo
 jd.plugins.decrypt.MyRef
+jd.plugins.decrypt.MySpaceCom
 jd.plugins.decrypt.Myupcc
 jd.plugins.decrypt.MyvideoDe
 jd.plugins.decrypt.NetfolderIn
@@ -63,6 +64,7 @@ jd.plugins.decrypt.Rapidsafenet
 jd.plugins.decrypt.RapidshareComFolder
 jd.plugins.decrypt.rapidsharknet
 jd.plugins.decrypt.RapidSpreadCom
+jd.plugins.decrypt.RbaDe
 jd.plugins.decrypt.RedirectWayaroundorg
 jd.plugins.decrypt.RelinkUs
 jd.plugins.decrypt.Rlslog
