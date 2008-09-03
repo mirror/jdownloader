@@ -1439,12 +1439,13 @@ abstract public class DownloadInterface {
             fileOutput.getParentFile().mkdirs();
         }
 
-        if (fileOutput.exists()) {
+        loop:if (fileOutput.exists()) {
 
             logger.severe("File already exists. " + fileOutput);
             if (this.downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");
+                    break loop;
                 } else {
 
                     error(LinkStatus.ERROR_FATAL, JDLocale.L("system.download.errors.couldnotoverwritejdu", "Update Download Error"));

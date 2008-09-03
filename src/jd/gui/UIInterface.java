@@ -98,10 +98,6 @@ public interface UIInterface extends ControlListener {
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def);
 
-    /**
-     * Wird aufgeruifen sobald die Initialisierung aller Module komplett ist
-     */
-    public void onJDInitComplete();
 
     /**
      * Entfernt einen UIListener

@@ -216,7 +216,8 @@ public class PackageManager extends Interaction implements Serializable {
         return ret;
     }
 
-    public void onDownloadedPackage(final DownloadLink downloadLink) {
+    @SuppressWarnings("unchecked")
+    public synchronized void onDownloadedPackage(final DownloadLink downloadLink) {
         final PackageData dat = (PackageData) downloadLink.getProperty("JDU");
         logger.finer("downloaded addon");
         if (dat == null) {
@@ -225,7 +226,14 @@ public class PackageManager extends Interaction implements Serializable {
         }
         dat.setProperty("LOCALPATH", downloadLink.getFileOutput());
         dat.setDownloaded(true);
+        ArrayList<PackageData> data = (ArrayList<PackageData>) CFGConfig.getConfig("JDU").getProperty("PACKAGEDATA", new ArrayList<PackageData>());
+
+        for (PackageData pd : data) {
+            if (pd.isDownloaded()) logger.finer(pd.getStringProperty("url") + " << downloaded " + pd.getStringProperty("LOCALPATH"));
+            if (pd == dat) logger.finer("^^^^lastest^^^^^^");
+        }
         CFGConfig.getConfig("JDU").save();
+        
         new Thread() {
             @Override
             public void run() {

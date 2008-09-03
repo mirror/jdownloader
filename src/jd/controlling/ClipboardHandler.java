@@ -169,7 +169,9 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
         if (enabled && !isAlive()) {
             new ClipboardHandler();
+            this.start();
         }
+       
     }
 
     public void toggleActivation() {

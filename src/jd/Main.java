@@ -426,7 +426,7 @@ public class Main {
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
         // init.createQueueBackup();
 
-        controller.getUiInterface().onJDInitComplete();
+       
         Properties pr = System.getProperties();
         TreeSet propKeys = new TreeSet(pr.keySet());
 

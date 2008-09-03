@@ -1002,7 +1002,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 switch (event.getID()) {
+                case ControlEvent.CONTROL_INIT_COMPLETE:
+                    frame.setTitle(JDUtilities.getJDTitle());
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                    }
+                    if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)) {
+                        startStopDownloads();
+                    }
 
+                    break;
                 case ControlEvent.CONTROL_PLUGIN_ACTIVE:
                     logger.info("Plugin Aktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
@@ -1535,12 +1545,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         frame.setTitle(JDUtilities.getJDTitle());
     }
 
-    public void onJDInitComplete() {
-        if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_START_DOWNLOADS_AFTER_START, false)) {
-            startStopDownloads();
-        }
-        frame.setTitle(JDUtilities.getJDTitle());
-    }
+
+
 
     public void removeUIListener(UIListener listener) {
         synchronized (uiListener) {
