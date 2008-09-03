@@ -26,27 +26,7 @@ import java.util.regex.Pattern;
 
 import jd.utils.JDUtilities;
 
-/**
- * Die Regexklasse Diese Klasse wird in JD zum Parsen über Regluar Expressions
- * verwendet. Andere Konstrukte wie getBetween und Co sollten wenn möglich nicht
- * verwendet werden. Zum Parsen wird der Klasse der Text (Heuhaufen) und das
- * Pattern übergeben. Das Pattern kann mehrmals im Text vorkommen und kann
- * selbst mehrere "Platzhalter" enhalten. daraus ergibt sich ein Tabellenartiges
- * 2-D Trefferfeld. Die Reihen dieser Tabelle sind dabei Die TrefferGruppen.
- * 
- * Beispiel: Sind 3 Platzhalter im Pattern (..) So hat jede Reihe 3 Einträge. Es
- * gibt soviele Reihen wie das Pattern im Text vorkommt.
- * 
- * Der Zugriff auf die Treffer erfolgt über Reihen und Spalten.
- * 
- * _______X | | | Y
- * 
- * Der Erste Treffer, bzw die erste Treffergruppe haben immer den Index 0. Mit
- * Index -1 wird jeweils der Komplette Match angesprochen. Beispiel:
- * "http://(.*?)\\.(.*?)" auf a href="http://www.google.de" Index 0 z.B.
- * getMatch(0,0); gibt www.google zurück Index 1 getMatch(1,0); gibt de zurück
- * index -1 getMatch(-1,0); gibt "http://www.google.de" zurück.
- */
+
 public class Regex {
     public static String[] getLines(String arg) {
         if (arg == null) { return new String[] {}; }
@@ -212,15 +192,7 @@ public class Regex {
         return ar.toArray(new String[][] {});
     }
 
-    /**
-     * Die RegexKlasse kann man sich wie einen 2D parser vorstellen. Ein Pattern
-     * kann beliebig viele PLatzhalter haben und werden von 0-...[x]
-     * durchnummeriert. x entspricht der Spaltennummer Gleichzeitig kann ein
-     * Pattern im Text mehrfach vorkommen. ergebnisse werden von 0-...[y]
-     * durchnummeriert. y entspricht der Reihe. getColomn(x) gibt dabei für
-     * jeden Treffer den Wert des x. Platzhalters zurück
-     * 
-     */
+
     public String[] getColumn(int x) {
         if (matcher == null) { return null; }
         x++;
@@ -360,5 +332,9 @@ public class Regex {
        return Integer.parseInt(hours)*60*60*1000+Integer.parseInt(minutes)*60*1000+Integer.parseInt(seconds)*1000;
         
         
+    }
+    public static void main(String args[]) {
+        
+       
     }
 }
