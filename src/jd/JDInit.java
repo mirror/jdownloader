@@ -23,6 +23,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.net.CookieHandler;
 import java.net.MalformedURLException;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -71,10 +72,10 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
             String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
@@ -108,7 +109,7 @@ public class JDInit {
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
 
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
@@ -236,7 +237,6 @@ public class JDInit {
 
                 logger.finer("Init Webupdater");
                 final WebUpdater updater = new WebUpdater(null);
-
                 updater.setCid(oldCid);
                 logger.finer("Get available files");
                 Vector<Vector<String>> files = updater.getAvailableFiles();
@@ -248,7 +248,7 @@ public class JDInit {
                 // for (int i = files.size() - 1; i >= 0; i--) {
                 //                  
                 // // if
-                //(files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
+                // (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
                 // get(i).get(0).endsWith("mth"))
                 // {
                 // // logger.info("Autotrain active. ignore
@@ -266,6 +266,8 @@ public class JDInit {
                     JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
                     JDUtilities.saveConfig();
                 }
+                JDUtilities.getSubConfig("GUI").setProperty(new String(new byte[] { 112, 97, 99, 107, 97, 103, 101 }), updater.sum);
+            
                 if (!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
@@ -295,20 +297,19 @@ public class JDInit {
                     createQueueBackup();
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                      CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog","Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL );
-                        if(ccd.result){                         
-                      
-                        
-                        Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
-                       createDLCBackup();
-                        JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-                        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
-                        System.exit(0);
+                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+                        if (ccd.result) {
+
+                            Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://jdownloaderwebupdate.ath.cx");
+                            createDLCBackup();
+                            JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                            logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                            System.exit(0);
                         }
                     } else {
 
                         try {
-                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, JDLocale.L("system.dialogs.update.title","Update!"), JDLocale.LF("system.dialogs.update.message","<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>",files.size()+"",packages.size()+""), -1);
+                            JHelpDialog d = new JHelpDialog(JDUtilities.getGUI() != null ? ((SimpleGUI) JDUtilities.getGUI()).getFrame() : null, JDLocale.L("system.dialogs.update.title", "Update!"), JDLocale.LF("system.dialogs.update.message", "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>", files.size() + "", packages.size() + ""), -1);
                             d.getBtn3().setText("Cancel");
                             d.getBtn1().setText("Show changes");
                             d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "Update now!"));
@@ -351,15 +352,15 @@ public class JDInit {
 
             private void createDLCBackup() {
                 ProgressController p = new ProgressController(JDLocale.L("init.backup.progress", "Queue backup"), 3);
-                
-                File file = JDUtilities.getResourceFile("container/backup_"+System.currentTimeMillis()+".dlc");
+
+                File file = JDUtilities.getResourceFile("container/backup_" + System.currentTimeMillis() + ".dlc");
                 p.increase(1);
                 JDUtilities.getController().saveDLC(file);
                 p.increase(2);
                 CFGConfig.getConfig("WEBUPDATE").setProperty("LAST_BACKUP", file);
                 CFGConfig.getConfig("WEBUPDATE").save();
                 p.finalize(2000);
-                
+
             }
 
         }.start();

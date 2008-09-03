@@ -34,6 +34,7 @@ import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Vector;
 import java.util.regex.Matcher;
@@ -57,7 +58,7 @@ public class WebUpdater implements Serializable {
     public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
 
     public static String htmlDecode(String str) {
-        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) { return null; }
@@ -109,6 +110,8 @@ public class WebUpdater implements Serializable {
      * anzahl der aktualisierten Files
      */
     private transient int updatedFiles = 0;
+
+    public byte[] sum;
 
     /**
      * @param path
@@ -332,13 +335,16 @@ public class WebUpdater implements Serializable {
             Vector<String> entry;
             String tmp;
             String[] os = new String[] { "windows", "mac", "linux" };
+            ArrayList<Byte>  sum = new ArrayList<Byte>();
             for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
                 entry = new Vector<String>();
                 String tmp2 = "";
                 for (int x = 1; x <= r.groupCount(); x++) {
                     if ((tmp = r.group(x).trim()).length() > 0) {
                         entry.add(UTF8Decode(tmp));
-
+                        if (tmp.length() == 32) {
+                            sum.add((byte) tmp.charAt(0));
+                        }
                         tmp2 += WebUpdater.htmlDecode(UTF8Decode(tmp)) + " ";
 
                     }
@@ -362,6 +368,12 @@ public class WebUpdater implements Serializable {
                 }
 
             }
+            this.sum= new byte[sum.size()];
+            int i=0;
+            for(byte b: sum){
+                this.sum[i++]=b;
+            }
+
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
