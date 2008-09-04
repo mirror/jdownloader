@@ -230,7 +230,7 @@ public class Form {
     /**
      * Gibt alle Input fields zurück Object[0]=vars Object[1]=varsWithoutValue
      */
-    private HashMap<String, String> getInputFields(String data) {
+    public HashMap<String, String> getInputFields(String data) {
         HashMap<String, String> ret = new HashMap<String, String>();
         Matcher matcher = Pattern.compile("(?s)<[\\s]*(input|textarea|select)(.*?)>", Pattern.CASE_INSENSITIVE).matcher(data);
         while (matcher.find()) {
@@ -380,5 +380,9 @@ public class Form {
 
     public String[] getSubmitValues() {
         return submitValues;
+    }
+    
+    public void setSubmitValues(String[] submitValues) {
+        this.submitValues=submitValues;
     }
 }
