@@ -96,6 +96,7 @@ jd.plugins.decrypt.Stealth
 jd.plugins.decrypt.TechnorockerInfo
 jd.plugins.decrypt.TinyLoadCom
 jd.plugins.decrypt.Tinyurl
+jd.plugins.decrypt.UCashin
 jd.plugins.decrypt.UCMS
 jd.plugins.decrypt.UploadJockeycom
 jd.plugins.decrypt.UpPicoasisNet
