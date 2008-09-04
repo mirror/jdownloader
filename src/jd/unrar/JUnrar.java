@@ -82,11 +82,11 @@ public class JUnrar {
 
 	public boolean overwriteFiles = false, autoDelete = true,
 			deleteInfoFile = false;
-
+	public int autoFolder = 2;
 	private ProgressUnrar progress;
 
 	public String standardPassword = null;
-
+	private int filesWithoutFolder = 0;
 	private HashMap<File, String> toExtractlist;
 
 	private Integer[][] typicalFilesignatures = { { 80, 75, 3, 4, -1, 0, },
@@ -428,7 +428,14 @@ public class JUnrar {
 				parent = file.getParentFile();
 				params.add(file.getName());
 			}
-
+			if(autoFolder>0)
+			{
+					if(filesWithoutFolder>=autoFolder)
+					{
+						parent = new File(parent, file.getName().replaceFirst("(\\.part\\d+)?(\\.rar|r\\d+)$", ""));
+						parent.mkdirs();
+					}
+			}
 			Process p = JUnrar.createProcess(unrar, params
 					.toArray(new String[] {}), parent);
 			String str = startInputListener(p, parent);
@@ -489,6 +496,7 @@ public class JUnrar {
 				un.autoDelete = autoDelete;
 				un.link = link;
 				un.unrar = unrar;
+				un.autoFolder = autoFolder;
 				un.useToextractlist = false;
 				un.overwriteFiles = overwriteFiles;
 				un.progressInTerminal = progressInTerminal;
@@ -716,6 +724,10 @@ public class JUnrar {
 			while (matchervolumes.find()) {
 
 				String name = matchervolumes.group(1);
+				if(!name.contains(System.getProperty("file.separator")))
+				{
+					filesWithoutFolder++;
+				}
 				if (name.matches("\\*.*")) {
 					name = name.replaceFirst(".", "");
 					long size = Long.parseLong(matchervolumes.group(2));
@@ -1177,7 +1189,7 @@ public class JUnrar {
 		logger.info("Config->unrar: " + unrar);
 		logger.info("Config->extractFolder: " + extractFolder);
 		logger.info("Config->useToextractlist: " + useToextractlist);
-
+		logger.info("Config->autoFolder: " + autoFolder);
 		logger.info("Config->overwriteFiles: " + overwriteFiles);
 		logger.info("Config->autoDelete: " + autoDelete);
 		if (unrar == null) {
@@ -1211,7 +1223,12 @@ public class JUnrar {
 							pw = standardPassword;
 						}
 						logger.info("Password: " + pw);
-						extractFile(entry.getKey(), pw);
+						try {
+							extractFile(entry.getKey(), pw);
+						} catch (Exception e) {
+							// TODO: handle exception
+						}
+						
 					}
 
 				} else if (!name.matches(".*part[0-9]+.rar$")
@@ -1233,7 +1250,12 @@ public class JUnrar {
 							pw = standardPassword;
 						}
 						logger.info("Password: " + pw);
-						extractFile(entry.getKey(), pw);
+						try {
+							extractFile(entry.getKey(), pw);
+						} catch (Exception e) {
+							// TODO: handle exception
+						}
+
 					}
 				} else {
 					// logger.finer("Not an archive: " + entry.getKey());
