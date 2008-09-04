@@ -36,7 +36,7 @@ public class DreiDlAm extends PluginForDecrypt {
 
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
     private final static Pattern patternSupported_1 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-    private final static Pattern patternSupported_2 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/ ", Pattern.CASE_INSENSITIVE);
+    private final static Pattern patternSupported_2 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/", Pattern.CASE_INSENSITIVE);
     private final static Pattern patternSupported_3 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
     private final static Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern() + "|" + patternSupported_3.pattern(), Pattern.CASE_INSENSITIVE);
     private String password;
@@ -45,7 +45,7 @@ public class DreiDlAm extends PluginForDecrypt {
         super();
     }
 
-    private String decryptFromDownload(String parameter) throws IOException, DecrypterException {
+    private void decryptFromDownload(String parameter) throws IOException, DecrypterException {
         parameter.replace("&quot;", "\"");
 
         br.getPage(parameter);
@@ -64,7 +64,7 @@ public class DreiDlAm extends PluginForDecrypt {
                 Form form = br.getForm(3);
                 if (!Browser.download(file, br.cloneBrowser().openGetConnection("http://3dl.am/images/captcha5.php" + captcha))) {
                     logger.severe("Could not download Captchafile");
-                    return null;
+                    throw new IOException("Could not download Captchafile");
                 }
                 String capTxt = Plugin.getCaptchaCode(file, this);
                 if (capTxt == null) throw new DecrypterException("Wrong Captcha Code");
@@ -74,7 +74,6 @@ public class DreiDlAm extends PluginForDecrypt {
             }
         }
         if (br.containsHTML("/failed.html';")) throw new DecrypterException("Wrong Captcha Code");
-        return br.getURL();
     }
 
     private String decryptFromLink(String parameter) throws IOException {
@@ -83,9 +82,13 @@ public class DreiDlAm extends PluginForDecrypt {
         return link;
     }
 
-    private ArrayList<String> decryptFromStart(String parameter) throws IOException {
+    private ArrayList<String> decryptFromStart(String parameter) throws IOException, DecrypterException {
         ArrayList<String> linksReturn = new ArrayList<String>();
-        br.getPage(parameter);
+        if (parameter != null) br.getPage(parameter);
+        if (br.containsHTML("/failed.html")) {
+            String url = br.getRegex(patternSupported_3).getMatch(-1);
+            decryptFromDownload(url);
+        }
         String[] links = br.getRegex(Pattern.compile("value='http://3dl\\.am/link/(.*?)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (int i = 0; i < links.length; i++) {
             linksReturn.add("http://3dl.am/link/" + links[i] + "/");
@@ -117,17 +120,15 @@ public class DreiDlAm extends PluginForDecrypt {
             decryptedLinks.add(createDownloadlink(link));
             progress.increase(1);
         } else if (new Regex(parameter, patternSupported_3).matches()) {
-            String url = decryptFromDownload(parameter);
-            if (url != null) {
-                ArrayList<String> links = decryptFromStart(url);
-                progress.setRange(links.size());
-                for (int i = 0; i < links.size(); i++) {
-                    progress.increase(1);
-                    String link2 = decryptFromLink(links.get(i));
-                    DownloadLink dl_link = createDownloadlink(link2);
-                    dl_link.addSourcePluginPassword(password);
-                    decryptedLinks.add(dl_link);
-                }
+            decryptFromDownload(parameter);
+            ArrayList<String> links = decryptFromStart(null);
+            progress.setRange(links.size());
+            for (int i = 0; i < links.size(); i++) {
+                progress.increase(1);
+                String link2 = decryptFromLink(links.get(i));
+                DownloadLink dl_link = createDownloadlink(link2);
+                dl_link.addSourcePluginPassword(password);
+                decryptedLinks.add(dl_link);
             }
         }
         return decryptedLinks;
