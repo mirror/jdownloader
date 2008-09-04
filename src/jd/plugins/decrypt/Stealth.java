@@ -31,7 +31,7 @@ import jd.plugins.PluginForDecrypt;
 public class Stealth extends PluginForDecrypt {
     static private final String host = "Stealth.to";
 
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+|\\?go\\=captcha&id=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
     public Stealth() {
         super();
@@ -43,8 +43,10 @@ public class Stealth extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+
         for (int i = 0; i < 5; ++i) {
             if (br.containsHTML("captcha_img.php")) {
+                /* alte Captcha Seite */
                 String sessid = new Regex(br.getRequest().getCookieString(), "PHPSESSID=([a-zA-Z0-9]*)").getMatch(0);
                 if (sessid == null) {
                     logger.severe("Error sessionid: " + br.getRequest().getCookieString());
@@ -57,11 +59,20 @@ public class Stealth extends PluginForDecrypt {
                 Browser.download(file, br.cloneBrowser().openGetConnection(captchaAdress));
                 form.put("txtCode", getCaptchaCode(file, this));
                 br.submitForm(form);
+            } else if (br.containsHTML("libs/captcha.php")) {
+                /* Neue Captcha Seite */
+                logger.finest("Captcha Protected");
+                File file = this.getLocalCaptchaFile(this);
+                Form form = br.getForm(0);
+                Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/captcha.php"));
+                form.put("code", getCaptchaCode(file, this));
+                br.submitForm(form);
             } else {
                 break;
             }
         }
 
+        /* Alte Links Seite */
         String[] links = br.getRegex("popup.php\\?id=(\\d+?)\"\\,'dl'").getColumn(0);
         if (links.length > 0) {
             progress.setRange(links.length);
@@ -70,6 +81,7 @@ public class Stealth extends PluginForDecrypt {
                 progress.increase(1);
             }
         }
+        /* Neue Links Seite */
         String[][] links2 = br.getRegex("download\\('(\\d+)', '(\\d+)'\\);\"></td>").getMatches();
         if (links2.length > 0) {
             for (String[] element : links2) {
