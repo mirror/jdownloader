@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;

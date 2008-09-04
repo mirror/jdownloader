@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.File;
@@ -13,20 +29,23 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
-public class MySpaceCom extends PluginForHost{
-//	private static final Pattern PATTERN_SUPPORTET = Pattern.compile("http://cache\\d+-music\\d+.myspacecdn\\.com/\\d+/std_.+\\.mp3",Pattern.CASE_INSENSITIVE);
-	private static final Pattern PATTERN_SUPPORTET = Pattern.compile("httpmyspace://.+",Pattern.CASE_INSENSITIVE);
-	private static final String CODER = "ToKaM";
-	private static final String HOST = "myspace.com";
-	private static final String AGB_LINK  = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
-	
+public class MySpaceCom extends PluginForHost {
+    // private static final Pattern PATTERN_SUPPORTET = Pattern.compile(
+    // "http://cache\\d+-music\\d+.myspacecdn\\.com/\\d+/std_.+\\.mp3"
+    // ,Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTET = Pattern.compile("myspace://.+", Pattern.CASE_INSENSITIVE);
+    private static final String CODER = "ToKaM";
+    private static final String HOST = "myspace.com";
+    private static final String AGB_LINK = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
 
     public MySpaceCom() {
-		super();
-	}
-    private String getDownloadUrl(DownloadLink link){
-    	return link.getDownloadURL().replaceAll("httpmyspace://", "");
+        super();
     }
+
+    private String getDownloadUrl(DownloadLink link) {
+        return link.getDownloadURL().replaceAll("myspace://", "");
+    }
+
     @Override
     public boolean doBotCheck(File file) {
         return false;
@@ -43,19 +62,11 @@ public class MySpaceCom extends PluginForHost{
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-    	downloadLink.setUrlDownload(getDownloadUrl(downloadLink));
-        try {
-        	HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!urlConnection.isOK()) return false;
-            downloadLink.setDownloadSize(urlConnection.getContentLength());
-            return true;
-		} catch (IOException e) {
-			logger.severe(e.getMessage());
-			downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-			return false;
-		}
-
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        HTTPConnection urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
+        if (!urlConnection.isOK()) return false;
+        downloadLink.setDownloadSize(urlConnection.getContentLength());
+        return true;
     }
 
     @Override
@@ -89,15 +100,15 @@ public class MySpaceCom extends PluginForHost{
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-    	downloadLink.setUrlDownload(getDownloadUrl(downloadLink));
+        downloadLink.setUrlDownload(getDownloadUrl(downloadLink));
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        /* Nochmals das File überprüfen */
+        /* Nochmals das File ÃœberprÃ¼fen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+        HTTPConnection urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
 
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -109,5 +120,4 @@ public class MySpaceCom extends PluginForHost{
         dl.setResume(true);
         dl.startDownload();
     }
-
 }

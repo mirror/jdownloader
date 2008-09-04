@@ -350,18 +350,18 @@ public class JDInit {
                 }
             }
 
-            private void createDLCBackup() {
-                ProgressController p = new ProgressController(JDLocale.L("init.backup.progress", "Queue backup"), 3);
-
-                File file = JDUtilities.getResourceFile("container/backup_" + System.currentTimeMillis() + ".dlc");
-                p.increase(1);
-                JDUtilities.getController().saveDLC(file);
-                p.increase(2);
-                CFGConfig.getConfig("WEBUPDATE").setProperty("LAST_BACKUP", file);
-                CFGConfig.getConfig("WEBUPDATE").save();
-                p.finalize(2000);
-
-            }
+//            private void createDLCBackup() {
+//                ProgressController p = new ProgressController(JDLocale.L("init.backup.progress", "Queue backup"), 3);
+//
+//                File file = JDUtilities.getResourceFile("container/backup_" + System.currentTimeMillis() + ".dlc");
+//                p.increase(1);
+//                JDUtilities.getController().saveDLC(file);
+//                p.increase(2);
+//                CFGConfig.getConfig("WEBUPDATE").setProperty("LAST_BACKUP", file);
+//                CFGConfig.getConfig("WEBUPDATE").save();
+//                p.finalize(2000);
+//
+//            }
 
         }.start();
     }
