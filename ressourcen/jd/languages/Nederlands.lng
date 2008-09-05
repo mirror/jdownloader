@@ -1,23 +1,6 @@
-﻿# --------------------------------------------------------------------------------------------
-#  
-#  Ik ben geen talenknobbel maar hoop dat deze Nederlandse vertaling goed, eenvoudig
-#  en verstaanbaar is. De vertaling is van het Engels/Duits naar Nederlands.
-#  - Op enkele dropboxen na is het programma nu geheel in het Nederlands.
-# 
-#  Gelieve me contacteren op GiaSoft@gmail.com voor
-#  - een foutieve vertaling.
-#  - opmerkingen.
-#  - aanpassingen.
-#                                                                                      GiaSoft
-# --------------------------------------------------------------------------------------------
- 
-﻿﻿action.passwordlist.name = Paswoord lijst bewerken
-﻿addons.jdlowspeed.statusmessage.disabled = Deactiveer lage snelheiddetectie
-﻿﻿addons.jdlowspeed.statusmessage.disabled = Lage Snelheid detectie uitschakelen
 addons.jdlowspeed.statusmessage.enabled = Lage Snelheiddetectie ingeschakeld
 addons.jdshutdown.menu.disable = Na Download Systeem Afsluiten Deactiveren
 addons.jdshutdown.menu.enable = Afsluiten activeren
-addons.jdshutdown.menu.enable = Na Download Systeem Afsluiten Activeren
 addons.jdshutdown.statusmessage.disabled = JDownloader zal het Systeem na het Downloaden NIET afsluiten.
 addons.jdshutdown.statusmessage.enabled = JDownloader zal het Systeem na het Downloaden afsluiten.
 addons.schedule.menu.abort = Afbreken
@@ -82,7 +65,7 @@ controller.status.reconnect = Herconnecteren
 controller.status.retryonerror = Her proberen (%s/%s) in 3 seconds
 controller.status.running = Loopt
 controller.status.tempUnavailable = Tijdelijk niet beschikbaar
-controller.status.termination =  Afbreken
+controller.status.termination = Afbreken
 controller.status.toManyUser = Te veel gebruikers
 controller.status.unknownError = Onbekende Fout
 controller.status.wait = Wachten: %s sec.
@@ -263,8 +246,8 @@ gui.config.general.webupdate.auto = automatisch, niet vragen
 gui.config.general.webupdate.beta = Betaversie aktualizeren(Opnieuw opstarten)
 gui.config.general.webupdate.disable = Update enkel manueel uitvoeren
 gui.config.general.webupdate.osFilter = Webupdate: Update alle extenties (ook Vreemde-OS)
-gui.config.gui.autoPackageLimit = Limiet Auto. Pakketten-beheer.
 gui.config.gui.autopackagelimit = Limiet Auto. Pakketten-beheer.
+gui.config.gui.autoPackageLimit = Limiet Auto. Pakketten-beheer.
 gui.config.gui.Browser = Browser
 gui.config.gui.container.tab = Downloadlinks
 gui.config.gui.disabledialogs = Bevestigingsdialoog uitschakelen
@@ -392,7 +375,7 @@ gui.config.plugin.optional.column_needs = Benodigd
 gui.config.plugin.optional.column_plugin = Plugin
 gui.config.plugin.optional.column_status = Status
 gui.config.plugin.optional.column_version = Versie
-gui.config.plugin.optional.link_help =   http://jdownloader.org/page.php?id=122
+gui.config.plugin.optional.link_help = http://jdownloader.org/page.php?id=122
 gui.config.plugin.optional.linktext_help = Help
 gui.config.plugin.optional.name = Optional Plugins
 gui.config.plugin.optional.statusActive = Aan
@@ -476,7 +459,7 @@ gui.download.bps = bytes/s
 gui.download.create_connection = Connecteren...
 gui.download.desc = <font color='#00aa00' size='14'>Help JDownloader vertalen in uw eigen taal!</font><hr>De string voor <b>%s</b> is niet vertaald voor <b>%s</b>.<br/> Geef uw vertaling in of selecteer <i>Annuleren</i><br/><div style='border: medium dotted #0000FF'><font color='#ff0000'>Je kunt de vertalings aanvraag deactiveren via Instellingen -> Gebruikers interface</font></div><br>Vertaal het volgende naar: <b><u>%s</u></b>. Selecteer 'OK' als alles in orde is!
 gui.download.filesize_unknown = Bestandsgrootte onbekend
-gui.download.kbps =  KBytes/sec
+gui.download.kbps = KBytes/sec
 gui.download.onlinecheckfailed = [Niet beschikbaar]
 gui.download.waittime_status = Wacht %s min
 gui.downloadlink.aborted = [geannuleerd]
@@ -506,13 +489,6 @@ gui.downloadTab.popup.up = Naar boven verplaatsen
 gui.dropTarget.downloadsAdded = Downloads toevoegen:
 gui.droptarget.label = Sleep Links naar mij!
 gui.droptarget.title = Linkverzamelaar actief (D&D + Clipboard)
-gui.frame.packageinfo.entrycomment = Commentaar
-gui.frame.packageinfo.entrydldirectory = Downloadmap
-gui.frame.packageinfo.entrylinks = Links
-gui.frame.packageinfo.entryloaded = Geladen
-gui.frame.packageinfo.entryname = Naam
-gui.frame.packageinfo.entrypackagesize = Pakketgrootte
-gui.frame.packageinfo.entryPassword = Paswoord
 gui.helpLocale.title = Support helpt veel!
 gui.images.jd_logo = gui.images.jd_logo
 gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>U gebruikt een verkeerde versie van Java. Gebruik het origineel van Sun Java.  jDownloader toch starten?<table width='100%%'><tr><th colspan='2'>Uw Java Versie:</th></tr><tr><th>Runtime Naam</th><td>%s</td></tr><tr><th>Runtime Versie</th><td>%s</td></tr></table></div>
@@ -584,56 +560,24 @@ gui.linkgrabber.tabs.context.deleteOthers = Alle Anderen verwijderen
 gui.linkgrabber.tabs.context.newpackage = Nieuw Pakket
 gui.linkgrabber.tabs.context.newPackage = Nieuw Pakket
 gui.linkgrabber.text = Hier kun je alles samenvoegen tot één pakket en pas later accepteren.
-gui.linkgrabber.title = Linkverzamelaar
-gui.linkgrabber.title_1 = Link(s)
-gui.linkgrabber.title_2 = Pakket(ten)
+gui.linkgrabber.title = Linkverzamelaar %s Link(s) %s Pakket(ten)
 gui.linkgrabber.writeInfoFile = Schrijf een Infobestand voor dit pakket
-gui.linkInfo.Available = Beschikbaar
-gui.linkInfo.available = Beschikbaar
 gui.linkinfo.available = Beschikbaar
 gui.linkinfo.available.notchecked = niet gecontroleerd
 gui.linkinfo.available.ok = Bestand is OK
-gui.linkInfo.Comment = Commentaar
-gui.linkInfo.comment = Commentaar
 gui.linkinfo.comment = Commentaar
-gui.linkInfo.Dateigröße = Bestandgrootte
-gui.linkInfo.Download = Download
-gui.linkInfo.download = Download
 gui.linkinfo.download = Download
-gui.linkinfo.download.activated =  is geactiveerd
-gui.linkInfo.download.chunks.label = Chunks
-gui.linkinfo.download.deactivated =  is gedeactiveerd
-gui.linkinfo.download.notunderway =  is niet in uitvoering
-gui.linkInfo.download.status = Download status
-gui.linkinfo.download.underway =  is in uitvoering
-gui.linkInfo.file = Bestand
-gui.linkInfo.Filesize = Bestandgrootte
-gui.linkInfo.fileSize = Bestandgrootte
+gui.linkinfo.download.activated = is geactiveerd
+gui.linkinfo.download.deactivated = is gedeactiveerd
+gui.linkinfo.download.notunderway = is niet in uitvoering
+gui.linkinfo.download.underway = is in uitvoering
 gui.linkinfo.filesize = Bestandsgrootte
-gui.linkInfo.Geschwindigkeit = Snelheid
-gui.linkInfo.Kommentar = Commentaar
-gui.linkInfo.Package = Pakket
-gui.linkInfo.package = Pakket
 gui.linkinfo.package = Pakket
-gui.linkInfo.Packet = Pakket
 gui.linkinfo.password = Pasoword
-gui.linkInfo.Password = Paswoord
-gui.linkInfo.password = Paswoord
-gui.linkInfo.Passwort = Paswoord
-gui.linkInfo.Plugin Status = Plugin Status
-gui.linkInfo.Save to = Opslaan in
 gui.linkinfo.saveto = Opslaan als
-gui.linkInfo.saveTo = Opslaan in
-gui.linkInfo.Speed = Snelheid
-gui.linkInfo.speed = Snelheid
 gui.linkinfo.speed = Snelheid
-gui.linkInfo.Speichern in = Opslaan in
 gui.linkinfo.title = Link Informatie:
-gui.linkInfo.Verfügbar = Beschikbaar
-gui.linkInfo.waitTime = Wachttijd
 gui.linkinfo.waittime = Wachttijd
-gui.linkInfo.Wartezeit = Wachttijd
-gui.linkinformation.title = Link Informatie:
 gui.linklist.editpackagename.message = Nieuw Pakketnaam
 gui.linklist.newpackage.message = Naam van het nieuwe Pakket
 gui.linklist.newpackage.title = Nieuw Pakket opstellen
@@ -661,7 +605,7 @@ gui.menu.action.add.mnem = H
 gui.menu.action.add.name = Links Toevoegen
 gui.menu.action.ces.accel = CTRL+h
 gui.menu.action.ces.desc = C.E.S. Ingave activeren
-gui.menu.action.ces.mnem = 
+gui.menu.action.ces.mnem =  
 gui.menu.action.ces.name = CES Ingave
 gui.menu.action.changes.accel = CTRL+SHIFT+C
 gui.menu.action.changes.desc = Toon laatste veranderingen
@@ -697,11 +641,11 @@ gui.menu.action.edit.items_remove.mnem = D
 gui.menu.action.edit.items_remove.name = Verwijderen
 gui.menu.action.edit.items_top.accel = - 
 gui.menu.action.edit.items_top.desc = Gemarkeerde Links/Pakketten naar het Begin verplaatsen
-gui.menu.action.edit.items_top.mnem =  -
+gui.menu.action.edit.items_top.mnem = -
 gui.menu.action.edit.items_top.name = Aan het Begin
 gui.menu.action.edit.items_up.accel = STRG+BOVEN
 gui.menu.action.edit.items_up.desc = Gemarkeerde Links/Pakketten naar boven verplaatsen
-gui.menu.action.edit.items_up.mnem =  -
+gui.menu.action.edit.items_up.mnem = -
 gui.menu.action.edit.items_up.name = Naar Boven
 gui.menu.action.exit.accel = CTRL+Q
 gui.menu.action.exit.desc = Afsluiten
@@ -778,7 +722,6 @@ gui.menu.file.load = Open container
 gui.menu.file.load_container = Laad container
 gui.menu.file.save = Maak container
 gui.menu.file_mnem = D
-gui.menu.file_mnem = D
 gui.menu.plugins = Plugins
 gui.menu.plugins.container = Container
 gui.menu.plugins.decrypt = Decrypter
@@ -793,6 +736,7 @@ gui.packageinfo.loaded = Geladen
 gui.packageinfo.name = Naam
 gui.packageinfo.packagesize = Pakketgrootte
 gui.packageinfo.password = Paswoord
+gui.packageinfo.Password = Paswoord
 gui.packageinfo.title = Pakket Informatie:
 gui.plugins.decrypt.wiireloaded.calcresult = Rekenresultaat
 gui.reconnect.confirm = Wilt U uw verbinding herstellen?
@@ -1101,7 +1045,7 @@ main.status.inactive = uit
 main.urls.faq = http://jdownloader.ath.cx/faq.php?lng=deutsch
 modules.container.dlc.containerinfo = <div style="width:450px;font-family:Geneva, Arial, Helvetica, sans-serif; font-size: 9px;"><font color="#0066FF"><strong>DLContainer succesvol geladen.</strong></font><br/><hr/><table style="width:450px"><tr><td>Gemaakt van </td><td>%s</td></tr><tr><td>Gemaakt met </td><td>%s</td></tr><tr><td>Pakketten </td><td>%s</td></tr><tr><td>Categorie </td><td>%s</td></tr><tr ><td colspan="2">%s</td></tr></table></div>
 modules.container.dlc.loadedmessage = DownloadLinkContainer geladen
-modules.packagemanager.loadednewpackage.more = Verdere Info & Installatie Instructies  
+modules.packagemanager.loadednewpackage.more = Verdere Info & Installatie Instructies 
 modules.packagemanager.loadednewpackage.title = Pakket Update geïnstalleerd
 modules.packagemanager.packagename = JD-Update
 modules.reconnect.pleaseSelect = A.U.B. een methode uitkiezen:
@@ -1110,6 +1054,7 @@ modules.reconnect.types.extern = Extern
 modules.reconnect.types.liveheader = LiveHeader/Curl
 modules.unrar.enabled.instanthelp = http://jdownloader.ath.cx/page.php?id=17
 modules.unrar.name = RAR extractor
+plugin.optional.jdchat.teamviewer.yourtvdata = Uw Teamviewer Data:
 plugin.rapidshare.tickettime = Wacht %s min. voor tikker
 plugin.serienjunkies.archiveincomplete = Archief niet compleet
 plugin.serienjunkies.pageerror = SJ levert geen Downloadlinks
@@ -1133,7 +1078,7 @@ plugins.decrypt.general.captchaDownloadError = Captcha Download milukt
 plugins.decrypt.general.downloadsDecrypted = Downloads vergrendeld
 plugins.decrypt.general.hosterSelection = Host Keuze
 plugins.decrypt.general.passwordWrong = Foutief Paswoord
-plugins.decrypt.gwarezcc.preferdlc =  Prefereer DLC Container
+plugins.decrypt.gwarezcc.preferdlc = Prefereer DLC Container
 plugins.decrypt.linkbankeu = Mirror Links controleren
 plugins.decrypt.passwordProtected = Deze links zijn met een paswoord beveiligd. Geef A.U.B. een paswoord in:
 plugins.decrypt.relinkus.useccf = Gebruik CCF Container plugin
@@ -1277,7 +1222,6 @@ plugins.optional.jdchat.locale = Taal Instellingen
 plugins.optional.jdchat.menu.windowstatus = Chat-venster
 plugins.optional.jdchat.name = JD Chat
 plugins.optional.jdchat.performonstart = Commando na verbinding uitvoeren
-plugin.optional.jdchat.teamviewer.yourtvdata = Uw Teamviewer Data:
 plugins.optional.jdchat.user = Bijnaam
 plugins.optional.JDLightTray.name = JDLightTrayIcon
 plugins.optional.jdlowspeed.maxspeed = Maximale Internet snelheid in kb/s (DSL 3000≈350kb/s)
@@ -1419,8 +1363,8 @@ plugins.rapidshare.userid = Klantnummer
 plugins.rapidshare.waitForHappyHour = Wacht op Happy Hour
 plugins.rapidshare.waitForHappyHour.progressbar = Wacht op Happy Hour. Volgende poging in
 plugins.rapidshare.waitForHappyHour.progressbartext = wacht op Happy Hour. Volgende poging in %s min
-Plugins.SerienJunkies.CatDialog.action = Kies een Aktie uit:
 plugins.SerienJunkies.CatDialog.action = Kies een Aktie uit:
+Plugins.SerienJunkies.CatDialog.action = Kies een Aktie uit:
 plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
 Plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
 plugins.SerienJunkies.decryptImmediately = Decrypt onmiddellijk
@@ -1467,33 +1411,14 @@ sys.warning.dlcerror_url = DLC: URL Foutmelding:
 sys.warning.dlcerror_version = DLC Foutmelding: Verouderde JD Versie (2)
 sys.warning.dlcerror_xml = DLC: XML Foutmelding
 sys.warning.linklist.incompatible = Linklijst incompatibel. \r\nOpslag verworpen.
-system.update.message.title = Update naar Versie %s
-system.update.showchangelog = Toon alle veranderingen
 system.download.triggerfileexists = Wanneer een bestand reeds bestaat:
 system.download.triggerfileexists.overwrite = Bestand overschrijven
 system.download.triggerfileexists.skip = Link conroleren
+system.update.message.title = Update naar Versie %s
+system.update.showchangelog = Toon alle veranderingen
 train.choose.folder = Kies een bestandsmap uit
 train.chooser.title = jDownloader :: Train All
 train.method = Kies een methode uit:
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+﻿addons.jdlowspeed.statusmessage.disabled = Deactiveer lage snelheiddetectie
+﻿﻿action.passwordlist.name = Paswoord lijst bewerken
+﻿﻿addons.jdlowspeed.statusmessage.disabled = Lage Snelheid detectie uitschakelen

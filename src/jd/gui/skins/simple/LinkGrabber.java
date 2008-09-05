@@ -1634,7 +1634,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void setTitle() {
-        setTitle(JDLocale.L("gui.linkgrabber.title", "Linksammler:") + " " + getTotalLinkCount() + " " + JDLocale.L("gui.linkgrabber.title_1", " Link(s) in") + " " + tabList.size() + " " + JDLocale.L("gui.linkgrabber.title_2", "Paket(en)"));
+        setTitle(JDLocale.LF("gui.linkgrabber.title", "Linksammler: %s  Link(s) in %s Paket(en)", getTotalLinkCount(), tabList.size()));
     }
 
     private void startLinkGatherer() {

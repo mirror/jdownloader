@@ -35,7 +35,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -113,10 +112,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
 
-    public static void main(String args[]) {
-        new LangFileEditor().showGui();
-    }
-
     private void showGui() {
 
         frame = new JFrame();
@@ -176,6 +171,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         frame.setVisible(true);
 
         if (sourceFolder != null || languageFile != null) initList();
+
     }
 
     private void initList() {
@@ -547,12 +543,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuDownloadSource) {
 
-            try {
-                JLinkButton.openURL("http://jdownloader.org/download");
-            } catch (MalformedURLException e1) {
-                e1.printStackTrace();
+            if (JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.downloadSource", "The SourceCode can be obtained via SVN.\nThe repository is located at https://www.syncom.org/svn/jdownloader/\nPress OK to open the repository!"), null, JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
+                try {
+                    JLinkButton.openURL("https://www.syncom.org/svn/jdownloader/");
+                } catch (Exception e1) {
+                    e1.printStackTrace();
+                }
             }
-
         }
 
     }
@@ -641,6 +638,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         Collections.sort(data, new StringArrayComparator());
         tableModel.fireTableRowsInserted(0, data.size() - 1);
+        if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
+        
         setInfoLabels();
 
     }
@@ -970,7 +969,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             btnCancel.addActionListener(this);
             btnAdopt.addActionListener(this);
 
-            lblKey.setText("Key: " + entry[0]);
+            lblKey.setText(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ": " + entry[0]);
             taSourceValue.setText(entry[1]);
             taFileValue.setText(entry[2]);
             taSourceValue.setEditable(false);
@@ -1044,13 +1043,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             setModal(true);
             setLayout(new BorderLayout(5, 5));
-            setTitle("Edit Value");
+            setTitle(JDLocale.L("plugins.optional.langfileeditor.addKey", "Add Key"));
             getRootPane().setDefaultButton(btnOK);
 
             btnOK.addActionListener(this);
             btnCancel.addActionListener(this);
 
-            JLabel lblKey = new JLabel("Key:");
+            JLabel lblKey = new JLabel(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ":");
 
             JPanel main = new JPanel(new BorderLayout(5, 5));
             main.setBorder(new EmptyBorder(10, 10, 10, 10));

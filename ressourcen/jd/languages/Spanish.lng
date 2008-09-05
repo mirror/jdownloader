@@ -1,34 +1,12 @@
-﻿# ----------------------------------------------------------------------------------------------------------------
-#
-# Traducción de cadenas perdidas y algunas traducciones fix by haity
-# Version: 0.0.998-0.6
-#
-# Traduccion castellano by haity
-# Version: 0.0.766-0.3
-#
-#
-# History:
-#
-# * 0.0.766-0.1: first release.
-# * 0.0.766-0.2: translation fixes.
-# * 0.0.766-0.3: translation fixes.
-# * 0.0.885-0.4: translation of strings missing and translation fixes.
-# * 0.0.935-0.5: translation of more missing strings and better translation for some already translated terms and
-#                alfabeticly sorting of strings name.
-# * 0.0.998-0.6: translation of missing strings.
-#
-# ----------------------------------------------------------------------------------------------------------------
-
-﻿action.passwordlist.name = Editar lista de contraseñas
 controller.status.aborted = Abortado
 controller.status.abused = Fichero borrado
 controller.status.active = Activado
 controller.status.agb_tos = AGB/TOS sin señal
 controller.status.botDetected = iniciar detectado/Reconnectado
 controller.status.captcha = Captcha
+controller.status.captchacode = Codigo:
 controller.status.captchaError = Error de Captcha
 controller.status.captchaFailed = Fallo al leer captcha
-controller.status.captchacode = Codigo:
 controller.status.filenotfound = Fichero no encontrado
 controller.status.finished = Finalizado
 controller.status.mustWaittime = Tiempo de espera: %s
@@ -68,9 +46,9 @@ gui.config.download.ipcheck.disable = Desabilitar chequeo de IP
 gui.config.download.ipcheck.regex = IP Filtro RegEx
 gui.config.download.ipcheck.website = Chequeo de ip online
 gui.config.download.maxspeed = Max. velocidad de descarga en kb/s (0 = ilimitado)
-gui.config.download.startDownloadsOnStartUp = Iniciar descargas cuando se inicie el programa
 gui.config.download.name = Red / Descarga
 gui.config.download.simultan_downloads = Max. descargas simultaneas
+gui.config.download.startDownloadsOnStartUp = Iniciar descargas cuando se inicie el programa
 gui.config.download.timeout.connect = Conexion fuera de tiempo (Request) (ms)
 gui.config.download.timeout.read = Leer fuera de tiempo (ms)
 gui.config.eventmanager.btn_add = +
@@ -113,7 +91,7 @@ gui.config.general.name = General
 gui.config.general.plaf = Estilo(necesita reiniciar JD)
 gui.config.general.startDownloadsOnStartUp = Iniciar descarga de la aplicación 
 gui.config.general.theme = Tema
-gui.config.general.toDoWithDownloads = Finalizado descargas ...
+gui.config.general.toDoWithDownloads = Finalizado descargas ...
 gui.config.general.webupdate.auto = Actualización web: Empieza automáticamente!
 gui.config.general.webupdate.beta = Actualizar Versiones Beta (require reinicio)
 gui.config.general.webupdate.disable = Actualizar sólo a solicitud del usuario
@@ -129,10 +107,10 @@ gui.config.gui.localeHelp = Sí quiero ayudar a jD a hacer un mejor localizació
 gui.config.gui.plaf = Estilo (Reiniciar para aplicar)
 gui.config.gui.showSplash = Mostrar pantalla de bienvenida en el arranque del programa 
 gui.config.gui.theme = Tema
+gui.config.httpreconnect.connection = Conexión
 gui.config.httpreconnect.connectPOSTParameter = POST codigo para conexión
 gui.config.httpreconnect.connectRequestProperties = Solicitud de Propiedades de conexión 
 gui.config.httpreconnect.connectType = Tipo de conexión
-gui.config.httpreconnect.connection = Conexión
 gui.config.httpreconnect.disconnect = Desconexión
 gui.config.httpreconnect.disconnectPOSTParameter = POST codigo para desconexión
 gui.config.httpreconnect.disconnectRequestProperties = Solicitud de Propiedades de conexión 
@@ -141,9 +119,9 @@ gui.config.httpreconnect.disconnectType = Tipo de desconexion
 gui.config.httpreconnect.importRouterData = Importar datos de ruta
 gui.config.httpreconnect.loginPOSTParameter = POST Codigo de acceso)
 gui.config.httpreconnect.loginRequestProperties = Solicitud de Propiedades de acceso
+gui.config.httpreconnect.loginrequestProperties.tooltip = <HTML> Introducir el código en esta casilla:<BR>key1==value1;;key2==value2;;key3==value3.1="value3.2"</HTML>
 gui.config.httpreconnect.loginRequestType = Tipo de acceso
 gui.config.httpreconnect.loginString = Cadena de acceso
-gui.config.httpreconnect.loginrequestProperties.tooltip = <HTML> Introducir el código en esta casilla:<BR>key1==value1;;key2==value2;;key3==value3.1="value3.2"</HTML>
 gui.config.httpreconnect.logoffString = Cadena de desconexión 
 gui.config.httpreconnect.password = Password
 gui.config.httpreconnect.retries = Reintentos(0=ilimitado)
@@ -159,7 +137,7 @@ gui.config.httpreconnect.tab_router = Router
 gui.config.httpreconnect.testreconnect = Reconectar al router
 gui.config.httpreconnect.userName = Nombre de usuario
 gui.config.httpreconnect.waitTimeForIPCheck = Tiempo de espera para el primer chequeo de IP (seg) 
-gui.config.infoFileWriter.name = Fichero de Información
+gui.config.infoFileWriter.name = Fichero de Información
 gui.config.interaction.noAction = Ninguna acción 
 gui.config.jac.column.method = Metodo
 gui.config.jac.column.use = Uso
@@ -171,6 +149,7 @@ gui.config.links.lblSupport = Soporte
 gui.config.links.lblTools = Herramientas adicionales 
 gui.config.links.message = Aquí puede encontrar algunos enlaces para jDownloader 
 gui.config.links.unrar.info = Atención: unrar/rar Debe estar instalado en la versión 3,7 o superior
+gui.config.liveaHeader.featchIP = Búsqueda para IP del router...
 gui.config.liveHeader.autoConfig = Configurar router automáticamente 
 gui.config.liveHeader.dialog.importRouter = Importar router
 gui.config.liveHeader.dialog.selectRouter = Por favor, seleccione su router 
@@ -188,7 +167,6 @@ gui.config.liveHeader.warning.noCURLConvert = JD no puede convertir la cadena CU
 gui.config.liveHeader.warning.notFound = jDownloader no puede detector la configuración de su router.
 gui.config.liveHeader.warning.wizard = La configuración de búsqueda puede tardar un rato. Por favor, introduzca sus datos de acceso al router. Ejecutar ahora?
 gui.config.liveHeader.warning.yourRouter = Tu tienes un
-gui.config.liveaHeader.featchIP = Búsqueda para IP del router...
 gui.config.plugin.abg_confirm = He leido el AGB/TOS/FAQ de %s y lo he aceptado!
 gui.config.plugin.container.btn_settings = Configuración
 gui.config.plugin.container.column_author = Autor
@@ -202,8 +180,8 @@ gui.config.plugin.defaultName = configuración de plugins
 gui.config.plugin.host.btn_settings = Configuración
 gui.config.plugin.host.column_agb = TOS
 gui.config.plugin.host.column_agb2 = AGB
-gui.config.plugin.host.column_agbChecked2 = Aceptado
 gui.config.plugin.host.column_agbChecked = *
+gui.config.plugin.host.column_agbChecked2 = Aceptado
 gui.config.plugin.host.column_author = Autor
 gui.config.plugin.host.column_coder2 = Creador
 gui.config.plugin.host.column_host = Equipo
@@ -224,7 +202,7 @@ gui.config.plugin.optional.column_plugin = Plugin
 gui.config.plugin.optional.column_status = Estado
 gui.config.plugin.optional.column_version = Versión
 gui.config.plugin.optional.name = Plugins Opcionales
-gui.config.plugin.optional.statusActive = On
+gui.config.plugin.optional.statusActive = On
 gui.config.plugin.optional.statusInactive = Off
 gui.config.plugin.search.btn_settings = Configuración
 gui.config.plugin.search.column_author = Autor
@@ -292,18 +270,6 @@ gui.droptarget.label = Arrastrar enlaces aquí!
 gui.droptarget.title = Colección de enlaces 
 gui.helpLocale.title = Support helps alot!
 gui.images.jd_logo = gui.images.jd_logo
-gui.linkInfo.Plugin Status = Estado de Plugin
-gui.linkInfo.available = Disponible
-gui.linkInfo.comment = Comentario
-gui.linkInfo.download = Descarga
-gui.linkInfo.download.status = Estado de Descarga 
-gui.linkInfo.file = Archivo
-gui.linkInfo.fileSize = Tamaño del archivo
-gui.linkInfo.package = Paquete
-gui.linkInfo.password = Password
-gui.linkInfo.saveTo = Guardar como...
-gui.linkInfo.speed = Velocidad
-gui.linkInfo.waitTime = Espere un tiempo 
 gui.linkgrabber.bar.title = Información de colección
 gui.linkgrabber.btn.accept = Aceptar paquete
 gui.linkgrabber.btn.acceptAll = Aceptar todo
@@ -353,10 +319,18 @@ gui.linkgrabber.tabs.context.delete = Eliminar
 gui.linkgrabber.tabs.context.deleteOthers = Eliminar todos los otros 
 gui.linkgrabber.tabs.context.newPackage = Nuevo Paquete
 gui.linkgrabber.text = Aquí puedes combinar todos los enlaces recogidos para un solo paquete y aceptar posteriormente.
-gui.linkgrabber.title = Colección de enlaces activado (D&D + Portapapeles)
-gui.linkgrabber.title_1 = Enlace(s) en
-gui.linkgrabber.title_2 = Paquete(s)
+gui.linkgrabber.title = Colección de enlaces activado (D&D + Portapapeles) %s Enlace(s) en %s Paquete(s)
 gui.linkgrabber.writeInfoFile = Escribir fichero de información en este paquete 
+gui.linkinfo.available = Disponible
+gui.linkinfo.comment = Comentario
+gui.linkinfo.download = Descarga
+gui.linkinfo.file = Archivo
+gui.linkinfo.fileSize = Tamaño del archivo
+gui.linkinfo.package = Paquete
+gui.linkinfo.password = Password
+gui.linkinfo.saveto = Guardar como...
+gui.linkinfo.speed = Velocidad
+gui.linkinfo.waittime = Espere un tiempo 
 gui.logDialog.btn_censor = Censor Log
 gui.logDialog.btn_save = Guardar
 gui.logDialog.btn_uploadLog = Actualizar Log
@@ -369,7 +343,6 @@ gui.menu.action.add.mnem = H
 gui.menu.action.add.name = Añadir enlaces 
 gui.menu.action.clipboard.accel = CTRL+8
 gui.menu.action.clipboard.desc = Monitor de Portapapeles
-
 gui.menu.action.clipboard.mnem = Z
 gui.menu.action.clipboard.name = Portapapeles
 gui.menu.action.configuration.accel = F11
@@ -487,8 +460,8 @@ gui.warning.reconnectSuccess = Reconexión exitosa!
 gui.warning.restartNeeded = Necesitas reiniciar JDownloader!
 init.webupdate.progress.0_title = Actualización via Web 
 init.webupdate.progress.1_title = Comprobar actualización 
-installer.abortInstallation = Error. Abortar Instalación 
 installer.aborted = Installación abortada!
+installer.abortInstallation = Error. Abortar Instalación 
 installer.downloadDir = Directorio de descarga 
 installer.title = Instalación jDownloader 
 installer.welcome = Bienvenido a JDownloader. El programa de instalación descargará algunos ficheros.
@@ -501,7 +474,7 @@ interaction.batchreconnect.progress.0_title = Reconexión por lotes
 interaction.batchreconnect.progress.1_retries = Reconexión por lotes #
 interaction.batchreconnect.progress.2_oldIP = Reconexión por lotes de una vieja IP:
 interaction.batchreconnect.progress.3_ipcheck = Reconexión por lotes de una nueva IP: %s / %s
-interaction.batchreconnect.retries = 	Max repeticiones (-1 = ilimitado)
+interaction.batchreconnect.retries = Max repeticiones (-1 = ilimitado)
 interaction.batchreconnect.terminal = Interpretar
 interaction.batchreconnect.toString = Parametros de Reconexión por lotes 
 interaction.batchreconnect.waitForIp = Espere para nueva IP (seg)
@@ -515,7 +488,7 @@ interaction.externExecute.name = Ejecución externa
 interaction.externExecute.parameter = Parametros (1 parametro por linea)
 interaction.externExecute.test = Ejecutar aplicación 
 interaction.externExecute.toString = Ejecutar aplicación externa 
-interaction.externExecute.variables = Variables disponibles 
+interaction.externExecute.variables = Variables disponibles 
 interaction.externExecute.waitForTermination = Tiempo de ejecución para cmd (seg)
 interaction.externreconnect.command = Comando (usar Camino absolute de directorio)
 interaction.externreconnect.executeIn = Ejecutar en (Directorio de aplicación)
@@ -546,7 +519,7 @@ interaction.liveHeader.progress.5_wait = (Espere) HTTP Cabecera
 interaction.resetLink.name = Resetear enlace de descarga
 interaction.resetLink.options.all = Todos los enlaces 
 interaction.resetLink.options.lastLink = Sólo los últimos enlaces 
-interaction.resetLink.whichLink = ¿Qué enlace deber ser resetada?
+interaction.resetLink.whichLink = ¿Qué enlace deber ser resetada?
 interaction.trigger.after_extract = Después extracción 
 interaction.trigger.after_extract.desc = Ejecutar UnRAR cuando finialice.
 interaction.trigger.after_reconnect = Después de Reconexión 
@@ -597,7 +570,7 @@ plugins.host.premium.useAccount = Usar Cuenta Premium
 plugins.host.premium.user = Usuario
 plugins.hoster.datenklo.net.premiumPass = Password Premium Pass
 plugins.hoster.datenklo.net.premiumUser = Usuario Premium
-plugins.hoster.datenklo.net.usePremium = Usar Cuenta Premium 
+plugins.hoster.datenklo.net.usePremium = Usar Cuenta Premium 
 plugins.hoster.filefactory.getFileHeaderIfFilenameTooLong1 = Si el nombre es reducido, los archivos podrán ser descargados 
 plugins.hoster.filefactory.getFileHeaderIfFilenameTooLong2 = (Requerido Lector Captcha y podrá tardar unos segundos)
 plugins.hoster.rapidshare.com.concernsFreeUser = (*2) Terminos válidos sólo para usuarios gratuitos 
@@ -605,15 +578,15 @@ plugins.hoster.rapidshare.com.concernsPremiumUser = (*1) Usuario Premium deberá
 plugins.hoster.rapidshare.com.important = Importante!
 plugins.hoster.rapidshare.com.increaseTicketTime = Incrementa el tiempo etiqueta (0%-500%)
 plugins.hoster.rapidshare.com.loadFirstBytes = Cargue sólo el primer * kilobytes para cada archivo (-1 = desactivado) 
+plugins.hoster.rapidshare.com.prefferedServer = Servidor Preferido(*1)
+plugins.hoster.rapidshare.com.premiumAccount = Cuenta Premium 
 plugins.hoster.rapidshare.com.premiumPass = Password Premium 
 plugins.hoster.rapidshare.com.premiumPass2 = Password Premium (alternativo)
-plugins.hoster.rapidshare.com.premiumPass3 = Password Premium (alternativo)
+plugins.hoster.rapidshare.com.premiumPass3 = Password Premium (alternativo)
 plugins.hoster.rapidshare.com.premiumUser = Usuario Premium 
 plugins.hoster.rapidshare.com.premiumUser2 = Usuario Premium (alternativo)
 plugins.hoster.rapidshare.com.premiumUser3 = Usuario Premium (alternativo)
 plugins.hoster.rapidshare.com.preSelection = Aceptar preselección (*2)
-plugins.hoster.rapidshare.com.prefferedServer = Servidor Preferido(*1)
-plugins.hoster.rapidshare.com.premiumAccount = Cuenta Premium 
 plugins.hoster.rapidshare.com.telekom = Utilice Telekom si el servidor está disponible *
 plugins.hoster.rapidshare.com.usePremium = Usar cuenta premium plugins.hoster.rapidshare.com.usePremium2 = (2) Usar cuenta premium 
 plugins.hoster.rapidshare.com.usePremium3 = (3) Usar cuenta premium 
@@ -638,3 +611,4 @@ sys.warning.linklist.incompatible = Lista de enlaces incompatible. Rechazado Gua
 system.download.triggerfileexists = Si el fichero ya existe:
 system.download.triggerfileexists.overwrite = Sobre escribir
 system.download.triggerfileexists.skip = Saltar enlace
+﻿action.passwordlist.name = Editar lista de contraseñas

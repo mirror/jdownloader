@@ -169,14 +169,14 @@ public class DownloadInfo extends JFrame {
             addEntry(JDLocale.L("gui.linkinfo.waittime", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
         }
         if (downloadLink.getLinkStatus().isPluginActive()) {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.underway", " ist in Bearbeitung"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.underway", "ist in Bearbeitung"));
         } else {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.notunderway", " ist nicht in Bearbeitung"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.notunderway", "ist nicht in Bearbeitung"));
         }
         if (!downloadLink.isEnabled()) {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.deactivated", " ist deaktiviert"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.deactivated", "ist deaktiviert"));
         } else {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.activated", " ist aktiviert"));
+            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.activated", "ist aktiviert"));
         }
 
         addEntry("download.status", downloadLink.getLinkStatus().getStatusString());

@@ -32,7 +32,7 @@ public class RomscentralCom extends PluginForDecrypt {
     static private final Pattern patternSupportedWay1 = Pattern.compile("http://[\\w.]*?romscentral\\.com/(.+)/(.+\\.htm)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupportedWay2 = Pattern.compile("onclick=\"return popitup\\('(.+\\.htm)'\\)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile("(" + patternSupportedWay1.pattern() + ")|(" + patternSupportedWay2.pattern() + ")", Pattern.CASE_INSENSITIVE);
-     
+
     public RomscentralCom() {
         super();
         this.setAcceptOnlyURIs(false);
@@ -45,20 +45,20 @@ public class RomscentralCom extends PluginForDecrypt {
 
         Matcher matcher = patternSupportedWay1.matcher(parameter);
         Matcher matcher2 = patternSupportedWay2.matcher(parameter);
-        if(matcher.find()) {
+        if (matcher.find()) {
             br.getPage(param.toString());
-            
+
             String file = new Regex(br, patternSupportedWay1.pattern()).getMatch(0);
             decryptedLinks.add(createDownloadlink(file));
-        } else if(matcher2.find()) {
+        } else if (matcher2.find()) {
             String rootUrl = JDUtilities.getGUI().showUserInputDialog("Bitte gebe die URL an, von woher du den Quelltext eingefügt hast!", lastRootCatUrl);
-   
+
             matcher = patternSupportedWay1.matcher(rootUrl);
-            if(matcher.find() && !rootUrl.equals("http://www.romscentral.com/<kategorie>/<htmlseite>")) {
+            if (matcher.find() && !rootUrl.equals("http://www.romscentral.com/<kategorie>/<htmlseite>")) {
                 lastRootCatUrl = rootUrl;
                 String rootCat = new Regex(rootUrl, patternSupportedWay1).getMatch(0);
                 String matches[] = new Regex(parameter, patternSupportedWay2.pattern()).getRow(0);
-                for(int i=0; i<= matches.length-1; i++) {
+                for (int i = 0; i < matches.length; i++) {
                     decryptedLinks.add(createDownloadlink("http://www.romscentral.com/" + rootCat + "/" + matches[i]));
                 }
             }

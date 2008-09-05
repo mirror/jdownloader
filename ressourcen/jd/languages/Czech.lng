@@ -1,49 +1,3 @@
-﻿# ----------------------------------------------------------------------------------------------------------------
-#
-# Translation of strings missing and some translation fix by ReX
-# Version: 0.1.058-0.7
-#
-# Original English translation by jdown
-# Version: 0.0.766-0.3
-#
-#
-# History:
-#
-# * 0.0.766-0.1: first release.
-# * 0.0.766-0.2: translation fixes.
-# * 0.0.766-0.3: translation fixes.
-# * 0.0.885-0.4: translation of strings missing and translation fixes.
-# * 0.0.935-0.5: translation of more missing strings and better translation for some already translated terms and
-#                alfabeticly sorting of strings name.
-# * 0.0.998-0.6: translation of missing strings.
-# * 0.1.058-0.7: translation of missing strings and some minor translation fixes.
-#
-# ----------------------------------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------------------------------------------
-#
-# Translation of strings missing and some translation fix by ReX
-# Version: 0.1.058-0.7
-#
-# Original English translation by jdown
-# Version: 0.0.766-0.3
-#
-#
-# History:
-#
-# * 0.0.766-0.1: first release.
-# * 0.0.766-0.2: translation fixes.
-# * 0.0.766-0.3: translation fixes.
-# * 0.0.885-0.4: translation of strings missing and translation fixes.
-# * 0.0.935-0.5: translation of more missing strings and better translation for some already translated terms and
-#                alfabeticly sorting of strings name.
-# * 0.0.998-0.6: translation of missing strings.
-# * 0.1.058-0.7: translation of missing strings and some minor translation fixes.
-#
-# ----------------------------------------------------------------------------------------------------------------
-
-﻿Plugins.SerienJunkies.CatDialog.action = Vyberte vaši akci:
-Plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
 addons.jdlowspeed.statusmessage.enabled = Povolit pomalorychlostní detekci
 addons.jdshutdown.menu.enable = Povolit vypnutí
 addons.schedule.menu.add = Přidat
@@ -66,9 +20,9 @@ controller.status.active = Aktivní
 controller.status.agb_tos = AGB/TOS není podepsaný
 controller.status.botDetected = Bot detected/Reconnect
 controller.status.captcha = Captcha
+controller.status.captchacode = Code:
 controller.status.captchaError = Captcha chyba
 controller.status.captchaFailed = Selhalo čtení captcha
-controller.status.captchacode = Code:
 controller.status.chunkloadfailed = Chunkdownload failed
 controller.status.fileexists.skip = File already exists
 controller.status.filenotfound = Soubor nenalezen
@@ -116,8 +70,6 @@ gui.captchaWindow.title_wait = jAntiCaptcha dokončen.
 gui.config.btn_cancel = Zrušit
 gui.config.btn_restart = Uložit & Restartovat
 gui.config.btn_save = Uložit
-gui.config.captcha.CES.tab = Captcha Exchange Service
-gui.config.captcha.JAC.tab = jAntiCaptcha
 gui.config.captcha.btn_show = Vyhodnotit zkušební obrázek
 gui.config.captcha.btn_train = Spustit trénink rozpoznávání kódu 
 gui.config.captcha.ces.btn_messages = Ukázat mé zprávy 
@@ -126,26 +78,30 @@ gui.config.captcha.ces.btn_sendmessages = Odeslat zprávu
 gui.config.captcha.ces.btn_stats = Moje statistika
 gui.config.captcha.ces.help = http://jdownloader.ath.cx/page.php?id=106
 gui.config.captcha.ces.pass = C.E.S. Heslo
+gui.config.captcha.CES.tab = Captcha Exchange Service
 gui.config.captcha.ces.user = C.E.S. Uživatelské jméno
 gui.config.captcha.extendedCaptcha = Oznámit zpracování obrázku
 gui.config.captcha.extendedCaptcha.instanthelp = jAntiCaptcha - Oznámit zpracování obrázku
+gui.config.captcha.JAC.tab = jAntiCaptcha
 gui.config.captcha.jac_disable = Zakázat automatické rozpoznávání kódu
 gui.config.captcha.jac_methods = Použít automatické rozpoznávání kódu pro:
 gui.config.captcha.show_input_dialog = Zobrazit vstupní dialog
 gui.config.captcha.train.level = Displaythreshold
 gui.config.captcha.train.level.instanthelp = http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=3
 gui.config.captcha.train.show_timeout = Odpočítávání pro rozpoznání
-gui.config.captcha.useCESPenaltyWarning = Zobrazit varování předejít point penalty
-gui.config.captcha.useCes = Použít Captcha Exchange Server
 gui.config.captcha.use_Ces = Použít Captcha Exchange Service(Nutný restart)
 gui.config.captcha.use_collector = Nahrát nerozpoznaný obrázek
+gui.config.captcha.useCes = Použít Captcha Exchange Server
+gui.config.captcha.useCESPenaltyWarning = Zobrazit varování předejít point penalty
 gui.config.cbo_expert = Pokročilý režim
 gui.config.download.autochunks = Přizpůsobit velikosti souboru
 gui.config.download.chunks = Počet povolených stahování
+gui.config.download.connectionlost.wait = Čekat na volný slot
 gui.config.download.crc = Pokud je možno kontrolovat SFV/CRC
 gui.config.download.download.tab = Ovládání stahování
 gui.config.download.errorretries = Max. opakování před trvalou chybou
 gui.config.download.ipcheck.disable = Zakázat kontrolu IP
+gui.config.download.ipcheck.mask = Povolená IPs
 gui.config.download.ipcheck.regex = IP Filtr RegEx
 gui.config.download.ipcheck.website = Kontrola IP online
 gui.config.download.maxspeed = Max rychlost stahování v kb/s (0 = bez omezení)
@@ -196,6 +152,7 @@ gui.config.general.link.jdtutorial = Výuka krok za krokem
 gui.config.general.link.rar = RAR
 gui.config.general.link.support = Fórum podpory
 gui.config.general.link.unrar = UnRAR
+gui.config.general.link.wiki = Wiki - Často kladené dotazy
 gui.config.general.link.winne = Wine HQ (Linux)
 gui.config.general.link.wireshark = Wireshark
 gui.config.general.loggerLevel = Zápis úrovně
@@ -208,10 +165,10 @@ gui.config.general.webupdate.auto = Aktualizace z Webu:  automatický start!
 gui.config.general.webupdate.beta = Aktualizovat BETA Verzi (Nutný restart)
 gui.config.general.webupdate.disable = Aktualizovat pouze je-li uživatel přihlášen
 gui.config.general.webupdate.osFilter = Aktualizace z Webu: Aktualizuj vše (také v ostatních jazykových lokacích)
-gui.config.gui.Browser = Prohlížeč
+gui.config.gui.autopackagelimit = Správná hodnota pro automatické vygenerování balíčku
 gui.config.gui.autoPackageLimit = Autobalíček.
 gui.config.gui.autopackageLimit = Správná hodnota pro automatické vytvoření balíčku
-gui.config.gui.autopackagelimit = Správná hodnota pro automatické vygenerování balíčku
+gui.config.gui.Browser = Prohlížeč
 gui.config.gui.container.tab = Odkazy ke stahování
 gui.config.gui.disabledialogs = Zakázat potvrzující dialogy
 gui.config.gui.extended = Pokročilé nastavení
@@ -225,10 +182,10 @@ gui.config.gui.plaf = Styl (restart aplikace)
 gui.config.gui.showSplash = Zobrazit úvodní obrazovku při startu programu
 gui.config.gui.soundTheme = Zvukové schéma
 gui.config.gui.theme = Schéma
+gui.config.httpreconnect.connection = Připojení
 gui.config.httpreconnect.connectPOSTParameter = Poštovní směrovací číslo pro připojení
 gui.config.httpreconnect.connectRequestProperties = Požadovat vlastnosti pro připojení
 gui.config.httpreconnect.connectType = Typ připojení
-gui.config.httpreconnect.connection = Připojení
 gui.config.httpreconnect.disconnect = Odpojení
 gui.config.httpreconnect.disconnectPOSTParameter = Poštovní směrovací číslo pro odpojení
 gui.config.httpreconnect.disconnectRequestProperties = Požadovat vlastnosti pro připojení
@@ -237,9 +194,9 @@ gui.config.httpreconnect.disconnectType = Typ odpojení
 gui.config.httpreconnect.importRouterData = Importovat data z Routeru
 gui.config.httpreconnect.loginPOSTParameter = Poštovní směrovací číslo pro přihlášení)
 gui.config.httpreconnect.loginRequestProperties = Požadovat vlastnosti pro přihlášení
+gui.config.httpreconnect.loginrequestProperties.tooltip = <HTML>Enter the code this way:<BR>key1==value1;;key2==value2;;key3==value3.1="value3.2"</HTML>
 gui.config.httpreconnect.loginRequestType = Typ přihlášení
 gui.config.httpreconnect.loginString = Přihlašovací řetězec
-gui.config.httpreconnect.loginrequestProperties.tooltip = <HTML>Enter the code this way:<BR>key1==value1;;key2==value2;;key3==value3.1="value3.2"</HTML>
 gui.config.httpreconnect.logoffString = Odhlašovací řetězec
 gui.config.httpreconnect.password = Heslo
 gui.config.httpreconnect.retries = Opakování (0=nekonečně)
@@ -267,6 +224,7 @@ gui.config.links.lblSupport = Podpora
 gui.config.links.lblTools = Další nástroje
 gui.config.links.message = Zde můžete najít odkazy související s jDownloader
 gui.config.links.unrar.info = Pozor: pro použití unrar/rar musíte mít nainstalovánu verzi 3.7 nebo vyšší
+gui.config.liveaHeader.featchIP = Hledám IP pro Router...
 gui.config.liveHeader.autoConfig = Konfiguruj router automaticky
 gui.config.liveHeader.dialog.importRouter = Importuj router
 gui.config.liveHeader.dialog.selectRouter = Prosím vyberte váš router
@@ -283,8 +241,7 @@ gui.config.liveHeader.waitTimeForIPCheck = První IP kontrola timeoutu (sec)
 gui.config.liveHeader.warning.noCURLConvert = JD nemůže konvertovat CURL skript. Prosím kontaktujte podporu JD-Support-Team!
 gui.config.liveHeader.warning.notFound = jDownloader nemůže detekovat nastavení vašeho routeru.
 gui.config.liveHeader.warning.wizard = Vyhledání nastavení může chvilku trvat. Prosím zadejte vaše přihlašovací údaje pro router. Provést nyní?
-gui.config.liveHeader.warning.yourRouter = Máte ..  
-gui.config.liveaHeader.featchIP = Hledám IP pro Router...
+gui.config.liveHeader.warning.yourRouter = Máte .. 
 gui.config.localeditmode = Make 'Chybí-jazykové-položky' soubor
 gui.config.packagemanager.column_category = Kategorie
 gui.config.packagemanager.column_id = ID
@@ -390,6 +347,9 @@ gui.config.unrar.passwordlist.btn_save.name = Ulož
 gui.config.unrar.thread = Pokračovat ve stahování po extrahování
 gui.config.unrar.usehjmerge = Sloučit pomocí HJSplitfiles
 gui.config.webupdate.name = Aktualizace z Webu
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.ath.cx/wiki/index.php?title=Konfig_en:
+gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.dialog.about.title = O JDownloader
 gui.dialogs.agb_tos.agbAccepted = Souhlasím s podmínkami služby
 gui.dialogs.agb_tos.title = Podmínky služby neakceptuji
 gui.dialogs.agb_tos_warning_text = <p><font size="3"><strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Terms os Service (TOS)</font></strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/>  what are readed and accepted.</font></font></p><p><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/> 	Manufacturer: </font></p>
@@ -400,15 +360,6 @@ gui.dialogs.progress.title = Probíhá.... prosím čekejte
 gui.download.bps = bytes/sec
 gui.download.desc = <font color='#00aa00' size='14'>Pomáhat JDownloader s lepší překladem do vašeho jazyka</font><hr>The string for <b>%s</b> isn't translated for <b>%s</b>.<br/> Please enter your translation or select <i>Cancel</i><br/><div style='border: medium dotted #0000FF'><font color='#ff0000'>You can disable these translation request via Configuration -> User interface</font></div><br>Please translate followed string to: <b><u>%s</u></b>. Select 'OK' if all is already fine!
 gui.download.kbps = KBytes/sec
-gui.downloadTab.popup.checkAvailability = Kontrola dostupnosti
-gui.downloadTab.popup.delete = Smazat
-gui.downloadTab.popup.disable = Zakázat
-gui.downloadTab.popup.down = Posun dolu
-gui.downloadTab.popup.enable = Povolit
-gui.downloadTab.popup.openDestinationDirectory = Otevřít cílový adresář
-gui.downloadTab.popup.restStatus = Reset stavu
-gui.downloadTab.popup.showInfos = Ukázat informace
-gui.downloadTab.popup.up = Posun nahoru
 gui.downloadlink.aborted = [zrušeno]
 gui.downloadlink.disabled = [deaktivováno]
 gui.downloadlink.offline = [offline]
@@ -419,48 +370,22 @@ gui.downloadlist.tooltip.partsactive = Activní:
 gui.downloadlist.tooltip.partsfailed = Chybné:
 gui.downloadlist.tooltip.partsfinished = Dokončené:
 gui.downloadlist.tooltip.simultan_downloads = Max. souběžných stahování:
+gui.downloadTab.popup.checkAvailability = Kontrola dostupnosti
+gui.downloadTab.popup.delete = Smazat
+gui.downloadTab.popup.disable = Zakázat
+gui.downloadTab.popup.down = Posun dolu
+gui.downloadTab.popup.enable = Povolit
+gui.downloadTab.popup.openDestinationDirectory = Otevřít cílový adresář
+gui.downloadTab.popup.restStatus = Reset stavu
+gui.downloadTab.popup.showInfos = Ukázat informace
+gui.downloadTab.popup.up = Posun nahoru
 gui.dropTarget.downloadsAdded = Přidat sathování:
 gui.droptarget.label = Zde zadejte link
 gui.droptarget.title = Sběratel linků
-gui.frame.packageinfo.entrycomment = Poznámka
-gui.frame.packageinfo.entrydldirectory = Složka pro stahování
-gui.frame.packageinfo.entrylinks = Uzel
-gui.frame.packageinfo.entryloaded = Přihlášeno
-gui.frame.packageinfo.entryname = Jméno
-gui.frame.packageinfo.entrypackagesize = Velikost souboru
 gui.helpLocale.title = Support helps alot!
 gui.images.jd_logo = gui.images.jd_logo
 gui.javacheck.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Špatná verze Java
-gui.linkInfo.Available = Dostupný
-gui.linkInfo.Comment = Poznámka
-gui.linkInfo.Dateigröße = Velikost souboru
-gui.linkInfo.Download = Stahování
-gui.linkInfo.Filesize = Velikost souboru
-gui.linkInfo.Geschwindigkeit = Rychlost
-gui.linkInfo.Kommentar = poznámka
-gui.linkInfo.Package = Balíček
-gui.linkInfo.Packet = Pakety
-gui.linkInfo.Password = Heslo
-gui.linkInfo.Passwort = Heslo
-gui.linkInfo.Plugin Status = Stav Pluginů
-gui.linkInfo.Save to = Uložit do
-gui.linkInfo.Speed = Rychlost
-gui.linkInfo.Speichern in = Uložit do
-gui.linkInfo.Verfügbar = Dostupný
-gui.linkInfo.Wartezeit = Čekání
-gui.linkInfo.available = Dostupný
-gui.linkInfo.comment = Poznámka
-gui.linkInfo.download = Stahování
-gui.linkInfo.download.chunks.label = Chunks
-gui.linkInfo.download.status = Stav stahování
-gui.linkInfo.file = Soubor
-gui.linkInfo.fileSize = Velikost souboru
-gui.linkInfo.package = Balíček
-gui.linkInfo.password = Heslo
-gui.linkInfo.saveTo = Uložit do
-gui.linkInfo.speed = rychlost
-gui.linkInfo.waitTime = Čekání
 gui.linkgrabber.bar.title = Informace o souboru
 gui.linkgrabber.btn.accept = Akceptovat balíček
 gui.linkgrabber.btn.acceptAll = Akceptovat vše
@@ -476,8 +401,8 @@ gui.linkgrabber.lbl.notonlinechecked = [Online stav není zkontrolován]
 gui.linkgrabber.markArchiv = (archiv)
 gui.linkgrabber.menu.edit = Editovat
 gui.linkgrabber.menu.edit.merge = Sloučit do jednoho balíčku
-gui.linkgrabber.menu.edit.removeEmptyPackages = Odebrat prázdné balíčky
 gui.linkgrabber.menu.edit.removeEmptypackages = Odebrat prázdné balíčky
+gui.linkgrabber.menu.edit.removeEmptyPackages = Odebrat prázdné balíčky
 gui.linkgrabber.menu.edit.removeOffline = Odebrat neplatné odkazy
 gui.linkgrabber.menu.edit.removeOfflineAll = Odebrat neplatné odkazy (vše)
 gui.linkgrabber.menu.edit.removepackage = Odebrat balíček
@@ -511,14 +436,22 @@ gui.linkgrabber.saveTo = Uložit do následující adresáře:
 gui.linkgrabber.tabs.context.acceptSelection = Souhlasím s výběrem
 gui.linkgrabber.tabs.context.delete = Odebrat
 gui.linkgrabber.tabs.context.deleteOthers = Odebrat vše ostatní
-gui.linkgrabber.tabs.context.newPackage = Nový balíček
 gui.linkgrabber.tabs.context.newpackage = Nový balíček
+gui.linkgrabber.tabs.context.newPackage = Nový balíček
 gui.linkgrabber.text = Zde můžete sloučit všechny vaše linky do jednoho balíčku a akceptovat později. 
-gui.linkgrabber.title = Spojení linků je aktivní (D&D + schránka)
-gui.linkgrabber.title_1 = Odkazy(s) in
-gui.linkgrabber.title_2 = Balíček(s)
+gui.linkgrabber.title = Spojení linků je aktivní (D&D + schránka) %s Odkazy(s) in %s Balíček(s)
 gui.linkgrabber.writeInfoFile = Vytvořit info soubor pro tento balíček
-gui.linkinformation.title = Informace o odkazu
+gui.linkinfo.available = Dostupný
+gui.linkinfo.comment = Poznámka
+gui.linkinfo.download = Stahování
+gui.linkinfo.file = Soubor
+gui.linkinfo.filesize = Velikost souboru
+gui.linkinfo.package = Balíček
+gui.linkinfo.password = Heslo
+gui.linkinfo.saveto = Uložit do
+gui.linkinfo.speed = rychlost
+gui.linkinfo.title = Informace o odkazu
+gui.linkinfo.waittime = Čekání
 gui.linklist.newpackage.message = Název nového balíčku
 gui.linklist.newpackage.title = Vytvořit nový balíček
 gui.logDialog.btn_censor = Censor Log
@@ -536,7 +469,7 @@ gui.menu.action.add.accel = CTRL+V
 gui.menu.action.add.desc = Přidat jeden nebo více download linků
 gui.menu.action.add.mnem = H
 gui.menu.action.add.name = Přidat link
-gui.menu.action.ces.accel = 
+gui.menu.action.ces.accel =  
 gui.menu.action.ces.desc = Použít Captcha Exchange Service
 gui.menu.action.ces.mnem = C
 gui.menu.action.ces.name = Captcha Exchange Service
@@ -632,6 +565,10 @@ gui.menu.action.viewlog.accel = F5
 gui.menu.action.viewlog.desc = Pokud vyberete LOG Windows bude zobrazen
 gui.menu.action.viewlog.mnem = L
 gui.menu.action.viewlog.name = Ukázat LOG Windows
+gui.menu.action.wiki.accel = -
+gui.menu.action.wiki.desc = Hledat pomoc na jDownloader wiki
+gui.menu.action.wiki.mnem = -
+gui.menu.action.wiki.name = Otevřít Wiki
 gui.menu.action_mnem = K
 gui.menu.addons = Vložit
 gui.menu.edit = Editace
@@ -648,21 +585,31 @@ gui.menu.plugins.container = Uložiště
 gui.menu.plugins.decrypt = Decrypter
 gui.menu.plugins.help = ?
 gui.menu.plugins.host = Hostitel
+gui.packageinfo.comment = Poznámka
+gui.packageinfo.dldirectory = Složka pro stahování
+gui.packageinfo.links = Uzel
+gui.packageinfo.loaded = Přihlášeno
+gui.packageinfo.name = Jméno
+gui.packageinfo.packagesize = Velikost souboru
+gui.reconnect.confirm = Opravdu se chcete znovu připojit?
+gui.reconnect.success = Reconnect úspěšné
 gui.searchDialog.btn_search = Start vyhledávání
 gui.searchDialog.title = jDownloader vyhledává
 gui.searchDialog.whatToSearchFor = Co chcete hledat?
 gui.splash.text.configLoaded = Načítání Konfigurace
 gui.splash.text.finished = Dokončeno
 gui.splash.text.initcontroller = Spouštění Controlleru
+gui.splash.text.loaddownloadqueue = Nahrávám seznam downloadů
 gui.splash.text.loadGUI = Nahrávám rozhraní
 gui.splash.text.loadLanguage = Nahrávám jazyk
-gui.splash.text.loadPlugins = Nahrávám  Pluginy
-gui.splash.text.loaddownloadqueue = Nahrávám seznam downloadů
 gui.splash.text.loadmodules = Nahrávám Moduly a nově přidané
+gui.splash.text.loadPlugins = Nahrávám  Pluginy
 gui.splash.text.update = Kontrola aktualizací
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Rychlost
+gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
+gui.support.wikiurl = http://jdownloader.ath.cx/wiki/index.php?title=JDownloader_Wiki:Portal_English
 gui.tab.download.column_host = Host
 gui.tab.download.column_index = Nº
 gui.tab.download.column_link = Soubor
@@ -714,13 +661,15 @@ gui.treetable.part.label = Soubor
 gui.treetable.part.label_package = Balíček
 gui.treetable.part.label_update = Aktualizace
 gui.treetable.parts = Části
+gui.warning.reconnect.hasbeendisabled = Reconnect zakázán!
+gui.warning.reconnect.hasbeendisabled.tooltip = Pro povolení automatického reconnectu musíte povolit toto!
 gui.warning.reconnectFailed = Reconnect neproveden!
 gui.warning.reconnectSuccess = Reconnect proveden!
 gui.warning.restartNeeded = Musíte restartovat jD!
 init.webupdate.progress.0_title = Web-Aktualizace
 init.webupdate.progress.1_title = Kontrola aktualizací
-installer.abortInstallation = Chyba. instalace neproběhla
 installer.aborted = Instalace neproběhla!
+installer.abortInstallation = Chyba. instalace neproběhla
 installer.downloadDir = Download directory
 installer.title = Instalace jDownloaderu
 installer.welcome = Vítejte v JDownloaderu. Instalační program bude stahovat nějaké soubory.
@@ -847,11 +796,10 @@ modules.reconnect.types.extern = Externí
 modules.reconnect.types.liveheader = LiveHeader/Curl
 modules.unrar.enabled.instanthelp = http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=17
 modules.unrar.name = RAR extractor
-plugins.SerienJunkies.CatDialog.action = Zrušit všechny akce
-plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
 plugins.container.ccf.useCCF2RSDF = Použít CCF2RSDF místo Online Decrypter
 plugins.container.decrypt = Adresa Decrypteru %s
 plugins.container.dlc.extendedInfos = Žádost o více informací při vytváření DLC
+plugins.container.dlc.showdialogoncreatedlc = Zobrazit potvrzovací zprávu po vytvoření
 plugins.container.dlc.uploaderName = Přiložit jméno Uploadera
 plugins.container.exit = Dokončeno. Found %s links
 plugins.container.found = Prozess %s links
@@ -883,35 +831,36 @@ plugins.hoster.rapidshare.com.info.title = Informace o účtu pro %s
 plugins.hoster.rapidshare.com.loadFirstBytes = nahrát pouze prvních * kilobajtů ze všech souborů (-1 = zakázat)
 plugins.hoster.rapidshare.com.loadinfo = Nahrát informace o účtu z rapidshare.com
 plugins.hoster.rapidshare.com.loadpreBytes = nahrát pouze prvních * Bajtů ze všech souborů (-1 = zakázat)
-plugins.hoster.rapidshare.com.preSelection = Accept pre-selection (*2)
 plugins.hoster.rapidshare.com.prefferedServer = Preferred server (*1)
 plugins.hoster.rapidshare.com.premiumAccount = Prémiový účet
 plugins.hoster.rapidshare.com.premiumPass = Prémiové heslo
 plugins.hoster.rapidshare.com.premiumPass2 = Prémiové heslo (alternative)
 plugins.hoster.rapidshare.com.premiumPass3 = Prémiové heslo (alternative)
+plugins.hoster.rapidshare.com.premiumtab = Prémiové volby
 plugins.hoster.rapidshare.com.premiumUser = Prémiový uživatel
 plugins.hoster.rapidshare.com.premiumUser2 = Prémiový uživatel (alternative)
 plugins.hoster.rapidshare.com.premiumUser3 = Prémiový uživatel (alternative)
-plugins.hoster.rapidshare.com.premiumtab = Prémiové volby
+plugins.hoster.rapidshare.com.preSelection = Accept pre-selection (*2)
 plugins.hoster.rapidshare.com.telekom = Použít Telekom server if avaiable*
 plugins.hoster.rapidshare.com.usePremium = Použít Prémiový účet
 plugins.hoster.rapidshare.com.usePremium2 = (2) Použít Prémiový účet
 plugins.hoster.rapidshare.com.usePremium3 = (3) Použít Prémiový účet
 plugins.hoster.rapidshare.com.useSSL = Download using SSL
 plugins.hoster.rapidshare.com.waitTimeOnBotDetection = Timeout (ms) after bot detection. (-1 = reconnect)
-plugins.optional.JDLightTray.name = JDLightTrayIcon
-plugins.optional.RemoteControl.name = Vzdálené ovládání
 plugins.optional.folderwatch.delete = Smazat
 plugins.optional.folderwatch.folder = Adresář:
 plugins.optional.folderwatch.name = FolderWatch
 plugins.optional.folderwatch.waittime = Čekání
 plugins.optional.getter.name = Příjemce
 plugins.optional.getter.port = Port:
+plugins.optional.JDLightTray.name = JDLightTrayIcon
 plugins.optional.jdlowspeed.maxspeed = Max. internetová rychlost v kb/s (DSL 3000≈350kb/s)
 plugins.optional.jdlowspeed.minspeed = Min rychlost při stahování jednoho souboru kb/s
 plugins.optional.jdlowspeed.name = LowSpeed detekce
 plugins.optional.jdlowspeed.rsonly = Sleduje pouze rapidshare.com
 plugins.optional.jdshutdown.name = JDukončení
+plugins.optional.RemoteControl.name = Vzdálené ovládání
+plugins.optional.RemoteControl.port = Port:
 plugins.optional.trayIcon.clipboard = Schránka
 plugins.optional.trayIcon.configuration = Konfigurace
 plugins.optional.trayIcon.dnd = Drag'n Drop
@@ -956,6 +905,9 @@ plugins.rapidshare.menu.premium3 = 3. Účet (
 plugins.rapidshare.menu.premiumInfo = Zobrazit informace o účtech
 plugins.rapidshare.pass = Heslo
 plugins.rapidshare.userid = UživatelskéID
+plugins.SerienJunkies.CatDialog.action = Zrušit všechny akce
+plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
+Plugins.SerienJunkies.CatDialog.title = SerienJunkies ::CAT::
 sys.ask.rlyclose = Opravdu ukončit jDownloader?
 sys.confirm.doRestart = Toto nastavení požaduje restart. Provést restart nyní?
 sys.dlc.error_version = DLC šifrování selhalo. Prosím ujistěte se zda používáte poslední verzi JD.
@@ -972,21 +924,4 @@ system.download.triggerfileexists = Soubor již existuje:
 system.download.triggerfileexists.overwrite = Přepsat
 system.download.triggerfileexists.skip = Přeskočit odkaz
 ﻿action.passwordlist.name = Edituj seznam hesel
-gui.config.download.connectionlost.wait = Čekat na volný slot
-gui.config.download.ipcheck.mask = Povolená IPs
-gui.config.general.link.wiki = Wiki - Často kladené dotazy
-gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.ath.cx/wiki/index.php?title=Konfig_en:
-gui.menu.action.wiki.accel = -
-gui.menu.action.wiki.desc = Hledat pomoc na jDownloader wiki
-gui.menu.action.wiki.mnem = -
-gui.menu.action.wiki.name = Otevřít Wiki
-plugins.container.dlc.showdialogoncreatedlc = Zobrazit potvrzovací zprávu po vytvoření
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
-gui.dialog.about.title = O JDownloader
-gui.reconnect.confirm = Opravdu se chcete znovu připojit?
-gui.reconnect.success = Reconnect úspěšné
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://jdownloader.ath.cx/wiki/index.php?title=JDownloader_Wiki:Portal_English
-gui.warning.reconnect.hasbeendisabled = Reconnect zakázán!
-gui.warning.reconnect.hasbeendisabled.tooltip = Pro povolení automatického reconnectu musíte povolit toto!
-plugins.optional.RemoteControl.port = Port:
+﻿Plugins.SerienJunkies.CatDialog.action = Vyberte vaši akci:
