@@ -426,12 +426,13 @@ public class JUnrar {
 				params.add(file.getAbsolutePath());
 			} else {
 				parent = file.getParentFile();
-				params.add(file.getName());
+				params.add(file.getAbsolutePath());
 			}
 			if(autoFolder>0)
 			{
 					if(filesWithoutFolder>=autoFolder)
 					{
+						b = true;
 						parent = new File(parent, file.getName().replaceFirst("(\\.part\\d+)?(\\.rar|r\\d+)$", ""));
 						parent.mkdirs();
 					}
@@ -473,7 +474,7 @@ public class JUnrar {
 					}
 				} else if (b) {
 					while (matcher.find()) {
-						File ufile = new File(file.getParentFile(), matcher
+						File ufile = new File(parent, matcher
 								.group(1));
 						unpackedlist.add(ufile);
 					}
@@ -724,14 +725,14 @@ public class JUnrar {
 			while (matchervolumes.find()) {
 
 				String name = matchervolumes.group(1);
-				if(!name.contains(System.getProperty("file.separator")))
-				{
-					filesWithoutFolder++;
-				}
 				if (name.matches("\\*.*")) {
 					name = name.replaceFirst(".", "");
 					long size = Long.parseLong(matchervolumes.group(2));
 					if (!name.equals(namen)) {
+						if(!name.contains(System.getProperty("file.separator")))
+						{
+							filesWithoutFolder++;
+						}
 						namen = name;
 						volumess.add(size);
 						if (size > 0) {
@@ -741,6 +742,10 @@ public class JUnrar {
 				} else {
 					name = name.replaceFirst(".", "");
 					if (!name.equals(namen)) {
+						if(!name.contains(System.getProperty("file.separator")))
+						{
+							filesWithoutFolder++;
+						}
 						namen = name;
 						volumess.add(Long.parseLong(matchervolumes.group(2)));
 					}
