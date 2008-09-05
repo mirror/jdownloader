@@ -108,6 +108,7 @@ public class Update {
         webRoot = "http://78.143.20.67/update/jd/";
 
         WebUpdater updater = new WebUpdater(null);
+        updater.setOSFilter(false);
         Vector<Vector<String>> files = updater.getAvailableFiles();
 
         // boolean success = false;
