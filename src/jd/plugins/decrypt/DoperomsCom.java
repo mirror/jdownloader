@@ -31,11 +31,15 @@ import jd.plugins.PluginForDecrypt;
 
 public class DoperomsCom extends PluginForDecrypt {
 
-    static private final String host = "doperoms.net"; //http://doperoms.com/roms/atari_jaguar/Alien%20vs%20Predator%20(Alpha).zip.html
+    static private final String host = "doperoms.net"; //http://doperoms.com/roms
+                                                       // /
+                                                       // atari_jaguar/Alien%20vs
+                                                       // %20Predator%20(Alpha).
+                                                       // zip.html
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternFilesize = Pattern.compile("<br>Filesize: ([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))<br>", Pattern.CASE_INSENSITIVE);
-    
+
     public DoperomsCom() {
         super();
     }
@@ -44,20 +48,27 @@ public class DoperomsCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        //br.setFollowRedirects(true);
-        
+        // br.setFollowRedirects(true);
+
         String rootCat = new Regex(parameter, patternSupported).getMatch(0);
         String filename = new Regex(parameter, patternSupported).getMatch(1);
         br.getPage("http://doperoms.com/");
-        br.setCookie("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20")+ ".html", "PHPSESSID", br.getCookie(br.getURL(), "PHPSESSID"));
-        br.getPage("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20")+ ".html"); //Encoding.urlEncode(filename));
-        
+        br.setCookie("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20") + ".html", "PHPSESSID", br.getCookie(br.getURL(), "PHPSESSID"));
+        br.getPage("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20") + ".html"); // Encoding
+                                                                                                             // .
+                                                                                                             // urlEncode
+                                                                                                             // (
+                                                                                                             // filename
+                                                                                                             // )
+                                                                                                             // )
+                                                                                                             // ;
+
         String file = new Regex(br, "http://[\\w.]*?doperoms\\.com/files/roms/.+" + rootCat + "/" + filename).getMatch(0);
         long filesize = Regex.getSize(new Regex(br, patternFilesize.pattern()).getMatch(0));
         DownloadLink dlLink = createDownloadlink(file);
         dlLink.setDownloadSize(filesize);
         dlLink.setName(filename);
-        
+
         decryptedLinks.add(dlLink);
 
         return decryptedLinks;
@@ -85,7 +96,7 @@ public class DoperomsCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2354 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

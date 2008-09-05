@@ -36,7 +36,7 @@ public class KnofflCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         String[] links = new Regex(br.getPage(parameter), Pattern.compile("dl\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String element : links) {
             decryptedLinks.add(createDownloadlink(element));
