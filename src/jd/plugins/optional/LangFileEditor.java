@@ -543,13 +543,15 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuDownloadSource) {
 
-            if (JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.downloadSource", "The SourceCode can be obtained via SVN.\nThe repository is located at https://www.syncom.org/svn/jdownloader/\nPress OK to open the repository!"), null, JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
+            String svnUrl = "https://www.syncom.org/svn/jdownloader/";
+            if (JOptionPane.showConfirmDialog(frame, JDLocale.LF("plugins.optional.langfileeditor.downloadSource", "The SourceCode can be obtained via SVN.\nThe repository is located at %s\nPress OK to open the repository!", svnUrl), null, JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
                 try {
-                    JLinkButton.openURL("https://www.syncom.org/svn/jdownloader/");
+                    JLinkButton.openURL(svnUrl);
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
             }
+
         }
 
     }

@@ -1269,7 +1269,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
-        actionUnrar = new JDAction(this, null, "action.unrar", JDAction.APP_UNRAR);
+        actionUnrar = new JDAction(this, JDTheme.V("gui.images.config.unrar"), "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
         actionPasswordlist = new JDAction(this, null, "action.passwordlist", JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
@@ -1544,9 +1544,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         progressBar.updateController(null);
         frame.setTitle(JDUtilities.getJDTitle());
     }
-
-
-
 
     public void removeUIListener(UIListener listener) {
         synchronized (uiListener) {
