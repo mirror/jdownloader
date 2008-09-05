@@ -476,7 +476,7 @@ public class Rapidshare extends PluginForHost {
 
             // Fehlerbehanldung
             String error;
-            if ((error = findError(br.toString())) != null) {                
+            if ((error = findError(br.toString())) != null) {
                 logger.warning(error);
                 if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
@@ -490,7 +490,7 @@ public class Rapidshare extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, error);
                 }
 
-            } else {                
+            } else {
                 reportUnknownError(br.toString(), 6);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
@@ -813,7 +813,7 @@ public class Rapidshare extends PluginForHost {
      */
     private void waitTicketTime(DownloadLink downloadLink, long pendingTime) throws InterruptedException {
 
-        while (pendingTime > 0 && !downloadLink.getDownloadLinkController().isAborted()) {
+        while (pendingTime > 0 && !downloadLink.isAborted()) {
             downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("plugin.rapidshare.tickettime", "Wait %s for ticket"), JDUtilities.formatSeconds((int) (pendingTime / 1000))));
             downloadLink.requestGuiUpdate();
             Thread.sleep(1000);
