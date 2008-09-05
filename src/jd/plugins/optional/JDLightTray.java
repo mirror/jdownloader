@@ -59,8 +59,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        subConfig.setProperty(PROPERTY_START_MINIMIZED, (((MenuItem) e.getSource()).getActionID() == 0));
-        subConfig.save();
+        if (e.getSource() instanceof MenuItem) {
+            subConfig.setProperty(PROPERTY_START_MINIMIZED, (((MenuItem) e.getSource()).getActionID() == 0));
+            subConfig.save();
+        }
     }
 
     @Override
@@ -155,7 +157,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
 
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
-            if (e.getClickCount() >= 1) {
+            if (e.getClickCount() >= 1 && !SwingUtilities.isRightMouseButton(e)) {
                 guiFrame.setVisible(!guiFrame.isVisible());
                 if (guiFrame.isVisible()) guiFrame.setState(JFrame.NORMAL);
             } else {
@@ -186,6 +188,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
                         // bottom right
                         popup.setLocation(x - popup.getWidth(), y - popup.getHeight());
                     }
+                    popup.setVisible(true);
 
                 }
             }

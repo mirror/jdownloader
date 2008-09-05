@@ -136,7 +136,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         addMenuEntry(ACTION_EXIT, JDTheme.II("gui.images.exit"), JDLocale.L("plugins.trayicon.popup.menu.exit", "Beenden"));
 
         initBottomPanel();
-        setVisible(true);
+        setVisible(false);
         pack();
 
     }
