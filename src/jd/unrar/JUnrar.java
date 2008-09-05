@@ -456,13 +456,11 @@ public class JUnrar {
 				if (autoDelete) {
 					while (matcher.find()) {
 						File delfile;
-						if (b) {
-							delfile = new File(matcher.group(1));
-						} else {
-							delfile = new File(file.getParentFile(), matcher
-									.group(1));
+						String mg = matcher.group(1);
+						delfile = new File(mg);
+						if (!delfile.isFile()) {
+							delfile = new File(file.getParentFile(), mg);
 						}
-
 						if (!delfile.isFile()) {
 							logger.warning(str);
 							logger.warning("Can't find " + delfile.getName());
