@@ -81,7 +81,7 @@ public class YouTubeCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         ArrayList<Account> accounts = JDUtilities.getAccountsForHost("youtube.com");
-        if (accounts != null) login(accounts.get(0));
+        if (accounts != null && accounts.size() != 0) login(accounts.get(0));
 
         try {
             if (StreamingShareLink.matcher(parameter).matches()) {
@@ -103,9 +103,12 @@ public class YouTubeCom extends PluginForDecrypt {
             }
 
             br.getPage(parameter);
-            if (br.getRegex(Pattern.compile("signup\\?next=/watch")).matches()) { throw new DecrypterException("No Valid Account for Age Check"); }
             Form f = br.getForms()[2];
-            if (f != null && f.action == null) br.submitForm(f);
+            if (f != null && f.action == null) {
+                br.submitForm(f);
+            } else {
+                if (br.getURL().contains("verify_age?")) { throw new DecrypterException("No Valid Account for Age Check"); }
+            }
             String video_id = "";
             String t = "";
             String match = br.getRegex(patternswfArgs).getMatch(0);
