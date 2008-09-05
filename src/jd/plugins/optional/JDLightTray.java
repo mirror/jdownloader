@@ -18,7 +18,6 @@ package jd.plugins.optional;
 
 import java.awt.AWTException;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
@@ -29,10 +28,12 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import jd.Main;
 import jd.config.MenuItem;
+import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
@@ -42,22 +43,38 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDLightTray extends PluginOptional implements MouseListener, WindowStateListener {
-    public static int getAddonInterfaceVersion() {
-        return 1;
-    }
+    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLIGHTTRAY");
+
+    private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
 
     private TrayIconPopup popup;
 
     private TrayIcon trayIcon;
 
+    private JFrame guiFrame;
+
+    public static int getAddonInterfaceVersion() {
+        return 1;
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-
+        subConfig.setProperty(PROPERTY_START_MINIMIZED, (((MenuItem) e.getSource()).getActionID() == 0));
+        subConfig.save();
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        return null;
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        MenuItem m;
+        if (!subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
+            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized"), 0).setActionListener(this));
+            m.setSelected(false);
+        } else {
+            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized"), 1).setActionListener(this));
+            m.setSelected(true);
+        }
+        return menu;
     }
 
     @Override
@@ -101,7 +118,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDLightTrayIcon Init complete");
-            SimpleGUI.CURRENTGUI.getFrame().addWindowStateListener(this);
+            guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+            if (subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
+                guiFrame.setState(JFrame.ICONIFIED);
+            }
+            guiFrame.addWindowStateListener(this);
             return;
         }
         super.controlEvent(event);
@@ -124,23 +145,19 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     }
 
     public void mouseClicked(MouseEvent e) {
-
     }
 
     public void mouseEntered(MouseEvent e) {
-
     }
 
     public void mouseExited(MouseEvent e) {
-
     }
 
     public void mousePressed(MouseEvent e) {
-        SimpleGUI simplegui = SimpleGUI.CURRENTGUI;
         if (e.getSource() instanceof TrayIcon) {
             if (e.getClickCount() >= 1) {
-                simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
-                if (simplegui.getFrame().isVisible()) simplegui.getFrame().setState(Frame.NORMAL);
+                guiFrame.setVisible(!guiFrame.isVisible());
+                if (guiFrame.isVisible()) guiFrame.setState(JFrame.NORMAL);
             } else {
                 if (popup != null && popup.isShowing()) {
                     popup.dispose();
@@ -178,7 +195,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     }
 
     public void mouseReleased(MouseEvent e) {
-
     }
 
     @Override
@@ -186,14 +202,12 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
         if (trayIcon != null) {
             SystemTray.getSystemTray().remove(trayIcon);
         }
-
     }
 
     public void windowStateChanged(WindowEvent arg0) {
-        if ((arg0.getOldState() & Frame.ICONIFIED) == 0) {
-            if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
-                SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-                simplegui.getFrame().setVisible(false);
+        if ((arg0.getOldState() & JFrame.ICONIFIED) == 0) {
+            if ((arg0.getNewState() & JFrame.ICONIFIED) != 0) {
+                guiFrame.setVisible(false);
             }
         }
     }
