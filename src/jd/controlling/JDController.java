@@ -127,11 +127,10 @@ public class JDController implements ControlListener, UIListener {
                         if (controlListener == null) {
                             controlListener = new ArrayList<ControlListener>();
                         }
-                        synchronized (controlListener) {
-                            Iterator<ControlListener> iterator = controlListener.iterator();
-                            while (iterator.hasNext()) {
+                        synchronized (controlListener) {                            
+                            for (int i = controlListener.size()-1; i >= 0; i--) {
                                 eventStart = System.currentTimeMillis();
-                                currentListener = (ControlListener) iterator.next();
+                                currentListener = controlListener.get(i);
                                 currentListener.controlEvent(event);
                                 eventStart = 0;
                             }
