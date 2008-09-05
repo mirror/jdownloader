@@ -58,7 +58,8 @@ public class RomHustlerNet extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);
+            br.clearCookies(HOST);
             br.getPage(downloadLink.getDownloadURL());
             downloadUrl = decodeurl(br.getRegex(Pattern.compile("link_enc=new Array\\((.*?)\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
             if (downloadUrl == null) return false;
@@ -86,7 +87,7 @@ public class RomHustlerNet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2398 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -109,7 +110,7 @@ public class RomHustlerNet extends PluginForHost {
         /* TODO: Wert nachprüfen */
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

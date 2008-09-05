@@ -48,7 +48,7 @@ public class MegasharesCom extends PluginForHost {
     private static String PLUGIN_PASS = null;
 
     public MegasharesCom() {
-
+        super();
     }
 
     @Override
@@ -67,10 +67,8 @@ public class MegasharesCom extends PluginForHost {
             br.getPage(link);
         }
         // Password protection
-       if(! checkPassword(downloadLink)){
-           return;
-       }
-       
+        if (!checkPassword(downloadLink)) { return; }
+
         // Sie laden gerade eine datei herunter
         if (br.containsHTML("You already have the maximum")) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -112,9 +110,7 @@ public class MegasharesCom extends PluginForHost {
                 linkStatus.setValue(30 * 1000l);
                 return;
             }
-            if(! checkPassword(downloadLink)){
-                return;
-            }
+            if (!checkPassword(downloadLink)) { return; }
         }
         // Downloadlink
         String url = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click here to download</a>").getMatch(0);
@@ -136,30 +132,26 @@ public class MegasharesCom extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, con);
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
         dl.setFilesize(Regex.getSize(dat[1]));
-//        dl.setFilesizeCheck(false);
+        // dl.setFilesizeCheck(false);
         dl.setResume(true);
         dl.startDownload();
     }
 
     private boolean checkPassword(DownloadLink link) throws IOException {
 
-       if (br.containsHTML("This link requires a password")) {
+        if (br.containsHTML("This link requires a password")) {
             Form form = br.getFormbyValue("Validate Password");
             String pass = link.getStringProperty("password");
             if (pass != null) {
                 form.put("passText", pass);
                 br.submitForm(form);
-                if (!br.containsHTML("This link requires a password")) {
-                    return true;
-                }
+                if (!br.containsHTML("This link requires a password")) { return true; }
             }
             pass = PLUGIN_PASS;
             if (pass != null) {
                 form.put("passText", pass);
                 br.submitForm(form);
-                if (!br.containsHTML("This link requires a password")) {
-                    return true;
-                }
+                if (!br.containsHTML("This link requires a password")) { return true; }
             }
             int i = 0;
             while ((i++) < 5) {
@@ -174,12 +166,12 @@ public class MegasharesCom extends PluginForHost {
                     }
                 }
             }
-            
+
             link.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
             link.getLinkStatus().setErrorMessage("Link password wrong");
             return false;
         }
-       return true;
+        return true;
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -226,22 +218,10 @@ public class MegasharesCom extends PluginForHost {
         return HOST;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.PluginForHost#reset()
-     */
-
     @Override
     public String getPluginName() {
         return HOST;
     }
-
-    /*
-     * (non-Javadoc)
-     * 
-     * @see jd.plugins.PluginForHost#checkAvailability(jd.plugins.DownloadLink)
-     */
 
     @Override
     public Pattern getSupportedLinks() {
@@ -250,14 +230,14 @@ public class MegasharesCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2576 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

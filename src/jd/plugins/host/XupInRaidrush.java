@@ -31,7 +31,7 @@ import jd.plugins.download.RAFDownload;
 public class XupInRaidrush extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.xup.in/terms/";
-    private static final String CODER = "jD-Team";
+    private static final String CODER = "JD-Team";
 
     private static final String HOST = "xup.raidrush.ws";
 
@@ -41,7 +41,7 @@ public class XupInRaidrush extends PluginForHost {
         super();
     }
 
-    @Override 
+    @Override
     public boolean doBotCheck(File file) {
         return false;
     }
@@ -84,7 +84,7 @@ public class XupInRaidrush extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2588 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -93,7 +93,7 @@ public class XupInRaidrush extends PluginForHost {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         Form download = br.getForms()[0];
         dl = new RAFDownload(this, downloadLink, br.openFormConnection(download));
-        dl.startDownload();       
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

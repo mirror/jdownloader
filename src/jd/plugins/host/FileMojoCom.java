@@ -54,7 +54,8 @@ public class FileMojoCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);
+            br.clearCookies(HOST);
 
             String url = downloadLink.getDownloadURL();
 
@@ -93,7 +94,7 @@ public class FileMojoCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2398 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -117,7 +118,7 @@ public class FileMojoCom extends PluginForHost {
         /* TODO: Wert nachprüfen */
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

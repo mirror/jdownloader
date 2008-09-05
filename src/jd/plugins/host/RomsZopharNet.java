@@ -28,7 +28,9 @@ import jd.plugins.download.RAFDownload;
 
 public class RomsZopharNet extends PluginForHost {
 
-    private static final String HOST = "roms.zophar.net";//http://roms.zophar.net/download-file/131583
+    private static final String HOST = "roms.zophar.net";//http://roms.zophar.net
+                                                         // /
+                                                         // download-file/131583
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}", Pattern.CASE_INSENSITIVE);
 
     public RomsZopharNet() {
@@ -75,7 +77,7 @@ public class RomsZopharNet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2398 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -94,7 +96,7 @@ public class RomsZopharNet extends PluginForHost {
         /* TODO: Wert nachprüfen */
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }
