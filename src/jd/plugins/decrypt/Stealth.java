@@ -16,10 +16,13 @@
 
 package jd.plugins.decrypt;
 
+import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
@@ -67,6 +70,18 @@ public class Stealth extends PluginForDecrypt {
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/captcha.php"));
                 form.put("code", getCaptchaCode(file, this));
                 br.submitForm(form);
+            } else if (br.containsHTML("libs/crosshair.php")) {
+                /* Neue Crosshair Seite */
+                logger.finest("Captcha Protected");
+                File file = this.getLocalCaptchaFile(this);
+                Form form = br.getForm(0);
+                Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/crosshair.php"));
+                ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", "Please click on the Circle with a gap", 20, null);
+                Point p = d.result;
+                form.put("button.x", p.x + "");
+                form.put("button.y", p.y + "");
+                br.submitForm(form);
+
             } else {
                 break;
             }
