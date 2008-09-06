@@ -704,7 +704,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
     }
 
-    private static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
+    public static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
     public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V2";
 

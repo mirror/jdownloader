@@ -86,23 +86,26 @@ public class JDSimpleWebserverRequestHandler {
                         }
                     }
                 }
-                // if (link.isAvailable() || ((PluginForHost)
-                // link.getPlugin()).isListOffline()) {
-
                 attachLinkTopackage(link);
-
-                // }
             }
         }
     }
 
     private void attachLinkTopackage(DownloadLink link) {
+        String packageName;
+        boolean autoPackage = false;
+        if (link.getFilePackage() != JDUtilities.getController().getDefaultFilePackage()) {
+            packageName = link.getFilePackage().getName();
+        } else {
+            autoPackage = true;
+            packageName = removeExtension(link.getName());
+        }
         synchronized (JDWebinterface.Link_Adder_Packages) {
             int bestSim = 0;
             int bestIndex = -1;
             for (int i = 0; i < JDWebinterface.Link_Adder_Packages.size(); i++) {
 
-                int sim = comparepackages(JDWebinterface.Link_Adder_Packages.get(i).getName(), removeExtension(link.getName()));
+                int sim = comparepackages(JDWebinterface.Link_Adder_Packages.get(i).getName(), packageName);
                 if (sim > bestSim) {
                     bestSim = sim;
                     bestIndex = i;
@@ -111,14 +114,13 @@ public class JDSimpleWebserverRequestHandler {
             if (bestSim < guiConfig.getIntegerProperty(LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, 90)) {
 
                 FilePackage fp = new FilePackage();
-                fp.setName(removeExtension(link.getName()));
+                fp.setName(packageName);
                 fp.add(link);
                 JDWebinterface.Link_Adder_Packages.add(fp);
             } else {
-                String newpackageName = getSimString(JDWebinterface.Link_Adder_Packages.get(bestIndex).getName(), removeExtension(link.getName()));
-                JDWebinterface.Link_Adder_Packages.get(bestIndex).setName(newpackageName);
+                String newPackageName = autoPackage ? getSimString(JDWebinterface.Link_Adder_Packages.get(bestIndex).getName(), packageName) : packageName;
+                JDWebinterface.Link_Adder_Packages.get(bestIndex).setName(newPackageName);
                 JDWebinterface.Link_Adder_Packages.get(bestIndex).add(link);
-
             }
         }
     }
@@ -149,7 +151,7 @@ public class JDSimpleWebserverRequestHandler {
         return ret;
     }
 
-//    @SuppressWarnings("static-access")
+    // @SuppressWarnings("static-access")
     public void handle() {
 
         String request = headers.get(null);
@@ -503,7 +505,7 @@ public class JDSimpleWebserverRequestHandler {
             if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
                 if (requestParameter.containsKey("password_list")) {
                     String password_list = Encoding.htmlDecode(requestParameter.get("password_list"));
-//                    JUnrar unrar = new JUnrar(false);
+                    // JUnrar unrar = new JUnrar(false);
                     UnrarPassword.editPasswordlist(Regex.getLines(password_list));
                 }
             }

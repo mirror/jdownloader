@@ -391,7 +391,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
-            t.setParam("page_refresh", JDWebinterface.page_refresh_interval);
+            t.setParam("page_refresh", JDWebinterface.getRefreshRate());
             if (url.startsWith("single_info.tmpl") == true) {
                 add_single_info(t, requestParameter);
             }

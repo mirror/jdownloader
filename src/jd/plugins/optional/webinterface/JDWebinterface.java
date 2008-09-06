@@ -36,7 +36,6 @@ import jd.utils.JDUtilities;
 public class JDWebinterface extends PluginOptional {
     static public JDWebinterface instance;
     static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
-    static public int page_refresh_interval = 0;
     static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
     static final String PROPERTY_LOGIN = "PARAM_LOGIN";
@@ -110,20 +109,21 @@ public class JDWebinterface extends PluginOptional {
         return ret == null ? "0.0" : ret;
     }
 
-    @Override
-    public boolean initAddon() {
+    static public int getRefreshRate() {
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
         if (subConfig.getBooleanProperty(JDWebinterface.PROPERTY_REFRESH, true)) {
-            page_refresh_interval = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_REFRESH_INTERVAL, 5);
+            return subConfig.getIntegerProperty(JDWebinterface.PROPERTY_REFRESH_INTERVAL, 5);
         } else {
-            page_refresh_interval = 0;
+            return 0;
         }
+    }
 
+    @Override
+    public boolean initAddon() {
         @SuppressWarnings("unused")
         JDSimpleWebserver server = new JDSimpleWebserver();
         logger.info("WebInterface ok: java " + JDUtilities.getJavaVersion());
         return true;
-
     }
 
     @Override

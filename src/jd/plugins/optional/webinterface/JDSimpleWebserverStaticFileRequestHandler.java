@@ -64,6 +64,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
         mimes.put("jpeg", "image/jpeg");
         mimes.put("jpg", "image/jpeg");
         mimes.put("jpe", "image/jpeg");
+        mimes.put("ico", "image/x-icon");
         // determine mime type
         String mimeType = null;
         int indexOfDot = fileToRead.getName().indexOf('.');
