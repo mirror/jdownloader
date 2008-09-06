@@ -19,38 +19,49 @@ package jd.gui.skins.simple.components;
 import java.awt.Color;
 
 public class ChartAPI_Entity {
-	private String caption = "";
-	private String data = "";
-	private Color color;
-	
-	public ChartAPI_Entity(String caption, String data, String RGB) {
-		String csplit[] = RGB.split(",");
-		this.caption = caption;
-		this.data = data;
-		this.color = new Color(Integer.parseInt(csplit[0]), Integer.parseInt(csplit[1]), Integer.parseInt(csplit[2]));
-	}
-	
-	public ChartAPI_Entity(String caption, String data) {
-		this.caption = caption;
-		this.data = data;
-	}
-	
-	public String getCaption() {
-		return caption;
-	}
-	public void setCaption(String caption) {
-		this.caption = caption;
-	}
-	public String getData() {
-		return data;
-	}
-	public void setData(String data) {
-		this.data = data;
-	}
-	public Color getColor() {
-		return color;
-	}
-	public void setColor(Color color) {
-		this.color = color;
-	}
+    private String caption = "";
+    private String data = "";
+    private Color color;
+
+    public ChartAPI_Entity(String caption, Object data, String RGB) {
+        String csplit[] = RGB.split(",");
+        this.caption = caption;
+        this.data = data.toString();
+        this.color = new Color(Integer.parseInt(csplit[0]), Integer.parseInt(csplit[1]), Integer.parseInt(csplit[2]));
+    }
+
+    public ChartAPI_Entity(String caption, Object data, Color color) {
+        this.caption = caption;
+        this.data = data.toString();
+        this.color = color;
+    }
+
+    public ChartAPI_Entity(String caption, Object data) {
+        this.caption = caption;
+        this.data = data.toString();
+    }
+
+    public String getCaption() {
+        return caption;
+    }
+
+    public void setCaption(String caption) {
+        this.caption = caption;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public void setData(Object data) {
+        this.data = data.toString();
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    public void setColor(Color color) {
+        this.color = color;
+    }
 }

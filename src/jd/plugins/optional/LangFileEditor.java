@@ -65,6 +65,8 @@ import jd.config.SubConfiguration;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.ChartAPI_Entity;
+import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -93,7 +95,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private MyTableModel tableModel;
     private File sourceFolder, languageFile;
     private ComboBrowseFile cmboFolder, cmboFile;
-    private JLabel lblEntriesCount;
+    private ChartAPI_PIE keyChart;
+    private ChartAPI_Entity entKeys, entMissing, entOld;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
     private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
@@ -126,33 +129,42 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
 
-        JPanel main = new JPanel(new BorderLayout(5, 5));
-        main.setBorder(new EmptyBorder(10, 10, 10, 10));
-        frame.setContentPane(main);
-
-        JPanel top = new JPanel(new BorderLayout(5, 5));
-        JPanel top1 = new JPanel(new BorderLayout(5, 5));
-        JPanel top2 = new JPanel(new BorderLayout(5, 5));
-
-        top.add(top1, BorderLayout.PAGE_START);
-        top.add(top2, BorderLayout.PAGE_END);
-
-        top1.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder: ")), BorderLayout.LINE_START);
-        top1.add(cmboFolder = new ComboBrowseFile("LANGFILEEDITOR_FOLDER"));
+        JPanel topFolder = new JPanel(new BorderLayout(5, 5));
+        topFolder.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:")), BorderLayout.LINE_START);
+        topFolder.add(cmboFolder = new ComboBrowseFile("LANGFILEEDITOR_FOLDER"));
         cmboFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         cmboFolder.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFolder.addActionListener(this);
 
-        top2.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File: ")), BorderLayout.LINE_START);
-        top2.add(cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE"));
+        JPanel topFile = new JPanel(new BorderLayout(5, 5));
+        topFile.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")), BorderLayout.LINE_START);
+        topFile.add(cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE"));
         cmboFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
         cmboFile.setFileFilter(new LngFileFilter());
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 
+        keyChart = new ChartAPI_PIE("", 150, 60, frame.getBackground());
+        keyChart.addEntity(entKeys = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.done", "Done"), 0, Color.GREEN));
+        keyChart.addEntity(entMissing = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.missing", "Missing"), 0, (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED)));
+        keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.old", "Old"), 0, (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE)));
+
+        JPanel topLeft = new JPanel(new BorderLayout(5, 5));
+        topLeft.add(topFolder, BorderLayout.PAGE_START);
+        topLeft.add(topFile, BorderLayout.PAGE_END);
+
+        JPanel topRight = new JPanel(new BorderLayout(5, 5));
+        topRight.add(keyChart);
+
+        JPanel top = new JPanel(new BorderLayout(5, 5));
+        top.add(topLeft, BorderLayout.CENTER);
+        top.add(topRight, BorderLayout.LINE_END);
+
+        JPanel main = new JPanel(new BorderLayout(5, 5));
+        main.setBorder(new EmptyBorder(10, 10, 10, 10));
+        frame.setContentPane(main);
         main.add(top, BorderLayout.PAGE_START);
-        main.add(new JScrollPane(table), BorderLayout.CENTER);
-        main.add(lblEntriesCount = new JLabel(JDLocale.L("plugins.optional.langfileeditor.entriesCount", "Entries Count:")), BorderLayout.PAGE_END);
+        main.add(new JScrollPane(table));
 
         buildMenu();
 
@@ -169,25 +181,22 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     private void setInfoLabels() {
 
-        int numSource = 0, numFile = 0, numMissing = 0, numOld = 0;
+        int numMissing = 0, numOld = 0;
 
         for (String[] entry : data) {
 
-            if (!entry[1].equals("") && !entry[2].equals("")) {
-                numSource++;
-                numFile++;
-            } else if (entry[1].equals("")) {
-                numFile++;
+            if (entry[1].equals("")) {
                 numOld++;
             } else if (entry[2].equals("")) {
-                numSource++;
                 numMissing++;
             }
 
         }
 
-        lblEntriesCount.setText(JDLocale.LF("plugins.optional.langfileeditor.entriesCount.extended", "Entries Count:     [Sourcecode] %s     [Language File] %s     [Missing] %s     [Not found / Probably old] %s     [Probably dupes] %s", numSource, numFile, numMissing, numOld, dupes.size()));
-
+        entKeys.setData(data.size() - numMissing - numOld);
+        entMissing.setData(numMissing);
+        entOld.setData(numOld);
+        keyChart.fetchImage();
     }
 
     private void buildMenu() {
@@ -455,6 +464,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 subConfig.setProperty(PROPERTY_MISSING_COLOR, newColor);
                 subConfig.save();
                 tableModel.fireTableDataChanged();
+                entMissing.setColor(newColor);
             }
 
         } else if (e.getSource() == mnuPickOldColor) {
@@ -464,6 +474,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 subConfig.setProperty(PROPERTY_OLD_COLOR, newColor);
                 subConfig.save();
                 tableModel.fireTableDataChanged();
+                entOld.setColor(newColor);
             }
 
         } else if (e.getSource() == mnuShowDupes) {
@@ -872,7 +883,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             setModal(true);
             setLayout(new BorderLayout());
-            setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries"));
+            setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
 
             JTable table = new JTable(new MyDupeTableModel(dupes));
             JScrollPane scroll = new JScrollPane(table);

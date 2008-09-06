@@ -81,11 +81,6 @@ public abstract class ChartAPI extends JComponent {
         setPreferredSize(new Dimension(width, height));
     }
 
-    public static Color convertStringToColor(String RGB) {
-        String csplit[] = RGB.split(",");
-        return new Color(Integer.parseInt(csplit[0]), Integer.parseInt(csplit[1]), Integer.parseInt(csplit[2]));
-    }
-
     public void clear() {
         collData.clear();
     }
@@ -156,8 +151,9 @@ public abstract class ChartAPI extends JComponent {
 
     public String getRelativeValue(String input) {
         double calc = Double.valueOf(input) / Double.valueOf(getMaxValue()) * 100;
-        if (calc < 0.01 && calc > 0.0) calc = 0.01;
-        else if(calc < 0) calc = 0;
+        if (calc < 0.01 && calc > 0.0)
+            calc = 0.01;
+        else if (calc < 0) calc = 0;
         return String.valueOf(calc);
     }
 

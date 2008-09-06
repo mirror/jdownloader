@@ -59,8 +59,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                         AccountInfo ai = ((PluginForHost) configEntry.getActionListener()).getAccountInformation(acc);
                         Long tleft = new Long(ai.getTrafficLeft());
                         if (tleft >= 0 && ai.isExpired() == false) {
-                            ChartAPI_Entity ent = new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", String.valueOf(tleft), "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50");
-                            freeTrafficChart.addEntity(ent);
+                            freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50"));
                             long rest = ai.getTrafficMax() - tleft;
                             if (rest > 0) collectTraffic = collectTraffic + rest;
                         }
