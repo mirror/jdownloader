@@ -153,12 +153,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         topLeft.add(topFolder, BorderLayout.PAGE_START);
         topLeft.add(topFile, BorderLayout.PAGE_END);
 
-        JPanel topRight = new JPanel(new BorderLayout(5, 5));
-        topRight.add(keyChart);
-
         JPanel top = new JPanel(new BorderLayout(5, 5));
         top.add(topLeft, BorderLayout.CENTER);
-        top.add(topRight, BorderLayout.LINE_END);
+        top.add(keyChart, BorderLayout.LINE_END);
 
         JPanel main = new JPanel(new BorderLayout(5, 5));
         main.setBorder(new EmptyBorder(10, 10, 10, 10));
