@@ -33,9 +33,9 @@ import jd.plugins.RequestInfo;
 public class Upload {
     public static String toJDownloader(String str, String desc) {
         try {
-            RequestInfo ri = HTTP.postRequest(new URL("http://jdservice.ath.cx/tools/log.php"), "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
+            RequestInfo ri = HTTP.postRequest(new URL("http://service.jdownloader.org/tools/log.php"), "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
 
-            return "http://jdservice.ath.cx/tools/log.php?id=" + ri.getHtmlCode();
+            return "http://service.jdownloader.org/tools/log.php?id=" + ri.getHtmlCode();
         } catch (MalformedURLException e) {
 
             e.printStackTrace();

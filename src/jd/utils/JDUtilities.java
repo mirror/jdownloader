@@ -955,9 +955,9 @@ public class JDUtilities {
         }
 
         try {
-            site = "http://jdownloaderipcheck.ath.cx";
+            site = "http://service.jdownloader.org/tools/getip.php";
 
-            logger.finer("IP Check via jdownloaderipcheck.ath.cx");
+            logger.finer("http://service.jdownloader.org/tools/getip.php");
             RequestInfo ri;
 
             ri = HTTP.getRequest(new URL(site), null, null, true);
