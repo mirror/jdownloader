@@ -443,18 +443,12 @@ public class Main {
         new Thread("packetmanager") {
             @Override
             public void run() {
-
-                new PackageManager().interact(this);
-
-                try {
-                    Thread.sleep(5000);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
                     init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
                 }
+             
+
+                
             }
 
         }.start();
@@ -473,5 +467,13 @@ public class Main {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
+   try {
+    Thread.sleep(3000);
+} catch (InterruptedException e) {
+    // TODO Auto-generated catch block
+    e.printStackTrace();
+}
+   new PackageManager().interact(this);
+    
     }
 }

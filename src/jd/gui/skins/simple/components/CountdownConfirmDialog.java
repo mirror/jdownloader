@@ -79,11 +79,15 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public boolean result = false;
     private JScrollPane scrollPane;
 
+    private String titleText;
+
     public CountdownConfirmDialog(Frame owner, String msg, int countdown) {
         this(owner, msg, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_STOP_COUNTDOWN);
     }
-
     public CountdownConfirmDialog(final Frame owner, final String msg, final int countdown, final boolean defaultResult, final int style) {
+        this(owner,null,msg,countdown,defaultResult,style);
+    }
+    public CountdownConfirmDialog(final Frame owner,final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
         super(owner);
         setModal(true);
 
@@ -93,18 +97,35 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
             @Override
             public void run() {
+                
+                while(!isVisible()&&isDisplayable()){
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                }
                 int c = countdown;
 
                 while (--c >= 0) {
                     if (countdownThread == null) { return; }
-                    setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
+                    if(titleText!=null){
+                         
+                        setTitle(JDUtilities.formatSeconds(c) + " mm:ss  >> "+titleText);
+                    }else{
+                        setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
+                    }
 
                     try {
                         Thread.sleep(1000);
 
                     } catch (InterruptedException e) {
                     }
-                    if (!isVisible()) { return; }
+                    if (!isVisible()) {
+                        
+                        return; 
+                        }
 
                 }
                 result = defaultResult;
@@ -113,7 +134,11 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             }
 
         };
-        countdownThread.start();
+        this.titleText=title;
+      
+        if(title!=null){
+            this.setTitle(title);
+        }
         if ((style & STYLE_MSGLABLE) != 0) {
             htmlArea = new JLabel(msg);
         } else {
@@ -149,8 +174,9 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));
+        countdownThread.start();
         setVisible(true);
-
+     
     }
 
     public void actionPerformed(ActionEvent e) {
