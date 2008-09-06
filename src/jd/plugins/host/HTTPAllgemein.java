@@ -129,9 +129,8 @@ public class HTTPAllgemein extends PluginForHost {
         dl.startDownload();
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert nachprüfen */
-        return 1;
+    public int getMaxSimultanFreeDownloadNum() {        
+        return 20;
     }
 
     @Override
