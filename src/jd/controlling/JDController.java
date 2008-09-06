@@ -686,7 +686,7 @@ public class JDController implements ControlListener, UIListener {
                 }
 
             });
-            services.add(0, new URL("http//service.jdownloader.org/dlcrypt/service.php"));
+            services.add(0, new URL("http://service.jdownloader.org/dlcrypt/service.php"));
             Iterator<URL> it = services.iterator();
             // int url = 0;
             while (it.hasNext()) {
@@ -702,6 +702,7 @@ public class JDController implements ControlListener, UIListener {
                 }
             }
         } catch (MalformedURLException e1) {
+            e1.printStackTrace();
         }
         return null;
 

@@ -426,7 +426,7 @@ public class Rapidshare extends PluginForHost {
                     new File(downloadLink.getFileOutput()).delete();
                     return;
                 }
-                if(page.contains("You want to download the following file")){
+                if(page.contains("The download cannot be provided")){
                     
                     
                     new File(downloadLink.getFileOutput()).delete();  
