@@ -56,7 +56,7 @@ public class Gwarezcc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             URL url = new URL(parameter);
             RequestInfo requestInfo;
@@ -128,6 +128,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     password = password.trim();
                 }
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                url = new URL("http://gwarez.cc/download/dlc/" + downloadid + "/");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", parameter);
                 if (Browser.download(container, dlc_con)) {
