@@ -20,7 +20,6 @@ import java.awt.Component;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -32,7 +31,6 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
@@ -46,13 +44,12 @@ import jd.utils.JDUtilities;
 
 public class ClickPositionDialog extends JDialog implements ActionListener, HyperlinkListener, MouseListener {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 4827346842931L;
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
-
-    public static void main(String[] args) {
-        ClickPositionDialog d = new ClickPositionDialog(new JFrame(), JDUtilities.getResourceFile("captchas\\xup.in\\05.09.2008_19.40.19.39.jpg"), "Imageclick", "klick any item", 20, new Point( -1, -1 ));
-
-    }
 
     private JButton btnBAD;
     private JButton btnCnTh;
