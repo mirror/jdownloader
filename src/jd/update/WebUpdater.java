@@ -43,6 +43,8 @@ import java.util.zip.GZIPInputStream;
 
 import javax.swing.JProgressBar;
 
+import jd.utils.HTMLEntities;
+
 import sun.misc.BASE64Encoder;
 
 /**
@@ -58,34 +60,68 @@ public class WebUpdater implements Serializable {
     public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
 
     public static String htmlDecode(String str) {
-        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) { return null; }
-        String pattern = "\\&\\#x(.*?)\\;";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
+        StringBuffer sb = new StringBuffer();
+        String pattern = "(\\&\\#x[a-f0-9A-F]+\\;?)";
+        Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
+        while (r.find()) {
             if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 16);
-                str = str.replaceFirst("\\&\\#x(.*?)\\;", c + "");
+                char c = (char) Integer.parseInt(r.group(1).replaceAll("\\&\\#x", "").replaceAll("\\;", ""), 16);
+                if (c == '$' || c == '\\') {
+                    r.appendReplacement(sb, "\\" + c);
+                } else {
+                    r.appendReplacement(sb, "" + c);
+                }
             }
         }
-        pattern = "\\&\\#(.*?)\\;";
-        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str); r.find();) {
+        r.appendTail(sb);
+        str = sb.toString();
+
+        sb = new StringBuffer();
+        pattern = "(\\&\\#\\d+\\;?)";
+        r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
+        while (r.find()) {
+
             if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1), 10);
-                str = str.replaceFirst("\\&\\#(.*?)\\;", c + "");
+                char c = (char) Integer.parseInt(r.group(1).replaceAll("\\&\\#", "").replaceAll("\\;", ""), 10);
+                if (c == '$' || c == '\\') {
+                    r.appendReplacement(sb, "\\" + c);
+                } else {
+                    r.appendReplacement(sb, "" + c);
+                }
             }
         }
+        r.appendTail(sb);
+        str = sb.toString();
+
+        sb = new StringBuffer();
+        pattern = "(\\%[a-f0-9A-F]{2})";
+        r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
+        while (r.find()) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1).replaceFirst("\\%", ""), 16);
+                if (c == '$' || c == '\\') {
+                    r.appendReplacement(sb, "\\" + c);
+                } else {
+                    r.appendReplacement(sb, "" + c);
+                }
+            }
+        }
+        r.appendTail(sb);
+        str = sb.toString();
+
         try {
             str = URLDecoder.decode(str, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
         }
         return HTMLEntities.unhtmlentities(str);
     }
-
     private int cid = -1;
 
-    private boolean OSFilter = false;
+    private boolean OSFilter = true;
 
     /**
      * Pfad zur lis.php auf dem updateserver
