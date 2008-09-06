@@ -127,12 +127,14 @@ public class JDController implements ControlListener, UIListener {
                         if (controlListener == null) {
                             controlListener = new ArrayList<ControlListener>();
                         }
-                        synchronized (controlListener) {                            
-                            for (int i = controlListener.size()-1; i >= 0; i--) {
-                                eventStart = System.currentTimeMillis();
-                                currentListener = controlListener.get(i);
-                                currentListener.controlEvent(event);
-                                eventStart = 0;
+                        synchronized (controlListener) {
+                            if (controlListener.size() > 0) {
+                                for (int i = controlListener.size() - 1; i >= 0; i--) {
+                                    eventStart = System.currentTimeMillis();
+                                    currentListener = controlListener.get(i);
+                                    currentListener.controlEvent(event);
+                                    eventStart = 0;
+                                }
                             }
                         }
                         // JDUtilities.getLogger().severe("THREAD2");
@@ -675,7 +677,7 @@ public class JDController implements ControlListener, UIListener {
             // services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
-//            services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
+            // services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
             Collections.sort(services, new Comparator<Object>() {
                 public int compare(Object a, Object b) {
