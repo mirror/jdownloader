@@ -16,6 +16,7 @@
 
 package jd;
 
+import java.awt.Color;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
@@ -236,8 +237,16 @@ public class JDInit {
                 final WebUpdater updater = new WebUpdater(null);
                 updater.setCid(oldCid);
                 logger.finer("Get available files");
-                Vector<Vector<String>> files = updater.getAvailableFiles();
                 // logger.info(files + "");
+                Vector<Vector<String>> files;
+                try {
+                    files = updater.getAvailableFiles();
+                } catch (Exception e) {
+                    progress.setColor(Color.RED);
+                    progress.setStatusText("Update failed");
+                    progress.finalize(15000l);
+                    return;
+                }
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
                 // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(
                 // Configuration.USE_CAPTCHA_EXCHANGE_SERVER,

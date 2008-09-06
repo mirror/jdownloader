@@ -60,7 +60,7 @@ public class WebUpdater implements Serializable {
     public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
 
     public static String htmlDecode(String str) {
-        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) { return null; }
@@ -119,6 +119,7 @@ public class WebUpdater implements Serializable {
         }
         return HTMLEntities.unhtmlentities(str);
     }
+
     private int cid = -1;
 
     private boolean OSFilter = true;
@@ -336,7 +337,7 @@ public class WebUpdater implements Serializable {
      * @return Vector mit allen verfügbaren files
      * @throws UnsupportedEncodingException
      */
-    public Vector<Vector<String>> getAvailableFiles() {
+    public Vector<Vector<String>> getAvailableFiles() throws Exception {
         String source;
         if (progresslist != null) {
             progresslist.setMaximum(100);
@@ -413,7 +414,7 @@ public class WebUpdater implements Serializable {
                         log("OS Filter: " + tmp2);
 
                     }
-                }else{
+                } else {
                     ret.add(entry);
                 }
 
@@ -485,51 +486,46 @@ public class WebUpdater implements Serializable {
      * @param urlStr
      * @return String inhalt von urlStr
      */
-    public String getRequest(URL link) {
-        try {
-            HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
+    public String getRequest(URL link) throws Exception {
+        HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
 
-            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
-                String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
-                String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
+        if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
+            String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
+            String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
 
-                httpConnection.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
+            httpConnection.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
 
-            }
-
-            if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_SOCKS", false)) {
-
-                String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER_SOCKS", "");
-                String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("ROXY_PASS_SOCKS", "");
-
-                httpConnection.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
-
-            }
-
-            httpConnection.setReadTimeout(20000);
-            httpConnection.setReadTimeout(20000);
-            httpConnection.setInstanceFollowRedirects(true);
-            httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-            // Content-Encoding: gzip
-            BufferedReader rd;
-            if (httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
-                rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream())));
-            } else {
-                rd = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
-            }
-            String line;
-            StringBuffer htmlCode = new StringBuffer();
-            while ((line = rd.readLine()) != null) {
-
-                htmlCode.append(line + "\n");
-            }
-            httpConnection.disconnect();
-
-            return htmlCode.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        return null;
+
+        if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_SOCKS", false)) {
+
+            String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER_SOCKS", "");
+            String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("ROXY_PASS_SOCKS", "");
+
+            httpConnection.setRequestProperty("Proxy-Authorization", "Basic " + Base64Encode(user + ":" + pass));
+
+        }
+
+        httpConnection.setReadTimeout(20000);
+        httpConnection.setReadTimeout(20000);
+        httpConnection.setInstanceFollowRedirects(true);
+        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        // Content-Encoding: gzip
+        BufferedReader rd;
+        if (httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
+            rd = new BufferedReader(new InputStreamReader(new GZIPInputStream(httpConnection.getInputStream())));
+        } else {
+            rd = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
+        }
+        String line;
+        StringBuffer htmlCode = new StringBuffer();
+        while ((line = rd.readLine()) != null) {
+
+            htmlCode.append(line + "\n");
+        }
+        httpConnection.disconnect();
+
+        return htmlCode.toString();
     }
 
     /**
@@ -552,8 +548,9 @@ public class WebUpdater implements Serializable {
      * Gibt die Anzahl der aktualisierbaren files zurück.
      * 
      * @return Anzahld er neuen Datein
+     * @throws Exception
      */
-    public int getUpdateNum() {
+    public int getUpdateNum() throws Exception {
         Vector<Vector<String>> files = getAvailableFiles();
 
         if (files == null) { return 0; }
@@ -565,7 +562,6 @@ public class WebUpdater implements Serializable {
     }
 
     public void log(String buf) {
-        buf = buf.replaceAll("http\\:\\/\\/.*\\.googlecode\\.com\\/svn\\/trunk", "...");
         System.out.println(buf);
         Date dt = new Date();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
@@ -576,8 +572,10 @@ public class WebUpdater implements Serializable {
 
     /**
      * Startet das Updaten
+     * 
+     * @throws Exception
      */
-    public void run() {
+    public void run() throws Exception {
 
         Vector<Vector<String>> files = getAvailableFiles();
         if (files != null) {

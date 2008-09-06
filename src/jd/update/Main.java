@@ -366,8 +366,18 @@ public class Main {
         updater.setListProgress(progresslist);
         updater.setDownloadProgress(progressload);
         Main.trace("Start Webupdate");
-
-        Vector<Vector<String>> files = updater.getAvailableFiles();
+        Vector<Vector<String>> files;
+        try {
+            files = updater.getAvailableFiles();
+        } catch (Exception e) {
+            Main.trace("Update failed");
+            Main.log(log, "Update failed");
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e1) {
+            }
+            files = new Vector<Vector<String>>();
+        }
 
         // boolean success = false;
         if (files != null) {
