@@ -179,6 +179,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         cmboInput = new JComboBox(files);
         cmboInput.setEditable(editable);
         cmboInput.addActionListener(this);
+        cmboInput.setSelectedIndex(0);
 
         btnBrowse = new JButton(JDLocale.L("gui.btn_select", "auswählen"));
         btnBrowse.addActionListener(this);
@@ -235,6 +236,9 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      */
     public void setFileFilter(FileFilter fileFilter) {
         this.fileFilter = fileFilter;
+        for (int i = files.size() - 1; i >= 0; --i) {
+            if (!fileFilter.accept(new File(files.get(i)))) files.remove(i);
+        }
     }
 
     private void setFiles(Vector<String> files) {
@@ -250,6 +254,15 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      */
     public void setFileSelectionMode(int fileSelectionMode) {
         this.fileSelectionMode = fileSelectionMode;
+        if (fileSelectionMode == JFileChooser.DIRECTORIES_ONLY) {
+            for (int i = files.size() - 1; i >= 0; --i) {
+                if (!new File(files.get(i)).isDirectory()) files.remove(i);
+            }
+        } else if (fileSelectionMode == JFileChooser.FILES_ONLY) {
+            for (int i = files.size() - 1; i >= 0; --i) {
+                if (!new File(files.get(i)).isFile()) files.remove(i);
+            }
+        }
     }
 
     public void setText(String text) {

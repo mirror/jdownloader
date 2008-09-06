@@ -31,7 +31,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -84,8 +83,6 @@ import jd.utils.JDUtilities;
 public class LangFileEditor extends PluginOptional implements KeyListener, MouseListener {
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
-    private static final String PROPERTY_FOLDER = "PROPERTY_FOLDER";
-    private static final String PROPERTY_FILE = "PROPERTY_FILE";
     private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
     private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
     private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
@@ -98,7 +95,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private ComboBrowseFile cmboFolder, cmboFile;
     private JLabel lblEntriesCount;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
-    private JMenuItem mnuDownloadSource, mnuReload, mnuSave, mnuSaveAs, mnuClose;
+    private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
@@ -143,16 +140,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         top1.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder: ")), BorderLayout.LINE_START);
         top1.add(cmboFolder = new ComboBrowseFile("LANGFILEEDITOR_FOLDER"));
         cmboFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        sourceFolder = (File) subConfig.getProperty(PROPERTY_FOLDER);
-        if (sourceFolder != null) cmboFolder.setText(sourceFolder.getAbsolutePath());
         cmboFolder.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFolder.addActionListener(this);
 
         top2.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File: ")), BorderLayout.LINE_START);
         top2.add(cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE"));
+        cmboFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
         cmboFile.setFileFilter(new LngFileFilter());
-        languageFile = (File) subConfig.getProperty(PROPERTY_FILE);
-        if (languageFile != null) cmboFile.setText(languageFile.getAbsolutePath());
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 
@@ -167,18 +161,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
 
-        if (sourceFolder != null || languageFile != null) initList();
-
-    }
-
-    private void initList() {
-
-        this.initLocaleData();
-        mnuEntries.setEnabled(true);
-        mnuKey.setEnabled(true);
-        mnuReload.setEnabled(true);
-        mnuSave.setEnabled(true);
-        mnuSaveAs.setEnabled(true);
+        sourceFolder = cmboFolder.getCurrentPath();
+        languageFile = cmboFile.getCurrentPath();
+        if (sourceFolder != null || languageFile != null) initLocaleData();
 
     }
 
@@ -209,21 +194,24 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         // File Menü
         mnuFile = new JMenu(JDLocale.L("plugins.optional.langfileeditor.file", "File"));
 
-        mnuFile.add(mnuReload = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.reload", "Reload")));
+        mnuFile.add(mnuNew = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.new", "New")));
         mnuFile.addSeparator();
         mnuFile.add(mnuSave = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.save", "Save")));
         mnuFile.add(mnuSaveAs = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.saveAs", "Save As")));
+        mnuFile.addSeparator();
+        mnuFile.add(mnuReload = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.reload", "Reload")));
         mnuFile.addSeparator();
         mnuFile.add(mnuDownloadSource = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.download", "Download SourceCode")));
         mnuFile.addSeparator();
         mnuFile.add(mnuClose = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close", "Close")));
 
-        mnuReload.addActionListener(this);
-        mnuReload.setEnabled(false);
+        mnuNew.addActionListener(this);
         mnuSave.addActionListener(this);
         mnuSave.setEnabled(false);
         mnuSaveAs.addActionListener(this);
         mnuSaveAs.setEnabled(false);
+        mnuReload.addActionListener(this);
+        mnuReload.setEnabled(false);
         mnuDownloadSource.addActionListener(this);
         mnuClose.addActionListener(this);
 
@@ -330,10 +318,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             File sourceFolder = cmboFolder.getCurrentPath();
             if (sourceFolder != this.sourceFolder && sourceFolder != null) {
                 this.sourceFolder = sourceFolder;
-                initList();
-
-                subConfig.setProperty(PROPERTY_FOLDER, sourceFolder);
-                subConfig.save();
+                initLocaleData();
             }
 
         } else if (e.getSource() == cmboFile) {
@@ -341,10 +326,19 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             File languageFile = cmboFile.getCurrentPath();
             if (languageFile != this.languageFile && languageFile != null) {
                 this.languageFile = languageFile;
-                initList();
+                initLocaleData();
+            }
 
-                subConfig.setProperty(PROPERTY_FILE, languageFile);
-                subConfig.save();
+        } else if (e.getSource() == mnuNew) {
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new LngFileFilter());
+            chooser.setCurrentDirectory(languageFile.getParentFile());
+
+            if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                languageFile = chooser.getSelectedFile();
+                if (!languageFile.getAbsolutePath().endsWith(".lng")) languageFile = new File(languageFile.getAbsolutePath() + ".lng");
+                cmboFile.setCurrentPath(languageFile);
             }
 
         } else if (e.getSource() == mnuSave) {
@@ -354,12 +348,14 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         } else if (e.getSource() == mnuSaveAs) {
 
             JFileChooser chooser = new JFileChooser();
-            chooser.setDialogType(JFileChooser.SAVE_DIALOG);
-            chooser.setDialogTitle(JDLocale.L("plugins.optional.langfileeditor.saveAs", "Save As"));
             chooser.setFileFilter(new LngFileFilter());
             chooser.setCurrentDirectory(languageFile.getParentFile());
 
-            if (chooser.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) saveLanguageFile(chooser.getSelectedFile());
+            if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+                languageFile = chooser.getSelectedFile();
+                if (!languageFile.getAbsolutePath().endsWith(".lng")) languageFile = new File(languageFile.getAbsolutePath() + ".lng");
+                saveLanguageFile(languageFile);
+            }
 
         } else if (e.getSource() == mnuEdit || e.getSource() == mnuContextEdit) {
 
@@ -398,7 +394,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuReload) {
 
-            initList();
+            initLocaleData();
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
 
@@ -588,7 +584,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         }
 
         try {
-            Writer out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
             out.write(sb.toString());
             out.close();
         } catch (Exception e) {
@@ -596,6 +592,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             return;
         }
 
+        if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
         JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -642,7 +639,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
 
         setInfoLabels();
-
+        mnuEntries.setEnabled(true);
+        mnuKey.setEnabled(true);
+        mnuReload.setEnabled(true);
+        mnuSave.setEnabled(true);
+        mnuSaveAs.setEnabled(true);
     }
 
     private String getValue(Vector<String[]> vector, String key) {
