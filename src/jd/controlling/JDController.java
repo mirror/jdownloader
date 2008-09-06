@@ -675,7 +675,7 @@ public class JDController implements ControlListener, UIListener {
             // services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
-            services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
+//            services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
             Collections.sort(services, new Comparator<Object>() {
                 public int compare(Object a, Object b) {
@@ -684,7 +684,7 @@ public class JDController implements ControlListener, UIListener {
                 }
 
             });
-            services.add(0, new URL("http://dlcrypt.ath.cx/service.php"));
+            services.add(0, new URL("http//service.jdownloader.org/dlcrypt/service.php"));
             Iterator<URL> it = services.iterator();
             // int url = 0;
             while (it.hasNext()) {

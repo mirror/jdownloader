@@ -124,7 +124,7 @@ public class WebUpdater implements Serializable {
         if (path != null) {
             setListPath(path);
         } else {
-            setListPath("http://jdupdatescript.ath.cx");
+            setListPath("http://service.jdownloader.org/update/jd");
         }
 
     }

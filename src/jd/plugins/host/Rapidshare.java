@@ -426,6 +426,12 @@ public class Rapidshare extends PluginForHost {
                     new File(downloadLink.getFileOutput()).delete();
                     return;
                 }
+                if(page.contains("You want to download the following file")){
+                    
+                    
+                    new File(downloadLink.getFileOutput()).delete();  
+                    throw new PluginException(LinkStatus.ERROR_FATAL,"Local IO Error (Javascripterror)");
+                }
             }
 
         }

@@ -53,6 +53,7 @@ public class LinksaveIn extends PluginForDecrypt {
                 url = new URL(parameter);
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
+                //Api ! nicht in org tauschen!
                 dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
                 if (Browser.download(container, dlc_con)) {
                     decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));

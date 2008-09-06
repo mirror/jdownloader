@@ -136,7 +136,7 @@ public class JDAboutDialog {
             public void run() {
                 try {
                     Browser br = new Browser();
-                    final String txt = br.getPage(JDLocale.L("gui.dialog.about.sourceurl", "http://jdservice.ath.cx/html/about_en.html"));
+                    final String txt = br.getPage(JDLocale.L("gui.dialog.about.sourceurl", "http://service.jdownloader.org/html/about_en.html"));
                     // JDUtilities.getGUI().showHTMLDialog(JDLocale.L(
                     // "gui.dialog.about.title","About JDownloader"), txt);
                     SwingUtilities.invokeLater(new Runnable() {
