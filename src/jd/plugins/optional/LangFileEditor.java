@@ -21,9 +21,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
-import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -604,16 +601,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     private void initLocaleData() {
 
-        String value;
-        String[] temp;
         Vector<String[]> dupeHelp = new Vector<String[]>();
         data.clear();
         dupes.clear();
         lngKey = null;
 
-        Vector<String[]> sourceEntries = (sourceFolder == null) ? new Vector<String[]>() : getSourceEntries(sourceFolder);
-        Vector<String[]> fileEntries = (languageFile == null) ? new Vector<String[]>() : getLanguageFileEntries(languageFile);
+        Vector<String[]> sourceEntries = (sourceFolder == null) ? new Vector<String[]>() : getSourceEntries();
+        Vector<String[]> fileEntries = (languageFile == null) ? new Vector<String[]>() : getLanguageFileEntries();
 
+        String value;
+        String[] temp;
         for (String[] entry : sourceEntries) {
 
             temp = new String[] { entry[0], entry[1], getValue(fileEntries, entry[0]) };
@@ -621,9 +618,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             data.add(temp);
             if (!temp[2].equals("")) {
+
                 value = getValue(dupeHelp, temp[2]);
                 if (value != null) dupes.add(new String[] { temp[2], temp[0], value });
                 dupeHelp.add(new String[] { temp[2], temp[0] });
+
             }
 
         }
@@ -641,7 +640,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         Collections.sort(data, new StringArrayComparator());
         tableModel.fireTableRowsInserted(0, data.size() - 1);
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
-        
+
         setInfoLabels();
 
     }
@@ -653,8 +652,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         for (String[] entry : vector) {
 
             if (entry[0].equals(key)) {
+
                 result = entry[1];
                 break;
+
             }
 
         }
@@ -663,12 +664,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    private Vector<String[]> getLanguageFileEntries(File file) {
+    private Vector<String[]> getLanguageFileEntries() {
 
         Vector<String[]> entries = new Vector<String[]>();
         Vector<String> keys = new Vector<String>();
 
-        String[][] matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n")).getMatches();
+        String[][] matches = new Regex(JDUtilities.getLocalFile(languageFile), Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n")).getMatches();
 
         for (String[] match : matches) {
 
@@ -687,26 +688,26 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    private Vector<String[]> getSourceEntries(File dir) {
+    private Vector<String[]> getSourceEntries() {
 
         Vector<String[]> entries = new Vector<String[]>();
         Vector<String> keys = new Vector<String>();
 
-        for (String file : getSourceFiles(dir)) {
+        String[][] matches;
+        for (File file : getSourceFiles(sourceFolder)) {
 
-            String[][] matches = new Regex(file, Pattern.compile("JDLocale[\\s]*?\\.L[F]?[\\s]*?\\([\\s]*?\"(.*?)\"[\\s]*?,[\\s]*?\"(.*?)\"[\\s]*?[,\\)]")).getMatches();
+            matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("JDLocale[\\s]*?\\.L[F]?[\\s]*?\\([\\s]*?\"(.*?)\"[\\s]*?,[\\s]*?\"(.*?)\"[\\s]*?[,\\)]")).getMatches();
 
             for (String[] match : matches) {
 
                 match[0] = match[0].trim();
-                // match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " "
-                // : "");
                 if (!keys.contains(match[0])) {
 
                     keys.add(Encoding.UTF8Decode(match[0]));
                     entries.add(new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) });
 
                 }
+
             }
         }
 
@@ -714,9 +715,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    private Vector<String> getSourceFiles(File directory) {
+    private Vector<File> getSourceFiles(File directory) {
 
-        Vector<String> fileContents = new Vector<String>();
+        Vector<File> fileContents = new Vector<File>();
 
         for (File entry : directory.listFiles()) {
 
@@ -727,7 +728,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             } else if (entry.isFile()) {
 
                 if (JDUtilities.getFileExtension(entry).equals("java")) {
-                    fileContents.add(JDUtilities.getLocalFile(entry));
+                    fileContents.add(entry);
                 }
 
             }
@@ -866,18 +867,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         public DupeDialog(JFrame owner, Vector<String[]> dupes) {
 
-            super();
-
-            JPanel panel = new JPanel();
-            setContentPane(panel);
+            super(owner);
 
             setModal(true);
-            setLayout(new GridBagLayout());
+            setLayout(new BorderLayout());
             setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries"));
 
-            MyDupeTableModel tableModel = new MyDupeTableModel();
-            JTable table = new JTable(tableModel);
-            tableModel.setData(dupes);
+            JTable table = new JTable(new MyDupeTableModel(dupes));
             JScrollPane scroll = new JScrollPane(table);
             scroll.setPreferredSize(new Dimension(900, 350));
 
@@ -885,11 +881,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             btnClose.addActionListener(this);
             getRootPane().setDefaultButton(btnClose);
 
-            JDUtilities.addToGridBag(this, scroll, 1, 1, 1, 1, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-            JDUtilities.addToGridBag(this, btnClose, 1, 2, 1, 1, 1, 1, new Insets(5, 5, 5, 5), GridBagConstraints.NONE, GridBagConstraints.CENTER);
+            JPanel buttons = new JPanel(new FlowLayout());
+            buttons.add(btnClose);
 
-            int n = 10;
-            panel.setBorder(new EmptyBorder(n, n, n, n));
+            add(scroll, BorderLayout.CENTER);
+            add(buttons, BorderLayout.PAGE_END);
 
             pack();
             setLocation(JDUtilities.getCenterOfComponent(owner, this));
@@ -908,6 +904,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             private static final long serialVersionUID = -5434313385327397539L;
             private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.firstKey", "First Key"), JDLocale.L("plugins.optional.langfileeditor.secondKey", "Second Key") };
             private Vector<String[]> tableData = new Vector<String[]>();
+
+            public MyDupeTableModel(Vector<String[]> data) {
+                tableData = data;
+                this.fireTableRowsInserted(0, tableData.size() - 1);
+            }
 
             public int getColumnCount() {
                 return columnNames.length;
@@ -933,11 +934,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 return false;
             }
 
-            public void setData(Vector<String[]> newData) {
-                tableData = newData;
-                this.fireTableRowsInserted(0, tableData.size() - 1);
-            }
-
         }
 
     }
@@ -949,7 +945,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         private JButton btnOK = new JButton(JDLocale.L("plugins.optional.langfileeditor.ok", "OK"));
         private JButton btnCancel = new JButton(JDLocale.L("plugins.optional.langfileeditor.cancel", "Cancel"));
         private JButton btnAdopt = new JButton(JDLocale.L("plugins.optional.langfileeditor.adoptDefaultValue", "Adopt Default Value"));
-        private JFrame owner;
+
         private JTextArea taSourceValue = new JTextArea(5, 20);
         private JTextArea taFileValue = new JTextArea(5, 20);
 
@@ -958,41 +954,34 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         public EditDialog(JFrame owner, String[] entry) {
 
             super(owner);
-            this.owner = owner;
 
             setModal(true);
             setLayout(new BorderLayout(5, 5));
             setTitle(JDLocale.L("plugins.optional.langfileeditor.editValue", "Edit Value"));
             getRootPane().setDefaultButton(btnOK);
 
-            JLabel lblKey = new JLabel("");
-
             btnOK.addActionListener(this);
             btnCancel.addActionListener(this);
             btnAdopt.addActionListener(this);
 
-            lblKey.setText(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ": " + entry[0]);
             taSourceValue.setText(entry[1]);
             taFileValue.setText(entry[2]);
             taSourceValue.setEditable(false);
 
-            JPanel main = new JPanel(new BorderLayout(5, 5));
-            main.setBorder(new EmptyBorder(10, 10, 10, 10));
             JPanel fields = new JPanel(new BorderLayout(5, 5));
-            JPanel buttons1 = new JPanel(new BorderLayout(5, 5));
-            JPanel buttons2 = new JPanel(new FlowLayout());
-
-            main.add(lblKey, BorderLayout.PAGE_START);
-            main.add(fields, BorderLayout.CENTER);
-            main.add(buttons1, BorderLayout.PAGE_END);
-
             fields.add(new JScrollPane(taSourceValue), BorderLayout.PAGE_START);
             fields.add(new JScrollPane(taFileValue), BorderLayout.PAGE_END);
 
-            buttons1.add(buttons2, BorderLayout.LINE_END);
-            buttons2.add(btnAdopt);
-            buttons2.add(btnOK);
-            buttons2.add(btnCancel);
+            JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+            buttons.add(btnAdopt);
+            buttons.add(btnOK);
+            buttons.add(btnCancel);
+
+            JPanel main = new JPanel(new BorderLayout(5, 5));
+            main.setBorder(new EmptyBorder(5, 5, 5, 5));
+            main.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ": " + entry[0]), BorderLayout.PAGE_START);
+            main.add(fields, BorderLayout.CENTER);
+            main.add(buttons, BorderLayout.PAGE_END);
 
             setContentPane(main);
             pack();
@@ -1007,13 +996,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
                 value = taFileValue.getText();
                 dispose();
-                owner.setVisible(true);
 
             } else if (e.getSource() == btnCancel) {
 
                 value = null;
                 dispose();
-                owner.setVisible(true);
 
             } else if (e.getSource() == btnAdopt) {
 
@@ -1031,7 +1018,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         private JButton btnOK = new JButton(JDLocale.L("plugins.optional.langfileeditor.ok", "OK"));
         private JButton btnCancel = new JButton(JDLocale.L("plugins.optional.langfileeditor.cancel", "Cancel"));
-        private JFrame owner;
+
         private JTextField tfKey = new JTextField(20);
         private JTextArea taValue = new JTextArea(5, 20);
 
@@ -1041,7 +1028,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         public AddDialog(JFrame owner) {
 
             super(owner);
-            this.owner = owner;
 
             setModal(true);
             setLayout(new BorderLayout(5, 5));
@@ -1051,24 +1037,19 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             btnOK.addActionListener(this);
             btnCancel.addActionListener(this);
 
-            JLabel lblKey = new JLabel(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ":");
-
-            JPanel main = new JPanel(new BorderLayout(5, 5));
-            main.setBorder(new EmptyBorder(10, 10, 10, 10));
             JPanel keyPanel = new JPanel(new BorderLayout(5, 5));
-            JPanel buttons1 = new JPanel(new BorderLayout(5, 5));
-            JPanel buttons2 = new JPanel(new FlowLayout());
-
-            main.add(keyPanel, BorderLayout.PAGE_START);
-            main.add(new JScrollPane(taValue), BorderLayout.CENTER);
-            main.add(buttons1, BorderLayout.PAGE_END);
-
-            keyPanel.add(lblKey, BorderLayout.LINE_START);
+            keyPanel.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ":"), BorderLayout.LINE_START);
             keyPanel.add(tfKey, BorderLayout.CENTER);
 
-            buttons1.add(buttons2, BorderLayout.LINE_END);
-            buttons2.add(btnOK);
-            buttons2.add(btnCancel);
+            JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+            buttons.add(btnOK);
+            buttons.add(btnCancel);
+
+            JPanel main = new JPanel(new BorderLayout(5, 5));
+            main.setBorder(new EmptyBorder(5, 5, 5, 5));
+            main.add(keyPanel, BorderLayout.PAGE_START);
+            main.add(new JScrollPane(taValue), BorderLayout.CENTER);
+            main.add(buttons, BorderLayout.PAGE_END);
 
             setContentPane(main);
             pack();
@@ -1083,16 +1064,14 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
                 value = taValue.getText().trim();
                 key = tfKey.getText().trim();
-                dispose();
-                owner.setVisible(true);
 
             } else if (e.getSource() == btnCancel) {
 
                 value = null;
-                dispose();
-                owner.setVisible(true);
 
             }
+
+            dispose();
 
         }
 

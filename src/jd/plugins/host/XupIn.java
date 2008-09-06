@@ -36,9 +36,9 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class XupIn extends PluginForHost {
-//http://xup.raidrush.ws/.*?/
+    // http://xup.raidrush.ws/.*?/
     private static final String AGB_LINK = "http://www.xup.in/terms/";
-    private static final String CODER = "jD-Team";
+    private static final String CODER = "JD-Team";
     private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
 
     private static final String DOWNLOAD_SIZE = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
@@ -155,7 +155,7 @@ public class XupIn extends PluginForHost {
             if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0) != null) {
                 downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0));
             }
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);            
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
 
         }
@@ -176,7 +176,7 @@ public class XupIn extends PluginForHost {
 
         } catch (Exception e) {
 
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);            
+            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
 
         }
@@ -186,7 +186,7 @@ public class XupIn extends PluginForHost {
         if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
 
             logger.severe("File already is in progress: " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);            
+            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
             return;
 
         }
@@ -194,7 +194,7 @@ public class XupIn extends PluginForHost {
         if (new File(downloadLink.getFileOutput()).exists()) {
 
             logger.severe("File already exists: " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);            
+            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
             return;
 
         }
@@ -203,20 +203,17 @@ public class XupIn extends PluginForHost {
         vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
         captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
 
-        
-
         File file = this.getLocalCaptchaFile(this);
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
 
         if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
 
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);            
+            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
 
         }
-        
 
         String vchep = this.getCaptchaCode(file, downloadLink);
 
@@ -231,7 +228,7 @@ public class XupIn extends PluginForHost {
         if (urlConnection.getContentType().contains("text/html")) {
 
             logger.severe("Captcha code or password wrong");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);            
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
 
         }
@@ -246,7 +243,7 @@ public class XupIn extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
 
