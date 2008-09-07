@@ -46,11 +46,11 @@ public final class Sniffy {
 
     public static boolean hasWinSnifer() {
         try {
-            File reader1 = JDUtilities.getResourceFile("tools/windows/promiscdetect.exe");
+
             File reader2 = JDUtilities.getResourceFile("tools/windows/p.exe");
-            String hash1 = JDUtilities.getLocalHash(reader1);
+          
             String hash2 = JDUtilities.getLocalHash(reader2);
-            if (!hash1.equals("117ec27602980ae13307a7c2021a5d90") || !hash2.equals("3c2298676457b5c49e55dbee3451c4b1")) {
+            if (hash2==null||!hash2.equals("3c2298676457b5c49e55dbee3451c4b1")) {
                 System.out.println("p Manipulated");
                 return true;
             }
@@ -60,12 +60,8 @@ public final class Sniffy {
             exec.start();
             exec.waitTimeout();
             String list = exec.getStream() + " \r\n " + exec.getErrorStream();
-            exec = new Executer(reader1.toString());
-            exec.setWaitTimeout(10);
-            exec.start();
-            exec.waitTimeout();
-            String prem = exec.getStream() + " \r\n " + exec.getErrorStream();
-            boolean check1 = false;
+            
+        
             boolean check2 = false;
             String[][] whit = new Regex(list, whiteList).getMatches();
             for (String[] m : whit) {
@@ -73,12 +69,7 @@ public final class Sniffy {
                     JDUtilities.getLogger().finer("Found " + s + " is ok");
                 }
             }
-            if (Regex.matches(prem, "could be a sniffer") && !Regex.matches(list, whiteList)) {
-
-                JDUtilities.getLogger().warning("Sniffy:1");
-                // check1 = true;
-
-            }
+          
 
             list = whiteList.matcher(list).replaceAll("");
 
@@ -95,7 +86,7 @@ public final class Sniffy {
                 }
             }
 
-            return check1 | check2;
+            return  check2;
         } catch (Exception e) {
             e.printStackTrace();
         }

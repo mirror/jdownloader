@@ -51,8 +51,6 @@ import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.SnifferException;
-import jd.utils.Sniffy;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -418,6 +416,11 @@ public class Rapidshare extends PluginForHost {
             if (new File(downloadLink.getFileOutput()).length() < 8000) {
                 String page = JDUtilities.getLocalFile(new File(downloadLink.getFileOutput()));
                 error = findError(page + "");
+                if (page.contains("The download cannot be provided")) {
+
+                    new File(downloadLink.getFileOutput()).delete();
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Local IO Error (Javascripterror)");
+                }
                 if (Regex.matches(page, PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
                     linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                     downloadLink.getLinkStatus().setStatusText("Download error(>log)");
@@ -426,12 +429,7 @@ public class Rapidshare extends PluginForHost {
                     new File(downloadLink.getFileOutput()).delete();
                     return;
                 }
-                if(page.contains("The download cannot be provided")){
-                    
-                    
-                    new File(downloadLink.getFileOutput()).delete();  
-                    throw new PluginException(LinkStatus.ERROR_FATAL,"Local IO Error (Javascripterror)");
-                }
+
             }
 
         }
@@ -452,9 +450,9 @@ public class Rapidshare extends PluginForHost {
             return;
         }
 
-//        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-//            if (Sniffy.hasSniffer()) throw new SnifferException();
-//        }
+        // if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+        // if (Sniffy.hasSniffer()) throw new SnifferException();
+        // }
         Rapidshare.correctURL(downloadLink);
         // Sagt der Browserinstanz, dass cookies nur für diese instanz verwaltet
         // werden, und nicht Global für ganz JD

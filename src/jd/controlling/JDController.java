@@ -442,7 +442,7 @@ public class JDController implements ControlListener, UIListener {
 //
 //        logger.finer("Call Redirect: " + ri.getLocation());
 
-        RequestInfo ri = HTTP.postRequest(service, null, null, null, "jd=1&srcType=plain&data=" + key, true, 2000, 2000);
+        RequestInfo ri = HTTP.postRequest(service, null, null, null, "jd=1&srcType=plain&data=" + key, true, 12000, 12000);
 
         logger.info("Call re: " + ri.getHtmlCode());
         if (!ri.isOK() || !ri.containsHTML("<rc>")) {
@@ -659,7 +659,7 @@ public class JDController implements ControlListener, UIListener {
 
     public String encryptDLC(String xml) {
         // if(true)return xml;
-        String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
+        String[] encrypt = JDUtilities.encrypt(xml, "DLCrypt");
 
         // logger.info(encrypt[1] + " - ");
         if (encrypt == null) {
@@ -1781,13 +1781,13 @@ public class JDController implements ControlListener, UIListener {
 
     public void saveDLC(File file) {
 
-        String xml = JDUtilities.createContainerString(getDownloadLinks(), "DLC Parser");
-        // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
+        String xml = JDUtilities.createContainerString(getDownloadLinks(), "DLCrypt");
+        // String[] encrypt = JDUtilities.encrypt(xml, "DLCrypt");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
 
             JDUtilities.writeLocalFile(file, cipher);
-            SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
+            SubConfiguration cfg = JDUtilities.getSubConfig("DLCrypt");
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
 
             {
@@ -1806,11 +1806,11 @@ public class JDController implements ControlListener, UIListener {
 
     public void saveDLC(File file, Vector<DownloadLink> links) {
 
-        String xml = JDUtilities.createContainerString(links, "DLC Parser");
-        // String[] encrypt = JDUtilities.encrypt(xml, "DLC Parser");
+        String xml = JDUtilities.createContainerString(links, "DLCrypt");
+        // String[] encrypt = JDUtilities.encrypt(xml, "DLCrypt");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
-            SubConfiguration cfg = JDUtilities.getSubConfig("DLC Parser");
+            SubConfiguration cfg = JDUtilities.getSubConfig("DLCrypt");
             JDUtilities.writeLocalFile(file, cipher);
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
             // Nur Falls Die Meldung nicht deaktiviert wurde

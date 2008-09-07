@@ -1,260 +1,269 @@
 <project default="standardBuild" basedir=".">
-    <property environment="env"/>
-    <property name="src" value="src" />
-    <property name="cls" value="bin" />
-    <property name="dist" value="dist" />
-    <property name="res" value="ressourcen" />
+	<property environment="env" />
+	<property name="src" value="src" />
+	<property name="cls" value="bin" />
+	<property name="dist" value="dist" />
+	<property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jDownloader.keystore" />
 	<property name="class-path" value="libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.jar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/servlet-api-2.5-6.1.8.jar libs/jetty-6.1.8.jar libs/jetty-util-6.1.8.jar libs/jl1.0.jar libs/savemytube.jar" />
-    <target name="compile">
-        <javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
-    </target>
+	<target name="compile">
+		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
+	</target>
 
-    <target name="jar">
-        <!-- jDownloader -->
-        <manifest file="Manifest.MF">
-            <attribute name="Created-By" value="coalado" />
-            <attribute name="Main-Class" value="jd.Main" />
-			<attribute name="Class-Path" value="${class-path}" />		
-        </manifest>
-        <jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
-            <fileset dir="${cls}">
-                <include name="**/*.class" />                
-                <exclude name="jd/plugins/decrypt/**" />
-                <exclude name="jd/plugins/host/**" />
-             
-                <exclude name="jd/plugins/optional/**" />
-            </fileset>
-            <fileset dir="${res}">                
-                <include name="*.properties" />
-                <exclude name="jd/captcha/methods" />
-            </fileset>
-        </jar>
-    	<delete file="Manifest.MF" failonerror="false" />
-        <!-- Plugins -->
-        <manifest file="Manifest.MF">
-              <attribute name="Created-By" value="coalado" />           
-  			<attribute name="Class-Path" value="${class-path}" />		
-          </manifest>
-        <jar jarfile="${dist}/JDownloaderPlugins.jar" manifest="Manifest.MF">
-            <fileset dir="${cls}">
-                <include name="jd/plugins/decrypt/**" />
-                <include name="jd/plugins/host/**" />
-            </fileset>
-            <fileset dir="${res}">
-                <include name="META-INF/services/*" />
-                <exclude name="META-INF/services/jd.plugins.PluginForContainer" />
-                <exclude name="META-INF/services/jd.plugins.PluginOptional" />
-            </fileset>
-        </jar>
+	<target name="jar">
+		<!-- jDownloader -->
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="coalado" />
+			<attribute name="Main-Class" value="jd.Main" />
+			<attribute name="Class-Path" value="${class-path}" />
+		</manifest>
+		<jar jarfile="${dist}/JDownloader.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="**/*.class" />
+				<exclude name="jd/plugins/decrypt/**" />
+				<exclude name="jd/plugins/host/**" />
+
+				<exclude name="jd/plugins/optional/**" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="*.properties" />
+				<exclude name="jd/captcha/methods" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+		<!-- Plugins -->
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="coalado" />
+			<attribute name="Class-Path" value="${class-path}" />
+		</manifest>
+		<jar jarfile="${dist}/JDownloaderPlugins.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/decrypt/**" />
+				<include name="jd/plugins/host/**" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/*" />
+				<exclude name="META-INF/services/jd.plugins.PluginForContainer" />
+				<exclude name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
 	</target>
 	<target name="jarWebupdater">
-		<!--Webupdater-->	
+		<!--Webupdater-->
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Main" />
-	    </manifest>
+		</manifest>
 		<jar jarfile="${dist}/webupdater.jar" manifest="Manifest.MF">
-		    <fileset dir="${cls}">
-		        <include name="jd/update/*.class" />    
-				<include name="jd/utils/HTMLEntities.class" /> 				
-		    </fileset>       
+			<fileset dir="${cls}">
+				<include name="jd/update/*.class" />
+				<include name="jd/utils/HTMLEntities.class" />
+			</fileset>
 		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
 	</target>
-		
-	<target name="jarOptionals">	
-		<!-- Optional Plugins -->	
+
+	<target name="jarOptionals">
+		<!-- Optional Plugins -->
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="coalado" />
 			<attribute name="Main-Class" value="jd.update.Main" />
-		
-	    </manifest>
-        <jar jarfile="${dist}/plugins/JDLightTray.jar" manifest="Manifest.MF">
-            <fileset dir="${cls}">
-                <include name="jd/plugins/optional/JDLightTray*" />    
-            	<include name="jd/plugins/optional/TrayIconPopup*" />   
-            	
-            </fileset>
-			     <fileset dir="${res}">
-                <include name="META-INF/services/jd.plugins.PluginOptional" />
-            </fileset>
-        </jar>
+
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDLightTray.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDLightTray*" />
+				<include name="jd/plugins/optional/TrayIconPopup*" />
+
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
 		<delete file="Manifest.MF" failonerror="false" />
-		
+
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="Botzi" />
 			<attribute name="Main-Class" value="jd.update.Main" />
-	    </manifest>
-        <jar jarfile="${dist}/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
-            <fileset dir="${cls}">
-                <include name="jd/plugins/optional/JDTrayIcon*" />                
-              </fileset>
-			     <fileset dir="${res}">
-                <include name="META-INF/services/jd.plugins.PluginOptional" />
-            </fileset>
-        </jar>
-		<delete file="Manifest.MF" failonerror="false" />	
-		
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDTrayIcon*" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="Tudels" />
 			<attribute name="Main-Class" value="jd.update.Main" />
-	    </manifest>
-        <jar jarfile="${dist}/plugins/schedule.jar" manifest="Manifest.MF">
-            <fileset dir="${cls}">
-                <include name="jd/plugins/optional/schedule/**" />                
-              </fileset>
-			     <fileset dir="${res}">
-                <include name="META-INF/services/jd.plugins.PluginOptional" />
-            </fileset>
-        </jar>
-		<delete file="Manifest.MF" failonerror="false" />			
-			<manifest file="Manifest.MF">
-				<attribute name="Created-By" value="jiaz" />
-				<attribute name="Main-Class" value="jd.update.Main" />
-		    </manifest>
-	        <jar jarfile="${dist}/plugins/JDWebinterface.jar" manifest="Manifest.MF">
-	            <fileset dir="${cls}">
-	                <include name="jd/plugins/optional/webinterface/**" />        
-	            </fileset>
-				     <fileset dir="${res}">
-	                <include name="META-INF/services/jd.plugins.PluginOptional" />
-	            </fileset>
-	        </jar>
-			<delete file="Manifest.MF" failonerror="false" />
-		
-		
+		</manifest>
+		<jar jarfile="${dist}/plugins/schedule.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/schedule/**" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
 		<manifest file="Manifest.MF">
-						<attribute name="Created-By" value="JD-Team" />
-						<attribute name="Main-Class" value="jd.update.Main" />
-				    </manifest>
-			        <jar jarfile="${dist}/plugins/JDChat.jar" manifest="Manifest.MF">
-			            <fileset dir="${cls}">
-			                <include name="jd/plugins/optional/jdchat/**" />        
-			            </fileset>
-						     <fileset dir="${res}">
-			                <include name="META-INF/services/jd.plugins.PluginOptional" />
-			            </fileset>
-			        </jar>
-					<delete file="Manifest.MF" failonerror="false" />
-		
+			<attribute name="Created-By" value="jiaz" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDWebinterface.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/webinterface/**" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+
+
 		<manifest file="Manifest.MF">
-				<attribute name="Created-By" value="Scr4ve" />
-				<attribute name="Main-Class" value="jd.update.Main" />
-		    </manifest>
-	        <jar jarfile="${dist}/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
-	            <fileset dir="${cls}">
-	                <include name="jd/plugins/optional/JDRemoteControl*" />                
-	              </fileset>
-				     <fileset dir="${res}">
-	                <include name="META-INF/services/jd.plugins.PluginOptional" />
-	            </fileset>
-	        </jar>
-		
+			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDChat.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/jdchat/**" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
+		<delete file="Manifest.MF" failonerror="false" />
+
 		<manifest file="Manifest.MF">
-					<attribute name="Created-By" value="Scr4ve" />
-					<attribute name="Main-Class" value="jd.update.Main" />
-			    </manifest>
-		        <jar jarfile="${dist}/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
-		            <fileset dir="${cls}">
-		                <include name="jd/plugins/optional/Newsfeeds*" />                
-		              </fileset>
-					     <fileset dir="${res}">
-		                <include name="META-INF/services/jd.plugins.PluginOptional" />
-		            </fileset>
-		        </jar>
-		
+			<attribute name="Created-By" value="Scr4ve" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDRemoteControl*" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
+
 		<manifest file="Manifest.MF">
-				<attribute name="Created-By" value="JD-Team" />
-				<attribute name="Main-Class" value="jd.update.Main" />
-		    </manifest>
-	        <jar jarfile="${dist}/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
-	            <fileset dir="${cls}">
-	                <include name="jd/plugins/optional/JDLowSpeed*" />                
-	              </fileset>
-				 
-	        </jar>
-		
+			<attribute name="Created-By" value="Scr4ve" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/Newsfeeds*" />
+			</fileset>
+			<fileset dir="${res}">
+				<include name="META-INF/services/jd.plugins.PluginOptional" />
+			</fileset>
+		</jar>
+
 		<manifest file="Manifest.MF">
-				<attribute name="Created-By" value="JD-Team" />
-				<attribute name="Main-Class" value="jd.update.Main" />
-		    </manifest>
-	        <jar jarfile="${dist}/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
-	            <fileset dir="${cls}">
-	                <include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />                
-	              </fileset>
-				 
-	        </jar>
-		
+			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDLowSpeed*" />
+			</fileset>
+
+		</jar>
+
 		<manifest file="Manifest.MF">
-					<attribute name="Created-By" value="JD-Team" />
-					<attribute name="Main-Class" value="jd.update.Main" />
-			    </manifest>
-		        <jar jarfile="${dist}/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
-		            <fileset dir="${cls}">
-		                <include name="jd/plugins/optional/LangFileEditor*" />                
-		              </fileset>
-					 
-		        </jar>
-		
+			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />
+			</fileset>
+
+		</jar>
+
 		<manifest file="Manifest.MF">
-					<attribute name="Created-By" value="JD-Team" />
-					<attribute name="Main-Class" value="jd.update.Main" />
-			    </manifest>
-		        <jar jarfile="${dist}/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
-		            <fileset dir="${cls}">
-		                <include name="jd/plugins/optional/JDInfoFileWriter*" />                
-		              </fileset>
-					 
-		        </jar>
-		
+			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/LangFileEditor*" />
+			</fileset>
+
+		</jar>
+
 		<manifest file="Manifest.MF">
-						<attribute name="Created-By" value="JD-Team" />
-						<attribute name="Main-Class" value="jd.update.Main" />
-				    </manifest>
-			        <jar jarfile="${dist}/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
-			            <fileset dir="${cls}">
-			                <include name="jd/plugins/optional/JDFolderWatch*" />                
-			              </fileset>
-						 
-			        </jar>
-		
+			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDInfoFileWriter*" />
+			</fileset>
+
+		</jar>
+
 		<manifest file="Manifest.MF">
-							<attribute name="Created-By" value="JD-Team" />
-							<attribute name="Main-Class" value="jd.update.Main" />
-					    </manifest>
-				        <jar jarfile="${dist}/plugins/JDShutdown.jar" manifest="Manifest.MF">
-				            <fileset dir="${cls}">
-				                <include name="jd/plugins/optional/JDShutdown*" />                
-				              </fileset>
-							 
-				        </jar>
-		
-    </target>
-	
-    <target name="sign">
-        <signjar keystore="${keystore}" alias="jDownloader" storepass="jDownloader">
-            <path>
-                <fileset dir="${dist}" includes="*.jar" />
-            </path>
-        </signjar>
-    </target>
+			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDFolderWatch*" />
+			</fileset>
+
+		</jar>
+
+		<manifest file="Manifest.MF">
+			<attribute name="Created-By" value="JD-Team" />
+			<attribute name="Main-Class" value="jd.update.Main" />
+		</manifest>
+		<jar jarfile="${dist}/plugins/JDShutdown.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDShutdown*" />
+			</fileset>
+
+		</jar>
+
+	</target>
+
+	<target name="sign">
+		<signjar keystore="${keystore}" alias="jDownloader" storepass="jDownloader">
+			<path>
+				<fileset dir="${dist}" includes="*.jar" />
+			</path>
+		</signjar>
+	</target>
 	<target name="cryptContainer">
-		<taskdef name="yguard"  classname="com.yworks.yguard.YGuardTask"/>
+		<taskdef name="yguard" classname="com.yworks.yguard.YGuardTask" />
 		<yguard>
 			<inoutpair in="${dist}/JDownloader.jar" out="${dist}/JDownloader_obfuscated.jar" />
 			<rename>
 				<keep>
-					<class extends="jd.plugins.Plugin"   />                    
-					<class classes="protected" methods="protected" fields="protected"/>
-					<class classes="public" methods="public" fields="public"/>
+					<field name="serialVersionUID" />
+					<method name="void readObject(java.io.ObjectInputStream)" />
+					<method name="void writeObject(java.io.ObjectOutputStream)" />
+					
+					<class implements="java.io.Serializable" classes="private" methods="private" fields="private" />
+
+					<class extends="jd.plugins.Plugin" />
+					<class classes="protected" methods="protected" fields="protected" />
+					<class classes="public" methods="public" fields="public" />
 				</keep>
 			</rename>
 		</yguard>
 		<delete file="${dist}/JDownloader.jar" failonerror="no" />
 		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
 	</target>
-	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater"></target>
-	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign"></target> 
-	<target name="signedBuild" depends="standardBuild,sign"></target>
+	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater">
+	</target>
+	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign">
+	</target>
+	<target name="signedBuild" depends="standardBuild,sign">
+	</target>
 </project>

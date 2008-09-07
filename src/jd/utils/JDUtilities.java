@@ -466,7 +466,12 @@ public class JDUtilities {
     public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
         ArrayList<PluginsC> pfc = JDUtilities.getPluginsForContainer();
         for (int i = 0; i < pfc.size(); i++) {
-            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).createContainerString(downloadLinks); }
+            String pn = pfc.get(i).getPluginName();
+            if (pn.equalsIgnoreCase(encryption)) {
+                
+                return pfc.get(i).createContainerString(downloadLinks);
+                
+            }
         }
         return null;
     }
@@ -1352,12 +1357,12 @@ public class JDUtilities {
         if (containerPath != null && containerPlugins.containsKey(containerPath)) { return containerPlugins.get(containerPath); }
         PluginsC ret = null;
         for (PluginsC act:JDUtilities.getPluginsForContainer()) {
-            if (act.getHost().equals(container)) {
+            if (act.getHost().equalsIgnoreCase(container)) {
                 try {
                     ret = act.getClass().newInstance();
                     if (containerPath != null) {
                         containerPlugins.put(containerPath, ret);
-                    }
+                    } 
                     return ret;
                 } catch (InstantiationException e) {
                     e.printStackTrace();
