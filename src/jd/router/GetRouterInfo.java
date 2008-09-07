@@ -58,6 +58,7 @@ public class GetRouterInfo {
     public String adress = null;
 
     public boolean cancel = false;
+    public boolean testAll = false;
 
     private Logger logger = JDUtilities.getLogger();
 
@@ -194,7 +195,10 @@ public class GetRouterInfo {
     public String[] getRouterData(String ip) {
         setProgressText("Get Routerdata");
         adress = ip;
+        if(testAll)
+            routerDatas=new HTTPLiveHeader().getLHScripts();
         if (getRouterDatas() == null) { return null; }
+
         int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
         int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
@@ -203,10 +207,22 @@ public class GetRouterInfo {
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
         final int size = routerDatas.size();
         for (int i = 0; i < size && !cancel; i++) {
-            final String[] data = routerDatas.get(i);
+     
+        	String[] data =  routerDatas.get(i);
+            if(data.length<6)
+            {
+            	String[] newDat = new String[6];
+            	for (int j = 0; j < data.length; j++) {
+            		newDat[j]=data[j];
+				}
+            	for (int j = data.length; j < newDat.length; j++) {
+            		newDat[j]="";
+				}
+            	data=newDat;
+            }
             setProgressText("Testing router: " + data[1]);
             setProgress(i * 100 / size);
-
+            
             if (isEmpty(username)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
             } else {
@@ -245,8 +261,15 @@ public class GetRouterInfo {
             Vector<String[]> retRouterData = new Vector<String[]>();
             for (int i = 0; i < routerData.size(); i++) {
                 String[] dat = routerData.get(i);
+                if(dat.length>3)
                 if (html.contains(dat[0].toLowerCase()) || html.contains(dat[1].toLowerCase()) || html.matches(dat[3])) {
                     retRouterData.add(dat);
+                }
+                else
+                {
+                    if (html.contains(dat[0].toLowerCase()) || html.contains(dat[1].toLowerCase())) {
+                        retRouterData.add(dat);
+                    }
                 }
             }
             routerDatas = retRouterData;

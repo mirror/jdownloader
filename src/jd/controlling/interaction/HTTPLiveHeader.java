@@ -461,6 +461,14 @@ public class HTTPLiveHeader extends Interaction {
                         if (requestInfo == null) {
                             logger.severe("Request error in " + toDo.getChildNodes().item(0).getNodeValue().trim());
                         }
+                        try {
+							List<String> ob = requestInfo.getHeaders().get(null);
+                            logger.severe("Request error in 404 wrong reconnect methode");
+                            progress.finalize();
+                            return false;
+						} catch (Exception e) {
+							// TODO: handle exception
+						}
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("RESPONSE")) {
                         logger.finer("get Response");

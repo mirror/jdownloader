@@ -47,6 +47,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import jd.gui.skins.simple.ConfirmCheckBoxDialog;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -280,8 +282,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             }
         }
         if (e.getSource() == btnAutoConfig) {
-
-            if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.liveHeader.warning.wizard", "Die automatische Suche nach den Einstellungen kann einige Minuten in Anspruch nehmen. Bitte geben Sie vorher Ihre Router Logindaten ein. Jetzt ausführen?"))) {
+        	final ConfirmCheckBoxDialog ccbd = new ConfirmCheckBoxDialog(JDLocale.L("gui.config.liveHeader.warning.wizard.title","Routererkennung jetzt starten?"), JDLocale.L("gui.config.liveHeader.warning.wizard", "Die automatische Suche nach den Einstellungen kann einige Minuten in Anspruch nehmen.\r\n Bitte geben Sie vorher Ihre Router Logindaten ein. Jetzt ausführen?"), JDLocale.L("gui.config.liveHeader.warning.wizard.checkall", "Alle Router prüfen"));
+            if (ccbd.isOk) {
                 Thread th;
                 final ProgressDialog progress = new ProgressDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, false);
 
@@ -290,6 +292,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                     public void run() {
 
                         GetRouterInfo routerInfo = new GetRouterInfo(progress);
+                        routerInfo.testAll=ccbd.isChecked;
                         routerInfo.setLoginPass((String) pass.getText());
                         routerInfo.setLoginUser((String) user.getText());
                         String username = (String) user.getText();
