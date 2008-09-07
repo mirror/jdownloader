@@ -100,30 +100,35 @@ public class GetRouterInfo {
         // "192.168.0.1", "fritz.box"};
 
         if (new File("/sbin/route").exists()) {
-            String routingt = JDUtilities.runCommand("/sbin/route", null, "/", 2).replaceFirst(".*\n.*", "");
-            Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(routingt);
-            while (matcher.find()) {
-                String hostname = matcher.group(1).trim();
-                if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                    setProgressText("testing " + hostname);
-                    try {
-                        if (InetAddress.getByName(hostname).isReachable(1500)) {
-                            if (checkport80(hostname)) {
-                                adress = hostname;
-                                return adress;
+        	try {
+                String routingt = JDUtilities.runCommand("/sbin/route", null, "/", 2).replaceFirst(".*\n.*", "");
+                Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
+                Matcher matcher = pattern.matcher(routingt);
+                while (matcher.find()) {
+                    String hostname = matcher.group(1).trim();
+                    if (!hostname.matches("[\\s]*\\*[\\s]*")) {
+                        setProgressText("testing " + hostname);
+                        try {
+                            if (InetAddress.getByName(hostname).isReachable(1500)) {
+                                if (checkport80(hostname)) {
+                                    adress = hostname;
+                                    return adress;
+                                }
                             }
+                        } catch (UnknownHostException e) {
+
+                            e.printStackTrace();
+                        } catch (IOException e) {
+
+                            e.printStackTrace();
                         }
-                    } catch (UnknownHostException e) {
-
-                        e.printStackTrace();
-                    } catch (IOException e) {
-
-                        e.printStackTrace();
                     }
-                }
 
-            }
+                }
+			} catch (Exception e) {
+				// TODO: handle exception
+			}
+
         }
         Vector<String> hosts = new Vector<String>();
         if (!hosts.contains("192.168.2.1")) {
