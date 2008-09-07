@@ -83,6 +83,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
             if (running) {
                 logger.info("Folderwatch: Stopping");
                 threadend = false;
+                running = false;
             } else {
                 logger.info("Folderwatch: Starting");
                 i = new check();
