@@ -1626,7 +1626,7 @@ public class JDUtilities {
      */
     public static Object loadObject(JFrame frame, File fileInput, boolean asXML) {
         // logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
-        Object objectLoaded = null;
+        Object objectLoaded = null; 
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
             if (currentDirectory != null) {
