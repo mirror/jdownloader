@@ -26,7 +26,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class Filer extends PluginForDecrypt {
     static private String host = "filer.net";
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/\\w*/\\w*", Pattern.CASE_INSENSITIVE);
+    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/.+/.*", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
         super();
@@ -38,7 +38,7 @@ public class Filer extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String[] links = br.getRegex("(?s)<td><a href=\"\\/get\\/(.*?).html\">(.*?)</a></td>").getColumn(0);
+        String[] links = br.getRegex("<td><a href=\"\\/get\\/(.*?)\\.html\">.*?</a></td>").getColumn(0);
         progress.setRange(links.length);
 
         for (String element : links) {
