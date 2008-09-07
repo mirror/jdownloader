@@ -1162,6 +1162,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
+                    if(nextDownloadLink.getLinkType()==DownloadLink.LINKTYPE_CONTAINER)continue;
                     if (nextDownloadLink.getDownloadURL() != null && nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) { return true; }
                 }
             }

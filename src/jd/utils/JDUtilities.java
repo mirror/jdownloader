@@ -137,7 +137,7 @@ public class JDUtilities {
      */
     private static JDController controller = null;
 
-    /**
+    /** 
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
     private static File currentDirectory;

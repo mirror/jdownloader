@@ -561,7 +561,7 @@ JDUtilities.setPluginForContainer(loadCPlugins());
             logger.finer("Try to initialize " + cl);
             try {
 
-                Class plgClass = jdClassLoader.loadClass("jd.plugins.container." + cl);
+                Class plgClass = jdClassLoader.loadClass("jd.plugins.a." + cl);
                 if (plgClass == null) {
                     logger.info("PLUGIN NOT FOUND!");
                     continue;
