@@ -132,11 +132,11 @@ public class YouTubeCom extends PluginForDecrypt {
             if (br.openGetConnection(link + "&fmt=18").getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEOMP4);
             }
+            possibleconverts.add(ConversionMode.VIDEOFLV);
             if (br.openGetConnection(link + "&fmt=13").getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEO3GP);
             }
-            possibleconverts.add(ConversionMode.AUDIOMP3);
-            possibleconverts.add(ConversionMode.VIDEOFLV);
+            possibleconverts.add(ConversionMode.AUDIOMP3);            
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
             ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
