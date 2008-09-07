@@ -22,7 +22,7 @@
                 <include name="**/*.class" />                
                 <exclude name="jd/plugins/decrypt/**" />
                 <exclude name="jd/plugins/host/**" />
-                <exclude name="jd/plugins/container/**" />
+             
                 <exclude name="jd/plugins/optional/**" />
             </fileset>
             <fileset dir="${res}">                
@@ -231,21 +231,7 @@
 				        </jar>
 		
     </target>
-	<target name="jarContainer">
-		<!-- Container -->
-		<jar jarfile="${dist}/JDownloaderContainer.jar">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/Plugin.class" />
-				<include name="jd/plugins/PluginForDecrypt.class" />
-                <include name="jd/plugins/PluginForContainer.class" />
-				<include name="jd/plugins/container/**/*" />
-			</fileset>
-			<fileset dir="${res}">
-                <include name="META-INF/services/jd.plugins.PluginForContainer" />
-            </fileset>
-		</jar>
-		<delete file="Manifest.MF" failonerror="false" />
-	</target>
+	
     <target name="sign">
         <signjar keystore="${keystore}" alias="jDownloader" storepass="jDownloader">
             <path>
@@ -256,20 +242,19 @@
 	<target name="cryptContainer">
 		<taskdef name="yguard"  classname="com.yworks.yguard.YGuardTask"/>
 		<yguard>
-			<inoutpair in="${dist}/JDownloaderContainer.jar" out="${dist}/JDownloaderContainer_obfuscated.jar" />
+			<inoutpair in="${dist}/JDownloader.jar" out="${dist}/JDownloader_obfuscated.jar" />
 			<rename>
 				<keep>
-					<class extends="jd.plugins.Plugin"   />
-                    <class extends="jd.plugins.PluginForContainer"/>
+					<class extends="jd.plugins.Plugin"   />                    
 					<class classes="protected" methods="protected" fields="protected"/>
 					<class classes="public" methods="public" fields="public"/>
 				</keep>
 			</rename>
 		</yguard>
-		<delete file="${dist}/JDownloaderContainer.jar" failonerror="no" />
-		<move file="${dist}/JDownloaderContainer_obfuscated.jar" tofile="${dist}/JDownloaderContainer.jar" />
+		<delete file="${dist}/JDownloader.jar" failonerror="no" />
+		<move file="${dist}/JDownloader_obfuscated.jar" tofile="${dist}/JDownloader.jar" />
 	</target>
 	<target name="standardBuild" depends="compile,jar,jarOptionals,jarWebupdater"></target>
-	<target name="dlcEnabledBuild" depends="standardBuild,jarContainer,cryptContainer,sign"></target> 
+	<target name="dlcEnabledBuild" depends="standardBuild,cryptContainer,sign"></target> 
 	<target name="signedBuild" depends="standardBuild,sign"></target>
 </project>

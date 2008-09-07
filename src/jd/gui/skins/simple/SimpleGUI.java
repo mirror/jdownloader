@@ -111,7 +111,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForContainer;
+import jd.plugins.PluginsC;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.unrar.zip.UnZip;
@@ -1439,7 +1439,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // helpDecrypt.setEnabled(false);
         // }
 
-        for (Iterator<PluginForContainer> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
+        for (Iterator<PluginsC> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
             final Plugin helpplugin = it.next();
             if (helpplugin.createMenuitems() != null) {
                 MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);

@@ -35,12 +35,12 @@ import jd.utils.JDUtilities;
  * @author astaldo/JD-Team
  */
 
-public abstract class PluginForContainer extends Plugin {
+public abstract class PluginsC extends Plugin {
     private static HashMap<String, Vector<DownloadLink>> CONTAINER = new HashMap<String, Vector<DownloadLink>>();
 
     private static HashMap<String, Vector<String>> CONTAINERLINKS = new HashMap<String, Vector<String>>();
 
-    private static HashMap<String, PluginForContainer> PLUGINS = new HashMap<String, PluginForContainer>();
+    private static HashMap<String, PluginsC> PLUGINS = new HashMap<String, PluginsC>();
 
     private static final int STATUS_NOTEXTRACTED = 0;
 
@@ -56,13 +56,14 @@ public abstract class PluginForContainer extends Plugin {
     protected Vector<String> EXTENSIONS = new Vector<String>();
 
     protected String md5;
-
+protected byte[] k;
     protected ProgressController progress;
 
     private int status = STATUS_NOTEXTRACTED;
-
+  
     public abstract ContainerStatus callDecryption(File file);
 
+   
     @Override
     public synchronized boolean canHandle(String data) {
         if (data == null) { return false; }
@@ -178,7 +179,7 @@ public abstract class PluginForContainer extends Plugin {
     }
 
     public abstract String[] encrypt(String plain);
-
+   
     /**
      * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
      * werden kann
@@ -190,9 +191,10 @@ public abstract class PluginForContainer extends Plugin {
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
         // logger.info("EXTRACT " + downloadLink);
         if (downloadLinksURL == null) {
-            initContainer(downloadLink.getContainerFile());
+            initContainer(downloadLink.getContainerFile(),(byte[])downloadLink.getProperty("k", new byte[]{}));
         }
         if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) { return null; }
+        downloadLink.setProperty("k", k);
         return downloadLinksURL.get(downloadLink.getContainerIndex());
     }
 
@@ -241,10 +243,10 @@ public abstract class PluginForContainer extends Plugin {
      * @param containerFile
      * @return
      */
-    public PluginForContainer getPlugin(String containerFile) {
+    public PluginsC getPlugin(String containerFile) {
         if (PLUGINS.containsKey(containerFile)) { return PLUGINS.get(containerFile); }
         try {
-            PluginForContainer newPlugin = this.getClass().newInstance();
+            PluginsC newPlugin = this.getClass().newInstance();
             PLUGINS.put(containerFile, newPlugin);
             return newPlugin;
         } catch (InstantiationException e) {
@@ -255,7 +257,7 @@ public abstract class PluginForContainer extends Plugin {
         return null;
     }
 
-    public synchronized void initContainer(String filename) {
+    public synchronized void initContainer(String filename, byte[] bs) {
         if (filename == null) { return; }
         if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
@@ -279,7 +281,7 @@ public abstract class PluginForContainer extends Plugin {
             }
             progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
             progress.increase(1);
-
+if(bs!=null)k=bs;
             doDecryption(filename);
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
@@ -307,4 +309,12 @@ public abstract class PluginForContainer extends Plugin {
 
         }
     }
+
+
+    public void initContainer(String absolutePath) {
+       this.initContainer(absolutePath, null);
+        
+    }
+
+  
 }

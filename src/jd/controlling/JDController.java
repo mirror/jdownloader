@@ -49,7 +49,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForContainer;
+import jd.plugins.PluginsC;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
@@ -434,15 +434,15 @@ public class JDController implements ControlListener, UIListener {
         // int tc=Plugin.getConnectTimeoutFromConfiguration();
         // int tr=Plugin.getReadTimeoutFromConfiguration();
 
-        RequestInfo ri = HTTP.getRequestWithoutHtmlCode(service, null, null, false, 2000, 2000);
+//        RequestInfo ri = HTTP.getRequestWithoutHtmlCode(service, null, null, false, 2000, 2000);
+//
+//        if (!ri.isOK() || ri.getLocation() == null) {
+//
+//        return null; }
+//
+//        logger.finer("Call Redirect: " + ri.getLocation());
 
-        if (!ri.isOK() || ri.getLocation() == null) {
-
-        return null; }
-
-        logger.finer("Call Redirect: " + ri.getLocation());
-
-        ri = HTTP.postRequest(new URL(ri.getLocation()), null, null, null, "jd=1&srcType=plain&data=" + key, true, 2000, 2000);
+        RequestInfo ri = HTTP.postRequest(service, null, null, null, "jd=1&srcType=plain&data=" + key, true, 2000, 2000);
 
         logger.info("Call re: " + ri.getHtmlCode());
         if (!ri.isOK() || !ri.containsHTML("<rc>")) {
@@ -1217,9 +1217,9 @@ public class JDController implements ControlListener, UIListener {
 
     public boolean isContainerFile(File file) {
 
-        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
         // Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginForContainer pContainer;
+        PluginsC pContainer;
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             pContainer = pluginsForContainer.get(i);
@@ -1266,9 +1266,9 @@ public class JDController implements ControlListener, UIListener {
             @SuppressWarnings("unchecked")
             public void run() {
 
-                Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+                ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
                 Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-                PluginForContainer pContainer;
+                PluginsC pContainer;
                 ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
                 logger.info("load Container: " + file);
 
@@ -1328,9 +1328,9 @@ public class JDController implements ControlListener, UIListener {
 
     public Vector<DownloadLink> getContainerLinks(final File file) {
 
-        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginForContainer pContainer;
+        PluginsC pContainer;
         ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
         logger.info("load Container: " + file);
 
@@ -1395,7 +1395,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<FilePackage> iterator = packages.iterator();
                 DownloadLink localLink;
                 PluginForHost pluginForHost = null;
-                PluginForContainer pluginForContainer = null;
+                PluginsC pluginForContainer = null;
                 Iterator<DownloadLink> it;
                 FilePackage fp;
                 while (iterator.hasNext()) {

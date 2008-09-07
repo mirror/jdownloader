@@ -47,7 +47,7 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.PluginForContainer;
+import jd.plugins.PluginsC;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
@@ -405,7 +405,7 @@ public class JDInit {
 
         JDUtilities.setPluginForDecryptList(loadPluginForDecrypt());
         JDUtilities.setPluginForHostList(loadPluginForHost());
-        JDUtilities.setPluginForContainerList(loadPluginForContainer());
+JDUtilities.setPluginForContainer(loadCPlugins());
         JDUtilities.setPluginOptionalList(loadPluginOptional());
 
         for (PluginOptional plg : JDUtilities.getPluginsOptional()) {
@@ -544,24 +544,41 @@ public class JDInit {
     }
 
     @SuppressWarnings("unchecked")
-    public Vector<PluginForContainer> loadPluginForContainer() {
-        Vector<PluginForContainer> plugins = new Vector<PluginForContainer>();
+    public ArrayList<PluginsC> loadCPlugins() {
+        ArrayList<PluginsC> plugins = new ArrayList<PluginsC>();
+        ArrayList<String> containerTypes = new ArrayList<String>();
+        containerTypes.add("D");
+        containerTypes.add("R");
+       // containerTypes.add("DLC");
+        containerTypes.add("B");
+        containerTypes.add("C");
+
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        logger.finer("Load Container Plugins");
-        Iterator iterator = Service.providers(PluginForContainer.class, jdClassLoader);
 
-        while (iterator.hasNext()) {
+        for (String cl : containerTypes) {
+
+            logger.finer("Try to initialize " + cl);
             try {
-                PluginForContainer p = (PluginForContainer) iterator.next();
-                logger.finer("Load " + p);
-                plugins.add(p);
-            } catch (Exception e) {
+
+                Class plgClass = jdClassLoader.loadClass("jd.plugins.container." + cl);
+                if (plgClass == null) {
+                    logger.info("PLUGIN NOT FOUND!");
+                    continue;
+                }
+                Class[] classes = new Class[] {};
+                Constructor con = plgClass.getConstructor(classes);
+
+                plugins.add((PluginsC) con.newInstance(new Object[] {}));
+                logger.finer("Successfully loaded " + cl);
+
+            } catch (Throwable e) {
+                logger.info("Plugin Exception!");
                 e.printStackTrace();
-                logger.info("caught");
             }
         }
         return plugins;
+
     }
 
     @SuppressWarnings("unchecked")

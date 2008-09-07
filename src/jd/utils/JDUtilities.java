@@ -105,7 +105,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForContainer;
+import jd.plugins.PluginsC;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
@@ -130,7 +130,7 @@ public class JDUtilities {
 
     private static DatabaseConnector dbconnect = null;
 
-    private static HashMap<String, PluginForContainer> containerPlugins = new HashMap<String, PluginForContainer>();
+    private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
 
     /**
      * Der DownloadController
@@ -178,8 +178,7 @@ public class JDUtilities {
      */
     public static Logger logger = JDUtilities.getLogger();
 
-    private static Vector<PluginForContainer> pluginsForContainer = null;
-
+    
     private static Vector<PluginForDecrypt> pluginsForDecrypt = null;
 
     private static Vector<PluginForHost> pluginsForHost = null;
@@ -200,6 +199,7 @@ public class JDUtilities {
     private static Vector<File> saveReadObject = new Vector<File>();
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
+    private static ArrayList<PluginsC> pluginsForContainer=new ArrayList<PluginsC>();
 
     public static String getSimString(String a, String b) {
 
@@ -224,7 +224,25 @@ public class JDUtilities {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
         images.put(imageName, image);
     }
+    public static String asHex(byte buf[]) {
+        StringBuffer strbuf = new StringBuffer(buf.length * 2);
+        int i;
+        strbuf.append("new byte[]{");
+        for (i = 0; i < buf.length; i++) {
+            strbuf.append("(byte) 0x");
+            if (((int) buf[i] & 0xff) < 0x10) {
+                strbuf.append("0");
+            }
 
+            strbuf.append(Long.toString((int) buf[i] & 0xff, 16));
+            if (i < buf.length - 1) {
+                strbuf.append(", ");
+            }
+        }
+        strbuf.append("};");
+
+        return strbuf.toString();
+    }
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      * 
@@ -446,7 +464,7 @@ public class JDUtilities {
     }
 
     public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
-        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
+        ArrayList<PluginsC> pfc = JDUtilities.getPluginsForContainer();
         for (int i = 0; i < pfc.size(); i++) {
             if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).createContainerString(downloadLinks); }
         }
@@ -461,7 +479,7 @@ public class JDUtilities {
      * @return ciphertext
      */
     public static String[] encrypt(String string, String encryption) {
-        Vector<PluginForContainer> pfc = JDUtilities.getPluginsForContainer();
+        ArrayList<PluginsC> pfc = JDUtilities.getPluginsForContainer();
         for (int i = 0; i < pfc.size(); i++) {
             if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).encrypt(string); }
         }
@@ -1330,13 +1348,13 @@ public class JDUtilities {
      * @param containerPath
      * @return Ein passendes Plugin oder null
      */
-    public static PluginForContainer getPluginForContainer(String container, String containerPath) {
+    public static PluginsC getPluginForContainer(String container, String containerPath) {
         if (containerPath != null && containerPlugins.containsKey(containerPath)) { return containerPlugins.get(containerPath); }
-        PluginForContainer ret = null;
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            if (pluginsForContainer.get(i).getHost().equals(container)) {
+        PluginsC ret = null;
+        for (PluginsC act:JDUtilities.getPluginsForContainer()) {
+            if (act.getHost().equals(container)) {
                 try {
-                    ret = pluginsForContainer.get(i).getClass().newInstance();
+                    ret = act.getClass().newInstance();
                     if (containerPath != null) {
                         containerPlugins.put(containerPath, ret);
                     }
@@ -1380,8 +1398,7 @@ public class JDUtilities {
      * 
      * @return Plugins zum Laden von Containerdateien
      */
-    public static Vector<PluginForContainer> getPluginsForContainer() {
-        if (pluginsForContainer == null) pluginsForContainer = new Vector<PluginForContainer>();
+    public static ArrayList<PluginsC> getPluginsForContainer() {
         return pluginsForContainer;
     }
 
@@ -1933,11 +1950,7 @@ public class JDUtilities {
         JDUtilities.locale = locale;
     }
 
-    public static void setPluginForContainerList(Vector<PluginForContainer> loadPlugins) {
-        pluginsForContainer = loadPlugins;
-
-    }
-
+   
     public static void setPluginForDecryptList(Vector<PluginForDecrypt> loadPlugins) {
         pluginsForDecrypt = loadPlugins;
 
@@ -2082,6 +2095,11 @@ public class JDUtilities {
             dbconnect = new DatabaseConnector();
         }
         return dbconnect;
+    }
+
+    public static void setPluginForContainer(ArrayList<PluginsC> loadPluginForContainer) {
+        pluginsForContainer=loadPluginForContainer;
+        
     }
 
 }

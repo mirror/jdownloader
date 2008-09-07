@@ -452,9 +452,9 @@ public class Rapidshare extends PluginForHost {
             return;
         }
 
-        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-            if (Sniffy.hasSniffer()) throw new SnifferException();
-        }
+//        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
+//            if (Sniffy.hasSniffer()) throw new SnifferException();
+//        }
         Rapidshare.correctURL(downloadLink);
         // Sagt der Browserinstanz, dass cookies nur für diese instanz verwaltet
         // werden, und nicht Global für ganz JD

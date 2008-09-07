@@ -134,7 +134,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Falls vorhanden, das Plugin für den Container, aus der dieser Download
      * geladen wurde
      */
-    private transient PluginForContainer pluginForContainer;
+    private transient PluginsC pluginForContainer;
 
     private String sourcePluginComment = null;
 
@@ -498,7 +498,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return plugin;
     }
 
-    public PluginForContainer getPluginForContainer() {
+    public PluginsC getPluginForContainer() {
         return pluginForContainer;
     }
 
@@ -832,7 +832,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         this.plugin = plugin;
     }
 
-    public void setLoadedPluginForContainer(PluginForContainer pluginForContainer) {
+    public void setLoadedPluginForContainer(PluginsC pluginForContainer) {
         this.pluginForContainer = pluginForContainer;
         container = pluginForContainer.getHost();
     }

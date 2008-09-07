@@ -17,6 +17,7 @@
 package jd.plugins.optional.webinterface;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -33,7 +34,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginForContainer;
+import jd.plugins.PluginsC;
 import jd.plugins.PluginForHost;
 import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
@@ -545,9 +546,9 @@ public class JDSimpleWebserverRequestHandler {
 
     private Vector<DownloadLink> loadContainerFile(final File file) {
 
-        Vector<PluginForContainer> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginForContainer pContainer;
+        PluginsC pContainer;
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             pContainer = pluginsForContainer.get(i);

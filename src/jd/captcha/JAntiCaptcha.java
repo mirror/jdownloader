@@ -940,7 +940,7 @@ public class JAntiCaptcha {
      * 
      * @param a
      *            Original Letter
-     * @param b
+     * @param B
      *            Vergleichsletter
      * @return int 0(super)-0xffffff (ganz übel)
      */

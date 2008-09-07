@@ -23,8 +23,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -39,7 +39,7 @@ import javax.swing.table.TableColumn;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.PluginForContainer;
+import jd.plugins.PluginsC;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -78,11 +78,11 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return pluginsForContainer.elementAt(rowIndex).getPluginName();
+                return pluginsForContainer.get(rowIndex).getPluginName();
             case 1:
-                return pluginsForContainer.elementAt(rowIndex).getVersion();
+                return pluginsForContainer.get(rowIndex).getVersion();
             case 2:
-                return pluginsForContainer.elementAt(rowIndex).getCoder();
+                return pluginsForContainer.get(rowIndex).getCoder();
             }
             return null;
         }
@@ -94,7 +94,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     private Configuration configuration;
 
-    private Vector<PluginForContainer> pluginsForContainer;
+    private ArrayList<PluginsC> pluginsForContainer;
 
     private JTable table;
 
@@ -114,7 +114,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForContainer.elementAt(table.getSelectedRow()));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForContainer.get(table.getSelectedRow()));
     }
 
     @Override
@@ -194,7 +194,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     @Override
     public void save() {
-        for (PluginForContainer plg : pluginsForContainer) {
+        for (PluginsC plg : pluginsForContainer) {
             if (plg.getPluginConfig() != null) {
                 configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
             }
