@@ -11,7 +11,7 @@ import jd.utils.JDUtilities;
 
 public class PluginWrapper {
 
-    public static final int LOAD_ON_INIT = 0<<1;
+    public static final int LOAD_ON_INIT = 1<<1;
     private Pattern pattern;
     private String host;
     private String className;

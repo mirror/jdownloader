@@ -645,18 +645,19 @@ public class JDInit {
         hpl.add(new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+/.*?"));
         hpl.add(new HostPluginWrapper("SiloFiles.com", "SiloFilescom", "http://[\\w\\.]*?silofiles\\.com/file/\\d+/.*?"));
         hpl.add(new HostPluginWrapper("Speedy-Share.com", "SpeedySharecom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)"));
-        hpl.add(new HostPluginWrapper("Uploadedto", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", PluginWrapper.LOAD_ON_INIT));        
-        hpl.add(new HostPluginWrapper("UploadServiceinfo", "UploadServiceinfo", "http://[\\w\\.]*?uploadservice\\.info/file/[a-zA-Z0-9]+\\.html"));
-        hpl.add(new HostPluginWrapper("UploadStube", "UploadStube", "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*"));
-        hpl.add(new HostPluginWrapper("Upsharenet", "Upsharenet", "http://[\\w\\.]*?upshare\\.(net|eu)/download\\.php\\?id=[a-zA-Z0-9]+"));
-        hpl.add(new HostPluginWrapper("Vipfilecom", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html"));
-        hpl.add(new HostPluginWrapper("XupIn", "XupIn", "http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?"));
-        hpl.add(new HostPluginWrapper("XupInRaidrush", "XupInRaidrush", "http://xup.raidrush.ws/.*?/"));
-        hpl.add(new HostPluginWrapper("YouPornCom", "YouPornCom", "http://download\\.youporn\\.com/download/\\d+/flv/.*"));
-        hpl.add(new HostPluginWrapper("YourFilesBiz", "YourFilesBiz", "http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+"));
-        hpl.add(new HostPluginWrapper("YourFileSendercom", "YourFileSendercom", "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)"));
-        hpl.add(new HostPluginWrapper("Youtube", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?"));
-        hpl.add(new HostPluginWrapper("Zippysharecom", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html"));
+        hpl.add(new HostPluginWrapper("Uploaded.to", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", PluginWrapper.LOAD_ON_INIT));        
+        hpl.add(new HostPluginWrapper("UploadService.info", "UploadServiceinfo", "http://[\\w\\.]*?uploadservice\\.info/file/[a-zA-Z0-9]+\\.html"));
+        hpl.add(new HostPluginWrapper("UploadStube.de", "UploadStube", "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*"));
+        hpl.add(new HostPluginWrapper("Upshare.net", "Upsharenet", "http://[\\w\\.]*?upshare\\.(net|eu)/download\\.php\\?id=[a-zA-Z0-9]+"));
+        hpl.add(new HostPluginWrapper("Vip-file.com", "Vipfilecom", "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html"));
+        hpl.add(new HostPluginWrapper("Xup.In", "XupIn", "http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?"));
+        hpl.add(new HostPluginWrapper("xup.raidrush.ws", "XupInRaidrush", "http://xup.raidrush.ws/.*?/"));
+        hpl.add(new HostPluginWrapper("YouPorn.Com", "YouPornCom", "http://download\\.youporn\\.com/download/\\d+/flv/.*"));
+        hpl.add(new HostPluginWrapper("YourFiles.Biz", "YourFilesBiz", "http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+"));
+        hpl.add(new HostPluginWrapper("YourFileSender.com", "YourFileSendercom", "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)"));
+        hpl.add(new HostPluginWrapper("Youtube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?"));
+        hpl.add(new HostPluginWrapper("Zippyshare.com", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html"));
+        hpl.add(new HostPluginWrapper("zshare.net", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html"));
 
         // HostPluginLoader loader = new HostPluginLoader();
         //
