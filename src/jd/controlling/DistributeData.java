@@ -31,7 +31,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
@@ -183,8 +182,7 @@ public class DistributeData extends ControlBroadcaster {
      * Ermittelt über die Plugins alle Passenden Links und gibt diese in einem
      * Vector zurück
      * 
-     * @param (optional)
-     *            searchpw (true,false))
+     * @param (optional) searchpw (true,false))
      * @return link-Vector
      */
     public Vector<DownloadLink> findLinks() {

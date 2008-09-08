@@ -247,21 +247,7 @@ public class JDInit {
                     return;
                 }
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
-                // if(JDUtilities.getSubConfig("JAC").getBooleanProperty(
-                // Configuration.USE_CAPTCHA_EXCHANGE_SERVER,
-                // false)){
-                // for (int i = files.size() - 1; i >= 0; i--) {
-                //                  
-                // // if
-                // (files.get(i).get(0).startsWith("jd/captcha/methods/")&&files.
-                // get(i).get(0).endsWith("mth"))
-                // {
-                // // logger.info("Autotrain active. ignore
-                // "+files.get(i).get(0));
-                // // files.remove(i);
-                // // }
-                // }
-                // }
+
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
@@ -600,10 +586,9 @@ public class JDInit {
         return plugins;
     }
 
-    @SuppressWarnings("unchecked")
     public ArrayList<HostPluginWrapper> loadPluginForHost() {
-
         ArrayList<HostPluginWrapper> hpl = new ArrayList<HostPluginWrapper>();
+
         hpl.add(new HostPluginWrapper("rapidshare.com", "Rapidshare", "sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("archiv.to", "ArchiveTo", "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*"));
         hpl.add(new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*"));
@@ -659,19 +644,6 @@ public class JDInit {
         hpl.add(new HostPluginWrapper("Zippyshare.com", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html"));
         hpl.add(new HostPluginWrapper("zshare.net", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html"));
 
-        // HostPluginLoader loader = new HostPluginLoader();
-        //
-        // while (iterator.hasNext()) {
-        // try {
-        // PluginForHost p = (PluginForHost) iterator.next();
-        // logger.finer("Load " + p);
-        // plugins.add(p);
-        // } catch (Exception e) {
-        // logger.info("caught");
-        // e.printStackTrace();
-        // }
-        // }
-        // plugins.addAll(loader.load)
         return hpl;
     }
 

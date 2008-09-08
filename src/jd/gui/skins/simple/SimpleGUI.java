@@ -424,12 +424,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         int height = screenSize.height;
         Object loc = guiConfig.getProperty("DIMENSION_OF_" + key);
         if (loc != null && loc instanceof Dimension) {
-            if (((Dimension) loc).width > width) {
-                ((Dimension) loc).width = width;
-            }
-            if (((Dimension) loc).height > height) {
-                ((Dimension) loc).height = height;
-            }
+            Dimension dim = (Dimension) loc;
+            if (dim.width > width) dim.width = width;
+            if (dim.height > height) dim.height = height;
+
             return (Dimension) loc;
         }
 
@@ -445,14 +443,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int width = screenSize.width;
         int height = screenSize.height;
-        if (loc != null && loc instanceof Point && ((Point) loc).getX() < width && ((Point) loc).getY() < height) {
-            if (((Point) loc).getX() < 0) {
-                ((Point) loc).x = 0;
-            }
-            if (((Point) loc).getY() < 0) {
-                ((Point) loc).y = 0;
-            }
-            return (Point) loc;
+        if (loc != null && loc instanceof Point) {
+            Point point = (Point) loc;
+            if (point.x < 0) point.x = 0;
+            if (point.y < 0) point.y = 0;
+            if (point.x > width) point.x = width;
+            if (point.y > height) point.y = height;
+
+            return point;
         }
         return JDUtilities.getCenterOfComponent(parent, child);
     }
@@ -462,16 +460,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             parent = CURRENTGUI.getFrame();
         }
 
-        Point point = SimpleGUI.getLastLocation(parent, null, component);
-        if (point.y < 0) {
-            point.y = 0;
-        }
-        if (point.x < 0) {
-            point.x = 0;
-        }
-        component.setLocation(point);
-        if (SimpleGUI.getLastDimension(component, null) != null) {
-            Dimension dim = SimpleGUI.getLastDimension(component, null);
+        component.setLocation(SimpleGUI.getLastLocation(parent, null, component));
+        Dimension dim = SimpleGUI.getLastDimension(component, null);
+        if (dim != null) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 
             dim.width = Math.min(dim.width, screenSize.width);

@@ -345,7 +345,7 @@ public abstract class PluginForHost extends Plugin {
 
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        link.getLinkStatus().setErrorMessage("Plugin has no hanldPremium Method");
+        link.getLinkStatus().setErrorMessage("Plugin has no handlePremium Method!");
     }
 
     public boolean canResume(DownloadLink link) {
