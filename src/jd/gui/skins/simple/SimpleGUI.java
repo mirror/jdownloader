@@ -428,7 +428,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (dim.width > width) dim.width = width;
             if (dim.height > height) dim.height = height;
 
-            return (Dimension) loc;
+            return dim;
         }
 
         return null;
