@@ -104,7 +104,6 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
-import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -113,7 +112,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.plugins.PluginsC;
 import jd.unrar.zip.UnZip;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -557,6 +555,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionDnD;
 
     private JDAction actionExit;
+    
+    private JDAction actionRestart;
 
     private JDAction actionHelp;
 
@@ -847,6 +847,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             frame.setVisible(false);
             frame.dispose();
             fireUIEvent(new UIEvent(this, UIEvent.UI_EXIT));
+            break;
+        case JDAction.APP_RESTART:
+            frame.setVisible(false);
+            frame.dispose();
+            fireUIEvent(new UIEvent(this, UIEvent.UI_RESTART));
             break;
         case JDAction.APP_LOG:
             logDialog.setVisible(!logDialog.isVisible());
@@ -1271,6 +1276,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
+        actionRestart = new JDAction(this, JDTheme.V("gui.images.exit"), "action.restart", JDAction.APP_RESTART);
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
         actionUnrar = new JDAction(this, JDTheme.V("gui.images.config.unrar"), "action.unrar", JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
@@ -1285,7 +1291,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
-        actionWiki = new JDAction(this, null, "action.wiki", JDAction.WIKI);
+        actionWiki = new JDAction(this, JDTheme.V("gui.images.help"), "action.wiki", JDAction.WIKI);
         actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.about", JDAction.ABOUT);
         actionChanges = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.changes", JDAction.CHANGES);
 
@@ -1310,6 +1316,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // Adds the menus form the Addons
 
         JMenuItem mi;
+        menAddons.add(SimpleGUI.createMenuItem(actioninstallJDU));
 
         for (final PluginOptional plg : JDUtilities.getPluginsOptional()) {
 
@@ -1354,11 +1361,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
         // JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt",
         // "Decrypter"));
-        JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
+        //JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
 
         menPlugins.add(helpHost);
         // menPlugins.add(helpDecrypt);
-        menPlugins.add(helpContainer);
+        // menPlugins.add(helpContainer);
 
         for (Iterator<PluginForHost> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
             final Plugin helpplugin = it.next();
@@ -1442,51 +1449,50 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // helpDecrypt.setEnabled(false);
         // }
 
-        for (Iterator<PluginsC> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
-            final Plugin helpplugin = it.next();
-            if (helpplugin.createMenuitems() != null) {
-                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-
-                mi = SimpleGUI.getJMenuItem(m);
-                if (mi != null) {
-                    helpContainer.add(mi);
-
-                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                    ((JMenu) mi).addMenuListener(new MenuListener() {
-                        public void menuCanceled(MenuEvent e) {
-                        }
-
-                        public void menuDeselected(MenuEvent e) {
-                        }
-
-                        public void menuSelected(MenuEvent e) {
-                            JMenu m = (JMenu) e.getSource();
-                            m.removeAll();
-                            for (MenuItem menuItem : helpplugin.createMenuitems()) {
-                                m.add(SimpleGUI.getJMenuItem(menuItem));
-
-                            }
-
-                        }
-
-                    });
-                } else {
-                    helpContainer.addSeparator();
-                }
-            }
-        }
-        if (helpContainer.getItemCount() == 0) {
-            helpContainer.setEnabled(false);
-        }
+//        for (Iterator<PluginsC> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
+//            final Plugin helpplugin = it.next();
+//            if (helpplugin.createMenuitems() != null) {
+//                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
+//
+//                mi = SimpleGUI.getJMenuItem(m);
+//                if (mi != null) {
+//                    helpContainer.add(mi);
+//
+//                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+//                    ((JMenu) mi).addMenuListener(new MenuListener() {
+//                        public void menuCanceled(MenuEvent e) {
+//                        }
+//
+//                        public void menuDeselected(MenuEvent e) {
+//                        }
+//
+//                        public void menuSelected(MenuEvent e) {
+//                            JMenu m = (JMenu) e.getSource();
+//                            m.removeAll();
+//                            for (MenuItem menuItem : helpplugin.createMenuitems()) {
+//                                m.add(SimpleGUI.getJMenuItem(menuItem));
+//
+//                            }
+//
+//                        }
+//
+//                    });
+//                } else {
+//                    helpContainer.addSeparator();
+//                }
+//            }
+//        }
+//        if (helpContainer.getItemCount() == 0) {
+//            helpContainer.setEnabled(false);
+//        }
 
         menFile.add(SimpleGUI.createMenuItem(actionLoadDLC));
-        menFile.add(SimpleGUI.createMenuItem(actionSaveDLC));
-        menFile.addSeparator();
-        menFile.add(SimpleGUI.createMenuItem(actioninstallJDU));
+        menFile.add(SimpleGUI.createMenuItem(actionSaveDLC));       
         menFile.addSeparator();
         menFile.add(SimpleGUI.createMenuItem(actionExit));
-
-        menExtra.add(menViewLog);
+        menFile.add(SimpleGUI.createMenuItem(actionRestart));
+        
+       
         menExtra.add(SimpleGUI.createMenuItem(actionDnD));
         menExtra.addSeparator();
         menExtra.add(SimpleGUI.createMenuItem(actionPasswordlist));
@@ -1494,6 +1500,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.addSeparator();
         menExtra.add(SimpleGUI.createMenuItem(actionConfig));
 
+        menHelp.add(menViewLog);
+        menHelp.addSeparator();
         menHelp.add(SimpleGUI.createMenuItem(actionHelp));
         menHelp.add(SimpleGUI.createMenuItem(actionWiki));
         menHelp.addSeparator();

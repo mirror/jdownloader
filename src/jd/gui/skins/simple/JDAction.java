@@ -73,6 +73,7 @@ public class JDAction extends AbstractAction {
     public static final int WIKI = 33;
 
     public static final int CHANGES = 35;
+    public static final int APP_RESTART = 161;
 
     /**
      * serialVersionUID

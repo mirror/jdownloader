@@ -434,13 +434,14 @@ public class JDController implements ControlListener, UIListener {
         // int tc=Plugin.getConnectTimeoutFromConfiguration();
         // int tr=Plugin.getReadTimeoutFromConfiguration();
 
-//        RequestInfo ri = HTTP.getRequestWithoutHtmlCode(service, null, null, false, 2000, 2000);
-//
-//        if (!ri.isOK() || ri.getLocation() == null) {
-//
-//        return null; }
-//
-//        logger.finer("Call Redirect: " + ri.getLocation());
+        // RequestInfo ri = HTTP.getRequestWithoutHtmlCode(service, null, null,
+        // false, 2000, 2000);
+        //
+        // if (!ri.isOK() || ri.getLocation() == null) {
+        //
+        // return null; }
+        //
+        // logger.finer("Call Redirect: " + ri.getLocation());
 
         RequestInfo ri = HTTP.postRequest(service, null, null, null, "jd=1&srcType=plain&data=" + key, true, 12000, 12000);
 
@@ -717,6 +718,19 @@ public class JDController implements ControlListener, UIListener {
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
+        System.exit(0);
+    }
+
+    /**
+     * Startet das Programm neu
+     */
+    public void restart() {
+        stopDownloads();
+        saveDownloadLinks();
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
+        Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
+        JDUtilities.getDatabaseConnector().shutdownDatabase();
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 
@@ -1162,7 +1176,7 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if(nextDownloadLink.getLinkType()==DownloadLink.LINKTYPE_CONTAINER)continue;
+                    if (nextDownloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) continue;
                     if (nextDownloadLink.getDownloadURL() != null && nextDownloadLink.getDownloadURL().equalsIgnoreCase(url)) { return true; }
                 }
             }
@@ -2002,6 +2016,10 @@ public class JDController implements ControlListener, UIListener {
 
         case UIEvent.UI_EXIT:
             exit();
+            break;
+
+        case UIEvent.UI_RESTART:
+            restart();
             break;
 
         case UIEvent.UI_UPDATED_LINKLIST:

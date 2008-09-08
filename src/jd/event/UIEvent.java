@@ -36,6 +36,10 @@ public class UIEvent extends AWTEvent {
      */
     public static final int UI_EXIT = 11;
     /**
+     * Die Anwendung soll neugestartet werden
+     */
+    public static final int UI_RESTART = 111;
+    /**
      * Ein Reconnect soll gemacht werden
      */
     public static final int UI_INTERACT_RECONNECT = 10;
