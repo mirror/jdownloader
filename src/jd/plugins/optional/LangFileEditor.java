@@ -347,7 +347,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             JFileChooser chooser = new JFileChooser();
             chooser.setFileFilter(new LngFileFilter());
-            chooser.setCurrentDirectory(languageFile.getParentFile());
+            if (languageFile != null) chooser.setCurrentDirectory(languageFile.getParentFile());
 
             if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();

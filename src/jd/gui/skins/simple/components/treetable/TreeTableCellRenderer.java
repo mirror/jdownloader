@@ -67,11 +67,10 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
         if (value instanceof DownloadLink) {
             int id = ((DownloadLink) value).getPartByName();
             if (((DownloadLink) value).getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                PackageData pd = (PackageData)((DownloadLink) value).getProperty("JDU");
-                
-                lbl_link.setText(JDLocale.L("gui.treetable.part.label_update", "Update ") +pd.getInstalledVersion()+ "-> " +pd.getStringProperty("version") );
+                PackageData pd = (PackageData) ((DownloadLink) value).getProperty("JDU");
+                lbl_link.setText(JDLocale.L("gui.treetable.part.label_update", "Update") + " " + pd.getInstalledVersion() + " -> " + pd.getStringProperty("version"));
             } else {
-                lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei ") + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ");
+                lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ");
             }
 
             if (selected) {

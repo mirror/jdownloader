@@ -147,13 +147,13 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         dim.width = Math.max(dim.width, 300);
         progress.setPreferredSize(dim);
         progress.setMinimumSize(dim);
-//        if (JDUtilities.getJavaVersion() >= 1.6) {
-//            ui = new TreeProgressBarUI();
-//            ui.setSelectionForeground(Color.BLACK);
-//            progress.setUI(ui);
-//        }
-
+        if (JDUtilities.getJavaVersion() >= 1.6) {
+            ui = new TreeProgressBarUI();
+            ui.setSelectionForeground(Color.BLACK);
+            progress.setUI(ui);
+        }
         progress.setBorderPainted(false);
+        progress.setStringPainted(true);
         progress.setOpaque(false);
 
     }
@@ -168,7 +168,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 label = fp.getLinksInProgress() + "/" + fp.size() + " " + JDLocale.L("gui.treetable.packagestatus.links_active", "aktiv");
             }
             if (fp.getTotalDownloadSpeed() > 0) {
-                label = "[" + fp.getLinksInProgress() + "/" + fp.size() + "] " + "ETA " + JDUtilities.formatSeconds(fp.getETA()) + " @ " + JDUtilities.formatKbReadable(fp.getTotalDownloadSpeed() / 1024) + "/s";
+                label = "[" + fp.getLinksInProgress() + "/" + fp.size() + "] ETA " + JDUtilities.formatSeconds(fp.getETA()) + " @ " + JDUtilities.formatKbReadable(fp.getTotalDownloadSpeed() / 1024) + "/s";
             }
             miniBar.setText(label);
             miniBar.setPercent(fp.getPercent() / 100.0);
@@ -176,9 +176,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
             if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
-
                 if (!dLink.getLinkStatus().isPluginActive()) {
-                    progress.setString("");
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         progress.setForeground(DONE_COLOR);
                         if (ui != null) {
@@ -192,45 +190,26 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                             ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
                             ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
                         }
+                        progress.setString("");
                     }
-                    progress.setMaximum(10000);
-                    progress.setStringPainted(true);
-                    progress.setValue(dLink.getPercent());
-
                 } else {
-                    progress.setMaximum(10000);
-                    progress.setStringPainted(true);
                     progress.setForeground(ACTIVE_PROGRESS_COLOR);
                     if (ui != null) {
                         ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
                         ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
                     }
-                    progress.setValue(dLink.getPercent());
-                    String str = c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize())) + ")";
-                    progress.setString(str);
-
+                    progress.setString(c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize())) + ")");
                 }
-
+                progress.setMaximum(10000);
+                progress.setValue(dLink.getPercent());
                 return progress;
-            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
                 progress.setMaximum((int) dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
                     ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
                     ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 }
-                progress.setStringPainted(true);
-                progress.setValue((int) dLink.getLinkStatus().getRemainingWaittime());
-                progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
-                return progress;
-            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0) {
-                progress.setMaximum((int) dLink.getLinkStatus().getTotalWaitTime());
-                progress.setForeground(ERROR_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
-                }
-                progress.setStringPainted(true);
                 progress.setValue((int) dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
                 return progress;
@@ -239,38 +218,25 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             return label;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof FilePackage) {
             fp = (FilePackage) value;
+            progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
+            progress.setForeground(PACKAGE_PROGRESS_COLOR);
+            if (ui != null) {
+                ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+                ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
+            }
             if (fp.getPercent() == 0.0) {
-                progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
-                progress.setStringPainted(true);
-                progress.setForeground(PACKAGE_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
-                }
-                progress.setValue(fp.getTotalKBLoaded());
+                progress.setValue(0);
                 progress.setString("- 0% -");
-
             } else {
-                progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
-                progress.setStringPainted(true);
-                progress.setForeground(PACKAGE_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
-                }
                 progress.setValue(fp.getTotalKBLoaded());
-                String str = c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")";
-                progress.setString(str);
+                progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
             }
             return progress;
         }
 
         co = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
         co.setForeground(FONT_COLOR);
         co.setBackground(FONT_COLOR);
-
         return co;
-
     }
 }
