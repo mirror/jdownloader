@@ -34,10 +34,7 @@ public class BluehostTo extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    static private final String HOST = "bluehost.to";
-
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", Pattern.CASE_INSENSITIVE);
-
+ 
     public BluehostTo() {
         super();
     }
@@ -127,20 +124,7 @@ public class BluehostTo extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

@@ -38,9 +38,7 @@ public class MeinUpload extends PluginForHost {
 
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
-    private static final String HOST = "meinupload.com";
-
-    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)", Pattern.CASE_INSENSITIVE);
+    
 
     public MeinUpload() {
         super();
@@ -83,7 +81,7 @@ public class MeinUpload extends PluginForHost {
 private void login(Account account) throws IOException{
     br.setCookiesExclusive(true);
     br.setFollowRedirects(true);
-    br.clearCookies(HOST);
+    br.clearCookies(getHost());
 
     br.getPage("http://meinupload.com");
     Form login = br.getFormbyValue("Login");
@@ -171,21 +169,9 @@ private void login(Account account) throws IOException{
         return true;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
 
-    @Override
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTED;
-    }
-
+ 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

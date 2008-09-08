@@ -16,7 +16,7 @@ public class PluginWrapper {
     private String host;
     private String className;
     protected Logger logger= JDUtilities.getLogger();
-    private Plugin loadedPLugin;
+    private Plugin loadedPLugin=null;
     private boolean acceptOnlyURIs;
     private String pluginName;
 
@@ -28,7 +28,7 @@ public class PluginWrapper {
         this.className = className;
         this.pluginName=name;
         if((flags&PluginWrapper.LOAD_ON_INIT)>0){
-            getPlugin();
+            this.getPlugin();
         }
         
     }
@@ -68,8 +68,10 @@ public class PluginWrapper {
             }
             Class[] classes = new Class[] {};
             Constructor con = plgClass.getConstructor(classes);
-
+            classes=null;
             this.loadedPLugin = (Plugin) con.newInstance(new Object[] {});
+            loadedPLugin.setHost(host);
+            loadedPLugin.setSupportedPattern(pattern);
             logger.finer("laoded PLugin "+"jd.plugins.host." + getClassName());
            return loadedPLugin;
         } catch (Throwable e) {

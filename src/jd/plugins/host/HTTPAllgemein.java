@@ -32,9 +32,9 @@ import jd.utils.JDUtilities;
 
 public class HTTPAllgemein extends PluginForHost {
 
-    private static final String HOST = "HTTP Links";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("httpviajd://[\\w\\.]*/.*?\\.(dlc|ccf|rsdf|zip|mp3|mp4|avi|iso|mov|wmv|mpg|rar|mp2|7z|pdf|flv|jpg|exe|3gp|wav|mkv|tar|bz2)", Pattern.CASE_INSENSITIVE);
+    
 
     private String contentType;
 
@@ -90,15 +90,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
 
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {
@@ -141,10 +133,6 @@ public class HTTPAllgemein extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {

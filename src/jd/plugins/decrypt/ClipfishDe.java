@@ -45,7 +45,7 @@ public class ClipfishDe extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         Regex regexInfo = new Regex(br.getPage(cryptedLink.getCryptedUrl()), PATTERN_TITEL);
         StringTokenizer tokenizer = new StringTokenizer(regexInfo.getMatch(0), "-");
         String name = "";

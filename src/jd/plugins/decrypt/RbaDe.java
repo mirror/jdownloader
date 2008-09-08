@@ -77,7 +77,7 @@ public class RbaDe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         Browser br = new Browser();
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         String page = br.getPage(cryptedLink.getCryptedUrl());
         if (new Regex(cryptedLink, PATTERN_SUPPORTED_BATTLE).matches()) {
             String links[] = new Regex(page, REGEX_DOWNLOADLINK).getColumn(0);

@@ -33,11 +33,11 @@ import jd.utils.JDUtilities;
 public class Upsharenet extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "upshare.net";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?upshare\\.(net|eu)/download\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    
 
-    private static final String PLUGIN_NAME = HOST;
+
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
@@ -67,7 +67,7 @@ public class Upsharenet extends PluginForHost {
 
         /* .eu zu .net weiterleitung */
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("upshare\\.(net|eu)", "upshare\\.net"));
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
 
         downloadurl = downloadLink.getDownloadURL();
         try {
@@ -92,20 +92,6 @@ public class Upsharenet extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

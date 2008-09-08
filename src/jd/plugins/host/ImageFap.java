@@ -34,8 +34,8 @@ public class ImageFap extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    static private final String HOST = "imagefap.com";
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?", Pattern.CASE_INSENSITIVE);
+    
+    
 
     public ImageFap() {
         super();
@@ -112,19 +112,7 @@ public class ImageFap extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
+  
 
     @Override
     public String getVersion() {

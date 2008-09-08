@@ -109,7 +109,7 @@ public class MySpaceCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         // Ermittle nickname und playerurl
         br.getPage(cryptedLink.getCryptedUrl());
         String[][] matches = br.getRegex(PATTERN_PAGE_INFOS).getMatches();

@@ -34,9 +34,9 @@ import jd.plugins.download.RAFDownload;
 
 public class Freaksharenet extends PluginForHost {
 
-    private static final String HOST = "freakshare.net";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
+    
 
     public Freaksharenet() {
         super();
@@ -62,7 +62,7 @@ public class Freaksharenet extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         String url = downloadLink.getDownloadURL();
 
         br.getPage(url);
@@ -78,20 +78,7 @@ public class Freaksharenet extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {
@@ -131,7 +118,7 @@ public class Freaksharenet extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
 
         br.setFollowRedirects(true);
         br.getPage("http://freakshare.net/");

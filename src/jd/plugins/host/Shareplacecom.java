@@ -34,9 +34,9 @@ import jd.plugins.download.RAFDownload;
 
 public class Shareplacecom extends PluginForHost {
 
-    private static final String HOST = "shareplace.com";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+/.*?", Pattern.CASE_INSENSITIVE);
+    
     private String postdata;
     private RequestInfo requestInfo;
     private String url;
@@ -88,20 +88,7 @@ public class Shareplacecom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

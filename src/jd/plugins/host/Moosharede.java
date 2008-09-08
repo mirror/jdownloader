@@ -31,9 +31,9 @@ import jd.utils.JDUtilities;
 public class Moosharede extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "mooshare.de";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?mooshare\\.de/index\\.php\\?pid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    
 
     public Moosharede() {
         super();
@@ -57,7 +57,7 @@ public class Moosharede extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(getHost());
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
@@ -74,20 +74,6 @@ public class Moosharede extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

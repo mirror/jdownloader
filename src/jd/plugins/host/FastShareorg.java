@@ -30,9 +30,9 @@ import jd.plugins.download.RAFDownload;
 
 public class FastShareorg extends PluginForHost {
 
-    private static final String HOST = "fastshare.org";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?fastshare\\.org/download/(.*)", Pattern.CASE_INSENSITIVE);
+    
     private String url;
 
     public FastShareorg() {
@@ -57,7 +57,7 @@ public class FastShareorg extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(getHost());
             br.setFollowRedirects(false);
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
@@ -78,19 +78,7 @@ public class FastShareorg extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
+ 
 
     @Override
     public String getVersion() {

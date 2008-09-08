@@ -42,12 +42,11 @@ public class XupIn extends PluginForHost {
     private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
 
     private static final String DOWNLOAD_SIZE = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
-    private static final String HOST = "xup.in";
+    
 
     private static final String NAME_FROM_URL = "http://.*?xup\\.in/dl,[0-9]+/(.*?)";
     private static final String NOT_FOUND = "File does not exist";
     private static final String PASSWORD_PROTECTED = "Bitte Passwort eingeben";
-    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?xup\\.in/dl,\\d+/?.+?", Pattern.CASE_INSENSITIVE);
 
     private static final String VID = "value=\"(.*?)\" name=\"vid\"";
     private static final String VTIME = "value=\"([0-9]+)\" name=\"vtime\"";
@@ -122,19 +121,9 @@ public class XupIn extends PluginForHost {
 
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
+ 
 
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTED;
-    }
+ 
 
     @Override
     public String getVersion() {

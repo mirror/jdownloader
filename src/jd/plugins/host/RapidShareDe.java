@@ -38,9 +38,9 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class RapidShareDe extends PluginForHost {
-    private static final String HOST = "rapidshare.de";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("sjdp://rapidshare\\.de.*|http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
+    
 
 
     //
@@ -73,7 +73,7 @@ public class RapidShareDe extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
 br.setFollowRedirects(false);
         Form[] forms = br.getForms(downloadLink.getDownloadURL());
         if (forms.length < 2) {
@@ -179,7 +179,7 @@ br.setFollowRedirects(false);
    		}
         String user = account.getUser();
         String pass = account.getPass();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setFollowRedirects(false);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         checkMirrorsInProgress(downloadLink);
@@ -193,7 +193,7 @@ br.setFollowRedirects(false);
         PostRequest r = new PostRequest("http://rapidshare.de");
         r.setPostVariable("uri", Encoding.urlEncode(path));
         r.setPostVariable("dl.start", "PREMIUM");
-        r.getCookies().add(new Cookie(HOST,"user", user + "-" + formatPass));
+        r.getCookies().add(new Cookie(getHost(),"user", user + "-" + formatPass));
 
         String page = r.load();
         if(page.contains("Premium-Cookie nicht gefunden")){
@@ -216,7 +216,7 @@ br.setFollowRedirects(false);
 
         HTTPConnection urlConnection;
         GetRequest req = new GetRequest(url);
-        r.getCookies().add(new Cookie(HOST,"user", user + "-" + formatPass));
+        r.getCookies().add(new Cookie(getHost(),"user", user + "-" + formatPass));
         req.connect();
         urlConnection = req.getHttpConnection();
         if (urlConnection.getHeaderField("content-disposition") == null) {
@@ -251,7 +251,7 @@ br.setFollowRedirects(false);
     public boolean getFileInformation(DownloadLink downloadLink) {
     	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         try {
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         Form[] forms = br.getForms();
@@ -270,27 +270,9 @@ br.setFollowRedirects(false);
 
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
+  
 
-    @Override
-    /*
-     * public int getMaxSimultanDownloadNum() { if
-     * (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM,
-     * true) && getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM, false)) {
-     * return 20; } else { return 1; } }
-     * 
-     * @Override
-     */public String getPluginName() {
-        return HOST;
-    }
 
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

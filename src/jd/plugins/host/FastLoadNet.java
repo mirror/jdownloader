@@ -43,13 +43,13 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
 
-    private static final String HOST = "fast-load.net";
+    
 
     private static final String NOT_FOUND = "Datei existiert nicht";
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
+    
 
-    private static final String PLUGIN_NAME = HOST;
+
 
     public FastLoadNet() {
         super();
@@ -126,19 +126,6 @@ public class FastLoadNet extends PluginForHost {
 
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

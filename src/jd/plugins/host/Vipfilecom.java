@@ -33,9 +33,9 @@ import jd.plugins.download.RAFDownload;
 public class Vipfilecom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "vip-file.com";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
+    
 
     private String downloadurl;
     private RequestInfo requestInfo;
@@ -74,7 +74,7 @@ public class Vipfilecom extends PluginForHost {
                 } else if (linkinfo[0][1].matches("Kb")) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
                 }
-                downloadLink.setName(new Regex(downloadurl, PAT_SUPPORTED).getMatch(0));
+                downloadLink.setName(new Regex(downloadurl, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0));
                 return true;
             }
         } catch (Exception e) {
@@ -84,21 +84,7 @@ public class Vipfilecom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
+ 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

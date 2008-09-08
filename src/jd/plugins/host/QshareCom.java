@@ -45,9 +45,9 @@ public class QshareCom extends PluginForHost {
     // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
-    static private final String HOST = "qshare.com";
+    
     // http://s1.qshare.com/get/246129/Verknuepfung_mit_JDownloader.exe.lnk.html
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", Pattern.CASE_INSENSITIVE);
+    
 
     public QshareCom() {
         super();
@@ -65,7 +65,7 @@ public class QshareCom extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.getPage("http://www.qshare.com");
@@ -119,7 +119,7 @@ public class QshareCom extends PluginForHost {
 
         String page = null;
 
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         // String[][] dat = new Regex(page, "<SPAN
@@ -191,7 +191,7 @@ public class QshareCom extends PluginForHost {
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.getPage("http://www.qshare.com");
         br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
         br.setFollowRedirects(false);
@@ -233,7 +233,7 @@ public class QshareCom extends PluginForHost {
             forms = br.getForms();
             Form premium = forms[forms.length - 1];
 
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(getHost());
             br.setFollowRedirects(false);
             br.submitForm(premium);
             br.getPage((String) null);
@@ -299,27 +299,7 @@ public class QshareCom extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    /*
-     * public int getMaxSimultanDownloadNum() { // if //
-     * (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, //
-     * true) && // this.getProperties().getBooleanProperty(PROPERTY_USE_PREMIUM,
-     * false)) // { // return 20; // } else { return 1; // } }
-     * 
-     * @Override
-     */public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

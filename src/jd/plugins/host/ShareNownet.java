@@ -31,9 +31,9 @@ import jd.plugins.download.RAFDownload;
 public class ShareNownet extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "share-now.net";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html", Pattern.CASE_INSENSITIVE);
+    
 
     private String captchaCode;
     private File captchaFile;
@@ -60,7 +60,7 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setFollowRedirects(false);
         downloadurl = downloadLink.getDownloadURL();
         try {
@@ -87,20 +87,7 @@ public class ShareNownet extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

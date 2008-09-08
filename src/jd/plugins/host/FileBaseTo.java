@@ -28,9 +28,9 @@ import jd.plugins.download.RAFDownload;
 
 public class FileBaseTo extends PluginForHost {
 
-    private static final String HOST = "filebase.to";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*", Pattern.CASE_INSENSITIVE);
+    
 
     public FileBaseTo() {
         super();
@@ -53,7 +53,7 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         try {
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
@@ -79,19 +79,6 @@ public class FileBaseTo extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

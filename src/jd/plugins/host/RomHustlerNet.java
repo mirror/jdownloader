@@ -31,9 +31,9 @@ import jd.plugins.download.RAFDownload;
 
 public class RomHustlerNet extends PluginForHost {
 
-    private static final String HOST = "romhustler.net";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?romhustler\\.net/download/.*?/\\d+", Pattern.CASE_INSENSITIVE);
+    
     private String downloadUrl;
 
     public RomHustlerNet() {
@@ -59,7 +59,7 @@ public class RomHustlerNet extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
-            br.clearCookies(HOST);
+            br.clearCookies(getHost());
             br.getPage(downloadLink.getDownloadURL());
             downloadUrl = decodeurl(br.getRegex(Pattern.compile("link_enc=new Array\\((.*?)\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
             if (downloadUrl == null) return false;
@@ -71,19 +71,7 @@ public class RomHustlerNet extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
+  
 
     @Override
     public String getVersion() {

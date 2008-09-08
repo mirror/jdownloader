@@ -34,9 +34,9 @@ import jd.plugins.download.RAFDownload;
 
 public class Przeslijnet extends PluginForHost {
 
-    private static final String HOST = "przeslij.net";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://www2\\.przeslij\\.net/download.php\\?file=(.*)", Pattern.CASE_INSENSITIVE);
+    
     private RequestInfo requestInfo;
     private String url;
 
@@ -84,20 +84,6 @@ public class Przeslijnet extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

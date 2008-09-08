@@ -34,9 +34,9 @@ import jd.utils.JDUtilities;
 public class SharedZillacom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "sharedzilla.com";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?sharedzilla\\.com/(en|ru)/get\\?id=\\d+", Pattern.CASE_INSENSITIVE);
+    
 
     private String passCode = "";
     private RequestInfo requestInfo;
@@ -80,20 +80,7 @@ public class SharedZillacom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

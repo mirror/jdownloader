@@ -30,9 +30,8 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class ClipfishDe extends PluginForHost {
-    private static final Pattern PATTERN_SUPPORTET = Pattern.compile("http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv", Pattern.CASE_INSENSITIVE);
     private static final String CODER = "ToKaM";
-    private static final String HOST = "clipfish.de";
+  
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
     public ClipfishDe() {
@@ -68,16 +67,7 @@ public class ClipfishDe extends PluginForHost {
         }
     }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTET;
-    }
-
+   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -92,10 +82,7 @@ public class ClipfishDe extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
+  
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

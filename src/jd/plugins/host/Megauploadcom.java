@@ -51,9 +51,9 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String ERROR_TEMP_NOT_AVAILABLE = "Zugriff auf die Datei ist vor";
 
-    static private final String HOST = "megaupload.com";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?(megaupload|megarotic|sexuploader)\\.com/.*?\\?d\\=.{8}", Pattern.CASE_INSENSITIVE);
+    
 
     private static final String PATTERN_PASSWORD_WRONG = "Wrong password! Please try again";
 
@@ -87,7 +87,7 @@ public class Megauploadcom extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
@@ -170,17 +170,7 @@ public class Megauploadcom extends PluginForHost {
         return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-    public String getHost() {
-        return HOST;
-    }
 
-    public String getPluginName() {
-        return HOST;
-    }
-
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

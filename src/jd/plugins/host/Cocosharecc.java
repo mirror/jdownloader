@@ -36,10 +36,7 @@ import jd.utils.JDUtilities;
 public class Cocosharecc extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "cocoshare.cc";
-
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?cocoshare\\.cc/\\d+/(.*)", Pattern.CASE_INSENSITIVE);
-
+ 
     private String downloadurl;
     private RequestInfo requestInfo;
 
@@ -85,20 +82,7 @@ public class Cocosharecc extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

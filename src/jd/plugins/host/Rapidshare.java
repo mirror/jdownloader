@@ -59,7 +59,7 @@ import org.mozilla.javascript.Scriptable;
 
 public class Rapidshare extends PluginForHost {
 
-    static private final String host = "rapidshare.com";
+    
 
     private static long LAST_FILE_CHECK = 0;
 
@@ -87,7 +87,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minute)");
 
-    static private final Pattern patternSupported = Pattern.compile("sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", Pattern.CASE_INSENSITIVE);
+    
 
     // private static final String PROPERTY_USE_SSL = "USE_SSL";
 
@@ -125,6 +125,7 @@ public class Rapidshare extends PluginForHost {
         if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }
+      
         return link;
     }
 
@@ -136,6 +137,7 @@ public class Rapidshare extends PluginForHost {
 
     public Rapidshare() {
         super();
+       
         setMaxConnections(35);
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
@@ -672,13 +674,7 @@ public class Rapidshare extends PluginForHost {
         return super.getFileInformationString(parameter);
     }
 
-    public String getHost() {
-        return host;
-    }
-
-    public String getPluginName() {
-        return host;
-    }
+  
 
     private String getServerName(String id) {
         Iterator<Entry<String, String>> it = serverMap.entrySet().iterator();
@@ -689,9 +685,7 @@ public class Rapidshare extends PluginForHost {
         return null;
     }
 
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
+ 
 
     private String getURL(String[] serverstrings, String selected, String postTarget) {
         if (!serverMap.containsKey(selected.trim())) {

@@ -28,11 +28,11 @@ import jd.plugins.download.RAFDownload;
 
 public class MediafireCom extends PluginForHost {
 
-    private static final String HOST = "mediafire.com";
+    
 
     static private final String offlinelink = "tos_aup_violation";
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+)", Pattern.CASE_INSENSITIVE);
+    
 
     private String url;
 
@@ -61,7 +61,7 @@ public class MediafireCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
  
         try {
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(getHost());
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
 
@@ -75,25 +75,7 @@ public class MediafireCom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-   */ public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {
@@ -108,7 +90,7 @@ public class MediafireCom extends PluginForHost {
         // switch (step.getStep()) {
         // case PluginStep.STEP_PAGE:
         url = downloadLink.getDownloadURL();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.getPage(url);
         if (br.getRegex(offlinelink).matches()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

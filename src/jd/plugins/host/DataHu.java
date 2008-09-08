@@ -34,9 +34,9 @@ import jd.utils.JDUtilities;
 
 public class DataHu extends PluginForHost {
 
-    private static final String HOST = "data.hu";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?data.hu/get/.+/.+", Pattern.CASE_INSENSITIVE);
+    
 
     public DataHu() {
         super();
@@ -78,20 +78,7 @@ public class DataHu extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
+  
 
     @Override
     public String getVersion() {

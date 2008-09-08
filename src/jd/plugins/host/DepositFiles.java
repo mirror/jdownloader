@@ -47,10 +47,9 @@ public class DepositFiles extends PluginForHost {
 
     static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
 
-    static private final String HOST = "depositfiles.com";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", Pattern.CASE_INSENSITIVE);
-
+   
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
 
     private static final String PATTERN_PREMIUM_REDIRECT = "window\\.location\\.href = \"(.*?)\";";
@@ -79,7 +78,7 @@ public class DepositFiles extends PluginForHost {
         DownloadLink downloadLink = parameter;
         Browser br = new Browser();
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
 
         String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
         link = link.replace("com/ru/files/", "com/de/files/");
@@ -174,12 +173,12 @@ public class DepositFiles extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.getPage("http://depositfiles.com/en/");
 
-        Form login = br.getFormbyValue("enter");
+        Form login = br.getFormbyValue("enter"); 
 
         login.put("login", account.getUser());
         login.put("password", account.getPass());
@@ -217,7 +216,7 @@ public class DepositFiles extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
 
         String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
         link = link.replace("com/ru/files/", "com/de/files/");
@@ -340,20 +339,7 @@ public class DepositFiles extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

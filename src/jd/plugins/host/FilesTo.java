@@ -44,8 +44,8 @@ public class FilesTo extends PluginForHost {
     static private final String CODER = "JD-Team";
     static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
 
-    static private final String HOST = "files.to";
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
+    
+    
     private Pattern CAPTCHA_FLE = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
     private String captchaAddress;
     private Pattern DOWNLOAD_URL = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
@@ -135,19 +135,6 @@ public class FilesTo extends PluginForHost {
 
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

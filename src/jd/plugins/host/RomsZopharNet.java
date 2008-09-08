@@ -28,10 +28,10 @@ import jd.plugins.download.RAFDownload;
 
 public class RomsZopharNet extends PluginForHost {
 
-    private static final String HOST = "roms.zophar.net";//http://roms.zophar.net
+    //http://roms.zophar.net
                                                          // /
                                                          // download-file/131583
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}", Pattern.CASE_INSENSITIVE);
+    
 
     public RomsZopharNet() {
         super();
@@ -61,19 +61,7 @@ public class RomsZopharNet extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
+ 
 
     @Override
     public String getVersion() {

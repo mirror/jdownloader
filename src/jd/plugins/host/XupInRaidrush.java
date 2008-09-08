@@ -33,9 +33,8 @@ public class XupInRaidrush extends PluginForHost {
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "xup.raidrush.ws";
+    
 
-    static private final Pattern PATTERN_SUPPORTED = Pattern.compile("http://xup.raidrush.ws/.*?/", Pattern.CASE_INSENSITIVE);
 
     public XupInRaidrush() {
         super();
@@ -66,20 +65,6 @@ public class XupInRaidrush extends PluginForHost {
         downloadLink.setDownloadSize(Integer.parseInt(size));
         return true;
 
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTED;
     }
 
     @Override

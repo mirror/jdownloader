@@ -36,10 +36,10 @@ import jd.utils.JDMediaConvert;
 
 public class Youtube extends PluginForHost {
     static private final String CODER = "JD-Team";
-    static private final String HOST = "youtube.com";
+    
     static private final String AGB = "http://youtube.com/t/terms";
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", Pattern.CASE_INSENSITIVE);
+    
 
     public Youtube() {
         super();
@@ -71,21 +71,7 @@ public class Youtube extends PluginForHost {
             return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
+   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -95,10 +81,10 @@ public class Youtube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
         HTTPConnection urlConnection = br.getHttpConnection();
@@ -128,7 +114,7 @@ public class Youtube extends PluginForHost {
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
         HTTPConnection urlConnection = br.getHttpConnection();
@@ -163,7 +149,7 @@ public class Youtube extends PluginForHost {
     }
 
     private void login(Account account) throws IOException {
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         br.getPage("http://www.youtube.com/signup?next=/index");
         Form login = br.getFormbyName("loginForm");
         login.put("username", account.getUser());

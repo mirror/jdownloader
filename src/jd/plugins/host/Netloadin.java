@@ -52,11 +52,11 @@ public class Netloadin extends PluginForHost {
     static private final String FILE_DAMAGED = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt. Wir konnten diese Datei leider nicht wieder herstellen)";
 
     static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
-    static private final String HOST = "netload.in";
+    
 
     static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
     static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("sjdp://[\\w\\.]*?netload\\.in.*|(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*)", Pattern.CASE_INSENSITIVE);
+    
 
     private static String getID(String link) {
 
@@ -88,7 +88,7 @@ public class Netloadin extends PluginForHost {
         checkMirrorsInProgress(downloadLink);
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
         checkPassword(downloadLink, linkStatus);
         if (linkStatus.isFailed()) return;
@@ -232,7 +232,7 @@ public class Netloadin extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
 
-        br.postPage("http://" + HOST + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=");
+        br.postPage("http://" + getHost() + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=");
         if (br.getRedirectLocation() == null) {
             ai.setValid(false);
             return ai;
@@ -342,7 +342,7 @@ public class Netloadin extends PluginForHost {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
             br.setCookiesExclusive(true);
-            br.clearCookies(HOST);
+            br.clearCookies(getHost());
 
             br.setConnectTimeout(15000);
             String id = Netloadin.getID(downloadLink.getDownloadURL());
@@ -389,21 +389,7 @@ public class Netloadin extends PluginForHost {
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
+  
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

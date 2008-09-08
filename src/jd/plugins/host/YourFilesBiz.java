@@ -28,9 +28,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class YourFilesBiz extends PluginForHost {
-    private static final String HOST = "yourfiles.biz";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+",Pattern.CASE_INSENSITIVE);
+    
 
     public YourFilesBiz() {
         super();
@@ -55,7 +55,7 @@ public class YourFilesBiz extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
 
         downloadLink.setName(br.getRegex("<td align=left width=20%><b>Dateiname:</b></td>[\\s]*?<td align=left width=80%>(.*?)</td>").getMatch(0).trim());
@@ -65,21 +65,7 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
+ 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -90,7 +76,7 @@ public class YourFilesBiz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

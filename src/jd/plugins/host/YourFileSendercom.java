@@ -33,9 +33,9 @@ import jd.plugins.download.RAFDownload;
 public class YourFileSendercom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "yourfilesender.com";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)", Pattern.CASE_INSENSITIVE);
+    
 
     private String downloadurl;
     private RequestInfo requestInfo;
@@ -81,20 +81,6 @@ public class YourFileSendercom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

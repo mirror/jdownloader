@@ -199,15 +199,16 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     private String statusText;
 
+    protected String host;
+
+    protected Pattern supportedPattern;
+
     protected Plugin() {
 
         initTime = System.currentTimeMillis();
 
         config = new ConfigContainer(this);
-        // Lädt die Konfigurationseinstellungen aus der Konfig
-        if (getPluginName() == null) {
-            logger.severe("ACHTUNG: die Plugin.getPluginName() Funktion muss einen Wert wiedergeben der zum init schon verfügbar ist, also einen static wert");
-        }
+      
 
     }
 
@@ -369,7 +370,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * 
      * @return Der unterstützte Anbieter
      */
-    public abstract String getHost();
+    public String getHost(){
+        return host;
+    }
 
     public String getInitID() {
         return initTime + "<ID";
@@ -403,7 +406,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * 
      * @return Der Name des Plugins
      */
-    public abstract String getPluginName();
+    public String getPluginName(){
+        return host;
+    }
 
     /**
      * p gibt das interne properties objekt zurück indem die Plugineinstellungen
@@ -412,6 +417,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
+        if(getPluginName()==null){
+            logger.severe("PLuginname noch noch nicht festgelegt!!");
+        }
         SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
 //        if (cfg.getCount() <= 1) {
 //            if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName()) != null) {
@@ -443,7 +451,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Ein regulärer Ausdruck
      * @see Pattern
      */
-    public abstract Pattern getSupportedLinks();
+    public Pattern getSupportedLinks(){
+        return this.supportedPattern;
+    }
 
     /**
      * Liefert die Versionsbezeichnung dieses Plugins zurück
@@ -508,5 +518,15 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     public void setAcceptOnlyURIs(boolean acceptCompleteLinks) {
         this.acceptOnlyURIs = acceptCompleteLinks;
+    }
+
+    public void setHost(String host) {
+        this.host=host;
+        
+    }
+
+    public void setSupportedPattern(Pattern pattern) {
+       supportedPattern=pattern;
+        
     }
 }

@@ -34,9 +34,9 @@ import jd.plugins.download.RAFDownload;
 public class Odsiebiecom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "odsiebie.com";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?odsiebie\\.com/pokaz/\\d+---[a-zA-Z0-9]+.html", Pattern.CASE_INSENSITIVE);
+    
 
     private String captchaCode;
     private File captchaFile;
@@ -87,20 +87,7 @@ public class Odsiebiecom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

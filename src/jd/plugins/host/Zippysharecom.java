@@ -34,9 +34,9 @@ import jd.plugins.download.RAFDownload;
 
 public class Zippysharecom extends PluginForHost {
 
-    private static final String HOST = "zippyshare.com";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html", Pattern.CASE_INSENSITIVE);
+    
     private RequestInfo requestInfo;
     private String url;
 
@@ -82,20 +82,7 @@ public class Zippysharecom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

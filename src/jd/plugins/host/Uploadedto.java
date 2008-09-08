@@ -41,9 +41,9 @@ public class Uploadedto extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    static private final String HOST = "uploaded.to";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", Pattern.CASE_INSENSITIVE);
+    
 
     public Uploadedto() {        
         this.enablePremium();
@@ -81,7 +81,7 @@ public class Uploadedto extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
 
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("http://uploaded.to/login");
@@ -129,7 +129,7 @@ public class Uploadedto extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         correctURL(downloadLink);
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setCookie("http://uploaded.to/", "lang", "de");
 
         String user = account.getUser();
@@ -227,7 +227,7 @@ public class Uploadedto extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
     	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);
@@ -250,18 +250,7 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
-
+  
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
@@ -274,7 +263,7 @@ public class Uploadedto extends PluginForHost {
    		return;
    		}
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setCookie("http://uploaded.to/", "lang", "de");
         correctURL(downloadLink);
 

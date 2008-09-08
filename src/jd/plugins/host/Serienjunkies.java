@@ -47,9 +47,9 @@ import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
 public class Serienjunkies extends PluginForHost {
-    private final static String HOST = "Serienjunkies.org";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sjdownload.org.*", Pattern.CASE_INSENSITIVE);
+    
     private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
@@ -380,17 +380,7 @@ public class Serienjunkies extends PluginForHost {
         return true;
     }
 
-    public String getHost() {
-        return HOST;
-    }
 
-    public String getPluginName() {
-        return HOST;
-    }
-
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

@@ -38,11 +38,11 @@ import org.mozilla.javascript.Scriptable;
 public class ShareOnlineBiz extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "share-online.biz";
+    
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+    
 
-    private static final String PLUGIN_NAME = HOST;
+  
     private String captchaCode;
     private File captchaFile;
     private String passCode;
@@ -103,20 +103,7 @@ public class ShareOnlineBiz extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
+ 
 
     @Override
     public String getVersion() {

@@ -32,9 +32,9 @@ import jd.plugins.download.RAFDownload;
 
 public class ShareBaseDe extends PluginForHost {
 
-    private static final String HOST = "sharebase.de";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
+    
 
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
@@ -73,20 +73,7 @@ public class ShareBaseDe extends PluginForHost {
 
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

@@ -32,11 +32,11 @@ import jd.utils.JDUtilities;
 public class RbaDe extends PluginForHost {
 
     private static final String CODER = "ToKaM";
-    private static final String HOST = "r-b-a.de";
+    
     private static final String AGB_LINK = "http://www.r-b-a.de/index.php?ID=3003";
-    private static final String PLUGIN_NAME = HOST;
+
     // http://www.r-b-a.de/download.php?FILE=42710-2.mp3&PATH=5
-    private static final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern LINK_PATTERN = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)", Pattern.CASE_INSENSITIVE);
 
     /*
      * private static final String REGEX_DOWNLOADLINK1 =
@@ -90,20 +90,7 @@ public class RbaDe extends PluginForHost {
         return CODER;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return PLUGIN_NAME;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTED;
-    }
+ 
 
     @Override
     public String getVersion() {
@@ -146,11 +133,11 @@ public class RbaDe extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink link) {
         Browser br = new Browser();
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         LinkStatus linkstatus = link.getLinkStatus();
         try {
-            int battleId = Integer.parseInt(new Regex(link.getDownloadURL(), PATTERN_SUPPORTED).getMatch(0));
-            int rundenId = Integer.parseInt(new Regex(link.getDownloadURL(), PATTERN_SUPPORTED).getMatch(1));
+            int battleId = Integer.parseInt(new Regex(link.getDownloadURL(), LINK_PATTERN).getMatch(0));
+            int rundenId = Integer.parseInt(new Regex(link.getDownloadURL(), LINK_PATTERN).getMatch(1));
             String page = br.getPage("http://www.r-b-a.de/index.php?ID=4101&BATTLE=" + battleId);
             // String herausforderer = new Regex(page,
             // REGEX_HERAUSFORDERER).getFirstMatch();
@@ -207,7 +194,7 @@ public class RbaDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
         Browser br = new Browser();
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         /*
          * String header;
          * logger.finer("Überprüfe Headerfled - \"Conten-Type\"! URL: --> "+
@@ -221,7 +208,7 @@ public class RbaDe extends PluginForHost {
          * link.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
          * link.getLinkStatus().setErrorMessage(ERR_FILE_NOT_FOUND); }
          */
-        String path = new Regex(link.getDownloadURL(), PATTERN_SUPPORTED).getColumn(2)[0];
+        String path = new Regex(link.getDownloadURL(), LINK_PATTERN).getColumn(2)[0];
         if (path.equals("5")) {
             new RAFDownload(this, link, br.openGetConnection(link.getDownloadURL())).startDownload();
         } else {

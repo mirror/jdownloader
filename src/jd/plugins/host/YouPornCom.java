@@ -35,8 +35,8 @@ import jd.utils.JDLocale;
 
 public class YouPornCom extends PluginForHost {
     private static final String CODER = "JD-Team";
-    private static final String HOST = "youporn.com";
-    private static final Pattern patternSupported = Pattern.compile("http://download\\.youporn\\.com/download/\\d+/flv/.*", Pattern.CASE_INSENSITIVE);
+    
+
     private RequestInfo requestInfo;
 
     @Override
@@ -66,7 +66,7 @@ public class YouPornCom extends PluginForHost {
         LinkStatus linkStatus = link.getLinkStatus();
         if (!getFileInformation(link)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
         HTTPConnection urlConnection = requestInfo.getConnection();
@@ -100,20 +100,7 @@ public class YouPornCom extends PluginForHost {
         return CODER;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

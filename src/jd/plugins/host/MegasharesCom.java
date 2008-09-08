@@ -40,10 +40,10 @@ public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
 
     static private final String CODER = "JD-Team";
-    static private final String HOST = "megashares.com";
+    
 
     // http://d01.megashares.com/?d01=ec0acc7
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?megashares\\.com/\\?d.*", Pattern.CASE_INSENSITIVE);
+    
 
     private static String PLUGIN_PASS = null;
 
@@ -213,20 +213,7 @@ public class MegasharesCom extends PluginForHost {
 
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

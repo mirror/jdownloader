@@ -36,9 +36,9 @@ import jd.utils.JDMediaConvert;
 
 public class MyVideo extends PluginForHost {
     static private final String CODER = "JD-Team";
-    static private final String HOST = "myvideo.de";
+    
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?myvideo.*?\\.llnwd\\.net/d[\\d]+/movie[\\d]+/.+/[\\d]+\\.flv", Pattern.CASE_INSENSITIVE);
+    
     private RequestInfo requestInfo;
 
     public MyVideo() {
@@ -75,25 +75,7 @@ public class MyVideo extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    /*public int getMaxSimultanDownloadNum() {
-        return 50;
-    }
-
-    @Override
-   */ public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
+ 
 
     @Override
     public String getVersion() {
@@ -106,7 +88,7 @@ public class MyVideo extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(HOST + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
 

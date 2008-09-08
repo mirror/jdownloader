@@ -48,7 +48,7 @@ public class FileFactory extends PluginForHost {
     private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
     private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
-    static private final String HOST = "filefactory.com";
+    
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
@@ -56,7 +56,7 @@ public class FileFactory extends PluginForHost {
 
     private static Pattern patternForCaptcha = Pattern.compile("src=\"(/securimage/securimage_show.php\\?[^\"]*)\" alt=");
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
-    static private final Pattern patternSupported = Pattern.compile("sjdp://filefactory\\.com.*|http://[\\w\\.]*?filefactory\\.com(/|//)file/.{6}/?", Pattern.CASE_INSENSITIVE);
+    
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
@@ -218,7 +218,7 @@ public class FileFactory extends PluginForHost {
         Browser br = new Browser();
 
         br.setCookiesExclusive(true);
-        br.clearCookies(HOST);
+        br.clearCookies(getHost());
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
@@ -361,19 +361,7 @@ public class FileFactory extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

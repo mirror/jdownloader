@@ -30,14 +30,14 @@ import jd.plugins.download.RAFDownload;
 public class FileUploadnet extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    private static final String HOST = "file-upload.net";
+    
 
     static private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAT_VIEW = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAT_Member = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern PAT_SUPPORTED = Pattern.compile(PAT_Download.pattern() + "|" + PAT_VIEW.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE);
+    
     private String downloadurl;
 
     public FileUploadnet() {
@@ -61,7 +61,7 @@ public class FileUploadnet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
         br.setFollowRedirects(false);
         try {
             if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
@@ -99,20 +99,7 @@ public class FileUploadnet extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
-    }
 
     @Override
     public String getVersion() {

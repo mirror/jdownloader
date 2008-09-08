@@ -28,9 +28,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
-    private static final String HOST = "uploadstube.de";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*", Pattern.CASE_INSENSITIVE);
+    
 
     public UploadStube() {
         super();
@@ -54,7 +54,7 @@ public class UploadStube extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
      
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(getHost());
             String page = br.getPage(downloadLink.getDownloadURL());
 
             downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0).trim());
@@ -65,20 +65,7 @@ public class UploadStube extends PluginForHost {
       
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {
@@ -89,7 +76,7 @@ public class UploadStube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

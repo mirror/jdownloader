@@ -26,9 +26,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class zShare extends PluginForHost {
-    private static final String HOST = "zshare.net";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*", Pattern.CASE_INSENSITIVE);
+    
 
     public zShare() {
         super();
@@ -52,7 +52,7 @@ public class zShare extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(getHost());
             br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
             String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
             downloadLink.setName(fileInfo[0]);
@@ -78,19 +78,7 @@ public class zShare extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
+ 
 
     @Override
     public String getVersion() {
@@ -100,7 +88,7 @@ public class zShare extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
 
         br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
 

@@ -28,9 +28,9 @@ import jd.plugins.download.RAFDownload;
 
 public class FileMojoCom extends PluginForHost {
 
-    private static final String HOST = "filemojo.com";
+    
 
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filemojo\\.com/\\d+(/.+)?", Pattern.CASE_INSENSITIVE);
+    
 
     public FileMojoCom() {
         super();
@@ -55,7 +55,7 @@ public class FileMojoCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             br.setCookiesExclusive(true);
-            br.clearCookies(HOST);
+            br.clearCookies(getHost());
 
             String url = downloadLink.getDownloadURL();
 
@@ -78,19 +78,7 @@ public class FileMojoCom extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
 
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
 
     @Override
     public String getVersion() {

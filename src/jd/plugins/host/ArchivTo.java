@@ -29,10 +29,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class ArchivTo extends PluginForHost {
-    private static final String HOST = "archiv.to";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*", Pattern.CASE_INSENSITIVE);
-
+   
     public ArchivTo() {
         super();
     }
@@ -55,7 +52,7 @@ public class ArchivTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(HOST);
+            br.setCookiesExclusive(true);br.clearCookies(getHost());
             String page = br.getPage(downloadLink.getDownloadURL());
 
             downloadLink.setName(new Regex(page, "<td width=.*?>Original\\-Dateiname</td>.*? <a href=\"(.*?)\" style=.*?>(.*?)</a>").getMatch(1));
@@ -69,21 +66,11 @@ public class ArchivTo extends PluginForHost {
         return false;
     }
 
-    @Override
-    public String getHost() {
-        return HOST;
-    }
+   
 
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
+   
 
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
+  
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -93,7 +80,7 @@ public class ArchivTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(HOST);
+        br.setCookiesExclusive(true);br.clearCookies(getHost());
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
