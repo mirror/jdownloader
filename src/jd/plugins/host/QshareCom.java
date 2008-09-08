@@ -43,14 +43,10 @@ public class QshareCom extends PluginForHost {
     // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
-    // http://s1.qshare.com/get/246129/Verknuepfung_mit_JDownloader.exe.lnk.html
-
     public QshareCom() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_COMPLETE, null));
-        // setConfigElements();
-        this.enablePremium();
 
+        this.enablePremium();
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -99,7 +95,6 @@ public class QshareCom extends PluginForHost {
             date = dateFormat.parse(expire);
             ai.setValidUntil(date.getTime());
         } catch (ParseException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return ai;
@@ -115,18 +110,6 @@ public class QshareCom extends PluginForHost {
         br.clearCookies(getHost());
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        // String[][] dat = new Regex(page, "<SPAN
-        // STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\-
-        // google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end
-        // \\-\\->(.*?)<\\/SPAN>").getMatches();
-        //
-        // if (dat == null || dat.length == 0) {
-        //
-        // // step.setStatus(PluginStep.STATUS_ERROR);
-        //
-        // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        // return;
-        // }
 
         if (br.getRedirectLocation() != null) br.getPage((String) null);
 
@@ -149,7 +132,6 @@ public class QshareCom extends PluginForHost {
         String wait = new Regex(page, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getMatch(0);
         if (wait != null) {
             long waitTime = Long.parseLong(wait) * 60 * 1000;
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.setValue(waitTime);
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
@@ -157,17 +139,12 @@ public class QshareCom extends PluginForHost {
         String link = new Regex(page, "<div id=\"download_link\"><a href=\"(.*?)\"").getMatch(0);
 
         if (link == null) {
-
-            // step.setStatus(PluginStep.STATUS_ERROR);
-
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
         HTTPConnection con = br.openGetConnection(link);
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-
             return;
         }
         dl = new RAFDownload(this, downloadLink, con);
@@ -259,7 +236,6 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-
         return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
     }
 
@@ -300,35 +276,15 @@ public class QshareCom extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    // private void setConfigElements() {
-    // ConfigEntry cfg;
-    // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,
-    // getProperties(), PROPERTY_PREMIUM_USER,
-    // JDLocale.L("plugins.hoster.rapidshare.de.premiumUser", "Premium User")));
-    // cfg.setDefaultValue("Kundennummer");
-    // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD,
-    // getProperties(), PROPERTY_PREMIUM_PASS,
-    // JDLocale.L("plugins.hoster.rapidshare.de.premiumPass", "Premium Pass")));
-    // cfg.setDefaultValue("Passwort");
-    // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-    // getProperties(), PROPERTY_USE_PREMIUM,
-    // JDLocale.L("plugins.hoster.rapidshare.de.usePremium", "Premium Account
-    // verwenden")));
-    // cfg.setDefaultValue(false);
-    //
-    // }
-
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
 
     @Override
     public void reset() {
-
     }
 
     @Override
     public void resetPluginGlobals() {
-
     }
 }

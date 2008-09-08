@@ -42,13 +42,7 @@ public class RapidShareDe extends PluginForHost {
 
     public RapidShareDe() {
         super();
-        // steps.add(new PluginStep(PluginStep.STEP_WAIT_TIME, null));
-        // steps.add(new PluginStep(PluginStep.STEP_PENDING, null));
-        // steps.add(new PluginStep(PluginStep.STEP_GET_CAPTCHA_FILE, null));
 
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-
-        setConfigElements();
         this.enablePremium();
     }
 
@@ -60,14 +54,12 @@ public class RapidShareDe extends PluginForHost {
         }
         checkMirrorsInProgress(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_WAIT_TIME:
+
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.setFollowRedirects(false);
         Form[] forms = br.getForms(downloadLink.getDownloadURL());
         if (forms.length < 2) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
             logger.severe("konnte den Download nicht finden");
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
@@ -78,13 +70,6 @@ public class RapidShareDe extends PluginForHost {
         br.submitForm(form);
 
         long waittime;
-        // case PluginStep.STEP_PENDING:
-        // if (aborted) {
-        // logger.warning("Plugin abgebrochen");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        // }
         try {
             waittime = Long.parseLong(new Regex(br, "<script>var.*?\\= ([\\d]+)").getMatch(0)) * 1000;
 
@@ -96,7 +81,6 @@ public class RapidShareDe extends PluginForHost {
                 linkStatus.setValue(waittime);
                 return;
             } catch (Exception es) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
                 logger.severe("kann wartezeit nicht setzen");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage("Waittime could not be set");
@@ -104,7 +88,6 @@ public class RapidShareDe extends PluginForHost {
             }
         }
 
-        // case PluginStep.STEP_GET_CAPTCHA_FILE:
         String ticketCode = Encoding.htmlDecode(new Regex(br, "unescape\\(\\'(.*?)\\'\\)").getMatch(0));
 
         form = Form.getForms(ticketCode)[0];
@@ -114,11 +97,7 @@ public class RapidShareDe extends PluginForHost {
         boolean fileDownloaded = br.downloadFile(captchaFile, captchaAdress);
         if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
             logger.severe("Captcha not found");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter(
-                                                           // "Captcha
-            // ImageIO
-            // Error");
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         String code = null;
@@ -129,20 +108,10 @@ public class RapidShareDe extends PluginForHost {
             logger.severe("Bot erkannt");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(60000);
-            // step.setStatus(PluginStep.STATUS_ERROR);
             JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
             return;
         }
         form.put("captcha", code);
-        // step.setStatus(PluginStep.STATUS_SKIP);
-
-        // case PluginStep.STEP_DOWNLOAD:
-        // if (aborted) {
-        // logger.warning("Plugin abgebrochen");
-        // linkStatus.addStatus(LinkStatus.TODO);
-        // //step.setStatus(PluginStep.STATUS_TODO);
-        // return;
-        // }
 
         dl = new RAFDownload(this, downloadLink, br.openFormConnection(form));
         //
@@ -197,7 +166,6 @@ public class RapidShareDe extends PluginForHost {
         if (error != null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
-            // step.setStatus(PluginStep.STATUS_ERROR);
             return;
 
         }
@@ -226,7 +194,6 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-
         return "http://rapidshare.de/de/faq.html";
     }
 
@@ -271,15 +238,9 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Automatisch erstellter Methoden-Stub
     }
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Automatisch erstellter Methoden-Stub
-    }
-
-    private void setConfigElements() {
-
     }
 }

@@ -27,47 +27,18 @@ import jd.plugins.PluginForDecrypt;
 
 public class RbaDe extends PluginForDecrypt {
     private static final String HOST = "r-b-a.de";
+
     private static final String CODER = "ToKaM";
-    // http://www.r-b-a.de/index.php?ID=4101&BATTLE=27505&sid=
-    // 6ecea8d124eb0cc28d4c101c7b848ffc
+
     private static final Pattern BATTLE_REL_PATH = Pattern.compile("(index\\.php\\?ID=4101&(amp;)?BATTLE=\\d+(&sid=\\w+)?)", Pattern.CASE_INSENSITIVE);
+
     private static final Pattern PATTERN_SUPPORTED_BATTLE = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/" + BATTLE_REL_PATH, Pattern.CASE_INSENSITIVE);
-    // http://www.r-b-a.de/index.php?ID=4100&direction=last&MEMBER=2931&sid=
-    // 6ecea8d124eb0cc28d4c101c7b848ffc
+
     private static final Pattern PATTERN_SUPPORTED_USER = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/index\\.php\\?ID=4100(&direction=last)?&MEMBER=\\d+(&sid=\\w+)?", Pattern.CASE_INSENSITIVE);
+
     private static final Pattern PATTERN_SUPPORTED = Pattern.compile(PATTERN_SUPPORTED_BATTLE.pattern() + "|" + PATTERN_SUPPORTED_USER.pattern(), Pattern.CASE_INSENSITIVE);
 
     private static final Pattern REGEX_DOWNLOADLINK = Pattern.compile("(download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&(amp;)?PATH=\\d)");
-
-    // TODO
-    // //Keys für die Config
-    // /** Configuarations-Propperty: Gibt an ob alle Downloads in
-    // downloads/RBA-BATTELS/ gespeichert werden sollen */
-    // private static final String ENABLE_SUBFOLDERS1 =
-    // "RBA_ENABLE_SUBFOLDERS1";
-    // /** Configuarations-Propperty: Gibt an ob für die mp3s eines Artisten ein
-    // zusätzlicher Ordner erstellt werden soll */
-    // private static final String ENABLE_SUBFOLDERS2 =
-    // "RBA_ENABLE_SUBFOLDERS2";
-    // /** Configuarations-Propperty: Gibt an ob für Dateinamen
-    // "[myspaceusername]-filename" und das genannte prefix hinzugefügt wird */
-    // private static final String SUBFOLDER1_PATH = "RBA_SUBFOLDER1_PATH";
-    // private void setConfigElements() {
-    // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-    // getPluginConfig(), ENABLE_SUBFOLDERS1,
-    // JDLocale.L("plugins.decrypt.RbaDe0",
-    // "Alle Downloads in einem übergeordneten Verzeichnis speichern"
-    // )).setDefaultValue(true));
-    // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-    // getPluginConfig(), ENABLE_SUBFOLDERS2,
-    // JDLocale.L("plugins.decrypt.RbaDe1",
-    // "Für jedes Battel einen eigenen Ordner anlegen"
-    // )).setDefaultValue(false));
-    // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD,
-    // getPluginConfig(), SUBFOLDER1_PATH, JDLocale.L("plugins.decrypt.RbaDe2",
-    // "Name des übergeordneten Verzeichnises")).setDefaultValue(this.));
-    //
-    // }
 
     public RbaDe() {
         super();

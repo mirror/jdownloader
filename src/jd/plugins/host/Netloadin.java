@@ -65,7 +65,8 @@ public class Netloadin extends PluginForHost {
     private String fileStatusText;
 
     public Netloadin() {
-        setConfigElements();
+        super();
+
         this.enablePremium();
     }
 
@@ -398,10 +399,6 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-
-    }
-
-    private void setConfigElements() {
 
     }
 }
