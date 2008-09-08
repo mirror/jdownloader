@@ -77,7 +77,6 @@ public class GetRouterInfo {
 //		curl "http://fritz.box:49000/upnp/control/WANIPConn1" -H "Content-Type: text/xml; charset="utf-8"" -H "SoapAction: urn:schemas-upnp-org:service:WANIPConnection:1#GetStatusInfo" -d "" -s
 		
 			Browser br = new Browser();
-			br.setConnectTimeout(2000);
 			try {
 				
 				HashMap<String, String> h = new HashMap<String, String>();	
