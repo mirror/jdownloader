@@ -47,6 +47,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import jd.gui.skins.simple.ConfirmCheckBoxDialog;
+
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -55,7 +57,6 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
@@ -281,59 +282,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             }
         }
         if (e.getSource() == btnAutoConfig) {
-        	final ConfirmCheckBoxDialog ccbd = new ConfirmCheckBoxDialog(JDLocale.L("gui.config.liveHeader.warning.wizard.title","Routererkennung jetzt starten?"), JDLocale.L("gui.config.liveHeader.warning.wizard", "Die automatische Suche nach den Einstellungen kann einige Minuten in Anspruch nehmen.\r\n Bitte geben Sie vorher Ihre Router Logindaten ein. Jetzt ausführen?"), JDLocale.L("gui.config.liveHeader.warning.wizard.checkall", "Alle Router prüfen"));
-            if (ccbd.isOk) {
-                Thread th;
-                final ProgressDialog progress = new ProgressDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, false);
-
-                th = new Thread() {
-                    @Override
-                    public void run() {
-
-                        GetRouterInfo routerInfo = new GetRouterInfo(progress);
-                        routerInfo.testAll=ccbd.isChecked;
-                        routerInfo.setLoginPass((String) pass.getText());
-                        routerInfo.setLoginUser((String) user.getText());
-                        String username = (String) user.getText();
-                        if (username != null && !username.matches("[\\s]*")) {
-                            routerInfo.username = username;
-                        }
-                        String pw = (String) pass.getText();
-                        if (pw != null && !pw.matches("[\\s]*")) {
-                            routerInfo.password = pw;
-                        }
-                        String[] data;
-                        if (GetRouterInfo.validateIP(ip.getText() + "")) {
-                            data = routerInfo.getRouterData(ip.getText() + "");
-                        } else {
-                            data = routerInfo.getRouterData(null);
-                        }
-                        if (data == null) {
-                            progress.setVisible(false);
-                            progress.dispose();
-                            JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
-                            return;
-                        }
-                        routerScript.setData(data[2]);
-                        if (username == null || username.matches("[\\s]*")) {
-                            user.setData(data[4]);
-                        }
-                        if (pw == null || pw.matches("[\\s]*")) {
-                            pass.setData(data[5]);
-                        }
-
-                        user.setData(data[4]);
-                        progress.setVisible(false);
-                        progress.dispose();
-                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.yourRouter", "Sie haben eine") + " " + data[1]);
-
-                    }
-                };
-                th.start();
-                progress.setThread(th);
-                progress.setVisible(true);
-
-            }
+        	GetRouterInfo.autoConfig(pass, user, ip, routerScript, null);
         }
 
     }

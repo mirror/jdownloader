@@ -32,7 +32,7 @@ import javax.swing.WindowConstants;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ProgressDialog extends JDialog implements ActionListener {
+public class ProgressDialog extends Progressor implements ActionListener {
 
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
@@ -57,32 +57,35 @@ public class ProgressDialog extends JDialog implements ActionListener {
     private Thread thread;
 
     public ProgressDialog(Frame owner, String message, Thread ob, boolean ok, boolean cancel) {
-        super(owner);
-        setModal(true);
-        setLayout(new GridBagLayout());
+	
+		        super(owner);
+		        setModal(true);
+		        setLayout(new GridBagLayout());
 
-        thread = ob;
-        btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
-        btnNOTOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
-        lblMessage = new JLabel(message);
-        progress = new JProgressBar();
-        setAlwaysOnTop(true);
-        setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
-        btnOK.addActionListener(this);
-        btnNOTOK.addActionListener(this);
-        getRootPane().setDefaultButton(btnOK);
-        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
-        JDUtilities.addToGridBag(this, lblMessage, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
-        JDUtilities.addToGridBag(this, progress, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        if (ok) {
-            JDUtilities.addToGridBag(this, btnOK, REL, REL, cancel ? REL : REM, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        }
-        if (cancel) {
-            JDUtilities.addToGridBag(this, btnNOTOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        }
-        setLocation(SimpleGUI.getLastLocation(owner, "DIALOGS", this));
+		        thread = ob;
+		        btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+		        btnNOTOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+		        lblMessage = new JLabel(message);
+		        progress = new JProgressBar();
+		        setAlwaysOnTop(true);
+		        setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
+		        btnOK.addActionListener(this);
+		        btnNOTOK.addActionListener(this);
+		        getRootPane().setDefaultButton(btnOK);
+		        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+		        JDUtilities.addToGridBag(this, lblMessage, REL, REL, REM, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
+		        JDUtilities.addToGridBag(this, progress, REL, REL, REM, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+		        if (ok) {
+		            JDUtilities.addToGridBag(this, btnOK, REL, REL, cancel ? REL : REM, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		        }
+		        if (cancel) {
+		            JDUtilities.addToGridBag(this, btnNOTOK, REL, REL, REM, 1, ok ? 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+		        }
+		        setLocation(SimpleGUI.getLastLocation(owner, "DIALOGS", this));
 
-        pack();
+		        pack();
+			
+
 
     }
 

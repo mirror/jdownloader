@@ -125,6 +125,8 @@ import org.jdesktop.swingx.JXTitledSeparator;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
+import jd.gui.skins.simple.config.FengShuiConfigPanel;
+
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
      * Toggled das MenuItem fuer die Ansicht des Log Fensters
@@ -906,7 +908,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
             break;
         case JDAction.APP_CONFIGURATION:
-            ConfigurationDialog.showConfig(frame, this);
+        	new FengShuiConfigPanel();
+//            ConfigurationDialog.showConfig(frame, this);
             break;
         }
 

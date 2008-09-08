@@ -97,7 +97,9 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HTTPSEND_IPCHECKWAITTIME = "HTTPSEND_IPCHECKWAITTIME";
 
     public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
-
+    
+    public static final String PARAM_HTTPSEND_ROUTERNAME = "PARAM_HTTPSEND_ROUTERNAME";
+    
     public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
 
     public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
