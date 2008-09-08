@@ -282,7 +282,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             }
         }
         if (e.getSource() == btnAutoConfig) {
-        	GetRouterInfo.autoConfig(pass, user, ip, routerScript, null);
+        	GetRouterInfo.autoConfig(pass, user, ip, routerScript);
         }
 
     }

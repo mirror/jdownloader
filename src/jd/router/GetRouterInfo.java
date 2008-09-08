@@ -28,8 +28,9 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
+
+import jd.gui.skins.simple.config.FengShuiConfigPanel;
 
 import jd.http.HTTPConnection;
 
@@ -153,7 +154,7 @@ public class GetRouterInfo {
 	}
 
 	public String getAdress() {
-		if (adress != null) {
+		if (adress != null && !adress.matches("\\s*")) {
 			return adress;
 		}
 		setProgressText("try to find the router ip");
@@ -271,6 +272,8 @@ public class GetRouterInfo {
 				Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
 		JDUtilities.getConfiguration().setProperty(
 				Configuration.PARAM_HTTPSEND_RETRIES, 0);
+		JDUtilities.getConfiguration().setProperty(
+				Configuration.PARAM_HTTPSEND_IP, adress);
 		JDUtilities.getConfiguration().setProperty(
 				Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
 		JDUtilities.getConfiguration().setProperty(
@@ -393,7 +396,7 @@ public class GetRouterInfo {
 	}
 
 	public static void autoConfig(final Object pass, final Object user,
-			final Object ip, final Object routerScript, final Object routername) {
+			final Object ip, final Object routerScript) {
 
 		final ConfirmCheckBoxDialog ccbd = new ConfirmCheckBoxDialog(
 				JDLocale.L("gui.config.liveHeader.warning.wizard.title",
@@ -457,9 +460,16 @@ public class GetRouterInfo {
 					}
 					if (routerScript != null
 							&& routerScript instanceof GUIConfigEntry)
+					{
 						((GUIConfigEntry) routerScript).setData(data[2]);
-					if (routername != null && routername instanceof JTextArea) {
-						((JTextField) routername).setText(data[1]);
+						JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME,
+								data[1]);
+					}
+					
+					else if (routerScript != null && routerScript instanceof FengShuiConfigPanel) {
+						FengShuiConfigPanel m = ((FengShuiConfigPanel) routerScript);
+						m.routername.setText(data[1]);
+						m.Reconnectmethode=data[2];
 					}
 					JDUtilities.getConfiguration().setProperty(
 							Configuration.PARAM_HTTPSEND_ROUTERNAME, data[1]);
