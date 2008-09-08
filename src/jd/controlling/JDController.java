@@ -1436,7 +1436,7 @@ public class JDController implements ControlListener, UIListener {
                             // Anhand des Hostnamens aus dem DownloadLink
                             // wird ein passendes Plugin gesucht
                             try {
-                                pluginForHost = JDUtilities.getPluginForHost(localLink.getHost()).getClass().newInstance();
+                                pluginForHost = JDUtilities.getPluginForHost(localLink.getHost());
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
