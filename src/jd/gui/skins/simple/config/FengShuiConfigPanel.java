@@ -75,7 +75,6 @@ import jd.gui.skins.simple.components.BrowseFile;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -146,11 +145,11 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
         Reconnectmethode = config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
         addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>Some hosters use captchas which are impossible<br> to enter for people with disabilities. With this functionality<br> the JD team addresses the requirement for<br> people with disabilities not to be discriminated against.<br> Read more about it at:<br> <b>http://en.wikipedia.org/wiki/Web_accessibility"));
-        
+
         languages = new JComboBox(JDLocale.getLocaleIDs().toArray(new String[] {}));
         languages.setSelectedItem(guiConfig.getProperty(SimpleGUI.PARAM_LOCALE, Locale.getDefault()));
         addComponents(panel, JDLocale.L("gui.config.gui.language", "Sprache"), languages);
-        
+
         downloadDirectory = new BrowseFile();
         downloadDirectory.setEditable(true);
         downloadDirectory.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -158,7 +157,7 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
         addComponents(panel, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis"), downloadDirectory);
 
         addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.config.host"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
-        
+
         panel.add(premium = new JButton(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster")), GAPLEFT + "align leading, wmax pref" + SPAN);
         premium.addActionListener(this);
 
@@ -178,7 +177,6 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
             tip.setToolTipText(JDLocale.L("gui.fengshuiconfig.reconnect.tooltip", "<html>Sometimes your Router needs a kick in the balls!"));
             panel.add(tip, GAPLEFT + "w pref!, wrap");
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -314,7 +312,6 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
             tip.setToolTipText(help);
             panel.add(tip, GAPLEFT + "w pref!, wrap");
         } catch (MalformedURLException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
 
@@ -361,48 +358,48 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
             JPopupMenu popup = new JPopupMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
 
             for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
-                HostPluginWrapper wrapper=it.next();
-                
-                if(wrapper.isLoaded()){
-                final Plugin helpplugin = wrapper.getPlugin();
-                if (helpplugin.createMenuitems() != null) {
-                    JMenu item;
-                    popup.add(item = new JMenu(helpplugin.getPluginName()));
-                    item.setHorizontalTextPosition(JMenuItem.RIGHT);
+                HostPluginWrapper wrapper = it.next();
 
-                    // m.setItems(helpplugin.createMenuitems());
+                if (wrapper.isLoaded()) {
+                    final Plugin helpplugin = wrapper.getPlugin();
+                    if (helpplugin.createMenuitems() != null) {
+                        JMenu item;
+                        popup.add(item = new JMenu(helpplugin.getPluginName()));
+                        item.setHorizontalTextPosition(JMenuItem.RIGHT);
 
-                    if (item != null) {
-                        popup.add(item);
+                        // m.setItems(helpplugin.createMenuitems());
 
-                        item.addMenuListener(new MenuListener() {
-                            public void menuCanceled(MenuEvent e) {
-                            }
+                        if (item != null) {
+                            popup.add(item);
 
-                            public void menuDeselected(MenuEvent e) {
-                            }
+                            item.addMenuListener(new MenuListener() {
+                                public void menuCanceled(MenuEvent e) {
+                                }
 
-                            public void menuSelected(MenuEvent e) {
-                                JMenu m = (JMenu) e.getSource();
-                                JMenuItem c;
-                                m.removeAll();
-                                for (MenuItem menuItem : helpplugin.createMenuitems()) {
-                                    c = SimpleGUI.getJMenuItem(menuItem);
-                                    if (c == null) {
-                                        m.addSeparator();
-                                    } else {
-                                        m.add(c);
+                                public void menuDeselected(MenuEvent e) {
+                                }
+
+                                public void menuSelected(MenuEvent e) {
+                                    JMenu m = (JMenu) e.getSource();
+                                    JMenuItem c;
+                                    m.removeAll();
+                                    for (MenuItem menuItem : helpplugin.createMenuitems()) {
+                                        c = SimpleGUI.getJMenuItem(menuItem);
+                                        if (c == null) {
+                                            m.addSeparator();
+                                        } else {
+                                            m.add(c);
+                                        }
+
                                     }
 
                                 }
 
-                            }
-
-                        });
-                    } else {
-                        popup.addSeparator();
+                            });
+                        } else {
+                            popup.addSeparator();
+                        }
                     }
-                }
                 }
             }
 

@@ -895,7 +895,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.ITEMS_REMOVE_PACKAGES:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "remove completed packages?"))) {
+                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "Remove completed packages?"))) {
                     JDUtilities.getController().removeCompletedPackages();
                 }
             } else {
@@ -904,7 +904,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.ITEMS_REMOVE_LINKS:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
-                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "remove completed downloads?"))) {
+                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_downloadlinks", "Remove completed downloads?"))) {
                     JDUtilities.getController().removeCompletedDownloadLinks();
                 }
             } else {
@@ -1401,47 +1401,47 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // menPlugins.add(helpContainer);
 
         for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
-            HostPluginWrapper wrapper=it.next();
-            
-            if(wrapper.isLoaded()){
-            
-            final Plugin helpplugin = wrapper.getPlugin();
-            if (helpplugin.createMenuitems() != null) {
-                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-                // m.setItems(helpplugin.createMenuitems());
-                mi = SimpleGUI.getJMenuItem(m);
-                if (mi != null) {
-                    helpHost.add(mi);
+            HostPluginWrapper wrapper = it.next();
 
-                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                    ((JMenu) mi).addMenuListener(new MenuListener() {
-                        public void menuCanceled(MenuEvent e) {
-                        }
+            if (wrapper.isLoaded()) {
 
-                        public void menuDeselected(MenuEvent e) {
-                        }
+                final Plugin helpplugin = wrapper.getPlugin();
+                if (helpplugin.createMenuitems() != null) {
+                    MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
+                    // m.setItems(helpplugin.createMenuitems());
+                    mi = SimpleGUI.getJMenuItem(m);
+                    if (mi != null) {
+                        helpHost.add(mi);
 
-                        public void menuSelected(MenuEvent e) {
-                            JMenu m = (JMenu) e.getSource();
-                            JMenuItem c;
-                            m.removeAll();
-                            for (MenuItem menuItem : helpplugin.createMenuitems()) {
-                                c = SimpleGUI.getJMenuItem(menuItem);
-                                if (c == null) {
-                                    m.addSeparator();
-                                } else {
-                                    m.add(c);
+                        ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                        ((JMenu) mi).addMenuListener(new MenuListener() {
+                            public void menuCanceled(MenuEvent e) {
+                            }
+
+                            public void menuDeselected(MenuEvent e) {
+                            }
+
+                            public void menuSelected(MenuEvent e) {
+                                JMenu m = (JMenu) e.getSource();
+                                JMenuItem c;
+                                m.removeAll();
+                                for (MenuItem menuItem : helpplugin.createMenuitems()) {
+                                    c = SimpleGUI.getJMenuItem(menuItem);
+                                    if (c == null) {
+                                        m.addSeparator();
+                                    } else {
+                                        m.add(c);
+                                    }
+
                                 }
 
                             }
 
-                        }
-
-                    });
-                } else {
-                    helpHost.addSeparator();
+                        });
+                    } else {
+                        helpHost.addSeparator();
+                    }
                 }
-            }
             }
         }
         if (helpHost.getItemCount() == 0) {

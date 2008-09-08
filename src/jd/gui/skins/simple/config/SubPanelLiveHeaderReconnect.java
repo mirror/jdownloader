@@ -47,8 +47,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import jd.gui.skins.simple.ConfirmCheckBoxDialog;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -57,7 +55,6 @@ import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
 import jd.router.GetRouterInfo;
@@ -282,7 +279,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             }
         }
         if (e.getSource() == btnAutoConfig) {
-        	GetRouterInfo.autoConfig(pass, user, ip, routerScript);
+            GetRouterInfo.autoConfig(pass, user, ip, routerScript);
         }
 
     }
