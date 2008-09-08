@@ -151,7 +151,6 @@ public class Main {
             System.exit(0);
         }
 
-
         Boolean newInstance = false;
         boolean showSplash = true;
         boolean stop = false;
@@ -428,7 +427,6 @@ public class Main {
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
         // init.createQueueBackup();
 
-       
         Properties pr = System.getProperties();
         TreeSet propKeys = new TreeSet(pr.keySet());
 
@@ -446,9 +444,7 @@ public class Main {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
                     init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
                 }
-             
 
-                
             }
 
         }.start();
@@ -459,21 +455,18 @@ public class Main {
         }
 
         Level level = JDUtilities.getLogger().getLevel();
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE))) {
-            if (!debug) {
-                JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), String.format(JDLocale.L("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet."), level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"));
-            }
+        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !debug) {
+            JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), JDLocale.LF("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.", level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"), 10);
         }
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
 
-   try {
-    Thread.sleep(3000);
-} catch (InterruptedException e) {
-    // TODO Auto-generated catch block
-    e.printStackTrace();
-}
-   new PackageManager().interact(this);
-    
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        new PackageManager().interact(this);
+
     }
 }

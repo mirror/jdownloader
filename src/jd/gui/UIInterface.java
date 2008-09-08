@@ -98,7 +98,6 @@ public interface UIInterface extends ControlListener {
      */
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def);
 
-
     /**
      * Entfernt einen UIListener
      * 
@@ -122,19 +121,38 @@ public interface UIInterface extends ControlListener {
      */
     public boolean showConfirmDialog(String string);
 
+    /**
+     * Zeigt einen MessageDialog mit Countdown an
+     * 
+     * @param string
+     * @param sec
+     */
     public boolean showCountdownConfirmDialog(String string, int sec);
 
     /**
      * Zeigt einen HTML dialog an
      * 
      * @param string
+     * @param message
+     * @param url
      */
     public int showHelpMessage(String title, String message, String url);
+
+    /**
+     * Zeigt einen HTML dialog mit Countdown an
+     * 
+     * @param string
+     * @param message
+     * @param url
+     * @param countdown
+     */
+    public int showHelpMessage(String title, String message, String url, int sec);
 
     /**
      * Zeigt einen HTML dialog an
      * 
      * @param string
+     * @param htmlQuestion
      */
     public boolean showHTMLDialog(String title, String htmlQuestion);
 
@@ -149,6 +167,8 @@ public interface UIInterface extends ControlListener {
      * Zeigt einen Textarea dialog an
      * 
      * @param string
+     * @param question
+     * @param def
      */
     public String showTextAreaDialog(String title, String question, String def);
 
@@ -156,6 +176,10 @@ public interface UIInterface extends ControlListener {
      * Zeigt einen Textfield dialog mit zwei Textfields und zwei Labels an
      * 
      * @param string
+     * @param questionOne
+     * @param questionTwo
+     * @param defaultOne
+     * @param defaultTwo
      */
     public String[] showTwoTextFieldDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo);
 
@@ -163,6 +187,10 @@ public interface UIInterface extends ControlListener {
      * Zeigt einen Textarea dialog mit zwei Textareas und zwei Labels an
      * 
      * @param string
+     * @param questionOne
+     * @param questionTwo
+     * @param defaultOne
+     * @param defaultTwo
      */
     public String[] showTextAreaDialog(String title, String questionOne, String questionTwo, String defaultOne, String defaultTwo);
 

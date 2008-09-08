@@ -56,16 +56,14 @@ public class JHelpDialog extends JDialog implements ActionListener {
     public static int STATUS_UNANSWERED = 0;
 
     public static int showHelpMessage(JFrame parent, String title, String message, final URL url) {
-        return JHelpDialog.showHelpMessage(parent, title, message, url, JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen"));
-
+        return JHelpDialog.showHelpMessage(parent, title, message, url, -1);
     }
 
-    public static int showHelpMessage(JFrame parent, String title, String message, final URL url, String helpText) {
-
-        title = title == null ? JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe") : title;
-        JHelpDialog d = new JHelpDialog(parent, title, message, -1);
+    public static int showHelpMessage(JFrame parent, String title, String message, final URL url, int countdown) {
+        if (title == null) title = JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe");
+        JHelpDialog d = new JHelpDialog(parent, title, message, countdown);
         d.getBtn3().setVisible(false);
-        d.getBtn1().setText(helpText);
+        d.getBtn1().setText(JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen"));
         d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"));
         d.action1 = d.new Action() {
             @Override

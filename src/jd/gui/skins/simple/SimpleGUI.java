@@ -1665,8 +1665,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public int showHelpMessage(String title, String message, String url) {
         // logger.info("HelpMessageDialog");
+        return showHelpMessage(title, message, url, -1);
+    }
+
+    public int showHelpMessage(String title, String message, String url, int sec) {
+        // logger.info("HelpMessageDialog");
         try {
-            return JHelpDialog.showHelpMessage(frame, title, "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>", new URL(url));
+            return JHelpDialog.showHelpMessage(frame, title, "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>", new URL(url), sec);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
