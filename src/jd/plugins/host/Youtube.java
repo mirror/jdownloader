@@ -40,8 +40,6 @@ public class Youtube extends PluginForHost {
     public Youtube(String cfgName) {
         super(cfgName);
         enablePremium(1);
-        br.setFollowRedirects(true);
-        br.setCookiesExclusive(true);
     }
 
     @Override
@@ -56,6 +54,7 @@ public class Youtube extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        br.setFollowRedirects(true);
         if (br.openGetConnection(downloadLink.getDownloadURL()).getResponseCode() == 200) {
             return true;
         } else
@@ -71,6 +70,8 @@ public class Youtube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
@@ -99,6 +100,9 @@ public class Youtube extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         login(account);
         if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
 
@@ -149,7 +153,9 @@ public class Youtube extends PluginForHost {
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-
+        br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         login(account);
         if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) {
             ai.setValid(false);
