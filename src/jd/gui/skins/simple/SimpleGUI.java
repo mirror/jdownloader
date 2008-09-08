@@ -356,6 +356,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return menuItem;
     }
 
+    private static JMenu createMenu(String iconname, String ressourceName) {
+        JMenu menu = new JMenu(iconname);
+        ImageIcon icon = JDUtilities.getscaledImageIcon(JDTheme.V(ressourceName), 16, -1);
+        if (icon != null) {
+            menu.setIcon(icon);
+        }
+        return menu;
+    }
+
     public static JMenuItem getJMenuItem(final MenuItem mi) {
         switch (mi.getID()) {
         case MenuItem.SEPARATOR:
@@ -555,7 +564,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionDnD;
 
     private JDAction actionExit;
-    
+
     private JDAction actionRestart;
 
     private JDAction actionHelp;
@@ -573,6 +582,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionItemsTop;
 
     private JDAction actionItemsUp;
+
+    private JDAction actionAddLinks;
+
+    private JDAction actionRemoveLinks;
+
+    private JDAction actionRemovePackages;
 
     private JDAction actionLoadDLC;
 
@@ -913,8 +928,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
             break;
         case JDAction.APP_CONFIGURATION:
-        	new FengShuiConfigPanel();
-//            ConfigurationDialog.showConfig(frame, this);
+            new FengShuiConfigPanel();
+            // ConfigurationDialog.showConfig(frame, this);
             break;
         }
 
@@ -1271,6 +1286,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionStartStopDownload = new JDAction(this, getStartStopDownloadImage(), "action.start", JDAction.APP_START_STOP_DOWNLOADS);
         actionPause = new JDAction(this, getPauseImage(), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
+        actionAddLinks = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
+        actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_ADD);
+        actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_ADD);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
         actioninstallJDU = new JDAction(this, JDTheme.V("gui.load"), "action.install", JDAction.APP_INSTALL_JDU);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
@@ -1294,7 +1312,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionWiki = new JDAction(this, JDTheme.V("gui.images.help"), "action.wiki", JDAction.WIKI);
         actionAbout = new JDAction(this, JDTheme.V("gui.images.jd_logo"), "action.about", JDAction.ABOUT);
         actionChanges = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.changes", JDAction.CHANGES);
-
     }
 
     /**
@@ -1307,16 +1324,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
 
         menViewLog = SimpleGUI.createMenuItem(actionLog);
-        if (actionLog.getAccelerator() != null) {
-            menViewLog.setAccelerator(actionLog.getAccelerator());
-        }
-
         // add menus to parents
 
         // Adds the menus form the Addons
 
         JMenuItem mi;
         menAddons.add(SimpleGUI.createMenuItem(actioninstallJDU));
+        menAddons.addSeparator();
+        menAddons.add(SimpleGUI.createMenuItem(actionDnD));
 
         for (final PluginOptional plg : JDUtilities.getPluginsOptional()) {
 
@@ -1361,7 +1376,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
         // JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt",
         // "Decrypter"));
-        //JMenu helpContainer = new JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
+        // JMenu helpContainer = new
+        // JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
 
         menPlugins.add(helpHost);
         // menPlugins.add(helpDecrypt);
@@ -1449,56 +1465,63 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // helpDecrypt.setEnabled(false);
         // }
 
-//        for (Iterator<PluginsC> it = JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
-//            final Plugin helpplugin = it.next();
-//            if (helpplugin.createMenuitems() != null) {
-//                MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
-//
-//                mi = SimpleGUI.getJMenuItem(m);
-//                if (mi != null) {
-//                    helpContainer.add(mi);
-//
-//                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-//                    ((JMenu) mi).addMenuListener(new MenuListener() {
-//                        public void menuCanceled(MenuEvent e) {
-//                        }
-//
-//                        public void menuDeselected(MenuEvent e) {
-//                        }
-//
-//                        public void menuSelected(MenuEvent e) {
-//                            JMenu m = (JMenu) e.getSource();
-//                            m.removeAll();
-//                            for (MenuItem menuItem : helpplugin.createMenuitems()) {
-//                                m.add(SimpleGUI.getJMenuItem(menuItem));
-//
-//                            }
-//
-//                        }
-//
-//                    });
-//                } else {
-//                    helpContainer.addSeparator();
-//                }
-//            }
-//        }
-//        if (helpContainer.getItemCount() == 0) {
-//            helpContainer.setEnabled(false);
-//        }
-
-        menFile.add(SimpleGUI.createMenuItem(actionLoadDLC));
-        menFile.add(SimpleGUI.createMenuItem(actionSaveDLC));       
+        // for (Iterator<PluginsC> it =
+        // JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
+        // final Plugin helpplugin = it.next();
+        // if (helpplugin.createMenuitems() != null) {
+        // MenuItem m = new MenuItem(MenuItem.CONTAINER,
+        // helpplugin.getPluginName(), 0);
+        //
+        // mi = SimpleGUI.getJMenuItem(m);
+        // if (mi != null) {
+        // helpContainer.add(mi);
+        //
+        // ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+        // ((JMenu) mi).addMenuListener(new MenuListener() {
+        // public void menuCanceled(MenuEvent e) {
+        // }
+        //
+        // public void menuDeselected(MenuEvent e) {
+        // }
+        //
+        // public void menuSelected(MenuEvent e) {
+        // JMenu m = (JMenu) e.getSource();
+        // m.removeAll();
+        // for (MenuItem menuItem : helpplugin.createMenuitems()) {
+        // m.add(SimpleGUI.getJMenuItem(menuItem));
+        //
+        // }
+        //
+        // }
+        //
+        // });
+        // } else {
+        // helpContainer.addSeparator();
+        // }
+        // }
+        // }
+        // if (helpContainer.getItemCount() == 0) {
+        // helpContainer.setEnabled(false);
+        // }
+        JMenu menAdd = createMenu(JDLocale.L("gui.menu.add", "Add"), "gui.images.add");
+        menAdd.add(SimpleGUI.createMenuItem(actionAddLinks));
+        menAdd.add(SimpleGUI.createMenuItem(actionLoadDLC));
+        menFile.add(menAdd);
+        JMenu menRemove = createMenu(JDLocale.L("gui.menu.remove", "Remove"), "gui.images.delete");
+        menRemove.add(SimpleGUI.createMenuItem(actionRemoveLinks));
+        menRemove.add(SimpleGUI.createMenuItem(actionRemovePackages));
+        menFile.add(menRemove);
+        menFile.add(SimpleGUI.createMenuItem(actionSaveDLC));
         menFile.addSeparator();
-        menFile.add(SimpleGUI.createMenuItem(actionExit));
-        menFile.add(SimpleGUI.createMenuItem(actionRestart));
-        
-       
-        menExtra.add(SimpleGUI.createMenuItem(actionDnD));
-        menExtra.addSeparator();
-        menExtra.add(SimpleGUI.createMenuItem(actionPasswordlist));
-        menExtra.add(SimpleGUI.createMenuItem(actionUnrar));
-        menExtra.addSeparator();
+        JMenu menExit = createMenu(JDLocale.L("gui.menu.exit", "Exit"), "gui.images.exit");
+        menExit.add(SimpleGUI.createMenuItem(actionExit));
+        menExit.add(SimpleGUI.createMenuItem(actionRestart));
+        menFile.add(menExit);
+
         menExtra.add(SimpleGUI.createMenuItem(actionConfig));
+        menExtra.addSeparator();
+        menExtra.add(SimpleGUI.createMenuItem(actionUnrar));
+        menExtra.add(SimpleGUI.createMenuItem(actionPasswordlist));
 
         menHelp.add(menViewLog);
         menHelp.addSeparator();
