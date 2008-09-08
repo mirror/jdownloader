@@ -98,8 +98,10 @@ public class Browser {
         host = Browser.getHost(url);
 
         HashMap<String, Cookie> cookies = getCookies().get(host);
-        return cookies.get(string).getValue();
-
+        if (cookies != null && cookies.containsKey(string)) {
+            return cookies.get(string).getValue();
+        } else
+            return null;
     }
 
     public HashMap<String, HashMap<String, Cookie>> getCookies() {
@@ -197,10 +199,10 @@ public class Browser {
         }
         return null;
     }
-    
+
     public Form getFormbyName(String name) {
         for (Form f : getForms()) {
-            if (f.formProperties.get("name")!= null && f.formProperties.get("name").equals(name)) return f;
+            if (f.formProperties.get("name") != null && f.formProperties.get("name").equals(name)) return f;
         }
         return null;
     }
@@ -251,7 +253,7 @@ public class Browser {
         updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
-            ret = this.getPage((String)null);
+            ret = this.getPage((String) null);
         } else {
 
             currentURL = new URL(string);
@@ -478,7 +480,7 @@ public class Browser {
         updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
-            ret = this.getPage((String)null);
+            ret = this.getPage((String) null);
         } else {
 
             currentURL = new URL(url);
@@ -990,8 +992,8 @@ public class Browser {
     }
 
     public void setAuth(String domain, String user, String pass) {
-        
-        HashMap<String, Auth> auths = this.cookiesExclusive?this.auths:AUTHS;
+
+        HashMap<String, Auth> auths = this.cookiesExclusive ? this.auths : AUTHS;
         if (user == null && pass == null) {
             auths.remove(domain);
         }
@@ -1005,8 +1007,8 @@ public class Browser {
     }
 
     public String getPage(URL url) throws IOException {
-        return getPage(url+"");
-        
+        return getPage(url + "");
+
     }
 
 }

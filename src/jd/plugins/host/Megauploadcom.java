@@ -20,7 +20,6 @@ import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -50,10 +49,6 @@ public class Megauploadcom extends PluginForHost {
     static private final String ERROR_FILENOTFOUND = "Die Datei konnte leider nicht gefunden werden";
 
     static private final String ERROR_TEMP_NOT_AVAILABLE = "Zugriff auf die Datei ist vor";
-
-    
-
-    
 
     private static final String PATTERN_PASSWORD_WRONG = "Wrong password! Please try again";
 
@@ -87,12 +82,17 @@ public class Megauploadcom extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
-
-        br.getPage("http://www.megaupload.com/xml/premiumstats.php?confirmcode=" + br.getCookie("http://megaupload.com", "user") + "&language=en&uniq=" + System.currentTimeMillis());
+        String cookie = br.getCookie("http://megaupload.com", "user");
+        if (cookie == null) {
+            ai.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.megaupload.com/xml/premiumstats.php?confirmcode=" + cookie + "&language=en&uniq=" + System.currentTimeMillis());
         String days = br.getRegex("daysremaining=\"(\\d*?)\"").getMatch(0);
         ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
         if (days == null || days.equals("0")) ai.setExpired(true);
@@ -142,7 +142,7 @@ public class Megauploadcom extends PluginForHost {
         downloadLink.getLinkStatus().setStatusText("Premium");
         urlConnection = br.openGetConnection(br.getRedirectLocation());
         dl = new RAFDownload(this, downloadLink, urlConnection);
-   
+
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
         dl.startDownload();
@@ -169,8 +169,6 @@ public class Megauploadcom extends PluginForHost {
     public String getFileInformationString(DownloadLink downloadLink) {
         return (tempUnavailable ? "<Temp. unavailable> " : "") + downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
-
-
 
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -199,7 +197,7 @@ public class Megauploadcom extends PluginForHost {
         if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
-            tempUnavailable = true;            
+            tempUnavailable = true;
             return;
         }
         if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
@@ -338,7 +336,7 @@ public class Megauploadcom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     public void reset() {
         captchaPost = null;
         captchaURL = null;
