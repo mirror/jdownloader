@@ -51,6 +51,8 @@ import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.SnifferException;
+import jd.utils.Sniffy;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -280,6 +282,9 @@ public class Rapidshare extends PluginForHost {
             new Serienjunkies().handleFree(downloadLink);
             return;
         }
+        if (downloadLink.getLinkType() != DownloadLink.LINKTYPE_NORMAL) {
+            if (Sniffy.hasSniffer()) throw new SnifferException();
+        }
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // if (ddl)this.doPremium(downloadLink);
         Rapidshare.correctURL(downloadLink);
@@ -288,9 +293,7 @@ public class Rapidshare extends PluginForHost {
         String freeOrPremiumSelectPostURL = null;
         Browser br = new Browser();
 
-        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-            br.setSnifferDetection(true);
-        }
+     
 
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
@@ -450,9 +453,9 @@ public class Rapidshare extends PluginForHost {
             return;
         }
 
-        // if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-        // if (Sniffy.hasSniffer()) throw new SnifferException();
-        // }
+        if (downloadLink.getLinkType() != DownloadLink.LINKTYPE_NORMAL) {
+            if (Sniffy.hasSniffer()) throw new SnifferException();
+        }
         Rapidshare.correctURL(downloadLink);
         // Sagt der Browserinstanz, dass cookies nur für diese instanz verwaltet
         // werden, und nicht Global für ganz JD
