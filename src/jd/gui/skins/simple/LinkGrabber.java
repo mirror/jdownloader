@@ -78,6 +78,7 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.text.PlainDocument;
 
+import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
@@ -811,7 +812,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         } else if (e.getSource() == mFreeMirror) {
             Vector<DownloadLink> finalList = new Vector<DownloadLink>();
             Vector<Vector<DownloadLink>> files = getSelectedTab().getMirrors();
-            Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
+            ArrayList<HostPluginWrapper> pfh = JDUtilities.getPluginsForHost();
             for (int a = 0; a < files.size(); a++) {
                 Vector<DownloadLink> mirrors = files.get(a);
                 if (mirrors.size() == 0) {
@@ -821,7 +822,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 DownloadLink link = null;
 
                 for (int b = 0; b < pfh.size(); b++) {
-                    PluginForHost plugin = pfh.get(b);
+                    HostPluginWrapper plugin = pfh.get(b);
                     boolean ch = false;
                     for (int c = 0; c < mirrors.size(); c++) {
                         DownloadLink mirror = mirrors.get(c);
@@ -845,12 +846,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         } else if (e.getSource() == mPremiumMirror) {
             Vector<DownloadLink> finalList = new Vector<DownloadLink>();
             Vector<Vector<DownloadLink>> files = getSelectedTab().getMirrors();
-            Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
+            ArrayList<HostPluginWrapper> pfh = JDUtilities.getPluginsForHost();
             for (int a = 0; a < files.size(); a++) {
                 Vector<DownloadLink> mirrors = files.get(a);
                 boolean found = false;
                 for (int b = 0; b < pfh.size(); b++) {
-                    PluginForHost plugin = pfh.get(b);
+                    PluginForHost plugin = pfh.get(b).getPlugin();
                     boolean ch = false;
                     for (int c = 0; c < mirrors.size(); c++) {
                         DownloadLink mirror = mirrors.get(c);
@@ -1179,7 +1180,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         submenu.add(mHostSelectionRemove);
         submenu.addSeparator();
         submenu.addSeparator();
-        Vector<PluginForHost> hosts = JDUtilities.getPluginsForHost();
+        ArrayList<HostPluginWrapper> hosts = JDUtilities.getPluginsForHost();
         mHostSelection = new JMenuItem[hosts.size()];
         subsubmenu = null;
         for (int i = 0; i < hosts.size(); ++i) {
@@ -1193,7 +1194,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     submenu.addSeparator();
                 }
             }
-            mHostSelection[i] = new JMenuItem(hosts.get(i).getPluginName());
+            mHostSelection[i] = new JMenuItem(hosts.get(i).getHost());
             mHostSelection[i].addActionListener(this);
             submenu.add(mHostSelection[i]);
         }
@@ -1406,10 +1407,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private DownloadLink getPriorityLink(Vector<DownloadLink> mirrors) {
-        Vector<PluginForHost> pfh = JDUtilities.getPluginsForHost();
+        ArrayList<HostPluginWrapper> pfh = JDUtilities.getPluginsForHost();
 
         for (int b = 0; b < pfh.size(); b++) {
-            PluginForHost plugin = pfh.get(b);
+           HostPluginWrapper plugin = pfh.get(b);
 
             for (int c = 0; c < mirrors.size(); c++) {
                 DownloadLink mirror = mirrors.get(c);

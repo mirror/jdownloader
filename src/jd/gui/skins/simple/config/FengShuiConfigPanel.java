@@ -59,6 +59,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import jd.HostPluginWrapper;
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -359,8 +360,11 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
             init.initPlugins();
             JPopupMenu popup = new JPopupMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
 
-            for (Iterator<PluginForHost> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
-                final Plugin helpplugin = it.next();
+            for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
+                HostPluginWrapper wrapper=it.next();
+                
+                if(wrapper.isLoaded()){
+                final Plugin helpplugin = wrapper.getPlugin();
                 if (helpplugin.createMenuitems() != null) {
                     JMenu item;
                     popup.add(item = new JMenu(helpplugin.getPluginName()));
@@ -398,6 +402,7 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
                     } else {
                         popup.addSeparator();
                     }
+                }
                 }
             }
 

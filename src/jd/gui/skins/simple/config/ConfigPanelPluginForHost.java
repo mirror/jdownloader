@@ -29,6 +29,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.Vector;
 
@@ -47,6 +48,7 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
+import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
@@ -98,15 +100,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 0:
                 return rowIndex;
             case 1:
-                return pluginsForHost.elementAt(rowIndex).getPluginName();
+                return pluginsForHost.get(rowIndex).getPluginName();
             case 2:
-                return pluginsForHost.elementAt(rowIndex).getVersion();
+                return pluginsForHost.get(rowIndex).getVersion();
             case 3:
-                return pluginsForHost.elementAt(rowIndex).getCoder();
+                return pluginsForHost.get(rowIndex).getCoder();
             case 4:
-                return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB"), pluginsForHost.elementAt(rowIndex).getAGBLink());
+                return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB"), pluginsForHost.get(rowIndex).getAGBLink());
             case 5:
-                return pluginsForHost.elementAt(rowIndex).isAGBChecked();
+                return pluginsForHost.get(rowIndex).isAGBChecked();
             }
             return null;
         }
@@ -119,12 +121,12 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         @Override
         public void setValueAt(Object value, int row, int col) {
             if ((Boolean) value) {
-                String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.elementAt(row).getHost());
+                String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.get(row).getHost());
                 if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) {
-                    pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+                    pluginsForHost.get(row).getPlugin().setAGBChecked((Boolean) value);
                 }
             } else {
-                pluginsForHost.elementAt(row).setAGBChecked((Boolean) value);
+                pluginsForHost.get(row).getPlugin().setAGBChecked((Boolean) value);
             }
         }
     }
@@ -184,9 +186,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private Configuration configuration;
 
-    private PluginForHost draggedPlugin;
+    private HostPluginWrapper draggedPlugin;
 
-    private Vector<PluginForHost> pluginsForHost;
+    private ArrayList<HostPluginWrapper> pluginsForHost;
 
     private JTable table;
 
@@ -230,7 +232,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForHost.elementAt(table.getSelectedRow()));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForHost.get(table.getSelectedRow()).getPlugin());
     }
 
     @Override
@@ -249,7 +251,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
         // table.setDefaultRenderer(Object.class, new
@@ -311,7 +313,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }
@@ -331,11 +333,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     @Override
     public void save() {
         Vector<String> priority = new Vector<String>();
-        for (PluginForHost plg : pluginsForHost) {
+        for (HostPluginWrapper plg : pluginsForHost) {
             priority.add(plg.getHost());
-            if (plg.getPluginConfig() != null) {
-                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
-            }
+//            if (plg.getPluginConfig() != null) {
+//                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
+//            }
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
     }

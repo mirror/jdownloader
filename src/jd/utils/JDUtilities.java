@@ -88,6 +88,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
+import jd.HostPluginWrapper;
 import jd.JDClassLoader;
 import jd.JDFileFilter;
 import jd.captcha.JAntiCaptcha;
@@ -181,7 +182,7 @@ public class JDUtilities {
     
     private static Vector<PluginForDecrypt> pluginsForDecrypt = null;
 
-    private static Vector<PluginForHost> pluginsForHost = null;
+    private static ArrayList<HostPluginWrapper> pluginsForHost = null;
 
     private static Vector<PluginOptional> pluginsOptional = null;
 
@@ -1383,7 +1384,7 @@ public class JDUtilities {
      */
     public static PluginForHost getPluginForHost(String host) {
         for (int i = 0; i < pluginsForHost.size(); i++) {
-            if (pluginsForHost.get(i).getHost().equals(host)) { return pluginsForHost.get(i); }
+            if (pluginsForHost.get(i).getHost().equals(host)) { return pluginsForHost.get(i).getPlugin(); }
         }
         return null;
     }
@@ -1424,19 +1425,19 @@ public class JDUtilities {
      * @return Plugins zum Downloaden von einem Anbieter
      */
     @SuppressWarnings("unchecked")
-    public static Vector<PluginForHost> getPluginsForHost() {
+    public static ArrayList<HostPluginWrapper> getPluginsForHost() {
         // return pluginsForHost;
 
-        Vector<PluginForHost> plgs = new Vector<PluginForHost>();
+        ArrayList<HostPluginWrapper> plgs = new ArrayList<HostPluginWrapper>();
         if (pluginsForHost != null) {
             plgs.addAll(pluginsForHost);
         }
-        Vector<PluginForHost> pfh = new Vector<PluginForHost>();
+        ArrayList<HostPluginWrapper> pfh = new ArrayList<HostPluginWrapper>();
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
                 if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
-                    PluginForHost plg = plgs.remove(b);
+                    HostPluginWrapper plg = plgs.remove(b);
                     pfh.add(plg);
                     break;
                 }
@@ -1612,7 +1613,7 @@ public class JDUtilities {
      * 
      * @return
      */
-    public static Vector<PluginForHost> getUnsortedPluginsForHost() {
+    public static ArrayList<HostPluginWrapper> getUnsortedPluginsForHost() {
         return pluginsForHost;
     }
 
@@ -1961,7 +1962,7 @@ public class JDUtilities {
 
     }
 
-    public static void setPluginForHostList(Vector<PluginForHost> loadPlugins) {
+    public static void setPluginForHostList(ArrayList<HostPluginWrapper> loadPlugins) {
         pluginsForHost = loadPlugins;
 
     }

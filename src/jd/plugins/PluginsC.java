@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.HostPluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
@@ -56,14 +57,13 @@ public abstract class PluginsC extends Plugin {
     protected Vector<String> EXTENSIONS = new Vector<String>();
 
     protected String md5;
-protected byte[] k;
+    protected byte[] k;
     protected ProgressController progress;
 
     private int status = STATUS_NOTEXTRACTED;
-  
+
     public abstract ContainerStatus callDecryption(File file);
 
-   
     @Override
     public synchronized boolean canHandle(String data) {
         if (data == null) { return false; }
@@ -179,7 +179,7 @@ protected byte[] k;
     }
 
     public abstract String[] encrypt(String plain);
-   
+
     /**
      * Diese Methode liefert eine URL zurück, von der aus der Download gestartet
      * werden kann
@@ -191,7 +191,7 @@ protected byte[] k;
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
         // logger.info("EXTRACT " + downloadLink);
         if (downloadLinksURL == null) {
-            initContainer(downloadLink.getContainerFile(),(byte[])downloadLink.getProperty("k", new byte[]{}));
+            initContainer(downloadLink.getContainerFile(), (byte[]) downloadLink.getProperty("k", new byte[] {}));
         }
         if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) { return null; }
         downloadLink.setProperty("k", k);
@@ -206,11 +206,11 @@ protected byte[] k;
      * @return Das gefundene Plugin oder null
      */
     protected PluginForHost findHostPlugin(String data) {
-        Vector<PluginForHost> pluginsForHost = JDUtilities.getPluginsForHost();
-        PluginForHost pHost;
+        ArrayList<HostPluginWrapper> pluginsForHost = JDUtilities.getPluginsForHost();
+        HostPluginWrapper pHost;
         for (int i = 0; i < pluginsForHost.size(); i++) {
             pHost = pluginsForHost.get(i);
-            if (pHost.canHandle(data)) { return pHost; }
+            if (pHost.canHandle(data)) { return pHost.getPlugin(); }
         }
         return null;
     }
@@ -281,7 +281,7 @@ protected byte[] k;
             }
             progress = new ProgressController(JDLocale.L("plugins.container.open", "Open Container"), 10);
             progress.increase(1);
-if(bs!=null)k=bs;
+            if (bs != null) k = bs;
             doDecryption(filename);
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
@@ -310,11 +310,9 @@ if(bs!=null)k=bs;
         }
     }
 
-
     public void initContainer(String absolutePath) {
-       this.initContainer(absolutePath, null);
-        
+        this.initContainer(absolutePath, null);
+
     }
 
-  
 }

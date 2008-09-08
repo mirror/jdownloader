@@ -78,6 +78,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import jd.HostPluginWrapper;
 import jd.JDFileFilter;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -105,6 +106,7 @@ import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
+import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -122,8 +124,6 @@ import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTitledSeparator;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
-
-import jd.gui.skins.simple.config.FengShuiConfigPanel;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
     /**
@@ -1383,8 +1383,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // menPlugins.add(helpDecrypt);
         // menPlugins.add(helpContainer);
 
-        for (Iterator<PluginForHost> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
-            final Plugin helpplugin = it.next();
+        for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
+            HostPluginWrapper wrapper=it.next();
+            
+            if(wrapper.isLoaded()){
+            
+            final Plugin helpplugin = wrapper.getPlugin();
             if (helpplugin.createMenuitems() != null) {
                 MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
                 // m.setItems(helpplugin.createMenuitems());
@@ -1420,6 +1424,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 } else {
                     helpHost.addSeparator();
                 }
+            }
             }
         }
         if (helpHost.getItemCount() == 0) {

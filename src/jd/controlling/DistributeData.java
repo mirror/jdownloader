@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
 import jd.parser.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -217,13 +218,13 @@ public class DistributeData extends ControlBroadcaster {
         while (iterator.hasNext()) {
             DownloadLink decrypted = iterator.next();
 
-            Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+            Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
             while (iteratorHost.hasNext()) {
 
                 try {
-                    PluginForHost pHost = iteratorHost.next();
+                    HostPluginWrapper pHost = iteratorHost.next();
                     if (pHost.canHandle(decrypted.getDownloadURL())) {
-                        Vector<DownloadLink> dLinks = pHost.getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != JDUtilities.getController().getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+                        Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != JDUtilities.getController().getDefaultFilePackage() ? decrypted.getFilePackage() : null);
 
                         for (int c = 0; c < dLinks.size(); c++) {
 
@@ -251,11 +252,11 @@ public class DistributeData extends ControlBroadcaster {
         }
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt
-        Iterator<PluginForHost> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
-            PluginForHost pHost = iteratorHost.next();
+            HostPluginWrapper pHost = iteratorHost.next();
             if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
+                Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (foundpassword.size() > 0) {
                     Iterator<DownloadLink> iter = dl.iterator();
                     while (iter.hasNext()) {
@@ -264,9 +265,9 @@ public class DistributeData extends ControlBroadcaster {
                 }
                 links.addAll(dl);
                 if (pHost.isAcceptOnlyURIs()) {
-                    data = pHost.cutMatches(data);
+                    data = pHost.getPlugin().cutMatches(data);
                 } else {
-                    orgData = pHost.cutMatches(orgData);
+                    orgData = pHost.getPlugin().cutMatches(orgData);
                 }
 
             }
@@ -275,9 +276,9 @@ public class DistributeData extends ControlBroadcaster {
         data = data.replaceAll("http://", "httpviajd://");
         iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
-            PluginForHost pHost = iteratorHost.next();
+            HostPluginWrapper pHost = iteratorHost.next();
             if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
-                Vector<DownloadLink> dl = pHost.getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
+                Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (foundpassword.size() > 0) {
                     Iterator<DownloadLink> iter = dl.iterator();
                     while (iter.hasNext()) {
@@ -286,9 +287,9 @@ public class DistributeData extends ControlBroadcaster {
                 }
                 links.addAll(dl);
                 if (pHost.isAcceptOnlyURIs()) {
-                    data = pHost.cutMatches(data);
+                    data = pHost.getPlugin().cutMatches(data);
                 } else {
-                    orgData = pHost.cutMatches(orgData);
+                    orgData = pHost.getPlugin().cutMatches(orgData);
                 }
             }
         }

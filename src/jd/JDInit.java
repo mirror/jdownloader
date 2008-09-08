@@ -603,24 +603,25 @@ JDUtilities.setPluginForContainer(loadCPlugins());
     }
 
     @SuppressWarnings("unchecked")
-    public Vector<PluginForHost> loadPluginForHost() {
-        Vector<PluginForHost> plugins = new Vector<PluginForHost>();
+    public  ArrayList<HostPluginWrapper> loadPluginForHost() {
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        logger.finer("Load Host Plugins");
-        Iterator iterator = Service.providers(PluginForHost.class, jdClassLoader);
 
-        while (iterator.hasNext()) {
-            try {
-                PluginForHost p = (PluginForHost) iterator.next();
-                logger.finer("Load " + p);
-                plugins.add(p);
-            } catch (Exception e) {
-                logger.info("caught");
-                e.printStackTrace();
-            }
-        }
-        return plugins;
+        ArrayList<HostPluginWrapper> hpl= new ArrayList<HostPluginWrapper>();
+        hpl.add(new HostPluginWrapper("rapidshare.com",false,"Rapidshare","sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*"));
+//        HostPluginLoader loader = new HostPluginLoader();
+//
+//        while (iterator.hasNext()) {
+//            try {
+//                PluginForHost p = (PluginForHost) iterator.next();
+//                logger.finer("Load " + p);
+//                plugins.add(p);
+//            } catch (Exception e) {
+//                logger.info("caught");
+//                e.printStackTrace();
+//            }
+//        }
+//        plugins.addAll(loader.load)
+        return hpl;
     }
 
     @SuppressWarnings("unchecked")
