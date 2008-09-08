@@ -41,8 +41,6 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
@@ -379,21 +377,6 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
 
 	public FengShuiConfigPanel() {
 		super();
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnsupportedLookAndFeelException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
 		setTitle("Feng Shui Config");
 
@@ -420,10 +403,11 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
 			dispose();
 		else if (e.getSource() == more) {
 //			save();
+			dispose();
 			UIInterface ui = JDUtilities.getGUI();
 			ConfigurationDialog.showConfig(((SimpleGUI) ui).getFrame(), ui);
 			// ConfigurationDialog.showConfig(new JFrame(), ui);
-			dispose();
+			
 		} else if (e.getSource() == apply) {
 			save();
 			dispose();
