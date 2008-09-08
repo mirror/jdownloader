@@ -68,10 +68,10 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich wäre
             String host = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_HOST, "");
@@ -105,7 +105,7 @@ public class JDInit {
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
 
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
@@ -589,7 +589,6 @@ public class JDInit {
     public ArrayList<HostPluginWrapper> loadPluginForHost() {
         ArrayList<HostPluginWrapper> hpl = new ArrayList<HostPluginWrapper>();
 
-        hpl.add(new HostPluginWrapper("rapidshare.com", "Rapidshare", "sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("archiv.to", "ArchiveTo", "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*"));
         hpl.add(new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*"));
         hpl.add(new HostPluginWrapper("cocoshare.cc", "Cocosharecc", "http://[\\w\\.]*?cocoshare\\.cc/\\d+/(.*)"));
@@ -609,6 +608,7 @@ public class JDInit {
         hpl.add(new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "httpviajd://[\\w\\.]*/.*?\\.(dlc|ccf|rsdf|zip|mp3|mp4|avi|iso|mov|wmv|mpg|rar|mp2|7z|pdf|flv|jpg|exe|3gp|wav|mkv|tar|bz2)"));
         hpl.add(new HostPluginWrapper("ImageFap.com", "ImageFap", "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?"));
         hpl.add(new HostPluginWrapper("Mediafire.Com", "MediafireCom", "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+)"));
+        hpl.add(new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?megashares\\.com/\\?d.*"));
         hpl.add(new HostPluginWrapper("Megaupload.com", "Megauploadcom", "http://[\\w\\.]*?(megaupload|megarotic|sexuploader)\\.com/.*?\\?d\\=.{8}", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("MeinUpload.com", "MeinUpload", "(http://[\\w\\.]*?meinupload\\.com/{1,}dl/.+/.+)|(http://[\\w\\.]*?meinupload\\.com/\\?d=.*)", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("Mooshare.de", "Moosharede", "http://[\\w\\.]*?mooshare\\.de/index\\.php\\?pid\\=[a-zA-Z0-9]+"));
@@ -617,12 +617,14 @@ public class JDInit {
         hpl.add(new HostPluginWrapper("Netload.in", "Netloadin", "sjdp://[\\w\\.]*?netload\\.in.*|(http://[\\w\\.]*?netload\\.in/(?!index\\.php).*)", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("Odsiebie.com", "Odsiebiecom", "http://[\\w\\.]*?odsiebie\\.com/pokaz/\\d+---[a-zA-Z0-9]+.html"));
         hpl.add(new HostPluginWrapper("Przeslij.net", "Przeslijnet", "http://www2\\.przeslij\\.net/download.php\\?file=(.*)"));
-        hpl.add(new HostPluginWrapper("Qshare.Com", "QshareCom", "http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", PluginWrapper.LOAD_ON_INIT));        
+        hpl.add(new HostPluginWrapper("Qshare.Com", "QshareCom", "http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("rapidshare.com", "Rapidshare", "sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("RapidShare.De", "RapidShareDe", "sjdp://rapidshare\\.de.*|http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("R-b-a.De", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)"));
         hpl.add(new HostPluginWrapper("Megashares.Com", "MegasharesCom", "http://[\\w\\.]*?megashares\\.com/\\?d.*"));
+        hpl.add(new HostPluginWrapper("Roms.Zophar.Net", "RomsZopharNet", "http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}"));
         hpl.add(new HostPluginWrapper("RomHustler.Net", "RomHustlerNet", "http://[\\w.]*?romhustler\\.net/download/.*?/\\d+"));
-        hpl.add(new HostPluginWrapper("Serienjunkies.org", "Serienjunkies", "http://[\\w\\.]*?sjdownload.org.*", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("Serienjunkies.org", "Serienjunkies", "http://[\\w\\.]*?sjdownload.org.*"));
         hpl.add(new HostPluginWrapper("ShareBase.De", "ShareBaseDe", "http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]+\\.html"));
         hpl.add(new HostPluginWrapper("SharedZilla.com", "SharedZillacom", "http://[\\w\\.]*?sharedzilla\\.com/(en|ru)/get\\?id=\\d+"));
         hpl.add(new HostPluginWrapper("Share-Now.net", "ShareNownet", "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html"));
@@ -630,7 +632,7 @@ public class JDInit {
         hpl.add(new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+/.*?"));
         hpl.add(new HostPluginWrapper("SiloFiles.com", "SiloFilescom", "http://[\\w\\.]*?silofiles\\.com/file/\\d+/.*?"));
         hpl.add(new HostPluginWrapper("Speedy-Share.com", "SpeedySharecom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)"));
-        hpl.add(new HostPluginWrapper("Uploaded.to", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", PluginWrapper.LOAD_ON_INIT));        
+        hpl.add(new HostPluginWrapper("Uploaded.to", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("UploadService.info", "UploadServiceinfo", "http://[\\w\\.]*?uploadservice\\.info/file/[a-zA-Z0-9]+\\.html"));
         hpl.add(new HostPluginWrapper("UploadStube.de", "UploadStube", "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*"));
         hpl.add(new HostPluginWrapper("Upshare.net", "Upsharenet", "http://[\\w\\.]*?upshare\\.(net|eu)/download\\.php\\?id=[a-zA-Z0-9]+"));
@@ -640,7 +642,7 @@ public class JDInit {
         hpl.add(new HostPluginWrapper("YouPorn.Com", "YouPornCom", "http://download\\.youporn\\.com/download/\\d+/flv/.*"));
         hpl.add(new HostPluginWrapper("YourFiles.Biz", "YourFilesBiz", "http://[\\w\\.]*?yourfiles\\.biz/\\?d\\=[a-zA-Z0-9]+"));
         hpl.add(new HostPluginWrapper("YourFileSender.com", "YourFileSendercom", "http://[\\w\\.]*?yourfilesender\\.com/v/\\d+/(.*?\\.html)"));
-        hpl.add(new HostPluginWrapper("Youtube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?"));
+        hpl.add(new HostPluginWrapper("Youtube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", PluginWrapper.LOAD_ON_INIT));
         hpl.add(new HostPluginWrapper("Zippyshare.com", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html"));
         hpl.add(new HostPluginWrapper("zshare.net", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html"));
 
