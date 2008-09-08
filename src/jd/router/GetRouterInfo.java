@@ -83,9 +83,9 @@ public class GetRouterInfo {
 				h.put("SoapAction", "urn:schemas-upnp-org:service:WANIPConnection:1#GetStatusInfo");
 				h.put("CONTENT-TYPE", "text/xml; charset=\"utf-8\"");
 				br.setHeaders(h);
-				br.postPage("http://"+iPaddress+":"+port+"/upnp/control/WANIPConn1", "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:GetStatusInfo xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>");
+				HTTPConnection con = br.openPostConnection("http://"+iPaddress+":"+port+"/upnp/control/WANIPConn1", "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:GetStatusInfo xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>");
 			
-				if(br.getHeaders().get(null).contains("200")) return true;
+				if(con.getHeaderField(null).contains("200")) return true;
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
