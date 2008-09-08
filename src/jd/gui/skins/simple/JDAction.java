@@ -42,6 +42,7 @@ public class JDAction extends AbstractAction {
     public static final int APP_CLIPBOARD = 28;
     public static final int APP_CONFIGURATION = 18;
     public static final int APP_EXIT = 16;
+    public static final int APP_RESTART = 161;
     public static final int APP_INSTALL_JDU = 34;
     public static final int APP_LOAD_CONTAINER = 15;
     public static final int APP_LOAD_DLC = 23;
@@ -65,6 +66,8 @@ public class JDAction extends AbstractAction {
     public static final int ITEMS_MOVE_TOP = 3;
     public static final int ITEMS_MOVE_UP = 1;
     public static final int ITEMS_REMOVE = 8;
+    public static final int ITEMS_REMOVE_LINKS = 81;
+    public static final int ITEMS_REMOVE_PACKAGES = 82;
 
     public static final int HELP = 29;
 
@@ -72,8 +75,7 @@ public class JDAction extends AbstractAction {
 
     public static final int WIKI = 33;
 
-    public static final int CHANGES = 35;
-    public static final int APP_RESTART = 161;
+    public static final int CHANGES = 35;    
 
     /**
      * serialVersionUID

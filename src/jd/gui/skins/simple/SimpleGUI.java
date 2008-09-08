@@ -893,6 +893,24 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 linkListPane.removeSelectedLinks();
             }
             break;
+        case JDAction.ITEMS_REMOVE_PACKAGES:
+            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "remove completed packages?"))) {
+                    JDUtilities.getController().removeCompletedPackages();
+                }
+            } else {
+                JDUtilities.getController().removeCompletedPackages();
+            }
+            break;
+        case JDAction.ITEMS_REMOVE_LINKS:
+            if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                if (showConfirmDialog(JDLocale.L("gui.downloadlist.delete_packages", "remove completed downloads?"))) {
+                    JDUtilities.getController().removeCompletedDownloadLinks();
+                }
+            } else {
+                JDUtilities.getController().removeCompletedDownloadLinks();
+            }
+            break;
         case JDAction.ITEMS_DND:
             toggleDnD();
             break;
@@ -909,7 +927,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             } catch (Exception e1) {
             }
             String data = LinkInputDialog.showDialog(frame, cb.trim());
-            if (data != null) {
+            if (data != null && data.length() > 0) {
                 fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, data));
             }
             break;
@@ -1287,8 +1305,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionPause = new JDAction(this, getPauseImage(), "action.pause", JDAction.APP_PAUSE_DOWNLOADS);
         actionItemsAdd = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
         actionAddLinks = new JDAction(this, JDTheme.V("gui.images.add"), "action.add", JDAction.ITEMS_ADD);
-        actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_ADD);
-        actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_ADD);
+        actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
+        actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
         actioninstallJDU = new JDAction(this, JDTheme.V("gui.load"), "action.install", JDAction.APP_INSTALL_JDU);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
@@ -1331,7 +1349,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem mi;
         menAddons.add(SimpleGUI.createMenuItem(actioninstallJDU));
         menAddons.addSeparator();
-        menAddons.add(SimpleGUI.createMenuItem(actionDnD));
 
         for (final PluginOptional plg : JDUtilities.getPluginsOptional()) {
 
@@ -1513,20 +1530,23 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menAdd.add(SimpleGUI.createMenuItem(actionLoadDLC));
         menFile.add(menAdd);
         JMenu menRemove = createMenu(JDLocale.L("gui.menu.remove", "Remove"), "gui.images.delete");
+        menRemove.add(SimpleGUI.createMenuItem(actionItemsDelete));
+        menRemove.addSeparator();
         menRemove.add(SimpleGUI.createMenuItem(actionRemoveLinks));
         menRemove.add(SimpleGUI.createMenuItem(actionRemovePackages));
         menFile.add(menRemove);
+        menFile.addSeparator();
         menFile.add(SimpleGUI.createMenuItem(actionSaveDLC));
         menFile.addSeparator();
-        JMenu menExit = createMenu(JDLocale.L("gui.menu.exit", "Exit"), "gui.images.exit");
-        menExit.add(SimpleGUI.createMenuItem(actionExit));
-        menExit.add(SimpleGUI.createMenuItem(actionRestart));
-        menFile.add(menExit);
+        menFile.add(SimpleGUI.createMenuItem(actionExit));
+        menFile.add(SimpleGUI.createMenuItem(actionRestart));
 
         menExtra.add(SimpleGUI.createMenuItem(actionConfig));
         menExtra.addSeparator();
         menExtra.add(SimpleGUI.createMenuItem(actionUnrar));
         menExtra.add(SimpleGUI.createMenuItem(actionPasswordlist));
+        menExtra.addSeparator();
+        menExtra.add(SimpleGUI.createMenuItem(actionDnD));
 
         menHelp.add(menViewLog);
         menHelp.addSeparator();

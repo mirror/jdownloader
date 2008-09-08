@@ -1756,6 +1756,48 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
+    public void removeCompletedPackages() {
+        Vector<FilePackage> packagestodelete = new Vector<FilePackage>();
+        synchronized (packages) {
+            for (FilePackage fp : packages) {
+                boolean remove = true;
+                for (DownloadLink downloadLink : fp.getDownloadLinks()) {
+                    if (!downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        remove = false;
+                        break;
+                    }
+                }
+                if (remove == true) {
+                    packagestodelete.add(fp);
+                }
+            }
+            if (packagestodelete.size() > 0) {
+                for (int i = packagestodelete.size() - 1; i >= 0; i--) {
+                    removePackage(packagestodelete.get(i));
+                }
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+            }
+        }
+    }
+
+    public void removeCompletedDownloadLinks() {
+        Vector<DownloadLink> downloadstodelete = new Vector<DownloadLink>();
+        synchronized (packages) {
+            for (FilePackage fp : packages) {
+                for (DownloadLink downloadLink : fp.getDownloadLinks()) {
+                    if (downloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        downloadstodelete.add(downloadLink);
+                    }
+                }
+            }
+
+            if (downloadstodelete.size() > 0) {
+                this.removeDownloadLinks(downloadstodelete);
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
+            }
+        }
+    }
+
     public void requestDownloadLinkUpdate(DownloadLink link) {
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, link));
