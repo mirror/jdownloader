@@ -213,7 +213,7 @@ public class WebUpdater implements Serializable {
 
             BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
             fileurl = URLDecoder.decode(fileurl, "UTF-8");
-
+            fileurl+=(fileurl.contains("?")?"&":"?")+System.currentTimeMillis();
             URL url = new URL(fileurl);
             URLConnection con = url.openConnection();
             con.setReadTimeout(10000);
