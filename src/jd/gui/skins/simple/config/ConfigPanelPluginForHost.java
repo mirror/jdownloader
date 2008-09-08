@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -29,14 +30,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.beans.PropertyChangeListener;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.Vector;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -48,6 +47,7 @@ import javax.swing.event.CellEditorListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -57,7 +57,6 @@ import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.Link.JLinkButton;
-import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -110,29 +109,19 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 3:
                 return pluginsForHost.get(rowIndex).getCoder();
             case 4:
-                return new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")){
+                return new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")) {
 
-             
-
-                   
-
-               
-
-                    /**
-                     * 
-                     */
                     private static final long serialVersionUID = 5915595466511261075L;
 
                     public void actionPerformed(ActionEvent e) {
-                       try {
-                        JLinkButton.openURL(pluginsForHost.get(rowIndex).getPlugin().getAGBLink());
-                    } catch (MalformedURLException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
+                        try {
+                            JLinkButton.openURL(pluginsForHost.get(rowIndex).getPlugin().getAGBLink());
+                        } catch (MalformedURLException e1) {
+                            e1.printStackTrace();
+                        }
+
                     }
-                        
-                    }
-                    
+
                 });
             case 5:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
@@ -233,8 +222,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry();
-        }else{
-            
         }
     }
 
@@ -278,13 +265,30 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table = new JTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-//        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-//            public void valueChanged(ListSelectionEvent e) {
-//                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
-//            }
-//        });
-        // table.setDefaultRenderer(Object.class, new
-        // PluginTableCellRenderer<PluginForHost>(pluginsForHost));
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).isLoaded() && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
+            }
+        });
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                if (isSelected) {
+                    c.setBackground(Color.LIGHT_GRAY);
+                } else if (pluginsForHost.get(row).isLoaded() && pluginsForHost.get(row).getPlugin().getConfig().getEntries().size() != 0) {
+                    c.setBackground(new Color(230, 230, 230));
+                } else {
+                    c.setBackground(Color.WHITE);
+                }
+
+                return c;
+            }
+        });
         table.setDragEnabled(true);
         new DropTarget(table, this);
 
@@ -342,7 +346,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).isLoaded() && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }
@@ -364,9 +368,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         Vector<String> priority = new Vector<String>();
         for (HostPluginWrapper plg : pluginsForHost) {
             priority.add(plg.getHost());
-//            if (plg.getPluginConfig() != null) {
-//                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
-//            }
+            // if (plg.getPluginConfig() != null) {
+            // configuration.setProperty("PluginConfig_" + plg.getPluginName(),
+            // plg.getPluginConfig());
+            // }
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
     }
