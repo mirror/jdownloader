@@ -28,8 +28,8 @@ import jd.plugins.download.RAFDownload;
 
 public class YourFilesBiz extends PluginForHost {
 
-    public YourFilesBiz() {
-        super();
+    public YourFilesBiz(String cfgName) {
+        super(cfgName);
     }
 
     @Override

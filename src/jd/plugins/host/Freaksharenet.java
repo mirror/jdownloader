@@ -33,8 +33,8 @@ import jd.plugins.download.RAFDownload;
 
 public class Freaksharenet extends PluginForHost {
 
-    public Freaksharenet() {
-        super();
+    public Freaksharenet(String cfgName) {
+        super(cfgName);
         this.enablePremium();
     }
 

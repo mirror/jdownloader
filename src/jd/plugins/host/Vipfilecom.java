@@ -35,8 +35,8 @@ public class Vipfilecom extends PluginForHost {
     private String downloadurl;
     private RequestInfo requestInfo;
 
-    public Vipfilecom() {
-        super();
+    public Vipfilecom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

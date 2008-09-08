@@ -70,7 +70,8 @@ public class Megauploadcom extends PluginForHost {
 
     private boolean tempUnavailable = false;
 
-    public Megauploadcom() {
+    public Megauploadcom(String cfgName) {
+        super(cfgName);
         setConfigElements();
         this.enablePremium();
     }

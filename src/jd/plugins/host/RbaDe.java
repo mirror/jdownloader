@@ -45,8 +45,8 @@ public class RbaDe extends PluginForHost {
     /** Downloads will be downloaded to DOWNLOAD_DIR + PackageName */
     private static final String DOWNLOAD_DIR = "RBA-BATTELS";
 
-    public RbaDe() {
-        super();
+    public RbaDe(String cfgName) {
+        super(cfgName);
     }
 
     @Override

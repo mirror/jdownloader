@@ -40,19 +40,22 @@ public class RapidShareDe extends PluginForHost {
 
     //
 
-    public RapidShareDe() {
-        super();
+    public RapidShareDe(String cfgName) {
+        super(cfgName);
 
         this.enablePremium();
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
-            return;
-        }
-        checkMirrorsInProgress(downloadLink);
+
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		return;
+   		}
+       	checkMirrorsInProgress(downloadLink);
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         br.setCookiesExclusive(true);
@@ -131,10 +134,13 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
-            return;
-        }
+
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		return;
+   		}
+
         String user = account.getUser();
         String pass = account.getPass();
         br.setCookiesExclusive(true);

@@ -53,8 +53,8 @@ public class Serienjunkies extends PluginForHost {
     private String subdomain = "download.";
     private static boolean active = false;
 
-    public Serienjunkies() {
-        super();
+    public Serienjunkies(String cfgName) {
+        super(cfgName);
     }
 
     public boolean collectCaptchas() {

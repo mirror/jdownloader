@@ -20,6 +20,7 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
@@ -47,6 +48,11 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
+    public PluginForHost(String cfgName) {
+        super(cfgName);
+ 
+    }
+
     private static final String AGB_CHECKED = "AGB_CHECKED";
     private static final String CONFIGNAME = "pluginsForHost";
     private static int currentConnections = 0;
@@ -225,7 +231,7 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
-                    PluginForHost plg = this.getClass().newInstance();
+                    PluginForHost plg = this.getClass().getConstructor(new Class[] {String.class}).newInstance(new Object[]{host});
 
                     DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
@@ -235,6 +241,18 @@ public abstract class PluginForHost extends Plugin {
                 } catch (InstantiationException e) {
                     e.printStackTrace();
                 } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (IllegalArgumentException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (SecurityException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (NoSuchMethodException e) {
+                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }

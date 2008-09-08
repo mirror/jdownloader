@@ -36,8 +36,8 @@ public class Przeslijnet extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public Przeslijnet() {
-        super();
+    public Przeslijnet(String cfgName) {
+        super(cfgName);
     }
 
     @Override

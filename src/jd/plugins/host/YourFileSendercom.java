@@ -35,8 +35,8 @@ public class YourFileSendercom extends PluginForHost {
     private String downloadurl;
     private RequestInfo requestInfo;
 
-    public YourFileSendercom() {
-        super();
+    public YourFileSendercom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

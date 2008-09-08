@@ -203,10 +203,12 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     protected Pattern supportedPattern;
 
-    protected Plugin() {
+    private String cfgName;
+
+    protected Plugin(String cfgName) {
 
         initTime = System.currentTimeMillis();
-
+       this.cfgName=cfgName;
         config = new ConfigContainer(this);
 
     }
@@ -408,10 +410,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
-        if (getPluginName() == null) {
-            logger.severe("PLuginname noch noch nicht festgelegt!!");
-        }
-        SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
+
+        SubConfiguration cfg = JDUtilities.getSubConfig(cfgName==null?getPluginName():cfgName);
+
         // if (cfg.getCount() <= 1) {
         // if (JDUtilities.getConfiguration().getProperty("PluginConfig_" +
         // getPluginName()) != null) {

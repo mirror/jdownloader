@@ -25,13 +25,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class Dataupde extends PluginForHost {
+    public Dataupde(String cfgName) {
+        super(cfgName);
+        // TODO Auto-generated constructor stub
+    }
+
     private static final String CODER = "JD-Team";
 
     private String downloadurl;
 
-    public Dataupde() {
-        super();
-    }
+ 
 
     @Override
     public String getAGBLink() {

@@ -32,6 +32,13 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class YouPornCom extends PluginForHost {
+    public YouPornCom(String cfgName) {
+        super(cfgName);
+        // TODO Auto-generated constructor stub
+    }
+
+
+
     private static final String CODER = "JD-Team";
 
     private RequestInfo requestInfo;

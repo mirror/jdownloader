@@ -37,6 +37,11 @@ import jd.utils.JDUtilities;
  */
 
 public abstract class PluginsC extends Plugin {
+    protected PluginsC() {
+        super(null);
+        // TODO Auto-generated constructor stub
+    }
+
     private static HashMap<String, Vector<DownloadLink>> CONTAINER = new HashMap<String, Vector<DownloadLink>>();
 
     private static HashMap<String, Vector<String>> CONTAINERLINKS = new HashMap<String, Vector<String>>();

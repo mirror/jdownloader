@@ -33,8 +33,11 @@ import jd.utils.JDUtilities;
 
 public class DataHu extends PluginForHost {
 
-    public DataHu() {
-        super();
+  
+
+    public DataHu(String cfgName) {
+        super(cfgName);
+        // TODO Auto-generated constructor stub
     }
 
     @Override

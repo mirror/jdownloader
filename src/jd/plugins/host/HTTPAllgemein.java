@@ -32,8 +32,8 @@ public class HTTPAllgemein extends PluginForHost {
 
     private String contentType;
 
-    public HTTPAllgemein() {
-        super();
+    public HTTPAllgemein(String cfgName) {
+        super(cfgName);
     }
 
     @Override

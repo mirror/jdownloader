@@ -29,11 +29,14 @@ import jd.utils.JDUtilities;
 
 public class BluehostTo extends PluginForHost {
 
+    public BluehostTo(String cfgName) {
+        super(cfgName);
+        // TODO Auto-generated constructor stub
+    }
+
     static private final String CODER = "JD-Team";
 
-    public BluehostTo() {
-        super();
-    }
+ 
 
     private void correctUrl(DownloadLink downloadLink) {
         String url = downloadLink.getDownloadURL();

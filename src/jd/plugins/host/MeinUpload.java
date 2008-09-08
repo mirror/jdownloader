@@ -36,8 +36,8 @@ public class MeinUpload extends PluginForHost {
 
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
-    public MeinUpload() {
-        super();
+    public MeinUpload(String cfgName) {
+        super(cfgName);
         enablePremium();
     }
 

@@ -37,8 +37,8 @@ public class Youtube extends PluginForHost {
 
     static private final String AGB = "http://youtube.com/t/terms";
 
-    public Youtube() {
-        super();
+    public Youtube(String cfgName) {
+        super(cfgName);
         enablePremium(1);
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);

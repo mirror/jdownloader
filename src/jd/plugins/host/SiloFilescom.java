@@ -35,8 +35,8 @@ public class SiloFilescom extends PluginForHost {
     private String downloadurl;
     private RequestInfo requestInfo;
 
-    public SiloFilescom() {
-        super();
+    public SiloFilescom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

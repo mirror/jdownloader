@@ -39,8 +39,8 @@ public class UploadServiceinfo extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public UploadServiceinfo() {
-        super();
+    public UploadServiceinfo(String cfgName) {
+        super(cfgName);
     }
 
     @Override

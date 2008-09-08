@@ -36,8 +36,8 @@ public class Zippysharecom extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public Zippysharecom() {
-        super();
+    public Zippysharecom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

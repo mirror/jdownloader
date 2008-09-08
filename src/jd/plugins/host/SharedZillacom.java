@@ -36,8 +36,8 @@ public class SharedZillacom extends PluginForHost {
     private String passCode = "";
     private RequestInfo requestInfo;
 
-    public SharedZillacom() {
-        super();
+    public SharedZillacom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

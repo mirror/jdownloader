@@ -38,8 +38,8 @@ public class Upsharenet extends PluginForHost {
     private String downloadurl;
     private String passCode = null;
 
-    public Upsharenet() {
-        super();
+    public Upsharenet(String cfgName) {
+        super(cfgName);
     }
 
     @Override

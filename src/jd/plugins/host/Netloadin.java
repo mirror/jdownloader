@@ -64,8 +64,9 @@ public class Netloadin extends PluginForHost {
 
     private String fileStatusText;
 
-    public Netloadin() {
-        super();
+    public Netloadin(String cfgName) {
+        super(cfgName);
+     
 
         this.enablePremium();
     }
@@ -73,7 +74,7 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
+            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
             return;
         }
         br.setDebug(false);
@@ -254,7 +255,7 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
+            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
             return;
         }
 

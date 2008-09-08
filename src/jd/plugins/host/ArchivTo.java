@@ -27,10 +27,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
-public class ArchivTo extends PluginForHost {
 
-    public ArchivTo() {
-        super();
+public class ArchivTo extends PluginForHost {    
+
+    
+
+    public ArchivTo(String cfgName) {
+        super(cfgName);
+    
+
     }
 
     @Override

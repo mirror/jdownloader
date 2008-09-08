@@ -132,8 +132,8 @@ public class Rapidshare extends PluginForHost {
 
     // private static boolean FORCE_FREE_USER = true;
 
-    public Rapidshare() {
-        super();
+    public Rapidshare(String cfgName) {
+        super(cfgName);
 
         setMaxConnections(35);
         serverMap.put("Cogent", "cg");
@@ -271,7 +271,7 @@ public class Rapidshare extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
+            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
             return;
         }
         if (downloadLink.getLinkType() != DownloadLink.LINKTYPE_NORMAL) {
@@ -441,7 +441,7 @@ public class Rapidshare extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
+            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
             return;
         }
 

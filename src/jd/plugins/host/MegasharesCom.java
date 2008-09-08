@@ -44,8 +44,8 @@ public class MegasharesCom extends PluginForHost {
 
     private static String PLUGIN_PASS = null;
 
-    public MegasharesCom() {
-        super();
+    public MegasharesCom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

@@ -1,6 +1,11 @@
 package jd;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,19 +65,23 @@ public class PluginWrapper {
         if(loadedPLugin!=null)return loadedPLugin;
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         try {
-
-            Class plgClass = jdClassLoader.loadClass("jd.plugins.host." + getClassName());
+           
+                URLClassLoader cl = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("plugins").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+         
+         System.out.println( JDUtilities.getResourceFile("").toURI().toURL()+" - "+getClassName());
+            Class plgClass = cl.loadClass("jd.plugins.host." + getClassName());
+           
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class[] classes = new Class[] {};
+            Class[] classes = new Class[] {String.class};
             Constructor con = plgClass.getConstructor(classes);
             classes=null;
-            this.loadedPLugin = (Plugin) con.newInstance(new Object[] {});
+            this.loadedPLugin = (Plugin) con.newInstance(new Object[] {host});
             loadedPLugin.setHost(host);
             loadedPLugin.setSupportedPattern(pattern);
-            logger.finer("laoded PLugin "+"jd.plugins.host." + getClassName());
+            logger.finer("loaded PLugin "+"jd.plugins.host." + getClassName());
            return loadedPLugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");

@@ -35,8 +35,8 @@ public class MySpaceCom extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
 
-    public MySpaceCom() {
-        super();
+    public MySpaceCom(String cfgName) {
+        super(cfgName);
     }
 
     private String getDownloadUrl(DownloadLink link) {

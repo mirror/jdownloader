@@ -43,8 +43,8 @@ public class QshareCom extends PluginForHost {
     // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
-    public QshareCom() {
-        super();
+    public QshareCom(String cfgName) {
+        super(cfgName);
 
         this.enablePremium();
     }

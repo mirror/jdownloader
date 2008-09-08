@@ -28,13 +28,16 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class ClipfishDe extends PluginForHost {
+    public ClipfishDe(String cfgName) {
+        super(cfgName);
+        // TODO Auto-generated constructor stub
+    }
+
     private static final String CODER = "ToKaM";
 
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
-    public ClipfishDe() {
-        super();
-    }
+  
 
     @Override
     public String getAGBLink() {

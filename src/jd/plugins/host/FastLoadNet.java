@@ -44,8 +44,8 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String NOT_FOUND = "Datei existiert nicht";
 
-    public FastLoadNet() {
-        super();
+    public FastLoadNet(String cfgName) {
+        super(cfgName);
 
     }
 

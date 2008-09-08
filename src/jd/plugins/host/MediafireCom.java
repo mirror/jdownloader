@@ -29,8 +29,8 @@ public class MediafireCom extends PluginForHost {
 
     private String url;
 
-    public MediafireCom() {
-        super();
+    public MediafireCom(String cfgName) {
+        super(cfgName);
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }

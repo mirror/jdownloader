@@ -23,6 +23,11 @@ import jd.event.ControlListener;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
+    protected PluginOptional() {
+          super(null);
+        // TODO Auto-generated constructor stub
+    }
+
     public static final int ADDON_INTERFACE_VERSION = 1;
 
     public void controlEvent(ControlEvent event) {

@@ -28,8 +28,8 @@ import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
 
-    public UploadStube() {
-        super();
+    public UploadStube(String cfgName) {
+        super(cfgName);
     }
 
     @Override

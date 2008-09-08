@@ -56,8 +56,8 @@ public class FilesTo extends PluginForHost {
     private Pattern SESSION = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
     private HTTPConnection urlConnection;
 
-    public FilesTo() {
-        super();
+    public FilesTo(String cfgName) {
+        super(cfgName);
     }
 
     @Override

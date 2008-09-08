@@ -41,8 +41,8 @@ public class Odsiebiecom extends PluginForHost {
     private String referrerurl;
     private RequestInfo requestInfo;
 
-    public Odsiebiecom() {
-        super();
+    public Odsiebiecom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

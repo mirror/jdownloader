@@ -32,8 +32,8 @@ public class RomHustlerNet extends PluginForHost {
 
     private String downloadUrl;
 
-    public RomHustlerNet() {
-        super();
+    public RomHustlerNet(String cfgName) {
+        super(cfgName);
     }
 
     @Override

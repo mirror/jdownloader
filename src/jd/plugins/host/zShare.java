@@ -24,8 +24,8 @@ import jd.plugins.download.RAFDownload;
 
 public class zShare extends PluginForHost {
 
-    public zShare() {
-        super();
+    public zShare(String cfgName) {
+        super(cfgName);
     }
 
     @Override

@@ -44,8 +44,8 @@ public class ShareOnlineBiz extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public ShareOnlineBiz() {
-        super();
+    public ShareOnlineBiz(String cfgName) {
+        super(cfgName);
     }
 
     @Override

@@ -52,6 +52,7 @@ public abstract class PluginForDecrypt extends Plugin {
      */
 
     public PluginForDecrypt() {
+        super(null);
         br = new Browser();
     }
 

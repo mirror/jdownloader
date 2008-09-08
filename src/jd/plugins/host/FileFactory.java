@@ -67,15 +67,15 @@ public class FileFactory extends PluginForHost {
 
     private int wait;
 
-    public FileFactory() {
-        super();
+    public FileFactory(String cfgName) {
+        super(cfgName);
         this.enablePremium();
     }
 
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         if (parameter.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(parameter);
+            new Serienjunkies("serienjunkies.org").handleFree(parameter);
             return;
         }
         LinkStatus linkStatus = parameter.getLinkStatus();
@@ -264,7 +264,7 @@ public class FileFactory extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
+            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
             return;
         }
         String user = account.getUser();

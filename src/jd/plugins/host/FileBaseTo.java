@@ -29,8 +29,8 @@ import jd.plugins.download.RAFDownload;
 
 public class FileBaseTo extends PluginForHost {
 
-    public FileBaseTo() {
-        super();
+    public FileBaseTo(String cfgName) {
+        super(cfgName);
     }
 
     @Override

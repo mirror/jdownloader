@@ -31,8 +31,8 @@ public class XupInRaidrush extends PluginForHost {
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "JD-Team";
 
-    public XupInRaidrush() {
-        super();
+    public XupInRaidrush(String cfgName) {
+        super(cfgName);
     }
 
     @Override

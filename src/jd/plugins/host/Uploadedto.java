@@ -39,7 +39,14 @@ public class Uploadedto extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    public Uploadedto() {
+
+    
+
+    
+
+    public Uploadedto(String cfgName) { 
+        super(cfgName);
+
         this.enablePremium();
         setMaxConnections(20);
     }
@@ -112,10 +119,13 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
-            return;
-        }
+
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		return;
+   		}
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         correctURL(downloadLink);
@@ -248,10 +258,13 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies().handleFree(downloadLink);
-            return;
-        }
+
+       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
+   		{
+   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		return;
+   		}
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());

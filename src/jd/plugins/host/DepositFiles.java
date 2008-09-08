@@ -58,8 +58,8 @@ public class DepositFiles extends PluginForHost {
     // Rechtschreibfehler übernommen
     private String PASSWORD_PROTECTED = "<strong>Bitte Password fuer diesem File eingeben</strong>";
 
-    public DepositFiles() {
-        super();
+    public DepositFiles(String cfgName) {
+        super(cfgName);
         this.enablePremium();
     }
 

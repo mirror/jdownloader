@@ -37,8 +37,8 @@ public class Shareplacecom extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public Shareplacecom() {
-        super();
+    public Shareplacecom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

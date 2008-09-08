@@ -29,8 +29,8 @@ public class FastShareorg extends PluginForHost {
 
     private String url;
 
-    public FastShareorg() {
-        super();
+    public FastShareorg(String cfgName) {
+        super( cfgName);
     }
 
     @Override

@@ -32,14 +32,17 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class Cocosharecc extends PluginForHost {
+    public Cocosharecc(String cfgName) {
+        super(cfgName);
+        // TODO Auto-generated constructor stub
+    }
+
     private static final String CODER = "JD-Team";
 
     private String downloadurl;
     private RequestInfo requestInfo;
 
-    public Cocosharecc() {
-        super();
-    }
+    
 
     @Override
     public String getAGBLink() {

@@ -40,8 +40,8 @@ public class Filer extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
-    public Filer() {
-        super();
+    public Filer(String cfgName) {
+        super(cfgName);
         this.enablePremium();
     }
 

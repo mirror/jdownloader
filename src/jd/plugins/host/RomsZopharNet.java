@@ -29,8 +29,8 @@ public class RomsZopharNet extends PluginForHost {
     // /
     // download-file/131583
 
-    public RomsZopharNet() {
-        super();
+    public RomsZopharNet(String cfgName) {
+        super(cfgName);
     }
 
     @Override

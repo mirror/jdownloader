@@ -35,8 +35,8 @@ public class ShareNownet extends PluginForHost {
     private File captchaFile;
     private String downloadurl;
 
-    public ShareNownet() {
-        super();
+    public ShareNownet(String cfgName) {
+        super(cfgName);
     }
 
     @Override

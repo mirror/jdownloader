@@ -33,8 +33,8 @@ public class ImageFap extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    public ImageFap() {
-        super();
+    public ImageFap(String cfgName) {
+        super(cfgName);
     }
 
     private String DecryptLink(String code) {

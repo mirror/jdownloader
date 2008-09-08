@@ -25,8 +25,8 @@ import jd.plugins.download.RAFDownload;
 
 public class FileMojoCom extends PluginForHost {
 
-    public FileMojoCom() {
-        super();
+    public FileMojoCom(String cfgName) {
+        super(cfgName);
     }
 
     @Override

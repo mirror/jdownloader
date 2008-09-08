@@ -37,8 +37,8 @@ public class FileUploadnet extends PluginForHost {
 
     private String downloadurl;
 
-    public FileUploadnet() {
-        super();
+    public FileUploadnet(String cfgName) {
+        super(cfgName);
     }
 
     @Override

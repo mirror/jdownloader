@@ -39,8 +39,8 @@ public class MyVideo extends PluginForHost {
 
     private RequestInfo requestInfo;
 
-    public MyVideo() {
-        super();
+    public MyVideo(String cfgName) {
+        super(cfgName);
     }
 
     @Override

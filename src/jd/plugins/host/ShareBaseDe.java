@@ -35,8 +35,8 @@ public class ShareBaseDe extends PluginForHost {
 
     private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
 
-    public ShareBaseDe() {
-        super();
+    public ShareBaseDe(String cfgName) {
+        super(cfgName);
     }
 
     @Override

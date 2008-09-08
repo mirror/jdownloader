@@ -54,8 +54,8 @@ public class XupIn extends PluginForHost {
     private String vpass = "";
     private String vtime = "";
 
-    public XupIn() {
-        super();
+    public XupIn(String cfgName) {
+        super(cfgName);
     }
 
     @Override

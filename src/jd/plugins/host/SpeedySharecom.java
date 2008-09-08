@@ -25,8 +25,8 @@ public class SpeedySharecom extends PluginForHost {
     RequestInfo requestInfo;
     private String url;
 
-    public SpeedySharecom() {
-        super();
+    public SpeedySharecom(String cfgName) {
+        super(cfgName);
     }
 
     @Override
