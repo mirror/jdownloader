@@ -444,7 +444,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             subConfig.setProperty(PROPERTY_COLORIZE_MISSING, mnuColorizeMissing.isSelected());
             subConfig.save();
             mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
-
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuColorizeOld) {
@@ -462,6 +461,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 subConfig.save();
                 tableModel.fireTableDataChanged();
                 entMissing.setColor(newColor);
+                keyChart.fetchImage();
             }
 
         } else if (e.getSource() == mnuPickOldColor) {
@@ -472,6 +472,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 subConfig.save();
                 tableModel.fireTableDataChanged();
                 entOld.setColor(newColor);
+                keyChart.fetchImage();
             }
 
         } else if (e.getSource() == mnuShowDupes) {

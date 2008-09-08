@@ -16,7 +16,7 @@
 
 package jd.gui.skins.simple.components;
 
-import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -44,10 +44,8 @@ import jd.utils.JDUtilities;
 
 public class ClickPositionDialog extends JDialog implements ActionListener, HyperlinkListener, MouseListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 4827346842931L;
+
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
 
@@ -59,9 +57,8 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
     private Thread countdownThread;
 
-    private Component htmlArea;
-    public Point result =new Point(-1,-1);
-    private JScrollPane scrollPane;
+    private JTextPane htmlArea;
+    public Point result = new Point(-1, -1);
 
     private String titleText;
     private JLabel button;
@@ -81,7 +78,6 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
@@ -118,25 +114,21 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
             this.setTitle(title);
         }
 
-        ImageIcon imageIcon = new ImageIcon(image.getAbsolutePath());
-
-        button = new JLabel(imageIcon);
-    button.addMouseListener(this);
-    button.setToolTipText(msg);
-  //      button.setToolTipText(msg);
+        button = new JLabel(new ImageIcon(image.getAbsolutePath()));
+        button.addMouseListener(this);
+        button.setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
+        button.setToolTipText(msg);
         JDUtilities.addToGridBag(this, button, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.CENTER);
 
         if (msg != null) {
             htmlArea = new JTextPane();
-            ((JTextPane) htmlArea).setEditable(false);
-            ((JTextPane) htmlArea).setContentType("text/html");
-            ((JTextPane) htmlArea).setText(msg);
-            ((JTextPane) htmlArea).requestFocusInWindow();
-            ((JTextPane) htmlArea).addHyperlinkListener(this);
+            htmlArea.setEditable(false);
+            htmlArea.setContentType("text/html");
+            htmlArea.setText(msg);
+            htmlArea.requestFocusInWindow();
+            htmlArea.addHyperlinkListener(this);
 
-            scrollPane = new JScrollPane(htmlArea);
-            JDUtilities.addToGridBag(this, scrollPane, 0, 1, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
+            JDUtilities.addToGridBag(this, new JScrollPane(htmlArea), 0, 1, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         }
 
         int d = 0;
@@ -150,7 +142,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
         JDUtilities.addToGridBag(this, btnBAD, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-this.setAlwaysOnTop(true);
+        this.setAlwaysOnTop(true);
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));
         countdownThread.start();
@@ -160,17 +152,12 @@ this.setAlwaysOnTop(true);
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnCnTh) {
-
             countdownThread = null;
-
         } else if (e.getSource() == btnBAD) {
             setVisible(false);
             dispose();
         }
-if(e.getSource()==button){
-    
-   
-}
+
         if (countdownThread != null && countdownThread.isAlive()) {
             countdownThread.interrupt();
         }
@@ -187,31 +174,22 @@ if(e.getSource()==button){
     }
 
     public void mouseClicked(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void mouseEntered(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void mouseExited(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void mousePressed(MouseEvent e) {
-        // TODO Auto-generated method stub
-        
     }
 
     public void mouseReleased(MouseEvent e) {
-     
-    this.result= e.getPoint();
-    setVisible(false);
-    dispose();
-    
-        
+
+        this.result = e.getPoint();
+        setVisible(false);
+        dispose();
+
     }
 }

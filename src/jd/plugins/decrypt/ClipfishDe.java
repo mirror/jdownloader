@@ -69,7 +69,7 @@ public class ClipfishDe extends PluginForDecrypt {
         if (pathToflv == null) return null;
         DownloadLink downloadLink = createDownloadlink(pathToflv);
         possibleconverts.add(ConversionMode.VIDEOFLV);
-        possibleconverts.add(ConversionMode.AUDIOMP3);        
+        possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
         ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
         if (ConvertTo != null) {
@@ -104,7 +104,7 @@ public class ClipfishDe extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2354 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 }

@@ -79,7 +79,7 @@ public class ClipfishDe extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2588 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -126,7 +126,7 @@ public class ClipfishDe extends PluginForHost {
             }
         }
     }
-    
+
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

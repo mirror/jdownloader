@@ -32,6 +32,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Stealth extends PluginForDecrypt {
@@ -95,7 +96,7 @@ public class Stealth extends PluginForDecrypt {
                     File file = this.getLocalCaptchaFile(this);
                     Form form = br.getForm(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/crosshair.php"));
-                    ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", "Please click on the Circle with a gap", 20, null);
+                    ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
                     Point p = d.result;
                     form.put("button.x", p.x + "");
                     form.put("button.y", p.y + "");

@@ -59,7 +59,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                         AccountInfo ai = ((PluginForHost) configEntry.getActionListener()).getAccountInformation(acc);
                         Long tleft = new Long(ai.getTrafficLeft());
                         if (tleft >= 0 && ai.isExpired() == false) {
-                            freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, "50," + (255 - ((255 / (accounts.size() + 1)) * accCounter)) + ",50"));
+                            freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (accounts.size() + 1)) * accCounter), 50)));
                             long rest = ai.getTrafficMax() - tleft;
                             if (rest > 0) collectTraffic = collectTraffic + rest;
                         }
@@ -69,7 +69,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 }
             }
 
-            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", String.valueOf(collectTraffic), "150,150,150"));
+            if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
             freeTrafficChart.fetchImage();
 
         }

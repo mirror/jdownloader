@@ -23,17 +23,10 @@ public class ChartAPI_Entity {
     private String data = "";
     private Color color;
 
-    public ChartAPI_Entity(String caption, Object data, String RGB) {
-        String csplit[] = RGB.split(",");
+    public ChartAPI_Entity(String caption, Object data, Color RGB) {
         this.caption = caption;
         this.data = data.toString();
-        this.color = new Color(Integer.parseInt(csplit[0]), Integer.parseInt(csplit[1]), Integer.parseInt(csplit[2]));
-    }
-
-    public ChartAPI_Entity(String caption, Object data, Color color) {
-        this.caption = caption;
-        this.data = data.toString();
-        this.color = color;
+        this.color = RGB;
     }
 
     public ChartAPI_Entity(String caption, Object data) {
