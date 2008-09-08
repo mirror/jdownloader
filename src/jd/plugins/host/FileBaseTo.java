@@ -16,10 +16,14 @@
 
 package jd.plugins.host;
 
+import java.util.regex.Pattern;
+
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
@@ -47,8 +51,7 @@ public class FileBaseTo extends PluginForHost {
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
 
-            String[] helpurl = url.split("/");
-            downloadLink.setName(helpurl[helpurl.length - 1]);
+            downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
             if (br.containsHTML("Angeforderte Datei herunterladen")) {
 
                 br.getPage(url + "&dl=1");
@@ -82,8 +85,10 @@ public class FileBaseTo extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-
-        HTTPConnection urlConnection = br.openFormConnection(1);
+        Form dl_form = br.getForm(2);
+        String value = br.getRegex(Pattern.compile("document\\.waitform\\.wait\\.value = \"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        dl_form.put("wait", value);
+        HTTPConnection urlConnection = br.openFormConnection(dl_form);
         downloadLink.setDownloadSize(urlConnection.getContentLength());
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(false);
