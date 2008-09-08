@@ -143,7 +143,7 @@ public class PackageManager extends Interaction implements Serializable {
         CFGConfig.getConfig("JDU").setProperty("PACKAGEDATA", data);
 
         try {
-            br.getPage("http://service.jdownloader.org/update/packages/list.php");
+            br.getPage("http://service.jdownloader.org/update/packages/list.php?jd="+JDUtilities.getRevision()+"&r="+System.currentTimeMillis());
 
             String xml = "<packages>" + br.getMatch("<packages>(.*?)</packages>") + "</packages>";
             // xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
