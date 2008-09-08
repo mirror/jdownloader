@@ -240,7 +240,7 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
 		premium.addActionListener(this);
 
 		JLinkButton label;
-		if (routerIp == null)
+		if (routerIp == null || routerIp.matches("\\s*"))
 			progress = new JProgressBar();
 		try {
 			label = new JLinkButton("<html><u><b  color=\"#006400\">"
