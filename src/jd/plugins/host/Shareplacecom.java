@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,20 +33,12 @@ import jd.plugins.download.RAFDownload;
 
 public class Shareplacecom extends PluginForHost {
 
-    
-
-    
     private String postdata;
     private RequestInfo requestInfo;
     private String url;
 
     public Shareplacecom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -88,8 +79,6 @@ public class Shareplacecom extends PluginForHost {
         return false;
     }
 
-
-
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -129,7 +118,7 @@ public class Shareplacecom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

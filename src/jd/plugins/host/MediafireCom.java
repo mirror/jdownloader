@@ -16,9 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-import java.util.regex.Pattern;
-
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,11 +25,7 @@ import jd.plugins.download.RAFDownload;
 
 public class MediafireCom extends PluginForHost {
 
-    
-
     static private final String offlinelink = "tos_aup_violation";
-
-    
 
     private String url;
 
@@ -40,11 +33,6 @@ public class MediafireCom extends PluginForHost {
         super();
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -59,9 +47,10 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
- 
+
         try {
-            br.setCookiesExclusive(true);br.clearCookies(getHost());
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
 
@@ -74,8 +63,6 @@ public class MediafireCom extends PluginForHost {
         }
         return false;
     }
-
-
 
     @Override
     public String getVersion() {
@@ -90,7 +77,8 @@ public class MediafireCom extends PluginForHost {
         // switch (step.getStep()) {
         // case PluginStep.STEP_PAGE:
         url = downloadLink.getDownloadURL();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.getPage(url);
         if (br.getRegex(offlinelink).matches()) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,7 +111,7 @@ public class MediafireCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

@@ -16,9 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
@@ -36,21 +34,14 @@ import jd.utils.JDMediaConvert;
 
 public class Youtube extends PluginForHost {
     static private final String CODER = "JD-Team";
-    
-    static private final String AGB = "http://youtube.com/t/terms";
 
-    
+    static private final String AGB = "http://youtube.com/t/terms";
 
     public Youtube() {
         super();
         enablePremium(1);
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -71,7 +62,6 @@ public class Youtube extends PluginForHost {
             return false;
     }
 
-   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

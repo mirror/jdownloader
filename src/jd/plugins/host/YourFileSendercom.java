@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -33,20 +32,11 @@ import jd.plugins.download.RAFDownload;
 public class YourFileSendercom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
     private String downloadurl;
     private RequestInfo requestInfo;
 
     public YourFileSendercom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -80,7 +70,6 @@ public class YourFileSendercom extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
 
     @Override
     public String getVersion() {
@@ -138,7 +127,7 @@ public class YourFileSendercom extends PluginForHost {
         /* TODO: Wert prüfen */
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

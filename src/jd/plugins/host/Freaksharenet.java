@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -34,18 +33,9 @@ import jd.plugins.download.RAFDownload;
 
 public class Freaksharenet extends PluginForHost {
 
-    
-
-    
-
     public Freaksharenet() {
         super();
         this.enablePremium();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -69,7 +59,7 @@ public class Freaksharenet extends PluginForHost {
         if (!br.containsHTML("<span class=\"txtbig\">Fehler</span>")) {
             String[][] filename = new Regex(br, Pattern.compile("colspan=\"2\" class=\"content_head\">(.*?)<b>(.*?)</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
             downloadLink.setName(filename[0][1]);
-            String[][] filesize = new Regex(br, Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();            
+            String[][] filesize = new Regex(br, Pattern.compile("<b>Datei(.*?)</b>(.*?)<td width=\"48%\" height=\"10\" align=\"left\" class=\"content_headcontent\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
             downloadLink.setDownloadSize(Regex.getSize(filesize[0][2]));
 
             return true;
@@ -77,8 +67,6 @@ public class Freaksharenet extends PluginForHost {
 
         return false;
     }
-
-
 
     @Override
     public String getVersion() {
@@ -177,7 +165,7 @@ public class Freaksharenet extends PluginForHost {
         downloadLink.setLocalSpeedLimit(-1);
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setChunkNum(1);
-        dl.setResume(false);       
+        dl.setResume(false);
         dl.startDownload();
     }
 

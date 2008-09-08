@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -28,17 +27,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class YourFilesBiz extends PluginForHost {
-    
-
-    
 
     public YourFilesBiz() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -65,7 +56,6 @@ public class YourFilesBiz extends PluginForHost {
 
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

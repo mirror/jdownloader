@@ -34,10 +34,6 @@ import jd.plugins.download.RAFDownload;
 public class Odsiebiecom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
     private String captchaCode;
     private File captchaFile;
     private String downloadcookie;
@@ -47,11 +43,6 @@ public class Odsiebiecom extends PluginForHost {
 
     public Odsiebiecom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -86,8 +77,6 @@ public class Odsiebiecom extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
-
 
     @Override
     public String getVersion() {

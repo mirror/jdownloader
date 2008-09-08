@@ -1,6 +1,5 @@
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -22,20 +21,12 @@ import jd.utils.JDUtilities;
 
 public class SpeedySharecom extends PluginForHost {
 
-    
-
-    
     private String postdata;
     RequestInfo requestInfo;
     private String url;
 
     public SpeedySharecom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -63,8 +54,6 @@ public class SpeedySharecom extends PluginForHost {
         return false;
 
     }
-
-  
 
     @Override
     public String getVersion() {

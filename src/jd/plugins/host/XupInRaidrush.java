@@ -16,9 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -33,16 +31,8 @@ public class XupInRaidrush extends PluginForHost {
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "JD-Team";
 
-    
-
-
     public XupInRaidrush() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

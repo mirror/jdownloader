@@ -16,9 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
@@ -38,16 +36,9 @@ public class MeinUpload extends PluginForHost {
 
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
-    
-
     public MeinUpload() {
         super();
         enablePremium();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -63,11 +54,11 @@ public class MeinUpload extends PluginForHost {
         if (form != null) {
             // Old version 1.9.08
             br.submitForm(form);
-        
-        Form captcha = br.getForms()[1];
-        String captchaCode = getCaptchaCode("http://meinupload.com/captcha.php", downloadLink);
-        captcha.put("captchacode", captchaCode);
-        br.submitForm(captcha);
+
+            Form captcha = br.getForms()[1];
+            String captchaCode = getCaptchaCode("http://meinupload.com/captcha.php", downloadLink);
+            captcha.put("captchacode", captchaCode);
+            br.submitForm(captcha);
         }
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
         con = br.openGetConnection(url);
@@ -78,20 +69,22 @@ public class MeinUpload extends PluginForHost {
 
         dl.startDownload();
     }
-private void login(Account account) throws IOException{
-    br.setCookiesExclusive(true);
-    br.setFollowRedirects(true);
-    br.clearCookies(getHost());
 
-    br.getPage("http://meinupload.com");
-    Form login = br.getFormbyValue("Login");
-    login.put("user", account.getUser());
-    login.put("pass", account.getPass());
-    br.submitForm(login);
-}
+    private void login(Account account) throws IOException {
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
+        br.clearCookies(getHost());
+
+        br.getPage("http://meinupload.com");
+        Form login = br.getFormbyValue("Login");
+        login.put("user", account.getUser());
+        login.put("pass", account.getPass());
+        br.submitForm(login);
+    }
+
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
- 
+
         login(account);
 
         String expire = br.getRegex("<b>Paket l.*?uft ab am</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
@@ -117,8 +110,8 @@ private void login(Account account) throws IOException{
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        login(account);        
-        br.getPage(downloadLink.getDownloadURL());       
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
@@ -169,9 +162,6 @@ private void login(Account account) throws IOException{
         return true;
     }
 
-
-
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

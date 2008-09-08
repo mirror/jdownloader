@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -33,20 +32,11 @@ import jd.plugins.download.RAFDownload;
 public class Vipfilecom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
     private String downloadurl;
     private RequestInfo requestInfo;
 
     public Vipfilecom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -84,7 +74,6 @@ public class Vipfilecom extends PluginForHost {
         return false;
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -138,7 +127,7 @@ public class Vipfilecom extends PluginForHost {
         /* TODO: Wert prüfen */
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

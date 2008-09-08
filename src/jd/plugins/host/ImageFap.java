@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
@@ -34,9 +33,6 @@ public class ImageFap extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    
-    
-
     public ImageFap() {
         super();
     }
@@ -50,7 +46,7 @@ public class ImageFap extends PluginForHost {
                 // logger.info("decrypt4 " + i);
                 // logger.info("decrypt5 " + ((int) (s1.charAt(i+1) - '0')));
                 // logger.info("decrypt6 " +
-                // (Integer.parseInt(code.substring(code.length()-1,code.length()
+                //(Integer.parseInt(code.substring(code.length()-1,code.length()
                 // ))));
                 int charcode = s1.charAt(i) - Integer.parseInt(code.substring(code.length() - 1, code.length()));
                 // logger.info("decrypt7 " + charcode);
@@ -61,7 +57,7 @@ public class ImageFap extends PluginForHost {
             }
             // logger.info(t);
             // var s1=unescape(s.substr(0,s.length-1)); var t='';
-            // for(i=0;i<s1.length;i++)t+=String.fromCharCode(s1.charCodeAt(i)-s.
+            //for(i=0;i<s1.length;i++)t+=String.fromCharCode(s1.charCodeAt(i)-s.
             // substr(s.length-1,1));
             // return unescape(t);
             // logger.info("return of DecryptLink(): " +
@@ -71,11 +67,6 @@ public class ImageFap extends PluginForHost {
             e.printStackTrace();
         }
         return null;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -111,8 +102,6 @@ public class ImageFap extends PluginForHost {
         }
         return false;
     }
-
-  
 
     @Override
     public String getVersion() {
@@ -153,7 +142,7 @@ public class ImageFap extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 15;
     }
-    
+
     @Override
     public void reset() {
     }

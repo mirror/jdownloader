@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -34,20 +33,11 @@ import jd.utils.JDUtilities;
 public class SharedZillacom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
     private String passCode = "";
     private RequestInfo requestInfo;
 
     public SharedZillacom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -79,8 +69,6 @@ public class SharedZillacom extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
-
 
     @Override
     public String getVersion() {
@@ -143,7 +131,7 @@ public class SharedZillacom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

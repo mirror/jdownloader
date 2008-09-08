@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -34,17 +33,8 @@ import jd.utils.JDUtilities;
 
 public class DataHu extends PluginForHost {
 
-    
-
-    
-
     public DataHu() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -77,8 +67,6 @@ public class DataHu extends PluginForHost {
         }
         return false;
     }
-
-  
 
     @Override
     public String getVersion() {

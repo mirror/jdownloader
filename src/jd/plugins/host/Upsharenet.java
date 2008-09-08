@@ -33,11 +33,6 @@ import jd.utils.JDUtilities;
 public class Upsharenet extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
-
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
@@ -45,11 +40,6 @@ public class Upsharenet extends PluginForHost {
 
     public Upsharenet() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -67,7 +57,8 @@ public class Upsharenet extends PluginForHost {
 
         /* .eu zu .net weiterleitung */
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("upshare\\.(net|eu)", "upshare\\.net"));
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
 
         downloadurl = downloadLink.getDownloadURL();
         try {
@@ -91,7 +82,6 @@ public class Upsharenet extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
 
     @Override
     public String getVersion() {
@@ -193,7 +183,7 @@ public class Upsharenet extends PluginForHost {
         /* TODO: Wert prüfen */
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

@@ -16,9 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-import java.util.regex.Pattern;
-
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -26,17 +23,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class zShare extends PluginForHost {
-    
-
-    
 
     public zShare() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -52,7 +41,8 @@ public class zShare extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(getHost());
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
             br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
             String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
             downloadLink.setName(fileInfo[0]);
@@ -78,8 +68,6 @@ public class zShare extends PluginForHost {
         return false;
     }
 
- 
-
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -88,7 +76,8 @@ public class zShare extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
 
         br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
 
@@ -105,7 +94,7 @@ public class zShare extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub

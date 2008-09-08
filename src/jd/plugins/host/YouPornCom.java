@@ -16,11 +16,9 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.regex.Pattern;
 
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -35,7 +33,6 @@ import jd.utils.JDLocale;
 
 public class YouPornCom extends PluginForHost {
     private static final String CODER = "JD-Team";
-    
 
     private RequestInfo requestInfo;
 
@@ -85,22 +82,15 @@ public class YouPornCom extends PluginForHost {
         /* TODO: Wert prüfen */
         return 1;
     }
-    
-    @Override
-    public void reset() {
-    }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
+    public void reset() {
     }
 
     @Override
     public String getCoder() {
         return CODER;
     }
-
-
 
     @Override
     public String getVersion() {

@@ -16,9 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-import java.util.regex.Pattern;
-
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -31,17 +28,8 @@ import jd.utils.JDUtilities;
 public class Moosharede extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
     public Moosharede() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -57,7 +45,8 @@ public class Moosharede extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(getHost());
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
             br.setFollowRedirects(false);
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
@@ -73,7 +62,6 @@ public class Moosharede extends PluginForHost {
 
         return false;
     }
-
 
     @Override
     public String getVersion() {
@@ -112,7 +100,7 @@ public class Moosharede extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

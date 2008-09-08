@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -42,7 +41,6 @@ public class XupIn extends PluginForHost {
     private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
 
     private static final String DOWNLOAD_SIZE = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
-    
 
     private static final String NAME_FROM_URL = "http://.*?xup\\.in/dl,[0-9]+/(.*?)";
     private static final String NOT_FOUND = "File does not exist";
@@ -58,11 +56,6 @@ public class XupIn extends PluginForHost {
 
     public XupIn() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -120,10 +113,6 @@ public class XupIn extends PluginForHost {
         return false;
 
     }
-
- 
-
- 
 
     @Override
     public String getVersion() {

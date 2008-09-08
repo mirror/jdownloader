@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -28,17 +27,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
-    
-
-    
 
     public UploadStube() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -53,19 +44,17 @@ public class UploadStube extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-     
-            br.setCookiesExclusive(true);br.clearCookies(getHost());
-            String page = br.getPage(downloadLink.getDownloadURL());
 
-            downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0).trim());
-            downloadLink.setDownloadSize(Regex.getSize(new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>").getMatch(0).trim()));
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        String page = br.getPage(downloadLink.getDownloadURL());
 
-            return true;
-     
-      
+        downloadLink.setName(new Regex(page, "<b>Dateiname: </b>(.*?) <br>").getMatch(0).trim());
+        downloadLink.setDownloadSize(Regex.getSize(new Regex(page, "<b>Dateigr..e:</b> (.*?)<br>").getMatch(0).trim()));
+
+        return true;
+
     }
-
-
 
     @Override
     public String getVersion() {
@@ -76,7 +65,8 @@ public class UploadStube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -91,7 +81,7 @@ public class UploadStube extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

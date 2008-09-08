@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.net.URI;
-import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Cookie;
@@ -38,10 +37,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class RapidShareDe extends PluginForHost {
-    
-
-    
-
 
     //
 
@@ -58,23 +53,18 @@ public class RapidShareDe extends PluginForHost {
     }
 
     @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    } // kein BotCheck
-
-    @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		new Serienjunkies().handleFree(downloadLink);
-   		return;
-   		}
-       	checkMirrorsInProgress(downloadLink);
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
+            new Serienjunkies().handleFree(downloadLink);
+            return;
+        }
+        checkMirrorsInProgress(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
-br.setFollowRedirects(false);
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        br.setFollowRedirects(false);
         Form[] forms = br.getForms(downloadLink.getDownloadURL());
         if (forms.length < 2) {
             // step.setStatus(PluginStep.STATUS_ERROR);
@@ -97,8 +87,8 @@ br.setFollowRedirects(false);
         // }
         try {
             waittime = Long.parseLong(new Regex(br, "<script>var.*?\\= ([\\d]+)").getMatch(0)) * 1000;
-            
-            this.sleep((int)waittime, downloadLink);
+
+            this.sleep((int) waittime, downloadLink);
         } catch (Exception e) {
             try {
                 waittime = Long.parseLong(new Regex(br, "Oder warte (\\d*?) Minute").getMatch(0)) * 60000;
@@ -124,16 +114,17 @@ br.setFollowRedirects(false);
         boolean fileDownloaded = br.downloadFile(captchaFile, captchaAdress);
         if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
             logger.severe("Captcha not found");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter("Captcha
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);// step.setParameter(
+                                                           // "Captcha
             // ImageIO
             // Error");
             // step.setStatus(PluginStep.STATUS_ERROR);
             return;
         }
-        String code=null;
-  
+        String code = null;
+
         code = Plugin.getCaptchaCode(captchaFile, this);
-      
+
         if (code == null || code == "") {
             logger.severe("Bot erkannt");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -152,34 +143,33 @@ br.setFollowRedirects(false);
         // //step.setStatus(PluginStep.STATUS_TODO);
         // return;
         // }
-   
-        
+
         dl = new RAFDownload(this, downloadLink, br.openFormConnection(form));
-//
+        //
         dl.startDownload();
         File l = new File(downloadLink.getFileOutput());
-        if(l.length()<10240){
-            String local=JDUtilities.getLocalFile(l);
-            if(Regex.matches(local, "Zugriffscode falsch")){
+        if (l.length() < 10240) {
+            String local = JDUtilities.getLocalFile(l);
+            if (Regex.matches(local, "Zugriffscode falsch")) {
                 l.delete();
                 l.deleteOnExit();
                 linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-               return;
+                return;
             }
-            
+
         }
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		new Serienjunkies().handleFree(downloadLink);
-   		return;
-   		}
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
+            new Serienjunkies().handleFree(downloadLink);
+            return;
+        }
         String user = account.getUser();
         String pass = account.getPass();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setFollowRedirects(false);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         checkMirrorsInProgress(downloadLink);
@@ -193,16 +183,15 @@ br.setFollowRedirects(false);
         PostRequest r = new PostRequest("http://rapidshare.de");
         r.setPostVariable("uri", Encoding.urlEncode(path));
         r.setPostVariable("dl.start", "PREMIUM");
-        r.getCookies().add(new Cookie(getHost(),"user", user + "-" + formatPass));
+        r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
 
         String page = r.load();
-        if(page.contains("Premium-Cookie nicht gefunden")){
+        if (page.contains("Premium-Cookie nicht gefunden")) {
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             linkStatus.setErrorMessage("Account not found or password wrong");
             return;
-            
-            
+
         }
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getMatch(0);
         if (error != null) {
@@ -216,7 +205,7 @@ br.setFollowRedirects(false);
 
         HTTPConnection urlConnection;
         GetRequest req = new GetRequest(url);
-        r.getCookies().add(new Cookie(getHost(),"user", user + "-" + formatPass));
+        r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
         req.connect();
         urlConnection = req.getHttpConnection();
         if (urlConnection.getHeaderField("content-disposition") == null) {
@@ -224,7 +213,6 @@ br.setFollowRedirects(false);
             page = req.read();
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(page);
-           
 
         }
 
@@ -249,30 +237,27 @@ br.setFollowRedirects(false);
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         try {
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
-        br.setFollowRedirects(false);
-        br.getPage(downloadLink.getDownloadURL());
-        Form[] forms = br.getForms();
-        if (forms.length < 2) { return false; }
-      
-        br.submitForm(forms[1]);
-       
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
+            br.setFollowRedirects(false);
+            br.getPage(downloadLink.getDownloadURL());
+            Form[] forms = br.getForms();
+            if (forms.length < 2) { return false; }
+
+            br.submitForm(forms[1]);
+
             String[][] regExp = new Regex(br, "<p>Du hast die Datei <b>(.*?)</b> \\(([\\d]+)").getMatches();
             downloadLink.setDownloadSize(Integer.parseInt(regExp[0][1]) * 1024);
             downloadLink.setName(regExp[0][0]);
             return true;
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return false;
 
     }
-
-  
-
-
 
     @Override
     public String getVersion() {
@@ -283,7 +268,7 @@ br.setFollowRedirects(false);
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
         // TODO Automatisch erstellter Methoden-Stub

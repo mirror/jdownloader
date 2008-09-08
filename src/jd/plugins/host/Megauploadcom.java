@@ -75,10 +75,6 @@ public class Megauploadcom extends PluginForHost {
         this.enablePremium();
     }
 
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();

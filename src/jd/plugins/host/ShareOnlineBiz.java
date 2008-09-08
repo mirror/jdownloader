@@ -38,11 +38,6 @@ import org.mozilla.javascript.Scriptable;
 public class ShareOnlineBiz extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
-  
     private String captchaCode;
     private File captchaFile;
     private String passCode;
@@ -51,11 +46,6 @@ public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -74,9 +64,8 @@ public class ShareOnlineBiz extends PluginForHost {
         for (int i = 1; i < 3; i++) {
             try {
                 Thread.sleep(1000);/*
-                                     * Sicherheitspause, sonst gibts 403
-                                     * Response
-                                     */
+                                    * Sicherheitspause, sonst gibts 403 Response
+                                    */
                 requestInfo = HTTP.getRequest(new URL(url));
                 if (requestInfo != null && requestInfo.getLocation() == null) {
                     String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -102,8 +91,6 @@ public class ShareOnlineBiz extends PluginForHost {
         }
         return false;
     }
-
- 
 
     @Override
     public String getVersion() {
@@ -201,7 +188,7 @@ public class ShareOnlineBiz extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

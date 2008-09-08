@@ -47,9 +47,7 @@ import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
 public class Serienjunkies extends PluginForHost {
-    
 
-    
     private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
@@ -192,10 +190,6 @@ public class Serienjunkies extends PluginForHost {
         return links;
     }
 
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
     // Für Links die gleich auf den Hoster relocaten
     private String EinzelLinks(String url) {
         String links = "";
@@ -204,11 +198,10 @@ public class Serienjunkies extends PluginForHost {
             url = "http://" + url;
         }
         try {
-        	if(!url.matches(".*sa[fv]e/f.*"))
-        	{
-            url = url.replaceAll("safe/", "safe/f");
-            url = url.replaceAll("save/", "save/f");
-        	}
+            if (!url.matches(".*sa[fv]e/f.*")) {
+                url = url.replaceAll("safe/", "safe/f");
+                url = url.replaceAll("save/", "save/f");
+            }
             RequestInfo reqinfo = HTTP.getRequest(new URL(url));
             File captchaFile = null;
             String capTxt = null;
@@ -380,8 +373,6 @@ public class Serienjunkies extends PluginForHost {
         return true;
     }
 
-
-
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
@@ -494,7 +485,7 @@ public class Serienjunkies extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     public void reset() {
     }
 

@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -32,21 +31,12 @@ import jd.plugins.download.RAFDownload;
 
 public class ShareBaseDe extends PluginForHost {
 
-    
-
-    
-
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
     private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
 
     public ShareBaseDe() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -60,20 +50,18 @@ public class ShareBaseDe extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException  {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.setFollowRedirects(true);
         String page = br.getPage(downloadLink.getDownloadURL());
         String[] infos = new Regex(page, FILEINFO).getRow(0);
 
-        downloadLink.setName(infos[0].trim());        
+        downloadLink.setName(infos[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
 
         return true;
 
     }
-
-
 
     @Override
     public String getVersion() {

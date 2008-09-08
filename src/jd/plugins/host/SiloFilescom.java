@@ -16,11 +16,9 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.regex.Pattern;
 
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -34,20 +32,11 @@ import jd.plugins.download.RAFDownload;
 public class SiloFilescom extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
     private String downloadurl;
     private RequestInfo requestInfo;
 
     public SiloFilescom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -63,21 +52,20 @@ public class SiloFilescom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws MalformedURLException, IOException {
         downloadurl = downloadLink.getDownloadURL();
-     
-            requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (requestInfo != null && requestInfo.getLocation() == null) {
-                String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getMatch(0).trim();
-                String filesize;
-               filesize = requestInfo.getRegexp("Dateigr.*?e:<b>(.*?)</b></tr>").getMatch(0);
-         
-                    downloadLink.setDownloadSize(Regex.getSize(filesize));
-                
-                downloadLink.setName(filename);
-                return true;
-            }return false;
-    }
 
-   
+        requestInfo = HTTP.getRequest(new URL(downloadurl));
+        if (requestInfo != null && requestInfo.getLocation() == null) {
+            String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getMatch(0).trim();
+            String filesize;
+            filesize = requestInfo.getRegexp("Dateigr.*?e:<b>(.*?)</b></tr>").getMatch(0);
+
+            downloadLink.setDownloadSize(Regex.getSize(filesize));
+
+            downloadLink.setName(filename);
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public String getVersion() {
@@ -124,7 +112,7 @@ public class SiloFilescom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

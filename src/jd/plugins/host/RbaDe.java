@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -32,32 +31,11 @@ import jd.utils.JDUtilities;
 public class RbaDe extends PluginForHost {
 
     private static final String CODER = "ToKaM";
-    
+
     private static final String AGB_LINK = "http://www.r-b-a.de/index.php?ID=3003";
 
-    // http://www.r-b-a.de/download.php?FILE=42710-2.mp3&PATH=5
-    private static final Pattern LINK_PATTERN = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)", Pattern.CASE_INSENSITIVE);
-
-    /*
-     * private static final String REGEX_DOWNLOADLINK1 =
-     * "<tr><td><a href='download\\.php\\?FILE=\\d+-2\\.mp3&amp;PATH=\\d'>Runde 1 hin</a></td>"
-     * ; private static final String REGEX_DOWNLOADLINK2 =
-     * "<tr><td><a href='download\\.php\\?FILE=\\d+-5\\.mp3&amp;PATH=\\d'>Runde 2 hin</a></td>"
-     * ; private static final String REGEX_DATUMSANGABE1 =
-     * "<td>\\d+\\.\\d+\\.\\d+ \\d+:\\d+:\\d+\\.\\d+</td>"; private static final
-     * String REGEX_DATUMSANGABE2 =
-     * "<td>\\d+\\.\\d+\\.\\d+ \\d+:\\d+:\\d+</td>";
-     */
     private static final String REGEX_NICKNAME = "<td>(.+?)</td><td>\\d+</td></tr>";
 
-    // private static final Pattern REGEX_HERAUSFORDERER =
-    // Pattern.compile(REGEX_DOWNLOADLINK1
-    // +"\\s+?"+REGEX_DATUMSANGABE1+"|"+REGEX_DATUMSANGABE2
-    // +"\\s+?"+REGEX_NICKNAME, Pattern.CASE_INSENSITIVE|Pattern.LITERAL);
-    // private static final Pattern REGEX_GEGNER =
-    // Pattern.compile(REGEX_DOWNLOADLINK2
-    // +"\\s+?"+REGEX_DATUMSANGABE1+"|"+REGEX_DATUMSANGABE2
-    // +"\\s+?"+REGEX_NICKNAME, Pattern.MULTILINE);
     private static final Pattern REGEX_RAPPERNAMEN = Pattern.compile(REGEX_NICKNAME, Pattern.CASE_INSENSITIVE);
 
     private static final String ERR_IDS_NOT_FOUND = "Konnte BattleId und Rundennummer nicht herausfinden. Plugin defeckt!";
@@ -67,30 +45,14 @@ public class RbaDe extends PluginForHost {
     /** Downloads will be downloaded to DOWNLOAD_DIR + PackageName */
     private static final String DOWNLOAD_DIR = "RBA-BATTELS";
 
-    // <tr><td><a href='download.php?FILE=45529-2.mp3&amp;PATH=5'>Runde 1
-    // hin</a></td>
-    // <tr><td><a href='download.php?FILE=4217-2.mp3&amp;PATH=5'>Runde 1
-    // hin</a></td>
-    // <td>25.08.2008 15:56:26.181355</td>
-    // <td>26.08.2002 18:41:49</td>
-    // <td>Abdel</td><td>2012</td></tr>
-    // <td>JackPod</td><td>121</td></tr>
-
     public RbaDe() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
     public String getCoder() {
         return CODER;
     }
-
- 
 
     @Override
     public String getVersion() {
@@ -136,8 +98,8 @@ public class RbaDe extends PluginForHost {
         br.clearCookies(getHost());
         LinkStatus linkstatus = link.getLinkStatus();
         try {
-            int battleId = Integer.parseInt(new Regex(link.getDownloadURL(), LINK_PATTERN).getMatch(0));
-            int rundenId = Integer.parseInt(new Regex(link.getDownloadURL(), LINK_PATTERN).getMatch(1));
+            int battleId = Integer.parseInt(new Regex(link.getDownloadURL(), getSupportedLinks()).getMatch(0));
+            int rundenId = Integer.parseInt(new Regex(link.getDownloadURL(), getSupportedLinks()).getMatch(1));
             String page = br.getPage("http://www.r-b-a.de/index.php?ID=4101&BATTLE=" + battleId);
             // String herausforderer = new Regex(page,
             // REGEX_HERAUSFORDERER).getFirstMatch();
@@ -208,7 +170,7 @@ public class RbaDe extends PluginForHost {
          * link.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
          * link.getLinkStatus().setErrorMessage(ERR_FILE_NOT_FOUND); }
          */
-        String path = new Regex(link.getDownloadURL(), LINK_PATTERN).getColumn(2)[0];
+        String path = new Regex(link.getDownloadURL(), getSupportedLinks()).getColumn(2)[0];
         if (path.equals("5")) {
             new RAFDownload(this, link, br.openGetConnection(link.getDownloadURL())).startDownload();
         } else {

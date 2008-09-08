@@ -16,9 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-import java.util.regex.Pattern;
-
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -30,18 +27,10 @@ import jd.plugins.download.RAFDownload;
 public class Dataupde extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
     private String downloadurl;
 
     public Dataupde() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -73,8 +62,6 @@ public class Dataupde extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
-
 
     @Override
     public String getVersion() {
@@ -122,7 +109,7 @@ public class Dataupde extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
@@ -29,14 +28,9 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class ArchivTo extends PluginForHost {
-   
+
     public ArchivTo() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -52,7 +46,8 @@ public class ArchivTo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(getHost());
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
             String page = br.getPage(downloadLink.getDownloadURL());
 
             downloadLink.setName(new Regex(page, "<td width=.*?>Original\\-Dateiname</td>.*? <a href=\"(.*?)\" style=.*?>(.*?)</a>").getMatch(1));
@@ -66,11 +61,6 @@ public class ArchivTo extends PluginForHost {
         return false;
     }
 
-   
-
-   
-
-  
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -80,7 +70,8 @@ public class ArchivTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws IOException {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -59,8 +59,6 @@ import org.mozilla.javascript.Scriptable;
 
 public class Rapidshare extends PluginForHost {
 
-    
-
     private static long LAST_FILE_CHECK = 0;
 
     private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Please wait until the download is completed)", Pattern.CASE_INSENSITIVE);
@@ -87,8 +85,6 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minute)");
 
-    
-
     // private static final String PROPERTY_USE_SSL = "USE_SSL";
 
     private static final String PROPERTY_INCREASE_TICKET = "INCREASE_TICKET";
@@ -97,17 +93,20 @@ public class Rapidshare extends PluginForHost {
 
     private static final String PROPERTY_SELECTED_SERVER2 = "SELECTED_SERVER#2";
 
+    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER#3";
+
     private static final String PROPERTY_USE_PRESELECTED = "USE_PRESELECTED";
 
     private static final String PROPERTY_USE_TELEKOMSERVER = "USE_TELEKOMSERVER";
 
-    private static final String PROPERTY_WAIT_WHEN_BOT_DETECTED = "WAIT_WHEN_BOT_DETECTED";
-
-    private static final String PROPERTY_SELECTED_SERVER3 = "SELECTED_SERVER#3";
+    // private static final String PROPERTY_WAIT_WHEN_BOT_DETECTED =
+    // "WAIT_WHEN_BOT_DETECTED";
 
     private static String[] serverList1;
 
     private static String[] serverList2;
+
+    private static String[] serverList3;
 
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
 
@@ -125,19 +124,17 @@ public class Rapidshare extends PluginForHost {
         if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }
-      
+
         return link;
     }
 
     private final String ACCEPT_LANGUAGE = "en-gb, en;q=0.8";
 
-    private String[] serverList3;
-
     // private static boolean FORCE_FREE_USER = true;
 
     public Rapidshare() {
         super();
-       
+
         setMaxConnections(35);
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
@@ -272,13 +269,6 @@ public class Rapidshare extends PluginForHost {
 
     }
 
-    public boolean doBotCheck(File file) {
-
-        String hash = JDUtilities.getLocalHash(file);
-        return hash != null && hash.equals(JDUtilities.getLocalHash(JDUtilities.getResourceFile("jd/captcha/methods/rapidshare.com/bot.jpg")));
-
-    }
-
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
             new Serienjunkies().handleFree(downloadLink);
@@ -291,16 +281,11 @@ public class Rapidshare extends PluginForHost {
         // if (ddl)this.doPremium(downloadLink);
         Rapidshare.correctURL(downloadLink);
         checkMirrorsInProgress(downloadLink);
-    
 
-     
-        
         // if (getRemainingWaittime() > 0) { return
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
         Browser br = new Browser();
-
-     
 
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
@@ -446,8 +431,6 @@ public class Rapidshare extends PluginForHost {
 
     }
 
- 
-
     /**
      * premiumdownload Methode
      * 
@@ -552,11 +535,6 @@ public class Rapidshare extends PluginForHost {
 
     public String getAGBLink() {
         return "http://rapidshare.com/faq.html";
-    }
-
-    public long getBotWaittime() {
-
-        return getPluginConfig().getIntegerProperty(PROPERTY_WAIT_WHEN_BOT_DETECTED, -1);
     }
 
     public String getCoder() {
@@ -674,8 +652,6 @@ public class Rapidshare extends PluginForHost {
         return super.getFileInformationString(parameter);
     }
 
-  
-
     private String getServerName(String id) {
         Iterator<Entry<String, String>> it = serverMap.entrySet().iterator();
         while (it.hasNext()) {
@@ -684,8 +660,6 @@ public class Rapidshare extends PluginForHost {
         }
         return null;
     }
-
- 
 
     private String getURL(String[] serverstrings, String selected, String postTarget) {
         if (!serverMap.containsKey(selected.trim())) {
@@ -760,7 +734,6 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.extendedTab", "Erweiterte Einstellungen")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_WAIT_WHEN_BOT_DETECTED, JDLocale.L("plugins.hoster.rapidshare.com.waitTimeOnBotDetection", "Wartezeit [ms] wenn Bot erkannt wird.(-1 für Reconnect)"), -1, 600000).setDefaultValue(-1).setStep(1000));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
     }
 

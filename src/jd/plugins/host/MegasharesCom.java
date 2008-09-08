@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.HTTPConnection;
@@ -40,20 +39,13 @@ public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
 
     static private final String CODER = "JD-Team";
-    
 
     // http://d01.megashares.com/?d01=ec0acc7
-    
 
     private static String PLUGIN_PASS = null;
 
     public MegasharesCom() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -212,8 +204,6 @@ public class MegasharesCom extends PluginForHost {
         return true;
 
     }
-
-
 
     @Override
     public String getVersion() {

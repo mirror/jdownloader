@@ -47,9 +47,6 @@ public class DepositFiles extends PluginForHost {
 
     static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
 
-    
-
-   
     private static final String PATTERN_PREMIUM_FINALURL = "<div id=\"download_url\">.*?<a href=\"(.*?)\"";
 
     private static final String PATTERN_PREMIUM_REDIRECT = "window\\.location\\.href = \"(.*?)\";";
@@ -64,11 +61,6 @@ public class DepositFiles extends PluginForHost {
     public DepositFiles() {
         super();
         this.enablePremium();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -178,7 +170,7 @@ public class DepositFiles extends PluginForHost {
 
         br.getPage("http://depositfiles.com/en/");
 
-        Form login = br.getFormbyValue("enter"); 
+        Form login = br.getFormbyValue("enter");
 
         login.put("login", account.getUser());
         login.put("password", account.getPass());
@@ -338,8 +330,6 @@ public class DepositFiles extends PluginForHost {
     public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
-
-
 
     @Override
     public String getVersion() {

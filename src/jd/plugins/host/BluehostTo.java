@@ -16,9 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-import java.util.regex.Pattern;
-
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -34,7 +31,6 @@ public class BluehostTo extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
- 
     public BluehostTo() {
         super();
     }
@@ -43,11 +39,6 @@ public class BluehostTo extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         url = url.replaceFirst("\\?dl=", "dl=");
         downloadLink.setUrlDownload(url);
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -124,8 +115,6 @@ public class BluehostTo extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-
-
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -135,7 +124,7 @@ public class BluehostTo extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
 

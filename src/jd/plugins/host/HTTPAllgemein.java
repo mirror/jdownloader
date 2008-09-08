@@ -16,9 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
@@ -32,19 +30,10 @@ import jd.utils.JDUtilities;
 
 public class HTTPAllgemein extends PluginForHost {
 
-    
-
-    
-
     private String contentType;
 
     public HTTPAllgemein() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -90,8 +79,6 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
 
-
-
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -121,7 +108,7 @@ public class HTTPAllgemein extends PluginForHost {
         dl.startDownload();
     }
 
-    public int getMaxSimultanFreeDownloadNum() {        
+    public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
 
@@ -132,7 +119,6 @@ public class HTTPAllgemein extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {

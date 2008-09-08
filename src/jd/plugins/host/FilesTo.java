@@ -44,8 +44,6 @@ public class FilesTo extends PluginForHost {
     static private final String CODER = "JD-Team";
     static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
 
-    
-    
     private Pattern CAPTCHA_FLE = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
     private String captchaAddress;
     private Pattern DOWNLOAD_URL = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
@@ -60,11 +58,6 @@ public class FilesTo extends PluginForHost {
 
     public FilesTo() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -134,7 +127,6 @@ public class FilesTo extends PluginForHost {
         return size;
 
     }
-
 
     @Override
     public String getVersion() {
@@ -209,7 +201,7 @@ public class FilesTo extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
         finalURL = null;

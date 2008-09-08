@@ -31,21 +31,12 @@ import jd.plugins.download.RAFDownload;
 public class ShareNownet extends PluginForHost {
     private static final String CODER = "JD-Team";
 
-    
-
-    
-
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
 
     public ShareNownet() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -60,7 +51,8 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setFollowRedirects(false);
         downloadurl = downloadLink.getDownloadURL();
         try {
@@ -86,8 +78,6 @@ public class ShareNownet extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
-
 
     @Override
     public String getVersion() {
@@ -151,7 +141,7 @@ public class ShareNownet extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

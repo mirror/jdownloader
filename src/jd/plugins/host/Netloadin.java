@@ -52,11 +52,9 @@ public class Netloadin extends PluginForHost {
     static private final String FILE_DAMAGED = "(Die Datei wurde Opfer einer defekten Festplatte|Diese Datei liegt auf einem Server mit einem technischen Defekt. Wir konnten diese Datei leider nicht wieder herstellen)";
 
     static private final String FILE_NOT_FOUND = "Die Datei konnte leider nicht gefunden werden";
-    
 
     static private final String LIMIT_REACHED = "share/images/download_limit_go_on.gif";
     static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
-    
 
     private static String getID(String link) {
 
@@ -69,11 +67,6 @@ public class Netloadin extends PluginForHost {
     public Netloadin() {
         setConfigElements();
         this.enablePremium();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -389,7 +382,6 @@ public class Netloadin extends PluginForHost {
         return downloadLink.getName() + " (" + fileStatusText + ")";
     }
 
-  
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

@@ -16,9 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
-import java.util.regex.Pattern;
-
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -30,18 +27,10 @@ import jd.plugins.download.RAFDownload;
 
 public class FastShareorg extends PluginForHost {
 
-    
-
-    
     private String url;
 
     public FastShareorg() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -57,7 +46,8 @@ public class FastShareorg extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);br.clearCookies(getHost());
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
             br.setFollowRedirects(false);
             String url = downloadLink.getDownloadURL();
             br.getPage(url);
@@ -77,8 +67,6 @@ public class FastShareorg extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
- 
 
     @Override
     public String getVersion() {
@@ -122,7 +110,7 @@ public class FastShareorg extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.regex.Pattern;
 
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -43,22 +42,11 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
 
-    
-
     private static final String NOT_FOUND = "Datei existiert nicht";
-
-    
-
-
 
     public FastLoadNet() {
         super();
 
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -125,7 +113,6 @@ public class FastLoadNet extends PluginForHost {
         return false;
 
     }
-
 
     @Override
     public String getVersion() {

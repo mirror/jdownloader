@@ -16,9 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Browser;
@@ -41,11 +39,7 @@ public class Uploadedto extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    
-
-    
-
-    public Uploadedto() {        
+    public Uploadedto() {
         this.enablePremium();
         setMaxConnections(20);
     }
@@ -69,10 +63,6 @@ public class Uploadedto extends PluginForHost {
 
     }
 
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
     public int getTimegapBetweenConnections() {
         return 300;
     }
@@ -81,7 +71,8 @@ public class Uploadedto extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
 
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("http://uploaded.to/login");
@@ -121,15 +112,15 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		new Serienjunkies().handleFree(downloadLink);
-   		return;
-   		}
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
+            new Serienjunkies().handleFree(downloadLink);
+            return;
+        }
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         correctURL(downloadLink);
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setCookie("http://uploaded.to/", "lang", "de");
 
         String user = account.getUser();
@@ -225,9 +216,10 @@ public class Uploadedto extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-    	if(downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);
@@ -250,20 +242,19 @@ public class Uploadedto extends PluginForHost {
         return true;
     }
 
-  
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		new Serienjunkies().handleFree(downloadLink);
-   		return;
-   		}
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
+            new Serienjunkies().handleFree(downloadLink);
+            return;
+        }
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setCookie("http://uploaded.to/", "lang", "de");
         correctURL(downloadLink);
 
@@ -324,12 +315,11 @@ public class Uploadedto extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     public void reset() {
     }
 
     public void resetPluginGlobals() {
     }
-
 
 }

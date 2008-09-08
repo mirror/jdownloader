@@ -16,11 +16,9 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
@@ -36,17 +34,11 @@ import jd.utils.JDUtilities;
 public class Cocosharecc extends PluginForHost {
     private static final String CODER = "JD-Team";
 
- 
     private String downloadurl;
     private RequestInfo requestInfo;
 
     public Cocosharecc() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -81,8 +73,6 @@ public class Cocosharecc extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
-
 
     @Override
     public String getVersion() {
@@ -139,7 +129,7 @@ public class Cocosharecc extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

@@ -16,9 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
@@ -34,7 +32,7 @@ public class MySpaceCom extends PluginForHost {
     // "http://cache\\d+-music\\d+.myspacecdn\\.com/\\d+/std_.+\\.mp3"
     // ,Pattern.CASE_INSENSITIVE);
     private static final String CODER = "ToKaM";
-    
+
     private static final String AGB_LINK = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
 
     public MySpaceCom() {
@@ -43,11 +41,6 @@ public class MySpaceCom extends PluginForHost {
 
     private String getDownloadUrl(DownloadLink link) {
         return link.getDownloadURL().replaceAll("myspace://", "");
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -68,8 +61,6 @@ public class MySpaceCom extends PluginForHost {
         return true;
     }
 
-
-
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -83,7 +74,6 @@ public class MySpaceCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

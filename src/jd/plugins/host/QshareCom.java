@@ -16,12 +16,10 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.http.Browser;
@@ -45,9 +43,7 @@ public class QshareCom extends PluginForHost {
     // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
-    
     // http://s1.qshare.com/get/246129/Verknuepfung_mit_JDownloader.exe.lnk.html
-    
 
     public QshareCom() {
         super();
@@ -57,15 +53,11 @@ public class QshareCom extends PluginForHost {
 
     }
 
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
-    }
-
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.getPage("http://www.qshare.com");
@@ -119,7 +111,8 @@ public class QshareCom extends PluginForHost {
 
         String page = null;
 
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
         // String[][] dat = new Regex(page, "<SPAN
@@ -191,7 +184,8 @@ public class QshareCom extends PluginForHost {
         String pass = account.getPass();
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        br.setCookiesExclusive(true);br.clearCookies(getHost());
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
         br.getPage("http://www.qshare.com");
         br.getPage("http://www.qshare.com/index.php?sysm=user_portal&sysf=login");
         br.setFollowRedirects(false);
@@ -233,7 +227,8 @@ public class QshareCom extends PluginForHost {
             forms = br.getForms();
             Form premium = forms[forms.length - 1];
 
-            br.setCookiesExclusive(true);br.clearCookies(getHost());
+            br.setCookiesExclusive(true);
+            br.clearCookies(getHost());
             br.setFollowRedirects(false);
             br.submitForm(premium);
             br.getPage((String) null);
@@ -247,7 +242,7 @@ public class QshareCom extends PluginForHost {
             login.put("cookie", "1");
             br.submitForm(login);
             br.getPage((String) null);
-            url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/"+account.getUser()+"/"+account.getPass()+"/.*?)\"").getMatch(0);
+            url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/" + account.getUser() + "/" + account.getPass() + "/.*?)\"").getMatch(0);
             br.setFollowRedirects(true);
             br.openGetConnection(url);
 
@@ -299,8 +294,6 @@ public class QshareCom extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-
-
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -328,7 +321,7 @@ public class QshareCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
 

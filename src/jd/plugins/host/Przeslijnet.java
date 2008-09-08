@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,19 +33,11 @@ import jd.plugins.download.RAFDownload;
 
 public class Przeslijnet extends PluginForHost {
 
-    
-
-    
     private RequestInfo requestInfo;
     private String url;
 
     public Przeslijnet() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -83,7 +74,6 @@ public class Przeslijnet extends PluginForHost {
         downloadLink.setAvailable(false);
         return false;
     }
-
 
     @Override
     public String getVersion() {
@@ -122,7 +112,7 @@ public class Przeslijnet extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
-    
+
     @Override
     public void reset() {
     }

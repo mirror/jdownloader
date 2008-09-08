@@ -16,11 +16,9 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.regex.Pattern;
 
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
@@ -36,18 +34,13 @@ import jd.utils.JDMediaConvert;
 
 public class MyVideo extends PluginForHost {
     static private final String CODER = "JD-Team";
-    
+
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
-    
+
     private RequestInfo requestInfo;
 
     public MyVideo() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -63,8 +56,7 @@ public class MyVideo extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            
-         
+
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
             if (requestInfo.getResponseCode() == 200) { return true; }
         } catch (MalformedURLException e) {
@@ -74,8 +66,6 @@ public class MyVideo extends PluginForHost {
         }
         return false;
     }
-
- 
 
     @Override
     public String getVersion() {
@@ -112,7 +102,7 @@ public class MyVideo extends PluginForHost {
         /* TODO: Wert nachprüfen */
         return 1;
     }
-    
+
     @Override
     public void reset() {
     }

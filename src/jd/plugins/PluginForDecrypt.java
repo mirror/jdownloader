@@ -17,7 +17,6 @@
 package jd.plugins;
 
 import java.awt.Color;
-import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -64,11 +63,6 @@ public abstract class PluginForDecrypt extends Plugin {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     /**

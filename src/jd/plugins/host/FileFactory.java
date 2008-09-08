@@ -48,7 +48,6 @@ public class FileFactory extends PluginForHost {
     private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
     private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
     private static Pattern frameForCaptcha = Pattern.compile("<iframe src=\"/(check[^\"]*)\" frameborder=\"0\"");
-    
 
     private static final String NO_SLOT = "no free download slots";
     private static final String NOT_AVAILABLE = "class=\"box error\"";
@@ -56,7 +55,6 @@ public class FileFactory extends PluginForHost {
 
     private static Pattern patternForCaptcha = Pattern.compile("src=\"(/securimage/securimage_show.php\\?[^\"]*)\" alt=");
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
-    
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
     private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
@@ -72,11 +70,6 @@ public class FileFactory extends PluginForHost {
     public FileFactory() {
         super();
         this.enablePremium();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -360,8 +353,6 @@ public class FileFactory extends PluginForHost {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return super.getFileInformationString(downloadLink);
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
-
-
 
     @Override
     public String getVersion() {

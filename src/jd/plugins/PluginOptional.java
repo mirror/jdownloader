@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.event.ControlEvent;
@@ -25,12 +24,6 @@ import jd.event.ControlListener;
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
     public static final int ADDON_INTERFACE_VERSION = 1;
-
-//    public static int VERSION_ID = 0;
-//
-//    public static int getVersionID() {
-//        return VERSION_ID;
-//    }
 
     public void controlEvent(ControlEvent event) {
 
@@ -44,11 +37,6 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
         }
 
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override

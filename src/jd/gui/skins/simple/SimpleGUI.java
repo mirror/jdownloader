@@ -1374,7 +1374,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                             m.removeAll();
                             for (MenuItem menuItem : plg.createMenuitems()) {
                                 m.add(SimpleGUI.getJMenuItem(menuItem));
-
                             }
                         }
 
@@ -1385,9 +1384,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
         }
 
-        if (menAddons.getItemCount() == 0) {
-            menAddons.setEnabled(false);
+        if (menAddons.getItem(menAddons.getItemCount() - 1) == null) {
+            menAddons.remove(menAddons.getItemCount() - 1);
         }
+
         // Adds the menus form the plugins
         JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins", "Plugins"));
         JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));

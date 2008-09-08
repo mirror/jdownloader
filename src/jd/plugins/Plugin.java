@@ -61,8 +61,8 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public static final int CAPTCHA_USER_INPUT = 1;
 
     public static SubConfiguration CONFIGS = null;
- 
-    private boolean acceptOnlyURIs=true;
+
+    private boolean acceptOnlyURIs = true;
     /**
      * Ein Logger, um Meldungen darzustellen
      */
@@ -208,7 +208,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         initTime = System.currentTimeMillis();
 
         config = new ConfigContainer(this);
-      
 
     }
 
@@ -266,14 +265,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public String cutMatches(String data) {
         return data.replaceAll(getSupportedLinks().pattern(), "--CUT--");
     }
-
-    /**
-     * Führt einen Botcheck für den captcha file aus
-     * 
-     * @param file
-     * @return true:istBot; false: keinBot
-     */
-    public abstract boolean doBotCheck(File file);
 
     /**
      * Verwendet den JDcontroller um ein ControlEvent zu broadcasten
@@ -370,7 +361,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * 
      * @return Der unterstützte Anbieter
      */
-    public String getHost(){
+    public String getHost() {
         return host;
     }
 
@@ -406,7 +397,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * 
      * @return Der Name des Plugins
      */
-    public String getPluginName(){
+    public String getPluginName() {
         return host;
     }
 
@@ -417,17 +408,20 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
-        if(getPluginName()==null){
+        if (getPluginName() == null) {
             logger.severe("PLuginname noch noch nicht festgelegt!!");
         }
         SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
-//        if (cfg.getCount() <= 1) {
-//            if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName()) != null) {
-//                cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName())).getProperties());
-//                cfg.save();
-//                return cfg;
-//            }
-//        }
+        // if (cfg.getCount() <= 1) {
+        // if (JDUtilities.getConfiguration().getProperty("PluginConfig_" +
+        // getPluginName()) != null) {
+        // cfg.setProperties(((Property)
+        // JDUtilities.getConfiguration().getProperty("PluginConfig_" +
+        // getPluginName())).getProperties());
+        // cfg.save();
+        // return cfg;
+        // }
+        // }
         return cfg;
     }
 
@@ -451,7 +445,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Ein regulärer Ausdruck
      * @see Pattern
      */
-    public Pattern getSupportedLinks(){
+    public Pattern getSupportedLinks() {
         return this.supportedPattern;
     }
 
@@ -508,10 +502,14 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public int compareTo(Plugin plg) {
         return getPluginName().compareToIgnoreCase(plg.getPluginName());
     }
-/**
- * gibt zurück ob das plugin als supportedLinks nur gültige URIs aktzeotiert. Soll ein PLugin  auf andere strings reagieren, z.B. auf Javascript strings, muss setAcceptOnlyURIs(false) gesetzt werden
- * @return
- */
+
+    /**
+     * gibt zurück ob das plugin als supportedLinks nur gültige URIs
+     * aktzeotiert. Soll ein PLugin auf andere strings reagieren, z.B. auf
+     * Javascript strings, muss setAcceptOnlyURIs(false) gesetzt werden
+     * 
+     * @return
+     */
     public boolean isAcceptOnlyURIs() {
         return acceptOnlyURIs;
     }
@@ -521,12 +519,12 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     }
 
     public void setHost(String host) {
-        this.host=host;
-        
+        this.host = host;
+
     }
 
     public void setSupportedPattern(Pattern pattern) {
-       supportedPattern=pattern;
-        
+        supportedPattern = pattern;
+
     }
 }

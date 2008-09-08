@@ -16,9 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
@@ -31,16 +29,11 @@ import jd.utils.JDMediaConvert;
 
 public class ClipfishDe extends PluginForHost {
     private static final String CODER = "ToKaM";
-  
+
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 
     public ClipfishDe() {
         super();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -67,7 +60,6 @@ public class ClipfishDe extends PluginForHost {
         }
     }
 
-   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
@@ -81,8 +73,6 @@ public class ClipfishDe extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-
-  
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {

@@ -38,19 +38,11 @@ public class Filer extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    
-    
-
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
     public Filer() {
         super();
         this.enablePremium();
-    }
-
-    @Override
-    public boolean doBotCheck(File file) {
-        return false;
     }
 
     @Override
@@ -74,7 +66,7 @@ public class Filer extends PluginForHost {
                 break;
             }
         }
-        if (page!=null && page.contains("captcha.png")) {
+        if (page != null && page.contains("captcha.png")) {
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
@@ -194,17 +186,16 @@ public class Filer extends PluginForHost {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
-
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
-    
+
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     @Override
     public void reset() {
 

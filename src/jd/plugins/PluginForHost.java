@@ -104,19 +104,19 @@ public abstract class PluginForHost extends Plugin {
         }
 
     }
+
     /**
-     * wirft eien PLuginExceptionwe nn der übergebene downloadlink bereits von einer anderen quelle geladen wird (mirror)
+     * wirft eien PLuginExceptionwe nn der übergebene downloadlink bereits von
+     * einer anderen quelle geladen wird (mirror)
+     * 
      * @param downloadLink
      * @throws PluginException
      */
-    protected void checkMirrorsInProgress(DownloadLink downloadLink) throws PluginException{
+    protected void checkMirrorsInProgress(DownloadLink downloadLink) throws PluginException {
         DownloadLink blocker;
-        if( (blocker=JDUtilities.getController().getLinkThatBlocks(downloadLink))!=null){
-              throw new PluginException(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), blocker.getPlugin().getHost()));
-              
-          }
-        
+        if ((blocker = JDUtilities.getController().getLinkThatBlocks(downloadLink)) != null) throw new PluginException(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), blocker.getPlugin().getHost()));
     }
+
     public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
         File captchaFile = this.getLocalCaptchaFile(this);
         if (!Browser.download(captchaFile, br.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
@@ -190,17 +190,6 @@ public abstract class PluginForHost extends Plugin {
         cfg.setActionListener(this);
         cfg.setDefaultValue(new ArrayList<Account>());
 
-    }
-
-    /**
-     * Gibt zurück wie lange nach einem erkanntem Bot gewartet werden muss. Bei
-     * -1 wird ein reconnect durchgeführt
-     * 
-     * @return
-     */
-    public long getBotWaittime() {
-
-        return -1;
     }
 
     public int getChunksPerFile() {
@@ -332,7 +321,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public long getRemainingHosterWaittime() {
-        // TODO Auto-generated method stub
         if (!HOSTER_WAIT_UNTIL_TIMES.containsKey(this.getClass())) { return 0; }
         return Math.max(0, (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
     }
