@@ -102,7 +102,8 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
     private JPanel panel;
     private JProgressBar progress = null;
     public String Reconnectmethode = null;
-    private String wikiurl = JDLocale.L("gui.fengshuiconfig.wikiurl","http://wiki.jdownloader.org/index.php?title=DE:fengshui:");
+    private String wikiurl = JDLocale.L("gui.fengshuiconfig.wikiurl", "http://wiki.jdownloader.org/index.php?title=DE:fengshui:");
+
     public String getDownloadDirectory() {
         if (ddir == null) {
             ddir = config.getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
@@ -123,16 +124,15 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
                 }
                 if (Reconnectmethode == null || Reconnectmethode.matches("[\\s]*")) {
                     if (GetRouterInfo.isFritzbox(ip.getText())) {
-                    	String tit = JDLocale.L("gui.config.fengshui.fritzbox.title","Fritz!Box erkannt");
+                        String tit = JDLocale.L("gui.config.fengshui.fritzbox.title", "Fritz!Box erkannt");
                         if (GetRouterInfo.isUpnp(ip.getText(), "49000")) {
-                            JDUtilities.getGUI().showHTMLDialog(tit, JDLocale.L("gui.config.fengshui.fritzbox.upnpactive","Sie haben eine Fritz!Box, der Reconnect läuft über Upnp.<br> Sie brauchen keinen Reconnecteinstellungen zu tätigen."));
+                            JDUtilities.getGUI().showHTMLDialog(tit, JDLocale.L("gui.config.fengshui.fritzbox.upnpactive", "Sie haben eine Fritz!Box, der Reconnect läuft über Upnp.<br> Sie brauchen keinen Reconnecteinstellungen zu tätigen."));
                             Reconnectmethode = "[[[HSRC]]]\r\n" + "[[[STEP]]]\r\n" + "[[[REQUEST]]]\r\n" + "POST /upnp/control/WANIPConn1 HTTP/1.1\r\n" + "Host: %%%routerip%%%:49000\r\n" + "Content-Type: text/xml; charset=\"utf-8\"\r\n" + "SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\r\n" +
 
                             "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>\r\n" + "[[[/REQUEST]]]\r\n" + "[[[/STEP]]]\r\n" + "[[[/HSRC]]]\r\n";
                             routername.setText("!FRITZ BOX (All via UPNP)");
                         } else {
-                            JDUtilities.getGUI().showHTMLDialog(tit, JDLocale.L("gui.config.fengshui.fritzbox.upnpinactive", "Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br>" + "<a href=\"http://" + ip.getText() + "\">zur Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>"));
-
+                            JDUtilities.getGUI().showHTMLDialog(tit, JDLocale.LF("gui.config.fengshui.fritzbox.upnpinactive", "Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href=\"http://%s\">zur Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>", ip.getText()));
                         }
                     }
                 }
@@ -165,8 +165,8 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
         JLinkButton label;
         if (routerIp == null || routerIp.matches("\\s*")) progress = new JProgressBar();
         try {
-        	String titl = JDLocale.L("gui.config.reconnect.name", "Reconnect");
-            label = new JLinkButton("<html><u><b  color=\"#006400\">" + titl, JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.reconnect"), 32, 32), new URL(wikiurl+(titl.replaceAll("\\s", "_"))));
+            String titl = JDLocale.L("gui.config.reconnect.name", "Reconnect");
+            label = new JLinkButton("<html><u><b  color=\"#006400\">" + titl, JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.reconnect"), 32, 32), new URL(wikiurl + (titl.replaceAll("\\s", "_"))));
 
             label.setIconTextGap(8);
             panel.add(label, "align left, split 2");
@@ -303,7 +303,7 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
     private void addSeparator(JPanel panel, String title, Icon icon, String help) {
         JLinkButton label;
         try {
-            label = new JLinkButton("<html><u><b  color=\"#006400\">" + title, icon, new URL(wikiurl+(title.replaceAll("\\s", "_"))));
+            label = new JLinkButton("<html><u><b  color=\"#006400\">" + title, icon, new URL(wikiurl + (title.replaceAll("\\s", "_"))));
 
             label.setIconTextGap(8);
             panel.add(label, "align left, split 2");
