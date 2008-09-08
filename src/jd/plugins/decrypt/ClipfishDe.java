@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.regex.Pattern;
+
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.parser.Regex;

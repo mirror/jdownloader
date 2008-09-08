@@ -44,7 +44,6 @@ import java.util.zip.GZIPInputStream;
 import javax.swing.JProgressBar;
 
 import jd.utils.HTMLEntities;
-
 import sun.misc.BASE64Encoder;
 
 /**

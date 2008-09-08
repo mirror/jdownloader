@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
+
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;

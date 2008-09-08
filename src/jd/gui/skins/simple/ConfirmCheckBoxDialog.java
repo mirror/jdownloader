@@ -29,6 +29,7 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
+
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

@@ -108,6 +108,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
+    private boolean colorizeMissing, colorizeOld;
     private Color colorMissing, colorOld;
 
     private void showGui() {
@@ -120,6 +121,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         frame.setPreferredSize(new Dimension(1200, 700));
         frame.setName("LANGFILEEDIT");
         frame.addWindowListener(new LocationListener());
+
+        colorizeMissing = subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true);
+        colorizeOld = subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false);
 
         colorMissing = (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED);
         colorOld = (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE);
@@ -276,8 +280,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuColorize.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
         mnuColorize.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
 
-        mnuColorizeMissing.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true));
-        mnuColorizeOld.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false));
+        mnuColorizeMissing.setSelected(colorizeMissing);
+        mnuColorizeOld.setSelected(colorizeOld);
 
         mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
         mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
@@ -445,14 +449,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuColorizeMissing) {
 
-            subConfig.setProperty(PROPERTY_COLORIZE_MISSING, mnuColorizeMissing.isSelected());
+            colorizeMissing = mnuColorizeMissing.isSelected();
+            subConfig.setProperty(PROPERTY_COLORIZE_MISSING, colorizeMissing);
             subConfig.save();
             mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuColorizeOld) {
 
-            subConfig.setProperty(PROPERTY_COLORIZE_OLD, mnuColorizeOld.isSelected());
+            colorizeOld = mnuColorizeOld.isSelected();
+            subConfig.setProperty(PROPERTY_COLORIZE_OLD, colorizeOld);
             subConfig.save();
             mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
             tableModel.fireTableDataChanged();
@@ -801,9 +807,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             if (isSelected) {
                 c.setBackground(Color.LIGHT_GRAY);
-            } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false) && r[2].equals("")) {
+            } else if (colorizeMissing && r[2].equals("")) {
                 c.setBackground(colorMissing);
-            } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false) && r[1].equals("")) {
+            } else if (colorizeOld && r[1].equals("")) {
                 c.setBackground(colorOld);
             } else {
                 c.setBackground(Color.WHITE);

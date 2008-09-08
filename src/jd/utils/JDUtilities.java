@@ -18,7 +18,7 @@ package jd.utils;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Dimension; 
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.Image;
@@ -105,10 +105,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
-import jd.plugins.PluginsC;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.plugins.PluginsC;
 import jd.plugins.RequestInfo;
 
 import org.w3c.dom.Document;
