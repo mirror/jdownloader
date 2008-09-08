@@ -180,7 +180,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         sourceFolder = cmboFolder.getCurrentPath();
         languageFile = cmboFile.getCurrentPath();
-        if (sourceFolder != null || languageFile != null) initLocaleData();
+        if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
+        initLocaleData();
 
     }
 
