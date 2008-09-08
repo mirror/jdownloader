@@ -17,9 +17,11 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.ComponentOrientation;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.URL;
@@ -55,15 +57,18 @@ public class JHelpDialog extends JDialog implements ActionListener {
 
     public static int STATUS_UNANSWERED = 0;
 
-    public static int showHelpMessage(JFrame parent, String title, String message, final URL url) {
-        return JHelpDialog.showHelpMessage(parent, title, message, url, -1);
-    }
-
-    public static int showHelpMessage(JFrame parent, String title, String message, final URL url, int countdown) {
+    public static int showHelpMessage(JFrame parent, String title, String message, final URL url, String helpMsg, int countdown) {
         if (title == null) title = JDLocale.L("gui.dialogs.helpDialog.defaultTitle", "jDownloader Soforthilfe");
+        if (helpMsg == null) helpMsg = JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen");
+
         JHelpDialog d = new JHelpDialog(parent, title, message, countdown);
+        Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
+        int minWidth = Math.min(d.getPreferredSize().width, (int) (size.width * .50));
+        int minHeight = Math.min(d.getPreferredSize().height, (int) (size.height * .75));
+        d.setMaximumSize(new Dimension(Math.max(minWidth, 640), Math.max(minHeight, 540)));
+        d.pack();
         d.getBtn3().setVisible(false);
-        d.getBtn1().setText(JDLocale.L("gui.dialogs.helpDialog.btn.help", "Hilfe anzeigen"));
+        d.getBtn1().setText(helpMsg);
         d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"));
         d.action1 = d.new Action() {
             @Override

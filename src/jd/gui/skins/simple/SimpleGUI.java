@@ -1663,15 +1663,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return CountdownConfirmDialog.showCountdownConfirmDialog(frame, string, sec);
     }
 
-    public int showHelpMessage(String title, String message, String url) {
+    public int showHelpMessage(String title, String message, boolean toHTML, String url, String helpMsg, int sec) {
         // logger.info("HelpMessageDialog");
-        return showHelpMessage(title, message, url, -1);
-    }
-
-    public int showHelpMessage(String title, String message, String url, int sec) {
-        // logger.info("HelpMessageDialog");
+        if (toHTML) message = "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>";
         try {
-            return JHelpDialog.showHelpMessage(frame, title, "<font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">" + message + "</font>", new URL(url), sec);
+            return JHelpDialog.showHelpMessage(frame, title, message, new URL(url), helpMsg, sec);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -1880,38 +1876,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         JDTheme.setTheme("default");
-        final JHelpDialog d = new JHelpDialog(new JFrame(), JDLocale.LF("system.update.message.title", "Update to version %s", version), html + "", 60);
-        Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
-        int minWidth = Math.min(d.getPreferredSize().width, (int) (size.width * .50));
-        int minHeight = Math.min(d.getPreferredSize().height, (int) (size.height * .75));
-        d.setPreferredSize(new Dimension(Math.max(minWidth, 640), Math.max(minHeight, 540)));
-        d.pack();
-        d.getBtn3().setVisible(false);
-        d.getBtn1().setText(JDLocale.L("system.update.showchangelog", "Show all changes"));
-        d.getBtn2().setText(JDLocale.L("gui.btn_ok", "OK"));
-
-        d.setAction1(d.new Action() {
-            public boolean doAction() {
-
-                try {
-                    JLinkButton.openURL(JDLocale.L("system.update.changelogurl", "http://jdownloader.org/changes?toolmode=1"));
-                } catch (MalformedURLException e) {
-                    e.printStackTrace();
-                }
-                d.dispose();
-                return true;
-            }
-        });
-
-        d.setAction2(d.new Action() {
-            public boolean doAction() {
-                d.dispose();
-                return true;
-            }
-        });
-
-        d.showDialog();
-
+        JDUtilities.getGUI().showHelpMessage(JDLocale.LF("system.update.message.title", "Update to version %s", version), html.toString(), false, JDLocale.L("system.update.changelogurl", "http://jdownloader.org/changes?toolmode=1"), JDLocale.L("system.update.showchangelog", "Show all changes"), 60);
     }
 
 }

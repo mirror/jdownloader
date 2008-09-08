@@ -130,23 +130,16 @@ public interface UIInterface extends ControlListener {
     public boolean showCountdownConfirmDialog(String string, int sec);
 
     /**
-     * Zeigt einen HTML dialog an
-     * 
-     * @param string
-     * @param message
-     * @param url
-     */
-    public int showHelpMessage(String title, String message, String url);
-
-    /**
      * Zeigt einen HTML dialog mit Countdown an
      * 
      * @param string
      * @param message
+     * @param toHTML
      * @param url
-     * @param countdown
+     * @param helpMsg
+     * @param sec
      */
-    public int showHelpMessage(String title, String message, String url, int sec);
+    public int showHelpMessage(String title, String message, boolean toHTML, String url, String helpMsg, int sec);
 
     /**
      * Zeigt einen HTML dialog an
