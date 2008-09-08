@@ -69,6 +69,7 @@ public class RapidShareDe extends PluginForHost {
    		new Serienjunkies().handleFree(downloadLink);
    		return;
    		}
+       	checkMirrorsInProgress(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // switch (step.getStep()) {
         // case PluginStep.STEP_WAIT_TIME:
@@ -181,7 +182,7 @@ br.setFollowRedirects(false);
         br.setCookiesExclusive(true);br.clearCookies(HOST);
         br.setFollowRedirects(false);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
+        checkMirrorsInProgress(downloadLink);
         String formatPass = "";
         for (int i = 0; i < pass.length(); i++) {
             formatPass += "%" + Integer.toString(pass.charAt(i), 16);

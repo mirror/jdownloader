@@ -45,45 +45,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 abstract public class DownloadInterface {
-    // public static final int STATUS_INITIALIZED = 0;
-    //
-    // // Errorids unter 100 sind für DownloadLink reserviert
-    // public static final int ERROR_OUTPUTFILE_OWNED_BY_ANOTHER_LINK =
-    // LinkStatus.ERROR_LINK_IN_PROGRESS;
-    //
-    // public static final int ERROR_OUTPUTFILE_INVALID = 100;
-    //
-    // public static final int ERROR_OUTPUTFILE_ALREADYEXISTS =
-    // LinkStatus.ERROR_ALREADYEXISTS;
-    //
-    // public static final int ERROR_CHUNK_INCOMPLETE =
-    // LinkStatus.DOWNLOAD_INCOMPLETE;
-    //
-    // public static final int ERROR_FILE_NOT_FOUND =
-    // LinkStatus.ERROR_FILE_NOT_FOUND;
-    //
-    // public static final int ERROR_SECURITY = LinkStatus.ERROR_SECURITY;
-    //
-    // public static final int ERROR_UNKNOWN = LinkStatus.ERROR_RETRY;
-    //
-    // public static final int ERROR_COULD_NOT_RENAME = 101;
-    //
-    // public static final int ERROR_ABORTED_BY_USER = 102;
-    //
-    // public static final int ERROR_TOO_MUCH_BUFFERMEMORY = 103;
-    //
-    // public static final int ERROR_CHUNKLOAD_FAILED =
-    // LinkStatus.ERROR_CHUNKLOAD_FAILED;
-    //
-    // public static final int ERROR_NO_CONNECTION = 104;
-    //
-    // public static final int ERROR_TIMEOUT_REACHED = 105;
-    //
-    // public static final int ERROR_LOCAL_IO = 106;
-    //
-    // public static final int ERROR_NIBBLE_LIMIT_REACHED = 107;
-    // public static final int ERROR_CRC = 108;
-
+    
     /**
      * Chunk Klasse verwaltet eine einzellne Downloadverbindung.
      * 

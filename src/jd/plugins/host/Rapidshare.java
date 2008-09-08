@@ -288,6 +288,11 @@ public class Rapidshare extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // if (ddl)this.doPremium(downloadLink);
         Rapidshare.correctURL(downloadLink);
+        checkMirrorsInProgress(downloadLink);
+    
+
+     
+        
         // if (getRemainingWaittime() > 0) { return
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
@@ -439,6 +444,8 @@ public class Rapidshare extends PluginForHost {
 
     }
 
+ 
+
     /**
      * premiumdownload Methode
      * 
@@ -457,6 +464,7 @@ public class Rapidshare extends PluginForHost {
             if (Sniffy.hasSniffer()) throw new SnifferException();
         }
         Rapidshare.correctURL(downloadLink);
+        checkMirrorsInProgress(downloadLink);
         // Sagt der Browserinstanz, dass cookies nur für diese instanz verwaltet
         // werden, und nicht Global für ganz JD
         // Neben cookies werden mit diesem aufruf auch AUTHs infos nur auf diese

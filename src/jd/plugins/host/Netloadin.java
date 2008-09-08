@@ -85,6 +85,7 @@ public class Netloadin extends PluginForHost {
         br.setDebug(false);
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        checkMirrorsInProgress(downloadLink);
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setCookiesExclusive(true);
         br.clearCookies(HOST);
@@ -264,6 +265,7 @@ public class Netloadin extends PluginForHost {
         }
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        checkMirrorsInProgress(downloadLink);
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
         br.setAuth("netload.in", account.getUser(), account.getPass());
