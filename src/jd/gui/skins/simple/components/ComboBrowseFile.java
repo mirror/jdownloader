@@ -80,22 +80,19 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        File newPath;
         ActionEvent event = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
 
         if (e.getSource() == cmboInput) {
             Object sel = cmboInput.getSelectedItem();
             if (sel != null) {
-                newPath = new File(sel.toString());
-                setCurrentPath(newPath);
+                setCurrentPath(new File(sel.toString()));
                 dispatchEvent(event);
                 for (ActionListener l : listenerList) {
                     l.actionPerformed(event);
                 }
             }
         } else if (e.getSource() == btnBrowse) {
-            newPath = getPath();
-            setCurrentPath(newPath);
+            setCurrentPath(getPath());
             dispatchEvent(event);
             for (ActionListener l : listenerList) {
                 l.actionPerformed(event);
@@ -123,9 +120,8 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
      */
     private File getDirectoryFromTxtInput() {
         File directory = null;
-        String stringPath = cmboInput.getSelectedItem().toString();
 
-        if (null != stringPath) {
+        if (cmboInput.getSelectedItem() != null) {
             directory = new File(cmboInput.getSelectedItem().toString());
             if (directory.exists()) {
                 if (directory.isFile()) {
@@ -164,8 +160,7 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         if (fileFilter != null) fc.setFileFilter(fileFilter);
         fc.setCurrentDirectory(getDirectoryFromTxtInput());
         fc.showOpenDialog(this);
-        File ret = fc.getSelectedFile();
-        return ret;
+        return fc.getSelectedFile();
     }
 
     public String getText() {
