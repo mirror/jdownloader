@@ -37,6 +37,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalButtonUI;
 
 import jd.gui.skins.simple.SimpleGUI;
+
 import jd.utils.JDUtilities;
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
@@ -317,6 +318,8 @@ public class JLinkButton extends JButton {
     public JLinkButton(URL url) {
         this(null, null, url);
     }
+
+
 
     private void checkLinkBehaviour(int beha) {
         if (beha != ALWAYS_UNDERLINE && beha != HOVER_UNDERLINE && beha != NEVER_UNDERLINE && beha != SYSTEM_DEFAULT) {

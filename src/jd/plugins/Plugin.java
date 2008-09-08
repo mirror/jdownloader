@@ -413,13 +413,13 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public SubConfiguration getPluginConfig() {
         SubConfiguration cfg = JDUtilities.getSubConfig(getPluginName());
-        if (cfg.getCount() <= 1) {
-            if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName()) != null) {
-                cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName())).getProperties());
-                cfg.save();
-                return cfg;
-            }
-        }
+//        if (cfg.getCount() <= 1) {
+//            if (JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName()) != null) {
+//                cfg.setProperties(((Property) JDUtilities.getConfiguration().getProperty("PluginConfig_" + getPluginName())).getProperties());
+//                cfg.save();
+//                return cfg;
+//            }
+//        }
         return cfg;
     }
 

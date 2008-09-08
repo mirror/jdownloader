@@ -48,7 +48,6 @@ import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginsC;
 import jd.update.PackageData;
@@ -405,7 +404,7 @@ public class JDInit {
 
         JDUtilities.setPluginForDecryptList(loadPluginForDecrypt());
         JDUtilities.setPluginForHostList(loadPluginForHost());
-JDUtilities.setPluginForContainer(loadCPlugins());
+        JDUtilities.setPluginForContainer(loadCPlugins());
         JDUtilities.setPluginOptionalList(loadPluginOptional());
 
         for (PluginOptional plg : JDUtilities.getPluginsOptional()) {
@@ -549,10 +548,9 @@ JDUtilities.setPluginForContainer(loadCPlugins());
         ArrayList<String> containerTypes = new ArrayList<String>();
         containerTypes.add("D");
         containerTypes.add("R");
-       // containerTypes.add("DLC");
+        // containerTypes.add("DLC");
         containerTypes.add("B");
         containerTypes.add("C");
-
 
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
@@ -603,24 +601,79 @@ JDUtilities.setPluginForContainer(loadCPlugins());
     }
 
     @SuppressWarnings("unchecked")
-    public  ArrayList<HostPluginWrapper> loadPluginForHost() {
+    public ArrayList<HostPluginWrapper> loadPluginForHost() {
 
+        ArrayList<HostPluginWrapper> hpl = new ArrayList<HostPluginWrapper>();
+        hpl.add(new HostPluginWrapper("rapidshare.com", "Rapidshare", "sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("archiv.to", "ArchiveTo", ""));
 
-        ArrayList<HostPluginWrapper> hpl= new ArrayList<HostPluginWrapper>();
-        hpl.add(new HostPluginWrapper("rapidshare.com",false,"Rapidshare","sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*"));
-//        HostPluginLoader loader = new HostPluginLoader();
-//
-//        while (iterator.hasNext()) {
-//            try {
-//                PluginForHost p = (PluginForHost) iterator.next();
-//                logger.finer("Load " + p);
-//                plugins.add(p);
-//            } catch (Exception e) {
-//                logger.info("caught");
-//                e.printStackTrace();
-//            }
-//        }
-//        plugins.addAll(loader.load)
+        hpl.add(new HostPluginWrapper("bluehost.to", "BluehostTo", ""));
+        hpl.add(new HostPluginWrapper("cocoshare.cc", "Cocosharecc", ""));
+        hpl.add(new HostPluginWrapper("clipfish.de", "ClipfishDe", ""));
+        hpl.add(new HostPluginWrapper("data.hu", "DataHu", ""));
+        hpl.add(new HostPluginWrapper("Dataupde", "Dataupde", ""));
+        hpl.add(new HostPluginWrapper("DepositFiles", "DepositFiles", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("FastLoadNet", "FastLoadNet", ""));
+        hpl.add(new HostPluginWrapper("FastShareorg", "FastShareorg", ""));
+        hpl.add(new HostPluginWrapper("FileBaseTo", "FileBaseTo", ""));
+        hpl.add(new HostPluginWrapper("FileFactory", "FileFactory", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("FileMojoCom", "FileMojoCom", ""));
+        hpl.add(new HostPluginWrapper("Filer", "Filer", ""));
+        hpl.add(new HostPluginWrapper("FilesTo", "FilesTo", ""));
+        hpl.add(new HostPluginWrapper("FileUploadnet", "FileUploadnet", ""));
+        hpl.add(new HostPluginWrapper("Freaksharenet", "Freaksharenet", ""));
+        hpl.add(new HostPluginWrapper("HTTPAllgemein", "HTTPAllgemein", ""));
+        hpl.add(new HostPluginWrapper("ImageFap", "ImageFap", ""));
+        hpl.add(new HostPluginWrapper("MediafireCom", "MediafireCom", ""));
+        hpl.add(new HostPluginWrapper("Megauploadcom", "Megauploadcom", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("MeinUpload", "MeinUpload", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("Moosharede", "Moosharede", ""));
+        hpl.add(new HostPluginWrapper("MySpaceCom", "MySpaceCom", ""));
+        hpl.add(new HostPluginWrapper("MyVideo", "MyVideo", ""));
+        hpl.add(new HostPluginWrapper("Netloadin", "Netloadin", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("Odsiebiecom", "Odsiebiecom", ""));
+        hpl.add(new HostPluginWrapper("Przeslijnet", "Przeslijnet", ""));
+        hpl.add(new HostPluginWrapper("QshareCom", "QshareCom", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("Rapidshare", "Rapidshare", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("RapidShareDe", "RapidShareDe", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("RbaDe", "RbaDe", ""));
+        hpl.add(new HostPluginWrapper("MegasharesCom", "MegasharesCom", ""));
+        hpl.add(new HostPluginWrapper("RomHustlerNet", "RomHustlerNet", ""));
+        hpl.add(new HostPluginWrapper("Serienjunkies", "Serienjunkies", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("ShareBaseDe", "ShareBaseDe", ""));
+        hpl.add(new HostPluginWrapper("SharedZillacom", "SharedZillacom", ""));
+        hpl.add(new HostPluginWrapper("ShareNownet", "ShareNownet", ""));
+        hpl.add(new HostPluginWrapper("ShareOnlineBiz", "ShareOnlineBiz", ""));
+        hpl.add(new HostPluginWrapper("Shareplacecom", "Shareplacecom", ""));
+        hpl.add(new HostPluginWrapper("SiloFilescom", "SiloFilescom", ""));
+        hpl.add(new HostPluginWrapper("SpeedySharecom", "SpeedySharecom", ""));
+        hpl.add(new HostPluginWrapper("Uploadedto", "Uploadedto", "", PluginWrapper.LOAD_ON_INIT));
+        hpl.add(new HostPluginWrapper("XupInRaidrush", "XupInRaidrush", ""));
+        hpl.add(new HostPluginWrapper("UploadServiceinfo", "UploadServiceinfo", ""));
+        hpl.add(new HostPluginWrapper("UploadStube", "UploadStube", ""));
+        hpl.add(new HostPluginWrapper("Upsharenet", "Upsharenet", ""));
+        hpl.add(new HostPluginWrapper("Vipfilecom", "Vipfilecom", ""));
+        hpl.add(new HostPluginWrapper("XupIn", "XupIn", ""));
+        hpl.add(new HostPluginWrapper("YouPornCom", "YouPornCom", ""));
+        hpl.add(new HostPluginWrapper("YourFilesBiz", "YourFilesBiz", ""));
+        hpl.add(new HostPluginWrapper("YourFileSendercom", "YourFileSendercom", ""));
+        hpl.add(new HostPluginWrapper("Youtube", "Youtube", ""));
+        hpl.add(new HostPluginWrapper("Zippysharecom", "Zippysharecom", ""));
+        hpl.add(new HostPluginWrapper("zShare", "zShare", ""));
+
+        // HostPluginLoader loader = new HostPluginLoader();
+        //
+        // while (iterator.hasNext()) {
+        // try {
+        // PluginForHost p = (PluginForHost) iterator.next();
+        // logger.finer("Load " + p);
+        // plugins.add(p);
+        // } catch (Exception e) {
+        // logger.info("caught");
+        // e.printStackTrace();
+        // }
+        // }
+        // plugins.addAll(loader.load)
         return hpl;
     }
 

@@ -11,23 +11,30 @@ import jd.utils.JDUtilities;
 
 public class PluginWrapper {
 
+    public static final int LOAD_ON_INIT = 0<<1;
     private Pattern pattern;
     private String host;
     private String className;
     protected Logger logger= JDUtilities.getLogger();
     private Plugin loadedPLugin;
+    private boolean acceptOnlyURIs;
+    private String pluginName;
 
   
 
-    public PluginWrapper(String host, boolean loadOnInit, String className, String patternSupported) {
-        this.pattern = Pattern.compile(patternSupported, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    public PluginWrapper(String name,String host, String className, String pattern,int flags) {
+        this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         this.host = host;
         this.className = className;
+        this.pluginName=name;
+        if((flags&PluginWrapper.LOAD_ON_INIT)>0){
+            getPlugin();
+        }
         
     }
 
     public Pattern getPattern() {
-        return pattern;
+     return this.isLoaded()?getPlugin().getSupportedLinks():pattern;
     }
 
     public void setPattern(Pattern pattern) {
@@ -35,7 +42,7 @@ public class PluginWrapper {
     }
 
     public String getHost() {
-        return host;
+     return this.isLoaded()?getPlugin().getHost():host;
     }
 
     public void setHost(String host) {
@@ -63,6 +70,7 @@ public class PluginWrapper {
             Constructor con = plgClass.getConstructor(classes);
 
             this.loadedPLugin = (Plugin) con.newInstance(new Object[] {});
+            logger.finer("laoded PLugin "+"jd.plugins.host." + getClassName());
            return loadedPLugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
@@ -72,19 +80,20 @@ public class PluginWrapper {
     }
     public String getPluginName() {
         // TODO Auto-generated method stub
-        return getHost();
+        return this.isLoaded()?getPlugin().getPluginName():this.pluginName;
     }
 
     public Object getVersion() {
         // TODO Auto-generated method stub
-        return "n.A.";
+        return this.isLoaded()?getPlugin().getVersion():"n.A.";
     }
 
     public Object getCoder() {
         // TODO Auto-generated method stub
-        return "JD-Team";
+        return this.isLoaded()?getPlugin().getCoder():"JD-Team";
     }
     public boolean canHandle(String data) {
+       if(this.isLoaded())getPlugin().canHandle(data);
         if (data == null) { return false; }
         Pattern pattern = this.getPattern();
         if (pattern != null) {
@@ -96,11 +105,19 @@ public class PluginWrapper {
 
     public boolean isAcceptOnlyURIs() {
         // TODO Auto-generated method stub
-        return false;
+        return acceptOnlyURIs;
     }
 
     public boolean isLoaded() {
         // TODO Auto-generated method stub
         return this.loadedPLugin!=null;
+    }
+
+    public void setAcceptOnlyURIs(boolean acceptOnlyURIs) {
+        this.acceptOnlyURIs = acceptOnlyURIs;
+    }
+
+    public void setPluginName(String pluginName) {
+        this.pluginName = pluginName;
     }
 }

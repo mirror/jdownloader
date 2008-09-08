@@ -29,10 +29,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.beans.PropertyChangeListener;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.Vector;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -95,7 +99,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             return pluginsForHost.size();
         }
 
-        public Object getValueAt(int rowIndex, int columnIndex) {
+        public Object getValueAt(final int rowIndex, final int columnIndex) {
             switch (columnIndex) {
             case 0:
                 return rowIndex;
@@ -106,7 +110,30 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 3:
                 return pluginsForHost.get(rowIndex).getCoder();
             case 4:
-                return new JLinkButton(JDLocale.L("gui.config.plugin.host.readAGB", "AGB"), pluginsForHost.get(rowIndex).getAGBLink());
+                return new JLinkButton(new AbstractAction(JDLocale.L("gui.config.plugin.host.readAGB", "AGB")){
+
+             
+
+                   
+
+               
+
+                    /**
+                     * 
+                     */
+                    private static final long serialVersionUID = 5915595466511261075L;
+
+                    public void actionPerformed(ActionEvent e) {
+                       try {
+                        JLinkButton.openURL(pluginsForHost.get(rowIndex).getPlugin().getAGBLink());
+                    } catch (MalformedURLException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+                        
+                    }
+                    
+                });
             case 5:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
             }
@@ -123,10 +150,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             if ((Boolean) value) {
                 String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.get(row).getHost());
                 if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) {
-                    pluginsForHost.get(row).getPlugin().setAGBChecked((Boolean) value);
+                    pluginsForHost.get(row).setAGBChecked((Boolean) value);
                 }
             } else {
-                pluginsForHost.get(row).getPlugin().setAGBChecked((Boolean) value);
+                pluginsForHost.get(row).setAGBChecked((Boolean) value);
             }
         }
     }
@@ -206,6 +233,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry();
+        }else{
+            
         }
     }
 
@@ -249,11 +278,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table = new JTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
-            }
-        });
+//        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+//            public void valueChanged(ListSelectionEvent e) {
+//                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
+//            }
+//        });
         // table.setDefaultRenderer(Object.class, new
         // PluginTableCellRenderer<PluginForHost>(pluginsForHost));
         table.setDragEnabled(true);
