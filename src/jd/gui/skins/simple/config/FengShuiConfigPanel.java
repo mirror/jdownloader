@@ -20,7 +20,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
@@ -94,6 +93,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public static void main(String[] args) {
         new FengShuiConfigPanel();
     }
+
     private JButton more, apply, cancel, premium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
     private JComboBox languages;
     private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
@@ -126,8 +126,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         this.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.configuration")));
         this.pack();
         panel.setPreferredSize(minSize);
-        Point point = SimpleGUI.getLastLocation(SimpleGUI.CURRENTGUI.getFrame(), null, this);
-        this.setLocation(point);
+        if (SimpleGUI.CURRENTGUI != null) this.setLocation(SimpleGUI.getLastLocation(SimpleGUI.CURRENTGUI.getFrame(), null, this));
         this.setResizable(false);
         this.setVisible(true);
 
