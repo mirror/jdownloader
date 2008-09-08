@@ -94,9 +94,6 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
         } else if (e.getSource() == btnBrowse) {
             setCurrentPath(getPath());
             dispatchEvent(event);
-            for (ActionListener l : listenerList) {
-                l.actionPerformed(event);
-            }
         }
 
     }
@@ -121,8 +118,9 @@ public class ComboBrowseFile extends JPanel implements ActionListener {
     private File getDirectoryFromTxtInput() {
         File directory = null;
 
-        if (cmboInput.getSelectedItem() != null) {
-            directory = new File(cmboInput.getSelectedItem().toString());
+        Object sel = cmboInput.getSelectedItem();
+        if (sel != null) {
+            directory = new File(sel.toString());
             if (directory.exists()) {
                 if (directory.isFile()) {
                     directory = directory.getParentFile();

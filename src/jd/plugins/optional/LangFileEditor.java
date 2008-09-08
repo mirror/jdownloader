@@ -108,6 +108,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
+    private Color colorMissing, colorOld;
 
     private void showGui() {
 
@@ -119,6 +120,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         frame.setPreferredSize(new Dimension(1200, 700));
         frame.setName("LANGFILEEDIT");
         frame.addWindowListener(new LocationListener());
+
+        colorMissing = (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED);
+        colorOld = (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE);
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
@@ -144,10 +148,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 
-        keyChart = new ChartAPI_PIE("", 150, 60, frame.getBackground());
-        keyChart.addEntity(entKeys = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.done", "Done"), 0, Color.GREEN));
-        keyChart.addEntity(entMissing = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.missing", "Missing"), 0, (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED)));
-        keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.old", "Old"), 0, (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE)));
+        keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 150, 60, frame.getBackground());
+        keyChart.addEntity(entKeys = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, Color.GREEN));
+        keyChart.addEntity(entMissing = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing"), 0, colorMissing));
+        keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old"), 0, colorOld));
 
         JPanel topLeft = new JPanel(new BorderLayout(5, 5));
         topLeft.add(topFolder, BorderLayout.PAGE_START);
@@ -272,7 +276,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuColorize.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
         mnuColorize.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
 
-        mnuColorizeMissing.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false));
+        mnuColorizeMissing.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true));
         mnuColorizeOld.setSelected(subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false));
 
         mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
@@ -455,23 +459,25 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuPickMissingColor) {
 
-            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries"), (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED));
+            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries"), colorMissing);
             if (newColor != null) {
-                subConfig.setProperty(PROPERTY_MISSING_COLOR, newColor);
+                colorMissing = newColor;
+                subConfig.setProperty(PROPERTY_MISSING_COLOR, colorMissing);
                 subConfig.save();
                 tableModel.fireTableDataChanged();
-                entMissing.setColor(newColor);
+                entMissing.setColor(colorMissing);
                 keyChart.fetchImage();
             }
 
         } else if (e.getSource() == mnuPickOldColor) {
 
-            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries"), (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE));
+            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries"), colorOld);
             if (newColor != null) {
-                subConfig.setProperty(PROPERTY_OLD_COLOR, newColor);
+                colorOld = newColor;
+                subConfig.setProperty(PROPERTY_OLD_COLOR, colorOld);
                 subConfig.save();
                 tableModel.fireTableDataChanged();
-                entOld.setColor(newColor);
+                entOld.setColor(colorOld);
                 keyChart.fetchImage();
             }
 
@@ -796,9 +802,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             if (isSelected) {
                 c.setBackground(Color.LIGHT_GRAY);
             } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, false) && r[2].equals("")) {
-                c.setBackground((Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED));
+                c.setBackground(colorMissing);
             } else if (subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false) && r[1].equals("")) {
-                c.setBackground((Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE));
+                c.setBackground(colorOld);
             } else {
                 c.setBackground(Color.WHITE);
             }
