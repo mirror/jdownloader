@@ -251,7 +251,7 @@ public class Browser {
         updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
-            ret = this.getPage(null);
+            ret = this.getPage((String)null);
         } else {
 
             currentURL = new URL(string);
@@ -478,7 +478,7 @@ public class Browser {
         updateCookies(request);
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
-            ret = this.getPage(null);
+            ret = this.getPage((String)null);
         } else {
 
             currentURL = new URL(url);
@@ -1002,6 +1002,11 @@ public class Browser {
     public String submitForm(String formname) throws IOException {
         return this.submitForm(getFormbyValue(formname));
 
+    }
+
+    public String getPage(URL url) throws IOException {
+        return getPage(url+"");
+        
     }
 
 }

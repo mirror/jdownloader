@@ -18,7 +18,6 @@ package jd.controlling.interaction;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.Authenticator;
 import java.net.MalformedURLException;
@@ -26,12 +25,9 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Vector;
-import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,11 +37,9 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
-import jd.plugins.HTTP;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -111,25 +105,25 @@ public class HTTPLiveHeader extends Interaction {
         Vector<String[]> db = new Vector<String[]>();
         String[] cScript = null;
         try {
-
-            RequestInfo requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/"));
+            Browser br = new Browser();
+            br.getPage(new URL("http://reconnect.thau-ex.de/"));
             // ArrayList<ArrayList<String>> cats =
             // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a
             // href=?cat_select=°>");
-            String[] cats = requestInfo.getRegexp("<a href=\\?cat_select=(.*?)>").getColumn(-1);
+            String[] cats = br.getRegex("<a href=\\?cat_select=(.*?)>").getColumn(-1);
             for (String element : cats) {
-                requestInfo = HTTP.getRequest(new URL("http://reconnect.thau-ex.de/?cat_select=" + element));
+                br.getPage(new URL("http://reconnect.thau-ex.de/?cat_select=" + element));
                 // ArrayList<ArrayList<String>> router =
                 // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(),
                 // "<a
                 // class=\"link\" href=?cat_select=°&show=°>°</a>");
-                String[][] router = requestInfo.getRegexp("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
+                String[][] router = br.getRegex("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
                 for (String[] element2 : router) {
                     String endURL = "http://reconnect.thau-ex.de/?cat_select=" + element2[0] + "&show=" + element2[1];
-                    requestInfo = HTTP.getRequest(new URL(endURL));
+                    br.getPage(new URL(endURL));
                     // s logger.info(requestInfo.getHtmlCode() + "");
 
-                    String code = requestInfo.getRegexp("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getMatch(0);
+                    String code = br.getRegex("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getMatch(0);
 
                     String script = HTTPLiveHeader.getScriptFromCURL(code, Encoding.htmlDecode(element2[2]));
                     if (script == null) {
@@ -332,7 +326,7 @@ public class HTTPLiveHeader extends Interaction {
     private HashMap<String, String> variables;
 
     public boolean doInteraction(Object arg) {
-
+int okCounter=0;
         // Hole die Config parameter. Über die Parameterkeys wird in der
         // initConfig auch der ConfigContainer für die Gui vorbereitet
         Configuration configuration = JDUtilities.getConfiguration();
@@ -371,7 +365,6 @@ public class HTTPLiveHeader extends Interaction {
         variables.put("user", user);
         variables.put("pass", pass);
         variables.put("basicauth", new BASE64Encoder().encode((user + ":" + pass).getBytes()));
-
         variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
@@ -382,7 +375,7 @@ public class HTTPLiveHeader extends Interaction {
                 progress.finalize();
                 return parseError("Root Node must be [[[HSRC]]]*[/HSRC]");
             }
-            RequestInfo requestInfo = null;
+
             NodeList steps = root.getChildNodes();
             progress.addToMax(steps.getLength());
             for (int step = 0; step < steps.getLength(); step++) {
@@ -452,23 +445,26 @@ public class HTTPLiveHeader extends Interaction {
 
                         logger.finer("Variables set: " + variables);
                     }
+                    Browser br = null;
                     if (toDo.getNodeName().equalsIgnoreCase("REQUEST")) {
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
                             return parseError("A REQUEST Tag is not allowed to have childTags.");
                         }
-                        requestInfo = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim());
-                        if (requestInfo == null) {
-                            logger.severe("Request error in " + toDo.getChildNodes().item(0).getNodeValue().trim());
-                        }
-                        try {
-							List<String> ob = requestInfo.getHeaders().get(null);
-                            logger.severe("Request error in 404 wrong reconnect methode");
+                        br = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim());
+
+                        if (!br.getHttpConnection().isOK()) {
+                            okCounter--;
+                            logger.severe("Request error!");
+                            if(okCounter<0){
+                                logger.severe("Too many RequestErrors. abort!");
                             progress.finalize();
                             return false;
-						} catch (Exception e) {
-							// TODO: handle exception
-						}
+                            }
+                        }else{
+                            okCounter++;
+                        }
+
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("RESPONSE")) {
                         logger.finer("get Response");
@@ -480,13 +476,11 @@ public class HTTPLiveHeader extends Interaction {
                         NamedNodeMap attributes = toDo.getAttributes();
                         if (attributes.getNamedItem("keys") == null) {
                             progress.finalize();
-                            return parseError("A RESPONSE Node needs a Keys Attribute: " + toDo);                    }
-                        
-                        
-                        
-       
+                            return parseError("A RESPONSE Node needs a Keys Attribute: " + toDo);
+                        }
+
                         String[] keys = attributes.getNamedItem("keys").getNodeValue().split("\\;");
-                        getVariables(toDo.getChildNodes().item(0).getNodeValue().trim(), keys, requestInfo);
+                        getVariables(toDo.getChildNodes().item(0).getNodeValue().trim(), keys, br);
 
                     }
                     if (toDo.getNodeName().equalsIgnoreCase("WAIT")) {
@@ -574,12 +568,11 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
-    private RequestInfo doRequest(String request) throws MalformedURLException {
+    private Browser doRequest(String request) throws MalformedURLException {
         String requestType;
         String path;
         String post = "";
         String host = null;
-        RequestInfo requestInfo;
 
         HashMap<String, String> requestProperties = new HashMap<String, String>();
         String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
@@ -667,71 +660,38 @@ public class HTTPLiveHeader extends Interaction {
             return null;
         }
         try {
+            Browser br = new Browser();
+
+            br.setConnectTimeout(5000);
+            br.setReadTimeout(5000);
+            if (requestProperties != null) {
+                br.getHeaders().putAll(requestProperties);
+            }
             if (requestType.equalsIgnoreCase("GET")) {
                 logger.finer("GET " + "http://" + host + path);
-                HTTPConnection httpConnection = new HTTPConnection(new URL("http://" + host + path).openConnection());
-                if (requestProperties != null) {
-                    Set<String> keys = requestProperties.keySet();
-                    Iterator<String> iterator = keys.iterator();
-                    String key;
-                    while (iterator.hasNext()) {
-                        key = iterator.next();
-                        httpConnection.setRequestProperty(key, requestProperties.get(key));
-                    }
-                }
-                httpConnection.setConnectTimeout(5000);
-                httpConnection.setReadTimeout(5000);
-                httpConnection.setInstanceFollowRedirects(false);
-                requestInfo = HTTP.readFromURL(httpConnection);
-                requestInfo.setConnection(httpConnection);
+
+                br.getPage("http://" + host + path);
 
             } else {
                 post = post.trim();
                 logger.finer("POST " + "http://" + host + path + " " + post);
-                HTTPConnection httpConnection = new HTTPConnection(new URL("http://" + host + path).openConnection());
-                httpConnection.setInstanceFollowRedirects(false);
-                httpConnection.setConnectTimeout(5000);
-                httpConnection.setReadTimeout(5000);
-                if (requestProperties != null) {
-                    Set<String> keys = requestProperties.keySet();
-                    Iterator<String> iterator = keys.iterator();
-                    String key;
-                    while (iterator.hasNext()) {
-                        key = iterator.next();
-                        httpConnection.setRequestProperty(key, requestProperties.get(key));
-                    }
-                }
-
-                httpConnection.setRequestProperty("Content-Length", post.length() + "");
-                httpConnection.setDoOutput(true);
-                httpConnection.connect();
-                OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-                if (post != null) {
-                    wr.write(post);
-                }
-                wr.flush();
-                requestInfo = HTTP.readFromURL(httpConnection);
-                wr.close();
-                requestInfo.setConnection(httpConnection);
+                br.postPage("http://" + host + path, post);
             }
 
-            Set<Entry<String, List<String>>> set = requestInfo.getHeaders().entrySet();
             logger.finer("Answer: ");
-            for (Map.Entry<String, List<String>> me : set) {
+            for (Map.Entry<String, List<String>> me : br.getRequest().getResponseHeaders().entrySet()) {
                 if (me.getValue() != null && me.getValue().size() > 0) {
                     headerProperties.put(me.getKey(), me.getValue().get(0));
                     logger.finer(me.getKey() + " : " + me.getValue().get(0));
                 }
             }
-
+            return br;
         } catch (IOException e) {
 
             logger.severe("IO Error: " + e.getLocalizedMessage());
             e.printStackTrace();
             return null;
         }
-
-        return requestInfo;
 
     }
 
@@ -784,14 +744,14 @@ public class HTTPLiveHeader extends Interaction {
         return ret;
     }
 
-    private void getVariables(String patStr, String[] keys, RequestInfo requestInfo) {
-        if (requestInfo == null) { return; }
+    private void getVariables(String patStr, String[] keys, Browser br) {
 
+        if (br == null) return;
         // patStr="<title>(.*?)</title>";
         Pattern pattern = Pattern.compile(patStr);
 
         // logger.info(requestInfo.getHtmlCode());
-        Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
+        Matcher matcher = pattern.matcher(br + "");
         logger.info("Matches: " + matcher.groupCount());
         if (matcher.find() && matcher.groupCount() > 0) {
             for (int i = 0; i < keys.length && i < matcher.groupCount(); i++) {
