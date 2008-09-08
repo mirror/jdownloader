@@ -330,6 +330,7 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
         this.pack();
         Dimension ps = this.getPreferredSize();
         this.setPreferredSize(new Dimension(Math.min(800, ps.width), Math.min(480, ps.height)));
+        setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.configuration")));
         this.pack();
         panel.setPreferredSize(minSize);
         this.setLocationRelativeTo(null);
