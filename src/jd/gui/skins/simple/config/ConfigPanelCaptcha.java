@@ -115,8 +115,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         tableModel = new InternalTableModel();
-        table = new JTable();
-        table.setModel(tableModel); 
+        table = new JTable(tableModel);
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setEditingRow(0);
@@ -146,7 +145,7 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     public void mouseClicked(MouseEvent e) {
         configuration.setProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), !configuration.getBooleanProperty(Configuration.PARAM_JAC_METHODS + "_" + methods[table.getSelectedRow()].getName(), true));
-        tableModel.fireTableCellUpdated(table.getSelectedRow(), table.getSelectedRow());
+        tableModel.fireTableRowsUpdated(table.getSelectedRow(), table.getSelectedRow());
     }
 
     public void mouseEntered(MouseEvent e) {

@@ -293,18 +293,17 @@ public class FengShuiConfigPanel extends JDialog implements ActionListener {
 
         panel.add(new JLabel("<html><b color=\"#4169E1\">" + label), "gapleft 22, gaptop 5" + GAPBOTTOM);
         for (int i = 0; i < components.length; i++) {
-            if (i == components.length - 1)
+            if (i == components.length - 1) {
                 panel.add(components[i], GAPLEFT + SPAN + ", gapright 5");
-            else
+            } else {
                 panel.add(components[i], GAPLEFT);
+            }
         }
     }
 
     private void addSeparator(JPanel panel, String title, Icon icon, String help) {
-        JLinkButton label;
         try {
-            label = new JLinkButton("<html><u><b  color=\"#006400\">" + title, icon, new URL(wikiurl + (title.replaceAll("\\s", "_"))));
-
+            JLinkButton label = new JLinkButton("<html><u><b  color=\"#006400\">" + title, icon, new URL(wikiurl + (title.replaceAll("\\s", "_"))));
             label.setIconTextGap(8);
             panel.add(label, "align left, split 2");
             panel.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
