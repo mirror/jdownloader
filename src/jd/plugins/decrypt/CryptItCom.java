@@ -129,12 +129,10 @@ public class CryptItCom extends PluginForDecrypt {
             }
 
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-            if (Browser.download(container, requestInfo.getConnection())) {
+            Browser.download(container, requestInfo.getConnection());
                 decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                 container.delete();
-            } else {
-                return null;
-            }
+           
 
         } catch (MalformedURLException e) {
             e.printStackTrace();

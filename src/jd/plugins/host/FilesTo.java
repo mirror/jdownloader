@@ -162,13 +162,8 @@ public class FilesTo extends PluginForHost {
         }
 
         File file = this.getLocalCaptchaFile(this);
-
-        if (!Browser.download(file, captchaAddress) || !file.exists()) {
-            logger.severe("Captcha download failed: " + captchaAddress);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-
-        }
+Browser.download(file, captchaAddress);
+       
         String code = this.getCaptchaCode(file, downloadLink);
 
         HashMap<String, String> requestHeaders = new HashMap<String, String>();

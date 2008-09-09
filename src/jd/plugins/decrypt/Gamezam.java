@@ -50,10 +50,7 @@ public class Gamezam extends PluginForDecrypt {
         String page = null;
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             File captchaFile = this.getLocalCaptchaFile(this);
-            if (!Browser.download(captchaFile, br.openGetConnection("http://www.gamez.am/captcha.php")) || !captchaFile.exists()) {
-                /* Fehler beim Captcha */
-                return null;
-            }
+           Browser.download(captchaFile, br.openGetConnection("http://www.gamez.am/captcha.php"));
             String captchaCode = JDUtilities.getCaptcha(this, "gamez.am", captchaFile, false);
             if (captchaCode == null) {
                 /* Abbruch geklickt */

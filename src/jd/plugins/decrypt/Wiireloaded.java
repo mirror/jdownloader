@@ -58,9 +58,9 @@ public class Wiireloaded extends PluginForDecrypt {
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
-            boolean fileDownloaded = Browser.download(captchaFile, br.openGetConnection(adr));
+          Browser.download(captchaFile, br.openGetConnection(adr));
             progress.addToMax(1);
-            if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
+            if (!captchaFile.exists() || captchaFile.length() == 0) {
                 return null;
             } else {
                 String capTxt = Plugin.getCaptchaCode(captchaFile, this);

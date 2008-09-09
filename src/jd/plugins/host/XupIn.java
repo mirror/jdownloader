@@ -185,13 +185,8 @@ public class XupIn extends PluginForHost {
 
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
 
-        if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
+        Browser.download(file, requestInfo.getConnection());
 
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-
-        }
 
         String vchep = this.getCaptchaCode(file, downloadLink);
 

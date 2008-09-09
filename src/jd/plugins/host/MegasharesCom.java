@@ -82,12 +82,8 @@ public class MegasharesCom extends PluginForHost {
             String captchaAddress = br.getRegex("<dt>Enter the passport reactivation code in the graphic, then hit the \"Reactivate Passport\" button.</dt>.*?<dd><img src=\"(.*?)\" alt=\"Security Code\" style=.*?>").getMatch(0);
             File file = this.getLocalCaptchaFile(this);
             Browser c = br.cloneBrowser();
-            if (!Browser.download(file, c.openGetConnection(captchaAddress)) || !file.exists()) {
-                logger.severe("Captcha download failed: " + captchaAddress);
-
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-                return;
-            }
+            Browser.download(file, c.openGetConnection(captchaAddress));
+             
 
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 

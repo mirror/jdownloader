@@ -139,12 +139,7 @@ public class Netloadin extends PluginForHost {
         }
         File file = this.getLocalCaptchaFile(this);
         Browser c = br.cloneBrowser();
-        if (!Browser.download(file, c.openGetConnection(captchaURL)) || !file.exists()) {
-            logger.severe("Captcha download failed: " + captchaURL);
-
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+       Browser.download(file, c.openGetConnection(captchaURL));
         captchaPost.getVars().put("captcha_check", this.getCaptchaCode(file, downloadLink));
         br.submitForm(captchaPost);
         if (br.containsHTML(FILE_NOT_FOUND)) {

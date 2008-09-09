@@ -118,11 +118,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                         /* Captcha zu verarbeiten */
                         captchaFile = getLocalCaptchaFile(this);
                         HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.urlshield.net" + captchaurl).openConnection());
-                        if (!Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
-                            /* Fehler beim Captcha */
-                            logger.severe("Captcha Download fehlgeschlagen!");
-                            return null;
-                        }
+                        Browser.download(captchaFile, captcha_con);
                         /* CaptchaCode holen */
                         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) { return null; }
                         form.getVars().put("userkey", captchaCode);

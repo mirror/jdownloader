@@ -137,13 +137,14 @@ public class Odsiebiecom extends PluginForHost {
                 HTTPConnection captcha_con = new HTTPConnection(new URL(captchaurl).openConnection());
                 captcha_con.setRequestProperty("Referer", referrerurl);
                 captcha_con.setRequestProperty("Cookie", downloadcookie);
-                if (!captcha_con.getContentType().contains("text") && !Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
+                if (!captcha_con.getContentType().contains("text") ){
                     /* Fehler beim Captcha */
                     logger.severe("Captcha Download fehlgeschlagen!");
                     // step.setStatus(PluginStep.STATUS_ERROR);
                     linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                     return;
                 }
+                Browser.download(captchaFile, captcha_con);
                 /* CaptchaCode holen */
                 if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
                     linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);

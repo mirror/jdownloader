@@ -17,6 +17,7 @@
 package jd.http;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,13 +26,13 @@ import jd.parser.Form;
 public class PostRequest extends Request {
     private HashMap<String, String> postData = new HashMap<String, String>();
 
-    public PostRequest(Form form) {
+    public PostRequest(Form form) throws MalformedURLException {
         super(form.getAction(null));
 
         postData = form.getVars();
     }
 
-    public PostRequest(String url) {
+    public PostRequest(String url) throws MalformedURLException {
         super(url);
 
     }
@@ -80,7 +81,7 @@ public class PostRequest extends Request {
 
     }
 
-    public void setPostVariableString(String vars) {
+    public void setPostVariableString(String vars) throws MalformedURLException {
         postData.putAll(Request.parseQuery(vars));
     }
 

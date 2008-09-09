@@ -46,22 +46,20 @@ public abstract class Request {
      * @param query
      *            kann ein reines query ein (&key=value) oder eine url mit query
      * @return
+     * @throws MalformedURLException 
      */
 
-    public static HashMap<String, String> parseQuery(String query) {
+    public static HashMap<String, String> parseQuery(String query) throws MalformedURLException {
         if (query == null) { return null; }
         HashMap<String, String> ret = new HashMap<String, String>();
         if (query.toLowerCase().trim().startsWith("http")) {
-            try {
+         
                 query = new URL(query).getQuery();
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                return ret;
-            }
+           
         }
 
         if (query == null) { return ret; }
-        try {
+        
 
             String[] split = query.trim().split("[\\&|=]");
             int i = 0;
@@ -79,9 +77,7 @@ public abstract class Request {
 
             }
 
-        } catch (NoSuchElementException e) {
-            // ignore
-        }
+      
 
         return ret;
 
@@ -104,12 +100,10 @@ public abstract class Request {
 
     private URL url;
 
-    public Request(String url) {
-        try {
+    public Request(String url) throws MalformedURLException {
+     
             this.url = new URL(url);
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+      
         readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
 
         connectTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
@@ -176,7 +170,7 @@ public abstract class Request {
             String expires = null;
             String domain = null;
             HashMap<String, String> tmp = new HashMap<String, String>();
-            try {
+          
                 StringTokenizer st = new StringTokenizer(header, ";=");
                 while (true) {
 
@@ -205,9 +199,7 @@ public abstract class Request {
                     }
 
                 }
-            } catch (NoSuchElementException e) {
-                // ignore
-            }
+         
 
             for (Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
                 Entry<String, String> next = it.next();
@@ -263,15 +255,12 @@ public abstract class Request {
      */
     public String followRedirect() throws IOException {
         if (getLocation() == null) { return null; }
-        try {
+     
             url = new URL(getLocation());
 
             return load();
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-        }
-        return null;
+      
+    
     }
 
     public int getConnectTimeout() {
@@ -442,7 +431,7 @@ public abstract class Request {
 
     public void openConnection() throws IOException {
 
-        try {
+       
             long tima = System.currentTimeMillis();
             httpConnection = new HTTPConnection(url.openConnection());
             httpConnection.setInstanceFollowRedirects(followRedirects);
@@ -464,10 +453,7 @@ public abstract class Request {
             if (hasCookies()) {
                 httpConnection.setRequestProperty("Cookie", getCookieString());
             }
-        } catch (IOException e) {
-            requestTime = -1;
-            e.printStackTrace();
-        }
+      
 
     }
 
@@ -516,14 +502,12 @@ public abstract class Request {
         this.followRedirects = followRedirects;
     }
 
-    public void setProxy(String ip, String port) {
+    public void setProxy(String ip, String port) throws NumberFormatException, MalformedURLException {
         proxyip = ip;
         proxyport = port;
-        try {
+     
             url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+      
 
     }
 

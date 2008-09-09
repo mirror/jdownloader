@@ -47,11 +47,11 @@ public class RelinkUs extends PluginForDecrypt {
             URL container_url = new URL("http://relink.us/" + Encoding.htmlDecode(container_link));
             HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
             container_con.setRequestProperty("Referer", cryptedLink);
-            if (Browser.download(container, container_con)) {
+            Browser.download(container, container_con);
                 decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                 container.delete();
                 return true;
-            }
+            
         }
         return false;
     }

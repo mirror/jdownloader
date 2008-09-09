@@ -62,9 +62,9 @@ public class Serienjunkies extends PluginForHost {
     }
 
     // Für Links die bei denen die Parts angezeigt werden
-    private Vector<String> ContainerLinks(String url) {
+    private Vector<String> ContainerLinks(String url) throws InterruptedException {
         Vector<String> links = new Vector<String>();
-        boolean fileDownloaded = false;
+      
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
         }
@@ -106,17 +106,17 @@ public class Serienjunkies extends PluginForHost {
 
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
 
-                    fileDownloaded = Browser.download(captchaFile, con);
-                    if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
-                        logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
-                        try {
-                            Thread.sleep(1000);
-                            reqinfo = HTTP.getRequest(new URL(url));
-                            cookie = reqinfo.getCookie();
-                        } catch (InterruptedException e) {
-                        }
-                        continue;
-                    }
+                   try{
+                       Browser.download(captchaFile, con);
+                   }catch(Exception e){
+                      
+                           Thread.sleep(1000);
+                           reqinfo = HTTP.getRequest(new URL(url));
+                           cookie = reqinfo.getCookie();
+                      
+                       continue;
+                   }
+                  
                     logger.info("captchafile: " + captchaFile);
                     capTxt = Plugin.getCaptchaCode(captchaFile, this);
 
@@ -191,9 +191,9 @@ public class Serienjunkies extends PluginForHost {
     }
 
     // Für Links die gleich auf den Hoster relocaten
-    private String EinzelLinks(String url) {
+    private String EinzelLinks(String url) throws InterruptedException {
         String links = "";
-        boolean fileDownloaded = false;
+      
         if (!url.startsWith("http://")) {
             url = "http://" + url;
         }
@@ -214,15 +214,15 @@ public class Serienjunkies extends PluginForHost {
                     }
                     String captchaAdress = "http://serienjunkies.org" + matcher.group(2);
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
-                    fileDownloaded = Browser.download(captchaFile, captchaAdress);
-                    logger.info("captchafile: " + fileDownloaded);
-                    if (!fileDownloaded || !captchaFile.exists() || captchaFile.length() == 0) {
+                    try{
+                    Browser.download(captchaFile, captchaAdress);
+   
+                    }catch(Exception e){
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
-                        try {
+                    
                             Thread.sleep(1000);
                             reqinfo = HTTP.getRequest(new URL(url));
-                        } catch (InterruptedException e) {
-                        }
+                      
                         continue;
                     }
                     capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile, false);

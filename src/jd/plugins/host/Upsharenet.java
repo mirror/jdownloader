@@ -104,13 +104,8 @@ public class Upsharenet extends PluginForHost {
         /* Captcha File holen */
         captchaFile = getLocalCaptchaFile(this);
 
-        if (!br.downloadFile(captchaFile, "http://www.upshare.net/captcha.php") || !captchaFile.exists()) {
-            /* Fehler beim Captcha */
-            logger.severe("Captcha Download fehlgeschlagen!");
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+        br.downloadFile(captchaFile, "http://www.upshare.net/captcha.php");
+         
         /* CaptchaCode holen */
         if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);

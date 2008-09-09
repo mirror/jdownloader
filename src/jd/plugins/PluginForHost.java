@@ -50,7 +50,7 @@ import jd.utils.JDUtilities;
 public abstract class PluginForHost extends Plugin {
     public PluginForHost(String cfgName) {
         super(cfgName);
- 
+
     }
 
     private static final String AGB_CHECKED = "AGB_CHECKED";
@@ -125,7 +125,9 @@ public abstract class PluginForHost extends Plugin {
 
     public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
         File captchaFile = this.getLocalCaptchaFile(this);
-        if (!Browser.download(captchaFile, br.openGetConnection(captchaAddress)) || !captchaFile.exists()) {
+        try {
+            Browser.download(captchaFile, br.openGetConnection(captchaAddress));
+        } catch (Exception e) {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
@@ -231,7 +233,7 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
-                    PluginForHost plg = this.getClass().getConstructor(new Class[] {String.class}).newInstance(new Object[]{host});
+                    PluginForHost plg = this.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
 
                     DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);

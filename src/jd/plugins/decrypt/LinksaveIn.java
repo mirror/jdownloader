@@ -47,7 +47,7 @@ public class LinksaveIn extends PluginForDecrypt {
         String parameter = param.toString();  
         URL url;
         
-        try {
+   
             if (parameter.matches(patternSupported.pattern())) {
                 parameter = parameter + ".dlc";
                 url = new URL(parameter);
@@ -55,20 +55,12 @@ public class LinksaveIn extends PluginForDecrypt {
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 //Api ! nicht in org tauschen!
                 dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
-                if (Browser.download(container, dlc_con)) {
+               Browser.download(container, dlc_con);
                     decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                     container.delete();
-                } else {
-                    return null;
-                }
+               
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+      
         return decryptedLinks;
     }
 

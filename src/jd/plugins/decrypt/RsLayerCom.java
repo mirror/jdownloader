@@ -47,11 +47,11 @@ public class RsLayerCom extends PluginForDecrypt {
         String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
         if (br.containsHTML(container_link)) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
-            if (Browser.download(container, br.openGetConnection(container_link))) {
+            Browser.download(container, br.openGetConnection(container_link));
                 decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                 container.delete();
-                return true;
-            }
+               return true;
+            
         }
         return false;
     }
@@ -79,11 +79,8 @@ public class RsLayerCom extends PluginForDecrypt {
                 if (captchaFileName == null) { return null; }
                 String captchaUrl = "http://" + host + "/" + captchaFileName;
                 File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
-                boolean fileDownloaded = Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-                if (!fileDownloaded) {
-                    logger.info(JDLocale.L("plugins.decrypt.general.captchaDownloadError", "Captcha Download gescheitert"));
-                    return null;
-                }
+              Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
+                
                 String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                 if (null == captchaCode || captchaCode.length() == 0) {
                     logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));

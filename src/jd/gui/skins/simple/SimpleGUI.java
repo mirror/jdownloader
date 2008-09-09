@@ -1223,11 +1223,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
     }
 
-    public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def) {
+    public String getCaptchaCodeFromUser(final Plugin plugin,final  File captchaAddress,final  String def) {
+
+//        SwingUtilities.invokeLater(new Runnable() {
+//            public void run() {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress, def);
 
         logger.info("Returned: " + captchaDialog.getCaptchaText());
         return captchaDialog.getCaptchaText();
+//            }});
+//        return "";
     }
 
     private String getClipBoardImage() {

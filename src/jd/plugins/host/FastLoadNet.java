@@ -149,15 +149,9 @@ public class FastLoadNet extends PluginForHost {
 
             requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://fast-load.net/includes/captcha.php"), cookie, downloadurl, true);
 
-            if (!Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
+            Browser.download(file, requestInfo.getConnection());
 
-                logger.severe("Captcha download failed: http://fast-load.net/includes/captcha.php");
-
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.captchadownloaderror", "Captcha could not be downloaded"));
-                return;
-
-            }
+        
 
             String code = getCaptchaCode(file, downloadLink);
             if (code == null) {

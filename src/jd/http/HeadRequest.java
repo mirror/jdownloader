@@ -17,11 +17,12 @@
 package jd.http;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 
 
 public class HeadRequest extends Request {
 
-    public HeadRequest(String url) {
+    public HeadRequest(String url) throws MalformedURLException {
         super(url);
 
     }

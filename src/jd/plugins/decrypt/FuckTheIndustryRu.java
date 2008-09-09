@@ -52,10 +52,10 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         String pass = new Regex(page, patternPW).getMatch(0);
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
-        if (Browser.download(container, link)) {
+        Browser.download(container, link);
             links = JDUtilities.getController().getContainerLinks(container);
             container.delete();
-        }
+       
 
         if (links != null) {
             FilePackage fp = new FilePackage();

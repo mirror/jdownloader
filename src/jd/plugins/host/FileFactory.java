@@ -121,12 +121,8 @@ public class FileFactory extends PluginForHost {
 
         captchaFile = this.getLocalCaptchaFile(this);
 
-        if (!Browser.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-            logger.severe("Captcha Download failed: " + captchaAddress);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-
-        }
+        Browser.download(captchaFile, captchaAddress);
+         
         String captchaCode = this.getCaptchaCode(captchaFile, downloadLink);
 
         captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_." + JDUtilities.getFileExtension(captchaFile)));

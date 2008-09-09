@@ -101,7 +101,11 @@ public class Main {
 
                 String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
                 file = new File(filepath);
-                Browser.download(file, path);
+                try {
+                    Browser.download(file, path);
+                } catch (IOException e) {
+                   return "Downloaderror";
+                }
 
             } else {
 

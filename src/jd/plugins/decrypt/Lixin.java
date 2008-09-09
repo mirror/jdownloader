@@ -62,11 +62,7 @@ public class Lixin extends PluginForDecrypt {
 
                     String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
                     File captchaFile = this.getLocalCaptchaFile(this);
-                    if (!Browser.download(captchaFile, captchaAddress) || !captchaFile.exists()) {
-                        /* Fehler beim Captcha */
-                        logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
-                        return null;
-                    }
+                  Browser.download(captchaFile, captchaAddress);
                     String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     if (captchaCode == null) {
                         /* abbruch geklickt */

@@ -66,7 +66,7 @@ public class Browser {
 
     }
 
-    public void forwardCookies(Request request) {
+    public void forwardCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
         HashMap<String, Cookie> cookies = getCookies().get(host);
@@ -84,7 +84,7 @@ public class Browser {
 
     }
 
-    public void forwardCookies(HTTPConnection con) {
+    public void forwardCookies(HTTPConnection con) throws MalformedURLException {
         if (con == null) { return; }
         String host = Browser.getHost(con.getURL().toString());
         HashMap<String, Cookie> cookies = getCookies().get(host);
@@ -92,7 +92,7 @@ public class Browser {
         if (cs != null && cs.trim().length() > 0) con.setRequestProperty("Cookie", cs);
     }
 
-    public String getCookie(String url, String string) {
+    public String getCookie(String url, String string) throws MalformedURLException {
         String host;
 
         host = Browser.getHost(url);
@@ -110,7 +110,7 @@ public class Browser {
         return COOKIES;
     }
 
-    public void setCookie(String url, String key, String value) {
+    public void setCookie(String url, String key, String value) throws MalformedURLException {
         String host;
 
         host = Browser.getHost(url);
@@ -128,8 +128,8 @@ public class Browser {
 
     }
 
-    public static String getHost(Object url) {
-        try {
+    public static String getHost(Object url) throws MalformedURLException {
+     
             String ret = new URL(url + "").getHost();
             int id = 0;
             while ((id = ret.indexOf(".")) != ret.lastIndexOf(".")) {
@@ -137,15 +137,12 @@ public class Browser {
 
             }
             return ret;
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-        }
-        return null;
+      
+    
 
     }
 
-    public void updateCookies(Request request) {
+    public void updateCookies(Request request) throws MalformedURLException {
         if (request == null) { return; }
         String host = Browser.getHost(request.getUrl());
         HashMap<String, Cookie> cookies = getCookies().get(host);
@@ -582,13 +579,10 @@ public class Browser {
         this.connectTimeout = connectTimeout;
     }
 
-    public void setCurrentURL(String string) {
-        try {
+    public void setCurrentURL(String string) throws MalformedURLException {
+      
             currentURL = new URL(string);
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
-        }
+       
 
     }
 
@@ -705,11 +699,9 @@ public class Browser {
 
             updateCookies(request);
             this.request = request;
-            try {
+         
                 currentURL = new URL(action);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
+           
             up.close();
             return ret;
 
@@ -753,13 +745,14 @@ public class Browser {
      * @param file
      * @param con
      * @return Erfolg true/false
+     * @throws IOException 
      */
-    public static boolean download(File file, HTTPConnection con) {
-        try {
+    public static void download(File file, HTTPConnection con) throws IOException {
+        
             if (file.isFile()) {
                 if (!file.delete()) {
                     System.out.println("Konnte Datei nicht überschreiben " + file);
-                    return false;
+                   throw new IOException("Could not overwrite file: "+file);
                 }
             }
             if (!file.getParentFile().exists()) {
@@ -775,29 +768,20 @@ public class Browser {
             }
             output.close();
             input.close();
-            return true;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+          
+    
     }
 
-    public static boolean downloadBinary(String filepath, String fileurl) {
+    public static void downloadBinary(String filepath, String fileurl) throws IOException {
 
-        try {
+       
             fileurl = fileurl.replaceAll(" ", "%20");
             fileurl = Encoding.urlEncode(fileurl.replaceAll("\\\\", "/"));
             File file = new File(filepath);
             if (file.isFile()) {
                 if (!file.delete()) {
                     System.out.println("Konnte Datei nicht löschen " + file);
-                    return false;
+                    throw new IOException("Could not overwrite file: "+file);
                 }
 
             }
@@ -823,34 +807,17 @@ public class Browser {
             output.close();
             input.close();
 
-            return true;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-
-        }
 
     }
 
-    public boolean downloadFile(File file, String urlString) {
-        try {
+    public void downloadFile(File file, String urlString) throws IOException {
+      
             urlString = URLDecoder.decode(urlString, "UTF-8");
 
             HTTPConnection con = this.openGetConnection(urlString);
             con.setInstanceFollowRedirects(true);
-            return Browser.download(file, con);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+            Browser.download(file, con);
+       
     }
 
     /**
@@ -859,22 +826,16 @@ public class Browser {
      * @param file
      * @param urlString
      * @return Erfolg true/false
+     * @throws IOException 
      */
-    public static boolean download(File file, String urlString) {
-        try {
+    public static void download(File file, String urlString) throws IOException {
+      
             urlString = URLDecoder.decode(urlString, "UTF-8");
             URL url = new URL(urlString);
             HTTPConnection con = new HTTPConnection(url.openConnection());
             con.setInstanceFollowRedirects(true);
-            return Browser.download(file, con);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
+           Browser.download(file, con);
+      
     }
 
     public Form getForm(int i) {
@@ -963,9 +924,9 @@ public class Browser {
         return cookiesExclusive;
     }
 
-    public String followConnection() {
+    public String followConnection() throws IOException {
         String ret = null;
-        try {
+        
             if (request.getHtmlCode() != null) {
                 JDUtilities.getLogger().warning("Request has already been read");
                 return null;
@@ -973,11 +934,7 @@ public class Browser {
             checkContentLengthLimit(request);
 
             ret = request.read();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-            return null;
-        }
+      
 
         return ret;
 

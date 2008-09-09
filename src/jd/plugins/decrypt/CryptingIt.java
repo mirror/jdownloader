@@ -49,12 +49,10 @@ public class CryptingIt extends PluginForDecrypt {
 
         File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
-        if (Browser.download(containerFile, dlcLink)) {
+        Browser.download(containerFile, dlcLink);
             links = JDUtilities.getController().getContainerLinks(containerFile);
             containerFile.delete();
-        } else {
-            return null;
-        }
+      
 
         if (links != null) {
             for (DownloadLink dLink : links) {

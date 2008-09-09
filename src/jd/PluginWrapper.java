@@ -105,7 +105,9 @@ public class PluginWrapper implements Comparable {
     }
 
     public boolean canHandle(String data) {
-        if (this.isLoaded()) getPlugin().canHandle(data);
+        if (this.isLoaded()){
+           return getPlugin().canHandle(data);
+        }
         if (data == null) { return false; }
         Pattern pattern = this.getPattern();
         if (pattern != null) {

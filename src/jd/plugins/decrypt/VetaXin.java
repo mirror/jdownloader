@@ -59,14 +59,14 @@ public class VetaXin extends PluginForDecrypt {
             String rsdf = br.getRegex(Pattern.compile("<a href=\"(/crypt\\.php\\?.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (rsdf != null) {
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-                if (Browser.download(container, br.openGetConnection("http://vetax.in" + rsdf))) {
+               Browser.download(container, br.openGetConnection("http://vetax.in" + rsdf));
                     Vector<DownloadLink> dl_links = JDUtilities.getController().getContainerLinks(container);
                     container.delete();
                     for (DownloadLink dl_link : dl_links) {
                         dl_link.addSourcePluginPassword(pw);
                         decryptedLinks.add(dl_link);
                     }
-                }
+                
             }
             progress.setRange(links.length);
             for (String element : links) {

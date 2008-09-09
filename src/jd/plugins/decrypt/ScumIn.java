@@ -68,7 +68,7 @@ public class ScumIn extends PluginForDecrypt {
             con.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
 
             File captchaFile = this.getLocalCaptchaFile(this);
-            if (!Browser.download(captchaFile, con) || !captchaFile.exists()) { return null; }
+            Browser.download(captchaFile, con);
             String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
 
             reqinfo = HTTP.postRequest(new URL("http://scum.in/plugins/home/links.callback.php"), cookie, parameter, null, "id=" + id + "&captcha=" + captchaCode, false);

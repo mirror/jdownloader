@@ -213,11 +213,8 @@ public class Megauploadcom extends PluginForHost {
         File file = this.getLocalCaptchaFile(this);
         logger.info("Captcha " + captchaURL);
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), COOKIE, requestInfo.getLocation(), true);
-        if (!requestInfo.isOK() || !Browser.download(file, requestInfo.getConnection()) || !file.exists()) {
-            logger.severe("Captcha Download fehlgeschlagen: " + captchaURL);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+        Browser.download(file, requestInfo.getConnection());
+       
         String code = this.getCaptchaCode(file, downloadLink);
 
         requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code, true);

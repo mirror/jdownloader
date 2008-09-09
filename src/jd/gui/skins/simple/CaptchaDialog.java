@@ -168,10 +168,11 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 @Override
                 public void run() {
                     int c = countdown;
-                    while (!isActive()) {
+                    while (!isActive()&&isDisplayable()) {
                         try {
                             Thread.sleep(200);
                         } catch (InterruptedException e) {
+                            break;
                         }
                     }
 
@@ -184,6 +185,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException e) {
+                            break;
                         }
                         if (countdown < 0) return;
                         if (!isVisible()) return;
@@ -227,11 +229,14 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
         }
         this.pack();
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
-        this.setVisible(true);
+       
         this.toFront();
         this.setAlwaysOnTop(true);
         this.requestFocus();
         textField.requestFocusInWindow();
+
+        this.setVisible(true);
+        this.toFront();
 
     }
 

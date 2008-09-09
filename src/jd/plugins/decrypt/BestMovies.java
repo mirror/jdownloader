@@ -71,11 +71,8 @@ public class BestMovies extends PluginForDecrypt {
                     HTTPConnection captcha_con = new HTTPConnection(captcha_url.openConnection());
                     captcha_con.setRequestProperty("Referer", parameter);
                     captcha_con.setRequestProperty("Cookie", cookie);
-                    if (!Browser.download(captchaFile, captcha_con) || !captchaFile.exists()) {
-                        /* Fehler beim Captcha */
-                        logger.severe("Captcha Download fehlgeschlagen!");
-                        return null;
-                    }
+                    Browser.download(captchaFile, captcha_con);
+                  
                     String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     if (captchaCode == null) {
                         /* abbruch geklickt */

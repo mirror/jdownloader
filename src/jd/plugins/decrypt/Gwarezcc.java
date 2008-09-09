@@ -131,16 +131,14 @@ public class Gwarezcc extends PluginForDecrypt {
                 url = new URL("http://gwarez.cc/download/dlc/" + downloadid + "/");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", parameter);
-                if (Browser.download(container, dlc_con)) {
+               Browser.download(container, dlc_con);
                     Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
                     for (DownloadLink dl_link : dl_links) {
                         dl_link.addSourcePluginPassword(password);
                         decryptedLinks.add(dl_link);
                     }
                     container.delete();
-                } else {
-                    return null;
-                }
+                
             }
 
         } catch (MalformedURLException e) {

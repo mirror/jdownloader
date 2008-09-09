@@ -62,10 +62,7 @@ public class DreiDlAm extends PluginForDecrypt {
             if (captcha != null) {
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(3);
-                if (!Browser.download(file, br.cloneBrowser().openGetConnection("http://3dl.am/images/captcha5.php" + captcha))) {
-                    logger.severe("Could not download Captchafile");
-                    throw new IOException("Could not download Captchafile");
-                }
+                Browser.download(file, br.cloneBrowser().openGetConnection("http://3dl.am/images/captcha5.php" + captcha));
                 String capTxt = Plugin.getCaptchaCode(file, this);
                 if (capTxt == null) throw new DecrypterException("Wrong Captcha Code");
                 form.put("antwort", capTxt);
