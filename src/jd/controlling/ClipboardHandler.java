@@ -53,23 +53,19 @@ public class ClipboardHandler extends Thread implements ControlListener {
      */
     private DistributeData distributeData = null;
 
-    private boolean enabled = true;
+    private boolean enabled = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, false);
 
     private String olddata;
 
     private List<?> oldList;
 
-    private Thread saveConfig = null;
-
     /**
      */
     private ClipboardHandler() {
-
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         INSTANCE = this;
         // logger = JDUtilities.getLogger();
         JDUtilities.getController().addControlListener(this);
-    
     }
 
     /**
@@ -84,7 +80,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
-        enabled = isEnabled();
+        enabled = true;
         while (enabled) {
             try {
                 DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
@@ -118,9 +114,9 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
                         data = data.trim();
 
-//                        if (olddata == null) {
-//                            olddata = data;
-//                        }
+                        // if (olddata == null) {
+                        // olddata = data;
+                        // }
                         if (!data.equals(olddata)) {
                             olddata = data;
 
@@ -148,29 +144,13 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private void setEnabled(boolean enabled) {
         this.enabled = enabled;
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled);
-        if (saveConfig != null) {
-            while (saveConfig.isAlive()) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
+        JDUtilities.saveConfig();
 
-                    e.printStackTrace();
-                }
-            }
-        }
-        saveConfig = new Thread(new Runnable() {
-
-            public void run() {
-                JDUtilities.saveConfig();
-            }
-        });
-        saveConfig.start();
-
-        if (enabled && !isAlive()) {
+        if (this.enabled && !this.isAlive()) {
             new ClipboardHandler();
             this.start();
         }
-       
+
     }
 
     public void toggleActivation() {
@@ -179,10 +159,10 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
-            this.start();
+            if (this.enabled) this.start();
             JDUtilities.getController().removeControlListener(this);
         }
-        
+
     }
 
 }
