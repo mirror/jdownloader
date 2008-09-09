@@ -68,7 +68,7 @@ public class PackageInfo extends JDialog {
         setLayout(new BorderLayout(2, 2));
         setTitle(JDLocale.L("gui.packageinfo.title", "Package Information: ") + fp.getName());
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
-        setResizable(false);
+        setResizable(true);
         setAlwaysOnTop(true);
         new Thread() {
             @Override
@@ -89,6 +89,7 @@ public class PackageInfo extends JDialog {
         pack();
         setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - getHeight() / 2));
         setVisible(true);
+        frame.setMaximumSize(getToolkit().getScreenSize());
     }
 
     private void addEntry(String string, JComponent value) {
