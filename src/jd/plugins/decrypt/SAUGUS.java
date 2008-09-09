@@ -31,8 +31,8 @@ public class SAUGUS extends PluginForDecrypt {
     private Pattern patternSupported_folder = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternSupported_folder.pattern() + "|" + patternSupported_go.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public SAUGUS() {
-        super();
+    public SAUGUS(String cfgName){
+        super(cfgName);
     }
 
     @Override

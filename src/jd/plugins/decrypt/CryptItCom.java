@@ -87,8 +87,8 @@ public class CryptItCom extends PluginForDecrypt {
         return requestInfo;
     }
 
-    public CryptItCom() {
-        super();
+    public CryptItCom(String cfgName){
+        super(cfgName);
     }
 
     private ArrayList<DownloadLink> containerStep(CryptedLink param) {

@@ -38,8 +38,8 @@ public class ClipfishDe extends PluginForDecrypt {
     private static final String CODER = "ToKaM";
     private static final String HOST = "clipfish.de";
 
-    public ClipfishDe() {
-        super();
+    public ClipfishDe(String cfgName){
+        super(cfgName);
     }
 
     @Override

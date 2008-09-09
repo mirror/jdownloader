@@ -29,8 +29,8 @@ public class Tinyurl extends PluginForDecrypt {
     static private String host = "tinyurl.com";
     Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+", Pattern.CASE_INSENSITIVE);
 
-    public Tinyurl() {
-        super();
+    public Tinyurl(String cfgName){
+        super(cfgName);
     }
 
     @Override

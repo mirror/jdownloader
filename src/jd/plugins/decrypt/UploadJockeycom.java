@@ -30,8 +30,8 @@ public class UploadJockeycom extends PluginForDecrypt {
     static private final String HOST = "uploadjockey.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
 
-    public UploadJockeycom() {
-        super();
+    public UploadJockeycom(String cfgName){
+        super(cfgName);
     }
 
     @Override

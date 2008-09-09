@@ -37,8 +37,8 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
     private Pattern patternDLC = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
     private Pattern patternPW = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
 
-    public FuckTheIndustryRu() {
-        super();
+    public FuckTheIndustryRu(String cfgName){
+        super(cfgName);
     }
 
     @Override

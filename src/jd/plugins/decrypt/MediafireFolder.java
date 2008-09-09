@@ -29,8 +29,8 @@ public class MediafireFolder extends PluginForDecrypt {
     static private String host = "mediafire.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
-    public MediafireFolder() {
-        super();
+    public MediafireFolder(String cfgName){
+        super(cfgName);
     }
 
     @Override

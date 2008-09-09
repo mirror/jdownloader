@@ -34,8 +34,8 @@ public class CryptingIt extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?crypting\\.it/index\\.php\\?p=show&id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public CryptingIt() {
-        super();
+    public CryptingIt(String cfgName){
+        super(cfgName);
     }
 
     @Override

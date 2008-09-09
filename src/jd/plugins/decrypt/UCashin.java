@@ -29,8 +29,8 @@ public class UCashin extends PluginForDecrypt {
     static private String host = "ucash.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ucash\\.in/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    public UCashin() {
-        super();
+    public UCashin(String cfgName){
+        super(cfgName);
     }
 
     @Override

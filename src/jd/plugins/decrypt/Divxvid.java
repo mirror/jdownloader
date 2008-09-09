@@ -38,8 +38,8 @@ public class Divxvid extends PluginForDecrypt {
 
     private Pattern premiumdownloadlocation = Pattern.compile("form name=\"dxp\" action=\"(.*)\" method=\"post\"", Pattern.CASE_INSENSITIVE);
 
-    public Divxvid() {
-        super();
+    public Divxvid(String cfgName){
+        super(cfgName);
         passwords.add("dxd-tivi");
         passwords.add("dxp.divxvid.org");
         passwords.add("dxp");

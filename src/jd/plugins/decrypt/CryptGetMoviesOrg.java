@@ -30,8 +30,8 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
     private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/\\d+", Pattern.CASE_INSENSITIVE);
     private static Vector<String> passwords = new Vector<String>();
 
-    public CryptGetMoviesOrg() {
-        super();
+    public CryptGetMoviesOrg(String cfgName){
+        super(cfgName);
         passwords.add("www.get-movies.6x.to");
         passwords.add("get-movies.6x.to");
         passwords.add("get-movies.org");

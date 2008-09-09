@@ -75,8 +75,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private static Vector<String> passwords = new Vector<String>();
 
-    public Serienjunkies() {
-        super();
+    public Serienjunkies(String cfgName){
+        super(cfgName);
         setConfigElements();
         passwords.add("serienjunkies.dl.am");
         passwords.add("serienjunkies.org");

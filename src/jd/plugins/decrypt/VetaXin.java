@@ -35,8 +35,8 @@ public class VetaXin extends PluginForDecrypt {
     static private final Pattern patternSupported_Page = Pattern.compile("http://[\\w\\.]*?vetax\\.in/view/\\d+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Page.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public VetaXin() {
-        super();
+    public VetaXin(String cfgName){
+        super(cfgName);
     }
 
     @Override

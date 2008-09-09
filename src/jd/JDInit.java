@@ -566,24 +566,125 @@ public class JDInit {
     }
 
     @SuppressWarnings("unchecked")
-    public Vector<PluginForDecrypt> loadPluginForDecrypt() {
-        Vector<PluginForDecrypt> plugins = new Vector<PluginForDecrypt>();
+    public ArrayList<DecryptPluginWrapper> loadPluginForDecrypt() {
+        ArrayList<DecryptPluginWrapper> plwrappers = new ArrayList<DecryptPluginWrapper>();
+        plwrappers.add(new DecryptPluginWrapper("animea.net", "AnimeANet", "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html|http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("best-movies.us", "BestMovies", "http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("bm4u.in", "Bm4uin", "http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("cine.to", "CineTo", "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("collectr.net", "Collectr", "http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*"));
+        plwrappers.add(new DecryptPluginWrapper("crypt-it.com", "CryptItCom", "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("crypting.it", "CryptingIt", "http://[\\w.]*?crypting\\.it/index\\.php\\?p=show&id=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("cryptlink.ws", "Cryptlinkws", "http://[\\w\\.]*?cryptlink\\.ws/\\?file=[a-zA-Z0-9]+|http://[\\w\\.]*?cryptlink\\.ws/crypt\\.php\\?file=[0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("clipfish.de", "ClipfishDe", "http://[\\w\\.]*?clipfish\\.de/n\\.php/channel/\\d+/video/(\\d+)|http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?"));
+        plwrappers.add(new DecryptPluginWrapper("daten-bank.org", "Datenbankorg", "http://daten-bank\\.org/go/\\d+/|http://daten-bank\\.org/view/.*?/"));
+        plwrappers.add(new DecryptPluginWrapper("ddl-music.org", "DDLMusicOrg", "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+|http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("ddl-warez.org", "DDLWarez", "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+"));
+        plwrappers.add(new DecryptPluginWrapper("doperoms.net", "DoperomsCom", "http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html"));
+        plwrappers.add(new DecryptPluginWrapper("downloads.pes-arena.com", "DownloadsPesArenacom", "http://downloads\\.pes-arena\\.com/\\?id=(\\d+)"));
+        plwrappers.add(new DecryptPluginWrapper("3dl.am", "DreiDlAm", "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("1kh.de", "EinsKhDe", "http://[\\w\\.]*?1kh\\.de/f/[0-9/]+|http://[\\w\\.]*?1kh\\.de/[0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("falinks.com", "FalinksCom", "http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("filefactory.com", "FileFactoryFolder", "http://[\\w\\.]*?filefactory\\.com(/|//)f/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("filehost.it", "FilehostIt", "http://[\\w\\.]*?filehost\\.it/(multi|live)link/checklinks\\.php\\?links=[\\d]+"));
+        plwrappers.add(new DecryptPluginWrapper("filer.net", "Filer", "http://[\\w\\.]*?filer.net/folder/.+/.*"));
+        plwrappers.add(new DecryptPluginWrapper("File-Upload.net", "FileUploadnet", "http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)"));
+        plwrappers.add(new DecryptPluginWrapper("flyload.net", "FlyLoadnet", "http://[\\w\\.]*?flyload\\.net/safe\\.php\\?id=[a-zA-Z0-9]+|http://[\\w\\.]*?flyload\\.net/request_window\\.php\\?(\\d+)|http://[\\w\\.]*?flyload\\.net/download\\.php\\?view\\.(\\d+)"));
+        plwrappers.add(new DecryptPluginWrapper("frozen-roms.in", "FrozenRomsIn", "http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("ftp2share.net", "ftp2share", "http://[\\w\\.]*?ftp2share\\.net/folder/[a-zA-Z0-9\\-]+/(.*?)|http://[\\w\\.]*?ftp2share\\.net/file/[a-zA-Z0-9\\-]+/(.*?)"));
+        plwrappers.add(new DecryptPluginWrapper("fucktheindustry.ru", "FuckTheIndustryRu", "http://[\\w\\.]*?92\\.241\\.164\\.63/file\\.php\\?id=[\\d]+"));
+        plwrappers.add(new DecryptPluginWrapper("fyad.org", "Fyadorg", "http://[\\w\\.]*?fyad\\.org/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("Gamez.am", "Gamezam", "javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)"));
+        plwrappers.add(new DecryptPluginWrapper("gapping.org", "GappingOrg", "http://[\\w\\.]*?gapping\\.org/index\\.php\\?folderid=\\d+|http://[\\w\\.]*?gapping\\.org/f/\\d+\\.html|http://[\\w\\.]*?gapping\\.org/file\\.php\\?id=.+|http://[\\w\\.]*?gapping\\.org/g.*?\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("gwarez.cc", "Gwarezcc", "http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/"));
+        plwrappers.add(new DecryptPluginWrapper("Hider.ath.cx", "HiderAthCx", "http://[\\w\\.]*?hider\\.ath\\.cx/\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("hideurl.biz", "Hideurlbiz", "http://[\\w\\.]*?hideurl\\.biz/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("hubupload.com", "Hubuploadcom", "http://[\\w\\.]*?hubupload\\.com/files/[a-zA-Z0-9]+/[a-zA-Z0-9]+/(.*)"));
+        plwrappers.add(new DecryptPluginWrapper("imagefap.com", "ImagefapCom", "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)"));
+        plwrappers.add(new DecryptPluginWrapper("is.gd", "IsGd", "http://[\\w\\.]*?is\\.gd/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("knoffl.com", "KnofflCom", "http://[\\w\\.]*?knoffl\\.com/u/\\w+"));
+        plwrappers.add(new DecryptPluginWrapper("leecher.ws", "LeecherWs", "http://[\\w\\.]*?leecher\\.ws/(folder/.+|out/.+/[0-9]+)"));
+        plwrappers.add(new DecryptPluginWrapper("LinkBank.eu", "LinkBankeu", "http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("linkbucks.com", "LinkBucks", "http://[\\w\\.]*?linkbucks\\.com/link/[0-9a-zA-Z]+/\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("link-protector.com", "LinkProtectorCom", "http://[\\w\\.]*?link-protector\\.com/[\\d]{6}.*"));
+        plwrappers.add(new DecryptPluginWrapper("linkprotect.in", "LinkProtectIn", "http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[a-zA-Z0-9]{1,50}"));
+        plwrappers.add(new DecryptPluginWrapper("linksafe.ws", "LinkSafeWs", "http://[\\w\\.]*?linksafe\\.ws/files/[a-zA-Z0-9]{4}-[\\d]{5}-[\\d]"));
+        plwrappers.add(new DecryptPluginWrapper("Linksave.in", "LinksaveIn", "http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("www.linkshield.com", "Linkshield", "http://[\\w\\.]*?linkshield\\.com/[sc]/[\\d]+_[\\d]+"));
+        plwrappers.add(new DecryptPluginWrapper("lix.in", "Lixin", "http://[\\w\\.]*?lix\\.in/[-]{0,1}[a-zA-Z0-9]{6,10}"));
+        plwrappers.add(new DecryptPluginWrapper("loading.cc", "LoadingCc", "http://.*?loading\\.cc/detail\\.php\\?id=[0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("mediafire.com", "MediafireFolder", "http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+"));
+        plwrappers.add(new DecryptPluginWrapper("mirrorit.de", "MirrorItDe", "http://[\\w\\.]*?mirrorit\\.de/\\?id=[a-zA-Z0-9]{16}"));
+        plwrappers.add(new DecryptPluginWrapper("myref.de", "MyRef", "http://[\\w\\.]*?myref\\.de(\\/){0,1}\\?\\d{0,10}"));
+        plwrappers.add(new DecryptPluginWrapper("myspace.com", "MySpaceCom", "http://[\\w\\.]*?myspace\\.(com|de)/.+"));
+        plwrappers.add(new DecryptPluginWrapper("myup.cc", "Myupcc", "http://[\\w\\.]*?myup\\.cc/link-[a-zA-Z0-9]+\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("myvideo.de", "MyvideoDe", "http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/"));
+        plwrappers.add(new DecryptPluginWrapper("netfolder.in", "NetfolderIn", "http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}|http://[\\w\\.]*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?"));
+        plwrappers.add(new DecryptPluginWrapper("newzfind.com", "NewzFindCom", "http://[\\w\\.]*?newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/.+"));
+        plwrappers.add(new DecryptPluginWrapper("Protect.Tehparadox.com", "ProtectTehparadoxcom", "http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!"));
+        plwrappers.add(new DecryptPluginWrapper("raidrush.org", "RaidrushOrg", "http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("rapidlayer.in", "Rapidlayerin", "http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("rapidsafe.de", "RapidsafeDe", "http://.+rapidsafe\\.de"));
+        plwrappers.add(new DecryptPluginWrapper("rapidsafe.net", "Rapidsafenet", "http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*"));
+        plwrappers.add(new DecryptPluginWrapper("rapidshare.com", "RapidshareComFolder", "http://[\\w\\.]*?rapidshare.com/users/.+"));
+        plwrappers.add(new DecryptPluginWrapper("Rapidshark.net", "rapidsharknet", "http://[\\w\\.]*?rapidshark\\.net/(?!safe\\.php\\?id=)[a-zA-Z0-9]+|http://[\\w\\.]*?rapidshark\\.net/safe\\.php\\?id=[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("rapidspread.com", "RapidSpreadCom", "http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+"));
+        plwrappers.add(new DecryptPluginWrapper("r-b-a.de", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/(index\\.php\\?ID=4101&(amp;)?BATTLE=\\d+(&sid=\\w+)?)|http://[\\w\\.]*?r-b-a\\.de/index\\.php\\?ID=4100(&direction=last)?&MEMBER=\\d+(&sid=\\w+)?"));
+        plwrappers.add(new DecryptPluginWrapper("redirect.wayaround.org", "RedirectWayaroundorg", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)"));
+        plwrappers.add(new DecryptPluginWrapper("relink.us", "RelinkUs", "http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("rlslog.net", "Rlslog", "(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/))"));
+        plwrappers.add(new DecryptPluginWrapper("RnB4U.in", "RnB4Uin", "http://[\\w\\.]*?rnb4u\\.in/download\\.php\\?action=kategorie&kat_id=\\d+|http://[\\w\\.]*?rnb4u\\.in/download\\.php\\?action=popup&kat_id=\\d+&fileid=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("rock-house.in", "RockHouseIn", "http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("romhustler.net", "RomHustlerNet", "(http://[\\w.]*?romhustler\\.net/rom/.*?/\\d+/.+)|(/rom/.*?/\\d+/.+)"));
+        plwrappers.add(new DecryptPluginWrapper("roms.zophar.net", "RomsZopharNet", "http://[\\w.]*?roms\\.zophar\\.net/(.+)/(.+\\.7z)"));
+        plwrappers.add(new DecryptPluginWrapper("romscentral.com", "RomscentralCom", "(http://[\\w.]*?romscentral\\.com/(.+)/(.+\\.htm))|(onclick=\"return popitup\\('(.+\\.htm)'\\))"));
+        plwrappers.add(new DecryptPluginWrapper("rs.hoerbuch.in", "RsHoerbuchin", "http://rs\\.hoerbuch\\.in/com-[\\w]{11}/.*|http://rs\\.hoerbuch\\.in/de-[\\w]{11}/.*|http://rs\\.hoerbuch\\.in/u[\\w]{6}.html"));
+        plwrappers.add(new DecryptPluginWrapper("rs-layer.com", "RsLayerCom", "http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("rsprotect.com", "RsprotectCom", "http://[\\w\\.]*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*"));
+        plwrappers.add(new DecryptPluginWrapper("rs-protect.freehoster.ch", "Rsprotectfreehosterch", "http://[\\w\\.]*?rs-protect\\.freehoster\\.ch/r[sc]-[a-zA-Z0-9]{11}/.*"));
+        plwrappers.add(new DecryptPluginWrapper("rs.xxx-blog.org", "RsXXXBlog", "http://[\\w\\.]*?xxx-blog\\.org/[a-zA-Z0-9]{1,4}-[a-zA-Z0-9]{10,40}/.*"));
+        plwrappers.add(new DecryptPluginWrapper("rurl.de", "RurlDe", "http://[\\w\\.]*?rurl\\.de/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("rurl.org", "RurlOrg", "http://[\\w\\.]*?rurl\\.org/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("saug.us", "SAUGUS", "http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html|http://[\\w\\.]*?saug\\.us/go.+\\.php"));
+        plwrappers.add(new DecryptPluginWrapper("save.raidrush.ws", "SaveRaidrushWs", "http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("scum.in", "ScumIn", "http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+"));
+        plwrappers.add(new DecryptPluginWrapper("secured.in", "Secured", "http://[\\w\\.]*?secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("se-cur.net", "SeCurNet", "http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+"));
+        plwrappers.add(new DecryptPluginWrapper("Serienjunkies.org", "Serienjunkies", null,PluginWrapper.LOAD_ON_INIT));
+        plwrappers.add(new DecryptPluginWrapper("sexuria.com", "Sexuriacom", "http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("sharebee.com", "SharebeeCom", "http://[\\w\\.]*?sharebee\\.com/[a-zA-Z0-9]{8}"));
+        plwrappers.add(new DecryptPluginWrapper("shareonall.com", "ShareOnAll", "http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm"));
+        plwrappers.add(new DecryptPluginWrapper("shareprotect.t-w.at", "ShareProtect", "http://shareprotect\\.t-w\\.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}"));
+        plwrappers.add(new DecryptPluginWrapper("share.rockt.es", "ShareRocktEs", "http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+|http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)"));
+        plwrappers.add(new DecryptPluginWrapper("stacheldraht.to", "StacheldrahtTo", "http://[\\w\\.]*?stacheldraht\\.to/index\\.php\\?folder=.+"));
+        plwrappers.add(new DecryptPluginWrapper("Stealth.to", "Stealth", "http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+|\\?go\\=captcha&id=[a-zA-Z0-9]+)"));
+        plwrappers.add(new DecryptPluginWrapper("technorocker.info", "TechnorockerInfo", "http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("tinyload.com", "TinyLoadCom", "http://[\\w\\.]*?tinyload\\.com/\\w+"));
+        plwrappers.add(new DecryptPluginWrapper("tinyurl.com", "Tinyurl", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+"));
+        plwrappers.add(new DecryptPluginWrapper("ucash.in", "UCashin", "http://[\\w\\.]*?ucash\\.in/([a-zA-Z0-9]+)"));
+        plwrappers.add(new DecryptPluginWrapper("Underground CMS", "UCMS", "(http://[\\w\\.]*?saugking\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?oxygen-warez\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?filefox\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?alphawarez\\.us/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?pirate-loads\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?fettrap\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?omega-music\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?hardcoremetal\\.biz/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?flashload\\.org/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?twin-warez\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?oneload\\.org/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?steelwarez\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?fullstreams\\.info/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?lionwarez\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?1dl\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?chrome-database\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?oneload\\.org/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?youwarez\\.biz/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?saugking\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?leetpornz\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?freefiles4u\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?dark-load\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?crimeland\\.de/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?get-warez\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?meinsound\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?projekt-tempel-news\\.de\\.vu/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?datensau\\.org/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?musik\\.am/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?spreaded\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?relfreaks\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?babevidz\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?serien24\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?porn-freaks\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?xxx-4-free\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?porn-traffic\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?chili-warez\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?game-freaks\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?isos\\.at/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?your-load\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?mov-world\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?xtreme-warez\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?sceneload\\.to/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?oxygen-warez\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?epicspeedload\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?serienfreaks\\.to/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?serienfreaks\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?warez-load\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?ddl-scene\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?mp3king\\.cinipac-hosting\\.biz/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?xwebb\\.extra\\.hu/1dl/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?wii-reloaded\\.ath\\.cx/sites/epic/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?wankingking\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?projekt-tempel-news\\.org/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?porn-ox\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?music-dome\\.cc/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?sound-load\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?hoerspiele\\.to/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?jim2008\\.extra\\.hu/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?ex-yu\\.extra\\.hu/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?firefiles\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?gez-load\\.net/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?wrzunlimited\\.1gb\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?streamload\\.in/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?toxic\\.to/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?mp3z\\.to/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?sexload\\.to/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?sound-load\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?sfulc\\.exofire\\.net/cms/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?fickdiehure\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?dream-team\\.bz/cms/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?omega-warez\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?ddl-scene\\.cc/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?xxxstreams\\.org/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?scene-warez\\.com/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))|(http://[\\w\\.]*?dokuh\\.tv/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))"));
+        plwrappers.add(new DecryptPluginWrapper("uploadjockey.com", "UploadJockeycom", "http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)"));
+        plwrappers.add(new DecryptPluginWrapper("up.picoasis.net", "UpPicoasisNet", "http://up\\.picoasis\\.net/[\\d]+"));
+        plwrappers.add(new DecryptPluginWrapper("urlcash.net", "URLCash", "http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)"));
+        plwrappers.add(new DecryptPluginWrapper("urlshield.net", "UrlShieldnet", "http://[\\w\\.]*?urlshield\\.net/l/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("vetax.in", "VetaXin", "http://[\\w\\.]*?vetax\\.in/view/\\d+|http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("web06.de", "Web06de", "http://[\\w\\.]*?web06\\.de/\\?user=\\d+site=(.*)"));
+        plwrappers.add(new DecryptPluginWrapper("wii-reloaded.ath.cx", "Wiireloaded", "http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+"));
+        plwrappers.add(new DecryptPluginWrapper("chaoz.ws", "Woireless6xTo", "http://[\\w.]*?chaoz\\.ws/woireless/page/album_\\d+\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("Wordpress Parser", "Wordpress", "http://[\\w\\.]*?(hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+|movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*"));
+        plwrappers.add(new DecryptPluginWrapper("xaili.com", "Xailicom", "http://[\\w\\.]*?xaili\\.com/\\?site=protect\\&id=[0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("xink.it", "XinkIt", "http://[\\w\\.]*?xink\\.it/f-[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("xlice.net", "XliceNet", "http://[\\w\\.]*?xlice\\.net/download/[a-z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("xlink.in", "Xlinkin", "http://[\\w\\.]*?xlink\\.in/\\?v=[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("xrl.us", "XrlUs", "http://[\\w\\.]*?xrl\\.us/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("xup.in", "XupInFolder", "http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?"));
+        plwrappers.add(new DecryptPluginWrapper("youporn.com", "YouPornCom", "http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.+/?|http://[\\w\\.]*?youporn\\.com/(.*?page=\\d+)"));
+        plwrappers.add(new DecryptPluginWrapper("yourfiles.biz", "YourFilesBizFolder", "http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" brurl=\".*?\" convertto=\".*?\" comment=\".*?\" \\>"));
 
-        JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
-        logger.finer("Load Decrypt Plugins");
-        Iterator iterator = Service.providers(PluginForDecrypt.class, jdClassLoader);
-
-        while (iterator.hasNext()) {
-            try {
-                PluginForDecrypt p = (PluginForDecrypt) iterator.next();
-                logger.finer("Load " + p);
-                plugins.add(p);
-            } catch (Exception e) {
-                logger.info("caught");
-                e.printStackTrace();
-            }
-        }
-        return plugins;
+        
+        return plwrappers;
     }
 
     public ArrayList<HostPluginWrapper> loadPluginForHost() {

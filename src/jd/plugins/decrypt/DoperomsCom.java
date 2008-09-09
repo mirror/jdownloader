@@ -40,8 +40,8 @@ public class DoperomsCom extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternFilesize = Pattern.compile("<br>Filesize: ([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))<br>", Pattern.CASE_INSENSITIVE);
 
-    public DoperomsCom() {
-        super();
+    public DoperomsCom(String cfgName){
+        super(cfgName);
     }
 
     @Override

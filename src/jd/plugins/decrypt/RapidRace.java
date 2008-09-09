@@ -29,8 +29,8 @@ public class RapidRace extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+", Pattern.CASE_INSENSITIVE);
 
-    public RapidRace() {
-        super();
+    public RapidRace(String cfgName){
+        super(cfgName);
     }
 
     @Override

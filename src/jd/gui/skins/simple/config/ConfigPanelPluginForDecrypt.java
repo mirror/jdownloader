@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
@@ -36,6 +37,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import jd.DecryptPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
@@ -78,11 +80,11 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return pluginsForDecrypt.elementAt(rowIndex).getPluginName();
+                return pluginsForDecrypt.get(rowIndex).getPluginName();
             case 1:
-                return pluginsForDecrypt.elementAt(rowIndex).getVersion();
+                return pluginsForDecrypt.get(rowIndex).getVersion();
             case 2:
-                return pluginsForDecrypt.elementAt(rowIndex).getCoder();
+                return pluginsForDecrypt.get(rowIndex).getCoder();
             }
             return null;
         }
@@ -94,7 +96,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     private Configuration configuration;
 
-    private Vector<PluginForDecrypt> pluginsForDecrypt;
+    private ArrayList<DecryptPluginWrapper> pluginsForDecrypt;
 
     private JTable table;
 
@@ -114,7 +116,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForDecrypt.elementAt(table.getSelectedRow()));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForDecrypt.get(table.getSelectedRow()).getPlugin());
     }
 
     @Override
@@ -132,12 +134,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         table.setModel(internalTableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForDecrypt.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
-            }
-        });
-        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<PluginForDecrypt>(pluginsForDecrypt));
+        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<DecryptPluginWrapper>(pluginsForDecrypt));
 
         TableColumn column = null;
         for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
@@ -175,7 +172,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }
@@ -194,10 +191,10 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     @Override
     public void save() {
-        for (PluginForDecrypt plg : pluginsForDecrypt) {
-            if (plg.getPluginConfig() != null) {
-                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
-            }
-        }
+//        for (PluginForDecrypt plg : pluginsForDecrypt) {
+//            if (plg.getPluginConfig() != null) {
+//                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
+//            }
+//        }
     }
 }

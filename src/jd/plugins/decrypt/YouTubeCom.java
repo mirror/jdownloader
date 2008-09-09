@@ -46,8 +46,8 @@ public class YouTubeCom extends PluginForDecrypt {
 
     static public final Pattern YT_FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    public YouTubeCom() {
-        super();
+    public YouTubeCom(String cfgName){
+        super(cfgName);
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.clearCookies("youtube.com");

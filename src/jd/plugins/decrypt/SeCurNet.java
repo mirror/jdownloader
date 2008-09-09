@@ -29,8 +29,8 @@ public class SeCurNet extends PluginForDecrypt {
     static private final String host = "se-cur.net";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
 
-    public SeCurNet() {
-        super();
+    public SeCurNet(String cfgName){
+        super(cfgName);
     }
 
     @Override

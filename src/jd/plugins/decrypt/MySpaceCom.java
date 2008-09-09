@@ -100,8 +100,8 @@ public class MySpaceCom extends PluginForDecrypt {
      */
     private static final String ENABLE_DL_NAME_MODIFICATION = "MYSPACE_ENABLE_DL_NAME_MODIFICATION";
 
-    public MySpaceCom() {
-        super();
+    public MySpaceCom(String cfgName){
+        super(cfgName);
         setConfigElements();
     }
 

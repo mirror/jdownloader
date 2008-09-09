@@ -9,7 +9,7 @@ public class HostPluginWrapper extends PluginWrapper {
     private static final String AGB_CHECKED = null;
 
     public HostPluginWrapper(String name, String host, String className, String patternSupported, int flags) {
-        super(name, host, className, patternSupported, flags);
+        super(name, host, "jd.plugins.host."+className, patternSupported, flags);
     }
 
     public HostPluginWrapper(String host, String className, String patternSupported, int flags) {
@@ -33,9 +33,6 @@ public class HostPluginWrapper extends PluginWrapper {
         getPluginConfig().save();
     }
 
-    private SubConfiguration getPluginConfig() {
-        String name = getPluginName();
-        return JDUtilities.getSubConfig(name);
-    }
+  
 
 }

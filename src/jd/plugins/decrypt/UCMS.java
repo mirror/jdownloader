@@ -42,8 +42,8 @@ public class UCMS extends PluginForDecrypt {
 
     final static private Pattern patternSupported = UCMS.create_patternSupported();
 
-    public UCMS() {
-        super();
+    public UCMS(String cfgName){
+        super(cfgName);
     }
 
     static private Pattern create_patternSupported() {

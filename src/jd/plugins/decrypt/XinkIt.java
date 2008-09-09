@@ -37,8 +37,8 @@ public class XinkIt extends PluginForDecrypt {
     final static String host = "xink.it";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xink\\.it/f-[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public XinkIt() {
-        super();
+    public XinkIt(String cfgName){
+        super(cfgName);
     }
 
     @Override

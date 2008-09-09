@@ -31,8 +31,8 @@ public class RsprotectCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    public RsprotectCom() {
-        super();
+    public RsprotectCom(String cfgName){
+        super(cfgName);
     }
 
     @Override

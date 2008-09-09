@@ -30,8 +30,8 @@ public class RurlOrg extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rurl\\.org/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public RurlOrg() {
-        super();
+    public RurlOrg(String cfgName){
+        super(cfgName);
     }
 
     @Override

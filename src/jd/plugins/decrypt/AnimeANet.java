@@ -30,8 +30,8 @@ public class AnimeANet extends PluginForDecrypt {
     private Pattern patternSupported_Episode = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternSupported_Series.pattern() + "|" + patternSupported_Episode.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public AnimeANet() {
-        super();
+    public AnimeANet(String cfgName) {
+        super(cfgName);
     }
 
     @Override

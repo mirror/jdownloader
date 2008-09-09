@@ -30,8 +30,8 @@ public class IsGd extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?is\\.gd/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public IsGd() {
-        super();
+    public IsGd(String cfgName){
+        super(cfgName);
     }
 
     @Override

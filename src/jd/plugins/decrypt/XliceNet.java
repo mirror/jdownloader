@@ -30,8 +30,8 @@ public class XliceNet extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xlice\\.net/download/[a-z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public XliceNet() {
-        super();
+    public XliceNet(String cfgName){
+        super(cfgName);
     }
 
     @Override

@@ -40,8 +40,8 @@ public class RbaDe extends PluginForDecrypt {
 
     private static final Pattern REGEX_DOWNLOADLINK = Pattern.compile("(download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&(amp;)?PATH=\\d)");
 
-    public RbaDe() {
-        super();
+    public RbaDe(String cfgName){
+        super(cfgName);
     }
 
     @Override

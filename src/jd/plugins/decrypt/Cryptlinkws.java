@@ -38,8 +38,8 @@ public class Cryptlinkws extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public Cryptlinkws() {
-        super();
+    public Cryptlinkws(String cfgName){
+        super(cfgName);
     }
 
     @Override

@@ -31,8 +31,8 @@ public class RapidshareComFolder extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare.com/users/.+", Pattern.CASE_INSENSITIVE);
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-    public RapidshareComFolder() {
-        super();
+    public RapidshareComFolder(String cfgName){
+        super(cfgName);
     }
 
     @Override

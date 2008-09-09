@@ -35,8 +35,8 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?link-protector\\.com/[\\d]{6}.*", Pattern.CASE_INSENSITIVE);
 
-    public LinkProtectorCom() {
-        super();
+    public LinkProtectorCom(String cfgName){
+        super(cfgName);
     }
 
     private String decryptCode(String decryptedLink, int charCode) {

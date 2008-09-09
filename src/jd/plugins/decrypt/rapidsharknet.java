@@ -38,8 +38,8 @@ public class rapidsharknet extends PluginForDecrypt {
     private static final Pattern patternLink_safephp = Pattern.compile("http://[\\w\\.]*?rapidshark\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternLink_direct.pattern() + "|" + patternLink_safephp.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public rapidsharknet() {
-        super();
+    public rapidsharknet(String cfgName){
+        super(cfgName);
     }
 
     @Override

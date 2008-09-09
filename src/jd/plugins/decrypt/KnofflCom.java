@@ -28,8 +28,8 @@ public class KnofflCom extends PluginForDecrypt {
     static private final String host = "knoffl.com";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?knoffl\\.com/u/\\w+", Pattern.CASE_INSENSITIVE);
 
-    public KnofflCom() {
-        super();
+    public KnofflCom(String cfgName){
+        super(cfgName);
     }
 
     @Override

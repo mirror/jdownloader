@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
 import jd.parser.HTMLParser;
@@ -139,20 +140,20 @@ public class DistributeData extends ControlBroadcaster {
             }
 
             boolean canDecrypt = false;
-            Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+            Iterator<DecryptPluginWrapper> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
             while (iteratorDecrypt.hasNext()) {
-                PluginForDecrypt pDecrypt = iteratorDecrypt.next();
+                DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
                 if (pDecrypt.canHandle(url)) {
                     try {
-                        pDecrypt = pDecrypt.getClass().newInstance();
+                        PluginForDecrypt plg = (PluginForDecrypt)pDecrypt.getNewPluginInstance();
 
-                        CryptedLink[] decryptableLinks = pDecrypt.getDecryptableLinks(url);
-                        url = pDecrypt.cutMatches(url);
+                        CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
+                        url = plg.cutMatches(url);
                         /* reicht die Decrypter Passwörter weiter */
                         for (CryptedLink clink : decryptableLinks) {
                             clink.setDecrypterPassword(link.getDecrypterPassword());
                         }
-                        ArrayList<DownloadLink> links = pDecrypt.decryptLinks(decryptableLinks);
+                        ArrayList<DownloadLink> links = plg.decryptLinks(decryptableLinks);
 
                         // Reicht die passwörter weiter
                         for (int t = 0; t < links.size(); t++) {
@@ -304,23 +305,24 @@ public class DistributeData extends ControlBroadcaster {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (JDUtilities.getPluginsForDecrypt() == null) { return decryptedLinks; }
-        Iterator<PluginForDecrypt> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+        Iterator<DecryptPluginWrapper> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
         while (iteratorDecrypt.hasNext()) {
-            PluginForDecrypt pDecrypt = iteratorDecrypt.next();
+            DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
             if (pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
-                    pDecrypt = pDecrypt.getClass().newInstance();
+                    PluginForDecrypt plg = (PluginForDecrypt)pDecrypt.getNewPluginInstance();
 
-                    CryptedLink[] decryptableLinks = pDecrypt.getDecryptableLinks(pDecrypt.isAcceptOnlyURIs() ? data : orgData);
-                    if (pDecrypt.isAcceptOnlyURIs()) {
 
-                        data = pDecrypt.cutMatches(data);
+                    CryptedLink[] decryptableLinks = plg.getDecryptableLinks(pDecrypt.isAcceptOnlyURIs() ? data : orgData);
+                    if (plg.isAcceptOnlyURIs()) {
+
+                        data =plg.cutMatches(data);
                     } else {
-                        orgData = pDecrypt.cutMatches(orgData);
+                        orgData = plg.cutMatches(orgData);
                     }
 
-                    decryptedLinks.addAll(pDecrypt.decryptLinks(decryptableLinks));
+                    decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
 
                 } catch (Exception e) {
 

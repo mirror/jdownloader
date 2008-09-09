@@ -582,7 +582,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
                     removePackage(lastDownloadFinished.getFilePackage());
@@ -1025,22 +1025,21 @@ public class JDController implements ControlListener, UIListener {
     // return filePackage.getDownloadLinks();
     // }
 
-    // public Vector<DownloadLink> getPackageFiles(FilePackage filePackage,
-    // Vector<DownloadLink> links) {
-    // Vector<DownloadLink> ret = new Vector<DownloadLink>();
-    // // ret.add(downloadLink);
-    //
-    // Iterator<DownloadLink> iterator = links.iterator();
-    // DownloadLink nextDownloadLink = null;
-    // while (iterator.hasNext()) {
-    // nextDownloadLink = iterator.next();
-    //
-    // if (filePackage == nextDownloadLink.getFilePackage()) {
-    // ret.add(nextDownloadLink);
-    // }
-    // }
-    // return ret;
-    // }
+    public Vector<DownloadLink> getPackageFiles(FilePackage filePackage, Vector<DownloadLink> links) {
+        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        // ret.add(downloadLink);
+
+        Iterator<DownloadLink> iterator = links.iterator();
+        DownloadLink nextDownloadLink = null;
+        while (iterator.hasNext()) {
+            nextDownloadLink = iterator.next();
+
+            if (filePackage == nextDownloadLink.getFilePackage()) {
+                ret.add(nextDownloadLink);
+            }
+        }
+        return ret;
+    }
 
     // /**
     // * Gibt die Anzahl der fertigen Downloads im package zurück
@@ -1888,10 +1887,10 @@ public class JDController implements ControlListener, UIListener {
      * @param newLinks
      */
     /*
-     * private void abortDeletedLink(Vector<DownloadLink> oldLinks,
-     * Vector<DownloadLink> newLinks) { logger.info("abort " + oldLinks.size() +
-     * " - " + newLinks.size()); if (watchdog == null) return; for (int i = 0; i
-     * < oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
+     * private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink>
+     * newLinks) { logger.info("abort " + oldLinks.size() + " - " +
+     * newLinks.size()); if (watchdog == null) return; for (int i = 0; i <
+     * oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
      * -1) { // Link gefunden der entfernt wurde logger.finer("Found link that
      * hast been removed: " + oldLinks.elementAt(i)); //
      * oldLinks.elementAt(i).setAborted(true);

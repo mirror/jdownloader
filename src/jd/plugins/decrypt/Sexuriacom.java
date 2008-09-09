@@ -35,8 +35,8 @@ public class Sexuriacom extends PluginForDecrypt {
 
     private Browser br;
 
-    public Sexuriacom() {
-        super();
+    public Sexuriacom(String cfgName){
+        super(cfgName);
     }
 
     @Override

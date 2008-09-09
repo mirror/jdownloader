@@ -41,8 +41,8 @@ public class DreiDlAm extends PluginForDecrypt {
     private final static Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern() + "|" + patternSupported_3.pattern(), Pattern.CASE_INSENSITIVE);
     private String password;
 
-    public DreiDlAm() {
-        super();
+    public DreiDlAm(String cfgName){
+        super(cfgName);
     }
 
     private void decryptFromDownload(String parameter) throws IOException, DecrypterException {

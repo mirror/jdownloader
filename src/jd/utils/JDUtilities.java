@@ -88,6 +88,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
+import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
 import jd.JDFileFilter;
@@ -180,7 +181,7 @@ public class JDUtilities {
     public static Logger logger = JDUtilities.getLogger();
 
     
-    private static Vector<PluginForDecrypt> pluginsForDecrypt = null;
+    private static ArrayList<DecryptPluginWrapper> pluginsForDecrypt = null;
 
     private static ArrayList<HostPluginWrapper> pluginsForHost = null;
 
@@ -1413,8 +1414,8 @@ public class JDUtilities {
      * 
      * @return Plugins zum Entschlüsseln
      */
-    public static Vector<PluginForDecrypt> getPluginsForDecrypt() {
-        if (pluginsForDecrypt == null) pluginsForDecrypt = new Vector<PluginForDecrypt>();
+    public static ArrayList<DecryptPluginWrapper> getPluginsForDecrypt() {
+        if (pluginsForDecrypt == null) pluginsForDecrypt = new ArrayList<DecryptPluginWrapper>();
         return pluginsForDecrypt;
     }
 
@@ -1960,7 +1961,7 @@ public class JDUtilities {
     }
 
    
-    public static void setPluginForDecryptList(Vector<PluginForDecrypt> loadPlugins) {
+    public static void setPluginForDecryptList(ArrayList<DecryptPluginWrapper> loadPlugins) {
         pluginsForDecrypt = loadPlugins;
 
     }

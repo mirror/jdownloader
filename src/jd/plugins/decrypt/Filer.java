@@ -28,8 +28,8 @@ public class Filer extends PluginForDecrypt {
     static private String host = "filer.net";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/.+/.*", Pattern.CASE_INSENSITIVE);
 
-    public Filer() {
-        super();
+    public Filer(String cfgName){
+        super(cfgName);
     }
 
     @Override

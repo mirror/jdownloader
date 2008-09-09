@@ -51,8 +51,8 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return Ein Vector mit Klartext-links
      */
 
-    public PluginForDecrypt() {
-        super(null);
+    public PluginForDecrypt(String cfgName) {
+        super(cfgName);
         br = new Browser();
     }
 

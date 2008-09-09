@@ -1,16 +1,19 @@
 package jd;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.config.SubConfiguration;
 import jd.plugins.Plugin;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class PluginWrapper {
+public class PluginWrapper implements Comparable {
 
     public static final int LOAD_ON_INIT = 1 << 1;
     private Pattern pattern;
@@ -20,9 +23,13 @@ public class PluginWrapper {
     private Plugin loadedPLugin = null;
     private boolean acceptOnlyURIs;
     private String pluginName;
+    private static URLClassLoader CL;
 
     public PluginWrapper(String name, String host, String className, String pattern, int flags) {
-        this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+
+        if (pattern != null) {
+            this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        }
         this.host = host;
         this.className = className;
         this.pluginName = name;
@@ -60,10 +67,11 @@ public class PluginWrapper {
 
         try {
 
-            URLClassLoader cl = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("plugins").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("plugins").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
 
             System.out.println(JDUtilities.getResourceFile("").toURI().toURL() + " - " + getClassName());
-            Class plgClass = cl.loadClass("jd.plugins.host." + getClassName());
+            logger.finer("load plugin: "+getClassName());
+            Class plgClass = CL.loadClass(getClassName());
 
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
@@ -75,7 +83,7 @@ public class PluginWrapper {
             this.loadedPLugin = (Plugin) con.newInstance(new Object[] { host });
             loadedPLugin.setHost(host);
             loadedPLugin.setSupportedPattern(pattern);
-            logger.finer("loaded PLugin " + "jd.plugins.host." + getClassName());
+          
             return loadedPLugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
@@ -89,7 +97,7 @@ public class PluginWrapper {
     }
 
     public Object getVersion() {
-        return this.isLoaded() ? getPlugin().getVersion() : "n.A.";
+        return this.isLoaded() ? getPlugin().getVersion() : JDLocale.L("plugin.system.notloaded", "idle");
     }
 
     public Object getCoder() {
@@ -121,5 +129,41 @@ public class PluginWrapper {
 
     public void setPluginName(String pluginName) {
         this.pluginName = pluginName;
+    }
+
+    public SubConfiguration getPluginConfig() {
+        String name = getPluginName();
+        return JDUtilities.getSubConfig(name);
+    }
+
+    public Plugin getNewPluginInstance() {
+        Plugin plg = getPlugin();
+        try {
+            return plg.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
+        } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (SecurityException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InstantiationException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (NoSuchMethodException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
+
+    }
+
+    public int compareTo(Object o) {
+        return getHost().compareTo(((PluginWrapper) o).getHost());
     }
 }

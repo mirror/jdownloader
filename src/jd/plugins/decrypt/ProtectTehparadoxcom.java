@@ -31,8 +31,8 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!", Pattern.CASE_INSENSITIVE);
 
-    public ProtectTehparadoxcom() {
-        super();
+    public ProtectTehparadoxcom(String cfgName){
+        super(cfgName);
     }
 
     @Override

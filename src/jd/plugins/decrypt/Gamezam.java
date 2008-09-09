@@ -31,8 +31,8 @@ public class Gamezam extends PluginForDecrypt {
     static private final String host = "Gamez.am";
     static private final Pattern patternSupported = Pattern.compile("javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", Pattern.CASE_INSENSITIVE);
 
-    public Gamezam() {
-        super();
+    public Gamezam(String cfgName){
+        super(cfgName);
         this.setAcceptOnlyURIs(false);
     }
 

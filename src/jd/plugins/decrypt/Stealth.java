@@ -40,8 +40,8 @@ public class Stealth extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+|\\?go\\=captcha&id=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    public Stealth() {
-        super();
+    public Stealth(String cfgName){
+        super(cfgName);
     }
 
     @Override

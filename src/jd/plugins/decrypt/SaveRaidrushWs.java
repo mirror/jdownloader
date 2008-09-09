@@ -28,8 +28,8 @@ public class SaveRaidrushWs extends PluginForDecrypt {
     static private final String host = "save.raidrush.ws";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public SaveRaidrushWs() {
-        super();
+    public SaveRaidrushWs(String cfgName){
+        super(cfgName);
     }
 
     @Override

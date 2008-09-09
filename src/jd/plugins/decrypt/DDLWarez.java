@@ -104,8 +104,8 @@ public class DDLWarez extends PluginForDecrypt {
 
     public static Integer Worker_Delay = 250;
 
-    public DDLWarez() {
-        super();
+    public DDLWarez(String cfgName){
+        super(cfgName);
     }
 
     @Override

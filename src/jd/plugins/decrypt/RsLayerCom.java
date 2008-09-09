@@ -38,8 +38,8 @@ public class RsLayerCom extends PluginForDecrypt {
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
 
-    public RsLayerCom() {
-        super();
+    public RsLayerCom(String cfgName){
+        super(cfgName);
     }
 
     private boolean add_container(String cryptedLink, String ContainerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {

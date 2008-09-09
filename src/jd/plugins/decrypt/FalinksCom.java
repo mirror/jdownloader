@@ -34,8 +34,8 @@ public class FalinksCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public FalinksCom() {
-        super();
+    public FalinksCom(String cfgName){
+        super(cfgName);
     }
 
     @Override

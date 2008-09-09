@@ -30,8 +30,8 @@ public class LoadingCc extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://.*?loading\\.cc/detail\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public LoadingCc() {
-        super();
+    public LoadingCc(String cfgName){
+        super(cfgName);
     }
 
     @Override

@@ -271,8 +271,8 @@ public class Secured extends PluginForDecrypt {
 
     private String cryptedLink;
 
-    public Secured() {
-        super();
+    public Secured(String cfgName){
+        super(cfgName);
     }
 
     public String decryptId(String id) throws IOException {

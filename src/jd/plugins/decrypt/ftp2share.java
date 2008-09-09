@@ -34,8 +34,8 @@ public class ftp2share extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public ftp2share() {
-        super();
+    public ftp2share(String cfgName){
+        super(cfgName);
     }
 
     @Override

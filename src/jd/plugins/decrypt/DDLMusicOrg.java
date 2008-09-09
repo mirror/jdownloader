@@ -35,8 +35,8 @@ public class DDLMusicOrg extends PluginForDecrypt {
     private static final Pattern patternLink_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternLink_Main.pattern() + "|" + patternLink_Crypt.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public DDLMusicOrg() {
-        super();
+    public DDLMusicOrg(String cfgName){
+        super(cfgName);
     }
 
     @Override

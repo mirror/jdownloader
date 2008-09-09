@@ -30,8 +30,8 @@ public class ShareProtect extends PluginForDecrypt {
     final static String host = "shareprotect.t-w.at";
     private Pattern patternSupported = Pattern.compile("http://shareprotect\\.t-w\\.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}", Pattern.CASE_INSENSITIVE);
 
-    public ShareProtect() {
-        super();
+    public ShareProtect(String cfgName){
+        super(cfgName);
     }
 
     @Override

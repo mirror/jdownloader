@@ -39,8 +39,8 @@ public class RsHoerbuchin extends PluginForDecrypt {
     private static final Pattern patternLink_UP = Pattern.compile("http://rs\\.hoerbuch\\.in/u[\\w]{6}.html", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternLink_RS.pattern() + "|" + patternLink_DE.pattern() + "|" + patternLink_UP.pattern(), patternLink_RS.flags() | patternLink_DE.flags() | patternLink_UP.flags());
 
-    public RsHoerbuchin() {
-        super();
+    public RsHoerbuchin(String cfgName){
+        super(cfgName);
     }
 
     @Override

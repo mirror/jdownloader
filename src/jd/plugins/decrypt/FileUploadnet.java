@@ -28,8 +28,8 @@ public class FileUploadnet extends PluginForDecrypt {
     static private final String host = "File-Upload.net";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)", Pattern.CASE_INSENSITIVE);
 
-    public FileUploadnet() {
-        super();
+    public FileUploadnet(String cfgName){
+        super(cfgName);
     }
 
     @Override

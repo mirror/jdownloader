@@ -31,8 +31,8 @@ public class FlyLoadnet extends PluginForDecrypt {
     private static final Pattern patternSupported_Safe = Pattern.compile("http://[\\w\\.]*?flyload\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Safe.pattern() + "|" + patternSupported_Request.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public FlyLoadnet() {
-        super();
+    public FlyLoadnet(String cfgName){
+        super(cfgName);
     }
 
     @Override

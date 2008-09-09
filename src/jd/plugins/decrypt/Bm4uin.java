@@ -28,8 +28,8 @@ public class Bm4uin extends PluginForDecrypt {
     static private final String host = "bm4u.in";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public Bm4uin() {
-        super();
+    public Bm4uin(String cfgName){
+        super(cfgName);
     }
 
     @Override

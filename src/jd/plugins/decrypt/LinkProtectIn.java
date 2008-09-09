@@ -42,8 +42,8 @@ public class LinkProtectIn extends PluginForDecrypt {
     static private final Pattern patternDownload = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/includes/dl.php\\?id=[a-zA-Z0-9]{1,50}");
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[a-zA-Z0-9]{1,50}", Pattern.CASE_INSENSITIVE);
 
-    public LinkProtectIn() {
-        super();
+    public LinkProtectIn(String cfgName){
+        super(cfgName);
     }
 
     @Override

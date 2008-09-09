@@ -18,20 +18,21 @@ package jd.gui.skins.simple.config;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
-import jd.plugins.Plugin;
+import jd.PluginWrapper;
 
-public class PluginTableCellRenderer<T extends Plugin> extends DefaultTableCellRenderer {
+public class PluginTableCellRenderer<T extends PluginWrapper> extends DefaultTableCellRenderer {
 
     private static final long serialVersionUID = 412703637249573038L;
     
-    Vector<T> plugins;
+    ArrayList<T> plugins;
 
-    public PluginTableCellRenderer(Vector<T> plugins) {
+    public PluginTableCellRenderer(ArrayList<T> plugins) {
         this.plugins = plugins;
     }
 
@@ -41,9 +42,9 @@ public class PluginTableCellRenderer<T extends Plugin> extends DefaultTableCellR
 
         if (isSelected) {
             c.setBackground(Color.LIGHT_GRAY);
-        } else if (plugins.get(row).getConfig().getEntries().size() != 0) {
-            c.setBackground(new Color(230, 230, 230));
-//            c.setBackground(Color.CYAN);
+//        } else if (plugins.get(row).getConfig().getEntries().size() != 0) {
+//            c.setBackground(new Color(230, 230, 230));
+////            c.setBackground(Color.CYAN);
         } else {
             c.setBackground(Color.WHITE);
         }
