@@ -155,8 +155,6 @@ public class GetRouterInfo {
     public String getAdress() {
         if (adress != null && !adress.matches("\\s*")) { return adress; }
         setProgressText("try to find the router ip");
-        // String[] hosts = new String[]{"192.168.2.1", "192.168.1.1",
-        // "192.168.0.1", "fritz.box"};
 
         if (new File("/sbin/route").exists()) {
             try {
@@ -190,18 +188,11 @@ public class GetRouterInfo {
 
         }
         Vector<String> hosts = new Vector<String>();
-        if (!hosts.contains("192.168.2.1")) {
-            hosts.add("192.168.2.1");
-        }
-        if (!hosts.contains("192.168.1.1")) {
-            hosts.add("192.168.1.1");
-        }
-        if (!hosts.contains("192.168.0.1")) {
-            hosts.add("192.168.0.1");
-        }
-        if (!hosts.contains("fritz.box")) {
-            hosts.add("fritz.box");
-        }
+
+        hosts.add("192.168.2.1");
+        hosts.add("192.168.1.1");
+        hosts.add("192.168.0.1");
+        hosts.add("fritz.box");
 
         String ip = null;
         String localHost;
@@ -212,7 +203,7 @@ public class GetRouterInfo {
                 if (GetRouterInfo.validateIP(ia.getHostAddress() + "")) {
                     ip = ia.getHostAddress();
 
-                    if (ip != null) {
+                    if (ip != null && ip.lastIndexOf(".") != -1) {
                         String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
                         for (int i = 0; i < 255; i++) {
                             String lhost = host + i;
