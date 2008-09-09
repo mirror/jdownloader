@@ -55,6 +55,7 @@ public class Serienjunkies extends PluginForHost {
 
     public Serienjunkies(String cfgName) {
         super(cfgName);
+        this.setHost(cfgName);
     }
 
     public boolean collectCaptchas() {
