@@ -41,7 +41,8 @@ public class Replacer {
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) {
-            Vector<DownloadLink> files = controller.getPackageFiles(dLink);
+            // Vector<DownloadLink> files = controller.getPackageFiles(dLink);
+            Vector<DownloadLink> files = dLink.getFilePackage().getDownloadLinks();
             return files.toString();
         }
 

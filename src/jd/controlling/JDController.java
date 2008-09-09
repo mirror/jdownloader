@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -680,13 +678,11 @@ public class JDController implements ControlListener, UIListener {
             // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
             // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
-            Collections.sort(services, new Comparator<Object>() {
-                public int compare(Object a, Object b) {
-                    return (int) (Math.random() * 4.0 - 2.0);
-
-                }
-
-            });
+            // Collections.sort(services, new Comparator<Object>() {
+            // public int compare(Object a, Object b) {
+            // return (int) (Math.random() * 4.0 - 2.0);
+            // }
+            // });
             services.add(0, new URL("http://service.jdownloader.org/dlcrypt/service.php"));
             Iterator<URL> it = services.iterator();
             // int url = 0;
@@ -925,18 +921,18 @@ public class JDController implements ControlListener, UIListener {
         return th;
     }
 
-    public FilePackage getFilePackage(DownloadLink link) {
-        synchronized (packages) {
-            Iterator<FilePackage> it = packages.iterator();
-            FilePackage fp;
-            while (it.hasNext()) {
-                fp = it.next();
-                if (fp.contains(link)) { return fp; }
-            }
-        }
-        logger.severe("Link " + link + " does not belong to any Package");
-        return null;
-    }
+    // public FilePackage getFilePackage(DownloadLink link) {
+    // synchronized (packages) {
+    // Iterator<FilePackage> it = packages.iterator();
+    // FilePackage fp;
+    // while (it.hasNext()) {
+    // fp = it.next();
+    // if (fp.contains(link)) { return fp; }
+    // }
+    // }
+    // logger.severe("Link " + link + " does not belong to any Package");
+    // return null;
+    // }
 
     /**
      * Gibt alle in dieser Session beendeten Downloadlinks zurück. unabhängig
@@ -1005,81 +1001,82 @@ public class JDController implements ControlListener, UIListener {
         return lastDownloadFinished.getFileOutput();
     }
 
-    /**
-     * Gibt ale links zurück die im selben package sind wie downloadLink
-     * 
-     * @param downloadLink
-     * @return Alle DownloadLinks die zum selben package gehören
-     */
-    public Vector<DownloadLink> getPackageFiles(DownloadLink downloadLink) {
-        synchronized (packages) {
-            Iterator<FilePackage> iterator = packages.iterator();
-            FilePackage fp = null;
+    // /**
+    // * Gibt ale links zurück die im selben package sind wie downloadLink
+    // *
+    // * @param downloadLink
+    // * @return Alle DownloadLinks die zum selben package gehören
+    // */
+    // public Vector<DownloadLink> getPackageFiles(DownloadLink downloadLink) {
+    // synchronized (packages) {
+    // Iterator<FilePackage> iterator = packages.iterator();
+    // FilePackage fp = null;
+    //
+    // while (iterator.hasNext()) {
+    // fp = iterator.next();
+    // if (fp.contains(downloadLink)) { return fp.getDownloadLinks(); }
+    //
+    // }
+    // }
+    // return null;
+    // }
 
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                if (fp.contains(downloadLink)) { return fp.getDownloadLinks(); }
+    // public Vector<DownloadLink> getPackageFiles(FilePackage filePackage) {
+    // return filePackage.getDownloadLinks();
+    // }
 
-            }
-        }
-        return null;
-    }
+    // public Vector<DownloadLink> getPackageFiles(FilePackage filePackage,
+    // Vector<DownloadLink> links) {
+    // Vector<DownloadLink> ret = new Vector<DownloadLink>();
+    // // ret.add(downloadLink);
+    //
+    // Iterator<DownloadLink> iterator = links.iterator();
+    // DownloadLink nextDownloadLink = null;
+    // while (iterator.hasNext()) {
+    // nextDownloadLink = iterator.next();
+    //
+    // if (filePackage == nextDownloadLink.getFilePackage()) {
+    // ret.add(nextDownloadLink);
+    // }
+    // }
+    // return ret;
+    // }
 
-    public Vector<DownloadLink> getPackageFiles(FilePackage filePackage) {
-        return filePackage.getDownloadLinks();
-    }
+    // /**
+    // * Gibt die Anzahl der fertigen Downloads im package zurück
+    // *
+    // * @param downloadLink
+    // * @return Anzahl der fertigen Files in diesem paket
+    // */
+    // public int getPackageReadyNum(DownloadLink downloadLink) {
+    // int i = 0;
+    //
+    // Vector<DownloadLink> downloadLinks = getPackageFiles(downloadLink);
+    // Iterator<DownloadLink> iterator = downloadLinks.iterator();
+    // DownloadLink nextDownloadLink = null;
+    // while (iterator.hasNext()) {
+    // nextDownloadLink = iterator.next();
+    // if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) {
+    // i++;
+    // }
+    // }
+    // return i;
+    // }
 
-    public Vector<DownloadLink> getPackageFiles(FilePackage filePackage, Vector<DownloadLink> links) {
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
-        // ret.add(downloadLink);
-
-        Iterator<DownloadLink> iterator = links.iterator();
-        DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-
-            if (filePackage == nextDownloadLink.getFilePackage()) {
-                ret.add(nextDownloadLink);
-            }
-        }
-        return ret;
-    }
-
-    /**
-     * Gibt die Anzahl der fertigen Downloads im package zurück
-     * 
-     * @param downloadLink
-     * @return Anzahl der fertigen Files in diesem paket
-     */
-    public int getPackageReadyNum(DownloadLink downloadLink) {
-        int i = 0;
-
-        Vector<DownloadLink> downloadLinks = getPackageFiles(downloadLink);
-        Iterator<DownloadLink> iterator = downloadLinks.iterator();
-        DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) {
-                i++;
-            }
-        }
-        return i;
-    }
-
-    public int getPackageReadyNum(FilePackage filePackage) {
-        int i = 0;
-
-        Vector<DownloadLink> downloadLinks = filePackage.getDownloadLinks();
-        Iterator<DownloadLink> iterator = downloadLinks.iterator();
-        DownloadLink nextDownloadLink = null;
-        while (iterator.hasNext()) {
-            nextDownloadLink = iterator.next();
-            if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) {
-                i++;
-            }
-        }
-        return i;
-    }
+    // public int getPackageReadyNum(FilePackage filePackage) {
+    // int i = 0;
+    //
+    // Vector<DownloadLink> downloadLinks = filePackage.getDownloadLinks();
+    // Iterator<DownloadLink> iterator = downloadLinks.iterator();
+    // DownloadLink nextDownloadLink = null;
+    // while (iterator.hasNext()) {
+    // nextDownloadLink = iterator.next();
+    // if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.FINISHED)) {
+    // i++;
+    // }
+    // }
+    // return i;
+    // }
 
     /**
      * Der Zurückgegeben Vector darf nur gelesen werden!!

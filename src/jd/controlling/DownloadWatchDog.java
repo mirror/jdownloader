@@ -229,7 +229,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     // if (statusD == LinkStatus.FINISHED ||
     // (this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep()
     // != null &&
-    // this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep().getStatus()
+    // this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep().
+    // getStatus()
     // == PluginStep.STATUS_ERROR)) {
     // activeLinks.remove(i);
     // }
@@ -322,29 +323,31 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         return null;
     }
 
-    /**
-     * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
-     * sich wirklich in der downloadpahse befinden
-     * 
-     * @return Anzahld er laufenden Downloadsl Sollte eventl mal umgeschrieben
-     *         werden. ohne iteration
-     */
-    public int getRunningDownloadNum() {
-        int ret = 0;
-        DownloadLink nextDownloadLink;
-        for (FilePackage filePackage : controller.getPackages()) {
-            for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinks().iterator(); it2.hasNext();) {
-
-                nextDownloadLink = it2.next();
-                if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                    ret++;
-                }
-
-            }
-        }
-
-        return ret;
-    }
+    // /**
+    // * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
+    // * sich wirklich in der downloadpahse befinden
+    // *
+    // * @return Anzahld er laufenden Downloadsl Sollte eventl mal umgeschrieben
+    // * werden. ohne iteration
+    // */
+    // public int getRunningDownloadNum() {
+    // int ret = 0;
+    // DownloadLink nextDownloadLink;
+    // for (FilePackage filePackage : controller.getPackages()) {
+    // for (Iterator<DownloadLink> it2 =
+    // filePackage.getDownloadLinks().iterator(); it2.hasNext();) {
+    //
+    // nextDownloadLink = it2.next();
+    // if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.
+    // DOWNLOADINTERFACE_IN_PROGRESS)) {
+    // ret++;
+    // }
+    //
+    // }
+    // }
+    //
+    // return ret;
+    // }
 
     /**
      * Gibt die Configeinstellung zurück, wieviele simultane Downloads der user
@@ -437,7 +440,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         link = links.elementAt(i);
                         linkStatus = link.getLinkStatus();
                         if (!link.isEnabled() && link.getLinkType() == DownloadLink.LINKTYPE_JDU && linkStatus.getTotalWaitTime() <= 0) {
-                          
+
                             removes.add(link);
                             continue;
                         }
@@ -490,10 +493,10 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                     }
                 }
-                if(removes.size()>0){
-                JDUtilities.getController().removeDownloadLinks(removes);
-                removes.clear();
-                JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this);
+                if (removes.size() > 0) {
+                    JDUtilities.getController().removeDownloadLinks(removes);
+                    removes.clear();
+                    JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this);
                 }
                 // logger.info("I-"+1);
                 Reconnecter.doReconnectIfRequested();
