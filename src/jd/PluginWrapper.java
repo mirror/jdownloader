@@ -28,7 +28,7 @@ public class PluginWrapper implements Comparable {
     public PluginWrapper(String name, String host, String className, String pattern, int flags) {
 
         if (pattern != null) {
-            this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         }
         this.host = host;
         this.className = className;
