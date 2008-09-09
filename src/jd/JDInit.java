@@ -640,6 +640,7 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("loading.cc", "LoadingCc", "http://.*?loading\\.cc/detail\\.php\\?id=[0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("mediafire.com", "MediafireFolder", "http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+"));
         plwrappers.add(new DecryptPluginWrapper("mirrorit.de", "MirrorItDe", "http://[\\w\\.]*?mirrorit\\.de/\\?id=[a-zA-Z0-9]{16}"));
+        plwrappers.add(new DecryptPluginWrapper("movieload.to", "MovieloadTo", "http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+"));
         plwrappers.add(new DecryptPluginWrapper("myref.de", "MyRef", "http://[\\w\\.]*?myref\\.de(\\/){0,1}\\?\\d{0,10}"));
         plwrappers.add(new DecryptPluginWrapper("myspace.com", "MySpaceCom", "http://[\\w\\.]*?myspace\\.(com|de)/.+"));
         plwrappers.add(new DecryptPluginWrapper("myup.cc", "Myupcc", "http://[\\w\\.]*?myup\\.cc/link-[a-zA-Z0-9]+\\.html"));
@@ -649,6 +650,7 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("Protect.Tehparadox.com", "ProtectTehparadoxcom", "http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!"));
         plwrappers.add(new DecryptPluginWrapper("raidrush.org", "RaidrushOrg", "http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("rapidlayer.in", "Rapidlayerin", "http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+"));
+        plwrappers.add(new DecryptPluginWrapper("rapidrace.org", "RapidRace", "http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+"));
         plwrappers.add(new DecryptPluginWrapper("rapidsafe.de", "RapidsafeDe", "http://.+rapidsafe\\.de"));
         plwrappers.add(new DecryptPluginWrapper("rapidsafe.net", "Rapidsafenet", "http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*"));
         plwrappers.add(new DecryptPluginWrapper("rapidshare.com", "RapidshareComFolder", "http://[\\w\\.]*?rapidshare.com/users/.+"));
