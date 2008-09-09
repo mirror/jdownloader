@@ -67,7 +67,7 @@ public class PluginWrapper implements Comparable {
 
         try {
 
-            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("plugins").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
 
             System.out.println(JDUtilities.getResourceFile("").toURI().toURL() + " - " + getClassName());
             logger.finer("load plugin: "+getClassName());

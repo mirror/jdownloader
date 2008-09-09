@@ -30,23 +30,7 @@
 				<exclude name="jd/captcha/methods" />
 			</fileset>
 		</jar>
-		<delete file="Manifest.MF" failonerror="false" />
-		<!-- Plugins -->
-		<manifest file="Manifest.MF">
-			<attribute name="Created-By" value="coalado" />
-			<attribute name="Class-Path" value="${class-path}" />
-		</manifest>
-		<jar jarfile="${dist}/JDownloaderPlugins.jar" manifest="Manifest.MF">
-			<fileset dir="${cls}">
-				<include name="jd/plugins/decrypt/**" />
-				<exclude name="jd/plugins/host/**" />
-			</fileset>
-			<fileset dir="${res}">
-				<include name="META-INF/services/*" />
-				<exclude name="META-INF/services/jd.plugins.PluginForContainer" />
-				<exclude name="META-INF/services/jd.plugins.PluginOptional" />
-			</fileset>
-		</jar>
+	
 		<delete file="Manifest.MF" failonerror="false" />
 			<!-- Plugins -->
 			<manifest file="Manifest.MF">
@@ -55,7 +39,8 @@
 			</manifest>
 			<jar jarfile="${dist}/JAntiCaptcha.jar" manifest="Manifest.MF">
 				<fileset dir="${cls}">
-					<include name="jd/captcha/**" />					
+					<include name="jd/captcha/**" />		
+					<exclude name="jd/captcha/methods/**" />
 				</fileset>			
 			</jar>
 	</target>

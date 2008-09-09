@@ -25,6 +25,7 @@ import jd.parser.Form;
 
 public class PostRequest extends Request {
     private HashMap<String, String> postData = new HashMap<String, String>();
+    private String postDataString=null;
 
     public PostRequest(Form form) throws MalformedURLException {
         super(form.getAction(null));
@@ -54,12 +55,15 @@ public class PostRequest extends Request {
         }
         return buffer.toString().substring(1);
     }
+    public void setPostDataString(String post){
+        this.postDataString=post;
+    }
 
     @Override
     public void postRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
-        String parameter = getPostDataString();
-        if (!postData.isEmpty() && parameter != null) {
+        String parameter = postDataString!=null?postDataString:getPostDataString();
+        if (parameter != null) {
             parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.connect();

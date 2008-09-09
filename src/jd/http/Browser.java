@@ -570,7 +570,49 @@ public class Browser {
 
         return postPage(url, Request.parseQuery(post));
     }
+    public String postPageRaw(String url, String post) throws IOException {
+        url = getURL(url);
 
+        if (currentURL == null) {
+            currentURL = new URL(url);
+        }
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        PostRequest request = new PostRequest(url);
+        doAuth(request);
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        if (post != null) request.setPostDataString(post);
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+
+        String ret = null;
+
+        request.connect();
+        if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
+        checkContentLengthLimit(request);
+        ret = request.read();
+
+        updateCookies(request);
+        this.request = request;
+        if (this.doRedirects && request.getLocation() != null) {
+            ret = this.getPage((String) null);
+        } else {
+
+            currentURL = new URL(url);
+        }
+        return ret;
+    }
     public void setAcceptLanguage(String acceptLanguage) {
         this.acceptLanguage = acceptLanguage;
     }

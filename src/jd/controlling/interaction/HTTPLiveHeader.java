@@ -675,9 +675,8 @@ int okCounter=0;
             } else {
                 post = post.trim();
                 logger.finer("POST " + "http://" + host + path + " " + post);
-                br.postPage("http://" + host + path, post);
+                br.postPageRaw("http://" + host + path, post);
             }
-
             logger.finer("Answer: ");
             for (Map.Entry<String, List<String>> me : br.getRequest().getResponseHeaders().entrySet()) {
                 if (me.getValue() != null && me.getValue().size() > 0) {
