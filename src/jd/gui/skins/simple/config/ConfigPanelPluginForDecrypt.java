@@ -25,7 +25,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -41,7 +40,6 @@ import jd.DecryptPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -94,12 +92,14 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     private JButton btnEdit;
 
+    @SuppressWarnings("unused")
     private Configuration configuration;
 
     private ArrayList<DecryptPluginWrapper> pluginsForDecrypt;
 
     private JTable table;
 
+    @SuppressWarnings("unchecked")
     public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
@@ -134,6 +134,11 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         table.setModel(internalTableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForDecrypt.get(table.getSelectedRow()).isLoaded() && pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
+            }
+        });
         table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<DecryptPluginWrapper>(pluginsForDecrypt));
 
         TableColumn column = null;
@@ -172,7 +177,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).isLoaded() && pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }
@@ -191,10 +196,5 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     @Override
     public void save() {
-//        for (PluginForDecrypt plg : pluginsForDecrypt) {
-//            if (plg.getPluginConfig() != null) {
-//                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
-//            }
-//        }
     }
 }

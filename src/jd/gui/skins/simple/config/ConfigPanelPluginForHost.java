@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -47,7 +46,6 @@ import javax.swing.event.CellEditorListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
@@ -213,8 +211,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
-        pluginsForHost = JDUtilities.getPluginsForHost();
-        // Collections.sort(pluginsForHost);
+        pluginsForHost = JDUtilities.getPluginsForHost();       
         initPanel();
         load();
     }
@@ -270,25 +267,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).isLoaded() && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
-        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
-
-            private static final long serialVersionUID = 1L;
-
-            @Override
-            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-                if (isSelected) {
-                    c.setBackground(Color.LIGHT_GRAY);
-                } else if (pluginsForHost.get(row).isLoaded() && pluginsForHost.get(row).getPlugin().getConfig().getEntries().size() != 0) {
-                    c.setBackground(new Color(230, 230, 230));
-                } else {
-                    c.setBackground(Color.WHITE);
-                }
-
-                return c;
-            }
-        });
+        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<HostPluginWrapper>(pluginsForHost));
         table.setDragEnabled(true);
         new DropTarget(table, this);
 
@@ -368,10 +347,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         Vector<String> priority = new Vector<String>();
         for (HostPluginWrapper plg : pluginsForHost) {
             priority.add(plg.getHost());
-            // if (plg.getPluginConfig() != null) {
-            // configuration.setProperty("PluginConfig_" + plg.getPluginName(),
-            // plg.getPluginConfig());
-            // }
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
     }
