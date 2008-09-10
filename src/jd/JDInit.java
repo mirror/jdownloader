@@ -863,13 +863,13 @@ public class JDInit {
     }
 
     public void removeFiles() {
-        String[] remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
+        String[] remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated1.dat")));
         String homedir = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
         if (remove != null) {
             for (String file : remove) {
                 if (file.length() == 0) continue;
                 File delete = new File(homedir, file);
-                if (!delete.toString().matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?") && delete.toString().contains(homedir)) {
+                if (!file.matches(".*?"+File.separator + "?\\.+" + File.separator+".*?")) {
                     if (JDUtilities.removeDirectoryOrFile(delete)) logger.warning("Removed " + file);
                 }
             }
