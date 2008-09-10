@@ -866,7 +866,7 @@ public class JDInit {
     }
 
     public void removeFiles() {
-        String[] remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated1.dat")));
+        String[] remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
         String homedir = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
         if (remove != null) {
             for (String file : remove) {
