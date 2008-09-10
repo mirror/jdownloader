@@ -92,12 +92,16 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     private JButton btnEdit;
 
+    private JButton btnLoad;
+
     @SuppressWarnings("unused")
     private Configuration configuration;
 
     private ArrayList<DecryptPluginWrapper> pluginsForDecrypt;
 
     private JTable table;
+
+    private InternalTableModel tableModel;
 
     public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
@@ -111,11 +115,22 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry();
+        } else if (e.getSource() == btnLoad) {
+            loadEntry();
+            btnLoad.setEnabled(false);
         }
     }
 
     private void editEntry() {
         SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForDecrypt.get(table.getSelectedRow()).getPlugin());
+    }
+
+    private void loadEntry() {
+        int cur = table.getSelectedRow();
+        DecryptPluginWrapper dpw = pluginsForDecrypt.get(cur);
+        dpw.getPlugin();
+        tableModel.fireTableRowsUpdated(cur, cur);
+        btnEdit.setEnabled(dpw.hasConfig());
     }
 
     @Override
@@ -128,20 +143,22 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         this.setLayout(new BorderLayout());
         this.setPreferredSize(new Dimension(550, 350));
 
-        table = new JTable();
-        InternalTableModel internalTableModel = new InternalTableModel();
-        table.setModel(internalTableModel);
+        tableModel = new InternalTableModel();
+        table = new JTable(tableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForDecrypt.get(table.getSelectedRow()).hasConfig());
+                if (table.getSelectedColumn() < 0) return;
+                DecryptPluginWrapper dpw = pluginsForDecrypt.get(table.getSelectedRow());
+                btnEdit.setEnabled(dpw.hasConfig());
+                btnLoad.setEnabled(!dpw.isLoaded());
             }
         });
         table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<DecryptPluginWrapper>(pluginsForDecrypt));
 
         TableColumn column = null;
-        for (int c = 0; c < internalTableModel.getColumnCount(); c++) {
+        for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
@@ -164,8 +181,13 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
+        btnLoad = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_load", "Load Plugin"));
+        btnLoad.setEnabled(false);
+        btnLoad.addActionListener(this);
+
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bpanel.add(btnEdit);
+        bpanel.add(btnLoad);
 
         this.add(scrollpane);
         this.add(bpanel, BorderLayout.SOUTH);

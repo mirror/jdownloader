@@ -198,6 +198,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private JButton btnEdit;
 
+    private JButton btnLoad;
+
     private Configuration configuration;
 
     private HostPluginWrapper draggedPlugin;
@@ -219,6 +221,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry();
+        } else if (e.getSource() == btnLoad) {
+            loadEntry();
+            btnLoad.setEnabled(false);
         }
     }
 
@@ -248,6 +253,14 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForHost.get(table.getSelectedRow()).getPlugin());
     }
 
+    private void loadEntry() {
+        int cur = table.getSelectedRow();
+        HostPluginWrapper dpw = pluginsForHost.get(cur);
+        dpw.getPlugin();
+        tableModel.fireTableRowsUpdated(cur, cur);
+        btnEdit.setEnabled(dpw.hasConfig());
+    }
+
     @Override
     public String getName() {
         return JDLocale.L("gui.config.plugin.host.name", "Host Plugins");
@@ -264,7 +277,10 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).hasConfig());
+                if (table.getSelectedColumn() < 0) return;
+                HostPluginWrapper dpw = pluginsForHost.get(table.getSelectedRow());
+                btnEdit.setEnabled(dpw.hasConfig());
+                btnLoad.setEnabled(!dpw.isLoaded());
             }
         });
         table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<HostPluginWrapper>(pluginsForHost));
@@ -312,8 +328,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
+        btnLoad = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_load", "Load Plugin"));
+        btnLoad.setEnabled(false);
+        btnLoad.addActionListener(this);
+
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bpanel.add(btnEdit);
+        bpanel.add(btnLoad);
 
         this.add(new JLabel("<html><body align=\"justify\" color=\"red\"><b>" + JDLocale.L("gui.config.plugin.host.desc", "ACHTUNG!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB \r\n der Hoster. Bitte lesen Sie die AGB aufmerksam und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!")), BorderLayout.NORTH);
         this.add(scrollpane);
