@@ -105,6 +105,7 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.parser.Regex;
@@ -307,7 +308,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static SimpleGUI CURRENTGUI = null;
+
     public static final String GUICONFIGNAME = "simpleGUI";
+
     private static SubConfiguration guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
 
     public static final String PARAM_BROWSER = "BROWSER";
@@ -323,6 +326,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static final String PARAM_PLAF = "PLAF";
 
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
+
+    public static final String PARAM_SHOW_FENGSHUI = "SHOW_FENGSHUI";
 
     public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
 
@@ -937,8 +942,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
             break;
         case JDAction.APP_CONFIGURATION:
-            new FengShuiConfigPanel();
-            // ConfigurationDialog.showConfig(frame, this);
+            if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, false)) {
+                ConfigurationDialog.showConfig(frame, this);
+            } else {
+                new FengShuiConfigPanel();
+            }
             break;
         }
 
@@ -1223,16 +1231,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
     }
 
-    public String getCaptchaCodeFromUser(final Plugin plugin,final  File captchaAddress,final  String def) {
+    public String getCaptchaCodeFromUser(final Plugin plugin, final File captchaAddress, final String def) {
 
-//        SwingUtilities.invokeLater(new Runnable() {
-//            public void run() {
+        // SwingUtilities.invokeLater(new Runnable() {
+        // public void run() {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress, def);
 
         logger.info("Returned: " + captchaDialog.getCaptchaText());
         return captchaDialog.getCaptchaText();
-//            }});
-//        return "";
+        // }});
+        // return "";
     }
 
     private String getClipBoardImage() {

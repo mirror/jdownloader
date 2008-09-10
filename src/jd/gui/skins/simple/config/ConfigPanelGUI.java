@@ -117,6 +117,9 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")));
         ce.setDefaultValue(true);
 
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, SimpleGUI.PARAM_SHOW_FENGSHUI, JDLocale.L("gui.config.gui.showFengShui", "FengShui-Konfiguration nicht mehr anzeigen")));
+        ce.setDefaultValue(true);
+
         Object[] BrowserArray = (Object[]) config.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
         if (BrowserArray == null) {
             BrowserLauncher launcher;
