@@ -895,7 +895,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
             Class[] classes = new Class[arguments.length];
             for (int i = 0; i < arguments.length; i++) {
                 classes[i] = arguments[i].getClass();
-            }
+            } 
             Constructor con = newClass.getConstructor(classes);
             return con.newInstance(arguments);
         } catch (SecurityException e) {
