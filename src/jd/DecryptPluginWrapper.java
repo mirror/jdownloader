@@ -20,7 +20,7 @@ public class DecryptPluginWrapper extends PluginWrapper {
 
     public DecryptPluginWrapper(String name, String host, String className, Pattern patternSupported, int flags) {
         super(name, host, "jd.plugins.decrypt." + className, patternSupported.pattern(), flags);
-       
+        super.setPattern(patternSupported);
     }
 
     public DecryptPluginWrapper(String host, String className, Pattern patternSupported, int flags) {
