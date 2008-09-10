@@ -8,7 +8,7 @@ import jd.plugins.PluginForHost;
 
 public class HostPluginWrapper extends PluginWrapper {
 
-    private static final String AGB_CHECKED = null;
+    private static final String AGB_CHECKED = "AGB_CHECKED";
 
     public HostPluginWrapper(String name, String host, String className, String patternSupported, int flags) {
         super(name, host, "jd.plugins.host." + className, patternSupported, flags);
@@ -40,12 +40,12 @@ public class HostPluginWrapper extends PluginWrapper {
     }
 
     public boolean isAGBChecked() {
-        return getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
+        return super.getPluginConfig().getBooleanProperty(AGB_CHECKED, false);
     }
 
     public void setAGBChecked(Boolean value) {
-        getPluginConfig().setProperty(AGB_CHECKED, value);
-        getPluginConfig().save();
+        super.getPluginConfig().setProperty(AGB_CHECKED, value);
+        super.getPluginConfig().save();
     }
 
 }
