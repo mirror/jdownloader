@@ -21,9 +21,7 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
@@ -46,22 +44,21 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
- * Dies Klasse ziegt informationen zu einem DownloadLink an
+ * Dies Klasse ziegt informationen zu einem FilePackage an
  */
-public class PackageInfo extends JDialog {    
+public class PackageInfo extends JDialog {
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
     /**
      * 
      */
     private static final long serialVersionUID = -9146764850581039090L;
-    private jd.plugins.FilePackage fp;
+    private FilePackage fp;
     private int i = 0;
     private JPanel panel;
-    private JScrollPane sp;
     private DecimalFormat c = new DecimalFormat("0.00");
     private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
-    private int linkCounter = 0;
+
     /**
      * @param frame
      * @param dlink
@@ -74,6 +71,14 @@ public class PackageInfo extends JDialog {
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
         setResizable(true);
         setAlwaysOnTop(true);
+
+        panel = new JPanel(new GridBagLayout());
+        int n = 10;
+        panel.setBorder(new EmptyBorder(n, n, n, n));
+        panel.setBackground(Color.WHITE);
+        panel.setForeground(Color.WHITE);
+        this.add(new JScrollPane(panel));
+
         new Thread() {
             @Override
             public void run() {
@@ -97,46 +102,46 @@ public class PackageInfo extends JDialog {
     }
 
     private void addEntry(String string, JComponent value) {
-            if(hmObjects.get(string) == null) {
-                JLabel key;
-                JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-                
-                JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-                key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-                value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-                i++;
-                hmObjects.put(string, value);
-                hmObjects.put("JLabel_" + string, key);
-            } else {
-                if(hmObjects.get(string).getClass() == JProgressBar.class) {
-                    JProgressBar tmpJBar = (JProgressBar) hmObjects.get(string);
-                    tmpJBar.setValue(((JProgressBar) value).getValue());
-                    tmpJBar.setString(((JProgressBar) value).getString());
-                    tmpJBar.setEnabled(((JProgressBar) value).isEnabled());
-                    tmpJBar.setBackground((((JProgressBar) value).getBackground()));
-                    
-                    JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + string);
-                    tmpJLbl.setForeground(tmpJBar.getBackground());
-                } else if(hmObjects.get(string).getClass() == JTextField.class) {
-                    JTextField tmp = (JTextField) hmObjects.get(string);
-                    tmp.setText(((JTextField) value).getText());
-                }
-                hmObjects.get(string).repaint();
+        if (hmObjects.get(string) == null) {
+            JLabel key;
+            JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+
+            JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+            key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+            value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+            i++;
+            hmObjects.put(string, value);
+            hmObjects.put("JLabel_" + string, key);
+        } else {
+            if (hmObjects.get(string).getClass() == JProgressBar.class) {
+                JProgressBar tmpJBar = (JProgressBar) hmObjects.get(string);
+                tmpJBar.setValue(((JProgressBar) value).getValue());
+                tmpJBar.setString(((JProgressBar) value).getString());
+                tmpJBar.setEnabled(((JProgressBar) value).isEnabled());
+                tmpJBar.setBackground((((JProgressBar) value).getBackground()));
+
+                JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + string);
+                tmpJLbl.setForeground(tmpJBar.getBackground());
+            } else if (hmObjects.get(string).getClass() == JTextField.class) {
+                JTextField tmp = (JTextField) hmObjects.get(string);
+                tmp.setText(((JTextField) value).getText());
             }
+            hmObjects.get(string).repaint();
+        }
 
     }
 
     private void addEntry(String label, String data) {
-        if(hmObjects.get("JLableCaption_" + label) == null) {
+        if (hmObjects.get("JLableCaption_" + label) == null) {
             if (label == null && data == null) {
                 JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
                 return;
             }
-            
+
             JLabel key;
             JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
             key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-    
+
             JLabel value;
             JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
             value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
@@ -144,7 +149,7 @@ public class PackageInfo extends JDialog {
             value.setForeground(Color.DARK_GRAY);
             hmObjects.put("JLableCaption_" + label, key);
             hmObjects.put("JLableValue_" + label, value);
-            
+
             i++;
         } else {
             if (label != null && data != null) {
@@ -157,19 +162,6 @@ public class PackageInfo extends JDialog {
     }
 
     private void initDialog() {
-        if(sp == null || fp.getDownloadLinks().size() != linkCounter) {
-            panel = new JPanel(new GridBagLayout());
-            int n = 10;
-            panel.setBorder(new EmptyBorder(n, n, n, n));
-            panel.setBackground(Color.WHITE);
-            panel.setForeground(Color.WHITE);
-            if (sp != null) {
-                this.remove(sp);
-                hmObjects.clear();
-            }
-            this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
-            linkCounter = fp.getDownloadLinks().size();
-        }
         addEntry(JDLocale.L("gui.packageinfo.name", "Name"), fp.getName());
         if (fp.hasPassword()) addEntry(JDLocale.L("gui.packageinfo.password", "Password"), new JTextField(fp.getPassword()));
         if (fp.hasComment()) addEntry(JDLocale.L("gui.packageinfo.comment", "Comment"), fp.getComment());
@@ -179,18 +171,19 @@ public class PackageInfo extends JDialog {
         addEntry(JDLocale.L("gui.packageinfo.links", "Links"), "");
 
         int i = 0;
+        JProgressBar p;
         for (DownloadLink link : fp.getDownloadLinks()) {
-            JProgressBar p = new JProgressBar(0, 100);
-           
+            p = new JProgressBar(0, 100);
+
             p.setMaximum(10000);
             p.setValue(link.getPercent());
             p.setStringPainted(true);
-            p.setString(JDUtilities.formatKbReadable(link.getDownloadSpeed() / 1024) + "/s " + c.format(link.getPercent() / 100.0) + " %| " + link.getDownloadCurrent() + "/" + link.getDownloadSize() + " bytes");
+            p.setString(c.format(link.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(link.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, link.getDownloadSize())) + ") @ " + JDUtilities.formatKbReadable(link.getDownloadSpeed() / 1024) + "/s");
             p.setEnabled(link.isEnabled());
-            if(link.isEnabled() == false) {
-                p.setBackground(new Color(150,150,150));
+            if (link.isEnabled() == false) {
+                p.setBackground(new Color(150, 150, 150));
             } else {
-                p.setBackground(new Color(0,0,0));
+                p.setBackground(new Color(0, 0, 0));
             }
             addEntry(++i + ". " + link.getName(), p);
         }
