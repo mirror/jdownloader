@@ -31,7 +31,7 @@ public class LeecherWs extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?leecher\\.ws/(folder/.+|out/.+/[0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    public LeecherWs(String cfgName){
+    public LeecherWs(String cfgName) {
         super(cfgName);
     }
 
@@ -60,21 +60,6 @@ public class LeecherWs extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

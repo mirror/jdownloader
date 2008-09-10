@@ -38,7 +38,7 @@ public class Cryptlinkws extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public Cryptlinkws(String cfgName){
+    public Cryptlinkws(String cfgName) {
         super(cfgName);
     }
 
@@ -128,21 +128,6 @@ public class Cryptlinkws extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

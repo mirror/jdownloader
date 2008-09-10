@@ -29,7 +29,7 @@ public class UCashin extends PluginForDecrypt {
     static private String host = "ucash.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ucash\\.in/([a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    public UCashin(String cfgName){
+    public UCashin(String cfgName) {
         super(cfgName);
     }
 
@@ -51,7 +51,6 @@ public class UCashin extends PluginForDecrypt {
         return "JD-Team";
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

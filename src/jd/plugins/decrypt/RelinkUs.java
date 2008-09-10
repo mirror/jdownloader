@@ -36,7 +36,7 @@ public class RelinkUs extends PluginForDecrypt {
     final static String host = "relink.us";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public RelinkUs(String cfgName){
+    public RelinkUs(String cfgName) {
         super(cfgName);
     }
 
@@ -48,10 +48,10 @@ public class RelinkUs extends PluginForDecrypt {
             HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
             container_con.setRequestProperty("Referer", cryptedLink);
             Browser.download(container, container_con);
-                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-                container.delete();
-                return true;
-            
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            container.delete();
+            return true;
+
         }
         return false;
     }
@@ -92,21 +92,6 @@ public class RelinkUs extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

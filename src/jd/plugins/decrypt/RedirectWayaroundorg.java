@@ -30,7 +30,7 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
 
-    public RedirectWayaroundorg(String cfgName){
+    public RedirectWayaroundorg(String cfgName) {
         super(cfgName);
     }
 
@@ -40,7 +40,7 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        if (br.getRedirectLocation()==null) return null;
+        if (br.getRedirectLocation() == null) return null;
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
         return decryptedLinks;
@@ -49,21 +49,6 @@ public class RedirectWayaroundorg extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

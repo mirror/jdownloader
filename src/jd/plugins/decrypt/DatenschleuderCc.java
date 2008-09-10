@@ -29,7 +29,7 @@ public class DatenschleuderCc extends PluginForDecrypt {
     final static String host = "datenschleuder.cc";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+", Pattern.CASE_INSENSITIVE);
 
-    public DatenschleuderCc(String cfgName){
+    public DatenschleuderCc(String cfgName) {
         super(cfgName);
     }
 
@@ -52,21 +52,6 @@ public class DatenschleuderCc extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

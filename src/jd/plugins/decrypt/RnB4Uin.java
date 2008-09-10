@@ -30,7 +30,7 @@ public class RnB4Uin extends PluginForDecrypt {
     private static final Pattern pattern_File = Pattern.compile("http://[\\w\\.]*?rnb4u\\.in/download\\.php\\?action=popup&kat_id=\\d+&fileid=\\d+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(pattern_Kategorie.pattern() + "|" + pattern_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public RnB4Uin(String cfgName){
+    public RnB4Uin(String cfgName) {
         super(cfgName);
     }
 
@@ -48,21 +48,6 @@ public class RnB4Uin extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

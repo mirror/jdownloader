@@ -31,7 +31,7 @@ public class Gamezam extends PluginForDecrypt {
     static private final String host = "Gamez.am";
     static private final Pattern patternSupported = Pattern.compile("javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", Pattern.CASE_INSENSITIVE);
 
-    public Gamezam(String cfgName){
+    public Gamezam(String cfgName) {
         super(cfgName);
         this.setAcceptOnlyURIs(false);
     }
@@ -50,7 +50,7 @@ public class Gamezam extends PluginForDecrypt {
         String page = null;
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             File captchaFile = this.getLocalCaptchaFile(this);
-           Browser.download(captchaFile, br.openGetConnection("http://www.gamez.am/captcha.php"));
+            Browser.download(captchaFile, br.openGetConnection("http://www.gamez.am/captcha.php"));
             String captchaCode = JDUtilities.getCaptcha(this, "gamez.am", captchaFile, false);
             if (captchaCode == null) {
                 /* Abbruch geklickt */
@@ -105,21 +105,6 @@ public class Gamezam extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

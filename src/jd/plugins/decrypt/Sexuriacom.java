@@ -35,7 +35,7 @@ public class Sexuriacom extends PluginForDecrypt {
 
     private Browser br;
 
-    public Sexuriacom(String cfgName){
+    public Sexuriacom(String cfgName) {
         super(cfgName);
     }
 
@@ -43,7 +43,7 @@ public class Sexuriacom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         String downloadId;
         String password = null;
         br = new Browser();
@@ -82,21 +82,6 @@ public class Sexuriacom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "ToKaM";
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

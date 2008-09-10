@@ -31,7 +31,7 @@ public class FlyLoadnet extends PluginForDecrypt {
     private static final Pattern patternSupported_Safe = Pattern.compile("http://[\\w\\.]*?flyload\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Safe.pattern() + "|" + patternSupported_Request.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public FlyLoadnet(String cfgName){
+    public FlyLoadnet(String cfgName) {
         super(cfgName);
     }
 
@@ -72,21 +72,6 @@ public class FlyLoadnet extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

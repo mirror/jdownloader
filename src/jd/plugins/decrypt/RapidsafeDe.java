@@ -38,7 +38,7 @@ public class RapidsafeDe extends PluginForDecrypt {
     final static String host = "rapidsafe.de";
     private Pattern patternSupported = Pattern.compile("http://.+rapidsafe\\.de", Pattern.CASE_INSENSITIVE);
 
-    public RapidsafeDe(String cfgName){
+    public RapidsafeDe(String cfgName) {
         super(cfgName);
     }
 
@@ -46,7 +46,7 @@ public class RapidsafeDe extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         if (!parameter.endsWith("/")) {
             parameter += "/";
         }
@@ -183,21 +183,6 @@ public class RapidsafeDe extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

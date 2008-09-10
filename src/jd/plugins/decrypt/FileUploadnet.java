@@ -28,7 +28,7 @@ public class FileUploadnet extends PluginForDecrypt {
     static private final String host = "File-Upload.net";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)", Pattern.CASE_INSENSITIVE);
 
-    public FileUploadnet(String cfgName){
+    public FileUploadnet(String cfgName) {
         super(cfgName);
     }
 
@@ -36,7 +36,7 @@ public class FileUploadnet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         String user = new Regex(parameter, "upload\\.net/(.*?)/").getMatch(0);
         String file = new Regex(parameter, user + "/(.*)").getMatch(0);
         String link = "http://www.file-upload.net/member/data3.php?user=" + user + "&name=" + file;
@@ -52,21 +52,6 @@ public class FileUploadnet extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

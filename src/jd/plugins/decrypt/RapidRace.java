@@ -29,7 +29,7 @@ public class RapidRace extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+", Pattern.CASE_INSENSITIVE);
 
-    public RapidRace(String cfgName){
+    public RapidRace(String cfgName) {
         super(cfgName);
     }
 
@@ -59,21 +59,6 @@ public class RapidRace extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "TheBlindProphet";
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

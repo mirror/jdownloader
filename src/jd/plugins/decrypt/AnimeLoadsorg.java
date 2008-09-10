@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -27,8 +26,8 @@ import jd.plugins.PluginForDecrypt;
 
 public class AnimeLoadsorg extends PluginForDecrypt {
     static private String host = "anime-loads.org";
-   
-    public AnimeLoadsorg(String cfgName){
+
+    public AnimeLoadsorg(String cfgName) {
         super(cfgName);
     }
 
@@ -37,7 +36,8 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        br.setCookiesExclusive(true);br.clearCookies(host);
+        br.setCookiesExclusive(true);
+        br.clearCookies(host);
         br.getPage(parameter);
         String[] links = br.getRegex("src=\"(.*?)\"").getColumn(0);
         progress.setRange(links.length);
@@ -55,7 +55,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         return "JD-Team";
     }
 
-     @Override
+    @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;

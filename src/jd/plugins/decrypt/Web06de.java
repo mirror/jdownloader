@@ -30,7 +30,7 @@ public class Web06de extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?web06\\.de/\\?user=\\d+site=(.*)", Pattern.CASE_INSENSITIVE);
 
-    public Web06de(String cfgName){
+    public Web06de(String cfgName) {
         super(cfgName);
     }
 
@@ -38,7 +38,7 @@ public class Web06de extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         String link = new Regex(parameter, "user=\\d+site=(.*)").getMatch(0);
         if (link != null) {
             decryptedLinks.add(createDownloadlink(link));
@@ -51,7 +51,6 @@ public class Web06de extends PluginForDecrypt {
     public String getCoder() {
         return "JD-Team";
     }
-
 
     @Override
     public String getVersion() {

@@ -34,7 +34,7 @@ public class CryptingIt extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?crypting\\.it/index\\.php\\?p=show&id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public CryptingIt(String cfgName){
+    public CryptingIt(String cfgName) {
         super(cfgName);
     }
 
@@ -50,9 +50,8 @@ public class CryptingIt extends PluginForDecrypt {
         File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         Browser.download(containerFile, dlcLink);
-            links = JDUtilities.getController().getContainerLinks(containerFile);
-            containerFile.delete();
-      
+        links = JDUtilities.getController().getContainerLinks(containerFile);
+        containerFile.delete();
 
         if (links != null) {
             for (DownloadLink dLink : links) {
@@ -66,21 +65,6 @@ public class CryptingIt extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

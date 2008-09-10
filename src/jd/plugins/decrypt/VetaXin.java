@@ -35,7 +35,7 @@ public class VetaXin extends PluginForDecrypt {
     static private final Pattern patternSupported_Page = Pattern.compile("http://[\\w\\.]*?vetax\\.in/view/\\d+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Page.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public VetaXin(String cfgName){
+    public VetaXin(String cfgName) {
         super(cfgName);
     }
 
@@ -59,14 +59,14 @@ public class VetaXin extends PluginForDecrypt {
             String rsdf = br.getRegex(Pattern.compile("<a href=\"(/crypt\\.php\\?.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (rsdf != null) {
                 File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-               Browser.download(container, br.openGetConnection("http://vetax.in" + rsdf));
-                    Vector<DownloadLink> dl_links = JDUtilities.getController().getContainerLinks(container);
-                    container.delete();
-                    for (DownloadLink dl_link : dl_links) {
-                        dl_link.addSourcePluginPassword(pw);
-                        decryptedLinks.add(dl_link);
-                    }
-                
+                Browser.download(container, br.openGetConnection("http://vetax.in" + rsdf));
+                Vector<DownloadLink> dl_links = JDUtilities.getController().getContainerLinks(container);
+                container.delete();
+                for (DownloadLink dl_link : dl_links) {
+                    dl_link.addSourcePluginPassword(pw);
+                    decryptedLinks.add(dl_link);
+                }
+
             }
             progress.setRange(links.length);
             for (String element : links) {

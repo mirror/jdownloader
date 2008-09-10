@@ -29,7 +29,7 @@ public class MediafireFolder extends PluginForDecrypt {
     static private String host = "mediafire.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
-    public MediafireFolder(String cfgName){
+    public MediafireFolder(String cfgName) {
         super(cfgName);
     }
 
@@ -37,7 +37,7 @@ public class MediafireFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             Browser br = new Browser();
 
@@ -66,21 +66,6 @@ public class MediafireFolder extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

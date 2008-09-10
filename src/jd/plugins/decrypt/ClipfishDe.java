@@ -38,7 +38,7 @@ public class ClipfishDe extends PluginForDecrypt {
     private static final String CODER = "ToKaM";
     private static final String HOST = "clipfish.de";
 
-    public ClipfishDe(String cfgName){
+    public ClipfishDe(String cfgName) {
         super(cfgName);
     }
 
@@ -88,7 +88,7 @@ public class ClipfishDe extends PluginForDecrypt {
         return CODER;
     }
 
-      @Override
+    @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;

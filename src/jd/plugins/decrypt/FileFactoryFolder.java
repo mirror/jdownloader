@@ -29,7 +29,7 @@ public class FileFactoryFolder extends PluginForDecrypt {
     final static String host = "filefactory.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)f/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public FileFactoryFolder(String cfgName){
+    public FileFactoryFolder(String cfgName) {
         super(cfgName);
     }
 
@@ -51,21 +51,6 @@ public class FileFactoryFolder extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

@@ -30,7 +30,7 @@ public class LinkBucks extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbucks\\.com/link/[0-9a-zA-Z]+/\\d+", Pattern.CASE_INSENSITIVE);
 
-    public LinkBucks(String cfgName){
+    public LinkBucks(String cfgName) {
         super(cfgName);
     }
 
@@ -40,7 +40,7 @@ public class LinkBucks extends PluginForDecrypt {
         String parameter = param.toString();
 
         String link = new Regex(br.getPage(parameter), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getMatch(0);
-        if (link==null) return null;
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
@@ -49,21 +49,6 @@ public class LinkBucks extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

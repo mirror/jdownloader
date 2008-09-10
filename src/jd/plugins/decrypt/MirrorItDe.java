@@ -30,7 +30,7 @@ public class MirrorItDe extends PluginForDecrypt {
     final static String host = "mirrorit.de";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mirrorit\\.de/\\?id=[a-zA-Z0-9]{16}", Pattern.CASE_INSENSITIVE);
 
-    public MirrorItDe(String cfgName){
+    public MirrorItDe(String cfgName) {
         super(cfgName);
     }
 
@@ -54,21 +54,6 @@ public class MirrorItDe extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

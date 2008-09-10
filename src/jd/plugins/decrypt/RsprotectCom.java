@@ -31,7 +31,7 @@ public class RsprotectCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    public RsprotectCom(String cfgName){
+    public RsprotectCom(String cfgName) {
         super(cfgName);
     }
 
@@ -41,7 +41,7 @@ public class RsprotectCom extends PluginForDecrypt {
         String parameter = param.toString();
 
         String link = new Regex(br.getPage(parameter), "<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE).getMatch(0);
-        if (link==null) return null;
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;
@@ -50,21 +50,6 @@ public class RsprotectCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

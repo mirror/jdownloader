@@ -29,7 +29,7 @@ public class FilehostIt extends PluginForDecrypt {
     final static String host = "filehost.it";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filehost\\.it/(multi|live)link/checklinks\\.php\\?links=[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    public FilehostIt(String cfgName){
+    public FilehostIt(String cfgName) {
         super(cfgName);
     }
 
@@ -51,21 +51,6 @@ public class FilehostIt extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

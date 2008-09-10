@@ -30,7 +30,7 @@ public class ShareProtect extends PluginForDecrypt {
     final static String host = "shareprotect.t-w.at";
     private Pattern patternSupported = Pattern.compile("http://shareprotect\\.t-w\\.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}", Pattern.CASE_INSENSITIVE);
 
-    public ShareProtect(String cfgName){
+    public ShareProtect(String cfgName) {
         super(cfgName);
     }
 
@@ -38,7 +38,7 @@ public class ShareProtect extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             br.getPage(parameter);
             String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getColumn(0);
@@ -72,7 +72,6 @@ public class ShareProtect extends PluginForDecrypt {
     public String getCoder() {
         return "JD-Team";
     }
-
 
     @Override
     public String getVersion() {

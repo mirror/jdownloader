@@ -38,7 +38,7 @@ public class RsLayerCom extends PluginForDecrypt {
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
 
-    public RsLayerCom(String cfgName){
+    public RsLayerCom(String cfgName) {
         super(cfgName);
     }
 
@@ -48,10 +48,10 @@ public class RsLayerCom extends PluginForDecrypt {
         if (br.containsHTML(container_link)) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
             Browser.download(container, br.openGetConnection(container_link));
-                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-                container.delete();
-               return true;
-            
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            container.delete();
+            return true;
+
         }
         return false;
     }
@@ -79,8 +79,8 @@ public class RsLayerCom extends PluginForDecrypt {
                 if (captchaFileName == null) { return null; }
                 String captchaUrl = "http://" + host + "/" + captchaFileName;
                 File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
-              Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-                
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
+
                 String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                 if (null == captchaCode || captchaCode.length() == 0) {
                     logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));
@@ -124,21 +124,6 @@ public class RsLayerCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

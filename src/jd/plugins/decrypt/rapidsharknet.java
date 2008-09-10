@@ -38,7 +38,7 @@ public class rapidsharknet extends PluginForDecrypt {
     private static final Pattern patternLink_safephp = Pattern.compile("http://[\\w\\.]*?rapidshark\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternLink_direct.pattern() + "|" + patternLink_safephp.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public rapidsharknet(String cfgName){
+    public rapidsharknet(String cfgName) {
         super(cfgName);
     }
 
@@ -46,7 +46,7 @@ public class rapidsharknet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             URL url = new URL(parameter);
             RequestInfo requestInfo;
@@ -74,21 +74,6 @@ public class rapidsharknet extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

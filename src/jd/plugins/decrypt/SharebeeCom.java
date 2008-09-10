@@ -30,7 +30,7 @@ public class SharebeeCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebee\\.com/[a-zA-Z0-9]{8}", Pattern.CASE_INSENSITIVE);
 
-    public SharebeeCom(String cfgName){
+    public SharebeeCom(String cfgName) {
         super(cfgName);
     }
 
@@ -52,21 +52,6 @@ public class SharebeeCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

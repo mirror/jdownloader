@@ -30,7 +30,7 @@ public class Hideurlbiz extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hideurl\\.biz/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public Hideurlbiz(String cfgName){
+    public Hideurlbiz(String cfgName) {
         super(cfgName);
     }
 
@@ -58,21 +58,6 @@ public class Hideurlbiz extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

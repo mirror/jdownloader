@@ -37,7 +37,7 @@ public class XinkIt extends PluginForDecrypt {
     final static String host = "xink.it";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xink\\.it/f-[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public XinkIt(String cfgName){
+    public XinkIt(String cfgName) {
         super(cfgName);
     }
 
@@ -45,7 +45,7 @@ public class XinkIt extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             File captchaFile = null;

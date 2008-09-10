@@ -42,7 +42,7 @@ public class LinkProtectIn extends PluginForDecrypt {
     static private final Pattern patternDownload = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/includes/dl.php\\?id=[a-zA-Z0-9]{1,50}");
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[a-zA-Z0-9]{1,50}", Pattern.CASE_INSENSITIVE);
 
-    public LinkProtectIn(String cfgName){
+    public LinkProtectIn(String cfgName) {
         super(cfgName);
     }
 
@@ -81,8 +81,7 @@ public class LinkProtectIn extends PluginForDecrypt {
                     try {
                         File captchaFile = this.getLocalCaptchaFile(this);
                         Browser br2 = new Browser();
-                       Browser.download(captchaFile, br2.openGetConnection(captchaAddress));
-                         
+                        Browser.download(captchaFile, br2.openGetConnection(captchaAddress));
 
                         br.setCookie(br.getURL(), "PHPSESSID", br2.getCookie(br2.getURL(), "PHPSESSID"));
                         String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
@@ -168,21 +167,6 @@ public class LinkProtectIn extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

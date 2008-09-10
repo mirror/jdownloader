@@ -271,7 +271,7 @@ public class Secured extends PluginForDecrypt {
 
     private String cryptedLink;
 
-    public Secured(String cfgName){
+    public Secured(String cfgName) {
         super(cfgName);
     }
 
@@ -356,21 +356,6 @@ public class Secured extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "olimex, JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PAT_SUPPORTED;
     }
 
     @Override

@@ -29,7 +29,7 @@ public class Linkshield extends PluginForDecrypt {
     static private final String host = "www.linkshield.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkshield\\.com/[sc]/[\\d]+_[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    public Linkshield(String cfgName){
+    public Linkshield(String cfgName) {
         super(cfgName);
     }
 
@@ -39,7 +39,7 @@ public class Linkshield extends PluginForDecrypt {
         String parameter = param.toString();
 
         String link = new Regex(br.getPage(parameter), Pattern.compile("<frame src=(?!blank)(.*?)>")).getMatch(0);
-        if (link==null) return null;
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
@@ -48,21 +48,6 @@ public class Linkshield extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

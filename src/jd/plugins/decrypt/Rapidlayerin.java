@@ -34,7 +34,7 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public Rapidlayerin(String cfgName){
+    public Rapidlayerin(String cfgName) {
         super(cfgName);
     }
 
@@ -65,21 +65,6 @@ public class Rapidlayerin extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

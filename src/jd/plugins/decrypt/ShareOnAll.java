@@ -32,7 +32,7 @@ public class ShareOnAll extends PluginForDecrypt {
     final static String host = "shareonall.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm", Pattern.CASE_INSENSITIVE);
 
-    public ShareOnAll(String cfgName){
+    public ShareOnAll(String cfgName) {
         super(cfgName);
     }
 
@@ -40,7 +40,7 @@ public class ShareOnAll extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             String id = new Regex(parameter, patternSupported).getMatch(0);
             String url = "http://www.shareonall.com/showlinks.php?f=" + id + ".htm";
@@ -55,7 +55,7 @@ public class ShareOnAll extends PluginForDecrypt {
                     captchaAddress = "http://www.shareonall.com/code/" + captchaAddress;
 
                     File captchaFile = this.getLocalCaptchaFile(this);
-                  Browser.download(captchaFile, br.openGetConnection(captchaAddress));
+                    Browser.download(captchaFile, br.openGetConnection(captchaAddress));
                     String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     if (captchaCode == null) {
                         /* abbruch geklickt */
@@ -89,21 +89,6 @@ public class ShareOnAll extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

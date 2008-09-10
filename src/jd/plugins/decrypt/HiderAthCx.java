@@ -28,7 +28,7 @@ public class HiderAthCx extends PluginForDecrypt {
     static private final String host = "Hider.ath.cx";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hider\\.ath\\.cx/\\d+", Pattern.CASE_INSENSITIVE);
 
-    public HiderAthCx(String cfgName){
+    public HiderAthCx(String cfgName) {
         super(cfgName);
     }
 
@@ -46,21 +46,6 @@ public class HiderAthCx extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

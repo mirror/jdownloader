@@ -30,7 +30,7 @@ public class Rsprotectfreehosterch extends PluginForDecrypt {
     final static String host = "rs-protect.freehoster.ch";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-protect\\.freehoster\\.ch/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    public Rsprotectfreehosterch(String cfgName){
+    public Rsprotectfreehosterch(String cfgName) {
         super(cfgName);
     }
 
@@ -49,21 +49,6 @@ public class Rsprotectfreehosterch extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

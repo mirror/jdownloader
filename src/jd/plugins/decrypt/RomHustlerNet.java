@@ -30,7 +30,7 @@ public class RomHustlerNet extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("(http://[\\w.]*?romhustler\\.net/rom/.*?/\\d+/.+)|(/rom/.*?/\\d+/.+)", Pattern.CASE_INSENSITIVE);
 
-    public RomHustlerNet(String cfgName){
+    public RomHustlerNet(String cfgName) {
         super(cfgName);
     }
 
@@ -49,21 +49,6 @@ public class RomHustlerNet extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

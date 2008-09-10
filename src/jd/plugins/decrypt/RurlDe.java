@@ -30,7 +30,7 @@ public class RurlDe extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rurl\\.de/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public RurlDe(String cfgName){
+    public RurlDe(String cfgName) {
         super(cfgName);
     }
 
@@ -52,21 +52,6 @@ public class RurlDe extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

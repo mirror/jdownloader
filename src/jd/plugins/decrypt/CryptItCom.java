@@ -87,7 +87,7 @@ public class CryptItCom extends PluginForDecrypt {
         return requestInfo;
     }
 
-    public CryptItCom(String cfgName){
+    public CryptItCom(String cfgName) {
         super(cfgName);
     }
 
@@ -130,9 +130,8 @@ public class CryptItCom extends PluginForDecrypt {
 
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
             Browser.download(container, requestInfo.getConnection());
-                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-                container.delete();
-           
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            container.delete();
 
         } catch (MalformedURLException e) {
             e.printStackTrace();
@@ -257,21 +256,6 @@ public class CryptItCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

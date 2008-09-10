@@ -35,7 +35,7 @@ public class Wiireloaded extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+", Pattern.CASE_INSENSITIVE);
 
-    public Wiireloaded(String cfgName){
+    public Wiireloaded(String cfgName) {
         super(cfgName);
     }
 
@@ -58,7 +58,7 @@ public class Wiireloaded extends PluginForDecrypt {
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
-          Browser.download(captchaFile, br.openGetConnection(adr));
+            Browser.download(captchaFile, br.openGetConnection(adr));
             progress.addToMax(1);
             if (!captchaFile.exists() || captchaFile.length() == 0) {
                 return null;
@@ -95,7 +95,6 @@ public class Wiireloaded extends PluginForDecrypt {
         return "JD-Team";
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

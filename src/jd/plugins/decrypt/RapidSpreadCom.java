@@ -28,7 +28,7 @@ public class RapidSpreadCom extends PluginForDecrypt {
     static private final String host = "rapidspread.com";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+", Pattern.CASE_INSENSITIVE);
 
-    public RapidSpreadCom(String cfgName){
+    public RapidSpreadCom(String cfgName) {
         super(cfgName);
     }
 
@@ -48,21 +48,6 @@ public class RapidSpreadCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

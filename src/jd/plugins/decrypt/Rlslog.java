@@ -34,7 +34,7 @@ public class Rlslog extends PluginForDecrypt {
     static private final String host = "rlslog.net";
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/))", Pattern.CASE_INSENSITIVE);
 
-    public Rlslog(String cfgName){
+    public Rlslog(String cfgName) {
         super(cfgName);
     }
 
@@ -86,21 +86,6 @@ public class Rlslog extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

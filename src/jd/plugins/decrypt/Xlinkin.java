@@ -95,7 +95,7 @@ public class Xlinkin extends PluginForDecrypt {
         }
     }
 
-    public Xlinkin(String cfgName){
+    public Xlinkin(String cfgName) {
         super(cfgName);
     }
 

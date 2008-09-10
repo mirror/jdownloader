@@ -42,7 +42,7 @@ public class UCMS extends PluginForDecrypt {
 
     final static private Pattern patternSupported = UCMS.create_patternSupported();
 
-    public UCMS(String cfgName){
+    public UCMS(String cfgName) {
         super(cfgName);
     }
 
@@ -160,7 +160,6 @@ public class UCMS extends PluginForDecrypt {
     public String getCoder() {
         return "JD-Team";
     }
-
 
     @Override
     public String getVersion() {

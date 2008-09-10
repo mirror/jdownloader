@@ -32,7 +32,7 @@ public class GappingOrg extends PluginForDecrypt {
     private Pattern patternSupported_container = Pattern.compile("http://[\\w\\.]*?gapping\\.org/g.*?\\.html", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternSupported_folder1.pattern() + "|" + patternSupported_folder2.pattern() + "|" + patternSupported_file.pattern() + "|" + patternSupported_container.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public GappingOrg(String cfgName){
+    public GappingOrg(String cfgName) {
         super(cfgName);
     }
 
@@ -69,21 +69,6 @@ public class GappingOrg extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

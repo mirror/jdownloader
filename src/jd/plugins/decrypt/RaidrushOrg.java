@@ -32,7 +32,7 @@ public class RaidrushOrg extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public RaidrushOrg(String cfgName){
+    public RaidrushOrg(String cfgName) {
         super(cfgName);
     }
 
@@ -66,21 +66,6 @@ public class RaidrushOrg extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

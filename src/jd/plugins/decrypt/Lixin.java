@@ -38,7 +38,7 @@ public class Lixin extends PluginForDecrypt {
     static private final Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.+?)\"", Pattern.DOTALL);
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?lix\\.in/[-]{0,1}[a-zA-Z0-9]{6,10}", Pattern.CASE_INSENSITIVE);
 
-    public Lixin(String cfgName){
+    public Lixin(String cfgName) {
         super(cfgName);
     }
 
@@ -46,7 +46,7 @@ public class Lixin extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
 
             boolean lix_continue = false;
@@ -62,7 +62,7 @@ public class Lixin extends PluginForDecrypt {
 
                     String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
                     File captchaFile = this.getLocalCaptchaFile(this);
-                  Browser.download(captchaFile, captchaAddress);
+                    Browser.download(captchaFile, captchaAddress);
                     String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     if (captchaCode == null) {
                         /* abbruch geklickt */
@@ -108,21 +108,6 @@ public class Lixin extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

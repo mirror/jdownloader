@@ -35,7 +35,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
     private static final Pattern patternLink_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternLink_Main.pattern() + "|" + patternLink_Crypt.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public DDLMusicOrg(String cfgName){
+    public DDLMusicOrg(String cfgName) {
         super(cfgName);
     }
 
@@ -43,7 +43,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-       
+
         try {
 
             if (new Regex(parameter, patternLink_Crypt).matches()) {
@@ -92,21 +92,6 @@ public class DDLMusicOrg extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

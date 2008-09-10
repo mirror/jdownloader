@@ -31,7 +31,7 @@ public class Datenbankorg extends PluginForDecrypt {
     private Pattern patternSupported_Info = Pattern.compile("http://daten-bank\\.org/view/.*?/", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternSupported_Go.pattern() + "|" + patternSupported_Info.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public Datenbankorg(String cfgName){
+    public Datenbankorg(String cfgName) {
         super(cfgName);
     }
 
@@ -61,21 +61,6 @@ public class Datenbankorg extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

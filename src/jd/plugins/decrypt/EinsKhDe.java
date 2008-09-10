@@ -36,7 +36,7 @@ public class EinsKhDe extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public EinsKhDe(String cfgName){
+    public EinsKhDe(String cfgName) {
         super(cfgName);
     }
 
@@ -97,21 +97,6 @@ public class EinsKhDe extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

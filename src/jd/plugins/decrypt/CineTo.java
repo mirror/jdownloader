@@ -31,14 +31,14 @@ public class CineTo extends PluginForDecrypt {
     private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public CineTo(String cfgName){
+    public CineTo(String cfgName) {
         super(cfgName);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         if (parameter.matches(patternLink_Show.pattern())) {
             String[] mirrors = new Regex(br.getPage(parameter), Pattern.compile("href=\"index\\.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             for (String element : mirrors) {
@@ -124,7 +124,6 @@ public class CineTo extends PluginForDecrypt {
         return "JD-Team";
     }
 
- 
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;

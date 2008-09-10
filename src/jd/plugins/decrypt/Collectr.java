@@ -32,7 +32,7 @@ public class Collectr extends PluginForDecrypt {
     static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*");
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*", Pattern.CASE_INSENSITIVE);
 
-    public Collectr(String cfgName){
+    public Collectr(String cfgName) {
         super(cfgName);
     }
 
@@ -66,7 +66,6 @@ public class Collectr extends PluginForDecrypt {
         return "JD-Team";
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

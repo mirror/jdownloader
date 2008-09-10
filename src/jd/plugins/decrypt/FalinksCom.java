@@ -34,7 +34,7 @@ public class FalinksCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public FalinksCom(String cfgName){
+    public FalinksCom(String cfgName) {
         super(cfgName);
     }
 
@@ -42,7 +42,7 @@ public class FalinksCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             URL url = new URL(parameter);
             RequestInfo reqinfo = HTTP.getRequest(url);
@@ -65,21 +65,6 @@ public class FalinksCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

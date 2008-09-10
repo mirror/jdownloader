@@ -27,7 +27,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class AnimeANet extends PluginForDecrypt {
     final static String host = "animea.net";
-    
+
     public AnimeANet(String cfgName) {
         super(cfgName);
     }
@@ -35,7 +35,7 @@ public class AnimeANet extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString(); 
+        String parameter = param.toString();
         parameter = parameter.replaceAll(" ", "+");
 
         if (PluginPattern.decrypterPattern_AnimeANet_Series.matcher(parameter).matches()) {
@@ -61,7 +61,7 @@ public class AnimeANet extends PluginForDecrypt {
     public String getCoder() {
         return "JD-Team";
     }
-   
+
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

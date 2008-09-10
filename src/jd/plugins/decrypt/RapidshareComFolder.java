@@ -31,14 +31,14 @@ public class RapidshareComFolder extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare.com/users/.+", Pattern.CASE_INSENSITIVE);
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-    public RapidshareComFolder(String cfgName){
+    public RapidshareComFolder(String cfgName) {
         super(cfgName);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         String parameter = param.toString();
-        
+
         String page = br.getPage(parameter);
         String password = "";
 
@@ -62,11 +62,6 @@ public class RapidshareComFolder extends PluginForDecrypt {
         return "JD-Team";
     }
 
-    @Override
-    public String getHost() {
-        return host;
-    }
-
     private void getLinks(String para, String password, String source) throws IOException {
         String[] folders = new Regex(source, "font\\-size:12pt\\;\" href=\"javascript:folderoeffnen\\('(\\d+?)'\\);").getColumn(0);
         String[] links = new Regex(source, "<a style=\"font-size:12pt;\" target=\"_blank\" href=\"http://rapidshare.com/files/(.*?)\">").getColumn(0);
@@ -77,16 +72,6 @@ public class RapidshareComFolder extends PluginForDecrypt {
         for (String element : links) {
             decryptedLinks.add(createDownloadlink("http://rapidshare.com/files/" + element));
         }
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

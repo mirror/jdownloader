@@ -35,7 +35,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?link-protector\\.com/[\\d]{6}.*", Pattern.CASE_INSENSITIVE);
 
-    public LinkProtectorCom(String cfgName){
+    public LinkProtectorCom(String cfgName) {
         super(cfgName);
     }
 
@@ -55,7 +55,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             URL url = new URL(parameter);
             RequestInfo requestInfo = HTTP.getRequest(url);
@@ -97,21 +97,6 @@ public class LinkProtectorCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

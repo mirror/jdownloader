@@ -31,7 +31,7 @@ public class XrlUs extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xrl\\.us/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public XrlUs(String cfgName){
+    public XrlUs(String cfgName) {
         super(cfgName);
     }
 
@@ -67,8 +67,6 @@ public class XrlUs extends PluginForDecrypt {
     public String getCoder() {
         return "JD-Team";
     }
-
-  
 
     @Override
     public String getVersion() {

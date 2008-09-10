@@ -100,7 +100,7 @@ public class MySpaceCom extends PluginForDecrypt {
      */
     private static final String ENABLE_DL_NAME_MODIFICATION = "MYSPACE_ENABLE_DL_NAME_MODIFICATION";
 
-    public MySpaceCom(String cfgName){
+    public MySpaceCom(String cfgName) {
         super(cfgName);
         setConfigElements();
     }
@@ -217,21 +217,6 @@ public class MySpaceCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return CODER;
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTED;
     }
 
     @Override

@@ -30,7 +30,7 @@ public class Woireless6xTo extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?chaoz\\.ws/woireless/page/album_\\d+\\.html", Pattern.CASE_INSENSITIVE);
 
-    public Woireless6xTo(String cfgName){
+    public Woireless6xTo(String cfgName) {
         super(cfgName);
     }
 
@@ -61,7 +61,6 @@ public class Woireless6xTo extends PluginForDecrypt {
         return "JD-Team";
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

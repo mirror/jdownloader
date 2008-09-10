@@ -40,7 +40,7 @@ public class Stealth extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+|\\?go\\=captcha&id=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    public Stealth(String cfgName){
+    public Stealth(String cfgName) {
         super(cfgName);
     }
 
@@ -52,13 +52,13 @@ public class Stealth extends PluginForDecrypt {
         String id = new Regex(parameter, Pattern.compile("\\?id\\=([a-zA-Z0-9]+)")).getMatch(0);
         if (id != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-           Browser.download(container, br.openGetConnection("http://stealth.to/?go=dlc&id=" + id));
-                Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
-                for (DownloadLink dl_link : dl_links) {
-                    decryptedLinks.add(dl_link);
-                }
-                container.delete();
-            
+            Browser.download(container, br.openGetConnection("http://stealth.to/?go=dlc&id=" + id));
+            Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
+            for (DownloadLink dl_link : dl_links) {
+                decryptedLinks.add(dl_link);
+            }
+            container.delete();
+
         }
 
         if (decryptedLinks.size() == 0) {
@@ -135,7 +135,6 @@ public class Stealth extends PluginForDecrypt {
         return "JD-Team";
     }
 
-   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

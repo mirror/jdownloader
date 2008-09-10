@@ -31,14 +31,14 @@ public class ShareRocktEs extends PluginForDecrypt {
     private static final Pattern patternSupported_v = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternSupported_v.pattern() + "|" + patternSupported_go.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public ShareRocktEs(String cfgName){
+    public ShareRocktEs(String cfgName) {
         super(cfgName);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         String parameter = param.toString();
-        
+
         String page = br.getPage(parameter);
         br.setFollowRedirects(false);
         String[] matches;
@@ -80,7 +80,6 @@ public class ShareRocktEs extends PluginForDecrypt {
         return "ToKaM";
     }
 
-  
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

@@ -28,7 +28,7 @@ public class MovieloadTo extends PluginForDecrypt {
     final static String host = "movieload.to";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+", Pattern.CASE_INSENSITIVE);
 
-    public MovieloadTo(String cfgName){
+    public MovieloadTo(String cfgName) {
         super(cfgName);
     }
 
@@ -53,21 +53,6 @@ public class MovieloadTo extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

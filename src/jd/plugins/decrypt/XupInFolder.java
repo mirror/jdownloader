@@ -30,7 +30,7 @@ public class XupInFolder extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?", Pattern.CASE_INSENSITIVE);
 
-    public XupInFolder(String cfgName){
+    public XupInFolder(String cfgName) {
         super(cfgName);
     }
 

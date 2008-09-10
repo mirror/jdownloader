@@ -36,7 +36,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
     final static String host = "yourfiles.biz";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
 
-    public YourFilesBizFolder(String cfgName){
+    public YourFilesBizFolder(String cfgName) {
         super(cfgName);
     }
 
@@ -44,7 +44,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
             if (reqinfo.getHtmlCode().contains("Ordner Passwort")) {
@@ -79,7 +79,6 @@ public class YourFilesBizFolder extends PluginForDecrypt {
         return "JD-Team";
     }
 
-   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

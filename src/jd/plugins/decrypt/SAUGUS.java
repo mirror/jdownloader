@@ -31,7 +31,7 @@ public class SAUGUS extends PluginForDecrypt {
     private Pattern patternSupported_folder = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternSupported_folder.pattern() + "|" + patternSupported_go.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public SAUGUS(String cfgName){
+    public SAUGUS(String cfgName) {
         super(cfgName);
     }
 
@@ -43,9 +43,9 @@ public class SAUGUS extends PluginForDecrypt {
         String server_id = "";
         if (new Regex(parameter, patternSupported_folder).matches()) {
             if (parameter.contains("folder2")) {
-                server_folder_id = "2";               
+                server_folder_id = "2";
             }
-            if (parameter.contains("s2.saug.us")){
+            if (parameter.contains("s2.saug.us")) {
                 server_id = "s2.";
             }
             br.getPage(parameter);
@@ -68,9 +68,9 @@ public class SAUGUS extends PluginForDecrypt {
             }
         } else if (new Regex(parameter, patternSupported_go).matches()) {
             if (parameter.contains("folder2")) {
-                server_folder_id = "2";               
+                server_folder_id = "2";
             }
-            if (parameter.contains("s2.saug.us")){
+            if (parameter.contains("s2.saug.us")) {
                 server_id = "s2.";
             }
             br.getPage(parameter);
@@ -91,21 +91,6 @@ public class SAUGUS extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

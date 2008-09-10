@@ -37,7 +37,7 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
     private Pattern patternDLC = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
     private Pattern patternPW = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
 
-    public FuckTheIndustryRu(String cfgName){
+    public FuckTheIndustryRu(String cfgName) {
         super(cfgName);
     }
 
@@ -53,9 +53,8 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         Browser.download(container, link);
-            links = JDUtilities.getController().getContainerLinks(container);
-            container.delete();
-       
+        links = JDUtilities.getController().getContainerLinks(container);
+        container.delete();
 
         if (links != null) {
             FilePackage fp = new FilePackage();
@@ -77,21 +76,6 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

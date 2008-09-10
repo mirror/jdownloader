@@ -31,7 +31,7 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    public Rapidsafenet(String cfgName){
+    public Rapidsafenet(String cfgName) {
         super(cfgName);
     }
 
@@ -41,7 +41,7 @@ public class Rapidsafenet extends PluginForDecrypt {
         String parameter = param.toString();
 
         String link = new Regex(br.getPage(parameter), Pattern.compile("&nbsp;<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (link==null) return null;
+        if (link == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;
@@ -50,21 +50,6 @@ public class Rapidsafenet extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

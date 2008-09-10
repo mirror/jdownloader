@@ -31,7 +31,7 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!", Pattern.CASE_INSENSITIVE);
 
-    public ProtectTehparadoxcom(String cfgName){
+    public ProtectTehparadoxcom(String cfgName) {
         super(cfgName);
     }
 
@@ -50,21 +50,6 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

@@ -29,18 +29,18 @@ public class TechnorockerInfo extends PluginForDecrypt {
     final static String host = "technorocker.info";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public TechnorockerInfo(String cfgName){
-        super(cfgName);        
+    public TechnorockerInfo(String cfgName) {
+        super(cfgName);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         String link = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"(.*?)\"><b>here</b>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (link == null) return null;
-        DownloadLink dl_link=createDownloadlink(link);
+        DownloadLink dl_link = createDownloadlink(link);
         dl_link.addSourcePluginPassword("technorocker");
         decryptedLinks.add(dl_link);
 
@@ -52,7 +52,6 @@ public class TechnorockerInfo extends PluginForDecrypt {
         return "JD-Team";
     }
 
-   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

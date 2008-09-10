@@ -32,7 +32,7 @@ import jd.plugins.RequestInfo;
 public class YouPornCom extends PluginForDecrypt {
     public YouPornCom(String cfgName) {
         super(cfgName);
-   
+
     }
 
     private static final String HOST = "youporn.com";
@@ -46,7 +46,7 @@ public class YouPornCom extends PluginForDecrypt {
         RequestInfo loader;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             if (new Regex(parameter, patternSupported_Other).matches()) {
                 loader = HTTP.getRequest(new URL(parameter), "age_check=1", "", true);
@@ -78,7 +78,6 @@ public class YouPornCom extends PluginForDecrypt {
         return "JD-Team";
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

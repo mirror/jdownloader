@@ -41,7 +41,7 @@ public class DreiDlAm extends PluginForDecrypt {
     private final static Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern() + "|" + patternSupported_3.pattern(), Pattern.CASE_INSENSITIVE);
     private String password;
 
-    public DreiDlAm(String cfgName){
+    public DreiDlAm(String cfgName) {
         super(cfgName);
     }
 
@@ -134,21 +134,6 @@ public class DreiDlAm extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

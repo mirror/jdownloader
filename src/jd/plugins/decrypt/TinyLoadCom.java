@@ -28,7 +28,7 @@ public class TinyLoadCom extends PluginForDecrypt {
     static private final String host = "tinyload.com";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyload\\.com/\\w+", Pattern.CASE_INSENSITIVE);
 
-    public TinyLoadCom(String cfgName){
+    public TinyLoadCom(String cfgName) {
         super(cfgName);
     }
 
@@ -36,7 +36,7 @@ public class TinyLoadCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         String[] links = new Regex(br.getPage(parameter), Pattern.compile("alt=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String element : links) {
             decryptedLinks.add(createDownloadlink(element));
@@ -49,7 +49,6 @@ public class TinyLoadCom extends PluginForDecrypt {
         return "JD-Team";
     }
 
-  
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

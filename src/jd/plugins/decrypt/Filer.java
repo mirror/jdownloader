@@ -28,7 +28,7 @@ public class Filer extends PluginForDecrypt {
     static private String host = "filer.net";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/.+/.*", Pattern.CASE_INSENSITIVE);
 
-    public Filer(String cfgName){
+    public Filer(String cfgName) {
         super(cfgName);
     }
 
@@ -52,21 +52,6 @@ public class Filer extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

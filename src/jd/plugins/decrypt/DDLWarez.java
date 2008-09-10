@@ -104,7 +104,7 @@ public class DDLWarez extends PluginForDecrypt {
 
     public static Integer Worker_Delay = 250;
 
-    public DDLWarez(String cfgName){
+    public DDLWarez(String cfgName) {
         super(cfgName);
     }
 
@@ -163,21 +163,6 @@ public class DDLWarez extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

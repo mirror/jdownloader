@@ -38,7 +38,7 @@ public class Divxvid extends PluginForDecrypt {
 
     private Pattern premiumdownloadlocation = Pattern.compile("form name=\"dxp\" action=\"(.*)\" method=\"post\"", Pattern.CASE_INSENSITIVE);
 
-    public Divxvid(String cfgName){
+    public Divxvid(String cfgName) {
         super(cfgName);
         passwords.add("dxd-tivi");
         passwords.add("dxp.divxvid.org");
@@ -56,7 +56,7 @@ public class Divxvid extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
             URL url = new URL(parameter);
 
@@ -92,21 +92,6 @@ public class Divxvid extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

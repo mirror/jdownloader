@@ -32,7 +32,7 @@ public class NetfolderIn extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public NetfolderIn(String cfgName){
+    public NetfolderIn(String cfgName) {
         super(cfgName);
     }
 
@@ -71,21 +71,6 @@ public class NetfolderIn extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

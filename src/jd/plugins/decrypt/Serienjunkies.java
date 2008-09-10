@@ -75,7 +75,7 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private static Vector<String> passwords = new Vector<String>();
 
-    public Serienjunkies(String cfgName){
+    public Serienjunkies(String cfgName) {
         super(cfgName);
         setConfigElements();
         passwords.add("serienjunkies.dl.am");
@@ -423,10 +423,6 @@ public class Serienjunkies extends PluginForDecrypt {
         return ret.toArray(new CryptedLink[ret.size()]);
     }
 
-    public String getHost() {
-        return host;
-    }
-
     private String getHostname(String link) {
         if (link.matches(".*rc[\\_\\-].*")) {
             return "rapidshare.com";
@@ -503,19 +499,11 @@ public class Serienjunkies extends PluginForDecrypt {
         return ret.toArray(new String[ret.size()]);
     }
 
-    public String getPluginName() {
-        return host;
-    }
-
     private int getSerienJunkiesCat(boolean isP) {
 
         sCatDialog(isP);
         return useScat[0];
 
-    }
-
-    public Pattern getSupportedLinks() {
-        return null;
     }
 
     public String getVersion() {

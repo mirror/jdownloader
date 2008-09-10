@@ -31,7 +31,7 @@ public class Xailicom extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xaili\\.com/\\?site=protect\\&id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public Xailicom(String cfgName){
+    public Xailicom(String cfgName) {
         super(cfgName);
     }
 
@@ -55,7 +55,6 @@ public class Xailicom extends PluginForDecrypt {
     public String getCoder() {
         return "JD-Team";
     }
-
 
     @Override
     public String getVersion() {

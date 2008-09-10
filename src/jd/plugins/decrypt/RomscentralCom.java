@@ -33,7 +33,7 @@ public class RomscentralCom extends PluginForDecrypt {
     static private final Pattern patternSupportedWay2 = Pattern.compile("onclick=\"return popitup\\('(.+\\.htm)'\\)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile("(" + patternSupportedWay1.pattern() + ")|(" + patternSupportedWay2.pattern() + ")", Pattern.CASE_INSENSITIVE);
 
-    public RomscentralCom(String cfgName){
+    public RomscentralCom(String cfgName) {
         super(cfgName);
         this.setAcceptOnlyURIs(false);
     }
@@ -69,21 +69,6 @@ public class RomscentralCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

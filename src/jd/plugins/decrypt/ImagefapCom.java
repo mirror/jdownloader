@@ -28,7 +28,7 @@ public class ImagefapCom extends PluginForDecrypt {
     static private final String host = "imagefap.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)", Pattern.CASE_INSENSITIVE);
 
-    public ImagefapCom(String cfgName){
+    public ImagefapCom(String cfgName) {
         super(cfgName);
     }
 
@@ -54,21 +54,6 @@ public class ImagefapCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

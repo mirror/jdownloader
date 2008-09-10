@@ -29,7 +29,7 @@ public class RockHouseIn extends PluginForDecrypt {
     final static String host = "rock-house.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public RockHouseIn(String cfgName){
+    public RockHouseIn(String cfgName) {
         super(cfgName);
     }
 
@@ -53,21 +53,6 @@ public class RockHouseIn extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

@@ -48,7 +48,7 @@ public class Gwarezcc extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
     private static final String PREFER_DLC = "PREFER_DLC";
 
-    public Gwarezcc(String cfgName){
+    public Gwarezcc(String cfgName) {
         super(cfgName);
         setConfigElements();
     }
@@ -131,14 +131,14 @@ public class Gwarezcc extends PluginForDecrypt {
                 url = new URL("http://gwarez.cc/download/dlc/" + downloadid + "/");
                 HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
                 dlc_con.setRequestProperty("Referer", parameter);
-               Browser.download(container, dlc_con);
-                    Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
-                    for (DownloadLink dl_link : dl_links) {
-                        dl_link.addSourcePluginPassword(password);
-                        decryptedLinks.add(dl_link);
-                    }
-                    container.delete();
-                
+                Browser.download(container, dlc_con);
+                Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
+                for (DownloadLink dl_link : dl_links) {
+                    dl_link.addSourcePluginPassword(password);
+                    decryptedLinks.add(dl_link);
+                }
+                container.delete();
+
             }
 
         } catch (MalformedURLException e) {
@@ -153,18 +153,6 @@ public class Gwarezcc extends PluginForDecrypt {
 
     public String getCoder() {
         return "JD-Team";
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public String getPluginName() {
-        return host;
-    }
-
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     public String getVersion() {

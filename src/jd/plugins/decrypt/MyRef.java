@@ -30,7 +30,7 @@ public class MyRef extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myref\\.de(\\/){0,1}\\?\\d{0,10}", Pattern.CASE_INSENSITIVE);
 
-    public MyRef(String cfgName){
+    public MyRef(String cfgName) {
         super(cfgName);
     }
 
@@ -49,21 +49,6 @@ public class MyRef extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

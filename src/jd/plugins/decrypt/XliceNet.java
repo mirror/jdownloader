@@ -30,7 +30,7 @@ public class XliceNet extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xlice\\.net/download/[a-z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public XliceNet(String cfgName){
+    public XliceNet(String cfgName) {
         super(cfgName);
     }
 
@@ -59,7 +59,7 @@ public class XliceNet extends PluginForDecrypt {
         return "JD-Team";
     }
 
-     @Override
+    @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;

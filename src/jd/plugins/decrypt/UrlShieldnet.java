@@ -46,7 +46,7 @@ public class UrlShieldnet extends PluginForDecrypt {
     private File captchaFile;
     private String passCode = null;
 
-    public UrlShieldnet(String cfgName){
+    public UrlShieldnet(String cfgName) {
         super(cfgName);
     }
 
@@ -54,12 +54,13 @@ public class UrlShieldnet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        
+
         try {
 
             boolean do_continue = true;
             Form form;
-            br.setCookiesExclusive(true);br.clearCookies(host);
+            br.setCookiesExclusive(true);
+            br.clearCookies(host);
 
             br.getPage(parameter);
             br.setFollowRedirects(false);
@@ -142,7 +143,6 @@ public class UrlShieldnet extends PluginForDecrypt {
         return "JD-Team";
     }
 
- 
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
