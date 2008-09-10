@@ -30,9 +30,9 @@ public class PluginWrapper implements Comparable {
         if (pattern != null) {
             this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         }
-        this.host = host;
+        this.host = host.toLowerCase();
         this.className = className;
-        this.pluginName = name;
+        this.pluginName = name.toLowerCase();
         if ((flags & PluginWrapper.LOAD_ON_INIT) > 0) this.getPlugin();
 
     }
@@ -46,11 +46,11 @@ public class PluginWrapper implements Comparable {
     }
 
     public String getHost() {
-        return this.isLoaded() ? getPlugin().getHost() : host;
+        return this.isLoaded() ? getPlugin().getHost().toLowerCase() : host.toLowerCase();
     }
 
     public void setHost(String host) {
-        this.host = host;
+        this.host = host.toLowerCase();
     }
 
     public String getClassName() {
@@ -80,8 +80,8 @@ public class PluginWrapper implements Comparable {
             Class[] classes = new Class[] { String.class };
             Constructor con = plgClass.getConstructor(classes);
             classes = null;
-            this.loadedPLugin = (Plugin) con.newInstance(new Object[] { host });
-            loadedPLugin.setHost(host);
+            this.loadedPLugin = (Plugin) con.newInstance(new Object[] { host.toLowerCase() });
+            loadedPLugin.setHost(host.toLowerCase());
             loadedPLugin.setSupportedPattern(pattern);
           
             return loadedPLugin;
@@ -93,7 +93,7 @@ public class PluginWrapper implements Comparable {
     }
 
     public String getPluginName() {
-        return this.isLoaded() ? getPlugin().getPluginName() : this.pluginName;
+        return this.isLoaded() ? getPlugin().getPluginName().toLowerCase() : this.pluginName.toLowerCase();
     }
 
     public Object getVersion() {
@@ -130,7 +130,7 @@ public class PluginWrapper implements Comparable {
     }
 
     public void setPluginName(String pluginName) {
-        this.pluginName = pluginName;
+        this.pluginName = pluginName.toLowerCase();
     }
 
     public SubConfiguration getPluginConfig() {
@@ -170,6 +170,6 @@ public class PluginWrapper implements Comparable {
     }
 
     public int compareTo(Object o) {
-        return getHost().compareTo(((PluginWrapper) o).getHost());
+        return getHost().toLowerCase().compareTo(((PluginWrapper) o).getHost().toLowerCase());
     }
 }

@@ -186,7 +186,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         sourcePluginPasswords = new Vector<String>();
 
         downloadMax = 0;
-        this.host = host;
+        this.host = host.toLowerCase();
         this.isEnabled = isEnabled;
         speedMeter = new SpeedMeter();
         if (urlDownload != null) {
@@ -390,7 +390,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Der Hoster, auf dem dieser Link verweist
      */
     public String getHost() {
-        return host;
+        return host.toLowerCase();
     }
 
     /**

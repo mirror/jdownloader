@@ -619,7 +619,7 @@ public class JDUtilities {
         if (method == null) {
             host = plugin.getHost();
         } else {
-            host = method;
+            host = method.toLowerCase();
         }
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED, file));
@@ -1385,7 +1385,7 @@ public class JDUtilities {
      */
     public static PluginForHost getPluginForHost(String host) {
         for (int i = 0; i < pluginsForHost.size(); i++) {
-            if (pluginsForHost.get(i).getHost().equals(host)) { return pluginsForHost.get(i).getPlugin(); }
+            if (pluginsForHost.get(i).getHost().equals(host.toLowerCase())) { return pluginsForHost.get(i).getPlugin(); }
         }
         return null;
     }

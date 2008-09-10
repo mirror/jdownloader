@@ -364,7 +364,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Der unterstützte Anbieter
      */
     public String getHost() {
-        return host;
+        return host.toLowerCase();
     }
 
     public String getInitID() {
@@ -400,7 +400,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Der Name des Plugins
      */
     public String getPluginName() {
-        return host;
+        return host.toLowerCase();
     }
 
     /**
@@ -501,7 +501,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * Sortieren für die Konfiguration benötigt.
      */
     public int compareTo(Plugin plg) {
-        return getPluginName().compareToIgnoreCase(plg.getPluginName());
+        return getPluginName().toLowerCase().compareToIgnoreCase(plg.getPluginName().toLowerCase());
     }
 
     /**
@@ -520,7 +520,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     }
 
     public void setHost(String host) {
-        this.host = host;
+        this.host = host.toLowerCase();
 
     }
 
