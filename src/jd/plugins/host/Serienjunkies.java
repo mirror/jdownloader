@@ -228,7 +228,7 @@ public class Serienjunkies extends PluginForHost {
                       
                         continue;
                     }
-                    capTxt = JDUtilities.getCaptcha(this, "einzellinks.Serienjunkies.org", captchaFile, false);
+                    capTxt = JDUtilities.getCaptcha(this, "einzellinks.serienjunkies.org", captchaFile, false);
                     reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     if (captchaFile != null && capTxt != null) {
