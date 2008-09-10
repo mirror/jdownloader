@@ -33,13 +33,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class BestMovies extends PluginForDecrypt {
-    static private final String HOST = "best-movies.us";
+
     static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"captcha.php\"");
     static private final Pattern patternCaptcha_Wrong = Pattern.compile("Der Sicherheitscode ist falsch");
     static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
-    static private final Pattern patternSupported = Pattern.compile("http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public BestMovies(String cfgName){
+    public BestMovies(String cfgName) {
         super(cfgName);
     }
 
@@ -72,7 +71,7 @@ public class BestMovies extends PluginForDecrypt {
                     captcha_con.setRequestProperty("Referer", parameter);
                     captcha_con.setRequestProperty("Cookie", cookie);
                     Browser.download(captchaFile, captcha_con);
-                  
+
                     String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
                     if (captchaCode == null) {
                         /* abbruch geklickt */
@@ -103,21 +102,6 @@ public class BestMovies extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public String getPluginName() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

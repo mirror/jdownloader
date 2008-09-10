@@ -124,18 +124,7 @@ public class CineTo extends PluginForDecrypt {
         return "JD-Team";
     }
 
-    public String getHost() {
-        return host;
-    }
-
-    public String getPluginName() {
-        return host;
-    }
-
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
+ 
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;

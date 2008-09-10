@@ -25,10 +25,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Bm4uin extends PluginForDecrypt {
-    static private final String host = "bm4u.in";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+", Pattern.CASE_INSENSITIVE);
-
-    public Bm4uin(String cfgName){
+    public Bm4uin(String cfgName) {
         super(cfgName);
     }
 
@@ -54,21 +51,6 @@ public class Bm4uin extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

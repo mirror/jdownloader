@@ -41,12 +41,11 @@ public class YouTubeCom extends PluginForDecrypt {
     private static final String PLAYER = "get_video";
     private static final String T = "\"t\"";
     private static final String VIDEO_ID = "video_id";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" brurl=\".*?\" convertto=\".*?\" comment=\".*?\" \\>", Pattern.CASE_INSENSITIVE);
     private Pattern StreamingShareLink = Pattern.compile("\\< streamingshare=\"youtube\\.com\" name=\"(.*?)\" dlurl=\"(.*?)\" brurl=\"(.*?)\" convertto=\"(.*?)\" comment=\"(.*?)\" \\>", Pattern.CASE_INSENSITIVE);
 
     static public final Pattern YT_FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    public YouTubeCom(String cfgName){
+    public YouTubeCom(String cfgName) {
         super(cfgName);
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
@@ -136,7 +135,7 @@ public class YouTubeCom extends PluginForDecrypt {
             if (br.openGetConnection(link + "&fmt=13").getResponseCode() == 200) {
                 possibleconverts.add(ConversionMode.VIDEO3GP);
             }
-            possibleconverts.add(ConversionMode.AUDIOMP3);            
+            possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
             ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
@@ -163,21 +162,6 @@ public class YouTubeCom extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return "JD-Team";
-    }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
     }
 
     @Override

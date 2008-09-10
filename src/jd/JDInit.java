@@ -589,7 +589,7 @@ public class JDInit {
 
     public ArrayList<DecryptPluginWrapper> loadPluginForDecrypt() {
         ArrayList<DecryptPluginWrapper> plwrappers = new ArrayList<DecryptPluginWrapper>();
-        plwrappers.add(new DecryptPluginWrapper("animea.net", "AnimeANet", "http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html|http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html"));
+        plwrappers.add(new DecryptPluginWrapper("animea.net", "AnimeANet", PluginPattern.decrypterPattern_AnimeANet_Plugin));
         plwrappers.add(new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html"));
         plwrappers.add(new DecryptPluginWrapper("best-movies.us", "BestMovies", "http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+"));
         plwrappers.add(new DecryptPluginWrapper("bm4u.in", "Bm4uin", "http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+"));
@@ -686,7 +686,7 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("scum.in", "ScumIn", "http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+"));
         plwrappers.add(new DecryptPluginWrapper("secured.in", "Secured", "http://[\\w\\.]*?secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html"));
         plwrappers.add(new DecryptPluginWrapper("se-cur.net", "SeCurNet", "http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+"));
-        plwrappers.add(new DecryptPluginWrapper("Serienjunkies.org", "Serienjunkies", null, PluginWrapper.LOAD_ON_INIT));
+        plwrappers.add(new DecryptPluginWrapper("Serienjunkies.org", "Serienjunkies", new String(), PluginWrapper.LOAD_ON_INIT));
         plwrappers.add(new DecryptPluginWrapper("sexuria.com", "Sexuriacom", "http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("sharebee.com", "SharebeeCom", "http://[\\w\\.]*?sharebee\\.com/[a-zA-Z0-9]{8}"));
         plwrappers.add(new DecryptPluginWrapper("shareonall.com", "ShareOnAll", "http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm"));
@@ -698,7 +698,7 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("tinyload.com", "TinyLoadCom", "http://[\\w\\.]*?tinyload\\.com/\\w+"));
         plwrappers.add(new DecryptPluginWrapper("tinyurl.com", "Tinyurl", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+"));
         plwrappers.add(new DecryptPluginWrapper("ucash.in", "UCashin", "http://[\\w\\.]*?ucash\\.in/([a-zA-Z0-9]+)"));
-        plwrappers.add(new DecryptPluginWrapper("Underground CMS", "UCMS", PluginPattern.decrypterPattern_UCMS().pattern()));
+        plwrappers.add(new DecryptPluginWrapper("Underground CMS", "UCMS", PluginPattern.decrypterPattern_UCMS_Plugin()));
         plwrappers.add(new DecryptPluginWrapper("uploadjockey.com", "UploadJockeycom", "http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)"));
         plwrappers.add(new DecryptPluginWrapper("up.picoasis.net", "UpPicoasisNet", "http://up\\.picoasis\\.net/[\\d]+"));
         plwrappers.add(new DecryptPluginWrapper("urlcash.net", "URLCash", "http://[a-zA-Z0-9\\-]{5,16}\\.(urlcash\\.net|urlcash\\.org|clb1\\.com|urlgalleries\\.com|celebclk\\.com|smilinglinks\\.com|peekatmygirlfriend\\.com|looble\\.net)"));

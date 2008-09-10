@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginPattern;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -26,10 +27,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class AnimeANet extends PluginForDecrypt {
     final static String host = "animea.net";
-    private Pattern patternSupported_Series = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported_Episode = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+-[\\d]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile(patternSupported_Series.pattern() + "|" + patternSupported_Episode.pattern(), Pattern.CASE_INSENSITIVE);
-
+    
     public AnimeANet(String cfgName) {
         super(cfgName);
     }
@@ -40,7 +38,7 @@ public class AnimeANet extends PluginForDecrypt {
         String parameter = param.toString(); 
         parameter = parameter.replaceAll(" ", "+");
 
-        if (patternSupported_Series.matcher(parameter).matches()) {
+        if (PluginPattern.decrypterPattern_AnimeANet_Series.matcher(parameter).matches()) {
             String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"/download/(.*?)\\.html\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
@@ -63,22 +61,7 @@ public class AnimeANet extends PluginForDecrypt {
     public String getCoder() {
         return "JD-Team";
     }
-
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
+   
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);

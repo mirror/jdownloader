@@ -1,5 +1,9 @@
 package jd;
 
+import java.util.regex.Pattern;
+
+import jd.config.SubConfiguration;
+
 import jd.plugins.PluginForHost;
 
 public class HostPluginWrapper extends PluginWrapper {
@@ -15,6 +19,19 @@ public class HostPluginWrapper extends PluginWrapper {
     }
 
     public HostPluginWrapper(String host, String className, String patternSupported) {
+        this(host, host, className, patternSupported, 0);
+    }
+
+    public HostPluginWrapper(String name, String host, String className, Pattern patternSupported, int flags) {
+        super(name, host, "jd.plugins.host." + className, patternSupported.pattern(), flags);
+        super.setPattern(patternSupported);
+    }
+
+    public HostPluginWrapper(String host, String className, Pattern patternSupported, int flags) {
+        this(host, host, className, patternSupported, flags);
+    }
+
+    public HostPluginWrapper(String host, String className, Pattern patternSupported) {
         this(host, host, className, patternSupported, 0);
     }
 

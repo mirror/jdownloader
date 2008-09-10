@@ -27,8 +27,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class AnimeLoadsorg extends PluginForDecrypt {
     static private String host = "anime-loads.org";
-    final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
-
+   
     public AnimeLoadsorg(String cfgName){
         super(cfgName);
     }
@@ -56,22 +55,7 @@ public class AnimeLoadsorg extends PluginForDecrypt {
         return "JD-Team";
     }
 
-    @Override
-    public String getHost() {
-        return host;
-    }
-
-    @Override
-    public String getPluginName() {
-        return host;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return patternSupported;
-    }
-
-    @Override
+     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
