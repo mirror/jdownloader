@@ -80,11 +80,11 @@ public class JDLocale {
         }
 
         if (def == null) def = key;
-        if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)).replace("\\r", "\r").replace("\\n", "\n"); }
+        if (data.containsKey(key)) { return data.get(key); }
 
         logger.info("Key not found: " + key);
         if (defaultData.containsKey(key)) {
-            def = Encoding.UTF8Decode(defaultData.get(key)).replace("\\r", "\r").replace("\\n", "\n");
+            def = defaultData.get(key);
         }
         data.put(key, Encoding.UTF8Encode(def));
         missingData.put(key, Encoding.UTF8Encode(def));
@@ -131,6 +131,8 @@ public class JDLocale {
             }
             String key = element.substring(0, split).trim();
             String value = element.substring(split + 1).trim() + (element.endsWith(" ") ? " " : "");
+           value=value.replace("\\r", "\r").replace("\\n", "\n");
+           value=Encoding.UTF8Decode(value);
             if (dat.containsKey(key)) {
                 logger.severe("Dupe found: " + key);
                 dat.put(key, value);

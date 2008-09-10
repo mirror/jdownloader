@@ -102,7 +102,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         public void run() {
             while (true) {
                 try {
-                    Thread.sleep(50);
+                    Thread.sleep(200);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

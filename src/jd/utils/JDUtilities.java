@@ -102,6 +102,7 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.http.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -153,8 +154,8 @@ public class JDUtilities {
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
 
-    public static final String JD_REVISION = "$Id$";
-
+    public static final String[] JD_REVISION = new Regex("$Id$", "JDUtilities\\.java (\\d+?) ").getRow(0);
+public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     /**
      * Versionsstring der Applikation
      */
@@ -1103,7 +1104,7 @@ public class JDUtilities {
     }
 
     public static String getJDTitle() {
-        String ret = JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision() + " (" + JDUtilities.getLastChangeDate() + " " + JDUtilities.getLastChangeTime() + ")";
+        String ret = JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision();
         // + ") - "
         // + JDUtilities.getConfiguration().getIntegerProperty(
         // Configuration.CID, -1);
@@ -1120,36 +1121,13 @@ public class JDUtilities {
      *         hat
      */
     public static String getLastChangeAuthor() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 5) { return data[5]; }
+      
+        if (JD_REVISION.length ==3) { return JD_REVISION[2]; }
         return null;
     }
 
-    /**
-     * parsed den JD_REVISION String auf
-     * 
-     * @return Letztes Änderungs datum
-     */
-    public static String getLastChangeDate() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 3) {
-            String[] date = data[3].split("-");
-            if (date.length != 3) { return null; }
-            return date[2] + "." + date[1] + "." + date[0];
-        }
-        return null;
-    }
+ 
 
-    /**
-     * parsed den JD_REVISION String auf
-     * 
-     * @return Letzte änderungsuhrzeit
-     */
-    public static String getLastChangeTime() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 4) { return data[4].substring(0, data[4].length() - 1); }
-        return null;
-    }
 
     public static Locale getLocale() {
         return locale;
@@ -1532,13 +1510,10 @@ public class JDUtilities {
      * @return RevissionID
      */
     public static String getRevision() {
-        String[] data = JD_REVISION.split(" ");
-        if (data.length > 2) {
-            int rev = JDUtilities.filterInt(data[2]);
-            double r = (double) rev / 1000.0;
+      
+            double r = (double) JD_REVISION_NUM / 1000.0;
             return r + "";
-        }
-        return null;
+       
     }
 
     /**

@@ -93,8 +93,7 @@ public class Replacer {
             return dLink.isAvailable() ? "YES" : "NO";
         }
 
-        if (key.equalsIgnoreCase("JD.LAST_CHANGE_DATE")) return JDUtilities.getLastChangeDate();
-
+     
         if (key.equalsIgnoreCase("SYSTEM.IP")) return JDUtilities.getIPAddress();
 
         if (key.equalsIgnoreCase("SYSTEM.DATE")) {
@@ -107,8 +106,7 @@ public class Replacer {
             return JDUtilities.fillInteger(c.get(Calendar.HOUR_OF_DAY), 2, "0") + ":" + JDUtilities.fillInteger(c.get(Calendar.MINUTE), 2, "0") + ":" + JDUtilities.fillInteger(c.get(Calendar.SECOND), 2, "0");
         }
 
-        if (key.equalsIgnoreCase("JD.LAST_CHANGE_TIME")) return JDUtilities.getLastChangeTime();
-
+     
         if (key.equalsIgnoreCase("JD.REVISION")) return JDUtilities.getRevision();
 
         if (key.equalsIgnoreCase("SYSTEM.JAVA_VERSION")) return JDUtilities.getJavaVersion().toString();

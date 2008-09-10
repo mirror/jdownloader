@@ -672,10 +672,13 @@ int okCounter=0;
 
                 br.getPage("http://" + host + path);
 
-            } else {
+            }else if(requestType.equalsIgnoreCase("POST")) {
                 post = post.trim();
                 logger.finer("POST " + "http://" + host + path + " " + post);
                 br.postPageRaw("http://" + host + path, post);
+            }else{
+                logger.severe("Unknown requesttyp: "+requestType);
+                return null;
             }
             logger.finer("Answer: ");
             for (Map.Entry<String, List<String>> me : br.getRequest().getResponseHeaders().entrySet()) {
