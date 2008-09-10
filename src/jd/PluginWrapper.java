@@ -157,10 +157,8 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public Plugin getNewPluginInstance() {
         Plugin plg = getPlugin();
         try {
-            Plugin ret = plg.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
-
-            ret.setHost(plg.getHost());
-            ret.setSupportedPattern(plg.getSupportedLinks());
+            Plugin ret = plg.newInstance();
+   
             return ret;
         } catch (IllegalArgumentException e) {
             e.printStackTrace();

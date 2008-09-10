@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -278,6 +279,13 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
+    public Plugin newInstance() throws IllegalArgumentException, SecurityException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+        Plugin plg=this.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
+
+        plg.setHost(plg.getHost());
+        plg.setSupportedPattern(plg.getSupportedLinks());
+        return plg;
+      }
 
     public String getCaptchaCode(File file, DownloadLink downloadLink) {
 
