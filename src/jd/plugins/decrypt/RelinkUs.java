@@ -33,9 +33,6 @@ import jd.utils.JDUtilities;
 
 public class RelinkUs extends PluginForDecrypt {
 
-    final static String host = "relink.us";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?relink\\.us\\/go\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
-
     public RelinkUs(String cfgName) {
         super(cfgName);
     }

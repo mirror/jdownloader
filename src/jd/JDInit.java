@@ -225,9 +225,7 @@ public class JDInit {
 
         cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
         cfg.save();
-       final  ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
-      
-        
+        final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         logger.finer("Init Webupdater");
         final WebUpdater updater = new WebUpdater(null);
@@ -237,7 +235,7 @@ public class JDInit {
         final Vector<Vector<String>> files;
         try {
             files = updater.getAvailableFiles();
-           
+
         } catch (Exception e) {
             progress.setColor(Color.RED);
             progress.setStatusText("Update failed");
@@ -274,7 +272,7 @@ public class JDInit {
                     progress.finalize();
                     return;
                 }
-               
+
                 int org;
                 progress.setRange(org = files.size());
                 logger.finer("Files found: " + files);
@@ -290,7 +288,7 @@ public class JDInit {
                     createQueueBackup();
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI==null?null:SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                         if (ccd.result) {
 
                             try {
@@ -342,8 +340,6 @@ public class JDInit {
                 }
             }
 
-          
-
             // private void createDLCBackup() {
             // ProgressController p = new
             // ProgressController(JDLocale.L("init.backup.progress",
@@ -363,6 +359,7 @@ public class JDInit {
 
         }.start();
     }
+
     private void checkMessage() {
         File res = JDUtilities.getResourceFile("message.html");
         String hash = JDUtilities.getLocalHash(res);
@@ -384,6 +381,7 @@ public class JDInit {
         }
 
     }
+
     public int getCid() {
         return cid;
     }
@@ -718,6 +716,7 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("xrl.us", "XrlUs", "http://[\\w\\.]*?xrl\\.us/[a-zA-Z0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("xup.in", "XupInFolder", "http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?"));
         plwrappers.add(new DecryptPluginWrapper("youporn.com", "YouPornCom", "http://[\\w\\.]*?youporn\\.com/watch/\\d+/?.+/?|http://[\\w\\.]*?youporn\\.com/(.*?page=\\d+)"));
+        plwrappers.add(new DecryptPluginWrapper("yourlayer.com", "YourLayerCom", "http://[\\w\\.]*?yourlayer\\.com/go\\.php\\?uid=[a-zA-Z0-9]+(&part=\\d+)?"));
         plwrappers.add(new DecryptPluginWrapper("yourfiles.biz", "YourFilesBizFolder", "http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html"));
         plwrappers.add(new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" brurl=\".*?\" convertto=\".*?\" comment=\".*?\" \\>"));
 
@@ -872,13 +871,11 @@ public class JDInit {
             for (String file : remove) {
                 if (file.length() == 0) continue;
                 File delete = new File(homedir, file);
-                if (!file.matches(".*?"+File.separator + "?\\.+" + File.separator+".*?")) {
+                if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
                     if (JDUtilities.removeDirectoryOrFile(delete)) logger.warning("Removed " + file);
                 }
             }
         }
     }
-
-    
 
 }
