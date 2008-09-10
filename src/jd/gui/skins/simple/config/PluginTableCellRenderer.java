@@ -40,8 +40,8 @@ public class PluginTableCellRenderer<T extends PluginWrapper> extends DefaultTab
 
         if (isSelected) {
             c.setBackground(Color.LIGHT_GRAY);
-        } else if (plugins.get(row).isLoaded() && plugins.get(row).getPlugin().getConfig().getEntries().size() != 0) {
-            c.setBackground(new Color(230, 230, 230));            
+        } else if (plugins.get(row).hasConfig()) {
+            c.setBackground(new Color(230, 230, 230));
         } else {
             c.setBackground(Color.WHITE);
         }

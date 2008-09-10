@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils; 
+package jd.utils;
 
 import java.awt.Component;
 import java.awt.Container;
@@ -107,7 +107,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginsC;
@@ -123,7 +122,7 @@ public class JDUtilities {
     /**
      * Parametername für den Konfigpath
      */
-    public static final String CONFIG_PATH = "jDownloader.config"; 
+    public static final String CONFIG_PATH = "jDownloader.config";
 
     /**
      * Die Konfiguration
@@ -139,7 +138,7 @@ public class JDUtilities {
      */
     private static JDController controller = null;
 
-    /** 
+    /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
      */
     private static File currentDirectory;
@@ -180,7 +179,6 @@ public class JDUtilities {
      */
     public static Logger logger = JDUtilities.getLogger();
 
-    
     private static ArrayList<DecryptPluginWrapper> pluginsForDecrypt = null;
 
     private static ArrayList<HostPluginWrapper> pluginsForHost = null;
@@ -201,7 +199,7 @@ public class JDUtilities {
     private static Vector<File> saveReadObject = new Vector<File>();
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
-    private static ArrayList<PluginsC> pluginsForContainer=new ArrayList<PluginsC>();
+    private static ArrayList<PluginsC> pluginsForContainer = new ArrayList<PluginsC>();
 
     public static String getSimString(String a, String b) {
 
@@ -226,6 +224,7 @@ public class JDUtilities {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
         images.put(imageName, image);
     }
+
     public static String asHex(byte buf[]) {
         StringBuffer strbuf = new StringBuffer(buf.length * 2);
         int i;
@@ -245,6 +244,7 @@ public class JDUtilities {
 
         return strbuf.toString();
     }
+
     /**
      * Genau wie add, aber mit den Standardwerten iPadX,iPadY=0
      * 
@@ -470,9 +470,9 @@ public class JDUtilities {
         for (int i = 0; i < pfc.size(); i++) {
             String pn = pfc.get(i).getPluginName();
             if (pn.equalsIgnoreCase(encryption)) {
-                
-                return pfc.get(i).createContainerString(downloadLinks);
-                
+
+            return pfc.get(i).createContainerString(downloadLinks);
+
             }
         }
         return null;
@@ -901,7 +901,7 @@ public class JDUtilities {
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
 
-            e.printStackTrace(); 
+            e.printStackTrace();
         } catch (IllegalArgumentException e) {
 
             e.printStackTrace();
@@ -1358,13 +1358,13 @@ public class JDUtilities {
     public static PluginsC getPluginForContainer(String container, String containerPath) {
         if (containerPath != null && containerPlugins.containsKey(containerPath)) { return containerPlugins.get(containerPath); }
         PluginsC ret = null;
-        for (PluginsC act:JDUtilities.getPluginsForContainer()) {
+        for (PluginsC act : JDUtilities.getPluginsForContainer()) {
             if (act.getHost().equalsIgnoreCase(container)) {
                 try {
                     ret = act.getClass().newInstance();
                     if (containerPath != null) {
                         containerPlugins.put(containerPath, ret);
-                    } 
+                    }
                     return ret;
                 } catch (InstantiationException e) {
                     e.printStackTrace();
@@ -1437,7 +1437,7 @@ public class JDUtilities {
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
-                if(plgs.get(b).getHost()==null){
+                if (plgs.get(b).getHost() == null) {
                     logger.info("OO");
                 }
                 if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
@@ -1636,7 +1636,7 @@ public class JDUtilities {
      */
     public static Object loadObject(JFrame frame, File fileInput, boolean asXML) {
         // logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
-        Object objectLoaded = null; 
+        Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
             if (currentDirectory != null) {
@@ -1960,7 +1960,6 @@ public class JDUtilities {
         JDUtilities.locale = locale;
     }
 
-   
     public static void setPluginForDecryptList(ArrayList<DecryptPluginWrapper> loadPlugins) {
         pluginsForDecrypt = loadPlugins;
 
@@ -2108,8 +2107,8 @@ public class JDUtilities {
     }
 
     public static void setPluginForContainer(ArrayList<PluginsC> loadPluginForContainer) {
-        pluginsForContainer=loadPluginForContainer;
-        
+        pluginsForContainer = loadPluginForContainer;
+
     }
 
 }

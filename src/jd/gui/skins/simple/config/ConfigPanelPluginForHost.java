@@ -264,7 +264,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).isLoaded() && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForHost.get(table.getSelectedRow()).hasConfig());
             }
         });
         table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<HostPluginWrapper>(pluginsForHost));
@@ -325,7 +325,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).isLoaded() && pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).hasConfig()) {
             editEntry();
         }
     }

@@ -99,7 +99,6 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     private JTable table;
 
-    @SuppressWarnings("unchecked")
     public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
@@ -136,7 +135,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForDecrypt.get(table.getSelectedRow()).isLoaded() && pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForDecrypt.get(table.getSelectedRow()).hasConfig());
             }
         });
         table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<DecryptPluginWrapper>(pluginsForDecrypt));
@@ -177,7 +176,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).isLoaded() && pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).hasConfig()) {
             editEntry();
         }
     }

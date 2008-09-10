@@ -22,7 +22,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.File;
 import java.text.DecimalFormat;
-import java.util.Iterator;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
@@ -32,7 +31,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
@@ -57,30 +55,35 @@ public class DownloadInfo extends JFrame {
     private DownloadLink downloadLink;
     private int i = 0;
     private JPanel panel;
-    private JScrollPane sp = null;
     private DecimalFormat c = new DecimalFormat("0.00");
 
     /**
      * @param frame
      * @param dlink
      */
-    public DownloadInfo(JFrame frame, DownloadLink dlink) {
+    public DownloadInfo(JFrame frame, DownloadLink dLink) {
         super();
-        downloadLink = dlink;
+        downloadLink = dLink;
         setLayout(new BorderLayout(2, 2));
-        setTitle(JDLocale.L("gui.linkinfo.title", "Link Information: ") + dlink.getName());
+        setTitle(JDLocale.L("gui.linkinfo.title", "Link Information: ") + downloadLink.getName());
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
         setResizable(false);
         setAlwaysOnTop(true);
+
+        panel = new JPanel(new GridBagLayout());
+        int n = 10;
+        panel.setBorder(new EmptyBorder(n, n, n, n));
+        panel.setBackground(Color.WHITE);
+        panel.setForeground(Color.WHITE);
+        this.add(new JScrollPane(panel));
+
         new Thread() {
             @Override
             public void run() {
                 do {
-
                     try {
                         Thread.sleep(5000);
                     } catch (InterruptedException e) {
-
                         e.printStackTrace();
                     }
                     initDialog();
@@ -93,52 +96,32 @@ public class DownloadInfo extends JFrame {
         pack();
         setLocation((int) (frame.getLocation().getX() + frame.getWidth() / 2 - getWidth() / 2), (int) (frame.getLocation().getY() + frame.getHeight() / 2 - getHeight() / 2));
         setVisible(true);
-
+        frame.setMaximumSize(getToolkit().getScreenSize());
     }
 
-    private void addEntry(String string, JComponent value) {
-
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
-        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-
-        i++;
-
-    }
-
-    private void addEntry(String label, String data) {
-        if (label == null && data == null) {
-            JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-            return;
-        }
+    private void addEntry(String label, JComponent value) {
         JLabel key;
         JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
         key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
 
-        JLabel value;
-        JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
         value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setHorizontalAlignment(SwingConstants.RIGHT);
-        value.setForeground(Color.DARK_GRAY);
 
         i++;
     }
 
+    private void addEntry(String label, String data) {
+        JLabel value = new JLabel(data);
+        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+        value.setHorizontalAlignment(SwingConstants.RIGHT);
+        value.setForeground(Color.DARK_GRAY);
+        addEntry(label, value);
+    }
+
     private void initDialog() {
-        panel = new JPanel(new GridBagLayout());
-        int n = 10;
-        panel.setBorder(new EmptyBorder(n, n, n, n));
-        panel.setBackground(Color.WHITE);
-        panel.setForeground(Color.WHITE);
-        if (sp != null) {
-            this.remove(sp);
-        }
-        this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
-        addEntry("file", new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
-        // addEntry(null, (String) null);
+        this.i = 0;
+        panel.removeAll();
+        addEntry(JDLocale.L("gui.linkinfo.file", "File"), new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasPassword()) {
             addEntry(JDLocale.L("gui.linkinfo.password", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
         }
@@ -181,18 +164,17 @@ public class DownloadInfo extends JFrame {
 
         addEntry("download.status", downloadLink.getLinkStatus().getStatusString());
 
-        DownloadInterface dl;
-        if (downloadLink.getLinkStatus().isPluginActive() && (dl = downloadLink.getDownloadInstance()) != null) {
+        DownloadInterface dl = downloadLink.getDownloadInstance();
+        if (downloadLink.getLinkStatus().isPluginActive() && dl != null) {
             addEntry(JDLocale.L("download.chunks.label", "Chunks"), "");
             int i = 1;
-            for (Iterator<Chunk> it = dl.getChunks().iterator(); it.hasNext(); i++) {
-                JProgressBar p;
-                Chunk next = it.next();
+            JProgressBar p;
+            for (Chunk chunk : dl.getChunks()) {
                 addEntry(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, p = new JProgressBar(0, 100));
                 p.setMaximum(10000);
-                p.setValue(next.getPercent());
+                p.setValue(chunk.getPercent());
                 p.setStringPainted(true);
-                p.setString(JDUtilities.formatKbReadable(next.getBytesPerSecond() / 1024) + "/s " + c.format(next.getPercent() / 100.0) + " %");
+                p.setString(c.format(chunk.getPercent() / 100.0) + " % @ " + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s");
             }
 
         }

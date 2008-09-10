@@ -17,8 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -37,30 +35,29 @@ public class LinksaveIn extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public LinksaveIn(String cfgName){
+    public LinksaveIn(String cfgName) {
         super(cfgName);
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();  
+        String parameter = param.toString();
         URL url;
-        
-   
-            if (parameter.matches(patternSupported.pattern())) {
-                parameter = parameter + ".dlc";
-                url = new URL(parameter);
-                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
-                //Api ! nicht in org tauschen!
-                dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
-               Browser.download(container, dlc_con);
-                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-                    container.delete();
-               
-            }
-      
+
+        if (parameter.matches(patternSupported.pattern())) {
+            parameter = parameter + ".dlc";
+            url = new URL(parameter);
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
+            // Api ! nicht in org tauschen!
+            dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
+            Browser.download(container, dlc_con);
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+            container.delete();
+
+        }
+
         return decryptedLinks;
     }
 

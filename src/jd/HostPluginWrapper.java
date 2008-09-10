@@ -1,15 +1,13 @@
 package jd;
 
-import jd.config.SubConfiguration;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 public class HostPluginWrapper extends PluginWrapper {
 
     private static final String AGB_CHECKED = null;
 
     public HostPluginWrapper(String name, String host, String className, String patternSupported, int flags) {
-        super(name, host, "jd.plugins.host."+className, patternSupported, flags);
+        super(name, host, "jd.plugins.host." + className, patternSupported, flags);
     }
 
     public HostPluginWrapper(String host, String className, String patternSupported, int flags) {
@@ -32,7 +30,5 @@ public class HostPluginWrapper extends PluginWrapper {
         getPluginConfig().setProperty(AGB_CHECKED, value);
         getPluginConfig().save();
     }
-
-  
 
 }

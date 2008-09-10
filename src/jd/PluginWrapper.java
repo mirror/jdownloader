@@ -13,14 +13,14 @@ import jd.plugins.Plugin;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class PluginWrapper implements Comparable {
+public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public static final int LOAD_ON_INIT = 1 << 1;
     private Pattern pattern;
     private String host;
     private String className;
     protected Logger logger = JDUtilities.getLogger();
-    private Plugin loadedPLugin = null;
+    private Plugin loadedPlugin = null;
     private boolean acceptOnlyURIs;
     private String pluginName;
     private static URLClassLoader CL;
@@ -63,13 +63,13 @@ public class PluginWrapper implements Comparable {
 
     @SuppressWarnings("unchecked")
     public Plugin getPlugin() {
-        if (loadedPLugin != null) return loadedPLugin;
+        if (loadedPlugin != null) return loadedPlugin;
 
         try {
 
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-            
-            logger.finer("load plugin: "+getClassName());
+
+            logger.finer("load plugin: " + getClassName());
             Class plgClass = CL.loadClass(getClassName());
 
             if (plgClass == null) {
@@ -79,11 +79,11 @@ public class PluginWrapper implements Comparable {
             Class[] classes = new Class[] { String.class };
             Constructor con = plgClass.getConstructor(classes);
             classes = null;
-            this.loadedPLugin = (Plugin) con.newInstance(new Object[] { host.toLowerCase() });
-            loadedPLugin.setHost(host.toLowerCase());
-            loadedPLugin.setSupportedPattern(pattern);
-          
-            return loadedPLugin;
+            this.loadedPlugin = (Plugin) con.newInstance(new Object[] { host.toLowerCase() });
+            loadedPlugin.setHost(host.toLowerCase());
+            loadedPlugin.setSupportedPattern(pattern);
+
+            return loadedPlugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
             e.printStackTrace();
@@ -104,9 +104,7 @@ public class PluginWrapper implements Comparable {
     }
 
     public boolean canHandle(String data) {
-        if (this.isLoaded()){
-           return getPlugin().canHandle(data);
-        }
+        if (this.isLoaded()) { return getPlugin().canHandle(data); }
         if (data == null) { return false; }
         Pattern pattern = this.getPattern();
         if (pattern != null) {
@@ -121,7 +119,7 @@ public class PluginWrapper implements Comparable {
     }
 
     public boolean isLoaded() {
-        return this.loadedPLugin != null;
+        return this.loadedPlugin != null;
     }
 
     public void setAcceptOnlyURIs(boolean acceptOnlyURIs) {
@@ -141,34 +139,32 @@ public class PluginWrapper implements Comparable {
         Plugin plg = getPlugin();
         try {
             Plugin ret = plg.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
-        
-        ret.setHost(plg.getHost());
-        ret.setSupportedPattern(plg.getSupportedLinks());
-        return ret;
+
+            ret.setHost(plg.getHost());
+            ret.setSupportedPattern(plg.getSupportedLinks());
+            return ret;
         } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (SecurityException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InvocationTargetException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return null;
 
     }
 
-    public int compareTo(Object o) {
+    public boolean hasConfig() {
+        return isLoaded() && getPlugin().getConfig().getEntries().size() != 0;
+    }
+
+    public int compareTo(PluginWrapper o) {
         return getHost().toLowerCase().compareTo(((PluginWrapper) o).getHost().toLowerCase());
     }
 }
