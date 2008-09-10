@@ -16,11 +16,14 @@
 
 package jd.plugins.host;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -73,11 +76,12 @@ public class FastLoadNet extends PluginForHost {
         }
 
         String fileName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<th.*?><b>Datei</b></th>.*?<font.*?;\">(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
-        long length = 0;
+        String fileSize = Encoding.htmlDecode(br.getRegex(Pattern.compile("<td.*?><b>Gr&ouml;sse</b></td>.*?<font.*?;\">(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+
         // downloadinfos gefunden? -> download verfügbar
-        if (fileName != null) {
+        if (fileName != null && fileSize != null) {
             downloadLink.setName(fileName.trim());
-            downloadLink.setDownloadSize(length);
+            downloadLink.setDownloadSize(Regex.getSize(fileSize));
             return true;
         }
         downloadLink.setName(downloadurl.substring(downloadurl.indexOf("pid=") + 4));
@@ -96,27 +100,50 @@ public class FastLoadNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
+        String downloadurl = downloadLink.getDownloadURL() + "&lg=de";
+        HTTPConnection urlConnection;
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-        if (br.containsHTML(NOT_FOUND)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
+
+        Form captcha_form = br.getForm(0);
+        if (captcha_form != null) {
+            boolean valid = false;
+            for (int retry = 1; retry <= 5; retry++) {
+                captcha_form = br.getForm(0);
+                if (captcha_form != null) {
+                    File file = this.getLocalCaptchaFile(this);
+                    Browser captchabr = br.cloneBrowser();
+                    Browser.download(file, captchabr.openGetConnection("http://www.fast-load.net/includes/captcha.php"));
+                    String code = this.getCaptchaCode(file, downloadLink);
+                    if (code == null) break;
+                    captcha_form.put("captcha_code", code);
+                    br.openFormConnection(captcha_form);
+                    if (br.getHttpConnection().isContentDisposition()) {
+                        valid = true;
+                        break;
+                    } else {
+                        br.getPage(downloadurl);
+                    }
+                } else {
+                    valid = true;
+                    break;
+                }
+            }
+
+            if (valid == false) {
+                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+                return;
+            }
+            urlConnection = br.getHttpConnection();
+        } else {
+            String dl_url = br.getRegex(Pattern.compile("type=\"button\" onclick=\"location='(.*?)'\" value=\"download", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            urlConnection = br.openGetConnection(dl_url);
         }
 
-        if (br.containsHTML(HARDWARE_DEFECT)) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-
-        String dl_url = br.getRegex(Pattern.compile("type=\"button\" onclick=\"location='(.*?)'\" value=\"download", Pattern.CASE_INSENSITIVE)).getMatch(0);
-
-        // Download vorbereiten
-        HTTPConnection urlConnection = br.openGetConnection(dl_url);
         long length = urlConnection.getContentLength();
 
         if (urlConnection.getContentType() != null) {
