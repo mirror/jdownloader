@@ -328,7 +328,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        btnLoad = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_load", "Load Plugin"));
+        btnLoad = new JButton(JDLocale.L("gui.config.plugin.host.btn_load", "Load Plugin"));
         btnLoad.setEnabled(false);
         btnLoad.addActionListener(this);
 

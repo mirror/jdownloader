@@ -596,15 +596,20 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("cine.to", "CineTo", "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("clipfish.de", "ClipfishDe", "http://[\\w\\.]*?clipfish\\.de/n\\.php/channel/\\d+/video/(\\d+)|http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?"));
         plwrappers.add(new DecryptPluginWrapper("collectr.net", "Collectr", "http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*"));
-        plwrappers.add(new DecryptPluginWrapper("crypt.get-movies.org", "CryptGetMoviesOrg", "http://crypt\\.get-movies\\.org/\\d+"));
+        // plwrappers.add(new DecryptPluginWrapper("crypt.get-movies.org",
+        // "CryptGetMoviesOrg", "http://crypt\\.get-movies\\.org/\\d+"));
         plwrappers.add(new DecryptPluginWrapper("crypting.it", "CryptingIt", "http://[\\w.]*?crypting\\.it/index\\.php\\?p=show&id=\\d+"));
         plwrappers.add(new DecryptPluginWrapper("crypt-it.com", "CryptItCom", "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[a-zA-Z0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("cryptlink.ws", "Cryptlinkws", "http://[\\w\\.]*?cryptlink\\.ws/\\?file=[a-zA-Z0-9]+|http://[\\w\\.]*?cryptlink\\.ws/crypt\\.php\\?file=[0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("daten-bank.org", "Datenbankorg", "http://daten-bank\\.org/go/\\d+/|http://daten-bank\\.org/view/.*?/"));
-        plwrappers.add(new DecryptPluginWrapper("datenschleuder.cc", "DatenschleuderCc", "http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+"));
+        // plwrappers.add(new DecryptPluginWrapper("datenschleuder.cc",
+        // "DatenschleuderCc",
+        // "http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+"
+        // ));
         plwrappers.add(new DecryptPluginWrapper("ddl-music.org", "DDLMusicOrg", "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+|http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+"));
         plwrappers.add(new DecryptPluginWrapper("ddl-warez.org", "DDLWarez", "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+"));
-        plwrappers.add(new DecryptPluginWrapper("dxp.divxvid.org", "Divxvid", "http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html"));
+        // plwrappers.add(new DecryptPluginWrapper("dxp.divxvid.org", "Divxvid",
+        // "http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html"));
         plwrappers.add(new DecryptPluginWrapper("doperoms.net", "DoperomsCom", "http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html"));
         plwrappers.add(new DecryptPluginWrapper("downloads.pes-arena.com", "DownloadsPesArenacom", "http://downloads\\.pes-arena\\.com/\\?id=(\\d+)"));
         plwrappers.add(new DecryptPluginWrapper("3dl.am", "DreiDlAm", "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html"));
@@ -640,7 +645,10 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("loading.cc", "LoadingCc", "http://.*?loading\\.cc/detail\\.php\\?id=[0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("mediafire.com", "MediafireFolder", "http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+"));
         plwrappers.add(new DecryptPluginWrapper("mirrorit.de", "MirrorItDe", "http://[\\w\\.]*?mirrorit\\.de/\\?id=[a-zA-Z0-9]{16}"));
-        plwrappers.add(new DecryptPluginWrapper("movieload.to", "MovieloadTo", "http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+"));
+        // plwrappers.add(new DecryptPluginWrapper("movieload.to",
+        // "MovieloadTo",
+        // "http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+"
+        // ));
         plwrappers.add(new DecryptPluginWrapper("myref.de", "MyRef", "http://[\\w\\.]*?myref\\.de(\\/){0,1}\\?\\d{0,10}"));
         plwrappers.add(new DecryptPluginWrapper("myspace.com", "MySpaceCom", "http://[\\w\\.]*?myspace\\.(com|de)/.+"));
         plwrappers.add(new DecryptPluginWrapper("myup.cc", "Myupcc", "http://[\\w\\.]*?myup\\.cc/link-[a-zA-Z0-9]+\\.html"));
@@ -650,7 +658,8 @@ public class JDInit {
         plwrappers.add(new DecryptPluginWrapper("Protect.Tehparadox.com", "ProtectTehparadoxcom", "http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!"));
         plwrappers.add(new DecryptPluginWrapper("raidrush.org", "RaidrushOrg", "http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+"));
         plwrappers.add(new DecryptPluginWrapper("rapidlayer.in", "Rapidlayerin", "http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+"));
-        plwrappers.add(new DecryptPluginWrapper("rapidrace.org", "RapidRace", "http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+"));
+        // plwrappers.add(new DecryptPluginWrapper("rapidrace.org", "RapidRace",
+        // "http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+"));
         plwrappers.add(new DecryptPluginWrapper("rapidsafe.de", "RapidsafeDe", "http://.+rapidsafe\\.de"));
         plwrappers.add(new DecryptPluginWrapper("rapidsafe.net", "Rapidsafenet", "http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*"));
         plwrappers.add(new DecryptPluginWrapper("rapidshare.com", "RapidshareComFolder", "http://[\\w\\.]*?rapidshare.com/users/.+"));
