@@ -175,7 +175,15 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             return miniBar;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
+            if(dLink.getPlugin()==null){
+                progress.setForeground(ERROR_PROGRESS_COLOR);
+                if (ui != null) {
+                    ui.setSelectionForeground(DONE_COLOR_FONT_A);
+                    ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                }
+                progress.setString("Plugin loading failed");
+            }
+            else if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         progress.setForeground(DONE_COLOR);

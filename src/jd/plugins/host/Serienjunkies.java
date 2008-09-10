@@ -51,10 +51,12 @@ public class Serienjunkies extends PluginForHost {
     private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
+    public String tmp;
     private static boolean active = false;
 
     public Serienjunkies(String cfgName) {
         super(cfgName);
+     this.tmp=cfgName;
         this.setHost(cfgName);
     }
 

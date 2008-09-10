@@ -456,11 +456,11 @@ int okCounter=0;
                         if (!br.getHttpConnection().isOK()) {
                             okCounter--;
                             logger.severe("Request error!");
-                            if(okCounter<0){
-                                logger.severe("Too many RequestErrors. abort!");
-                            progress.finalize();
-                            return false;
-                            }
+//                            if(okCounter<0){
+//                                logger.severe("Too many RequestErrors. abort!");
+//                            progress.finalize();
+//                            return false;
+//                            }
                         }else{
                             okCounter++;
                         }

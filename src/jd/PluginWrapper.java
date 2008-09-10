@@ -1,15 +1,21 @@
 package jd;
 
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
+import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
+import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.Plugin;
+import jd.update.WebUpdater;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -68,7 +74,20 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         try {
 
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-
+            if(WebUpdater.PLUGIN_LIST!=null){
+            String plg=getClassName().replace(".", "/")+".class";
+           File path = JDUtilities.getResourceFile(plg);
+           String hash=JDUtilities.getLocalHash(path);
+           HashMap<String, Vector<String>> list = WebUpdater.PLUGIN_LIST!=null?WebUpdater.PLUGIN_LIST:new HashMap<String, Vector<String>>();
+           Vector<String> current = list.get(plg);
+           if(hash==null||!hash.equalsIgnoreCase(current.get(1))){
+               ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateFile", "Update plugin %s",getClassName()), 10);
+               progress.increase(1);
+               new WebUpdater(null).updateFile(WebUpdater.PLUGIN_LIST.get(plg));
+               logger.info("UPdated plugin: "+plg);
+               progress.finalize(1000l);
+           }
+            }
             logger.finer("load plugin: " + getClassName());
             Class plgClass = CL.loadClass(getClassName());
 

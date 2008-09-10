@@ -206,7 +206,7 @@ public class TreeTablePaneUI extends BasicTableUI {
                         color = COLOR_DONE;
                     } else if (dLink.getLinkStatus().isFailed()) {
                         color = COLOR_ERROR;
-                    }else if (dLink.getLinkStatus().getRemainingWaittime() > 0||dLink.getPlugin().getRemainingHosterWaittime()>0) {
+                    }else if (dLink.getLinkStatus().getRemainingWaittime() > 0||dLink.getPlugin()==null||dLink.getPlugin().getRemainingHosterWaittime()>0) {
                         color = COLOR_WAIT;
                     }
 

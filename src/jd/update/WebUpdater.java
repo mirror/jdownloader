@@ -36,6 +36,7 @@ import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,6 +59,8 @@ public class WebUpdater implements Serializable {
     private static final long serialVersionUID = 1946622313175234371L;
 
     public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
+
+    public static HashMap<String, Vector<String>> PLUGIN_LIST=null;
 
     public static String htmlDecode(String str) {
         //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
@@ -161,7 +164,7 @@ public class WebUpdater implements Serializable {
         if (path != null) {
             setListPath(path);
         } else {
-            setListPath("http://service.jdownloader.org/update/jd");
+           setListPath("http://service.jdownloader.org/update/jd");
         }
 
     }
@@ -342,6 +345,7 @@ public class WebUpdater implements Serializable {
         if (progresslist != null) {
             progresslist.setMaximum(100);
         }
+     HashMap<String,Vector<String>> plugins= new HashMap<String,Vector<String>>();
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
         try {
             if (progresslist != null) {
@@ -377,7 +381,7 @@ public class WebUpdater implements Serializable {
 
             if (source == null) {
                 log(listPath + " nicht verfüpgbar");
-                return null;
+                return new Vector<Vector<String>>();
             }
             Vector<String> entry;
             String tmp;
@@ -396,6 +400,11 @@ public class WebUpdater implements Serializable {
 
                     }
                 }
+          String file= entry.get(0).split("\\?")[0];
+      
+             if(file.endsWith(".class")){
+                 plugins.put(file, entry);
+             }else{
                 boolean osFound = false;
                 boolean correctOS = false;
                 for (String element : os) {
@@ -417,6 +426,7 @@ public class WebUpdater implements Serializable {
                 } else {
                     ret.add(entry);
                 }
+             }
 
             }
             this.sum = new byte[sum.size()];
@@ -424,7 +434,7 @@ public class WebUpdater implements Serializable {
             for (byte b : sum) {
                 this.sum[i++] = b;
             }
-
+WebUpdater.PLUGIN_LIST=plugins;
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -691,6 +701,15 @@ public class WebUpdater implements Serializable {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public void updateFile(Vector<String> file) {
+       
+            String[] tmp = file.elementAt(0).split("\\?");
+            log("Webupdater: download" + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
+            downloadBinary(tmp[0], tmp[1]);
+     
+        
     }
 
 }

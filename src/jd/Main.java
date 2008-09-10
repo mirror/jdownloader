@@ -409,9 +409,12 @@ public class Main {
                 e.printStackTrace();
             }
         }
-
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
-
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
+        
+        init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
+        
+        Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
+        
         init.initPlugins();
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
 
@@ -442,16 +445,7 @@ public class Main {
         logger.info("Revision: " + JDUtilities.getJDTitle());
         logger.info("Runtype: " + JDUtilities.getRunType());
         logger.info("Last author: " + JDUtilities.getLastChangeAuthor());
-        new Thread("packetmanager") {
-            @Override
-            public void run() {
-                if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
-                    init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
-                }
-
-            }
-
-        }.start();
+       
         try {
             splashScreen.finish();
         } catch (Exception e) {

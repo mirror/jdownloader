@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.net.CookieHandler;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -150,6 +151,8 @@ public class JDInit {
 
     private SplashScreen splashScreen;
 
+    private Vector<Vector<String>> files;
+
     public JDInit() {
         this(null);
     }
@@ -222,29 +225,31 @@ public class JDInit {
 
         cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
         cfg.save();
+       final  ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
+      
+        
 
+        logger.finer("Init Webupdater");
+        final WebUpdater updater = new WebUpdater(null);
+        updater.setCid(oldCid);
+        logger.finer("Get available files");
+        // logger.info(files + "");
+        final Vector<Vector<String>> files;
+        try {
+            files = updater.getAvailableFiles();
+           
+        } catch (Exception e) {
+            progress.setColor(Color.RED);
+            progress.setStatusText("Update failed");
+            progress.finalize(15000l);
+            return;
+        }
         new Thread() {
 
             public void run() {
-                ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
                 checkMessage();
-
-                logger.finer("Init Webupdater");
-                final WebUpdater updater = new WebUpdater(null);
-                updater.setCid(oldCid);
-                logger.finer("Get available files");
-                // logger.info(files + "");
-                Vector<Vector<String>> files;
-                try {
-                    files = updater.getAvailableFiles();
-                } catch (Exception e) {
-                    progress.setColor(Color.RED);
-                    progress.setStatusText("Update failed");
-                    progress.finalize(15000l);
-                    return;
-                }
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
 
                 if (files != null) {
@@ -269,9 +274,7 @@ public class JDInit {
                     progress.finalize();
                     return;
                 }
-                if (files == null) {
-                    files = new Vector<Vector<String>>();
-                }
+               
                 int org;
                 progress.setRange(org = files.size());
                 logger.finer("Files found: " + files);
@@ -287,7 +290,7 @@ public class JDInit {
                     createQueueBackup();
 
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
-                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI==null?null:SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                         if (ccd.result) {
 
                             try {
@@ -339,27 +342,7 @@ public class JDInit {
                 }
             }
 
-            private void checkMessage() {
-                File res = JDUtilities.getResourceFile("message.html");
-                String hash = JDUtilities.getLocalHash(res);
-                try {
-                    Browser.download(JDUtilities.getResourceFile("message.html"), "http://service.jdownloader.org/html/message.html");
-                } catch (IOException e) {
-                    return;
-                }
-                String hash2 = JDUtilities.getLocalHash(res);
-                if (hash2 != null && !hash2.equals(hash)) {
-                    String message = JDUtilities.getLocalFile(res);
-                    if (message != null && message.trim().length() > 0) {
-                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("sys.warning.newMessage", "New Systemmessage"), message, 45, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN);
-                        if (!ccd.result) {
-                            res.delete();
-                            res.deleteOnExit();
-                        }
-                    }
-                }
-
-            }
+          
 
             // private void createDLCBackup() {
             // ProgressController p = new
@@ -380,7 +363,27 @@ public class JDInit {
 
         }.start();
     }
+    private void checkMessage() {
+        File res = JDUtilities.getResourceFile("message.html");
+        String hash = JDUtilities.getLocalHash(res);
+        try {
+            Browser.download(JDUtilities.getResourceFile("message.html"), "http://service.jdownloader.org/html/message.html");
+        } catch (IOException e) {
+            return;
+        }
+        String hash2 = JDUtilities.getLocalHash(res);
+        if (hash2 != null && !hash2.equals(hash)) {
+            String message = JDUtilities.getLocalFile(res);
+            if (message != null && message.trim().length() > 0) {
+                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("sys.warning.newMessage", "New Systemmessage"), message, 45, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN);
+                if (!ccd.result) {
+                    res.delete();
+                    res.deleteOnExit();
+                }
+            }
+        }
 
+    }
     public int getCid() {
         return cid;
     }
@@ -875,5 +878,7 @@ public class JDInit {
             }
         }
     }
+
+    
 
 }
