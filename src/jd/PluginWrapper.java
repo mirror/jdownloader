@@ -119,7 +119,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public Object getCoder() {
-        return this.isLoaded() ? getPlugin().getCoder() : "JD-Team";
+        return this.isLoaded() ? getPlugin().getCoder() : JDLocale.L("plugin.system.notloaded", "idle");
     }
 
     public boolean canHandle(String data) {
