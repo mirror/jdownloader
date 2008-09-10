@@ -280,7 +280,7 @@ public class Serienjunkies extends PluginForHost {
 
     public String getAGBLink() {
 
-        return null;
+        return "http://serienjunkies.org/?page_id=35";
     }
 
     public String getCoder() {

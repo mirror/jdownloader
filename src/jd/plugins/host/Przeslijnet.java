@@ -42,7 +42,7 @@ public class Przeslijnet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "hhttp://www2.przeslij.net/#";
+        return "http://www2.przeslij.net/#";
     }
 
     @Override

@@ -715,7 +715,7 @@ public class JDInit {
     public ArrayList<HostPluginWrapper> loadPluginForHost() {
         ArrayList<HostPluginWrapper> hpl = new ArrayList<HostPluginWrapper>();
 
-        hpl.add(new HostPluginWrapper("archiv.to", "ArchiveTo", "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*"));
+        hpl.add(new HostPluginWrapper("archiv.to", "ArchivTo", "http://[\\w\\.]*?archiv\\.to/\\?Module\\=Details\\&HashID\\=.*"));
         hpl.add(new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*"));
         hpl.add(new HostPluginWrapper("cocoshare.cc", "Cocosharecc", "http://[\\w\\.]*?cocoshare\\.cc/\\d+/(.*)"));
         hpl.add(new HostPluginWrapper("clipfish.de", "ClipfishDe", "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv"));
