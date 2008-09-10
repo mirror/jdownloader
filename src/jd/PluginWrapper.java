@@ -76,7 +76,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         try {
 
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-            if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
+            if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
 
                 ArrayList<Vector<String>> filelist = new ArrayList<Vector<String>>();
                 for (Iterator<Entry<String, Vector<String>>> it = WebUpdater.PLUGIN_LIST.entrySet().iterator(); it.hasNext();) {
