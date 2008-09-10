@@ -372,7 +372,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Der unterstützte Anbieter
      */
     public String getHost() {
-        return host.toLowerCase();
+        return host;
     }
 
     public String getInitID() {
@@ -528,6 +528,10 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     }
 
     public void setHost(String host) {
+        if(host==null){
+            this.host=null;
+            return;
+        }
         this.host = host.toLowerCase();
 
     }
