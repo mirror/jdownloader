@@ -96,7 +96,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private File sourceFolder, languageFile;
     private ComboBrowseFile cmboFolder, cmboFile;
     private ChartAPI_PIE keyChart;
-    private ChartAPI_Entity entKeys, entMissing, entOld;
+    private ChartAPI_Entity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
     private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
@@ -105,6 +105,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextEdit, mnuContextTranslate;
 
+    private Vector<String[]> sourceEntries = new Vector<String[]>();
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
@@ -152,10 +153,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 
-        keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 150, 60, frame.getBackground());
-        keyChart.addEntity(entKeys = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, Color.GREEN));
+        keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60, frame.getBackground());
+        keyChart.addEntity(entDone = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, Color.GREEN));
         keyChart.addEntity(entMissing = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing"), 0, colorMissing));
-        keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old"), 0, colorOld));
+        keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Probably Old"), 0, colorOld));
 
         JPanel topLeft = new JPanel(new BorderLayout(5, 5));
         topLeft.add(topFolder, BorderLayout.PAGE_START);
@@ -179,6 +180,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         frame.setVisible(true);
 
         sourceFolder = cmboFolder.getCurrentPath();
+        if (sourceFolder != null) getSourceEntries();
         languageFile = cmboFile.getCurrentPath();
         if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
         initLocaleData();
@@ -199,9 +201,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         }
 
-        entKeys.setData(data.size() - numMissing - numOld);
+        entDone.setData(data.size() - numMissing - numOld);
+        entDone.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done") + " [" + entDone.getData() + "]");
         entMissing.setData(numMissing);
+        entMissing.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing") + " [" + entMissing.getData() + "]");
         entOld.setData(numOld);
+        entOld.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Probably Old") + " [" + entOld.getData() + "]");
         keyChart.fetchImage();
     }
 
@@ -333,6 +338,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             File sourceFolder = cmboFolder.getCurrentPath();
             if (sourceFolder != this.sourceFolder && sourceFolder != null) {
                 this.sourceFolder = sourceFolder;
+                getSourceEntries();
                 initLocaleData();
             }
 
@@ -409,6 +415,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuReload) {
 
+            getSourceEntries();
             initLocaleData();
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
@@ -625,7 +632,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         dupes.clear();
         lngKey = null;
 
-        Vector<String[]> sourceEntries = (sourceFolder == null) ? new Vector<String[]>() : getSourceEntries();
         Vector<String[]> fileEntries = (languageFile == null) ? new Vector<String[]>() : getLanguageFileEntries();
 
         String value;
@@ -711,9 +717,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    private Vector<String[]> getSourceEntries() {
+    private void getSourceEntries() {
 
-        Vector<String[]> entries = new Vector<String[]>();
+        sourceEntries.clear();
         Vector<String> keys = new Vector<String>();
 
         String[][] matches;
@@ -727,14 +733,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 if (!keys.contains(match[0])) {
 
                     keys.add(Encoding.UTF8Decode(match[0]));
-                    entries.add(new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) });
+                    sourceEntries.add(new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) });
 
                 }
 
             }
         }
-
-        return entries;
 
     }
 
