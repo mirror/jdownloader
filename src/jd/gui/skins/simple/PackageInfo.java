@@ -21,6 +21,9 @@ import java.awt.Color;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
@@ -45,7 +48,7 @@ import jd.utils.JDUtilities;
 /**
  * Dies Klasse ziegt informationen zu einem DownloadLink an
  */
-public class PackageInfo extends JDialog {
+public class PackageInfo extends JDialog {    
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
     /**
@@ -57,7 +60,8 @@ public class PackageInfo extends JDialog {
     private JPanel panel;
     private JScrollPane sp;
     private DecimalFormat c = new DecimalFormat("0.00");
-
+    private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
+    private int linkCounter = 0;
     /**
      * @param frame
      * @param dlink
@@ -75,7 +79,7 @@ public class PackageInfo extends JDialog {
             public void run() {
                 do {
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -93,46 +97,79 @@ public class PackageInfo extends JDialog {
     }
 
     private void addEntry(String string, JComponent value) {
-
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-
-        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-
-        i++;
+            if(hmObjects.get(string) == null) {
+                JLabel key;
+                JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+                
+                JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+                key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+                value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+                i++;
+                hmObjects.put(string, value);
+                hmObjects.put("JLabel_" + string, key);
+            } else {
+                if(hmObjects.get(string).getClass() == JProgressBar.class) {
+                    JProgressBar tmpJBar = (JProgressBar) hmObjects.get(string);
+                    tmpJBar.setValue(((JProgressBar) value).getValue());
+                    tmpJBar.setString(((JProgressBar) value).getString());
+                    tmpJBar.setEnabled(((JProgressBar) value).isEnabled());
+                    tmpJBar.setBackground((((JProgressBar) value).getBackground()));
+                    
+                    JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + string);
+                    tmpJLbl.setForeground(tmpJBar.getBackground());
+                } else if(hmObjects.get(string).getClass() == JTextField.class) {
+                    JTextField tmp = (JTextField) hmObjects.get(string);
+                    tmp.setText(((JTextField) value).getText());
+                }
+                hmObjects.get(string).repaint();
+            }
 
     }
 
     private void addEntry(String label, String data) {
-        if (label == null && data == null) {
-            JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-            return;
+        if(hmObjects.get("JLableCaption_" + label) == null) {
+            if (label == null && data == null) {
+                JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+                return;
+            }
+            
+            JLabel key;
+            JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+            key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+    
+            JLabel value;
+            JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+            value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+            value.setHorizontalAlignment(SwingConstants.RIGHT);
+            value.setForeground(Color.DARK_GRAY);
+            hmObjects.put("JLableCaption_" + label, key);
+            hmObjects.put("JLableValue_" + label, value);
+            
+            i++;
+        } else {
+            if (label != null && data != null) {
+                JLabel key = (JLabel) hmObjects.get("JLableCaption_" + label);
+                JLabel value = (JLabel) hmObjects.get("JLableValue_" + label);
+                key.setText(label);
+                value.setText(data);
+            }
         }
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-
-        JLabel value;
-        JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setHorizontalAlignment(SwingConstants.RIGHT);
-        value.setForeground(Color.DARK_GRAY);
-
-        i++;
     }
 
     private void initDialog() {
-        panel = new JPanel(new GridBagLayout());
-        int n = 10;
-        panel.setBorder(new EmptyBorder(n, n, n, n));
-        panel.setBackground(Color.WHITE);
-        panel.setForeground(Color.WHITE);
-        if (sp != null) {
-            this.remove(sp);
+        if(sp == null || fp.getDownloadLinks().size() != linkCounter) {
+            panel = new JPanel(new GridBagLayout());
+            int n = 10;
+            panel.setBorder(new EmptyBorder(n, n, n, n));
+            panel.setBackground(Color.WHITE);
+            panel.setForeground(Color.WHITE);
+            if (sp != null) {
+                this.remove(sp);
+                hmObjects.clear();
+            }
+            this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
+            linkCounter = fp.getDownloadLinks().size();
         }
-        this.add(sp = new JScrollPane(panel), BorderLayout.CENTER);
         addEntry(JDLocale.L("gui.packageinfo.name", "Name"), fp.getName());
         if (fp.hasPassword()) addEntry(JDLocale.L("gui.packageinfo.password", "Password"), new JTextField(fp.getPassword()));
         if (fp.hasComment()) addEntry(JDLocale.L("gui.packageinfo.comment", "Comment"), fp.getComment());
@@ -141,14 +178,21 @@ public class PackageInfo extends JDialog {
         addEntry(JDLocale.L("gui.packageinfo.loaded", "Loaded"), JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " [" + fp.getTotalKBLoaded() + " KB]");
         addEntry(JDLocale.L("gui.packageinfo.links", "Links"), "");
 
-        int i = 1;
+        int i = 0;
         for (DownloadLink link : fp.getDownloadLinks()) {
-            JProgressBar p;
-            addEntry(i + ". " + link.getName(), p = new JProgressBar(0, 100));
+            JProgressBar p = new JProgressBar(0, 100);
+           
             p.setMaximum(10000);
             p.setValue(link.getPercent());
             p.setStringPainted(true);
             p.setString(JDUtilities.formatKbReadable(link.getDownloadSpeed() / 1024) + "/s " + c.format(link.getPercent() / 100.0) + " %| " + link.getDownloadCurrent() + "/" + link.getDownloadSize() + " bytes");
+            p.setEnabled(link.isEnabled());
+            if(link.isEnabled() == false) {
+                p.setBackground(new Color(150,150,150));
+            } else {
+                p.setBackground(new Color(0,0,0));
+            }
+            addEntry(++i + ". " + link.getName(), p);
         }
     }
 }
