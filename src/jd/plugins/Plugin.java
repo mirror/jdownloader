@@ -282,8 +282,8 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public Plugin newInstance() throws IllegalArgumentException, SecurityException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
         Plugin plg=this.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
 
-        plg.setHost(plg.getHost());
-        plg.setSupportedPattern(plg.getSupportedLinks());
+        plg.setHost(this.getHost());
+        plg.setSupportedPattern(this.getSupportedLinks());
         return plg;
       }
 

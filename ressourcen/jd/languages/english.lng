@@ -174,7 +174,7 @@ gui.config.eventmanager.trigger.btn = Edit Trigger
 gui.config.fengshui.expertview = Advanced Configuration
 gui.config.fengshui.fritzbox.title = Detected Router: Fritz!Box
 gui.config.fengshui.fritzbox.upnpactive = You have a Fritz!Box router. Please enable UPNP for your fritz!box.
-gui.config.fengshui.fritzbox.upnpinactive = Please enable UPNP fo your Fritz!Box <br><a href=\"http://%s\">to Fritz!Box Webinterface</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Please enable UPNP fo your Fritz!Box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.fengshui.password = Password:
 gui.config.fengshui.routerip = RouterIP:
 gui.config.fengshui.routername = Routername:
@@ -984,7 +984,7 @@ plugins.decrypt.general.hosterSelection = Hoster selection
 plugins.decrypt.general.passwordWrong = Wromg password
 plugins.decrypt.gwarezcc.preferdlc = Prefer DLC Container
 plugins.decrypt.linkbankeu = Check Mirror Links
-plugins.decrypt.myspacecom0 = Load all downloads into \"myspace.com/\"
+plugins.decrypt.myspacecom0 = Load all downloads into "myspace.com/"
 plugins.decrypt.myspacecom1 = Create a subfolder for each artist
 plugins.decrypt.myspacecom2 = Put the myspace username as prefix to the filename of all downloads
 plugins.decrypt.passwordProtected = Links are protected. Please enter password:
@@ -1004,7 +1004,7 @@ plugins.errors.wrongpassword = Password wrong
 plugins.host.premium.info.cash = Cash
 plugins.host.premium.info.error = The %s plugin does not support the Accountinfo feature yet.
 plugins.host.premium.info.files = Files
-plugins.host.premium.info.notValid = The account for \"%s\" isn't valid! Please check username and password!\r\n%s
+plugins.host.premium.info.notValid = The account for "%s" isn't valid! Please check username and password!\r\n%s
 plugins.host.premium.info.premiumpoints = PremiumPoints
 plugins.host.premium.info.status = Info
 plugins.host.premium.info.title = Accountinformation from %s for %s
@@ -1251,7 +1251,7 @@ sys.warning.dlcerror_xml = DLC: XML Error
 sys.warning.linklist.incompatible = Link list incompatible. Saving rejected.
 sys.warning.newMessage = New Systemmessage
 system.dialogs.update = Updates available
-system.dialogs.update.message = <font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>
+system.dialogs.update.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s update(s)  and %s package(s) or addon(s) available. Install now?</font>
 system.download.errors.couldnotoverwrite = Could not overwrite existing file
 system.download.errors.couldnotoverwritejdu = Update Download Error
 system.download.errors.couldnotrename = Could not rename partfile

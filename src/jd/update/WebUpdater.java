@@ -44,8 +44,8 @@ import java.util.zip.GZIPInputStream;
 
 import javax.swing.JProgressBar;
 
-import jd.utils.HTMLEntities;
-import jd.utils.JDUtilities;
+
+
 import sun.misc.BASE64Encoder;
 
 /**
@@ -610,7 +610,7 @@ WebUpdater.PLUGIN_LIST=plugins;
      *            the listPath to set
      */
     public void setListPath(String listPath) {
-        this.listPath = listPath + "/list.php?jd="+JDUtilities.getRevision()+"&r="+System.currentTimeMillis();
+        this.listPath = listPath + "/list.php?&r="+System.currentTimeMillis();
         onlinePath = listPath + "/bin";
         log("Update from " + listPath);
 

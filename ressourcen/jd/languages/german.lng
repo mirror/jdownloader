@@ -188,7 +188,7 @@ gui.config.eventmanager.trigger.btn = Trigger ändern
 gui.config.fengshui.expertview = Erweiterte Ansicht
 gui.config.fengshui.fritzbox.title = Fritz!Box erkannt
 gui.config.fengshui.fritzbox.upnpactive = Sie haben eine Fritz!Box, der Reconnect läuft über Upnp.<br> Sie brauchen keinen Reconnecteinstellungen zu tätigen.
-gui.config.fengshui.fritzbox.upnpinactive = Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href=\"http://%s\">zur Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href="http://%s">zur Fritz!Box</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wikiartikel: Fritz!Box Upnp</a>
 gui.config.fengshui.password = Password:
 gui.config.fengshui.routerip = RouterIP:
 gui.config.fengshui.routername = Routername:
@@ -228,13 +228,13 @@ gui.config.httpreconnect.connectType = Art des Verbindungsaufbaus
 gui.config.httpreconnect.disconnect = Verbindungsabbruch
 gui.config.httpreconnect.disconnectPOSTParameter = POST Parameter für den Verbindungsabbruch
 gui.config.httpreconnect.disconnectRequestProperties = RequestProperties für den Verbindungsabbruch
-gui.config.httpreconnect.disconnectRequestPropertiesTooltip = <HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>
+gui.config.httpreconnect.disconnectRequestPropertiesTooltip = <HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1="value3.2"</HTML>
 gui.config.httpreconnect.disconnectType = Art des Verbindungsabbruchs
 gui.config.httpreconnect.importRouter = Router importieren
 gui.config.httpreconnect.importRouterData = Routerdaten importieren
 gui.config.httpreconnect.loginPOSTParameter = POST Parameter für den Login
 gui.config.httpreconnect.loginRequestProperties = Requestparameter den Login
-gui.config.httpreconnect.loginrequestProperties.tooltip = <HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1=\"value3.2\"</HTML>
+gui.config.httpreconnect.loginrequestProperties.tooltip = <HTML>Die Werte werden folgendermaßen eingegeben:<BR>key1==value1;;key2==value2;;key3==value3.1="value3.2"</HTML>
 gui.config.httpreconnect.loginRequestType = Art der Anmeldung
 gui.config.httpreconnect.loginString = Anmeldestring
 gui.config.httpreconnect.logoffString = Abmeldestring
@@ -820,7 +820,7 @@ interaction.resetLink.name = Downloadlink zurücksetzen
 interaction.resetLink.options.all = alle Links
 interaction.resetLink.options.lastLink = nur den letzten Link
 interaction.resetLink.whichLink = Welcher Link soll zurückgesetzt werden?
-interaction.shutdown.dialog.msg = <h2><font color=\"red\">Achtung Ihr Betriebssystem wird heruntergefahren!</font></h2>
+interaction.shutdown.dialog.msg = <h2><font color="red">Achtung Ihr Betriebssystem wird heruntergefahren!</font></h2>
 interaction.simpleExecute.cmd = Befehl
 interaction.simpleExecute.executein = Ausführen in (Ordner)
 interaction.simpleExecute.extended = Erweiterte Einstellungen
@@ -976,7 +976,7 @@ plugins.errors.wrongpassword = Passwort falsch
 plugins.host.premium.info.cash = Cash
 plugins.host.premium.info.error = Das %s Plugin unterstützt noch keine Accountinformationen.
 plugins.host.premium.info.files = Dateien
-plugins.host.premium.info.notValid = Die Zugangsdaten für \"%s\" sind falsch! Bitte Passwort und Benutzername überprüfen!\r\n%s
+plugins.host.premium.info.notValid = Die Zugangsdaten für "%s" sind falsch! Bitte Passwort und Benutzername überprüfen!\r\n%s
 plugins.host.premium.info.premiumpoints = PremiumPoints
 plugins.host.premium.info.status = Info
 plugins.host.premium.info.title = Accountinfo von %s für %s
@@ -1238,7 +1238,7 @@ sys.warning.dlcerror_xml = DLC: XML Fehler
 sys.warning.linklist.incompatible = Linkliste inkompatibel. \r\nBackup angelegt.
 sys.warning.newMessage = Neue Systemnachricht
 system.dialogs.update = Updates verfügbar
-system.dialogs.update.message = <font size=\"2\" face=\"Verdana, Arial, Helvetica, sans-serif\">%s update(s)  und %s Paket(e) oder Addon(s) verfügbar. Jetzt installieren??</font>
+system.dialogs.update.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s update(s)  und %s Paket(e) oder Addon(s) verfügbar. Jetzt installieren??</font>
 system.download.errors.couldnotoverwrite = Konnte vorhandene Datei nicht überschreiben
 system.download.errors.couldnotoverwritejdu = Update: Download Fehler
 system.download.errors.couldnotrename = Konnte Part-Datei nicht umbenennen
