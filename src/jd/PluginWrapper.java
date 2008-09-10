@@ -72,9 +72,9 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         if (loadedPlugin != null) return loadedPlugin;
 
         try {
-
+          
             if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
-            if(WebUpdater.PLUGIN_LIST!=null){
+            if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_JARED&&WebUpdater.PLUGIN_LIST!=null){
             String plg=getClassName().replace(".", "/")+".class";
            File path = JDUtilities.getResourceFile(plg);
            String hash=JDUtilities.getLocalHash(path);
