@@ -29,6 +29,10 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
+
+import jd.gui.skins.simple.Link.JLinkButton;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -58,8 +62,10 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
      * @param downloadLink
      *            abzuarbeitender Link
      */
-
     public ConfirmCheckBoxDialog(String title, String text, String checkBoxText) {
+        this(title, text, checkBoxText, false);
+    }
+    public ConfirmCheckBoxDialog(String title, String text, String checkBoxText, boolean html) {
 
         super();
         JPanel panel = new JPanel();
@@ -73,9 +79,27 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
         setTitle(title);
 
         JTextPane labelInfo = new JTextPane();
+   
         labelInfo.setEditable(false);
-        labelInfo.setText(text);
+        if(html)
+        {
+            labelInfo.setContentType("text/html");
+            labelInfo.requestFocusInWindow();
+            labelInfo.addHyperlinkListener(new HyperlinkListener() {
+
+                public void hyperlinkUpdate(HyperlinkEvent e) {
+                    if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                        JLinkButton.openURL(e.getURL());
+                    }
+                    
+                }});
+
+        }
+        else
+        {
         labelInfo.setForeground(Color.red);
+        }        
+        labelInfo.setText(text);
         checkBox = new JCheckBox(checkBoxText);
         checkBox.addActionListener(this);
         checkBox.setFocusable(false);

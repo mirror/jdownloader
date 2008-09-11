@@ -61,6 +61,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import jd.gui.skins.simple.ConfirmCheckBoxDialog;
+
 import jd.HostPluginWrapper;
 import jd.JDInit;
 import jd.config.Configuration;
@@ -594,6 +596,9 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         new Thread(new Runnable() {
 
             public void run() {
+                String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
+                if(config.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).endsWith(lh))
+                {
                 if (routerIp == null || routerIp.matches("[\\s]*")) {
                     // System.out.println(routerIp);
                     ip.setText(new GetRouterInfo(prog).getAdress());
@@ -603,15 +608,33 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                     if (GetRouterInfo.isFritzbox(ip.getText())) {
                         String tit = JDLocale.L("gui.config.fengshui.fritzbox.title", "Fritz!Box erkannt");
                         if (GetRouterInfo.isUpnp(ip.getText(), "49000")) {
-                            JDUtilities.getGUI().showHTMLDialog(tit, JDLocale.L("gui.config.fengshui.fritzbox.upnpactive", "Sie haben eine Fritz!Box, der Reconnect läuft über Upnp.<br> Sie brauchen keinen Reconnecteinstellungen zu tätigen."));
+                            if(config.getBooleanProperty("FENGSHUI_UPNPACTIVE", true))
+                            {
+                            ConfirmCheckBoxDialog con = new ConfirmCheckBoxDialog(tit, JDLocale.L("gui.config.fengshui.fritzbox.upnpactive", "Sie haben eine Fritz!Box, der Reconnect über Upnp ist möglich.<br> möchten sie den Upnp Reconnect nutzen?"), JDLocale.L("gui.config.fengshui.fritzbox.upnp.checkbox", "Mitteilung nichtmehr zeigen"), true);
+                            if(con.isOk)
+                            {
                             Reconnectmethode = "[[[HSRC]]]\r\n" + "[[[STEP]]]\r\n" + "[[[REQUEST]]]\r\n" + "POST /upnp/control/WANIPConn1 HTTP/1.1\r\n" + "Host: %%%routerip%%%:49000\r\n" + "Content-Type: text/xml; charset=\"utf-8\"\r\n" + "SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\r\n" +
 
                             "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>\r\n" + "[[[/REQUEST]]]\r\n" + "[[[/STEP]]]\r\n" + "[[[/HSRC]]]\r\n";
                             routername.setText("!FRITZ BOX (All via UPNP)");
+                            }
+                            if(con.isChecked)
+                            {
+                                config.setProperty("FENGSHUI_UPNPACTIVE",false);
+                            }
+                            }
                         } else {
-                            JDUtilities.getGUI().showHTMLDialog(tit, JDLocale.LF("gui.config.fengshui.fritzbox.upnpinactive", "Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href=\"http://%s\">zur Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>", ip.getText()));
+                            if(config.getBooleanProperty("FENGSHUI_UPNPDEACTIVE", true))
+                            {
+                            ConfirmCheckBoxDialog con = new ConfirmCheckBoxDialog(tit, JDLocale.LF("gui.config.fengshui.fritzbox.upnpinactive", "Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href=\"http://%s\">zur Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>", ip.getText()), JDLocale.L("gui.config.fengshui.fritzbox.upnp.checkbox", "Mitteilung nichtmehr zeigen"), true);
+                            if(con.isChecked)
+                            {
+                                config.setProperty("FENGSHUI_UPNPDEACTIVE",false);
+                            }
+                            }
                         }
                     }
+                }
                 }
             }
         }).start();
