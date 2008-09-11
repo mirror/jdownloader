@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -37,8 +38,8 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
     private Pattern patternDLC = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
     private Pattern patternPW = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
 
-    public FuckTheIndustryRu(String cfgName) {
-        super(cfgName);
+    public FuckTheIndustryRu(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

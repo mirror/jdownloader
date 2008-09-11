@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
@@ -39,8 +40,8 @@ public class UploadServiceinfo extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public UploadServiceinfo(String cfgName) {
-        super(cfgName);
+    public UploadServiceinfo(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

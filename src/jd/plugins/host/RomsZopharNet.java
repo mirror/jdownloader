@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,8 +30,8 @@ public class RomsZopharNet extends PluginForHost {
     // /
     // download-file/131583
 
-    public RomsZopharNet(String cfgName) {
-        super(cfgName);
+    public RomsZopharNet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

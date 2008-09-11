@@ -78,7 +78,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return pluginsForDecrypt.get(rowIndex).getPluginName();
+                return pluginsForDecrypt.get(rowIndex).getHost();
             case 1:
                 return pluginsForDecrypt.get(rowIndex).getVersion();
             case 2:
@@ -106,7 +106,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
-        pluginsForDecrypt = JDUtilities.getPluginsForDecrypt();
+        pluginsForDecrypt = DecryptPluginWrapper.getDecryptWrapper();
         Collections.sort(pluginsForDecrypt);
         initPanel();
         load();

@@ -59,6 +59,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jd.JDFileFilter;
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
@@ -79,8 +80,13 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 public class HTTPLiveHeaderScripter extends PluginOptional {
+    public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
+        super(wrapper);
+       
+    }
+
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     public static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {
@@ -342,7 +348,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return "JD-Team";
     }
 
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter");
     }
 

@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -34,8 +35,8 @@ public class FalinksCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public FalinksCom(String cfgName) {
-        super(cfgName);
+    public FalinksCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

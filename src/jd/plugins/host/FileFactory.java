@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -67,15 +68,16 @@ public class FileFactory extends PluginForHost {
 
     private int wait;
 
-    public FileFactory(String cfgName) {
-        super(cfgName);
+    public FileFactory(PluginWrapper wrapper) {
+        super(wrapper);
         this.enablePremium();
     }
 
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         if (parameter.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies("serienjunkies.org").handleFree(parameter);
+            ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(parameter);
+           
             return;
         }
         LinkStatus linkStatus = parameter.getLinkStatus();
@@ -260,7 +262,8 @@ public class FileFactory extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+            ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+            
             return;
         }
         String user = account.getUser();

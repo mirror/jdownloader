@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -28,8 +29,8 @@ public class KnofflCom extends PluginForDecrypt {
     static private final String host = "knoffl.com";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?knoffl\\.com/u/\\w+", Pattern.CASE_INSENSITIVE);
 
-    public KnofflCom(String cfgName) {
-        super(cfgName);
+    public KnofflCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

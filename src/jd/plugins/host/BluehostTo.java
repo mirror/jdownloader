@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -29,8 +30,8 @@ import jd.utils.JDUtilities;
 
 public class BluehostTo extends PluginForHost {
 
-    public BluehostTo(String cfgName) {
-        super(cfgName);
+    public BluehostTo(PluginWrapper wrapper) {
+        super(wrapper);
         // TODO Auto-generated constructor stub
     }
 

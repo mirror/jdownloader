@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class RomHustlerNet extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("(http://[\\w.]*?romhustler\\.net/rom/.*?/\\d+/.+)|(/rom/.*?/\\d+/.+)", Pattern.CASE_INSENSITIVE);
 
-    public RomHustlerNet(String cfgName) {
-        super(cfgName);
+    public RomHustlerNet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

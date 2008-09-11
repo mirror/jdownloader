@@ -24,6 +24,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -40,8 +41,8 @@ public class DoperomsCom extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternFilesize = Pattern.compile("<br>Filesize: ([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))<br>", Pattern.CASE_INSENSITIVE);
 
-    public DoperomsCom(String cfgName) {
-        super(cfgName);
+    public DoperomsCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

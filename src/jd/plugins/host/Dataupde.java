@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -25,8 +26,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class Dataupde extends PluginForHost {
-    public Dataupde(String cfgName) {
-        super(cfgName);
+    public Dataupde(PluginWrapper wrapper) {
+        super(wrapper);
         // TODO Auto-generated constructor stub
     }
 

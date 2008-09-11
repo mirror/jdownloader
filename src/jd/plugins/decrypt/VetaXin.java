@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -35,8 +36,8 @@ public class VetaXin extends PluginForDecrypt {
     static private final Pattern patternSupported_Page = Pattern.compile("http://[\\w\\.]*?vetax\\.in/view/\\d+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Page.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public VetaXin(String cfgName) {
-        super(cfgName);
+    public VetaXin(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

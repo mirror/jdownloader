@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -33,8 +34,8 @@ public class ImageFap extends PluginForHost {
 
     static private final String CODER = "JD-Team";
 
-    public ImageFap(String cfgName) {
-        super(cfgName);
+    public ImageFap(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     private String DecryptLink(String code) {

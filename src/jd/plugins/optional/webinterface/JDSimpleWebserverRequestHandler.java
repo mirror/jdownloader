@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.CPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -546,15 +547,15 @@ public class JDSimpleWebserverRequestHandler {
 
     private Vector<DownloadLink> loadContainerFile(final File file) {
 
-        ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginsC pContainer;
-
+        CPluginWrapper wrapper;
         for (int i = 0; i < pluginsForContainer.size(); i++) {
-            pContainer = pluginsForContainer.get(i);
-            if (pContainer.canHandle(file.getName())) {
+            wrapper = pluginsForContainer.get(i);
+            if (wrapper.canHandle(file.getName())) {
                 try {
-                    pContainer = pContainer.getClass().newInstance();
+                    pContainer=(PluginsC)wrapper.getNewPluginInstance();                 
                     pContainer.initContainer(file.getAbsolutePath());
                     Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
                     if (links != null && links.size() != 0) {

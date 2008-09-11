@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -36,8 +37,8 @@ public class YourFilesBizFolder extends PluginForDecrypt {
     final static String host = "yourfiles.biz";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
 
-    public YourFilesBizFolder(String cfgName) {
-        super(cfgName);
+    public YourFilesBizFolder(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

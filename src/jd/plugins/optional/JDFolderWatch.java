@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -49,7 +50,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("FOLDERWATCH");
@@ -60,7 +61,8 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
 
     private boolean threadend = true;
 
-    public JDFolderWatch() {
+    public JDFolderWatch(PluginWrapper wrapper) {
+        super(wrapper);
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Ordner:")));
         cfg.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
@@ -141,7 +143,7 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch");
     }
 

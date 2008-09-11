@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -35,8 +36,8 @@ public class SiloFilescom extends PluginForHost {
     private String downloadurl;
     private RequestInfo requestInfo;
 
-    public SiloFilescom(String cfgName) {
-        super(cfgName);
+    public SiloFilescom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

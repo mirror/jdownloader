@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -38,8 +39,8 @@ public class BestMovies extends PluginForDecrypt {
     static private final Pattern patternCaptcha_Wrong = Pattern.compile("Der Sicherheitscode ist falsch");
     static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
 
-    public BestMovies(String cfgName) {
-        super(cfgName);
+    public BestMovies(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

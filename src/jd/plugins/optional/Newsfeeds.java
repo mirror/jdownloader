@@ -40,6 +40,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -55,6 +56,11 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class Newsfeeds extends PluginOptional implements ListSelectionListener {
+
+    public Newsfeeds(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
 
     private class AddAboDialog extends JDialog implements ActionListener {
 
@@ -229,7 +235,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     private static final String PROPERTY_FEEDS = "PROPERTY_FEEDS";
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private JList aboList;
@@ -460,7 +466,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     }
 
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check");
     }
 

@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class MyRef extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myref\\.de(\\/){0,1}\\?\\d{0,10}", Pattern.CASE_INSENSITIVE);
 
-    public MyRef(String cfgName) {
-        super(cfgName);
+    public MyRef(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

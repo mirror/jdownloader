@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -32,8 +33,8 @@ public class GappingOrg extends PluginForDecrypt {
     private Pattern patternSupported_container = Pattern.compile("http://[\\w\\.]*?gapping\\.org/g.*?\\.html", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternSupported_folder1.pattern() + "|" + patternSupported_folder2.pattern() + "|" + patternSupported_file.pattern() + "|" + patternSupported_container.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public GappingOrg(String cfgName) {
-        super(cfgName);
+    public GappingOrg(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

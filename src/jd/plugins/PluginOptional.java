@@ -18,17 +18,20 @@ package jd.plugins;
 
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
-    protected PluginOptional() {
-          super(null);
-        // TODO Auto-generated constructor stub
+ 
+
+    public PluginOptional(PluginWrapper wrapper) {
+        super(wrapper);
+     
     }
 
-    public static final int ADDON_INTERFACE_VERSION = 1;
+    public static final int ADDON_INTERFACE_VERSION = 2;
 
     public void controlEvent(ControlEvent event) {
 
@@ -44,20 +47,13 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     }
 
-    @Override
-    public String getHost() {
-        return null;
-    }
-
+ 
     @Override
     public String getLinkName() {
         return null;
     }
 
-    @Override
-    public String getPluginName() {
-        return "Unnamend Optional Plugin";
-    }
+ 
 
     public abstract String getRequirements();
 

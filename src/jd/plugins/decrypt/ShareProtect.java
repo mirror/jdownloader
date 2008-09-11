@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -30,8 +31,8 @@ public class ShareProtect extends PluginForDecrypt {
     final static String host = "shareprotect.t-w.at";
     private Pattern patternSupported = Pattern.compile("http://shareprotect\\.t-w\\.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}", Pattern.CASE_INSENSITIVE);
 
-    public ShareProtect(String cfgName) {
-        super(cfgName);
+    public ShareProtect(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

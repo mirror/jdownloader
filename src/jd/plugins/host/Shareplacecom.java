@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -37,8 +38,8 @@ public class Shareplacecom extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public Shareplacecom(String cfgName) {
-        super(cfgName);
+    public Shareplacecom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

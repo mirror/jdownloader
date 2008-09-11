@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -24,8 +25,8 @@ import jd.plugins.download.RAFDownload;
 
 public class zShare extends PluginForHost {
 
-    public zShare(String cfgName) {
-        super(cfgName);
+    public zShare(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

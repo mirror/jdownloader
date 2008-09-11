@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -37,8 +38,8 @@ public class FileUploadnet extends PluginForHost {
 
     private String downloadurl;
 
-    public FileUploadnet(String cfgName) {
-        super(cfgName);
+    public FileUploadnet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

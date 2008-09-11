@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -28,8 +29,8 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class ClipfishDe extends PluginForHost {
-    public ClipfishDe(String cfgName) {
-        super(cfgName);
+    public ClipfishDe(PluginWrapper wrapper) {
+        super(wrapper);
         // TODO Auto-generated constructor stub
     }
 

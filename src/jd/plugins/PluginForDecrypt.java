@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -34,6 +35,13 @@ import jd.parser.Regex;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
+    
+
+    public PluginForDecrypt(PluginWrapper wrapper) {
+        super(wrapper);
+       
+    }
+
     private CryptedLink cryptedLink = null;
 
     protected ProgressController progress;
@@ -51,10 +59,7 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return Ein Vector mit Klartext-links
      */
 
-    public PluginForDecrypt(String cfgName) {
-        super(cfgName);
-        br = new Browser();
-    }
+
 
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.htmlDecode(link), true);
@@ -89,7 +94,7 @@ public abstract class PluginForDecrypt extends Plugin {
         }
 
         progress = new ProgressController("Decrypter: " + getLinkName());
-        progress.setStatusText("decrypt-" + getPluginName() + ": " + getLinkName());
+        progress.setStatusText("decrypt-" + getHost() + ": " + getLinkName());
         ArrayList<DownloadLink> tmpLinks = null;
         try {
             tmpLinks = decryptIt(cryptedLink);

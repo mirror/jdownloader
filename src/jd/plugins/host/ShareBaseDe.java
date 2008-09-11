@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -35,8 +36,8 @@ public class ShareBaseDe extends PluginForHost {
 
     private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
 
-    public ShareBaseDe(String cfgName) {
-        super(cfgName);
+    public ShareBaseDe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

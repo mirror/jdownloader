@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -35,8 +36,8 @@ public class Wiireloaded extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+", Pattern.CASE_INSENSITIVE);
 
-    public Wiireloaded(String cfgName) {
-        super(cfgName);
+    public Wiireloaded(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -33,8 +34,8 @@ public class StacheldrahtTo extends PluginForDecrypt {
     final static String host = "stacheldraht.to";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stacheldraht\\.to/index\\.php\\?folder=.+", Pattern.CASE_INSENSITIVE);
 
-    public StacheldrahtTo(String cfgName) {
-        super(cfgName);
+    public StacheldrahtTo(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

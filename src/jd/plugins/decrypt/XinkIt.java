@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -37,8 +38,8 @@ public class XinkIt extends PluginForDecrypt {
     final static String host = "xink.it";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xink\\.it/f-[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public XinkIt(String cfgName) {
-        super(cfgName);
+    public XinkIt(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

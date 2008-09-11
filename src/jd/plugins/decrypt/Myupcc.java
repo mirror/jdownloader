@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class Myupcc extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myup\\.cc/link-[a-zA-Z0-9]+\\.html", Pattern.CASE_INSENSITIVE);
 
-    public Myupcc(String cfgName) {
-        super(cfgName);
+    public Myupcc(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -39,8 +40,8 @@ public class MyVideo extends PluginForHost {
 
     private RequestInfo requestInfo;
 
-    public MyVideo(String cfgName) {
-        super(cfgName);
+    public MyVideo(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

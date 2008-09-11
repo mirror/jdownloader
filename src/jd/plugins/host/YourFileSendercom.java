@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -35,8 +36,8 @@ public class YourFileSendercom extends PluginForHost {
     private String downloadurl;
     private RequestInfo requestInfo;
 
-    public YourFileSendercom(String cfgName) {
-        super(cfgName);
+    public YourFileSendercom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

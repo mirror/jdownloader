@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -35,8 +36,8 @@ public class ShareNownet extends PluginForHost {
     private File captchaFile;
     private String downloadurl;
 
-    public ShareNownet(String cfgName) {
-        super(cfgName);
+    public ShareNownet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

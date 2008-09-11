@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -36,8 +37,8 @@ public class MeinUpload extends PluginForHost {
 
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
 
-    public MeinUpload(String cfgName) {
-        super(cfgName);
+    public MeinUpload(PluginWrapper wrapper) {
+        super(wrapper);
         enablePremium();
     }
 

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.http.Encoding;
 import jd.parser.Regex;
@@ -37,8 +38,8 @@ public class Wordpress extends PluginForDecrypt {
     private Vector<String> passwordpattern = new Vector<String>();
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+|movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*", Pattern.CASE_INSENSITIVE);
 
-    public Wordpress(String cfgName) {
-        super(cfgName);
+    public Wordpress(PluginWrapper wrapper) {
+        super(wrapper);
         add_defaultpasswords();
         add_passwordpatterns();
     }

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -271,8 +272,8 @@ public class Secured extends PluginForDecrypt {
 
     private String cryptedLink;
 
-    public Secured(String cfgName) {
-        super(cfgName);
+    public Secured(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     public String decryptId(String id) throws IOException {

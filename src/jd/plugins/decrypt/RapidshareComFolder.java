@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -31,8 +32,8 @@ public class RapidshareComFolder extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidshare.com/users/.+", Pattern.CASE_INSENSITIVE);
     private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-    public RapidshareComFolder(String cfgName) {
-        super(cfgName);
+    public RapidshareComFolder(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

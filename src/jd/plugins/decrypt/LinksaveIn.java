@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -35,8 +36,8 @@ public class LinksaveIn extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public LinksaveIn(String cfgName) {
-        super(cfgName);
+    public LinksaveIn(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -812,7 +812,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.info", "Detailansicht"), TreeTableAction.DOWNLOAD_INFO, new Property("downloadlink", obj))));
 
                 JMenu packagePopup = new JMenu(JDLocale.L("gui.table.contextmenu.packagesubmenu", "Paket"));
-                JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.pluginsubmenu", "Plugin") + " (" + plg.getPluginName() + ")");
+                JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.pluginsubmenu", "Plugin") + " (" + plg.getHost() + ")");
 
                 ArrayList<MenuItem> pluginMenuEntries = plg.createMenuitems();
                 if (pluginMenuEntries != null) {

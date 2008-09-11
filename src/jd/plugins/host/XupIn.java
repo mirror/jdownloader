@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -54,8 +55,8 @@ public class XupIn extends PluginForHost {
     private String vpass = "";
     private String vtime = "";
 
-    public XupIn(String cfgName) {
-        super(cfgName);
+    public XupIn(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

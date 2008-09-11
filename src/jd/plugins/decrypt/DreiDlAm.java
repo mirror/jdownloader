@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -41,8 +42,8 @@ public class DreiDlAm extends PluginForDecrypt {
     private final static Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern() + "|" + patternSupported_3.pattern(), Pattern.CASE_INSENSITIVE);
     private String password;
 
-    public DreiDlAm(String cfgName) {
-        super(cfgName);
+    public DreiDlAm(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     private void decryptFromDownload(String parameter) throws IOException, DecrypterException {

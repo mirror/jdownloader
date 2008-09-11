@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,8 +32,8 @@ public class Rapidsafenet extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    public Rapidsafenet(String cfgName) {
-        super(cfgName);
+    public Rapidsafenet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

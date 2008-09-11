@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -104,8 +105,8 @@ public class DDLWarez extends PluginForDecrypt {
 
     public static Integer Worker_Delay = 250;
 
-    public DDLWarez(String cfgName) {
-        super(cfgName);
+    public DDLWarez(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

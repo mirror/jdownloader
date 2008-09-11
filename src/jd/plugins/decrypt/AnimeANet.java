@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginPattern;
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -28,8 +29,8 @@ import jd.plugins.PluginForDecrypt;
 public class AnimeANet extends PluginForDecrypt {
     final static String host = "animea.net";
 
-    public AnimeANet(String cfgName) {
-        super(cfgName);
+    public AnimeANet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

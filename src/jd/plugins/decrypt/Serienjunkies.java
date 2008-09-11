@@ -37,6 +37,7 @@ import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.SimpleGUI;
@@ -75,8 +76,8 @@ public class Serienjunkies extends PluginForDecrypt {
 
     private static Vector<String> passwords = new Vector<String>();
 
-    public Serienjunkies(String cfgName) {
-        super(cfgName);
+    public Serienjunkies(PluginWrapper wrapper) {
+        super(wrapper);
         setConfigElements();
         passwords.add("serienjunkies.dl.am");
         passwords.add("serienjunkies.org");

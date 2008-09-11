@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,8 +35,8 @@ public class Rlslog extends PluginForDecrypt {
     static private final String host = "rlslog.net";
     private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/))", Pattern.CASE_INSENSITIVE);
 
-    public Rlslog(String cfgName) {
-        super(cfgName);
+    public Rlslog(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

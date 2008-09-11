@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,8 +31,8 @@ public class UploadJockeycom extends PluginForDecrypt {
     static private final String HOST = "uploadjockey.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?uploadjockey\\.com/download/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
 
-    public UploadJockeycom(String cfgName) {
-        super(cfgName);
+    public UploadJockeycom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -43,6 +43,7 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
 import jd.Main;
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -58,6 +59,11 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDTrayIcon extends PluginOptional implements WindowStateListener {
+    public JDTrayIcon(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
+
     private class info extends Thread {
         private Point p;
 
@@ -110,7 +116,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private JCheckBoxMenuItem clipboard;
@@ -216,7 +222,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         return "JD-Team";
     }
 
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.trayIcon.name", "TrayIcon");
     }
 

@@ -159,7 +159,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                     final PluginForHost helpplugin = wrapper.getPlugin();
                     if (helpplugin.createMenuitems() != null) {
                         JMenu item;
-                        popup.add(item = new JMenu(helpplugin.getPluginName()));
+                        popup.add(item = new JMenu(helpplugin.getHost()));
                         item.setHorizontalTextPosition(JMenuItem.RIGHT);
 
                         // m.setItems(helpplugin.createMenuitems());

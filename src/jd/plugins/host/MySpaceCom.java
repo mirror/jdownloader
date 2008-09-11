@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -35,8 +36,8 @@ public class MySpaceCom extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
 
-    public MySpaceCom(String cfgName) {
-        super(cfgName);
+    public MySpaceCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     private String getDownloadUrl(DownloadLink link) {

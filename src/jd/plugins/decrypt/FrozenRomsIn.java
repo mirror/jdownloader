@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -28,8 +29,8 @@ public class FrozenRomsIn extends PluginForDecrypt {
     final static String host = "frozen-roms.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html", Pattern.CASE_INSENSITIVE);
 
-    public FrozenRomsIn(String cfgName) {
-        super(cfgName);
+    public FrozenRomsIn(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

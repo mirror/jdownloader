@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -39,8 +40,8 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String NOT_FOUND = "Datei existiert nicht";
 
-    public FastLoadNet(String cfgName) {
-        super(cfgName);
+    public FastLoadNet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

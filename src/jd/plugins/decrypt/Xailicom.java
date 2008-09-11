@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,8 +32,8 @@ public class Xailicom extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xaili\\.com/\\?site=protect\\&id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public Xailicom(String cfgName) {
-        super(cfgName);
+    public Xailicom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

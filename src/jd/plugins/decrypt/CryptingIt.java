@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,8 +35,8 @@ public class CryptingIt extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?crypting\\.it/index\\.php\\?p=show&id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public CryptingIt(String cfgName) {
-        super(cfgName);
+    public CryptingIt(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

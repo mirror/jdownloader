@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -46,8 +47,8 @@ public class UrlShieldnet extends PluginForDecrypt {
     private File captchaFile;
     private String passCode = null;
 
-    public UrlShieldnet(String cfgName) {
-        super(cfgName);
+    public UrlShieldnet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

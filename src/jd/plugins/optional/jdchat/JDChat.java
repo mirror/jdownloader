@@ -43,6 +43,7 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
@@ -102,7 +103,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String USERLIST_STYLE = JDUtilities.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private boolean changed;
@@ -125,7 +126,8 @@ public class JDChat extends PluginOptional implements ControlListener {
     private JTextField textField;
     private JLabel top;
 
-    public JDChat() {
+    public JDChat(PluginWrapper wrapper) {
+        super(wrapper);
         COMMANDS.add("/msg ");
         COMMANDS.add("/topic ");
         COMMANDS.add("/op ");
@@ -802,7 +804,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         return nick;
     }
 
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.jdchat.name", "JD Chat");
     }
 
@@ -1373,7 +1375,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 top.setText(msg);
-                frame.setTitle(getPluginName() + " : " + msg);
+                frame.setTitle(getHost() + " : " + msg);
                 frame.pack();
             }
         });

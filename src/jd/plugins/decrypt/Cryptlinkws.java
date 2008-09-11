@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.controlling.DistributeData;
 import jd.http.Encoding;
 import jd.parser.Form;
@@ -38,8 +39,8 @@ public class Cryptlinkws extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public Cryptlinkws(String cfgName) {
-        super(cfgName);
+    public Cryptlinkws(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

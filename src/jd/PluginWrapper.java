@@ -28,10 +28,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     private String host;
     private String className;
     protected Logger logger = JDUtilities.getLogger();
-    private Plugin loadedPlugin = null;
+    protected Plugin loadedPlugin = null;
     private boolean acceptOnlyURIs;
     private String pluginName;
     private static URLClassLoader CL;
+    private static final HashMap<String, PluginWrapper> WRAPPER = new HashMap<String, PluginWrapper>();
 
     public PluginWrapper(String name, String host, String className, String pattern, int flags) {
 
@@ -42,6 +43,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         this.className = className;
         this.pluginName = name.toLowerCase();
         if ((flags & PluginWrapper.LOAD_ON_INIT) > 0) this.getPlugin();
+        WRAPPER.put(className, this);
 
     }
 
@@ -54,7 +56,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public String getHost() {
-        return this.isLoaded() ? getPlugin().getHost().toLowerCase() : host.toLowerCase();
+        return host;
     }
 
     public void setHost(String host) {
@@ -86,17 +88,19 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                     }
 
                 }
-//                HashMap<String, Vector<String>> list = WebUpdater.PLUGIN_LIST != null ? WebUpdater.PLUGIN_LIST : new HashMap<String, Vector<String>>();
-                ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateFile", "Update plugin %s", getClassName()), filelist.size()+1);
+                // HashMap<String, Vector<String>> list = WebUpdater.PLUGIN_LIST
+                // != null ? WebUpdater.PLUGIN_LIST : new HashMap<String,
+                // Vector<String>>();
+                ProgressController progress = new ProgressController(JDLocale.LF("wrapper.webupdate.updateFile", "Update plugin %s", getClassName()), filelist.size() + 1);
                 progress.increase(1);
                 for (Vector<String> entry : filelist) {
                     String plg = entry.get(0).split("\\?")[0];
                     File path = JDUtilities.getResourceFile(plg);
-                    String hash = JDUtilities.getLocalHash(path);                 
-                    if (hash == null || !hash.equalsIgnoreCase(entry.get(1))) {                        
+                    String hash = JDUtilities.getLocalHash(path);
+                    if (hash == null || !hash.equalsIgnoreCase(entry.get(1))) {
                         new WebUpdater(null).updateFile(entry);
                         logger.info("UPdated plugin: " + plg);
-                      
+
                     }
                     progress.increase(1);
                 }
@@ -109,12 +113,10 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class[] classes = new Class[] { String.class };
+            Class[] classes = new Class[] { PluginWrapper.class };
             Constructor con = plgClass.getConstructor(classes);
             classes = null;
-            this.loadedPlugin = (Plugin) con.newInstance(new Object[] { host.toLowerCase() });
-            loadedPlugin.setHost(host.toLowerCase());
-            loadedPlugin.setSupportedPattern(pattern);
+            this.loadedPlugin = (Plugin) con.newInstance(new Object[] { this });
 
             return loadedPlugin;
         } catch (Throwable e) {
@@ -122,10 +124,6 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public String getPluginName() {
-        return this.isLoaded() ? getPlugin().getPluginName().toLowerCase() : this.pluginName.toLowerCase();
     }
 
     public Object getVersion() {
@@ -164,7 +162,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public SubConfiguration getPluginConfig() {
-        String name = getPluginName();
+        String name = getHost();
         return JDUtilities.getSubConfig(name);
     }
 
@@ -197,5 +195,22 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public int compareTo(PluginWrapper o) {
         return getHost().toLowerCase().compareTo(((PluginWrapper) o).getHost().toLowerCase());
+    }
+
+    public String getConfigName() {
+
+        return getHost();
+    }
+
+    public static Plugin getNewInstance(String className) {
+        if (!WRAPPER.containsKey(className)) {
+            try {
+                throw new Exception("plugin " + className + " could not be found");
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+        return WRAPPER.get(className).getNewPluginInstance();
     }
 }

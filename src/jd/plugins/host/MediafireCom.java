@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,8 +30,8 @@ public class MediafireCom extends PluginForHost {
 
     private String url;
 
-    public MediafireCom(String cfgName) {
-        super(cfgName);
+    public MediafireCom(PluginWrapper wrapper) {
+        super(wrapper);
         // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
         // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }

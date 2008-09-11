@@ -88,6 +88,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
+import jd.CPluginWrapper;
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
@@ -180,11 +181,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      */
     public static Logger logger = JDUtilities.getLogger();
 
-    private static ArrayList<DecryptPluginWrapper> pluginsForDecrypt = null;
 
-    private static ArrayList<HostPluginWrapper> pluginsForHost = null;
-
-    private static Vector<PluginOptional> pluginsOptional = null;
 
     /**
      * RessourceBundle für Texte
@@ -200,7 +197,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     private static Vector<File> saveReadObject = new Vector<File>();
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
-    private static ArrayList<PluginsC> pluginsForContainer = new ArrayList<PluginsC>();
+    private static ArrayList<CPluginWrapper> pluginsForContainer = new ArrayList<CPluginWrapper>();
 
     public static String getSimString(String a, String b) {
 
@@ -467,12 +464,12 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     }
 
     public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
-        ArrayList<PluginsC> pfc = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pfc = JDUtilities.getPluginsForContainer();
         for (int i = 0; i < pfc.size(); i++) {
-            String pn = pfc.get(i).getPluginName();
+            String pn = pfc.get(i).getHost();
             if (pn.equalsIgnoreCase(encryption)) {
 
-            return pfc.get(i).createContainerString(downloadLinks);
+            return pfc.get(i).getPlugin().createContainerString(downloadLinks);
 
             }
         }
@@ -487,9 +484,9 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      * @return ciphertext
      */
     public static String[] encrypt(String string, String encryption) {
-        ArrayList<PluginsC> pfc = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pfc = JDUtilities.getPluginsForContainer();
         for (int i = 0; i < pfc.size(); i++) {
-            if (pfc.get(i).getPluginName().equalsIgnoreCase(encryption)) { return pfc.get(i).encrypt(string); }
+            if (pfc.get(i).getHost().equalsIgnoreCase(encryption)) { return pfc.get(i).getPlugin().encrypt(string); }
         }
         return null;
 
@@ -1336,19 +1333,15 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     public static PluginsC getPluginForContainer(String container, String containerPath) {
         if (containerPath != null && containerPlugins.containsKey(containerPath)) { return containerPlugins.get(containerPath); }
         PluginsC ret = null;
-        for (PluginsC act : JDUtilities.getPluginsForContainer()) {
+        for (CPluginWrapper act : JDUtilities.getPluginsForContainer()) {
             if (act.getHost().equalsIgnoreCase(container)) {
-                try {
-                    ret = act.getClass().newInstance();
+        
+                    ret = (PluginsC)act.getNewPluginInstance();
                     if (containerPath != null) {
                         containerPlugins.put(containerPath, ret);
                     }
                     return ret;
-                } catch (InstantiationException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
+               
             }
         }
         return null;
@@ -1362,8 +1355,8 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      * @return Ein passendes Plugin oder null
      */
     public static PluginForHost getPluginForHost(String host) {
-        for (int i = 0; i < pluginsForHost.size(); i++) {
-            if (pluginsForHost.get(i).getHost().equals(host.toLowerCase())) { return pluginsForHost.get(i).getPlugin(); }
+        for (int i = 0; i < HostPluginWrapper.getHostWrapper().size(); i++) {
+            if (HostPluginWrapper.getHostWrapper().get(i).getHost().equals(host.toLowerCase())) { return HostPluginWrapper.getHostWrapper().get(i).getPlugin(); }
         }
         return null;
     }
@@ -1383,19 +1376,11 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      * 
      * @return Plugins zum Laden von Containerdateien
      */
-    public static ArrayList<PluginsC> getPluginsForContainer() {
+    public static ArrayList<CPluginWrapper> getPluginsForContainer() {
         return pluginsForContainer;
     }
 
-    /**
-     * Liefert alle geladenen Plugins zum Entschlüsseln zurück
-     * 
-     * @return Plugins zum Entschlüsseln
-     */
-    public static ArrayList<DecryptPluginWrapper> getPluginsForDecrypt() {
-        if (pluginsForDecrypt == null) pluginsForDecrypt = new ArrayList<DecryptPluginWrapper>();
-        return pluginsForDecrypt;
-    }
+ 
 
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
@@ -1408,9 +1393,9 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         // return pluginsForHost;
 
         ArrayList<HostPluginWrapper> plgs = new ArrayList<HostPluginWrapper>();
-        if (pluginsForHost != null) {
-            plgs.addAll(pluginsForHost);
-        }
+        
+            plgs.addAll(HostPluginWrapper.getHostWrapper());
+      
         ArrayList<HostPluginWrapper> pfh = new ArrayList<HostPluginWrapper>();
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
@@ -1429,15 +1414,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         return pfh;
     }
 
-    /**
-     * Liefert alle optionalen Plugins zurücl
-     * 
-     * @return Alle optionalen Plugins
-     */
-    public static Vector<PluginOptional> getPluginsOptional() {
-        if (pluginsOptional == null) pluginsOptional = new Vector<PluginOptional>();
-        return pluginsOptional;
-    }
+ 
 
     /**
      * Liefert einer char aus dem aktuellen ResourceBundle zurück
@@ -1587,14 +1564,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
 
     }
 
-    /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück.
-     * 
-     * @return
-     */
-    public static ArrayList<HostPluginWrapper> getUnsortedPluginsForHost() {
-        return pluginsForHost;
-    }
+   
 
     /**
      * Lädt ein Objekt aus einer Datei
@@ -1935,20 +1905,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         JDUtilities.locale = locale;
     }
 
-    public static void setPluginForDecryptList(ArrayList<DecryptPluginWrapper> loadPlugins) {
-        pluginsForDecrypt = loadPlugins;
 
-    }
-
-    public static void setPluginForHostList(ArrayList<HostPluginWrapper> loadPlugins) {
-        pluginsForHost = loadPlugins;
-
-    }
-
-    public static void setPluginOptionalList(Vector<PluginOptional> loadPlugins) {
-        pluginsOptional = loadPlugins;
-
-    }
 
     public static boolean sleep(int i) {
         try {
@@ -2081,7 +2038,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         return dbconnect;
     }
 
-    public static void setPluginForContainer(ArrayList<PluginsC> loadPluginForContainer) {
+    public static void setPluginForContainer(ArrayList<CPluginWrapper> loadPluginForContainer) {
         pluginsForContainer = loadPluginForContainer;
 
     }

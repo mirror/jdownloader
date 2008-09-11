@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -31,8 +32,8 @@ public class ShareRocktEs extends PluginForDecrypt {
     private static final Pattern patternSupported_v = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternSupported_v.pattern() + "|" + patternSupported_go.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public ShareRocktEs(String cfgName) {
-        super(cfgName);
+    public ShareRocktEs(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

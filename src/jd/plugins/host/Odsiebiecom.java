@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -41,8 +42,8 @@ public class Odsiebiecom extends PluginForHost {
     private String referrerurl;
     private RequestInfo requestInfo;
 
-    public Odsiebiecom(String cfgName) {
-        super(cfgName);
+    public Odsiebiecom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

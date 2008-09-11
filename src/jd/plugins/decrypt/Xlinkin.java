@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -95,8 +96,8 @@ public class Xlinkin extends PluginForDecrypt {
         }
     }
 
-    public Xlinkin(String cfgName) {
-        super(cfgName);
+    public Xlinkin(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

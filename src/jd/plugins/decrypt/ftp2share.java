@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
@@ -34,8 +35,8 @@ public class ftp2share extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public ftp2share(String cfgName) {
-        super(cfgName);
+    public ftp2share(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

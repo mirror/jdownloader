@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -44,8 +45,8 @@ public class MegasharesCom extends PluginForHost {
 
     private static String PLUGIN_PASS = null;
 
-    public MegasharesCom(String cfgName) {
-        super(cfgName);
+    public MegasharesCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -38,8 +39,8 @@ public class Divxvid extends PluginForDecrypt {
 
     private Pattern premiumdownloadlocation = Pattern.compile("form name=\"dxp\" action=\"(.*)\" method=\"post\"", Pattern.CASE_INSENSITIVE);
 
-    public Divxvid(String cfgName) {
-        super(cfgName);
+    public Divxvid(PluginWrapper wrapper) {
+        super(wrapper);
         passwords.add("dxd-tivi");
         passwords.add("dxp.divxvid.org");
         passwords.add("dxp");

@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Vector;
 
@@ -38,6 +39,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
@@ -90,15 +92,15 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex)), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
+                return configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
             case 1:
-                return pluginsOptional.get(rowIndex).getPluginName();
+                return pluginsOptional.get(rowIndex).getHost();
             case 2:
                 return pluginsOptional.get(rowIndex).getVersion();
             case 3:
                 return pluginsOptional.get(rowIndex).getCoder();
             case 4:
-                return pluginsOptional.get(rowIndex).getRequirements();
+                return pluginsOptional.get(rowIndex).getPlugin().getRequirements();
             }
             return null;
         }
@@ -114,7 +116,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     private JButton openPluginDir;
 
-    private Vector<PluginOptional> pluginsOptional;
+    private ArrayList<OptionalPluginWrapper> pluginsOptional;
 
     private JTable table;
 
@@ -123,7 +125,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     public SubPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
-        pluginsOptional = JDUtilities.getPluginsOptional();
+        pluginsOptional =  OptionalPluginWrapper.getOptionalWrapper();
         Collections.sort(pluginsOptional);
         initPanel();
         load();
@@ -134,8 +136,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             editEntry();
         } else if (e.getSource() == enableDisable) {
             int rowIndex = table.getSelectedRow();
-            boolean b = configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex)), false);
-            configuration.setProperty(getConfigParamKey(pluginsOptional.get(rowIndex)), !b);
+            boolean b = configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), false);
+            configuration.setProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), !b);
             tableModel.fireTableRowsUpdated(rowIndex, rowIndex);
             table.getSelectionModel().setSelectionInterval(rowIndex, rowIndex);
         } else if (e.getSource() == openPluginDir) {
@@ -147,11 +149,11 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsOptional.elementAt(table.getSelectedRow()));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsOptional.get(table.getSelectedRow()).getPlugin());
     }
 
     private String getConfigParamKey(PluginOptional pluginOptional) {
-        return "OPTIONAL_PLUGIN_" + pluginOptional.getPluginName();
+        return "OPTIONAL_PLUGIN_" + pluginOptional.getHost();
     }
 
     @Override
@@ -169,7 +171,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
         // table.setDefaultRenderer(Object.class, new
@@ -222,7 +224,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }

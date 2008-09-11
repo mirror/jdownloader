@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.HTMLParser;
@@ -42,8 +43,8 @@ public class UCMS extends PluginForDecrypt {
 
     final static private Pattern patternSupported = UCMS.create_patternSupported();
 
-    public UCMS(String cfgName) {
-        super(cfgName);
+    public UCMS(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     static private Pattern create_patternSupported() {

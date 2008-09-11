@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -29,8 +30,8 @@ import jd.plugins.download.RAFDownload;
 
 public class FileBaseTo extends PluginForHost {
 
-    public FileBaseTo(String cfgName) {
-        super(cfgName);
+    public FileBaseTo(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

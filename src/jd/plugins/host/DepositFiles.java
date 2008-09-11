@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
@@ -58,8 +59,8 @@ public class DepositFiles extends PluginForHost {
     // Rechtschreibfehler übernommen
     private String PASSWORD_PROTECTED = "<strong>Bitte Password fuer diesem File eingeben</strong>";
 
-    public DepositFiles(String cfgName) {
-        super(cfgName);
+    public DepositFiles(PluginWrapper wrapper) {
+        super(wrapper);
         this.enablePremium();
     }
 

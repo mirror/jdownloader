@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -31,8 +32,8 @@ public class XupInRaidrush extends PluginForHost {
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "JD-Team";
 
-    public XupInRaidrush(String cfgName) {
-        super(cfgName);
+    public XupInRaidrush(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

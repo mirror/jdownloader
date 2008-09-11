@@ -18,6 +18,7 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -27,8 +28,8 @@ import jd.plugins.PluginForDecrypt;
 public class AnimeLoadsorg extends PluginForDecrypt {
     static private String host = "anime-loads.org";
 
-    public AnimeLoadsorg(String cfgName) {
-        super(cfgName);
+    public AnimeLoadsorg(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

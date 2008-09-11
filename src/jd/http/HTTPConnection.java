@@ -48,7 +48,8 @@ public class HTTPConnection {
     public HTTPConnection(URLConnection openConnection) {
         connection = (HttpURLConnection) openConnection;
         requestProperties = new HashMap<String, List<String>>();
-
+        connection.setRequestProperty("Connection", "close");
+        
         connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");

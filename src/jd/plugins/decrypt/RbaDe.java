@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -40,8 +41,8 @@ public class RbaDe extends PluginForDecrypt {
 
     private static final Pattern REGEX_DOWNLOADLINK = Pattern.compile("(download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&(amp;)?PATH=\\d)");
 
-    public RbaDe(String cfgName) {
-        super(cfgName);
+    public RbaDe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

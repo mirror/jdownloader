@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -28,8 +29,8 @@ public class MovieloadTo extends PluginForDecrypt {
     final static String host = "movieload.to";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?movieload\\.to/v2/index\\.php\\?do=protect\\&i=.+", Pattern.CASE_INSENSITIVE);
 
-    public MovieloadTo(String cfgName) {
-        super(cfgName);
+    public MovieloadTo(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

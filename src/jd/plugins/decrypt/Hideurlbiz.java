@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class Hideurlbiz extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hideurl\\.biz/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public Hideurlbiz(String cfgName) {
-        super(cfgName);
+    public Hideurlbiz(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

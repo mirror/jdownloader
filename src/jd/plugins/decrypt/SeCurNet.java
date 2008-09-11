@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,8 +30,8 @@ public class SeCurNet extends PluginForDecrypt {
     static private final String host = "se-cur.net";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+", Pattern.CASE_INSENSITIVE);
 
-    public SeCurNet(String cfgName) {
-        super(cfgName);
+    public SeCurNet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

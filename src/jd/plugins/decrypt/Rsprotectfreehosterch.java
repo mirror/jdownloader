@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,8 +31,8 @@ public class Rsprotectfreehosterch extends PluginForDecrypt {
     final static String host = "rs-protect.freehoster.ch";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-protect\\.freehoster\\.ch/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
 
-    public Rsprotectfreehosterch(String cfgName) {
-        super(cfgName);
+    public Rsprotectfreehosterch(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
@@ -35,8 +36,8 @@ public class DataHu extends PluginForHost {
 
   
 
-    public DataHu(String cfgName) {
-        super(cfgName);
+    public DataHu(PluginWrapper wrapper) {
+        super(wrapper);
         // TODO Auto-generated constructor stub
     }
 

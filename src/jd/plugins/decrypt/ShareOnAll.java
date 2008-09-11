@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -32,8 +33,8 @@ public class ShareOnAll extends PluginForDecrypt {
     final static String host = "shareonall.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm", Pattern.CASE_INSENSITIVE);
 
-    public ShareOnAll(String cfgName) {
-        super(cfgName);
+    public ShareOnAll(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -26,8 +27,8 @@ import jd.plugins.PluginForDecrypt;
 
 public class YourLayercom extends PluginForDecrypt {
 
-    public YourLayercom(String cfgName) {
-        super(cfgName);
+    public YourLayercom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -44,8 +45,8 @@ public class Uploadedto extends PluginForHost {
 
     
 
-    public Uploadedto(String cfgName) { 
-        super(cfgName);
+    public Uploadedto(PluginWrapper wrapper) { 
+        super(wrapper);
 
         this.enablePremium();
         setMaxConnections(20);
@@ -122,7 +123,7 @@ public class Uploadedto extends PluginForHost {
 
        	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
    		{
-   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		 ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
    		return;
    		}
 
@@ -261,7 +262,7 @@ public class Uploadedto extends PluginForHost {
 
        	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
    		{
-   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		 ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
    		return;
    		}
 

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -32,8 +33,8 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class Cocosharecc extends PluginForHost {
-    public Cocosharecc(String cfgName) {
-        super(cfgName);
+    public Cocosharecc(PluginWrapper wrapper) {
+        super(wrapper);
         // TODO Auto-generated constructor stub
     }
 

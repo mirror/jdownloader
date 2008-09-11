@@ -20,13 +20,13 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
 
 import javax.swing.JPanel;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -48,8 +48,11 @@ import jd.utils.JDUtilities;
  * @author astaldo
  */
 public abstract class PluginForHost extends Plugin {
-    public PluginForHost(String cfgName) {
-        super(cfgName);
+
+  
+  
+    public PluginForHost(PluginWrapper wrapper) {
+        super(wrapper);
 
     }
 
@@ -66,7 +69,7 @@ public abstract class PluginForHost extends Plugin {
 
     public static final String PROPERTY_PREMIUM = "PREMIUM";
     private static Long LAST_CONNECTION_TIME = 0L;
-    protected Browser br = new Browser();
+    protected Browser br;
     private boolean enablePremium = false;
 
     public boolean[] checkLinks(DownloadLink[] urls) {
@@ -76,7 +79,6 @@ public abstract class PluginForHost extends Plugin {
     @Override
     public void clean() {
         dl = null;
-        br = new Browser();
         super.clean();
     }
 
@@ -233,31 +235,20 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
-                    PluginForHost plg = this.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
-plg.setHost(this.getHost());
-plg.setSupportedPattern(this.getSupportedLinks());
+                    PluginForHost plg = (PluginForHost)wrapper.getNewPluginInstance();
                     DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                     if (fp != null) {
                         link.setFilePackage(fp);
                     }
-                } catch (InstantiationException e) {
-                    e.printStackTrace();
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+      
                 } catch (IllegalArgumentException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 } catch (SecurityException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
-                } catch (InvocationTargetException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (NoSuchMethodException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                } 
             }
         }
         return links;
@@ -560,5 +551,4 @@ plg.setSupportedPattern(this.getSupportedLinks());
         return br;
     }
 
-  
 }

@@ -34,6 +34,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import jd.JDInit;
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -59,6 +60,11 @@ import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
+    public JDRemoteControl(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
+
     class Serverhandler extends AbstractHandler {
 
         public void handle(String target, HttpServletRequest request, HttpServletResponse response, int dispatch) throws IOException, ServletException {
@@ -753,7 +759,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     }
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private DecimalFormat f = new DecimalFormat("#0.00");
@@ -767,12 +773,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         try {
             if (server.isStarted() || server.isStarting()) {
                 server.stop();
-                JDUtilities.getGUI().showMessageDialog(getPluginName() + " stopped");
+                JDUtilities.getGUI().showMessageDialog(getHost() + " stopped");
             } else {
                 server = new Server(getPluginConfig().getIntegerProperty("PORT", 10025));
                 server.setHandler(new Serverhandler());
                 server.start();
-                JDUtilities.getGUI().showMessageDialog(getPluginName() + " started on port " + getPluginConfig().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + "/help for Developer Information.");
+                JDUtilities.getGUI().showMessageDialog(getHost() + " started on port " + getPluginConfig().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + "/help for Developer Information.");
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -789,7 +795,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         return "JD-Team";
     }
 
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.RemoteControl.name", "RemoteControl");
     }
 

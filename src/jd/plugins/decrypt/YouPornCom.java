@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class YouPornCom extends PluginForDecrypt {
-    public YouPornCom(String cfgName) {
-        super(cfgName);
+    public YouPornCom(PluginWrapper wrapper) {
+        super(wrapper);
 
     }
 

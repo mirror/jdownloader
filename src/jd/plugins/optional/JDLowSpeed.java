@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -42,14 +43,15 @@ public class JDLowSpeed extends PluginOptional {
     private static final String PROPERTY_RAPIDSHAREONLY = "PROPERTY_RAPIDSHAREONLY";
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private boolean isRunning = false;
     private Thread pluginThread = null;
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
 
-    public JDLowSpeed() {
+    public JDLowSpeed(PluginWrapper wrapper) {
+        super(wrapper);
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_RAPIDSHAREONLY, JDLocale.L("plugins.optional.jdlowspeed.rsonly", "Nur Raidshare überwachen")));
         cfg.setDefaultValue(true);
@@ -156,7 +158,7 @@ public class JDLowSpeed extends PluginOptional {
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.jdlowspeed.name", "LowSpeed Detection");
     }
 

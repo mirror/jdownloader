@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -30,8 +31,8 @@ public class UpPicoasisNet extends PluginForDecrypt {
     private final static String host = "up.picoasis.net";
     private Pattern patternSupported = Pattern.compile("http://up\\.picoasis\\.net/[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    public UpPicoasisNet(String cfgName) {
-        super(cfgName);
+    public UpPicoasisNet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

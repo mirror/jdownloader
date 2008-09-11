@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -25,8 +26,8 @@ import jd.plugins.download.RAFDownload;
 
 public class FileMojoCom extends PluginForHost {
 
-    public FileMojoCom(String cfgName) {
-        super(cfgName);
+    public FileMojoCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

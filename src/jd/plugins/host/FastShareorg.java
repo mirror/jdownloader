@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -29,8 +30,8 @@ public class FastShareorg extends PluginForHost {
 
     private String url;
 
-    public FastShareorg(String cfgName) {
-        super( cfgName);
+    public FastShareorg(PluginWrapper wrapper) {
+         super(wrapper);
     }
 
     @Override

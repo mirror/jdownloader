@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
@@ -38,8 +39,8 @@ public class RsLayerCom extends PluginForDecrypt {
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
 
-    public RsLayerCom(String cfgName) {
-        super(cfgName);
+    public RsLayerCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     private boolean add_container(String cryptedLink, String ContainerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {

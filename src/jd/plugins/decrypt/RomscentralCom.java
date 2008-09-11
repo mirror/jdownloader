@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -33,8 +34,8 @@ public class RomscentralCom extends PluginForDecrypt {
     static private final Pattern patternSupportedWay2 = Pattern.compile("onclick=\"return popitup\\('(.+\\.htm)'\\)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported = Pattern.compile("(" + patternSupportedWay1.pattern() + ")|(" + patternSupportedWay2.pattern() + ")", Pattern.CASE_INSENSITIVE);
 
-    public RomscentralCom(String cfgName) {
-        super(cfgName);
+    public RomscentralCom(PluginWrapper wrapper) {
+        super(wrapper);
         this.setAcceptOnlyURIs(false);
     }
 

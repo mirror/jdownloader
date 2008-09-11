@@ -19,14 +19,15 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Bm4uin extends PluginForDecrypt {
-    public Bm4uin(String cfgName) {
-        super(cfgName);
+    public Bm4uin(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

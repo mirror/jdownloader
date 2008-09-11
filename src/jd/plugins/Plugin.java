@@ -34,12 +34,13 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.captcha.pixelgrid.Captcha;
 import jd.config.ConfigContainer;
 import jd.config.MenuItem;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
@@ -107,7 +108,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
 
-        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getPluginName() + "/" + date + extension);
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getHost() + "/" + date + extension);
         return dest;
     }
 
@@ -191,7 +192,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public ConfigContainer config;
 
-    private long initTime;
+
 
     private Captcha lastCaptcha;
 
@@ -200,16 +201,18 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     private String statusText;
 
-    protected String host;
 
-    protected Pattern supportedPattern;
 
-    private String cfgName;
 
-    protected Plugin(String cfgName) {
 
-        initTime = System.currentTimeMillis();
-       this.cfgName=cfgName;
+    protected PluginWrapper wrapper;
+
+    private Browser br;
+
+    public Plugin(PluginWrapper wrapper) {
+
+        this.br = new Browser();
+       this.wrapper=wrapper;
         config = new ConfigContainer(this);
 
     }
@@ -240,6 +243,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public void clean() {
         lastCaptcha = null;
         requestInfo = null;
+        br = new Browser();
         System.gc();
         System.runFinalization();
 
@@ -280,11 +284,8 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
     public Plugin newInstance() throws IllegalArgumentException, SecurityException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-        Plugin plg=this.getClass().getConstructor(new Class[] { String.class }).newInstance(new Object[] { host });
-
-        plg.setHost(this.getHost());
-        plg.setSupportedPattern(this.getSupportedLinks());
-        return plg;
+       
+        return wrapper.getNewPluginInstance();
       }
 
     public String getCaptchaCode(File file, DownloadLink downloadLink) {
@@ -372,12 +373,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Der unterstützte Anbieter
      */
     public String getHost() {
-        return host;
+        return wrapper.getHost();
     }
 
-    public String getInitID() {
-        return initTime + "<ID";
-    }
 
     public Captcha getLastCaptcha() {
         return lastCaptcha;
@@ -399,17 +397,10 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return Plugin ID
      */
     public String getPluginID() {
-        return getPluginName() + "-" + getVersion();
+        return getHost() + "-" + getVersion();
     }
 
-    /**
-     * Liefert den Namen des Plugins zurück
-     * 
-     * @return Der Name des Plugins
-     */
-    public String getPluginName() {
-        return host.toLowerCase();
-    }
+ 
 
     /**
      * p gibt das interne properties objekt zurück indem die Plugineinstellungen
@@ -419,18 +410,8 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public SubConfiguration getPluginConfig() {
 
-        SubConfiguration cfg = JDUtilities.getSubConfig(cfgName==null?getPluginName():cfgName);
+        SubConfiguration cfg = JDUtilities.getSubConfig(wrapper.getConfigName());
 
-        // if (cfg.getCount() <= 1) {
-        // if (JDUtilities.getConfiguration().getProperty("PluginConfig_" +
-        // getPluginName()) != null) {
-        // cfg.setProperties(((Property)
-        // JDUtilities.getConfiguration().getProperty("PluginConfig_" +
-        // getPluginName())).getProperties());
-        // cfg.save();
-        // return cfg;
-        // }
-        // }
         return cfg;
     }
 
@@ -455,7 +436,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @see Pattern
      */
     public Pattern getSupportedLinks() {
-        return this.supportedPattern;
+        return this.wrapper.getPattern();
     }
 
     /**
@@ -509,7 +490,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * Sortieren für die Konfiguration benötigt.
      */
     public int compareTo(Plugin plg) {
-        return getPluginName().toLowerCase().compareToIgnoreCase(plg.getPluginName().toLowerCase());
+        return getHost().toLowerCase().compareToIgnoreCase(plg.getHost().toLowerCase());
     }
 
     /**
@@ -527,17 +508,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         this.acceptOnlyURIs = acceptCompleteLinks;
     }
 
-    public void setHost(String host) {
-        if(host==null){
-            this.host=null;
-            return;
-        }
-        this.host = host.toLowerCase();
+  
 
-    }
-
-    public void setSupportedPattern(Pattern pattern) {
-        supportedPattern = pattern;
-
-    }
+  
 }

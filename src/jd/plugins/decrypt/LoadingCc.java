@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class LoadingCc extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://.*?loading\\.cc/detail\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public LoadingCc(String cfgName) {
-        super(cfgName);
+    public LoadingCc(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

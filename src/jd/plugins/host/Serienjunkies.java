@@ -25,6 +25,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
@@ -51,13 +52,12 @@ public class Serienjunkies extends PluginForHost {
     private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
-    public String tmp;
+   
     private static boolean active = false;
 
-    public Serienjunkies(String cfgName) {
-        super(cfgName);
-     this.tmp=cfgName;
-        this.setHost(cfgName);
+    public Serienjunkies(PluginWrapper wrapper) {
+        super(wrapper);
+    
     }
 
     public boolean collectCaptchas() {

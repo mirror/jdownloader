@@ -19,6 +19,7 @@ package jd.plugins.optional;
 import java.io.File;
 import java.util.ArrayList;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
@@ -51,12 +52,13 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     public static final String VERSION = "$Revision$";
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("JDInfoFileWriter");
 
-    public JDInfoFileWriter() {
+    public JDInfoFileWriter(PluginWrapper wrapper) {
+        super(wrapper);
         initConfig();
     }
 
@@ -87,7 +89,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.infoFileWriter.name", "Info File Writer");
     }
 

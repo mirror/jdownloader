@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -44,8 +45,8 @@ public class ShareOnlineBiz extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public ShareOnlineBiz(String cfgName) {
-        super(cfgName);
+    public ShareOnlineBiz(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

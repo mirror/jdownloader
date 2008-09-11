@@ -31,6 +31,7 @@ import java.util.Vector;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -132,8 +133,8 @@ public class Rapidshare extends PluginForHost {
 
     // private static boolean FORCE_FREE_USER = true;
 
-    public Rapidshare(String cfgName) {
-        super(cfgName);
+    public Rapidshare(PluginWrapper wrapper) {
+        super(wrapper);
 
         setMaxConnections(35);
         serverMap.put("Cogent", "cg");
@@ -271,7 +272,7 @@ public class Rapidshare extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+             ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
         if (downloadLink.getLinkType() != DownloadLink.LINKTYPE_NORMAL) {
@@ -441,7 +442,7 @@ public class Rapidshare extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+             ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
 

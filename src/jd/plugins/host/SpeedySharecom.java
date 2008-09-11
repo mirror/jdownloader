@@ -6,6 +6,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
@@ -25,8 +26,8 @@ public class SpeedySharecom extends PluginForHost {
     RequestInfo requestInfo;
     private String url;
 
-    public SpeedySharecom(String cfgName) {
-        super(cfgName);
+    public SpeedySharecom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

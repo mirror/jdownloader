@@ -60,6 +60,7 @@ import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.LocationListener;
@@ -83,6 +84,11 @@ import jd.utils.JDUtilities;
  */
 
 public class LangFileEditor extends PluginOptional implements KeyListener, MouseListener {
+
+    public LangFileEditor(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
     private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
@@ -1128,7 +1134,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.langfileeditor.name", "JDLangFileEditor");
     }
 
@@ -1144,7 +1150,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     }
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
 }

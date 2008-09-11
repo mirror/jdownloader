@@ -140,7 +140,7 @@ public class DistributeData extends ControlBroadcaster {
             }
 
             boolean canDecrypt = false;
-            Iterator<DecryptPluginWrapper> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+            Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
             while (iteratorDecrypt.hasNext()) {
                 DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
                 if (pDecrypt.canHandle(url)) {
@@ -304,8 +304,8 @@ public class DistributeData extends ControlBroadcaster {
     private ArrayList<DownloadLink> handleDecryptPlugins() {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (JDUtilities.getPluginsForDecrypt() == null) { return decryptedLinks; }
-        Iterator<DecryptPluginWrapper> iteratorDecrypt = JDUtilities.getPluginsForDecrypt().iterator();
+        if (DecryptPluginWrapper.getDecryptWrapper() == null) { return decryptedLinks; }
+        Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
         while (iteratorDecrypt.hasNext()) {
             DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
             if (pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {

@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
@@ -40,8 +41,8 @@ public class Stealth extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+|\\?go\\=captcha&id=[a-zA-Z0-9]+)", Pattern.CASE_INSENSITIVE);
 
-    public Stealth(String cfgName) {
-        super(cfgName);
+    public Stealth(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

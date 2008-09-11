@@ -22,6 +22,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -33,8 +34,8 @@ import jd.utils.JDUtilities;
 
 public class RelinkUs extends PluginForDecrypt {
 
-    public RelinkUs(String cfgName) {
-        super(cfgName);
+    public RelinkUs(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {

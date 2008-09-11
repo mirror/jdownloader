@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
@@ -64,8 +65,8 @@ public class Netloadin extends PluginForHost {
 
     private String fileStatusText;
 
-    public Netloadin(String cfgName) {
-        super(cfgName);
+    public Netloadin(PluginWrapper wrapper) {
+        super(wrapper);
 
         this.enablePremium();
     }
@@ -73,7 +74,8 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+            
+             ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
         br.setDebug(false);
@@ -249,7 +251,8 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+            ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+            
             return;
         }
 
@@ -334,6 +337,8 @@ public class Netloadin extends PluginForHost {
             br.clearCookies(getHost());
 
             br.setConnectTimeout(15000);
+            
+      
             String id = Netloadin.getID(downloadLink.getDownloadURL());
             String page = br.getPage("http://netload.in/share/fileinfos2.php?file_id=" + id);
             for (int i = 0; i < 3 && page == null; i++) {

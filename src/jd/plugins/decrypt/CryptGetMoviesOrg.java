@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class CryptGetMoviesOrg extends PluginForDecrypt {
     private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/\\d+", Pattern.CASE_INSENSITIVE);
     private static Vector<String> passwords = new Vector<String>();
 
-    public CryptGetMoviesOrg(String cfgName) {
-        super(cfgName);
+    public CryptGetMoviesOrg(PluginWrapper wrapper) {
+        super(wrapper);
         passwords.add("www.get-movies.6x.to");
         passwords.add("get-movies.6x.to");
         passwords.add("get-movies.org");

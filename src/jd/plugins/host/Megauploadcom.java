@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -70,8 +71,8 @@ public class Megauploadcom extends PluginForHost {
 
     private boolean tempUnavailable = false;
 
-    public Megauploadcom(String cfgName) {
-        super(cfgName);
+    public Megauploadcom(PluginWrapper wrapper) {
+        super(wrapper);
         setConfigElements();
         this.enablePremium();
     }

@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Encoding;
@@ -34,8 +35,8 @@ public class LinkBankeu extends PluginForDecrypt {
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public LinkBankeu(String cfgName) {
-        super(cfgName);
+    public LinkBankeu(PluginWrapper wrapper) {
+        super(wrapper);
         setConfigElements();
     }
 

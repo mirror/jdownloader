@@ -19,6 +19,7 @@ package jd.plugins.optional.schedule;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.event.ControlListener;
 import jd.parser.Regex;
@@ -27,8 +28,13 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Schedule extends PluginOptional implements ControlListener {
+    public Schedule(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
+
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     ScheduleControl sControl = new ScheduleControl();
@@ -53,7 +59,7 @@ public class Schedule extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("addons.schedule.name", "Schedule");
     }
 

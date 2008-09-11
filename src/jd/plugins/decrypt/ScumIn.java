@@ -23,6 +23,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -39,8 +40,8 @@ public class ScumIn extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public ScumIn(String cfgName) {
-        super(cfgName);
+    public ScumIn(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

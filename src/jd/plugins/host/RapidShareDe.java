@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.File;
 import java.net.URI;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Cookie;
 import jd.http.Encoding;
@@ -40,8 +41,8 @@ public class RapidShareDe extends PluginForHost {
 
     //
 
-    public RapidShareDe(String cfgName) {
-        super(cfgName);
+    public RapidShareDe(PluginWrapper wrapper) {
+        super(wrapper);
 
         this.enablePremium();
     }
@@ -51,7 +52,7 @@ public class RapidShareDe extends PluginForHost {
 
        	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
    		{
-   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		 ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
    		return;
    		}
        	checkMirrorsInProgress(downloadLink);
@@ -137,7 +138,7 @@ public class RapidShareDe extends PluginForHost {
 
        	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
    		{
-   		new Serienjunkies("serienjunkies.org").handleFree(downloadLink);
+   		 ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
    		return;
    		}
 

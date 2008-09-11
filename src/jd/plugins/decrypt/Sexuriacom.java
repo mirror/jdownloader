@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -35,8 +36,8 @@ public class Sexuriacom extends PluginForDecrypt {
 
     private Browser br;
 
-    public Sexuriacom(String cfgName) {
-        super(cfgName);
+    public Sexuriacom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -35,8 +36,8 @@ public class LinkProtectorCom extends PluginForDecrypt {
 
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?link-protector\\.com/[\\d]{6}.*", Pattern.CASE_INSENSITIVE);
 
-    public LinkProtectorCom(String cfgName) {
-        super(cfgName);
+    public LinkProtectorCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     private String decryptCode(String decryptedLink, int charCode) {

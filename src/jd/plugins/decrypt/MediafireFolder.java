@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,8 +30,8 @@ public class MediafireFolder extends PluginForDecrypt {
     static private String host = "mediafire.com";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
-    public MediafireFolder(String cfgName) {
-        super(cfgName);
+    public MediafireFolder(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

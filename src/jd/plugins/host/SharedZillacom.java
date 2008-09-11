@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -36,8 +37,8 @@ public class SharedZillacom extends PluginForHost {
     private String passCode = "";
     private RequestInfo requestInfo;
 
-    public SharedZillacom(String cfgName) {
-        super(cfgName);
+    public SharedZillacom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

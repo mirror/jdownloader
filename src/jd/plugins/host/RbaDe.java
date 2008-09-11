@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -45,8 +46,8 @@ public class RbaDe extends PluginForHost {
     /** Downloads will be downloaded to DOWNLOAD_DIR + PackageName */
     private static final String DOWNLOAD_DIR = "RBA-BATTELS";
 
-    public RbaDe(String cfgName) {
-        super(cfgName);
+    public RbaDe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

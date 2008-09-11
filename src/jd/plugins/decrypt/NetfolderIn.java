@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -32,8 +33,8 @@ public class NetfolderIn extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public NetfolderIn(String cfgName) {
-        super(cfgName);
+    public NetfolderIn(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

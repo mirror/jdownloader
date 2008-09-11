@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,8 +32,8 @@ public class ProtectTehparadoxcom extends PluginForDecrypt {
 
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!", Pattern.CASE_INSENSITIVE);
 
-    public ProtectTehparadoxcom(String cfgName) {
-        super(cfgName);
+    public ProtectTehparadoxcom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

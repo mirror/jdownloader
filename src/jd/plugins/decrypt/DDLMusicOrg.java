@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -35,8 +36,8 @@ public class DDLMusicOrg extends PluginForDecrypt {
     private static final Pattern patternLink_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported = Pattern.compile(patternLink_Main.pattern() + "|" + patternLink_Crypt.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public DDLMusicOrg(String cfgName) {
-        super(cfgName);
+    public DDLMusicOrg(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

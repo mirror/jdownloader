@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class LinkBucks extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbucks\\.com/link/[0-9a-zA-Z]+/\\d+", Pattern.CASE_INSENSITIVE);
 
-    public LinkBucks(String cfgName) {
-        super(cfgName);
+    public LinkBucks(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

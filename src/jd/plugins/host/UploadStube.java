@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,8 +29,8 @@ import jd.plugins.download.RAFDownload;
 
 public class UploadStube extends PluginForHost {
 
-    public UploadStube(String cfgName) {
-        super(cfgName);
+    public UploadStube(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -33,8 +34,8 @@ import jd.plugins.download.RAFDownload;
 
 public class Freaksharenet extends PluginForHost {
 
-    public Freaksharenet(String cfgName) {
-        super(cfgName);
+    public Freaksharenet(PluginWrapper wrapper) {
+        super(wrapper);
         this.enablePremium();
     }
 

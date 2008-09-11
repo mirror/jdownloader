@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -31,8 +32,8 @@ public class Datenbankorg extends PluginForDecrypt {
     private Pattern patternSupported_Info = Pattern.compile("http://daten-bank\\.org/view/.*?/", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternSupported_Go.pattern() + "|" + patternSupported_Info.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public Datenbankorg(String cfgName) {
-        super(cfgName);
+    public Datenbankorg(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

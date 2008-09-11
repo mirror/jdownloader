@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -32,8 +33,8 @@ public class Collectr extends PluginForDecrypt {
     static private final Pattern patternAb18 = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*");
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*", Pattern.CASE_INSENSITIVE);
 
-    public Collectr(String cfgName) {
-        super(cfgName);
+    public Collectr(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

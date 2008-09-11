@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,8 +32,8 @@ public class Gamezam extends PluginForDecrypt {
     static private final String host = "Gamez.am";
     static private final Pattern patternSupported = Pattern.compile("javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", Pattern.CASE_INSENSITIVE);
 
-    public Gamezam(String cfgName) {
-        super(cfgName);
+    public Gamezam(PluginWrapper wrapper) {
+        super(wrapper);
         this.setAcceptOnlyURIs(false);
     }
 

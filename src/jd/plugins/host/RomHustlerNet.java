@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -32,8 +33,8 @@ public class RomHustlerNet extends PluginForHost {
 
     private String downloadUrl;
 
-    public RomHustlerNet(String cfgName) {
-        super(cfgName);
+    public RomHustlerNet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

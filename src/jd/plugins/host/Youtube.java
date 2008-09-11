@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -37,8 +38,8 @@ public class Youtube extends PluginForHost {
 
     static private final String AGB = "http://youtube.com/t/terms";
 
-    public Youtube(String cfgName) {
-        super(cfgName);
+    public Youtube(PluginWrapper wrapper) {
+        super(wrapper);
         enablePremium(1);
     }
 

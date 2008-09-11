@@ -22,6 +22,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
@@ -35,6 +36,11 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDShutdown extends PluginOptional {
+    public JDShutdown(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
+
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
 
     private static final int count = 60;
@@ -42,7 +48,7 @@ public class JDShutdown extends PluginOptional {
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     @Override
@@ -93,7 +99,7 @@ public class JDShutdown extends PluginOptional {
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
     }
 

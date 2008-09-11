@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -29,8 +30,8 @@ public class Linkshield extends PluginForDecrypt {
     static private final String host = "www.linkshield.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkshield\\.com/[sc]/[\\d]+_[\\d]+", Pattern.CASE_INSENSITIVE);
 
-    public Linkshield(String cfgName) {
-        super(cfgName);
+    public Linkshield(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

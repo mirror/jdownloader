@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -56,8 +57,8 @@ public class FilesTo extends PluginForHost {
     private Pattern SESSION = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
     private HTTPConnection urlConnection;
 
-    public FilesTo(String cfgName) {
-        super(cfgName);
+    public FilesTo(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -29,8 +30,8 @@ public class RockHouseIn extends PluginForDecrypt {
     final static String host = "rock-house.in";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
-    public RockHouseIn(String cfgName) {
-        super(cfgName);
+    public RockHouseIn(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

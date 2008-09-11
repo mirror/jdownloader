@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -32,8 +33,8 @@ public class HTTPAllgemein extends PluginForHost {
 
     private String contentType;
 
-    public HTTPAllgemein(String cfgName) {
-        super(cfgName);
+    public HTTPAllgemein(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.crypt.AESdecrypt;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -87,8 +88,8 @@ public class CryptItCom extends PluginForDecrypt {
         return requestInfo;
     }
 
-    public CryptItCom(String cfgName) {
-        super(cfgName);
+    public CryptItCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     private ArrayList<DownloadLink> containerStep(CryptedLink param) {

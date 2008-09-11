@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
@@ -48,8 +49,8 @@ public class Gwarezcc extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
     private static final String PREFER_DLC = "PREFER_DLC";
 
-    public Gwarezcc(String cfgName) {
-        super(cfgName);
+    public Gwarezcc(PluginWrapper wrapper) {
+        super(wrapper);
         setConfigElements();
     }
 

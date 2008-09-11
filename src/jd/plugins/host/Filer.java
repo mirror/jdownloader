@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -40,8 +41,8 @@ public class Filer extends PluginForHost {
 
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
-    public Filer(String cfgName) {
-        super(cfgName);
+    public Filer(PluginWrapper wrapper) {
+        super(wrapper);
         this.enablePremium();
     }
 

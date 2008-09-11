@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Encoding;
@@ -45,8 +46,8 @@ public class YouTubeCom extends PluginForDecrypt {
 
     static public final Pattern YT_FILENAME = Pattern.compile("<meta name=\"title\" content=\"(.*?)\">", Pattern.CASE_INSENSITIVE);
 
-    public YouTubeCom(String cfgName) {
-        super(cfgName);
+    public YouTubeCom(PluginWrapper wrapper) {
+        super(wrapper);
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.clearCookies("youtube.com");

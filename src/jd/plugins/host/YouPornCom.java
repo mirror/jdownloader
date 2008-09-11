@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -32,8 +33,8 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class YouPornCom extends PluginForHost {
-    public YouPornCom(String cfgName) {
-        super(cfgName);
+    public YouPornCom(PluginWrapper wrapper) {
+        super(wrapper);
         // TODO Auto-generated constructor stub
     }
 

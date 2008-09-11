@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -29,8 +30,8 @@ public class FileFactoryFolder extends PluginForDecrypt {
     final static String host = "filefactory.com";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filefactory\\.com(/|//)f/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
-    public FileFactoryFolder(String cfgName) {
-        super(cfgName);
+    public FileFactoryFolder(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

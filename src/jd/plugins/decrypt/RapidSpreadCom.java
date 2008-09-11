@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -28,8 +29,8 @@ public class RapidSpreadCom extends PluginForDecrypt {
     static private final String host = "rapidspread.com";
     private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+", Pattern.CASE_INSENSITIVE);
 
-    public RapidSpreadCom(String cfgName) {
-        super(cfgName);
+    public RapidSpreadCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

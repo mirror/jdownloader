@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -34,8 +35,8 @@ public class RomsZopharNet extends PluginForDecrypt {
     static private final Pattern patternDownload = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/([0-9]{1,})", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternFilesize = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}\"><b>.+</b></a> \\(([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))\\)</p>", Pattern.CASE_INSENSITIVE);
 
-    public RomsZopharNet(String cfgName) {
-        super(cfgName);
+    public RomsZopharNet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

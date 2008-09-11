@@ -32,6 +32,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import jd.Main;
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
@@ -43,6 +44,11 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDLightTray extends PluginOptional implements MouseListener, WindowStateListener {
+    public JDLightTray(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
+
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLIGHTTRAY");
 
     private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
@@ -54,7 +60,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     private JFrame guiFrame;
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     @Override
@@ -85,7 +91,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
     }
 

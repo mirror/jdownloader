@@ -21,6 +21,7 @@ import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.parser.Regex;
@@ -38,8 +39,8 @@ public class ClipfishDe extends PluginForDecrypt {
     private static final String CODER = "ToKaM";
     private static final String HOST = "clipfish.de";
 
-    public ClipfishDe(String cfgName) {
-        super(cfgName);
+    public ClipfishDe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

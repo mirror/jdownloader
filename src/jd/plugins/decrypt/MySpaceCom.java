@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
@@ -100,8 +101,8 @@ public class MySpaceCom extends PluginForDecrypt {
      */
     private static final String ENABLE_DL_NAME_MODIFICATION = "MYSPACE_ENABLE_DL_NAME_MODIFICATION";
 
-    public MySpaceCom(String cfgName) {
-        super(cfgName);
+    public MySpaceCom(PluginWrapper wrapper) {
+        super(wrapper);
         setConfigElements();
     }
 

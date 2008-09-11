@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.parser.SimpleMatches;
@@ -38,8 +39,8 @@ public class RapidsafeDe extends PluginForDecrypt {
     final static String host = "rapidsafe.de";
     private Pattern patternSupported = Pattern.compile("http://.+rapidsafe\\.de", Pattern.CASE_INSENSITIVE);
 
-    public RapidsafeDe(String cfgName) {
-        super(cfgName);
+    public RapidsafeDe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

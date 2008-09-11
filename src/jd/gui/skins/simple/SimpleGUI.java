@@ -80,6 +80,7 @@ import javax.swing.event.MenuListener;
 
 import jd.HostPluginWrapper;
 import jd.JDFileFilter;
+import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
@@ -1354,12 +1355,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menAddons.add(SimpleGUI.createMenuItem(actioninstallJDU));
         menAddons.addSeparator();
 
-        for (final PluginOptional plg : JDUtilities.getPluginsOptional()) {
+        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+if(!plg.isLoaded())continue;
+            if (plg.getPlugin().createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPlugin().getHost(), false)) {
 
-            if (plg.createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPluginName(), false)) {
-
-                MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPluginName(), 0);
-                m.setItems(plg.createMenuitems());
+                MenuItem m = new MenuItem(MenuItem.CONTAINER,  plg.getPlugin().getHost(), 0);
+                m.setItems( plg.getPlugin().createMenuitems());
                 mi = SimpleGUI.getJMenuItem(m);
                 if (mi != null) {
                     menAddons.add(mi);
@@ -1376,7 +1377,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                             JMenu m = (JMenu) e.getSource();
 
                             m.removeAll();
-                            for (MenuItem menuItem : plg.createMenuitems()) {
+                            for (MenuItem menuItem :  plg.getPlugin().createMenuitems()) {
                                 m.add(SimpleGUI.getJMenuItem(menuItem));
                             }
                         }
@@ -1411,7 +1412,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                 final Plugin helpplugin = wrapper.getPlugin();
                 if (helpplugin.createMenuitems() != null) {
-                    MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getPluginName(), 0);
+                    MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getHost(), 0);
                     // m.setItems(helpplugin.createMenuitems());
                     mi = SimpleGUI.getJMenuItem(m);
                     if (mi != null) {
@@ -1453,7 +1454,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         // for (Iterator<PluginForDecrypt> it =
-        // JDUtilities.getPluginsForDecrypt().iterator(); it.hasNext();) {
+        // DecryptPluginWrapper.getDecryptWrapper().iterator(); it.hasNext();) {
         // final Plugin helpplugin = it.next();
         // if (helpplugin.createMenuitems() != null) {
         // MenuItem m = new MenuItem(MenuItem.CONTAINER,

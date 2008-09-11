@@ -101,7 +101,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 0:
                 return rowIndex;
             case 1:
-                return pluginsForHost.get(rowIndex).getPluginName();
+                return pluginsForHost.get(rowIndex).getHost();
             case 2:
                 return pluginsForHost.get(rowIndex).getVersion();
             case 3:

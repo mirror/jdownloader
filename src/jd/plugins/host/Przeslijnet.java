@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -36,8 +37,8 @@ public class Przeslijnet extends PluginForHost {
     private RequestInfo requestInfo;
     private String url;
 
-    public Przeslijnet(String cfgName) {
-        super(cfgName);
+    public Przeslijnet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

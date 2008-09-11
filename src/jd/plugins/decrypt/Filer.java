@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -28,8 +29,8 @@ public class Filer extends PluginForDecrypt {
     static private String host = "filer.net";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?filer.net/folder/.+/.*", Pattern.CASE_INSENSITIVE);
 
-    public Filer(String cfgName) {
-        super(cfgName);
+    public Filer(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

@@ -35,6 +35,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTextArea;
 
 import jd.JDFileFilter;
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
 import jd.gui.skins.simple.ConvertDialog;
@@ -51,8 +52,13 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class StreamingShareTool extends PluginOptional {
+    public StreamingShareTool(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
+    }
+
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
     private JFrame frame;
@@ -156,7 +162,7 @@ public class StreamingShareTool extends PluginOptional {
         return "JD-Team";
     }
 
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.streamsharingtool.name", "StreamingShare Link-Generator");
     }
 

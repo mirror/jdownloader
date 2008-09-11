@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -32,14 +33,16 @@ public class ArchivTo extends PluginForHost {
 
     
 
-    public ArchivTo(String cfgName) {
-        super(cfgName);
-    
 
+
+    public ArchivTo(PluginWrapper wrapper) {
+        super(wrapper);
+        // TODO Auto-generated constructor stub
     }
 
     @Override
     public String getAGBLink() {
+  
         return "http://archiv.to/?Module=Policy";
     }
 

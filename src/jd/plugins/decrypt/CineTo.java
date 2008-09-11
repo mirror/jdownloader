@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -31,8 +32,8 @@ public class CineTo extends PluginForDecrypt {
     private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public CineTo(String cfgName) {
-        super(cfgName);
+    public CineTo(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {

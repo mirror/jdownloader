@@ -23,10 +23,12 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.HostPluginWrapper;
+import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -37,8 +39,10 @@ import jd.utils.JDUtilities;
  */
 
 public abstract class PluginsC extends Plugin {
-    protected PluginsC() {
-        super(null);
+
+
+    public PluginsC(PluginWrapper wrapper) {
+        super(wrapper);
         // TODO Auto-generated constructor stub
     }
 
@@ -59,7 +63,7 @@ public abstract class PluginsC extends Plugin {
 
     protected Vector<String> downloadLinksURL;
 
-    protected Vector<String> EXTENSIONS = new Vector<String>();
+   
 
     protected String md5;
     protected byte[] k;
@@ -72,9 +76,9 @@ public abstract class PluginsC extends Plugin {
     @Override
     public synchronized boolean canHandle(String data) {
         if (data == null) { return false; }
-        if (getExtensions().contains(JDUtilities.getFileExtension(new File(data.toLowerCase())))) { return true; }
-
-        return false;
+        String match = new Regex(data,this.getSupportedLinks()).getMatch(-1);
+        
+        return match.equalsIgnoreCase(data);
     }
 
     public String createContainerString(Vector<DownloadLink> downloadLinks) {
@@ -232,9 +236,7 @@ public abstract class PluginsC extends Plugin {
         return containedLinks == null ? new Vector<DownloadLink>() : containedLinks;
     }
 
-    public Vector<String> getExtensions() {
-        return EXTENSIONS;
-    }
+ 
 
     @Override
     public String getLinkName() {

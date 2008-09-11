@@ -29,6 +29,7 @@ import java.util.Vector;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import jd.CPluginWrapper;
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -1228,9 +1229,9 @@ public class JDController implements ControlListener, UIListener {
 
     public boolean isContainerFile(File file) {
 
-        ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
         // Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginsC pContainer;
+        CPluginWrapper pContainer;
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
             pContainer = pluginsForContainer.get(i);
@@ -1277,23 +1278,24 @@ public class JDController implements ControlListener, UIListener {
             @SuppressWarnings("unchecked")
             public void run() {
 
-                ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
+                ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
                 Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-                PluginsC pContainer;
+                CPluginWrapper wrapper;
                 ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
                 logger.info("load Container: " + file);
 
                 for (int i = 0; i < pluginsForContainer.size(); i++) {
 
-                    pContainer = pluginsForContainer.get(i);
+                    wrapper = pluginsForContainer.get(i);
                     // logger.info(i + ". " + "Containerplugin: " +
                     // pContainer.getPluginName());
-                    progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
-                    if (pContainer.canHandle(file.getName())) {
+                    progress.setStatusText("Containerplugin: " + wrapper.getHost());
+                    if (wrapper.canHandle(file.getName())) {
                         // es muss jeweils eine neue plugininstanz erzeugt
                         // werden
+                        PluginsC pContainer = (PluginsC)wrapper.getNewPluginInstance();
                         try {
-                            pContainer = pContainer.getClass().newInstance();
+                           
                             progress.setSource(pContainer);
 
                             pContainer.initContainer(file.getAbsolutePath());
@@ -1339,23 +1341,25 @@ public class JDController implements ControlListener, UIListener {
 
     public Vector<DownloadLink> getContainerLinks(final File file) {
 
-        ArrayList<PluginsC> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginsC pContainer;
+        CPluginWrapper wrapper;
         ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
         logger.info("load Container: " + file);
 
         for (int i = 0; i < pluginsForContainer.size(); i++) {
 
-            pContainer = pluginsForContainer.get(i);
+            wrapper = pluginsForContainer.get(i);
             // logger.info(i + ". " + "Containerplugin: " +
             // pContainer.getPluginName());
-            progress.setStatusText("Containerplugin: " + pContainer.getPluginName());
-            if (pContainer.canHandle(file.getName())) {
+            progress.setStatusText("Containerplugin: " + wrapper.getHost());
+            if (wrapper.canHandle(file.getName())) {
                 // es muss jeweils eine neue plugininstanz erzeugt
                 // werden
+                pContainer=(PluginsC)wrapper.getNewPluginInstance();
                 try {
-                    pContainer = pContainer.getClass().newInstance();
+                 
                     progress.setSource(pContainer);
 
                     pContainer.initContainer(file.getAbsolutePath());

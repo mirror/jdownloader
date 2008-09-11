@@ -23,6 +23,7 @@ import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Vector;
 
+import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
@@ -47,10 +48,11 @@ public class JDWebinterface extends PluginOptional {
     static final String PROPERTY_USER = "PARAM_USER";
 
     public static int getAddonInterfaceVersion() {
-        return 1;
+        return 2;
     }
 
-    public JDWebinterface() {
+    public JDWebinterface(PluginWrapper wrapper) {
+        super(wrapper);
         instance = this;
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
         ConfigEntry cfg;
@@ -94,7 +96,7 @@ public class JDWebinterface extends PluginOptional {
     }
 
     @Override
-    public String getPluginName() {
+    public String getHost() {
         return JDLocale.L("plugins.optional.webinterface.name", "WebInterface");
     }
 

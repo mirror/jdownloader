@@ -20,6 +20,7 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class MirrorItDe extends PluginForDecrypt {
     final static String host = "mirrorit.de";
     static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mirrorit\\.de/\\?id=[a-zA-Z0-9]{16}", Pattern.CASE_INSENSITIVE);
 
-    public MirrorItDe(String cfgName) {
-        super(cfgName);
+    public MirrorItDe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

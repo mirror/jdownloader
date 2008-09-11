@@ -36,6 +36,7 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableColumn;
 
+import jd.CPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
@@ -78,7 +79,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return pluginsForContainer.get(rowIndex).getPluginName();
+                return pluginsForContainer.get(rowIndex).getHost();
             case 1:
                 return pluginsForContainer.get(rowIndex).getVersion();
             case 2:
@@ -94,7 +95,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     private Configuration configuration;
 
-    private ArrayList<PluginsC> pluginsForContainer;
+    private ArrayList<CPluginWrapper> pluginsForContainer;
 
     private JTable table;
 
@@ -114,7 +115,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForContainer.get(table.getSelectedRow()));
+        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForContainer.get(table.getSelectedRow()).getPlugin());
     }
 
     @Override
@@ -132,11 +133,11 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         table.setModel(internalTableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
-            }
-        });
+//        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+//            public void valueChanged(ListSelectionEvent e) {
+//                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
+//            }
+//        });
         // table.setDefaultRenderer(Object.class, new
         // PluginTableCellRenderer<PluginForContainer>(pluginsForContainer));
 
@@ -175,7 +176,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }
@@ -194,10 +195,6 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     @Override
     public void save() {
-        for (PluginsC plg : pluginsForContainer) {
-            if (plg.getPluginConfig() != null) {
-                configuration.setProperty("PluginConfig_" + plg.getPluginName(), plg.getPluginConfig());
-            }
-        }
+       
     }
 }

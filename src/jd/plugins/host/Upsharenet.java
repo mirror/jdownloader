@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -38,8 +39,8 @@ public class Upsharenet extends PluginForHost {
     private String downloadurl;
     private String passCode = null;
 
-    public Upsharenet(String cfgName) {
-        super(cfgName);
+    public Upsharenet(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

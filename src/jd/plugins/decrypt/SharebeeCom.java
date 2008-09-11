@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,8 +31,8 @@ public class SharebeeCom extends PluginForDecrypt {
 
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebee\\.com/[a-zA-Z0-9]{8}", Pattern.CASE_INSENSITIVE);
 
-    public SharebeeCom(String cfgName) {
-        super(cfgName);
+    public SharebeeCom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

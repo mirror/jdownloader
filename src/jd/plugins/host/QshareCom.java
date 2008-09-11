@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -43,8 +44,8 @@ public class QshareCom extends PluginForHost {
     // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
     static private final String CODER = "JD-Team";
 
-    public QshareCom(String cfgName) {
-        super(cfgName);
+    public QshareCom(PluginWrapper wrapper) {
+        super(wrapper);
 
         this.enablePremium();
     }

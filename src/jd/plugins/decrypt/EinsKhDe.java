@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -36,8 +37,8 @@ public class EinsKhDe extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
-    public EinsKhDe(String cfgName) {
-        super(cfgName);
+    public EinsKhDe(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override

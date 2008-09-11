@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -31,8 +32,8 @@ public class DownloadsPesArenacom extends PluginForDecrypt {
 
     final static private Pattern patternSupported = Pattern.compile("http://downloads\\.pes-arena\\.com/\\?id=(\\d+)", Pattern.CASE_INSENSITIVE);
 
-    public DownloadsPesArenacom(String cfgName) {
-        super(cfgName);
+    public DownloadsPesArenacom(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override
