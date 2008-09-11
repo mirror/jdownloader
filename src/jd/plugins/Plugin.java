@@ -207,7 +207,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     protected PluginWrapper wrapper;
 
-    private Browser br;
+    protected Browser br;
 
     public Plugin(PluginWrapper wrapper) {
 

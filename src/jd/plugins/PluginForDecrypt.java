@@ -46,7 +46,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     protected ProgressController progress;
 
-    protected Browser br;
+   
 
     /**
      * Diese Methode entschlüsselt Links.
