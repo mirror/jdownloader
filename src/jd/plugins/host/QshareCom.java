@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,6 +34,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -47,7 +49,7 @@ public class QshareCom extends PluginForHost {
     public QshareCom(PluginWrapper wrapper) {
         super(wrapper);
 
-        this.enablePremium();
+//        this.enablePremium();
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -105,7 +107,7 @@ public class QshareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String page = null;
+     
 
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -116,37 +118,38 @@ public class QshareCom extends PluginForHost {
 
         String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
         if (error != null) {
-            linkStatus.setErrorMessage(error);
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
+            throw new PluginException(LinkStatus.ERROR_FATAL,Encoding.UTF8Encode(error));
+          
         }
-        Form[] forms = br.getForms();
-        page = br.submitForm(forms[0]);
+        
+        String url=br.getRegex("<a class=\"button\" href=\"(.*?)\"><span>Kostenlos</span></a>").getMatch(0);
+        br.getPage(url);
+//        
+//        Form[] forms = br.getForms();
+//        page = br.submitForm(forms[0]);
 
         if (br.getRegex("Du hast die maximal zulässige Anzahl").matches()) {
             logger.severe("There is already a download running with our ip");
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,20 * 60 * 1000l);
+       
+          
         }
 
-        String wait = new Regex(page, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getMatch(0);
-        if (wait != null) {
-            long waitTime = Long.parseLong(wait) * 60 * 1000;
-            linkStatus.setValue(waitTime);
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            return;
+        String wait = new Regex(br, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getMatch(0);
+        if (wait != null) {        
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,Integer.parseInt(wait.trim())*60*1000l);
+          
         }
-        String link = new Regex(page, "<div id=\"download_link\"><a href=\"(.*?)\"").getMatch(0);
+        String link = new Regex(br, "<DIV ID=\"download_link\"><A HREF=\"(.*?)\"").getMatch(0);
 
         if (link == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            return;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+     
         }
         HTTPConnection con = br.openGetConnection(link);
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+           
         }
         dl = new RAFDownload(this, downloadLink, con);
         dl.setResume(false);
@@ -246,23 +249,23 @@ public class QshareCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
-        try {
+    
             String page;
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis
             // happyhour
             Browser br = new Browser();
             br.setFollowRedirects(true);
-            page = br.getPage(downloadLink.getDownloadURL());
-            String[][] dat = new Regex(page, "<SPAN STYLE=\"font-size\\:13px\\;vertical\\-align\\:middle\">.*<\\!\\-\\- google_ad_section_start \\-\\->(.*?)<\\!\\-\\- google_ad_section_end \\-\\->(.*?)<\\/SPAN>").getMatches();
+           
+                page = br.getPage(downloadLink.getDownloadURL());
+          
+            String[] dat = new Regex(page, "<SPAN STYLE=\"font-size:13px;vertical-align:middle\">(.*?) \\((.*?)\\).*?</SPAN>").getRow(0);
 
-            downloadLink.setName(dat[0][0].trim());
-            downloadLink.setDownloadSize((int) Regex.getSize(dat[0][1].trim()));
+            downloadLink.setName(dat[0].trim());
+            downloadLink.setDownloadSize((int) Regex.getSize(dat[1].trim()));
             return true;
-        } catch (Exception e) {
-        }
-        return false;
+       
     }
 
     @Override

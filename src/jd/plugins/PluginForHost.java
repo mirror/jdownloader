@@ -69,7 +69,7 @@ public abstract class PluginForHost extends Plugin {
 
     public static final String PROPERTY_PREMIUM = "PREMIUM";
     private static Long LAST_CONNECTION_TIME = 0L;
-    protected Browser br;
+
     private boolean enablePremium = false;
 
     public boolean[] checkLinks(DownloadLink[] urls) {

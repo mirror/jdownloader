@@ -102,7 +102,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     public ConfigPanelPluginForContainer(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
-        pluginsForContainer = JDUtilities.getPluginsForContainer();
+        pluginsForContainer = CPluginWrapper.getCWrapper();
         Collections.sort(pluginsForContainer);
         initPanel();
         load();

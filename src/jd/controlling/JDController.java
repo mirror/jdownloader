@@ -1229,7 +1229,7 @@ public class JDController implements ControlListener, UIListener {
 
     public boolean isContainerFile(File file) {
 
-        ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         // Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         CPluginWrapper pContainer;
 
@@ -1278,7 +1278,7 @@ public class JDController implements ControlListener, UIListener {
             @SuppressWarnings("unchecked")
             public void run() {
 
-                ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
+                ArrayList<CPluginWrapper> pluginsForContainer =CPluginWrapper.getCWrapper();
                 Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
                 CPluginWrapper wrapper;
                 ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
@@ -1341,7 +1341,7 @@ public class JDController implements ControlListener, UIListener {
 
     public Vector<DownloadLink> getContainerLinks(final File file) {
 
-        ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pluginsForContainer =CPluginWrapper.getCWrapper();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginsC pContainer;
         CPluginWrapper wrapper;

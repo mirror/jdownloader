@@ -78,7 +78,7 @@ public abstract class PluginsC extends Plugin {
         if (data == null) { return false; }
         String match = new Regex(data,this.getSupportedLinks()).getMatch(-1);
         
-        return match.equalsIgnoreCase(data);
+        return match!=null &&match.equalsIgnoreCase(data);
     }
 
     public String createContainerString(Vector<DownloadLink> downloadLinks) {

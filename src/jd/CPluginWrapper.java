@@ -19,27 +19,11 @@ public class CPluginWrapper extends PluginWrapper {
         if(loadPlugin()!=null)C_WRAPPER.add(this);
     }
 
-    public CPluginWrapper(String host, String className, String patternSupported, int flags) {
-        this(host, host, className, patternSupported, flags);
-    }
 
     public CPluginWrapper(String host, String className, String patternSupported) {
         this(host, host, className, patternSupported, 0);
     }
 
-    public CPluginWrapper(String name, String host, String className, Pattern patternSupported, int flags) {
-        super(name, host, "jd.plugins.a." + className, patternSupported.pattern(), flags);
-        super.setPattern(patternSupported);
-        if(loadPlugin()!=null)C_WRAPPER.add(this);
-    }
-
-    public CPluginWrapper(String host, String className, Pattern patternSupported, int flags) {
-        this(host, host, className, patternSupported, flags);
-    }
-
-    public CPluginWrapper(String host, String className, Pattern patternSupported) {
-        this(host, host, className, patternSupported, 0);
-    }
     public PluginsC getPlugin() {
         return (PluginsC)loadedPlugin;
     }
@@ -59,7 +43,7 @@ public class CPluginWrapper extends PluginWrapper {
 
             this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
             logger.finer("Successfully loaded " + this.getClassName());
-
+return (PluginsC)loadedPlugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
             e.printStackTrace();

@@ -547,7 +547,7 @@ public class JDSimpleWebserverRequestHandler {
 
     private Vector<DownloadLink> loadContainerFile(final File file) {
 
-        ArrayList<CPluginWrapper> pluginsForContainer = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginsC pContainer;
         CPluginWrapper wrapper;

@@ -531,7 +531,10 @@ int okCounter=0;
             JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
             afterIP = "offline";
         }
-        logger.finer("Ip after: " + afterIP);
+        
+      
+        
+        
         progress.increase(1);
         String pattern;
 
@@ -554,6 +557,29 @@ int okCounter=0;
 
             logger.finer("Ip Check: " + afterIP);
         }
+        
+        logger.finer("Ip after: " + afterIP);
+        if(afterIP.equals("offline")&&!afterIP.equals(preIp)){
+            logger.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
+            endTime = System.currentTimeMillis() + 120 * 1000;
+            while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline") || afterIP == null || afterIP.equals(preIp))) {
+                try {
+                    Thread.sleep(20 * 1000);
+                } catch (InterruptedException e) {
+                }
+                afterIP = JDUtilities.getIPAddress();
+                try {
+                    pattern = JDLocale.L("interaction.liveHeader.progress.5_ipcheck_emergency", "(IPCHECK EMERGENCY)HTTPLiveHeader %s / %s");
+                    progress.setStatusText(String.format(pattern, preIp, afterIP));
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+
+                logger.finer("Ip Check: " + afterIP);
+            }
+            
+        }
+        
         if (!afterIP.equals(preIp) && !afterIP.equalsIgnoreCase("offline")) {
             progress.finalize();
             logger.info("Rec succ: " + afterIP);

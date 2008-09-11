@@ -197,7 +197,6 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     private static Vector<File> saveReadObject = new Vector<File>();
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
-    private static ArrayList<CPluginWrapper> pluginsForContainer = new ArrayList<CPluginWrapper>();
 
     public static String getSimString(String a, String b) {
 
@@ -464,7 +463,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     }
 
     public static String createContainerString(Vector<DownloadLink> downloadLinks, String encryption) {
-        ArrayList<CPluginWrapper> pfc = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
         for (int i = 0; i < pfc.size(); i++) {
             String pn = pfc.get(i).getHost();
             if (pn.equalsIgnoreCase(encryption)) {
@@ -484,7 +483,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      * @return ciphertext
      */
     public static String[] encrypt(String string, String encryption) {
-        ArrayList<CPluginWrapper> pfc = JDUtilities.getPluginsForContainer();
+        ArrayList<CPluginWrapper> pfc =CPluginWrapper.getCWrapper();
         for (int i = 0; i < pfc.size(); i++) {
             if (pfc.get(i).getHost().equalsIgnoreCase(encryption)) { return pfc.get(i).getPlugin().encrypt(string); }
         }
@@ -994,7 +993,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
 
                 }
             }
-            return "offline";
+            return "offline"; 
         }
 
         catch (Exception e1) {
@@ -1333,7 +1332,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     public static PluginsC getPluginForContainer(String container, String containerPath) {
         if (containerPath != null && containerPlugins.containsKey(containerPath)) { return containerPlugins.get(containerPath); }
         PluginsC ret = null;
-        for (CPluginWrapper act : JDUtilities.getPluginsForContainer()) {
+        for (CPluginWrapper act : CPluginWrapper.getCWrapper()) {
             if (act.getHost().equalsIgnoreCase(container)) {
         
                     ret = (PluginsC)act.getNewPluginInstance();
@@ -1371,14 +1370,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
             return null;
     }
 
-    /**
-     * Liefert alle geladenen Plugins zum Laden von Containerdateien zurück
-     * 
-     * @return Plugins zum Laden von Containerdateien
-     */
-    public static ArrayList<CPluginWrapper> getPluginsForContainer() {
-        return pluginsForContainer;
-    }
+
 
  
 
@@ -2038,9 +2030,6 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         return dbconnect;
     }
 
-    public static void setPluginForContainer(ArrayList<CPluginWrapper> loadPluginForContainer) {
-        pluginsForContainer = loadPluginForContainer;
 
-    }
 
 }
