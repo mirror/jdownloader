@@ -66,7 +66,6 @@ public class Netloadin extends PluginForHost {
 
     public Netloadin(String cfgName) {
         super(cfgName);
-     
 
         this.enablePremium();
     }
@@ -139,7 +138,7 @@ public class Netloadin extends PluginForHost {
         }
         File file = this.getLocalCaptchaFile(this);
         Browser c = br.cloneBrowser();
-       Browser.download(file, c.openGetConnection(captchaURL));
+        Browser.download(file, c.openGetConnection(captchaURL));
         captchaPost.getVars().put("captcha_check", this.getCaptchaCode(file, downloadLink));
         br.submitForm(captchaPost);
         if (br.containsHTML(FILE_NOT_FOUND)) {

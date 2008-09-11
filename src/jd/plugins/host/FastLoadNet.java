@@ -109,11 +109,11 @@ public class FastLoadNet extends PluginForHost {
             return;
         }
 
-        Form captcha_form = br.getForm(0);
+        Form captcha_form = getDownloadForm();
         if (captcha_form != null) {
             boolean valid = false;
             for (int retry = 1; retry <= 5; retry++) {
-                captcha_form = br.getForm(0);
+                captcha_form = getDownloadForm();
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
                     Browser captchabr = br.cloneBrowser();
@@ -121,6 +121,7 @@ public class FastLoadNet extends PluginForHost {
                     String code = this.getCaptchaCode(file, downloadLink);
                     if (code == null) break;
                     captcha_form.put("captcha_code", code);
+                    captcha_form.put("captchacode", code);
                     br.openFormConnection(captcha_form);
                     if (br.getHttpConnection().isContentDisposition()) {
                         valid = true;
@@ -177,6 +178,17 @@ public class FastLoadNet extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
+    }
+
+    private Form getDownloadForm() {
+        /* richtige form suchen, da fakeforms verwendet werden */
+        Form[] forms = br.getForms();
+        if (forms != null) {
+            for (int i = 0; i < forms.length; i++) {
+                if (forms[i].getVars().containsKey("fid")) { return forms[i]; }
+            }
+        }
+        return null;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
