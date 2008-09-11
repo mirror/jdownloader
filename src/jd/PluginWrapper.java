@@ -48,7 +48,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public Pattern getPattern() {
-        return this.isLoaded() ? getPlugin().getSupportedLinks() : pattern;
+        return pattern;
     }
 
     public void setPattern(Pattern pattern) {
@@ -169,20 +169,24 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public Plugin getNewPluginInstance() {
         Plugin plg = getPlugin();
         try {
-            Plugin ret = plg.newInstance();
-
-            return ret;
+            return plg.getClass().getConstructor(new Class[]{PluginWrapper.class}).newInstance(new Object[]{this});
         } catch (IllegalArgumentException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (SecurityException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InstantiationException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IllegalAccessException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InvocationTargetException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return null;

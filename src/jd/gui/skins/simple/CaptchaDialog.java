@@ -168,7 +168,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 @Override
                 public void run() {
                     int c = countdown;
-                    while (!isActive()&&isDisplayable()) {
+                    while (!isVisible()) {
                         try {
                             Thread.sleep(200);
                         } catch (InterruptedException e) {

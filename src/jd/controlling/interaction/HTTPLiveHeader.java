@@ -453,7 +453,7 @@ int okCounter=0;
                         }
                         br = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim());
 
-                        if (!br.getHttpConnection().isOK()) {
+                        if (br==null ||!br.getHttpConnection().isOK()) {
                             okCounter--;
                             logger.severe("Request error!");
 //                            if(okCounter<0){
@@ -568,7 +568,8 @@ int okCounter=0;
         return false;
     }
 
-    private Browser doRequest(String request) throws MalformedURLException {
+    private Browser doRequest(String request) {
+        try{
         String requestType;
         String path;
         String post = "";
@@ -691,6 +692,10 @@ int okCounter=0;
         } catch (IOException e) {
 
             logger.severe("IO Error: " + e.getLocalizedMessage());
+            e.printStackTrace();
+            return null;
+        }
+        }catch(Exception e){
             e.printStackTrace();
             return null;
         }

@@ -217,6 +217,10 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     }
 
+    public PluginWrapper getWrapper() {
+        return wrapper;
+    }
+
     public void actionPerformed(ActionEvent e) {
         return;
     }
@@ -283,10 +287,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
-    public Plugin newInstance() throws IllegalArgumentException, SecurityException, InstantiationException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
-       
-        return wrapper.getNewPluginInstance();
-      }
+
 
     public String getCaptchaCode(File file, DownloadLink downloadLink) {
 
