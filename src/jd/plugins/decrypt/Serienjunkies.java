@@ -53,7 +53,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Serienjunkies extends PluginForDecrypt {
-    private static final String host = "Serienjunkies.org";
+    // private static final String host = "Serienjunkies.org";
 
     public static String lastHtmlCode = "";
 
@@ -344,20 +344,19 @@ public class Serienjunkies extends PluginForDecrypt {
                                     String[] link = null;
                                     String lastHost = null;
                                     Integer lastint = Integer.MAX_VALUE;
-                                    breakit = false;
-                                    for (String bb : sp2) {
+                                    out: for (String bb : sp2) {
                                         String[] links2 = HTMLParser.getHttpLinks(bb, parameter);
                                         for (String element4 : links2) {
                                             if (canHandle(element4)) {
                                                 String hostn = getHostname(element4);
                                                 if (!mirrors.containsKey(hostn)) {
+                                                    System.out.println(links2);
                                                     mirrors.put(hostn, 1);
                                                     link = null;
                                                     DownloadLink dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
                                                     dl.setFilePackage(fp);
                                                     decryptedLinks.add(dl);
-                                                    breakit = true;
-                                                    break;
+                                                    break out;
                                                 } else {
                                                     Integer currentInt = mirrors.get(hostn);
                                                     if (currentInt < lastint) {
@@ -371,7 +370,6 @@ public class Serienjunkies extends PluginForDecrypt {
                                             }
 
                                         }
-                                        if (breakit) break;
                                     }
                                     if (link != null) {
                                         mirrors.put(lastHost, (mirrors.get(lastHost) + 1));
@@ -379,6 +377,7 @@ public class Serienjunkies extends PluginForDecrypt {
                                             DownloadLink dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
                                             dl.setFilePackage(fp);
                                             decryptedLinks.add(dl);
+                                            break;
                                         }
 
                                     }
