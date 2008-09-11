@@ -659,7 +659,7 @@ public class JDController implements ControlListener, UIListener {
 
     public String encryptDLC(String xml) {
         // if(true)return xml;
-        String[] encrypt = JDUtilities.encrypt(xml, "DLCrypt");
+        String[] encrypt = JDUtilities.encrypt(xml, "dlc");
 
         // logger.info(encrypt[1] + " - ");
         if (encrypt == null) {
@@ -1837,7 +1837,7 @@ public class JDController implements ControlListener, UIListener {
 
     public void saveDLC(File file) {
 
-        String xml = JDUtilities.createContainerString(getDownloadLinks(), "DLCrypt");
+        String xml = JDUtilities.createContainerString(getDownloadLinks(), "dlc");
         // String[] encrypt = JDUtilities.encrypt(xml, "DLCrypt");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
@@ -1862,7 +1862,7 @@ public class JDController implements ControlListener, UIListener {
 
     public void saveDLC(File file, Vector<DownloadLink> links) {
 
-        String xml = JDUtilities.createContainerString(links, "DLCrypt");
+        String xml = JDUtilities.createContainerString(links, "dlc");
         // String[] encrypt = JDUtilities.encrypt(xml, "DLCrypt");
         String cipher = encryptDLC(xml);
         if (cipher != null) {
