@@ -137,7 +137,7 @@ public class Odsiebiecom extends PluginForHost {
                 HTTPConnection captcha_con = new HTTPConnection(new URL(captchaurl).openConnection());
                 captcha_con.setRequestProperty("Referer", referrerurl);
                 captcha_con.setRequestProperty("Cookie", downloadcookie);
-                if (!captcha_con.getContentType().contains("text") ){
+                if (captcha_con.getContentType().contains("text")) {
                     /* Fehler beim Captcha */
                     logger.severe("Captcha Download fehlgeschlagen!");
                     // step.setStatus(PluginStep.STATUS_ERROR);
