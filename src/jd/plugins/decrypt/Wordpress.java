@@ -21,7 +21,6 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -30,37 +29,22 @@ import jd.plugins.PluginForDecrypt;
 public class Wordpress extends PluginForDecrypt {
 
     private ArrayList<String[]> defaultPasswords = new ArrayList<String[]>();
-    private Vector<String> passwordPattern = new Vector<String>();
+
     @SuppressWarnings("unused")
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+|movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*", Pattern.CASE_INSENSITIVE);
 
     public Wordpress(PluginWrapper wrapper) {
         super(wrapper);
-        add_defaultpasswords();
-        add_passwordpatterns();
+        addDefaultPasswords();
     }
 
-    private void add_defaultpasswords() {
+    private void addDefaultPasswords() {
         /* Die defaultpasswörter der einzelnen seiten */
         /* Host, defaultpw1, defaultpw2, usw */
         defaultPasswords.add(new String[] { "doku.cc", "doku.cc", "doku.dl.am" });
         defaultPasswords.add(new String[] { "hd-area.org", "hd-area.org" });
         defaultPasswords.add(new String[] { "movie-blog.org", "movie-blog.org", "movie-blog.dl.am" });
         defaultPasswords.add(new String[] { "xxx-blog.org", "xxx-blog.org", "xxx-blog.dl.am" });
-    }
-
-    private void add_passwordpatterns() {
-        /* diese Pattern dienen zum auffinden des Passworts */
-        /* ACHTUNG: passwort muss an erster stelle im pattern sein */
-        passwordPattern.add("<b>Passwort\\:<\\/b> (.*?) \\|");
-        passwordPattern.add("<b>Passwort\\:<\\/b> (.*?)<br><\\/p>");
-        passwordPattern.add("<b>Passwort\\:<\\/b> (.*?)<\\/p>");
-        passwordPattern.add("<strong>Passwort\\:<\\/strong> (.*?) \\|");
-        passwordPattern.add("<strong>Passwort\\: <\\/strong>(.*?)<strong>");
-        passwordPattern.add("<strong>Passwort<\\/strong>\\: (.*?) <strong>");
-        passwordPattern.add("<strong>Passwort\\: <\\/strong>(.*?)<\\/p>");
-        passwordPattern.add("<strong>Passwort\\:<\\/strong> (.*?)<\\/p>");
-        passwordPattern.add("<strong>Passwort\\:<\\/strong> (.*?) <\\/p>");
     }
 
     @Override
@@ -82,24 +66,18 @@ public class Wordpress extends PluginForDecrypt {
         }
 
         /* Passwort suchen */
-        String[] password = null;
-        for (String pattern : passwordPattern) {
-            password = br.getRegex(Pattern.compile(pattern, Pattern.CASE_INSENSITIVE)).getColumn(0);
-            if (password.length != 0) {
-                for (String element : password) {
-                    link_passwds.add(Encoding.htmlDecode(element));
-                }
-                break;
-            }
-        }
+        String password = br.getRegex(Pattern.compile("<.*?>Passwort[<|:].*?[>|:](.*?)[\\|<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (password != null) link_passwds.add(password.trim());
 
         /* Alle Parts suchen */
-        String[] links = br.getRegex(Pattern.compile("<a(.*?)href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(1);
+        String[] links = br.getRegex(Pattern.compile("<a(.*?)href=\".*?(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(1);
+        progress.setRange(links.length);
         for (String link : links) {
             if (!new Regex(link, this.getSupportedLinks()).matches()) {
                 DownloadLink dLink = createDownloadlink(link);
                 dLink.setSourcePluginPasswords(link_passwds);
                 decryptedLinks.add(dLink);
+                progress.increase(1);
             }
         }
 
