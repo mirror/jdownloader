@@ -50,6 +50,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -421,8 +422,8 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         }
         return ddir;
     }
-    private Progressor showProgressbar()
-    {
+
+    private Progressor showProgressbar() {
         progress = new JProgressBar();
         progresspanel.add(progress);
         prog = new Progressor() {
@@ -484,21 +485,23 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         };
         return prog;
     }
-        private void hideProgressbar() {
-            progresspanel.remove(progress);
-            progress.removeAll();
-            progress = null;
-//          progresspanel.setLayout(new MigLayout("ins 32 22 15 22", "[right, pref!]0[right,grow,fill]0[]"));
-         
-            progresspanel.invalidate();
-            progresspanel.repaint();
 
-            progresspanel.add(new JSeparator());
+    private void hideProgressbar() {
+        progresspanel.remove(progress);
+        progress.removeAll();
+        progress = null;
+        // progresspanel.setLayout(new MigLayout("ins 32 22 15 22",
+        // "[right, pref!]0[right,grow,fill]0[]"));
 
-            progresspanel.validate();
-          
+        progresspanel.invalidate();
+        progresspanel.repaint();
 
-        }
+        progresspanel.add(new JSeparator());
+
+        progresspanel.validate();
+
+    }
+
     private JPanel getPanel() {
         panel = new JPanel(new MigLayout("ins 32 22 15 22", "[right, pref!]0[right,grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
@@ -532,13 +535,13 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             label.setIconTextGap(8);
             panel.add(label, "align left, split 2");
             panel.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
-            progresspanel= new JPanel(new MigLayout("ins 0, aligny 49%", "fill, grow"));
+            progresspanel = new JPanel(new MigLayout("ins 0, aligny 49%", "fill, grow"));
             panel.add(progresspanel, "pushx, span 3, growx");
-            if(routerIp == null || routerIp.matches("\\s*"))
+            if (routerIp == null || routerIp.matches("\\s*"))
                 showProgressbar();
             else
                 progresspanel.add(new JSeparator());
-     
+
             JLabel tip = new JLabel(JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
             tip.setToolTipText(JDLocale.L("gui.fengshuiconfig.reconnect.tooltip", "<html>Somtimes you need to change your ip via reconnect, to skip the waittime!"));
             panel.add(tip, GAPLEFT + "w pref!, wrap");
@@ -569,11 +572,9 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         reconnectPanel.add(username = new JTextField(12));
         username.setText(config.getStringProperty(Configuration.PARAM_HTTPSEND_USER, ""));
         reconnectPanel.add(new JLabel(JDLocale.L("gui.config.fengshui.password", "Password:")));
-        reconnectPanel.add(password = new JTextField(12));
+        reconnectPanel.add(password = new JPasswordField(12));
         password.setText(config.getStringProperty(Configuration.PARAM_HTTPSEND_PASS, ""));
         panel.add(reconnectPanel, "spanx, pushx, growx, gapbottom :10:push");
-
-    
 
         getRouterIp();
 
@@ -596,44 +597,38 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
             public void run() {
                 String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-                if(config.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).endsWith(lh))
-                {
-                if (routerIp == null || routerIp.matches("[\\s]*")) {
-                    // System.out.println(routerIp);
-                    ip.setText(new GetRouterInfo(prog).getAdress());
+                if (config.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).endsWith(lh)) {
+                    if (routerIp == null || routerIp.matches("[\\s]*")) {
+                        // System.out.println(routerIp);
+                        ip.setText(new GetRouterInfo(prog).getAdress());
 
-                }
-                if (Reconnectmethode == null || Reconnectmethode.matches("[\\s]*")) {
-                    if (GetRouterInfo.isFritzbox(ip.getText())) {
-                        String tit = JDLocale.L("gui.config.fengshui.fritzbox.title", "Fritz!Box erkannt");
-                        if (GetRouterInfo.isUpnp(ip.getText(), "49000")) {
-                            if(config.getBooleanProperty("FENGSHUI_UPNPACTIVE", true))
-                            {
-                            ConfirmCheckBoxDialog con = new ConfirmCheckBoxDialog(tit, JDLocale.L("gui.config.fengshui.fritzbox.upnpactive", "Sie haben eine Fritz!Box, der Reconnect über Upnp ist möglich.<br> möchten sie den Upnp Reconnect nutzen?"), JDLocale.L("gui.config.fengshui.fritzbox.upnp.checkbox", "Mitteilung nichtmehr zeigen"), true);
-                            if(con.isOk)
-                            {
-                            Reconnectmethode = "[[[HSRC]]]\r\n" + "[[[STEP]]]\r\n" + "[[[REQUEST]]]\r\n" + "POST /upnp/control/WANIPConn1 HTTP/1.1\r\n" + "Host: %%%routerip%%%:49000\r\n" + "Content-Type: text/xml; charset=\"utf-8\"\r\n" + "SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\r\n" +
+                    }
+                    if (Reconnectmethode == null || Reconnectmethode.matches("[\\s]*")) {
+                        if (GetRouterInfo.isFritzbox(ip.getText())) {
+                            String tit = JDLocale.L("gui.config.fengshui.fritzbox.title", "Fritz!Box erkannt");
+                            if (GetRouterInfo.isUpnp(ip.getText(), "49000")) {
+                                if (config.getBooleanProperty("FENGSHUI_UPNPACTIVE", true)) {
+                                    ConfirmCheckBoxDialog con = new ConfirmCheckBoxDialog(tit, JDLocale.L("gui.config.fengshui.fritzbox.upnpactive", "Sie haben eine Fritz!Box, der Reconnect über Upnp ist möglich.<br> möchten sie den Upnp Reconnect nutzen?"), JDLocale.L("gui.config.fengshui.fritzbox.upnp.checkbox", "Mitteilung nichtmehr zeigen"), true);
+                                    if (con.isOk) {
+                                        Reconnectmethode = "[[[HSRC]]]\r\n" + "[[[STEP]]]\r\n" + "[[[REQUEST]]]\r\n" + "POST /upnp/control/WANIPConn1 HTTP/1.1\r\n" + "Host: %%%routerip%%%:49000\r\n" + "Content-Type: text/xml; charset=\"utf-8\"\r\n" + "SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\r\n" +
 
-                            "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>\r\n" + "[[[/REQUEST]]]\r\n" + "[[[/STEP]]]\r\n" + "[[[/HSRC]]]\r\n";
-                            routername.setText("!FRITZ BOX (All via UPNP)");
-                            }
-                            if(con.isChecked)
-                            {
-                                config.setProperty("FENGSHUI_UPNPACTIVE",false);
-                            }
-                            }
-                        } else {
-                            if(config.getBooleanProperty("FENGSHUI_UPNPDEACTIVE", true))
-                            {
-                            ConfirmCheckBoxDialog con = new ConfirmCheckBoxDialog(tit, JDLocale.LF("gui.config.fengshui.fritzbox.upnpinactive", "Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href=\"http://%s\">zur Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>", ip.getText()), JDLocale.L("gui.config.fengshui.fritzbox.upnp.checkbox", "Mitteilung nichtmehr zeigen"), true);
-                            if(con.isChecked)
-                            {
-                                config.setProperty("FENGSHUI_UPNPDEACTIVE",false);
-                            }
+                                        "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>\r\n" + "[[[/REQUEST]]]\r\n" + "[[[/STEP]]]\r\n" + "[[[/HSRC]]]\r\n";
+                                        routername.setText("!FRITZ BOX (All via UPNP)");
+                                    }
+                                    if (con.isChecked) {
+                                        config.setProperty("FENGSHUI_UPNPACTIVE", false);
+                                    }
+                                }
+                            } else {
+                                if (config.getBooleanProperty("FENGSHUI_UPNPDEACTIVE", true)) {
+                                    ConfirmCheckBoxDialog con = new ConfirmCheckBoxDialog(tit, JDLocale.LF("gui.config.fengshui.fritzbox.upnpinactive", "Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href=\"http://%s\">zur Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>", ip.getText()), JDLocale.L("gui.config.fengshui.fritzbox.upnp.checkbox", "Mitteilung nichtmehr zeigen"), true);
+                                    if (con.isChecked) {
+                                        config.setProperty("FENGSHUI_UPNPDEACTIVE", false);
+                                    }
+                                }
                             }
                         }
                     }
-                }
                 }
             }
         }).start();
