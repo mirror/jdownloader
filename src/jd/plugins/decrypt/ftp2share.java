@@ -29,11 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class ftp2share extends PluginForDecrypt {
-    static private final String host = "ftp2share.net";
+
     private static final Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?ftp2share\\.net/file/[a-zA-Z0-9\\-]+/(.*?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Folder = Pattern.compile("http://[\\w\\.]*?ftp2share\\.net/folder/[a-zA-Z0-9\\-]+/(.*?)", Pattern.CASE_INSENSITIVE);
-
-    static private final Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
     public ftp2share(PluginWrapper wrapper) {
         super(wrapper);

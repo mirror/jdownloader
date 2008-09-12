@@ -26,12 +26,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class GappingOrg extends PluginForDecrypt {
-    final static String host = "gapping.org";
+
     private Pattern patternSupported_folder1 = Pattern.compile("http://[\\w\\.]*?gapping\\.org/index\\.php\\?folderid=\\d+", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported_file = Pattern.compile("http://[\\w\\.]*?gapping\\.org/file\\.php\\?id=.+", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported_folder2 = Pattern.compile("http://[\\w\\.]*?gapping\\.org/f/\\d+\\.html", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported_container = Pattern.compile("http://[\\w\\.]*?gapping\\.org/g.*?\\.html", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile(patternSupported_folder1.pattern() + "|" + patternSupported_folder2.pattern() + "|" + patternSupported_file.pattern() + "|" + patternSupported_container.pattern(), Pattern.CASE_INSENSITIVE);
 
     public GappingOrg(PluginWrapper wrapper) {
         super(wrapper);

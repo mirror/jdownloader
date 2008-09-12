@@ -40,13 +40,13 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Gwarezcc extends PluginForDecrypt {
-    static private final String host = "gwarez.cc";
+
     private static final Pattern patternLink_Details_Download = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern patternLink_Details_Mirror_Check = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Details_Mirror_Parts = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Download_DLC = Pattern.compile("http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternLink_Details_Download.pattern() + "|" + patternLink_Details_Mirror_Check.pattern() + "|" + patternLink_Details_Mirror_Parts.pattern() + "|" + patternLink_Download_DLC.pattern(), Pattern.CASE_INSENSITIVE);
+
     private static final String PREFER_DLC = "PREFER_DLC";
 
     public Gwarezcc(PluginWrapper wrapper) {

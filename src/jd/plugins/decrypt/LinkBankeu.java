@@ -31,9 +31,6 @@ import jd.utils.JDLocale;
 
 public class LinkBankeu extends PluginForDecrypt {
     private static final String CHECK_MIRRORS = "CHECK_MIRRORS";
-    static private final String host = "LinkBank.eu";
-
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+", Pattern.CASE_INSENSITIVE);
 
     public LinkBankeu(PluginWrapper wrapper) {
         super(wrapper);

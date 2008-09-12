@@ -34,14 +34,11 @@ import jd.utils.JDUtilities;
 
 public class LinkProtectIn extends PluginForDecrypt {
 
-    static private final String host = "linkprotect.in";
-
     static private final Pattern patternName = Pattern.compile("Ordnername: <b>(.*?)</b>");
     static private final Pattern patternPassword = Pattern.compile("<input type=\"text\" name=\"pw\" class=\"[a-zA-Z0-9]{1,50}\" size=\"[0-9]{1,3}\" />");
     static private final Pattern patternPasswordWrong = Pattern.compile("<b>Passwort falsch!</b>");
     static private final Pattern patternCaptcha = Pattern.compile("<img src=\"(.*?securimage_show.*?)\"");
     static private final Pattern patternDownload = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/includes/dl.php\\?id=[a-zA-Z0-9]{1,50}");
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linkprotect\\.in/index.php\\?site=folder&id=[a-zA-Z0-9]{1,50}", Pattern.CASE_INSENSITIVE);
 
     public LinkProtectIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -72,7 +69,7 @@ public class LinkProtectIn extends PluginForDecrypt {
                     String source = br.toString();
                     form = br.getForm(0);
 
-                    String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
+                    String captchaAddress = "http://linkprotect.in/" + matcher.group(1);
 
                     /*
                      * Ein try Block weil sonst ein Error ausgelöst wird, wenn
@@ -139,7 +136,7 @@ public class LinkProtectIn extends PluginForDecrypt {
 
             if (lp_continue == true) {
                 /* Links extrahieren */
-                String[] links = jd.parser.HTMLParser.getHttpLinks(br + "", host);
+                String[] links = jd.parser.HTMLParser.getHttpLinks(br + "", "linkprotect.in");
                 FilePackage fp = new FilePackage();
                 matcher = patternName.matcher(br + "");
                 if (matcher.find()) fp.setName(new Regex(br + "", patternName.pattern()).getMatch(0));

@@ -26,8 +26,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class HiderAthCx extends PluginForDecrypt {
-    static private final String host = "Hider.ath.cx";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hider\\.ath\\.cx/\\d+", Pattern.CASE_INSENSITIVE);
 
     public HiderAthCx(PluginWrapper wrapper) {
         super(wrapper);

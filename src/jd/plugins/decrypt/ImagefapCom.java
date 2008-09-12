@@ -26,8 +26,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class ImagefapCom extends PluginForDecrypt {
-    static private final String host = "imagefap.com";
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)", Pattern.CASE_INSENSITIVE);
 
     public ImagefapCom(PluginWrapper wrapper) {
         super(wrapper);

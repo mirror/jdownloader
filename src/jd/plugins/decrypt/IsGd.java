@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -26,10 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class IsGd extends PluginForDecrypt {
-
-    static private final String host = "is.gd";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?is\\.gd/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public IsGd(PluginWrapper wrapper) {
         super(wrapper);

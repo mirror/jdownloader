@@ -1486,18 +1486,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         inner.add(progress, BorderLayout.SOUTH);
         panel.add(south, BorderLayout.SOUTH);
 
-        acceptAll.getRootPane().setDefaultButton(acceptAll);
+        getRootPane().setDefaultButton(acceptAll);
 
         setPreferredSize(new Dimension(640, 480));
         setLocationRelativeTo(null);
         pack();
-
-        if (SimpleGUI.getLastDimension(this, null) != null) {
-            setPreferredSize(SimpleGUI.getLastDimension(this, null));
-        }
-        if (SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this) != null) {
-            this.setLocation(SimpleGUI.getLastLocation(parentFrame.getFrame(), null, this));
-        }
 
         setVisible(true);
     }

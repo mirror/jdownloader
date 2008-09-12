@@ -32,9 +32,6 @@ import jd.utils.JDUtilities;
 
 public class FuckTheIndustryRu extends PluginForDecrypt {
 
-    static private String host = "fucktheindustry.ru";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?92\\.241\\.164\\.63/file\\.php\\?id=[\\d]+", Pattern.CASE_INSENSITIVE);
     private Pattern patternDLC = Pattern.compile("href=\"(http://92\\.241\\.164\\.63/store/_dlc//forcedl\\.php\\?file=(.*?)\\.dlc)\"", Pattern.CASE_INSENSITIVE);
     private Pattern patternPW = Pattern.compile("\\<input.*?id=\"pw_2_copy\".*?value=\"(.*?)\".*\\>", Pattern.CASE_INSENSITIVE);
 

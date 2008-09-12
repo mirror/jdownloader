@@ -28,10 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class LeecherWs extends PluginForDecrypt {
 
-    final static String host = "leecher.ws";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?leecher\\.ws/(folder/.+|out/.+/[0-9]+)", Pattern.CASE_INSENSITIVE);
-
     public LeecherWs(PluginWrapper wrapper) {
         super(wrapper);
     }

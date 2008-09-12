@@ -28,10 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class Hubuploadcom extends PluginForDecrypt {
 
-    static private String host = "hubupload.com";
-
-    final static private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?hubupload\\.com/files/[a-zA-Z0-9]+/[a-zA-Z0-9]+/(.*)", Pattern.CASE_INSENSITIVE);
-
     public Hubuploadcom(PluginWrapper wrapper) {
         super(wrapper);
     }

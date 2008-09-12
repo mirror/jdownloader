@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -26,10 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Fyadorg extends PluginForDecrypt {
-
-    static private final String host = "fyad.org";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?fyad\\.org/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public Fyadorg(PluginWrapper wrapper) {
         super(wrapper);

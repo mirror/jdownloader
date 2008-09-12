@@ -32,7 +32,10 @@ import jd.utils.JDUtilities;
 public class EinsKhDe extends PluginForDecrypt {
 
     final static private Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?1kh\\.de/[0-9]+", Pattern.CASE_INSENSITIVE);
-//    final static private Pattern patternSupported_Folder = Pattern.compile("http://[\\w\\.]*?1kh\\.de/f/[0-9/]+", Pattern.CASE_INSENSITIVE);
+
+    // final static private Pattern patternSupported_Folder =
+    // Pattern.compile("http://[\\w\\.]*?1kh\\.de/f/[0-9/]+",
+    // Pattern.CASE_INSENSITIVE);
 
     public EinsKhDe(PluginWrapper wrapper) {
         super(wrapper);

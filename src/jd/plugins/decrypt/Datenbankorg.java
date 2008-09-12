@@ -27,7 +27,9 @@ import jd.plugins.PluginForDecrypt;
 
 public class Datenbankorg extends PluginForDecrypt {
 
-//    private Pattern patternSupported_Go = Pattern.compile("http://daten-bank\\.org/go/\\d+/", Pattern.CASE_INSENSITIVE);
+    // private Pattern patternSupported_Go =
+    // Pattern.compile("http://daten-bank\\.org/go/\\d+/",
+    // Pattern.CASE_INSENSITIVE);
 
     private Pattern patternSupported_Info = Pattern.compile("http://daten-bank\\.org/view/.*?/", Pattern.CASE_INSENSITIVE);
 

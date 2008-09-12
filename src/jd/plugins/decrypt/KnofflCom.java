@@ -26,8 +26,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class KnofflCom extends PluginForDecrypt {
-    static private final String host = "knoffl.com";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?knoffl\\.com/u/\\w+", Pattern.CASE_INSENSITIVE);
 
     public KnofflCom(PluginWrapper wrapper) {
         super(wrapper);
