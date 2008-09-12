@@ -30,7 +30,6 @@ public class CineTo extends PluginForDecrypt {
     final static String host = "cine.to";
     private static final Pattern patternLink_Protected = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile(patternLink_Show.pattern() + "|" + patternLink_Protected.pattern(), Pattern.CASE_INSENSITIVE);
 
     public CineTo(PluginWrapper wrapper) {
         super(wrapper);

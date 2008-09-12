@@ -33,13 +33,11 @@ import jd.plugins.PluginForDecrypt;
 
 public class DreiDlAm extends PluginForDecrypt {
 
-    final static String host = "3dl.am";
-
     // ohne abschliessendes "/" gehts nicht (auch im Browser)!
     private final static Pattern patternSupported_1 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     private final static Pattern patternSupported_2 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/", Pattern.CASE_INSENSITIVE);
     private final static Pattern patternSupported_3 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
-    private final static Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern() + "|" + patternSupported_3.pattern(), Pattern.CASE_INSENSITIVE);
+
     private String password;
 
     public DreiDlAm(PluginWrapper wrapper) {

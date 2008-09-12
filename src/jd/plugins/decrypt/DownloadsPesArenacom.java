@@ -28,8 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class DownloadsPesArenacom extends PluginForDecrypt {
 
-    static private String host = "downloads.pes-arena.com";
-
     final static private Pattern patternSupported = Pattern.compile("http://downloads\\.pes-arena\\.com/\\?id=(\\d+)", Pattern.CASE_INSENSITIVE);
 
     public DownloadsPesArenacom(PluginWrapper wrapper) {

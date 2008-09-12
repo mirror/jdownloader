@@ -2,7 +2,6 @@ package jd;
 
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
@@ -16,17 +15,18 @@ public class CPluginWrapper extends PluginWrapper {
 
     public CPluginWrapper(String name, String host, String className, String patternSupported, int flags) {
         super(name, host, "jd.plugins.a." + className, patternSupported, flags);
-        if(loadPlugin()!=null)C_WRAPPER.add(this);
+        if (loadPlugin() != null) C_WRAPPER.add(this);
     }
-
 
     public CPluginWrapper(String host, String className, String patternSupported) {
         this(host, host, className, patternSupported, 0);
     }
 
     public PluginsC getPlugin() {
-        return (PluginsC)loadedPlugin;
+        return (PluginsC) loadedPlugin;
     }
+
+    @SuppressWarnings("unchecked")
     public PluginsC loadPlugin() {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
@@ -43,7 +43,7 @@ public class CPluginWrapper extends PluginWrapper {
 
             this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
             logger.finer("Successfully loaded " + this.getClassName());
-return (PluginsC)loadedPlugin;
+            return (PluginsC) loadedPlugin;
         } catch (Throwable e) {
             logger.info("Plugin Exception!");
             e.printStackTrace();

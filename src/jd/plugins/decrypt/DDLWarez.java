@@ -100,9 +100,6 @@ public class DDLWarez extends PluginForDecrypt {
         }
     }
 
-    private static final String host = "ddl-warez.org";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+", Pattern.CASE_INSENSITIVE);
-
     public static Integer Worker_Delay = 250;
 
     public DDLWarez(PluginWrapper wrapper) {

@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -30,10 +29,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 public class CryptingIt extends PluginForDecrypt {
-
-    static private final String host = "crypting.it";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?crypting\\.it/index\\.php\\?p=show&id=\\d+", Pattern.CASE_INSENSITIVE);
 
     public CryptingIt(PluginWrapper wrapper) {
         super(wrapper);

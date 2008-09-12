@@ -46,13 +46,9 @@ import jd.utils.JDUtilities;
 
 public class CryptItCom extends PluginForDecrypt {
 
-    static private final String HOST = "crypt-it.com";
-
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
 
     private static final String PATTERN_PW = "Passworteingabe";
-
-    static private final Pattern patternSupported = Pattern.compile("(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, byte[] parameter, boolean redirect) throws IOException {
         HTTPConnection httpConnection = new HTTPConnection(url.openConnection());

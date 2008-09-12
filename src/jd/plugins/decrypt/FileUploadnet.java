@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -26,8 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class FileUploadnet extends PluginForDecrypt {
-    static private final String host = "File-Upload.net";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?member\\.file-upload\\.net/(.*?)/(.*)", Pattern.CASE_INSENSITIVE);
 
     public FileUploadnet(PluginWrapper wrapper) {
         super(wrapper);

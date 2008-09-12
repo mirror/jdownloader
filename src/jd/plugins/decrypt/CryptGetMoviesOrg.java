@@ -27,8 +27,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class CryptGetMoviesOrg extends PluginForDecrypt {
-    static private final String host = "crypt.get-movies.org";
-    private static final Pattern patternSupported = Pattern.compile("http://crypt\\.get-movies\\.org/\\d+", Pattern.CASE_INSENSITIVE);
+
     private static Vector<String> passwords = new Vector<String>();
 
     public CryptGetMoviesOrg(PluginWrapper wrapper) {

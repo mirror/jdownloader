@@ -15,20 +15,20 @@ public class OptionalPluginWrapper extends PluginWrapper {
     }
 
     private double version;
-    private boolean tried=false;;
 
     public OptionalPluginWrapper(String string, double d) {
         super(string, string, "jd.plugins.optional." + string, null, 0);
         this.version = d;
-        
-       
-        if(loadPlugin()!=null) OPTIONAL_WRAPPER.add(this);
-        
+
+        if (loadPlugin() != null) OPTIONAL_WRAPPER.add(this);
 
     }
+
     public PluginOptional getPlugin() {
-        return (PluginOptional)loadedPlugin;
+        return (PluginOptional) loadedPlugin;
     }
+
+    @SuppressWarnings("unchecked")
     public PluginOptional loadPlugin() {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Double version = JDUtilities.getJavaVersion();
@@ -45,7 +45,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class[] classes = new Class[] {PluginWrapper.class };
+            Class[] classes = new Class[] { PluginWrapper.class };
             Constructor con = plgClass.getConstructor(classes);
 
             try {

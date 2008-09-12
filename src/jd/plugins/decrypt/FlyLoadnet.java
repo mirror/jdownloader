@@ -26,11 +26,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class FlyLoadnet extends PluginForDecrypt {
-    static private final String host = "flyload.net";
     private static final Pattern patternSupported_Download = Pattern.compile("http://[\\w\\.]*?flyload\\.net/download\\.php\\?view\\.(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Request = Pattern.compile("http://[\\w\\.]*?flyload\\.net/request_window\\.php\\?(\\d+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Safe = Pattern.compile("http://[\\w\\.]*?flyload\\.net/safe\\.php\\?id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternSupported_Safe.pattern() + "|" + patternSupported_Request.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
 
     public FlyLoadnet(PluginWrapper wrapper) {
         super(wrapper);

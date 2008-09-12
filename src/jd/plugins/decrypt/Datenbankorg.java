@@ -26,11 +26,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Datenbankorg extends PluginForDecrypt {
-    final static String host = "daten-bank.org";
 
-    private Pattern patternSupported_Go = Pattern.compile("http://daten-bank\\.org/go/\\d+/", Pattern.CASE_INSENSITIVE);
+//    private Pattern patternSupported_Go = Pattern.compile("http://daten-bank\\.org/go/\\d+/", Pattern.CASE_INSENSITIVE);
+
     private Pattern patternSupported_Info = Pattern.compile("http://daten-bank\\.org/view/.*?/", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile(patternSupported_Go.pattern() + "|" + patternSupported_Info.pattern(), Pattern.CASE_INSENSITIVE);
 
     public Datenbankorg(PluginWrapper wrapper) {
         super(wrapper);

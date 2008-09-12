@@ -30,11 +30,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class DDLMusicOrg extends PluginForDecrypt {
-    final static String host = "ddl-music.org";
 
     private static final Pattern patternLink_Main = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternLink_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternSupported = Pattern.compile(patternLink_Main.pattern() + "|" + patternLink_Crypt.pattern(), Pattern.CASE_INSENSITIVE);
 
     public DDLMusicOrg(PluginWrapper wrapper) {
         super(wrapper);

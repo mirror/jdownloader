@@ -30,6 +30,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     protected Logger logger = JDUtilities.getLogger();
     protected Plugin loadedPlugin = null;
     private boolean acceptOnlyURIs;
+    @SuppressWarnings("unused")
     private String pluginName;
     private static URLClassLoader CL;
     private static final HashMap<String, PluginWrapper> WRAPPER = new HashMap<String, PluginWrapper>();
@@ -171,22 +172,16 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         try {
             return plg.getClass().getConstructor(new Class[]{PluginWrapper.class}).newInstance(new Object[]{this});
         } catch (IllegalArgumentException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (SecurityException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InvocationTargetException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         return null;

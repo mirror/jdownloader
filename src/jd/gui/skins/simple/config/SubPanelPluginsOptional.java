@@ -25,7 +25,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Vector;
 
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -125,7 +124,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     public SubPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
         this.configuration = configuration;
-        pluginsOptional =  OptionalPluginWrapper.getOptionalWrapper();
+        pluginsOptional = OptionalPluginWrapper.getOptionalWrapper();
         Collections.sort(pluginsOptional);
         initPanel();
         load();
@@ -171,7 +170,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).hasConfig());
             }
         });
         // table.setDefaultRenderer(Object.class, new
@@ -224,7 +223,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).hasConfig()) {
             editEntry();
         }
     }

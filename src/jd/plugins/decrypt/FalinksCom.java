@@ -31,10 +31,6 @@ import jd.plugins.RequestInfo;
 
 public class FalinksCom extends PluginForDecrypt {
 
-    static private String host = "falinks.com";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=\\d+", Pattern.CASE_INSENSITIVE);
-
     public FalinksCom(PluginWrapper wrapper) {
         super(wrapper);
     }

@@ -32,12 +32,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class DoperomsCom extends PluginForDecrypt {
 
-    static private final String host = "doperoms.net"; //http://doperoms.com/roms
-    // /
-    // atari_jaguar/Alien%20vs
-    // %20Predator%20(Alpha).
-    // zip.html
-
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternFilesize = Pattern.compile("<br>Filesize: ([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))<br>", Pattern.CASE_INSENSITIVE);
 
@@ -54,15 +48,8 @@ public class DoperomsCom extends PluginForDecrypt {
         String rootCat = new Regex(parameter, patternSupported).getMatch(0);
         String filename = new Regex(parameter, patternSupported).getMatch(1);
         br.getPage("http://doperoms.com/");
-        br.setCookie("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20") + ".html", "PHPSESSID", br.getCookie(br.getURL(), "PHPSESSID"));
-        br.getPage("http://" + host + "/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20") + ".html"); // Encoding
-        // .
-        // urlEncode
-        // (
-        // filename
-        // )
-        // )
-        // ;
+        br.setCookie("http://doperoms.net/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20") + ".html", "PHPSESSID", br.getCookie(br.getURL(), "PHPSESSID"));
+        br.getPage("http://doperoms.net/roms/" + rootCat + "/" + filename.replaceAll(" ", "%20") + ".html");
 
         String file = new Regex(br, "http://[\\w.]*?doperoms\\.com/files/roms/.+" + rootCat + "/" + filename).getMatch(0);
         long filesize = Regex.getSize(new Regex(br, patternFilesize.pattern()).getMatch(0));

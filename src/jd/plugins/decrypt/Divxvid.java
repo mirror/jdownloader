@@ -31,9 +31,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class Divxvid extends PluginForDecrypt {
-    static private final String host = "dxp.divxvid.org";
-
-    static private final Pattern patternSupported = Pattern.compile("http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html", Pattern.CASE_INSENSITIVE);
 
     private static Vector<String> passwords = new Vector<String>();
 

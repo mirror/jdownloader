@@ -40,7 +40,6 @@ import jd.CPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.PluginsC;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -93,6 +92,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     private JButton btnEdit;
 
+    @SuppressWarnings("unused")
     private Configuration configuration;
 
     private ArrayList<CPluginWrapper> pluginsForContainer;
@@ -133,11 +133,11 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         table.setModel(internalTableModel);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-//        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
-//            public void valueChanged(ListSelectionEvent e) {
-//                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForContainer.get(table.getSelectedRow()).getConfig().getEntries().size() != 0);
-//            }
-//        });
+        table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsForContainer.get(table.getSelectedRow()).hasConfig());
+            }
+        });
         // table.setDefaultRenderer(Object.class, new
         // PluginTableCellRenderer<PluginForContainer>(pluginsForContainer));
 
@@ -176,7 +176,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
+        if (e.getClickCount() > 1 && pluginsForContainer.get(table.getSelectedRow()).hasConfig()) {
             editEntry();
         }
     }
@@ -195,6 +195,6 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     @Override
     public void save() {
-       
+
     }
 }

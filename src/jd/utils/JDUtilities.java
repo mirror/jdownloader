@@ -89,7 +89,6 @@ import javax.xml.transform.stream.StreamResult;
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.CPluginWrapper;
-import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
 import jd.JDFileFilter;
@@ -110,7 +109,6 @@ import jd.plugins.HTTP;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginOptional;
 import jd.plugins.PluginsC;
 import jd.plugins.RequestInfo;
 
@@ -156,7 +154,7 @@ public class JDUtilities {
     private static HashMap<String, Image> images = new HashMap<String, Image>();
 
     public static final String[] JD_REVISION = new Regex("$Id$", "JDUtilities\\.java (\\d+?) ").getRow(0);
-public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
+    public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
     /**
      * Versionsstring der Applikation
      */
@@ -180,8 +178,6 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      * Der Logger für Meldungen
      */
     public static Logger logger = JDUtilities.getLogger();
-
-
 
     /**
      * RessourceBundle für Texte
@@ -483,7 +479,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      * @return ciphertext
      */
     public static String[] encrypt(String string, String encryption) {
-        ArrayList<CPluginWrapper> pfc =CPluginWrapper.getCWrapper();
+        ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
         for (int i = 0; i < pfc.size(); i++) {
             if (pfc.get(i).getHost().equalsIgnoreCase(encryption)) { return pfc.get(i).getPlugin().encrypt(string); }
         }
@@ -891,7 +887,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
             Class[] classes = new Class[arguments.length];
             for (int i = 0; i < arguments.length; i++) {
                 classes[i] = arguments[i].getClass();
-            } 
+            }
             Constructor con = newClass.getConstructor(classes);
             return con.newInstance(arguments);
         } catch (SecurityException e) {
@@ -993,7 +989,7 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
 
                 }
             }
-            return "offline"; 
+            return "offline";
         }
 
         catch (Exception e1) {
@@ -1117,13 +1113,10 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      *         hat
      */
     public static String getLastChangeAuthor() {
-      
-        if (JD_REVISION.length ==3) { return JD_REVISION[2]; }
+
+        if (JD_REVISION.length == 3) { return JD_REVISION[2]; }
         return null;
     }
-
- 
-
 
     public static Locale getLocale() {
         return locale;
@@ -1334,13 +1327,13 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         PluginsC ret = null;
         for (CPluginWrapper act : CPluginWrapper.getCWrapper()) {
             if (act.getHost().equalsIgnoreCase(container)) {
-        
-                    ret = (PluginsC)act.getNewPluginInstance();
-                    if (containerPath != null) {
-                        containerPlugins.put(containerPath, ret);
-                    }
-                    return ret;
-               
+
+                ret = (PluginsC) act.getNewPluginInstance();
+                if (containerPath != null) {
+                    containerPlugins.put(containerPath, ret);
+                }
+                return ret;
+
             }
         }
         return null;
@@ -1370,10 +1363,6 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
             return null;
     }
 
-
-
- 
-
     /**
      * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
      * wird dabei sortiert zurückgegeben
@@ -1382,12 +1371,11 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      */
     @SuppressWarnings("unchecked")
     public static ArrayList<HostPluginWrapper> getPluginsForHost() {
-        // return pluginsForHost;
 
         ArrayList<HostPluginWrapper> plgs = new ArrayList<HostPluginWrapper>();
-        
-            plgs.addAll(HostPluginWrapper.getHostWrapper());
-      
+
+        plgs.addAll(HostPluginWrapper.getHostWrapper());
+
         ArrayList<HostPluginWrapper> pfh = new ArrayList<HostPluginWrapper>();
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
@@ -1405,8 +1393,6 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         pfh.addAll(plgs);
         return pfh;
     }
-
- 
 
     /**
      * Liefert einer char aus dem aktuellen ResourceBundle zurück
@@ -1479,10 +1465,10 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
      * @return RevissionID
      */
     public static String getRevision() {
-      
-            double r = (double) JD_REVISION_NUM / 1000.0;
-            return r + "";
-       
+
+        double r = (double) JD_REVISION_NUM / 1000.0;
+        return r + "";
+
     }
 
     /**
@@ -1555,8 +1541,6 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         return cfg;
 
     }
-
-   
 
     /**
      * Lädt ein Objekt aus einer Datei
@@ -1897,8 +1881,6 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         JDUtilities.locale = locale;
     }
 
-
-
     public static boolean sleep(int i) {
         try {
             Thread.sleep(i);
@@ -2029,7 +2011,5 @@ public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
         }
         return dbconnect;
     }
-
-
 
 }

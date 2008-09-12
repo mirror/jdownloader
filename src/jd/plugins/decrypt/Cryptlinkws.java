@@ -33,11 +33,8 @@ import jd.utils.JDUtilities;
 
 public class Cryptlinkws extends PluginForDecrypt {
 
-    static private String host = "cryptlink.ws";
     final static private Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?cryptlink\\.ws/crypt\\.php\\?file=[0-9]+", Pattern.CASE_INSENSITIVE);
     final static private Pattern patternSupported_Folder = Pattern.compile("http://[\\w\\.]*?cryptlink\\.ws/\\?file=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
-    final static private Pattern patternSupported = Pattern.compile(patternSupported_Folder.pattern() + "|" + patternSupported_File.pattern(), Pattern.CASE_INSENSITIVE);
 
     public Cryptlinkws(PluginWrapper wrapper) {
         super(wrapper);
