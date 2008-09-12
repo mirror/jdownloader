@@ -16,23 +16,20 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class DDLMusicOrg extends PluginForDecrypt {
 
     private static final Pattern patternLink_Main = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
+    private static final Pattern patternLink_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
 
     public DDLMusicOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -43,48 +40,42 @@ public class DDLMusicOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-
-            if (new Regex(parameter, patternLink_Crypt).matches()) {
-                try {
-                    Thread.sleep(250);
-                } catch (InterruptedException e) {
-                }
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter.replace("ddlm_cr.php", "test2.php")), null, parameter, false);
-                String link = new Regex(reqinfo.getHtmlCode(), "<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE).getMatch(0);
-                if (link == null) { return null; }
-                decryptedLinks.add(createDownloadlink(link));
-            } else if (new Regex(parameter, patternLink_Main).matches()) {
-                RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-                // passwort auslesen
-                String password = new Regex(reqinfo.getHtmlCode(), "<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n.*?</tr>\n.*?<tr>\n.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE).getMatch(0);
-                if (password != null && password.contains("kein Passwort")) {
-                    password = null;
-                }
-
-                String ids[] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\n?\" target=\"\\_blank\" onmouseout=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE).getColumn(0);
-
-                progress.setRange(ids.length);
-                DownloadLink link;
-                for (int i = 0; i < ids.length; i++) {
-                    if (ids[i].startsWith("/ddlm_cr.php")) {
-                        link = createDownloadlink("http://ddl-music.org" + ids[i]);
-                    } else {
-                        link = createDownloadlink(ids[i]);
-                        try {
-                            Thread.sleep(250);
-                        } catch (InterruptedException e) {
-                        }
-                    }
-                    link.addSourcePluginPassword(password);
-                    decryptedLinks.add(link);
-                    progress.increase(1);
-                }
+        if (new Regex(parameter, patternLink_Crypt).matches()) {
+            br.getPage(parameter);
+            try {
+                Thread.sleep(2500);
+            } catch (InterruptedException e) {
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+
+            Form captchaForm = br.getForm(0);
+            String[] calc = br.getRegex(Pattern.compile("method=\"post\">[\\s]*?(\\d*?) (\\+|-) (\\d*?) =", Pattern.DOTALL)).getRow(0);
+            if (calc[1].equals("+")) {
+                captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
+            } else {
+                captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
+            }
+            br.submitForm(captchaForm);
+
+            decryptedLinks.add(createDownloadlink(br.getRegex(Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        } else if (new Regex(parameter, patternLink_Main).matches()) {
+            br.getPage(parameter);
+
+            String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n.*?</tr>\n.*?<tr>\n.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (password != null && password.contains("kein Passwort")) {
+                password = null;
+            }
+
+            String ids[] = br.getRegex(Pattern.compile("<a href=\"(.*?)\" target=\"_blank\" onMouseOut=\"MM_swapImgRestore", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            progress.setRange(ids.length);
+            for (String id : ids) {
+                if (id.startsWith("/captcha/")) id = "http://ddl-music.org" + id;
+                DownloadLink dLink = createDownloadlink(id);
+                dLink.addSourcePluginPassword(password);
+                decryptedLinks.add(dLink);
+                progress.increase(1);
+            }
         }
+
         return decryptedLinks;
     }
 
