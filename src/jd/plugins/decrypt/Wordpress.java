@@ -16,26 +16,22 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.controlling.DistributeData;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Wordpress extends PluginForDecrypt {
 
-    private ArrayList<String[]> defaultpasswords = new ArrayList<String[]>();
-    private Vector<String> passwordpattern = new Vector<String>();
+    private ArrayList<String[]> defaultPasswords = new ArrayList<String[]>();
+    private Vector<String> passwordPattern = new Vector<String>();
+    @SuppressWarnings("unused")
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+|movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*", Pattern.CASE_INSENSITIVE);
 
     public Wordpress(PluginWrapper wrapper) {
@@ -47,24 +43,24 @@ public class Wordpress extends PluginForDecrypt {
     private void add_defaultpasswords() {
         /* Die defaultpasswörter der einzelnen seiten */
         /* Host, defaultpw1, defaultpw2, usw */
-        defaultpasswords.add(new String[] { "doku.cc", "doku.cc", "doku.dl.am" });
-        defaultpasswords.add(new String[] { "hd-area.org", "hd-area.org" });
-        defaultpasswords.add(new String[] { "movie-blog.org", "movie-blog.org", "movie-blog.dl.am" });
-        defaultpasswords.add(new String[] { "xxx-blog.org", "xxx-blog.org", "xxx-blog.dl.am" });
+        defaultPasswords.add(new String[] { "doku.cc", "doku.cc", "doku.dl.am" });
+        defaultPasswords.add(new String[] { "hd-area.org", "hd-area.org" });
+        defaultPasswords.add(new String[] { "movie-blog.org", "movie-blog.org", "movie-blog.dl.am" });
+        defaultPasswords.add(new String[] { "xxx-blog.org", "xxx-blog.org", "xxx-blog.dl.am" });
     }
 
     private void add_passwordpatterns() {
         /* diese Pattern dienen zum auffinden des Passworts */
         /* ACHTUNG: passwort muss an erster stelle im pattern sein */
-        passwordpattern.add("<b>Passwort\\:<\\/b> (.*?) \\|");
-        passwordpattern.add("<b>Passwort\\:<\\/b> (.*?)<br><\\/p>");
-        passwordpattern.add("<b>Passwort\\:<\\/b> (.*?)<\\/p>");
-        passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?) \\|");
-        passwordpattern.add("<strong>Passwort\\: <\\/strong>(.*?)<strong>");
-        passwordpattern.add("<strong>Passwort<\\/strong>\\: (.*?) <strong>");
-        passwordpattern.add("<strong>Passwort\\: <\\/strong>(.*?)<\\/p>");
-        passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?)<\\/p>");
-        passwordpattern.add("<strong>Passwort\\:<\\/strong> (.*?) <\\/p>");
+        passwordPattern.add("<b>Passwort\\:<\\/b> (.*?) \\|");
+        passwordPattern.add("<b>Passwort\\:<\\/b> (.*?)<br><\\/p>");
+        passwordPattern.add("<b>Passwort\\:<\\/b> (.*?)<\\/p>");
+        passwordPattern.add("<strong>Passwort\\:<\\/strong> (.*?) \\|");
+        passwordPattern.add("<strong>Passwort\\: <\\/strong>(.*?)<strong>");
+        passwordPattern.add("<strong>Passwort<\\/strong>\\: (.*?) <strong>");
+        passwordPattern.add("<strong>Passwort\\: <\\/strong>(.*?)<\\/p>");
+        passwordPattern.add("<strong>Passwort\\:<\\/strong> (.*?)<\\/p>");
+        passwordPattern.add("<strong>Passwort\\:<\\/strong> (.*?) <\\/p>");
     }
 
     @Override
@@ -72,49 +68,41 @@ public class Wordpress extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
+        br.getPage(parameter);
 
-            /* Defaultpasswörter der Seite setzen */
-            Vector<String> link_passwds = new Vector<String>();
-            for (int j = 0; j < defaultpasswords.size(); j++) {
-                if (url.getHost().toLowerCase().contains(defaultpasswords.get(j)[0])) {
-                    for (int jj = 1; jj < defaultpasswords.get(j).length; jj++) {
-                        link_passwds.add(defaultpasswords.get(j)[jj]);
-                    }
-                    break;
+        /* Defaultpasswörter der Seite setzen */
+        Vector<String> link_passwds = new Vector<String>();
+        for (String[] passwords : defaultPasswords) {
+            if (br.getHost().toLowerCase().contains(passwords[0])) {
+                for (String password : passwords) {
+                    link_passwds.add(password);
                 }
+                break;
             }
-
-            /* Passwort suchen */
-            String[] password = null;
-            for (int i = 0; i < passwordpattern.size(); i++) {
-                password = new Regex(reqinfo, Pattern.compile(passwordpattern.get(i), Pattern.CASE_INSENSITIVE)).getColumn(0);
-                if (password.length != 0) {
-                    for (String element : password) {
-                        link_passwds.add(Encoding.htmlDecode(element));
-                    }
-                    break;
-                }
-            }
-
-            /* Alle Parts suchen */
-            String[] links = new Regex(reqinfo, Pattern.compile("(<a(.*?)</a>)", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            for (int i = 0; i < links.length; i++) {
-                if (!new Regex(links[i], patternSupported).matches()) {
-                    Vector<DownloadLink> LinkList = new DistributeData(links[i]).findLinks();
-                    for (int ii = 0; ii < LinkList.size(); ii++) {
-                        DownloadLink link = createDownloadlink(Encoding.htmlDecode(LinkList.get(ii).getDownloadURL()));
-                        link.setSourcePluginPasswords(link_passwds);
-                        decryptedLinks.add(link);
-                    }
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+
+        /* Passwort suchen */
+        String[] password = null;
+        for (String pattern : passwordPattern) {
+            password = br.getRegex(Pattern.compile(pattern, Pattern.CASE_INSENSITIVE)).getColumn(0);
+            if (password.length != 0) {
+                for (String element : password) {
+                    link_passwds.add(Encoding.htmlDecode(element));
+                }
+                break;
+            }
+        }
+
+        /* Alle Parts suchen */
+        String[] links = br.getRegex(Pattern.compile("<a(.*?)href=\"(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(1);
+        for (String link : links) {
+            if (!new Regex(link, this.getSupportedLinks()).matches()) {
+                DownloadLink dLink = createDownloadlink(link);
+                dLink.setSourcePluginPasswords(link_passwds);
+                decryptedLinks.add(dLink);
+            }
+        }
+
         return decryptedLinks;
     }
 

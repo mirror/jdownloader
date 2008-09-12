@@ -38,10 +38,10 @@ public class RsXXXBlog extends PluginForDecrypt {
         parameter = parameter.substring(parameter.lastIndexOf("http://"));
         br.getPage(parameter.replaceFirst("http://[\\w\\.]*?xxx-blog.org", "http://xxx-blog.org/frame"));
         if (br.getRedirectLocation() == null) return null;
-        DownloadLink dl_link = createDownloadlink(br.getRedirectLocation());
-        dl_link.addSourcePluginPassword("xxx-blog.dl.am");
-        dl_link.addSourcePluginPassword("xxx-blog.org");
-        decryptedLinks.add(dl_link);
+        DownloadLink dLink = createDownloadlink(br.getRedirectLocation());
+        dLink.addSourcePluginPassword("xxx-blog.dl.am");
+        dLink.addSourcePluginPassword("xxx-blog.org");
+        decryptedLinks.add(dLink);
 
         return decryptedLinks;
     }
