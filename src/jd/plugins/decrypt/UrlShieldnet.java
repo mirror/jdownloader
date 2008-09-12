@@ -40,9 +40,6 @@ import org.mozilla.javascript.Scriptable;
 
 public class UrlShieldnet extends PluginForDecrypt {
 
-    static private final String host = "urlshield.net";
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?urlshield\\.net/l/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
     private String captchaCode;
     private File captchaFile;
     private String passCode = null;
@@ -61,7 +58,7 @@ public class UrlShieldnet extends PluginForDecrypt {
             boolean do_continue = true;
             Form form;
             br.setCookiesExclusive(true);
-            br.clearCookies(host);
+            br.clearCookies(getHost());
 
             br.getPage(parameter);
             br.setFollowRedirects(false);

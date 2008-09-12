@@ -29,8 +29,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class Xlinkin extends PluginForDecrypt {
 
-    static private String host = "xlink.in";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xlink\\.in/\\?v=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     public static Integer Worker_Delay = 250;
 
     static class Xlinkin_Linkgrabber extends Thread {

@@ -26,8 +26,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class TinyLoadCom extends PluginForDecrypt {
-    static private final String host = "tinyload.com";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyload\\.com/\\w+", Pattern.CASE_INSENSITIVE);
 
     public TinyLoadCom(PluginWrapper wrapper) {
         super(wrapper);

@@ -28,9 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class UpPicoasisNet extends PluginForDecrypt {
 
-    private final static String host = "up.picoasis.net";
-    private Pattern patternSupported = Pattern.compile("http://up\\.picoasis\\.net/[\\d]+", Pattern.CASE_INSENSITIVE);
-
     public UpPicoasisNet(PluginWrapper wrapper) {
         super(wrapper);
     }

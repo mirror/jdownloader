@@ -26,11 +26,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class ShareRocktEs extends PluginForDecrypt {
-    private static final String HOST = "share.rockt.es";
 
     private static final Pattern patternSupported_go = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_v = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternSupported = Pattern.compile(patternSupported_v.pattern() + "|" + patternSupported_go.pattern(), Pattern.CASE_INSENSITIVE);
 
     public ShareRocktEs(PluginWrapper wrapper) {
         super(wrapper);

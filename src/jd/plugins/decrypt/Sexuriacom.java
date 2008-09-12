@@ -27,12 +27,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Sexuriacom extends PluginForDecrypt {
-    private static final String HOST = "sexuria.com";
 
     private static final Pattern patternSupported_Main = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Crypt = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupportetRedirect = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternSupported = Pattern.compile(patternSupported_Main.pattern() + "|" + patternSupported_Crypt + "|" + patternSupportetRedirect.pattern(), Pattern.CASE_INSENSITIVE);
 
     private Browser br;
 

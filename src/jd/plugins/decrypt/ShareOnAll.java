@@ -30,7 +30,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class ShareOnAll extends PluginForDecrypt {
-    final static String host = "shareonall.com";
+
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm", Pattern.CASE_INSENSITIVE);
 
     public ShareOnAll(PluginWrapper wrapper) {

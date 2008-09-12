@@ -27,9 +27,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class TechnorockerInfo extends PluginForDecrypt {
 
-    final static String host = "technorocker.info";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+", Pattern.CASE_INSENSITIVE);
-
     public TechnorockerInfo(PluginWrapper wrapper) {
         super(wrapper);
     }

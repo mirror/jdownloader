@@ -31,10 +31,8 @@ import jd.utils.JDUtilities;
 
 public class VetaXin extends PluginForDecrypt {
 
-    static private final String host = "vetax.in";
     static private final Pattern patternSupported_Download = Pattern.compile("http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported_Page = Pattern.compile("http://[\\w\\.]*?vetax\\.in/view/\\d+", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile(patternSupported_Page.pattern() + "|" + patternSupported_Download.pattern(), Pattern.CASE_INSENSITIVE);
 
     public VetaXin(PluginWrapper wrapper) {
         super(wrapper);

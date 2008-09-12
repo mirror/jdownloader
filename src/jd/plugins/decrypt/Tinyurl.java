@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -26,9 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Tinyurl extends PluginForDecrypt {
-
-    static private String host = "tinyurl.com";
-    Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+", Pattern.CASE_INSENSITIVE);
 
     public Tinyurl(PluginWrapper wrapper) {
         super(wrapper);

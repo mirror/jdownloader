@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -31,10 +30,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class Wiireloaded extends PluginForDecrypt {
-
-    static private final String host = "wii-reloaded.ath.cx";
-
-    static private final Pattern patternSupported = Pattern.compile("http://wii-reloaded\\.ath\\.cx/protect/get\\.php\\?i=.+", Pattern.CASE_INSENSITIVE);
 
     public Wiireloaded(PluginWrapper wrapper) {
         super(wrapper);

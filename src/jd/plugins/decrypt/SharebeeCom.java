@@ -27,10 +27,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class SharebeeCom extends PluginForDecrypt {
 
-    final static String host = "sharebee.com";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?sharebee\\.com/[a-zA-Z0-9]{8}", Pattern.CASE_INSENSITIVE);
-
     public SharebeeCom(PluginWrapper wrapper) {
         super(wrapper);
     }

@@ -27,10 +27,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class XupInFolder extends PluginForDecrypt {
 
-    private final static String host = "xup.in";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?xup\\.in/a,[0-9]+(/.+)?(/(list|mini))?", Pattern.CASE_INSENSITIVE);
-
     public XupInFolder(PluginWrapper wrapper) {
         super(wrapper);
     }

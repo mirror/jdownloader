@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -26,10 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class Web06de extends PluginForDecrypt {
-
-    static private final String host = "web06.de";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?web06\\.de/\\?user=\\d+site=(.*)", Pattern.CASE_INSENSITIVE);
 
     public Web06de(PluginWrapper wrapper) {
         super(wrapper);
