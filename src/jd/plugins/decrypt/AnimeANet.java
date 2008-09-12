@@ -54,7 +54,6 @@ public class AnimeANet extends PluginForDecrypt {
                 progress.increase(1);
             }
         }
-
         return decryptedLinks;
     }
 
