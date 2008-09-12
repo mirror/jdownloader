@@ -28,9 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class MirrorItDe extends PluginForDecrypt {
 
-    final static String host = "mirrorit.de";
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mirrorit\\.de/\\?id=[a-zA-Z0-9]{16}", Pattern.CASE_INSENSITIVE);
-
     public MirrorItDe(PluginWrapper wrapper) {
         super(wrapper);
     }

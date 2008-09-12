@@ -34,7 +34,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class RsLayerCom extends PluginForDecrypt {
-    final static String host = "rs-layer.com";
+
     private static Pattern linkPattern = Pattern.compile("onclick=\"getFile\\('([^;]*)'\\)", Pattern.CASE_INSENSITIVE);
     private static String strCaptchaPattern = "<img src=\"(captcha-[^\"]*\\.png)\" ";
     private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-layer\\.com/(.+)\\.html", Pattern.CASE_INSENSITIVE);
@@ -78,7 +78,7 @@ public class RsLayerCom extends PluginForDecrypt {
                 Form captchaForm = forms[0];
                 String captchaFileName = br.getRegex(strCaptchaPattern).getMatch(0);
                 if (captchaFileName == null) { return null; }
-                String captchaUrl = "http://" + host + "/" + captchaFileName;
+                String captchaUrl = "http://rs-layer.com/" + captchaFileName;
                 File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
 

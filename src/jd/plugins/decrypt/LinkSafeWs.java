@@ -28,9 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class LinkSafeWs extends PluginForDecrypt {
 
-    private static final String host = "linksafe.ws";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksafe\\.ws/files/[a-zA-Z0-9]{4}-[\\d]{5}-[\\d]", Pattern.CASE_INSENSITIVE);
-
     public LinkSafeWs(PluginWrapper wrapper) {
         super(wrapper);
     }

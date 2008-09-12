@@ -36,10 +36,6 @@ import jd.plugins.RequestInfo;
 
 public class ScumIn extends PluginForDecrypt {
 
-    static private String host = "scum.in";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
-
     public ScumIn(PluginWrapper wrapper) {
         super(wrapper);
     }

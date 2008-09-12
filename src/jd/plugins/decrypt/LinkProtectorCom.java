@@ -32,9 +32,6 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class LinkProtectorCom extends PluginForDecrypt {
-    private static final String host = "link-protector.com";
-
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?link-protector\\.com/[\\d]{6}.*", Pattern.CASE_INSENSITIVE);
 
     public LinkProtectorCom(PluginWrapper wrapper) {
         super(wrapper);

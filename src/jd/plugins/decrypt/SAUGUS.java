@@ -27,10 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class SAUGUS extends PluginForDecrypt {
-    final static String host = "saug.us";
+
     private Pattern patternSupported_go = Pattern.compile("http://[\\w\\.]*?saug\\.us/go.+\\.php", Pattern.CASE_INSENSITIVE);
     private Pattern patternSupported_folder = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile(patternSupported_folder.pattern() + "|" + patternSupported_go.pattern(), Pattern.CASE_INSENSITIVE);
 
     public SAUGUS(PluginWrapper wrapper) {
         super(wrapper);

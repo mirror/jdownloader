@@ -27,11 +27,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 public class NetfolderIn extends PluginForDecrypt {
-    static private String host = "netfolder.in";
+
     static private final Pattern patternSupported_1 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupported_2 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?", Pattern.CASE_INSENSITIVE);
-
-    static private final Pattern patternSupported = Pattern.compile(patternSupported_1.pattern() + "|" + patternSupported_2.pattern(), Pattern.CASE_INSENSITIVE);
 
     public NetfolderIn(PluginWrapper wrapper) {
         super(wrapper);

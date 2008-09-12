@@ -28,10 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class Rapidsafenet extends PluginForDecrypt {
 
-    static private final String host = "rapidsafe.net";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
-
     public Rapidsafenet(PluginWrapper wrapper) {
         super(wrapper);
     }

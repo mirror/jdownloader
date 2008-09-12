@@ -28,11 +28,10 @@ import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
 public class RomscentralCom extends PluginForDecrypt {
-    static private final String host = "romscentral.com";
+
     static private String lastRootCatUrl = "http://www.romscentral.com/<kategorie>/<htmlseite>";
     static private final Pattern patternSupportedWay1 = Pattern.compile("http://[\\w.]*?romscentral\\.com/(.+)/(.+\\.htm)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternSupportedWay2 = Pattern.compile("onclick=\"return popitup\\('(.+\\.htm)'\\)", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported = Pattern.compile("(" + patternSupportedWay1.pattern() + ")|(" + patternSupportedWay2.pattern() + ")", Pattern.CASE_INSENSITIVE);
 
     public RomscentralCom(PluginWrapper wrapper) {
         super(wrapper);

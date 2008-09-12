@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -28,10 +27,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 public class RaidrushOrg extends PluginForDecrypt {
-
-    static private final String host = "raidrush.org";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
 
     public RaidrushOrg(PluginWrapper wrapper) {
         super(wrapper);

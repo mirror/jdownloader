@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.HTMLParser;
@@ -32,8 +31,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 
 public class Rlslog extends PluginForDecrypt {
-    static private final String host = "rlslog.net";
-    private Pattern patternSupported = Pattern.compile("(http://[\\w\\.]*?rlslog\\.net(/.+/.+/#comments|/.+/#comments|/.+/))", Pattern.CASE_INSENSITIVE);
 
     public Rlslog(PluginWrapper wrapper) {
         super(wrapper);

@@ -35,10 +35,9 @@ import jd.plugins.RequestInfo;
 
 public class MyvideoDe extends PluginForDecrypt {
 
-    static private String host = "myvideo.de";
     static private final Pattern FILENAME = Pattern.compile("GetThis\\('(.*?)',", Pattern.CASE_INSENSITIVE);
+
     static public final Pattern DOWNLOADURL = Pattern.compile("SWFObject\\('http://myvideo.*?/player/.*?swf\\?(http://[\\w\\.\\-0-9]*//*.*?flv)&amp;ID=[0-9]+', 'video_player_swf'", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?myvideo\\.de/watch/[0-9]+/", Pattern.CASE_INSENSITIVE);
 
     public MyvideoDe(PluginWrapper wrapper) {
         super(wrapper);

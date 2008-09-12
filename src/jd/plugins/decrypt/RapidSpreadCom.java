@@ -26,8 +26,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class RapidSpreadCom extends PluginForDecrypt {
-    static private final String host = "rapidspread.com";
-    private static final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+", Pattern.CASE_INSENSITIVE);
 
     public RapidSpreadCom(PluginWrapper wrapper) {
         super(wrapper);

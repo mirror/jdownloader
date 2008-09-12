@@ -31,10 +31,6 @@ import org.mozilla.javascript.Scriptable;
 
 public class Rapidlayerin extends PluginForDecrypt {
 
-    static private final String HOST = "rapidlayer.in";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
     public Rapidlayerin(PluginWrapper wrapper) {
         super(wrapper);
     }

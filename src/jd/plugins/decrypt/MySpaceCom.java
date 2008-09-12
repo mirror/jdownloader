@@ -34,12 +34,8 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class MySpaceCom extends PluginForDecrypt {
-    private static final String HOST = "myspace.com";
+
     private static final String CODER = "ToKaM";
-    // private static final Pattern PATTERN_SUPPORTED = Pattern.compile(
-    // "http://[\\w\\.]*?myspace\\.(com|de)/index\\.cfm\\?fuseaction=user\\.viewprofile&friendid=(\\d+)"
-    // , Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?myspace\\.(com|de)/.+", Pattern.CASE_INSENSITIVE);
 
     // private static final String ANY_ATTRIBUTE = "[^\"]+";
     private static final String ANY_URL = "[\\w~\\.\\!\\*'\\(\\);:@&=\\+$,/\\?%#\\[\\]-]*?";

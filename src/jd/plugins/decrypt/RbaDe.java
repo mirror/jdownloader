@@ -27,7 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class RbaDe extends PluginForDecrypt {
-    private static final String HOST = "r-b-a.de";
 
     private static final String CODER = "ToKaM";
 
@@ -36,8 +35,6 @@ public class RbaDe extends PluginForDecrypt {
     private static final Pattern PATTERN_SUPPORTED_BATTLE = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/" + BATTLE_REL_PATH, Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_SUPPORTED_USER = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/index\\.php\\?ID=4100(&direction=last)?&MEMBER=\\d+(&sid=\\w+)?", Pattern.CASE_INSENSITIVE);
-
-    private static final Pattern PATTERN_SUPPORTED = Pattern.compile(PATTERN_SUPPORTED_BATTLE.pattern() + "|" + PATTERN_SUPPORTED_USER.pattern(), Pattern.CASE_INSENSITIVE);
 
     private static final Pattern REGEX_DOWNLOADLINK = Pattern.compile("(download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&(amp;)?PATH=\\d)");
 

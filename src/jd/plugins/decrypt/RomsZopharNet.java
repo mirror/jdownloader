@@ -27,10 +27,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class RomsZopharNet extends PluginForDecrypt {
 
-    static private final String host = "roms.zophar.net"; // http://roms.zophar.
-    // net/download-file/
-    // 131583
-
     static private final Pattern patternSupported = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/(.+)/(.+\\.7z)", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternDownload = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/([0-9]{1,})", Pattern.CASE_INSENSITIVE);
     static private final Pattern patternFilesize = Pattern.compile("http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}\"><b>.+</b></a> \\(([0-9]{1,}\\.[0-9]{1,} (GB|MB|KB|B))\\)</p>", Pattern.CASE_INSENSITIVE);
@@ -48,7 +44,7 @@ public class RomsZopharNet extends PluginForDecrypt {
         String filename = new Regex(parameter, patternSupported).getMatch(1);
         String file = new Regex(br, patternDownload.pattern()).getMatch(0);
         long filesize = Regex.getSize(new Regex(br, patternFilesize.pattern()).getMatch(0));
-        DownloadLink dlLink = createDownloadlink("http://" + host + "/download-file/" + file);
+        DownloadLink dlLink = createDownloadlink("http://roms.zophar.net/download-file/" + file);
         dlLink.setDownloadSize(filesize);
         dlLink.setName(filename);
 

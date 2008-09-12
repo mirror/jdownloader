@@ -28,9 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class Rsprotectfreehosterch extends PluginForDecrypt {
 
-    final static String host = "rs-protect.freehoster.ch";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rs-protect\\.freehoster\\.ch/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
-
     public Rsprotectfreehosterch(PluginWrapper wrapper) {
         super(wrapper);
     }

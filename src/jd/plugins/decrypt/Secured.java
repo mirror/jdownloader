@@ -268,8 +268,6 @@ public class Secured extends PluginForDecrypt {
 
     static private final Pattern PAT_FILE_ID = Pattern.compile("accessDownload\\([^']*'([^']*)");
 
-    static private final Pattern PAT_SUPPORTED = Pattern.compile("http://[\\w\\.]*?secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html", Pattern.CASE_INSENSITIVE);
-
     private String cryptedLink;
 
     public Secured(PluginWrapper wrapper) {

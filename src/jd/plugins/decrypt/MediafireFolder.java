@@ -27,8 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class MediafireFolder extends PluginForDecrypt {
-    static private String host = "mediafire.com";
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?mediafire\\.com/\\?sharekey=.+", Pattern.CASE_INSENSITIVE);
 
     public MediafireFolder(PluginWrapper wrapper) {
         super(wrapper);

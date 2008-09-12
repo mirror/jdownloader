@@ -27,8 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class RockHouseIn extends PluginForDecrypt {
-    final static String host = "rock-house.in";
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rock-house\\.in/warez/warez_download\\.php\\?id=\\d+", Pattern.CASE_INSENSITIVE);
 
     public RockHouseIn(PluginWrapper wrapper) {
         super(wrapper);

@@ -28,10 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class RsprotectCom extends PluginForDecrypt {
 
-    final static String host = "rsprotect.com";
-
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?rsprotect\\.com/r[sc]-[a-zA-Z0-9]{11}/.*", Pattern.CASE_INSENSITIVE);
-
     public RsprotectCom(PluginWrapper wrapper) {
         super(wrapper);
     }

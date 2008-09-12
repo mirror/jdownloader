@@ -28,10 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class ProtectTehparadoxcom extends PluginForDecrypt {
 
-    static private final String host = "Protect.Tehparadox.com";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!", Pattern.CASE_INSENSITIVE);
-
     public ProtectTehparadoxcom(PluginWrapper wrapper) {
         super(wrapper);
     }

@@ -115,7 +115,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginOptional;
 import jd.unrar.zip.UnZip;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;

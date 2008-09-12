@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,10 +31,6 @@ import jd.utils.JDUtilities;
 
 public class LinksaveIn extends PluginForDecrypt {
 
-    static private final String HOST = "Linksave.in";
-
-    static private final Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?linksave\\.in/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-
     public LinksaveIn(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -46,18 +41,15 @@ public class LinksaveIn extends PluginForDecrypt {
         String parameter = param.toString();
         URL url;
 
-        if (parameter.matches(patternSupported.pattern())) {
-            parameter = parameter + ".dlc";
-            url = new URL(parameter);
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
-            // Api ! nicht in org tauschen!
-            dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
-            Browser.download(container, dlc_con);
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-            container.delete();
-
-        }
+        parameter = parameter + ".dlc";
+        url = new URL(parameter);
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
+        // Api ! nicht in org tauschen!
+        dlc_con.setRequestProperty("Referer", "jDownloader.ath.cx");
+        Browser.download(container, dlc_con);
+        decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+        container.delete();
 
         return decryptedLinks;
     }
