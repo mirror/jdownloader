@@ -556,7 +556,7 @@ public class JDInit {
         // "DatenschleuderCc",
         // "http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+"
         // );
-        new DecryptPluginWrapper("ddl-music.org", "DDLMusicOrg", "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+|http://[\\w\\.]*?ddl-music\\.org/ddlm_cr\\.php\\?\\d+\\?\\d+");
+        new DecryptPluginWrapper("ddl-music.org", "DDLMusicOrg", "http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+|http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+");
         new DecryptPluginWrapper("ddl-warez.org", "DDLWarez", "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+");
         // new DecryptPluginWrapper("dxp.divxvid.org", "Divxvid",
         // "http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html");

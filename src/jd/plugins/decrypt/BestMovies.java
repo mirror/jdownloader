@@ -17,21 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class BestMovies extends PluginForDecrypt {
 
@@ -48,55 +43,30 @@ public class BestMovies extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqInfo = null;
-            Matcher matcher;
-            boolean bestmovies_continue = false;
-            reqInfo = HTTP.getRequest(url);
-            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                matcher = patternCaptcha_Wrong.matcher(reqInfo.getHtmlCode());
-                if (matcher.find()) {
-                    /* Falscher Captcha, Seite neu laden */
-                    reqInfo = HTTP.getRequest(url);
-                }
-                /* Alle Requests müssen mit Cookie und Referer stattfinden */
-                String cookie = reqInfo.getCookie();
-                cookie = cookie.substring(0, cookie.indexOf(";") + 1);
-                matcher = patternCaptcha_Needed.matcher(reqInfo.getHtmlCode());
-                if (matcher.find()) {
-                    /* Captcha vorhanden */
-                    File captchaFile = this.getLocalCaptchaFile(this);
-                    URL captcha_url = new URL("http://crypt.best-movies.us/captcha.php");
-                    HTTPConnection captcha_con = new HTTPConnection(captcha_url.openConnection());
-                    captcha_con.setRequestProperty("Referer", parameter);
-                    captcha_con.setRequestProperty("Cookie", cookie);
-                    Browser.download(captchaFile, captcha_con);
+        br.getPage(parameter);
+        for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+            if (br.getRegex(patternCaptcha_Wrong).matches()) {
+                /* Falscher Captcha, Seite neu laden */
+                br.getPage(parameter);
+            }
 
-                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                    if (captchaCode == null) {
-                        /* abbruch geklickt */
-                        return null;
-                    }
-                    reqInfo = HTTP.postRequest(new URL(parameter), cookie, parameter, null, "sicherheitscode=" + captchaCode + "&submit=Submit+Query", false);
-                } else {
-                    /* Kein Captcha */
-                    bestmovies_continue = true;
-                    break;
+            if (br.getRegex(patternCaptcha_Needed).matches()) {
+                /* Captcha vorhanden */
+                File captchaFile = this.getLocalCaptchaFile(this);
+                Browser.download(captchaFile, br.openGetConnection("http://crypt.best-movies.us/captcha.php"));
+                String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                if (captchaCode == null) {
+                    /* abbruch geklickt */
+                    return null;
                 }
+                br.postPage(parameter, "sicherheitscode=" + captchaCode + "&submit=Submit+Query");
+            } else {
+                /* Kein Captcha */
+                String link = br.getRegex(patternIframe).getMatch(0);
+                if (link != null) decryptedLinks.add(createDownloadlink(link));
             }
-            if (bestmovies_continue == true) {
-                matcher = patternIframe.matcher(reqInfo.getHtmlCode());
-                if (matcher.find()) {
-                    /* EinzelLink gefunden */
-                    String link = matcher.group(1);
-                    decryptedLinks.add(createDownloadlink(link));
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
+
         return decryptedLinks;
     }
 
