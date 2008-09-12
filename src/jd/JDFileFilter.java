@@ -18,6 +18,8 @@ package jd;
 import java.io.File;
 import java.io.FileFilter;
 
+import jd.utils.JDLocale;
+
 /**
  * Mit dieser Klasse kann man sowohl bestimmte Dateien aus einem Verzeichnis
  * auflisten als auch einen FileFilter in einem JDFileChooser nutzen
@@ -31,89 +33,47 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     private boolean acceptDirectories = true;
 
     /**
-     * Extension der Datei (mit Punkt)
+     * Beschreibung vom FileFilter
      */
-    private String[] extension = null;
-    private String extensions = null;
+    private String description = JDLocale.L("gui.filefilter.desc", "Containerfiles");
 
     /**
-     * Name der Datei ohne Extension
+     * Zu akzeptierende Dateiendung (mit Punkt)
      */
-    private String name = null;
+    private String[] extension = null;
 
     /**
      * Erstellt einen neuen JDFileFilter
      * 
-     * @param name
-     *            Name der Datei ohne Extension
+     * @param description
+     *            Beschreibung vom FileFilter oder null, wenn der Defaultname
+     *            (Containerfiles) genommen werden soll
      * @param extension
-     *            Extension der Datei (mit Punkt)
+     *            Zu akzeptierende Dateiendung (mit Punkt)
      * @param acceptDirectories
      *            Sollen Verzeichnisse akzeptiert werden?
      */
-    public JDFileFilter(String name, String extension, boolean acceptDirectories) {
-        this.name = name;
-        if (extension != null) {
-
-            this.extension = extension.split("\\|");
-
-            extensions = extension;
-        }
+    public JDFileFilter(String description, String extension, boolean acceptDirectories) {
+        if (description != null) this.description = description;
+        this.extension = extension.split("\\|");
         this.acceptDirectories = acceptDirectories;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.swing.filechooser.FileFilter#accept(java.io.File)
-     */
     @Override
     public boolean accept(File f) {
-        if (f.isDirectory()) { return acceptDirectories; }
-        if (extension != null) {
-            for (String element : extension) {
-                if (f.getName().toLowerCase().endsWith(element.toLowerCase())) { return true; }
-            }
-            return false;
+        if (f.isDirectory()) return acceptDirectories;
+        for (String element : extension) {
+            if (f.getName().toLowerCase().endsWith(element.toLowerCase())) return true;
         }
-        if (name != null) {
-            if (!f.getName().startsWith(name)) { return false; }
-        }
-        return true;
+        return false;
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see javax.swing.filechooser.FileFilter#getDescription()
-     */
     /**
      * Gibt die Filefilter beschreibung zurück
      */
-
     @Override
     public String getDescription() {
-        return "Containerfiles";
+        return this.description;
     }
 
-    /**
-     * Liefert ein FileObjekt zurück, daß aus dem Name und der Extension
-     * zusammengesetzt wird
-     * 
-     * @return Ein FileObjekt
-     */
-    public File getFile() {
-        StringBuffer filename = new StringBuffer();
-        if (name != null) {
-            filename.append(name);
-        } else {
-            filename.append("*");
-        }
-        if (extension != null) {
-            filename.append(extensions);
-        } else {
-            filename.append(".*");
-        }
-        return new File(filename.toString());
-    }
 }

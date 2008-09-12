@@ -1737,10 +1737,10 @@ public class JDUtilities {
     public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
         // String hashPre;
         if (fileOutput == null) {
-            JDFileFilter fileFilter = new JDFileFilter(name, extension, true);
+            JDFileFilter fileFilter = new JDFileFilter(extension, extension, true);
             JFileChooser fileChooserSave = new JFileChooser();
             fileChooserSave.setFileFilter(fileFilter);
-            fileChooserSave.setSelectedFile(fileFilter.getFile());
+            fileChooserSave.setSelectedFile(new File(((name != null) ? name : "*") + ((extension != null) ? extension : ".*")));
             if (currentDirectory != null) {
                 fileChooserSave.setCurrentDirectory(currentDirectory);
             }

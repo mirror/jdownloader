@@ -819,7 +819,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_INSTALL_JDU:
             fc = new JDFileChooser("_INSTALLJDU");
-            fc.setFileFilter(new JDFileFilter(null, ".jdu", true));
+            fc.setFileFilter(new JDFileFilter(JDLocale.L("gui.menu.action.install.filefilter", "JD Addons"), ".jdu", true));
             fc.showOpenDialog(frame);
             ret = fc.getSelectedFile();
             if (ret != null) {
@@ -1003,6 +1003,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnStartStop);
         toolBar.add(btnPause);
         toolBar.add(createMenuButton(actionItemsAdd));
+//        toolBar.add(createMenuButton(actionLoadDLC));
         toolBar.add(createMenuButton(actionItemsDelete));
         toolBar.addSeparator();
         toolBar.add(createMenuButton(actionItemsBottom));

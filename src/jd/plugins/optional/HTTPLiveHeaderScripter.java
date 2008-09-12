@@ -82,7 +82,7 @@ import org.xml.sax.SAXException;
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
         super(wrapper);
-       
+
     }
 
     public static int getAddonInterfaceVersion() {
@@ -148,7 +148,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.openfile", "Open"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.setFileFilter(new JDFileFilter(null, ".xml", true));
+            fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null || !ret.exists()) { return; }
@@ -163,7 +163,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.avefile", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.setFileFilter(new JDFileFilter(null, ".xml", true));
+            fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }

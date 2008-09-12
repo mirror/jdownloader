@@ -41,7 +41,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
 import javax.swing.JDialog;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
@@ -56,10 +55,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 
+import jd.JDFileFilter;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
@@ -69,6 +68,7 @@ import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
+import jd.gui.skins.simple.components.JDFileChooser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -111,6 +111,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
+    private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
     private boolean colorizeMissing, colorizeOld;
     private Color colorMissing, colorOld;
 
@@ -147,15 +148,15 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         JPanel topFolder = new JPanel(new BorderLayout(5, 5));
         topFolder.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:")), BorderLayout.LINE_START);
         topFolder.add(cmboFolder = new ComboBrowseFile("LANGFILEEDITOR_FOLDER"));
-        cmboFolder.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+        cmboFolder.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
         cmboFolder.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFolder.addActionListener(this);
 
         JPanel topFile = new JPanel(new BorderLayout(5, 5));
         topFile.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")), BorderLayout.LINE_START);
         topFile.add(cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE"));
-        cmboFile.setFileSelectionMode(JFileChooser.FILES_ONLY);
-        cmboFile.setFileFilter(new LngFileFilter());
+        cmboFile.setFileSelectionMode(JDFileChooser.FILES_ONLY);
+        cmboFile.setFileFilter(fileFilter);
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 
@@ -358,11 +359,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuNew) {
 
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileFilter(new LngFileFilter());
-            if (languageFile != null) chooser.setCurrentDirectory(languageFile.getParentFile());
+            JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_FILE");
+            chooser.setFileFilter(fileFilter);
 
-            if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+            if (chooser.showSaveDialog(frame) == JDFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
                 if (!languageFile.getAbsolutePath().endsWith(".lng")) languageFile = new File(languageFile.getAbsolutePath() + ".lng");
                 cmboFile.setCurrentPath(languageFile);
@@ -374,11 +374,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuSaveAs) {
 
-            JFileChooser chooser = new JFileChooser();
-            chooser.setFileFilter(new LngFileFilter());
-            chooser.setCurrentDirectory(languageFile.getParentFile());
+            JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_FILE");
+            chooser.setFileFilter(fileFilter);
 
-            if (chooser.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
+            if (chooser.showSaveDialog(frame) == JDFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
                 if (!languageFile.getAbsolutePath().endsWith(".lng")) languageFile = new File(languageFile.getAbsolutePath() + ".lng");
                 saveLanguageFile(languageFile);
@@ -671,11 +670,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                         data.add(new String[] { entry[0], JDLocale.L("plugins.optional.langfileeditor.patternEntry", "<Entry matches Pattern>"), entry[1] });
                         breakIt = true;
                         break;
-                        
+
                     }
-                    
+
                 }
-                
+
                 if (breakIt) continue;
                 data.add(new String[] { entry[0], "", entry[1] });
 
@@ -898,22 +897,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         public int compare(String[] s1, String[] s2) {
 
             return s1[0].compareToIgnoreCase(s2[0]);
-
-        }
-
-    }
-
-    private class LngFileFilter extends FileFilter {
-
-        public boolean accept(File f) {
-
-            return (f.isDirectory() || f.getName().toLowerCase().endsWith(".lng"));
-
-        }
-
-        public String getDescription() {
-
-            return "LanguageFiles (*.lng)";
 
         }
 
