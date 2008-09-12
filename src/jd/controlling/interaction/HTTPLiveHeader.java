@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.Authenticator;
-import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.Collection;
@@ -326,7 +325,7 @@ public class HTTPLiveHeader extends Interaction {
     private HashMap<String, String> variables;
 
     public boolean doInteraction(Object arg) {
-int okCounter=0;
+        int okCounter = 0;
         // Hole die Config parameter. Über die Parameterkeys wird in der
         // initConfig auch der ConfigContainer für die Gui vorbereitet
         Configuration configuration = JDUtilities.getConfiguration();
@@ -453,15 +452,15 @@ int okCounter=0;
                         }
                         br = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim());
 
-                        if (br==null ||!br.getHttpConnection().isOK()) {
+                        if (br == null || !br.getHttpConnection().isOK()) {
                             okCounter--;
                             logger.severe("Request error!");
-//                            if(okCounter<0){
-//                                logger.severe("Too many RequestErrors. abort!");
-//                            progress.finalize();
-//                            return false;
-//                            }
-                        }else{
+                            // if(okCounter<0){
+                            // logger.severe("Too many RequestErrors. abort!");
+                            // progress.finalize();
+                            // return false;
+                            // }
+                        } else {
                             okCounter++;
                         }
 
@@ -531,10 +530,7 @@ int okCounter=0;
             JDUtilities.getGUI().displayMiniWarning(String.format(JDLocale.L("interaction.reconnect.ipfiltered.warning.short", "Die IP %s wurde als nicht erlaubt identifiziert"), afterIP), null, 20);
             afterIP = "offline";
         }
-        
-      
-        
-        
+
         progress.increase(1);
         String pattern;
 
@@ -557,9 +553,9 @@ int okCounter=0;
 
             logger.finer("Ip Check: " + afterIP);
         }
-        
+
         logger.finer("Ip after: " + afterIP);
-        if(afterIP.equals("offline")&&!afterIP.equals(preIp)){
+        if (afterIP.equals("offline") && !afterIP.equals(preIp)) {
             logger.warning("JD could disconnect your router, but could not connect afterwards. Try to rise the option 'Wait until first IP Check'");
             endTime = System.currentTimeMillis() + 120 * 1000;
             while (System.currentTimeMillis() <= endTime && (afterIP.equalsIgnoreCase("offline") || afterIP == null || afterIP.equals(preIp))) {
@@ -577,9 +573,9 @@ int okCounter=0;
 
                 logger.finer("Ip Check: " + afterIP);
             }
-            
+
         }
-        
+
         if (!afterIP.equals(preIp) && !afterIP.equalsIgnoreCase("offline")) {
             progress.finalize();
             logger.info("Rec succ: " + afterIP);
@@ -595,133 +591,134 @@ int okCounter=0;
     }
 
     private Browser doRequest(String request) {
-        try{
-        String requestType;
-        String path;
-        String post = "";
-        String host = null;
-
-        HashMap<String, String> requestProperties = new HashMap<String, String>();
-        String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
-        // ArrayList<String> params = SimpleMatches.getAllSimpleMatches(request,
-        // "%%%°%%%", 1);
-        String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
-        if (params.length > 0) {
-            String req;
-            if (request.startsWith(params[0])) {
-                req = "";
-                logger.finer("Variables: " + variables);
-                logger.finer("Headerproperties: " + headerProperties);
-                for (int i = 0; i <= tmp.length; i++) {
-                    logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
-
-                    req += getModifiedVariable(params[i - 1]);
-                    if (i < tmp.length) {
-                        req += tmp[i];
-                    }
-                }
-            } else {
-                req = tmp[0];
-                logger.finer("Variables: " + variables);
-                logger.finer("Headerproperties: " + headerProperties);
-                for (int i = 1; i <= tmp.length; i++) {
-                    if (i > params.length) {
-                        continue;
-                    }
-                    logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
-
-                    req += getModifiedVariable(params[i - 1]);
-                    if (i < tmp.length) {
-                        req += tmp[i];
-                    }
-                }
-            }
-
-            request = req;
-        }
-        String[] requestLines = HTTPLiveHeader.splitLines(request);
-        if (requestLines.length == 0) {
-            logger.severe("Parse Fehler:" + request);
-            return null;
-        }
-        // RequestType
-        tmp = requestLines[0].split(" ");
-        if (tmp.length < 2) {
-            logger.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
-            return null;
-        }
-        requestType = tmp[0];
-        path = tmp[1];
-        logger.finer("RequestType: " + requestType);
-        logger.finer("Path: " + path);
-        boolean headersEnd = false;
-        // Zerlege request
-
-        for (int li = 1; li < requestLines.length; li++) {
-
-            if (headersEnd) {
-                post += requestLines[li] + "\r\n";
-                continue;
-            }
-            if (requestLines[li].trim().length() == 0) {
-                headersEnd = true;
-
-                continue;
-            }
-            String[] p = requestLines[li].split("\\:");
-            if (p.length < 2) {
-                logger.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
-                headersEnd = true;
-                li--;
-                continue;
-            }
-            requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
-
-            if (p[0].trim().equalsIgnoreCase("HOST")) {
-                host = requestLines[li].substring(p[0].length() + 1).trim();
-            }
-        }
-
-        if (host == null) {
-            logger.severe("Host nicht gefunden: " + request);
-            return null;
-        }
         try {
-            Browser br = new Browser();
+            String requestType;
+            String path;
+            String post = "";
+            String host = null;
 
-            br.setConnectTimeout(5000);
-            br.setReadTimeout(5000);
-            if (requestProperties != null) {
-                br.getHeaders().putAll(requestProperties);
+            HashMap<String, String> requestProperties = new HashMap<String, String>();
+            String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
+            // ArrayList<String> params =
+            // SimpleMatches.getAllSimpleMatches(request,
+            // "%%%°%%%", 1);
+            String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
+            if (params.length > 0) {
+                String req;
+                if (request.startsWith(params[0])) {
+                    req = "";
+                    logger.finer("Variables: " + variables);
+                    logger.finer("Headerproperties: " + headerProperties);
+                    for (int i = 0; i <= tmp.length; i++) {
+                        logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+
+                        req += getModifiedVariable(params[i - 1]);
+                        if (i < tmp.length) {
+                            req += tmp[i];
+                        }
+                    }
+                } else {
+                    req = tmp[0];
+                    logger.finer("Variables: " + variables);
+                    logger.finer("Headerproperties: " + headerProperties);
+                    for (int i = 1; i <= tmp.length; i++) {
+                        if (i > params.length) {
+                            continue;
+                        }
+                        logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
+
+                        req += getModifiedVariable(params[i - 1]);
+                        if (i < tmp.length) {
+                            req += tmp[i];
+                        }
+                    }
+                }
+
+                request = req;
             }
-            if (requestType.equalsIgnoreCase("GET")) {
-                logger.finer("GET " + "http://" + host + path);
-
-                br.getPage("http://" + host + path);
-
-            }else if(requestType.equalsIgnoreCase("POST")) {
-                post = post.trim();
-                logger.finer("POST " + "http://" + host + path + " " + post);
-                br.postPageRaw("http://" + host + path, post);
-            }else{
-                logger.severe("Unknown requesttyp: "+requestType);
+            String[] requestLines = HTTPLiveHeader.splitLines(request);
+            if (requestLines.length == 0) {
+                logger.severe("Parse Fehler:" + request);
                 return null;
             }
-            logger.finer("Answer: ");
-            for (Map.Entry<String, List<String>> me : br.getRequest().getResponseHeaders().entrySet()) {
-                if (me.getValue() != null && me.getValue().size() > 0) {
-                    headerProperties.put(me.getKey(), me.getValue().get(0));
-                    logger.finer(me.getKey() + " : " + me.getValue().get(0));
+            // RequestType
+            tmp = requestLines[0].split(" ");
+            if (tmp.length < 2) {
+                logger.severe("Konnte Requesttyp nicht finden: " + requestLines[0]);
+                return null;
+            }
+            requestType = tmp[0];
+            path = tmp[1];
+            logger.finer("RequestType: " + requestType);
+            logger.finer("Path: " + path);
+            boolean headersEnd = false;
+            // Zerlege request
+
+            for (int li = 1; li < requestLines.length; li++) {
+
+                if (headersEnd) {
+                    post += requestLines[li] + "\r\n";
+                    continue;
+                }
+                if (requestLines[li].trim().length() == 0) {
+                    headersEnd = true;
+
+                    continue;
+                }
+                String[] p = requestLines[li].split("\\:");
+                if (p.length < 2) {
+                    logger.warning("Syntax Fehler in: " + requestLines[li] + "\r\n Vermute Post Parameter");
+                    headersEnd = true;
+                    li--;
+                    continue;
+                }
+                requestProperties.put(p[0].trim(), requestLines[li].substring(p[0].length() + 1).trim());
+
+                if (p[0].trim().equalsIgnoreCase("HOST")) {
+                    host = requestLines[li].substring(p[0].length() + 1).trim();
                 }
             }
-            return br;
-        } catch (IOException e) {
 
-            logger.severe("IO Error: " + e.getLocalizedMessage());
-            e.printStackTrace();
-            return null;
-        }
-        }catch(Exception e){
+            if (host == null) {
+                logger.severe("Host nicht gefunden: " + request);
+                return null;
+            }
+            try {
+                Browser br = new Browser();
+
+                br.setConnectTimeout(5000);
+                br.setReadTimeout(5000);
+                if (requestProperties != null) {
+                    br.getHeaders().putAll(requestProperties);
+                }
+                if (requestType.equalsIgnoreCase("GET")) {
+                    logger.finer("GET " + "http://" + host + path);
+
+                    br.getPage("http://" + host + path);
+
+                } else if (requestType.equalsIgnoreCase("POST")) {
+                    post = post.trim();
+                    logger.finer("POST " + "http://" + host + path + " " + post);
+                    br.postPageRaw("http://" + host + path, post);
+                } else {
+                    logger.severe("Unknown requesttyp: " + requestType);
+                    return null;
+                }
+                logger.finer("Answer: ");
+                for (Map.Entry<String, List<String>> me : br.getRequest().getResponseHeaders().entrySet()) {
+                    if (me.getValue() != null && me.getValue().size() > 0) {
+                        headerProperties.put(me.getKey(), me.getValue().get(0));
+                        logger.finer(me.getKey() + " : " + me.getValue().get(0));
+                    }
+                }
+                return br;
+            } catch (IOException e) {
+
+                logger.severe("IO Error: " + e.getLocalizedMessage());
+                e.printStackTrace();
+                return null;
+            }
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }

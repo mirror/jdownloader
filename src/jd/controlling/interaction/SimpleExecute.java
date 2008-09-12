@@ -90,15 +90,10 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
         ConfigEntry cfg;
         ConfigEntry conditionEntry;
-        // ConfigEntry cfg;
-        // (int type, ActionListener listener, String label)
-        ConfigContainer extended = new ConfigContainer(this, JDLocale.L("interaction.simpleExecute.extended", "Erweiterte Einstellungen"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.simpleExecute.test", "Jetzt ausführen")));
 
-        // extended.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX,
-        // this, "VARS", keys, JDLocale.L("interaction.simpleExecute.variables",
-        // "Available variables")).setExpertEntry(true));
+        ConfigContainer extended = new ConfigContainer(this, JDLocale.L("interaction.simpleExecute.extended", "Erweiterte Einstellungen"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.simpleExecute.test", "Jetzt ausführen")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, this, PROPERTY_COMMAND, JDLocale.L("interaction.simpleExecute.cmd", "Befehl")).setInstantHelp(JDLocale.L("interaction.simpleExecute.helpLink", "http://jdownloader.org/page.php?id=119")));
 

@@ -33,7 +33,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.gui.skins.simple.Link.JLinkButton;
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

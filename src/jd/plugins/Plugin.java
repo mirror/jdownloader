@@ -22,7 +22,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -192,18 +191,12 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public ConfigContainer config;
 
-
-
     private Captcha lastCaptcha;
 
     @Deprecated
     protected RequestInfo requestInfo;
 
     private String statusText;
-
-
-
-
 
     protected PluginWrapper wrapper;
 
@@ -212,7 +205,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public Plugin(PluginWrapper wrapper) {
 
         this.br = new Browser();
-       this.wrapper=wrapper;
+        this.wrapper = wrapper;
         config = new ConfigContainer(this);
 
     }
@@ -287,7 +280,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
-
 
     public String getCaptchaCode(File file, DownloadLink downloadLink) {
 
@@ -377,7 +369,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         return wrapper.getHost();
     }
 
-
     public Captcha getLastCaptcha() {
         return lastCaptcha;
     }
@@ -400,8 +391,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public String getPluginID() {
         return getHost() + "-" + getVersion();
     }
-
- 
 
     /**
      * p gibt das interne properties objekt zurück indem die Plugineinstellungen
@@ -509,7 +498,4 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         this.acceptOnlyURIs = acceptCompleteLinks;
     }
 
-  
-
-  
 }

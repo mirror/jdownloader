@@ -25,7 +25,6 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 
@@ -35,18 +34,15 @@ import jd.parser.Regex;
  * @author astaldo
  */
 public abstract class PluginForDecrypt extends Plugin {
-    
 
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
-       
+
     }
 
     private CryptedLink cryptedLink = null;
 
     protected ProgressController progress;
-
-   
 
     /**
      * Diese Methode entschlüsselt Links.
@@ -58,8 +54,6 @@ public abstract class PluginForDecrypt extends Plugin {
      *            getSupportedLinks()} herausgefiltert
      * @return Ein Vector mit Klartext-links
      */
-
-
 
     protected DownloadLink createDownloadlink(String link) {
         DownloadLink dl = new DownloadLink(null, null, getHost(), Encoding.htmlDecode(link), true);

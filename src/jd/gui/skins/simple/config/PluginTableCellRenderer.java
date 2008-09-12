@@ -19,6 +19,7 @@ package jd.gui.skins.simple.config;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.ArrayList;
+
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 

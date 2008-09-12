@@ -85,11 +85,6 @@ import jd.utils.JDUtilities;
 
 public class LangFileEditor extends PluginOptional implements KeyListener, MouseListener {
 
-    public LangFileEditor(PluginWrapper wrapper) {
-        super(wrapper);
-        // TODO Auto-generated constructor stub
-    }
-
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
     private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
     private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
@@ -112,11 +107,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextEdit, mnuContextTranslate;
 
     private Vector<String[]> sourceEntries = new Vector<String[]>();
+    private Vector<Pattern> sourcePatterns = new Vector<Pattern>();
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
     private boolean colorizeMissing, colorizeOld;
     private Color colorMissing, colorOld;
+
+    public LangFileEditor(PluginWrapper wrapper) {
+        super(wrapper);
+    }
 
     private void showGui() {
 
@@ -658,10 +658,25 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         }
 
+        boolean breakIt;
         for (String[] entry : fileEntries) {
 
             if (getValue(data, entry[0]) == null) {
 
+                breakIt = false;
+                for (Pattern pattern : sourcePatterns) {
+
+                    if (pattern.matcher(entry[0]).matches()) {
+
+                        data.add(new String[] { entry[0], JDLocale.L("plugins.optional.langfileeditor.patternEntry", "<Entry matches Pattern>"), entry[1] });
+                        breakIt = true;
+                        break;
+                        
+                    }
+                    
+                }
+                
+                if (breakIt) continue;
                 data.add(new String[] { entry[0], "", entry[1] });
 
             }
@@ -682,20 +697,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     private String getValue(Vector<String[]> vector, String key) {
 
-        String result = null;
-
         for (String[] entry : vector) {
 
-            if (entry[0].equals(key)) {
-
-                result = entry[1];
-                break;
-
-            }
+            if (entry[0].equals(key)) return entry[1];
 
         }
 
-        return result;
+        return null;
 
     }
 
@@ -712,8 +720,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
             if (!keys.contains(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
-                keys.add(Encoding.UTF8Decode(match[0]));
-                entries.add(new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) });
+                match[0] = Encoding.UTF8Decode(match[0]);
+                match[1] = Encoding.UTF8Decode(match[1]);
+                keys.add(match[0]);
+                entries.add(new String[] { match[0], match[1] });
 
             }
 
@@ -726,24 +736,41 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private void getSourceEntries() {
 
         sourceEntries.clear();
+        sourcePatterns.clear();
         Vector<String> keys = new Vector<String>();
 
         String[][] matches;
         for (File file : getSourceFiles(sourceFolder)) {
 
-            matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("JDLocale[\\s]*?\\.L[F]?[\\s]*?\\([\\s]*?\"(.*?)\"[\\s]*?,[\\s]*?\"(.*?)\"[\\s]*?[,\\)]")).getMatches();
+            matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*\"?(.*?)\"?[\\s]*[,\\)]")).getMatches();
 
             for (String[] match : matches) {
 
                 match[0] = match[0].trim();
-                if (!keys.contains(match[0])) {
+                if (keys.contains(match[0])) continue;
+
+                if (match[0].indexOf("\"") == -1) {
+
+                    match[0] = Encoding.UTF8Decode(match[0]);
+                    match[1] = Encoding.UTF8Decode(match[1]);
+                    keys.add(match[0]);
+                    sourceEntries.add(new String[] { match[0], match[1] });
+
+                } else {
+
+                    if (match[0].contains(",")) match[0] = match[0].substring(0, match[0].indexOf(",") + 1);
+                    match[0] = match[0].replaceAll("\\.", "\\\\.");
+                    match[0] = match[0].replaceAll("\"(.*?)[\",]", "(.*?)");
+
+                    if (keys.contains(match[0])) continue;
 
                     keys.add(Encoding.UTF8Decode(match[0]));
-                    sourceEntries.add(new String[] { Encoding.UTF8Decode(match[0]), Encoding.UTF8Decode(match[1]) });
+                    sourcePatterns.add(Pattern.compile(match[0], Pattern.CASE_INSENSITIVE));
 
                 }
 
             }
+
         }
 
     }
@@ -760,9 +787,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             } else if (entry.isFile()) {
 
-                if (JDUtilities.getFileExtension(entry).equals("java")) {
-                    fileContents.add(entry);
-                }
+                if (JDUtilities.getFileExtension(entry).equals("java")) fileContents.add(entry);
 
             }
 

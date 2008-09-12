@@ -1355,11 +1355,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menAddons.addSeparator();
 
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-if(!plg.isLoaded())continue;
+            if (!plg.isLoaded()) continue;
             if (plg.getPlugin().createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPlugin().getHost(), false)) {
 
-                MenuItem m = new MenuItem(MenuItem.CONTAINER,  plg.getPlugin().getHost(), 0);
-                m.setItems( plg.getPlugin().createMenuitems());
+                MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPlugin().getHost(), 0);
+                m.setItems(plg.getPlugin().createMenuitems());
                 mi = SimpleGUI.getJMenuItem(m);
                 if (mi != null) {
                     menAddons.add(mi);
@@ -1376,7 +1376,7 @@ if(!plg.isLoaded())continue;
                             JMenu m = (JMenu) e.getSource();
 
                             m.removeAll();
-                            for (MenuItem menuItem :  plg.getPlugin().createMenuitems()) {
+                            for (MenuItem menuItem : plg.getPlugin().createMenuitems()) {
                                 m.add(SimpleGUI.getJMenuItem(menuItem));
                             }
                         }
@@ -1395,14 +1395,8 @@ if(!plg.isLoaded())continue;
         // Adds the menus form the plugins
         JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins", "Plugins"));
         JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
-        // JMenu helpDecrypt = new JMenu(JDLocale.L("gui.menu.plugins.decrypt",
-        // "Decrypter"));
-        // JMenu helpContainer = new
-        // JMenu(JDLocale.L("gui.menu.plugins.container", "Container"));
 
         menPlugins.add(helpHost);
-        // menPlugins.add(helpDecrypt);
-        // menPlugins.add(helpContainer);
 
         for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
             HostPluginWrapper wrapper = it.next();
@@ -1452,83 +1446,6 @@ if(!plg.isLoaded())continue;
             helpHost.setEnabled(false);
         }
 
-        // for (Iterator<PluginForDecrypt> it =
-        // DecryptPluginWrapper.getDecryptWrapper().iterator(); it.hasNext();) {
-        // final Plugin helpplugin = it.next();
-        // if (helpplugin.createMenuitems() != null) {
-        // MenuItem m = new MenuItem(MenuItem.CONTAINER,
-        // helpplugin.getPluginName(), 0);
-        //
-        // mi = SimpleGUI.getJMenuItem(m);
-        // if (mi != null) {
-        // helpDecrypt.add(mi);
-        //
-        // ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-        // ((JMenu) mi).addMenuListener(new MenuListener() {
-        // public void menuCanceled(MenuEvent e) {
-        // }
-        //
-        // public void menuDeselected(MenuEvent e) {
-        // }
-        //
-        // public void menuSelected(MenuEvent e) {
-        // JMenu m = (JMenu) e.getSource();
-        // m.removeAll();
-        // for (MenuItem menuItem : helpplugin.createMenuitems()) {
-        // m.add(SimpleGUI.getJMenuItem(menuItem));
-        //
-        // }
-        //
-        // }
-        //
-        // });
-        // } else {
-        // helpDecrypt.addSeparator();
-        // }
-        // }
-        // }
-        // if (helpDecrypt.getItemCount() == 0) {
-        // helpDecrypt.setEnabled(false);
-        // }
-
-        // for (Iterator<PluginsC> it =
-        // JDUtilities.getPluginsForContainer().iterator(); it.hasNext();) {
-        // final Plugin helpplugin = it.next();
-        // if (helpplugin.createMenuitems() != null) {
-        // MenuItem m = new MenuItem(MenuItem.CONTAINER,
-        // helpplugin.getPluginName(), 0);
-        //
-        // mi = SimpleGUI.getJMenuItem(m);
-        // if (mi != null) {
-        // helpContainer.add(mi);
-        //
-        // ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-        // ((JMenu) mi).addMenuListener(new MenuListener() {
-        // public void menuCanceled(MenuEvent e) {
-        // }
-        //
-        // public void menuDeselected(MenuEvent e) {
-        // }
-        //
-        // public void menuSelected(MenuEvent e) {
-        // JMenu m = (JMenu) e.getSource();
-        // m.removeAll();
-        // for (MenuItem menuItem : helpplugin.createMenuitems()) {
-        // m.add(SimpleGUI.getJMenuItem(menuItem));
-        //
-        // }
-        //
-        // }
-        //
-        // });
-        // } else {
-        // helpContainer.addSeparator();
-        // }
-        // }
-        // }
-        // if (helpContainer.getItemCount() == 0) {
-        // helpContainer.setEnabled(false);
-        // }
         JMenu menAdd = createMenu(JDLocale.L("gui.menu.add", "Add"), "gui.images.add");
         menAdd.add(SimpleGUI.createMenuItem(actionAddLinks));
         menAdd.add(SimpleGUI.createMenuItem(actionLoadDLC));

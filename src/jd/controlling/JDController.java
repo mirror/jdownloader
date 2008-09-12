@@ -583,7 +583,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
                     removePackage(lastDownloadFinished.getFilePackage());
@@ -1278,7 +1278,7 @@ public class JDController implements ControlListener, UIListener {
             @SuppressWarnings("unchecked")
             public void run() {
 
-                ArrayList<CPluginWrapper> pluginsForContainer =CPluginWrapper.getCWrapper();
+                ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
                 Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
                 CPluginWrapper wrapper;
                 ProgressController progress = new ProgressController("Containerloader", pluginsForContainer.size());
@@ -1293,9 +1293,9 @@ public class JDController implements ControlListener, UIListener {
                     if (wrapper.canHandle(file.getName())) {
                         // es muss jeweils eine neue plugininstanz erzeugt
                         // werden
-                        PluginsC pContainer = (PluginsC)wrapper.getNewPluginInstance();
+                        PluginsC pContainer = (PluginsC) wrapper.getNewPluginInstance();
                         try {
-                           
+
                             progress.setSource(pContainer);
 
                             pContainer.initContainer(file.getAbsolutePath());
@@ -1341,7 +1341,7 @@ public class JDController implements ControlListener, UIListener {
 
     public Vector<DownloadLink> getContainerLinks(final File file) {
 
-        ArrayList<CPluginWrapper> pluginsForContainer =CPluginWrapper.getCWrapper();
+        ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
         Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
         PluginsC pContainer;
         CPluginWrapper wrapper;
@@ -1357,9 +1357,9 @@ public class JDController implements ControlListener, UIListener {
             if (wrapper.canHandle(file.getName())) {
                 // es muss jeweils eine neue plugininstanz erzeugt
                 // werden
-                pContainer=(PluginsC)wrapper.getNewPluginInstance();
+                pContainer = (PluginsC) wrapper.getNewPluginInstance();
                 try {
-                 
+
                     progress.setSource(pContainer);
 
                     pContainer.initContainer(file.getAbsolutePath());
@@ -1582,117 +1582,6 @@ public class JDController implements ControlListener, UIListener {
         }
     }
 
-    // /**
-    // * Führt über die in der cnfig gegebenen daten einen reconnect durch.
-    // *
-    // * @return
-    // */
-    //
-    // public boolean requestReconnect() {
-    // int wait = 0;
-    // while (isReconnecting) {
-    // try {
-    // Thread.sleep(500);
-    // } catch (InterruptedException e) {
-    // }
-    // wait += 500;
-    //
-    // }
-    // if (wait > 0 && lastReconnectSuccess) return true;
-    // boolean ipChangeSuccess = false;
-    // isReconnecting=true;
-    // if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.
-    // PARAM_DISABLE_RECONNECT, false)) {
-    // //logger.finer(
-    // "Reconnect is disabled. Enable the CheckBox in the Toolbar to reactivate
-    // it"
-    // );
-    // if ((System.currentTimeMillis() - lastIPUpdate) > (1000 * 60 * 10)) {
-    // this.lastIPUpdate = System.currentTimeMillis();
-    // String tmp = CURRENT_IP;
-    // CURRENT_IP = JDUtilities.getIPAddress();
-    // if (CURRENT_IP!=null&&!tmp.equals(CURRENT_IP)) {
-    // logger.info("Detected external IP Change.");
-    // ipChangeSuccess = true;
-    // }
-    // JDUtilities.getGUI().displayMiniWarning(JDLocale.L(
-    // "gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"),
-    // JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip",
-    // "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion
-    // wieder aktiviert werden."
-    // ), 60000);
-    //                
-    // }
-    //
-    // if (!ipChangeSuccess) {
-    // isReconnecting=false;
-    // return false;
-    // }
-    // }
-    // if (!ipChangeSuccess) {
-    // if (this.getForbiddenReconnectDownloadNum() > 0) {
-    // logger.finer("Downloads are running. reconnect is disabled");
-    // isReconnecting=false;
-    // return false;
-    // }
-    // Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT,
-    // this);
-    // String type =
-    // JDUtilities.getConfiguration().getStringProperty(Configuration
-    // .PARAM_RECONNECT_TYPE, null);
-    // if (type == null) {
-    // isReconnecting=false;
-    // logger.severe("Reconnect is not configured. Config->Reconnect!");
-    // return false;
-    // }
-    // isReconnecting = true;
-    //
-    // if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern")))
-    // {
-    // ipChangeSuccess = new ExternReconnect().interact(null);
-    // } else if (type.equals(JDLocale.L("modules.reconnect.types.batch",
-    // "Batch"))) {
-    // ipChangeSuccess = new BatchReconnect().interact(null);
-    // } else {
-    // ipChangeSuccess = new HTTPLiveHeader().interact(null);
-    // }
-    //
-    // lastReconnectSuccess = ipChangeSuccess;
-    // logger.info("Reconnect success: " + ipChangeSuccess);
-    // }
-    // if (ipChangeSuccess) {
-    // synchronized (packages) {
-    // Iterator<FilePackage> iterator = packages.iterator();
-    // FilePackage fp = null;
-    // DownloadLink nextDownloadLink;
-    // while (iterator.hasNext()) {
-    // fp = iterator.next();
-    // Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
-    // while (it2.hasNext()) {
-    // nextDownloadLink = it2.next();
-    // if (nextDownloadLink.getRemainingWaittime() > 0) {
-    // nextDownloadLink.setEndOfWaittime(0);
-    // logger.finer("REset GLOBALS: " + ((PluginForHost)
-    // nextDownloadLink.getPlugin()));
-    // ((PluginForHost) nextDownloadLink.getPlugin()).resetPluginGlobals();
-    // nextlinkStatus.addStatus(LinkStatus.TODO);
-    //
-    // }
-    // }
-    // }
-    // }
-    //
-    // }
-    // if (ipChangeSuccess) {
-    // Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT,
-    // this);
-    // }
-    // isReconnecting = false;
-    // this.lastIPUpdate = System.currentTimeMillis();
-    // CURRENT_IP = JDUtilities.getIPAddress();
-    // return ipChangeSuccess;
-    // }
-
     public void removeDownloadLink(DownloadLink link) {
         synchronized (packages) {
             link.setAborted(true);
@@ -1891,10 +1780,10 @@ public class JDController implements ControlListener, UIListener {
      * @param newLinks
      */
     /*
-     * private void abortDeletedLink(Vector<DownloadLink> oldLinks, Vector<DownloadLink>
-     * newLinks) { logger.info("abort " + oldLinks.size() + " - " +
-     * newLinks.size()); if (watchdog == null) return; for (int i = 0; i <
-     * oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
+     * private void abortDeletedLink(Vector<DownloadLink> oldLinks,
+     * Vector<DownloadLink> newLinks) { logger.info("abort " + oldLinks.size() +
+     * " - " + newLinks.size()); if (watchdog == null) return; for (int i = 0; i
+     * < oldLinks.size(); i++) { if (newLinks.indexOf(oldLinks.elementAt(i)) ==
      * -1) { // Link gefunden der entfernt wurde logger.finer("Found link that
      * hast been removed: " + oldLinks.elementAt(i)); //
      * oldLinks.elementAt(i).setAborted(true);

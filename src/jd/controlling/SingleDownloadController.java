@@ -88,15 +88,8 @@ public class SingleDownloadController extends Thread {
      * Bricht den Downloadvorgang ab.
      */
     public SingleDownloadController abortDownload() {
-        // linkStatus.setStatusText(JDLocale.L("controller.status.termination",
-        // "termination..."));
-        // aborted = true;
-
-        // if (currentPlugin != null) currentPlugin.abort();
         aborted = true;
         interrupt();
-        // System.out.println("IS interrupted?: "+this+" -
-        // "+Thread.currentThread().isInterrupted()+" - "+isInterrupted());
 
         return this;
     }
@@ -134,8 +127,7 @@ public class SingleDownloadController extends Thread {
                 return;
 
             }
-         
-            
+
             linkStatus.setStatusText(JDLocale.L("gui.download.create_connection", "Connecting..."));
 
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, currentPlugin);
@@ -393,7 +385,6 @@ public class SingleDownloadController extends Thread {
 
     }
 
-
     private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         logger.severe("Error occurred: No Serverconnection");
@@ -467,7 +458,7 @@ public class SingleDownloadController extends Thread {
         if (milliSeconds <= 0) {
             logger.severe("Es wurde vom PLugin keine Wartezeit übergeben");
             logger.severe("Nutze Default-Wartezeit: 60 mins");
-            logger.severe(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));            
+            logger.severe(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));
             milliSeconds = 3600000l;
         }
         status.setWaitTime(milliSeconds);

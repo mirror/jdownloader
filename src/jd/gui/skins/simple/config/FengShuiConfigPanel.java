@@ -61,8 +61,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import jd.gui.skins.simple.ConfirmCheckBoxDialog;
-
 import jd.HostPluginWrapper;
 import jd.JDInit;
 import jd.config.Configuration;
@@ -72,6 +70,7 @@ import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;

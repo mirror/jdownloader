@@ -28,24 +28,20 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.swing.JTextField;
-
-import jd.gui.skins.simple.config.FengShuiConfigPanel;
-
-import jd.http.HTTPConnection;
-
-import jd.gui.skins.simple.Progressor;
-
-import jd.gui.skins.simple.config.GUIConfigEntry;
-
-import jd.gui.skins.simple.ConfirmCheckBoxDialog;
-import jd.gui.skins.simple.config.ConfigurationDialog;
-import jd.utils.JDLocale;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
+import jd.gui.skins.simple.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.ProgressDialog;
+import jd.gui.skins.simple.Progressor;
+import jd.gui.skins.simple.config.ConfigurationDialog;
+import jd.gui.skins.simple.config.FengShuiConfigPanel;
+import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
+import jd.http.HTTPConnection;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 

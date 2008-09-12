@@ -90,9 +90,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
 
-    // deactived due to coalados order - private ChartAPI_PIE freeTrafficChart =
-    // new ChartAPI_PIE(JDLocale.L("plugins.config.premium.chartapi.caption",
-    // "Free Traffic Chart"), 450, 60, this.getBackground());
     private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
     private ChartRefresh loader;
 
