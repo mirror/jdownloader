@@ -1348,6 +1348,12 @@ public class JDUtilities {
      */
     public static PluginForHost getPluginForHost(String host) {
         for (int i = 0; i < HostPluginWrapper.getHostWrapper().size(); i++) {
+            if (HostPluginWrapper.getHostWrapper().get(i).getHost().equals(host.toLowerCase())) { return (PluginForHost) HostPluginWrapper.getHostWrapper().get(i).getPlugin(); }
+        }
+        return null;
+    }
+    public static PluginForHost getNewPluginForHostInstanz(String host) {
+        for (int i = 0; i < HostPluginWrapper.getHostWrapper().size(); i++) {
             if (HostPluginWrapper.getHostWrapper().get(i).getHost().equals(host.toLowerCase())) { return (PluginForHost) HostPluginWrapper.getHostWrapper().get(i).getNewPluginInstance(); }
         }
         return null;
