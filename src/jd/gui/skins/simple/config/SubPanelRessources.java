@@ -110,7 +110,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return true;
+            return columnIndex == 2 || columnIndex == 5;
         }
 
         @Override
