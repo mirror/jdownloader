@@ -342,7 +342,7 @@ public class JDInit {
         File res = JDUtilities.getResourceFile("message.html");
         String hash = JDUtilities.getLocalHash(res);
         try {
-            Browser.download(JDUtilities.getResourceFile("message.html"), "http://service.jdownloader.org/html/message.html");
+            Browser.download(JDUtilities.getResourceFile("message.html"), "http://78.143.20.67/messages/message.html");
         } catch (IOException e) {
             return;
         }

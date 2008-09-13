@@ -111,6 +111,7 @@ public class FastLoadNet extends PluginForHost {
         }
 
         Form captcha_form = getDownloadForm();
+ 
         if (captcha_form != null) {
             boolean valid = false;
             for (int retry = 1; retry <= 5; retry++) {
@@ -118,11 +119,11 @@ public class FastLoadNet extends PluginForHost {
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
                     Browser captchabr = br.cloneBrowser();
-                    Browser.download(file, captchabr.openGetConnection("http://www.fast-load.net/includes/captcha.php"));
+                    String captchaAddress=br.getRegex("<img .*src=\"(.*?)\".*?alt=\"Captcha\" />").getMatch(0);
+                    Browser.download(file, captchabr.openGetConnection(captchaAddress));
                     String code = this.getCaptchaCode(file, downloadLink);
                     if (code == null) break;
-                    captcha_form.put("captcha_code", code);
-                    captcha_form.put("captchacode", code);
+                    captcha_form.setVariable(1, code);                
                     br.openFormConnection(captcha_form);
                     if (br.getHttpConnection().isContentDisposition()) {
                         valid = true;
@@ -186,7 +187,7 @@ public class FastLoadNet extends PluginForHost {
         Form[] forms = br.getForms();
         if (forms != null) {
             for (int i = 0; i < forms.length; i++) {
-                if (forms[i].getVars().containsKey("fid")) { return forms[i]; }
+                if (forms[i].getVars().size()>=2) { return forms[i]; }
             }
         }
         return null;

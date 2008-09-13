@@ -324,7 +324,7 @@ public class Main {
         updater.setOSFilter(OSFilter);
         String warnHash = updater.getLocalHash(new File("updatewarnings.html"));
 
-        updater.downloadBinary("updatewarnings.html", "http://service.jdownloader.org/update/jd/warning.html");
+        updater.downloadBinary("updatewarnings.html", "http://78.143.20.67/messages/warning.html");
         String hash2 = updater.getLocalHash(new File("updatewarnings.html"));
         if (hash2 != null && !hash2.equals(warnHash)) {
             String str;
