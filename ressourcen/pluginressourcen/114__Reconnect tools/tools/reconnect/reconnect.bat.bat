@@ -1,0 +1,1 @@
+java -jar DLink635Rec.jar  192.168.1.1 PASSWORD

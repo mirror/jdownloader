@@ -1,0 +1,10 @@
+curl http://www.google.de/ -m 2 >>nul
+if %errorlevel% == 0 (
+	goto :trennen
+	)
+
+sleep.exe 3
+
+@echo off
+
+:verbinde

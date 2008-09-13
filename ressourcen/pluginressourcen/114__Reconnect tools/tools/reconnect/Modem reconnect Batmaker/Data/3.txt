@@ -1,0 +1,16 @@
+curl http://www.google.de/ -m 2 >>nul
+if %errorlevel% == 6 (
+	goto :verbinden
+	)
+
+@for /F "tokens=13,*" %%i in ('ipconfig^|find "IP-Ad"') do @set IPNEW=%%j
+@echo (%date% %time%) Reconnect durchgeführt!>>Reconnect-Log.txt
+@echo (%date% %time%) Neue IP: %IPNEW%>>Reconnect-Log.txt
+@if %IP% == %IPNEW% @echo (%date% %time%) IP Unverändert!>>Reconnect-Log.txt 
+@if %IP% == %IPNEW% type Abstand.txt>>Reconnect-Log.txt 
+@if %IP% == %IPNEW% GOTO AGAIN
+
+rem IP des lokalen Rechners
+if %IP%==192.168.1.1 GOTO AGAIN
+@echo (%date% %time%) Reconnect Erfolgreich!>>Reconnect-Log.txt
+:END

@@ -1,0 +1,10 @@
+@echo --------------------------------------------------------->>Reconnect-Log.txt
+:AGAIN
+@for /F "tokens=13,*" %%i in ('ipconfig^|find "IP-Ad"') do @set IP=%%j
+@if %IP% == 10.0.0.140 @echo (%date% %time%) Internetverbindung nicht aktiv!>>Reconnect-Log.txt
+@if %IP% == 10.0.0.140 GOTO trennen
+@echo (%date% %time%) Aktuelle IP: %IP%>>Reconnect-Log.txt
+
+@echo off
+
+:trenne
