@@ -16,7 +16,7 @@ public class PluginPattern {
             if (Complete_Pattern.length() > 0) {
                 Complete_Pattern += "|";
             }
-            Complete_Pattern += "(http://[\\w\\.]*?" + Pattern.replaceAll("\\.", "\\\\.") + "/(\\?id=.+|.+/.+\\.html|category/.+/.+\\.html|download/.+/.+\\.html))";
+            Complete_Pattern += "(http://[\\w\\.]*?" + Pattern.replaceAll("\\.", "\\\\.") + "/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html))";
         }
         logger.finest("UCMS: " + List.length + " Pattern added!");
         return Pattern.compile(Complete_Pattern, Pattern.CASE_INSENSITIVE);
