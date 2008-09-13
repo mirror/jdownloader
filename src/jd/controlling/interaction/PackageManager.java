@@ -143,7 +143,7 @@ public class PackageManager extends Interaction implements Serializable {
         CFGConfig.getConfig("JDU").setProperty("PACKAGEDATA", data);
 
         try {
-            br.getPage("http://service.jdownloader.org/update/packages/list.php?jd="+JDUtilities.getRevision()+"&r="+System.currentTimeMillis());
+            br.getPage("http://service.jdownloader.org/update/packages/list.php?jd=" + JDUtilities.getRevision() + "&r=" + System.currentTimeMillis());
 
             String xml = "<packages>" + br.getMatch("<packages>(.*?)</packages>") + "</packages>";
             // xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
@@ -194,6 +194,8 @@ public class PackageManager extends Interaction implements Serializable {
             }
             PACKAGE_DATA = data;
 
+            CFGConfig.getConfig("JDU").setProperty("PACKAGEDATA", PACKAGE_DATA);
+
             CFGConfig.getConfig("JDU").save();
             return data;
         } catch (Exception e) {
@@ -218,55 +220,67 @@ public class PackageManager extends Interaction implements Serializable {
 
     @SuppressWarnings("unchecked")
     public synchronized void onDownloadedPackage(final DownloadLink downloadLink) {
-        final PackageData dat = (PackageData) downloadLink.getProperty("JDU");
+        PackageData d = (PackageData) downloadLink.getProperty("JDU");
+        final PackageData dat;
         logger.finer("downloaded addon");
-        if (dat == null) {
-            logger.severe("Dat==null");
-            return;
-        }
-        dat.setProperty("LOCALPATH", downloadLink.getFileOutput());
-        dat.setDownloaded(true);
-        ArrayList<PackageData> data = (ArrayList<PackageData>) CFGConfig.getConfig("JDU").getProperty("PACKAGEDATA", new ArrayList<PackageData>());
 
+        ArrayList<PackageData> data = this.getPackageData();
+        boolean found = false;
         for (PackageData pd : data) {
-            if (pd.isDownloaded()) logger.finer(pd.getStringProperty("url") + " << downloaded " + pd.getStringProperty("LOCALPATH"));
-            if (pd == dat) logger.finer("^^^^lastest^^^^^^");
-        }
-        CFGConfig.getConfig("JDU").save();
-        
-        new Thread() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-                JDUtilities.getController().removeDownloadLink(downloadLink);
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-                boolean ch = false;
-                all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
-                    for (DownloadLink dLink : fp.getDownloadLinks()) {
-                        if (dLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                            ch = true;
-                            break all;
+
+            if (pd.equals(d)) {
+                logger.finer("Update found in list");
+                {
+                    dat = pd;
+                    found = true;
+
+                    dat.setProperty("LOCALPATH", downloadLink.getFileOutput());
+                    dat.setDownloaded(true);
+
+                    CFGConfig.getConfig("JDU").save();
+
+                    new Thread() {
+                        @Override
+                        public void run() {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                            JDUtilities.getController().removeDownloadLink(downloadLink);
+                            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
+                            boolean ch = false;
+                            all: for (FilePackage fp : JDUtilities.getController().getPackages()) {
+                                for (DownloadLink dLink : fp.getDownloadLinks()) {
+                                    if (dLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                                        ch = true;
+                                        break all;
+                                    }
+                                }
+                            }
+                            if (!ch) {
+                                String list = "";
+                                for (PackageData pa : getDownloadedPackages()) {
+                                    list += pa.getStringProperty("name") + " v." + pa.getStringProperty("version") + "<br/>";
+                                }
+                                String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list);
+                                boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
+                                if (ret) {
+                                    new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
+                                }
+                            }
+
                         }
-                    }
-                }
-                if (!ch) {
-                    String list = "";
-                    for (PackageData pa : getDownloadedPackages()) {
-                        list += pa.getStringProperty("name") + " v." + pa.getStringProperty("version") + "<br/>";
-                    }
-                    String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list);
-                    boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
-                    if (ret) {
-                        new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
-                    }
+                    }.start();
+
+                    break;
                 }
 
             }
-        }.start();
+        }
+        if (!found) {
+            logger.severe("Update Package " + d + " not found in packagelist");
+        }
 
     }
 

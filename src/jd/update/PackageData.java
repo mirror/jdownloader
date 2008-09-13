@@ -32,6 +32,9 @@ public class PackageData extends Property {
         this.preselected = b;
 
     }
+    public boolean equals(PackageData d){
+        return d.id==this.id;
+    }
 
     public boolean isPreselected() {
         return preselected;
