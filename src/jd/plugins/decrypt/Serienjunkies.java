@@ -164,7 +164,7 @@ public class Serienjunkies extends PluginForDecrypt {
         try {
             linkName = ((title.length() > 10 ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
         } catch (Exception e) {
-            // TODO: handle exception
+          e.printStackTrace();
         }
         if (linkName == null || parameter.matches("http://serienjunkies.org/sa[fv]e/.*") || parameter.matches("http://download.serienjunkies.org/..\\-.*")) {
             size = 100;
@@ -188,8 +188,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
-        String parameter = param.toString();
-
+        String parameter = param.toString().trim();
         br.setCookiesExclusive(true);
         br.clearCookies("serienjunkies.org");
         br.getPage("http://serienjunkies.org/enter/");
@@ -279,7 +278,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 for (String element : titles) {
 
                     String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
-                    String[] sp = element.split("<strong>Größe:</strong>[\\s]*");
+                    String[] sp = element.split("(?is)<strong>Gr(ö|oe)(ß|ss)e:?</strong>:?[\\s]*");
                     int b = 1;
                     for (String element2 : sp) {
 
@@ -350,7 +349,6 @@ public class Serienjunkies extends PluginForDecrypt {
                                             if (canHandle(element4)) {
                                                 String hostn = getHostname(element4);
                                                 if (!mirrors.containsKey(hostn)) {
-                                                    System.out.println(links2);
                                                     mirrors.put(hostn, 1);
                                                     link = null;
                                                     DownloadLink dl = createdl(element4, new String[] { size, element3[0], element3[1], title });
@@ -401,7 +399,6 @@ public class Serienjunkies extends PluginForDecrypt {
             lastHtmlCode = br + "";
             info = getLinkName(parameter);
         }
-
         decryptedLinks.add(createdl(parameter, info));
 
         return decryptedLinks;
@@ -446,17 +443,17 @@ public class Serienjunkies extends PluginForDecrypt {
         for (String element : titles) {
 
             String title = new Regex(element, "([^><]*?)</a>").getMatch(0);
-            String[] sp = element.split("(?is)<strong>Größe:</strong>[\\s]*");
+            String[] sp = element.split("(?is)<strong>Gr(ö|oe)(ß|ss)e:?</strong>:?[\\s]*");
             for (String element2 : sp) {
                 String size = new Regex(element2, "(\\d+)").getMatch(0);
                 String[][] links = new Regex(element2.replaceAll("<a href=\"http://vote.serienjunkies.org.*?</a>", ""), "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
-
+             
                 for (String[] element3 : links) {
                     try {
-
-                        if (element3[1].contains(link)) { return new String[] { size, element3[0], element3[1], title }; }
+                        if (element3[1].toLowerCase().contains(Encoding.UTF8Decode(link).toLowerCase())) { 
+                            return new String[] { size, element3[0], element3[1], title }; }
                     } catch (Exception e) {
-                        // TODO: handle exception
+                        e.printStackTrace();
                     }
 
                 }

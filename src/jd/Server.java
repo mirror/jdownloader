@@ -28,6 +28,8 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.event.UIEvent;
+
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
 import jd.controlling.JDController;
@@ -394,7 +396,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         for (int i = 0; i < linksToAdd.size(); i++) {
             linksToAddString += linksToAdd.get(i) + "\n";
         }
-
+        linksToAddString=linksToAddString.trim();
         if (!linksToAddString.equals("")) {
 
             DistributeData distributeData = new DistributeData(linksToAddString, hideGrabber, startDownload);

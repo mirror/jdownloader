@@ -146,7 +146,7 @@ public class HTMLParser {
      * @return Linkliste aus data extrahiert
      */
     public static String[] getHttpLinks(String data, String url) {
-
+        data=data.trim();
         String[] protocols = new String[] { "h.{2,3}", "https", "ccf", "dlc", "ftp" };
         String protocolPattern = "(";
         for (int i = 0; i < protocols.length; i++) {
@@ -206,6 +206,7 @@ public class HTMLParser {
                         link = basename + link;
                     }
                 }
+                link=link.trim();
                 if (!set.contains(link)) {
                     set.add(link);
                 }
@@ -218,6 +219,7 @@ public class HTMLParser {
             link = "http://" + m.group(0);
             link = Encoding.htmlDecode(link);
             link = link.replaceAll(protocols[0] + "://", "http://");
+            link=link.trim();
             if (!set.contains(link)) {
                 set.add(link);
             }
@@ -228,6 +230,7 @@ public class HTMLParser {
             link = Encoding.htmlDecode(link);
 
             link = link.replaceAll(protocols[0] + "://", "http://");
+            link=link.trim();
             if (!set.contains(link)) {
                 set.add(link);
             }
