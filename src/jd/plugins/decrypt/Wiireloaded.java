@@ -73,7 +73,7 @@ public class Wiireloaded extends PluginForDecrypt {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
             br.getPage(u);
             Form form = br.getForms()[0];
-            form.setVariable(0, "23");
+            form.setVariable(0, "25");
             br.submitForm(form);
             if (br.getRedirectLocation() != null) {
                 DownloadLink link = createDownloadlink(br.getRedirectLocation());
