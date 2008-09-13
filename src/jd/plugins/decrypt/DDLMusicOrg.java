@@ -60,7 +60,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
         } else if (new Regex(parameter, patternLink_Main).matches()) {
             br.getPage(parameter);
 
-            String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>\n.*?</tr>\n.*?<tr>\n.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE|Pattern.DOTALL)).getMatch(0);
             if (password != null && password.contains("kein Passwort")) {
                 password = null;
             }
