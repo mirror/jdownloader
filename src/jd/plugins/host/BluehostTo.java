@@ -16,6 +16,8 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
@@ -24,6 +26,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -36,8 +39,6 @@ public class BluehostTo extends PluginForHost {
     }
 
     static private final String CODER = "JD-Team";
-
- 
 
     private void correctUrl(DownloadLink downloadLink) {
         String url = downloadLink.getDownloadURL();
@@ -57,25 +58,26 @@ public class BluehostTo extends PluginForHost {
         page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
         String[] dat = page.split("\\, ");
 
+        
+        //vorrübergehen abgeschalten, bis api wieder online ist
         if (dat.length != 5) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
+//            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+//            return;
         }
 
-        br.getPage("http://bluehost.to/fetchinfo");
+//        br.getPage("http://bluehost.to/fetchinfo");
         br.getPage(downloadLink.getDownloadURL());
         if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(60 * 60 * 1000);
+
             logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
-            return;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         }
         Form[] forms = br.getForms();
         HTTPConnection con = br.openFormConnection(forms[2]);
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
+
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+
         }
 
         dl = new RAFDownload(this, downloadLink, con);
@@ -96,22 +98,27 @@ public class BluehostTo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+   
             correctUrl(downloadLink);
             String page;
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis
             // happyhour
             Browser br = new Browser();
-            page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
-            String[] dat = page.split("\\, ");
-            if (dat.length != 5) { return false; }
-            downloadLink.setName(dat[0]);
-            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
+            
+            br.getPage(downloadLink.getDownloadURL());
+            downloadLink.setName( br.getRegex("dl_filename2\">(.*?)</div>").getMatch(0));
+            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(0)+" "+br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(1)));
+//            page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
+//            String[] dat = page.split("\\, ");
+//            
+//            if (dat.length != 5) { 
+//               
+//                return false; }
+//            downloadLink.setName(dat[0]);
+//            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
             return true;
-        } catch (Exception e) {
-        }
-        return false;
+  
     }
 
     @Override

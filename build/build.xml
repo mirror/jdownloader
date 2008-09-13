@@ -52,81 +52,81 @@
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
-		<jar jarfile="${dist}/plugins/108_JDTrayLight/plugins/JDLightTray.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/108__JDTrayLight/plugins/JDLightTray.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDLightTray*" />
 				<include name="jd/plugins/optional/TrayIconPopup*" />
 			</fileset>		
 		</jar>	
-		<jar jarfile="${dist}/plugins/107__JDTrayIcon/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/107__JDTrayIcon/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDTrayIcon*" />
 			</fileset>		
 		</jar>	
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/schedule/**" />
 			</fileset>		
 		</jar>
 	
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDWebinterface.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/101__JDwebinterface/plugins/JDWebinterface.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/webinterface/**" />
 			</fileset>
 		
 		</jar>
 	
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDChat.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/100__JDChat/plugins/JDChat.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdchat/**" />
 			</fileset>			
 		</jar>
 	
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/104__JDRemoteControl/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDRemoteControl*" />
 			</fileset>			
 		</jar>
 
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/119__JDNewsfeed/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/Newsfeeds*" />
 			</fileset>		
 		</jar>
 
 	
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/118__JDLowSpeed/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDLowSpeed*" />
 			</fileset>
 		</jar>
 
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/117__JDHttpLiveScripter/plugins/JDHTTPLiveHeaderScripter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/HTTPLiveHeaderScripter*" />
 			</fileset>
 		</jar>
 
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/DLangFileEditor.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/120__JDLangFileEditor/plugins/JDLangFileEditor.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/LangFileEditor*" />
 			</fileset>
 		</jar>
 	
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDInfoFileWriter*" />
 			</fileset>
 		</jar>
 
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/121__JDWatchFolder/plugins/JDFolderWatch.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDFolderWatch*" />
 			</fileset>
 
 		</jar>
 
-		<jar jarfile="${dist}/plugins/105__JDScheduler/plugins/DShutdown.jar" manifest="Manifest.MF">
+		<jar jarfile="${dist}/pluginressourcen/106__JDShutdown/plugins/JDShutdown.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDShutdown*" />
 			</fileset>

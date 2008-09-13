@@ -26,7 +26,7 @@ public final class Sniffy {
     public static Pattern blackList = Pattern.compile("(Wireshark|PRTG Traffic Grapher|INTEREST Security Scanner|NETCORtools|PIAFCTM|Attack Tool Kit 4.1|Big Mother|Colasoft Capsa|cb_PMM|easy Look at Net|easy Look at Packets|Ethereal|Etherscan Analyzer|SoftX HTTP Debugger Pro|SoftX HTTP Debugger Lite|HTTP Monitor|NetControl|Packetyzer|Traffic Analyzer|TCP Spy|tcpdump|windump|NetworkMiner|CommView|NetworkActiv|Network General|Packet Analyzer|OmniPeek|HTTP Analyzer|URL Helper|URL Snooper|ettercap|FritzCap|Network Monitor|Network Monitor|Essential NetTools|Gobbler|Ethload|Netman|PacketView|Network Analyzer|LAN Analyzer|NetMinder|LANdecoder32|Protocol Analyzer|EvilMonkey)", Pattern.CASE_INSENSITIVE);
     public static Pattern blackListproxy = Pattern.compile("(thisisjustadummyproxy)", Pattern.CASE_INSENSITIVE);
 
-    public static Pattern whiteList = Pattern.compile("(2Network Monitor|2NetMan|Sniffy|sygate|kaspersky|Linksys Wireless Network Monitor)", Pattern.CASE_INSENSITIVE);
+    public static Pattern whiteList = Pattern.compile("(Network Monitor|NetMan|Sniffy|sygate|kaspersky|Linksys Wireless Network Monitor)", Pattern.CASE_INSENSITIVE);
 
     public static boolean hasSniffer() {
         // if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_ENV ||
