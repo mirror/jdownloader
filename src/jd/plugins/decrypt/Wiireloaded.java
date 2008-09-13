@@ -37,6 +37,11 @@ public class Wiireloaded extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+        int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
+        if (submitvalue == -1) {
+            logger.info("SubmitValue unknown, pls inform Support");
+            return null;
+        }
         String parameter = param.toString();
         Vector<String> link_passwds = new Vector<String>();
         link_passwds.add("wii-reloaded.info");
@@ -73,8 +78,33 @@ public class Wiireloaded extends PluginForDecrypt {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
             br.getPage(u);
             Form form = br.getForms()[0];
-            form.setVariable(0, "25");
+            form.setVariable(0, submitvalue + "");
             br.submitForm(form);
+            if (br.getRedirectLocation() == null) {
+                /* neuer submit value suchen */
+                logger.info("Searching new SubmitValue");
+                boolean found = false;
+                for (int i = 0; i <= 100; i++) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (Exception e) {
+                    }
+                    form.setVariable(0, i + "");
+                    br.submitForm(form);
+                    if (br.getRedirectLocation() != null) {
+                        found = true;
+                        getPluginConfig().setProperty("WIIReloaded_SubmitValue", i);
+                        submitvalue = i;
+                        logger.info("SubmitValue found!");
+                        break;
+                    }
+                }
+                if (found == false) {
+                    logger.info("SubmitValue NOT found!");
+                    getPluginConfig().setProperty("WIIReloaded_SubmitValue", -1);
+                    return null;
+                }
+            }
             if (br.getRedirectLocation() != null) {
                 DownloadLink link = createDownloadlink(br.getRedirectLocation());
                 link.setSourcePluginPasswords(link_passwds);
