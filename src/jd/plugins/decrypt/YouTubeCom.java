@@ -48,9 +48,6 @@ public class YouTubeCom extends PluginForDecrypt {
 
     public YouTubeCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        br.clearCookies("youtube.com");
     }
 
     private String clean(String s) {
@@ -63,12 +60,15 @@ public class YouTubeCom extends PluginForDecrypt {
 
     private void login(Account account) throws IOException {
         if (account.isEnabled()) {
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            br.clearCookies("youtube.com");
             br.getPage("http://www.youtube.com/signup?next=/index");
             Form login = br.getFormbyName("loginForm");
             login.put("username", account.getUser());
             login.put("password", account.getPass());
             br.submitForm(login);
-            if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) {
+            if (!br.getRegex("<title>YouTube - Mein YouTube: " + account.getUser() + "</title>").matches()) {
                 logger.severe("Account invalid");
                 account.setEnabled(false);
             }
@@ -80,6 +80,9 @@ public class YouTubeCom extends PluginForDecrypt {
         Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
+        br.clearCookies("youtube.com");
         ArrayList<Account> accounts = JDUtilities.getAccountsForHost("youtube.com");
         if (accounts != null && accounts.size() != 0) login(accounts.get(0));
 

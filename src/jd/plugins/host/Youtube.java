@@ -144,6 +144,8 @@ public class Youtube extends PluginForHost {
     }
 
     private void login(Account account) throws IOException {
+        br.setFollowRedirects(true);
+        br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage("http://www.youtube.com/signup?next=/index");
         Form login = br.getFormbyName("loginForm");
@@ -158,7 +160,7 @@ public class Youtube extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         login(account);
-        if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) {
+        if (!br.getRegex("<title>YouTube - Mein YouTube: " + account.getUser() + "</title>").matches()) {
             ai.setValid(false);
             ai.setStatus("Account invalid. Logins wrong?");
             return ai;
