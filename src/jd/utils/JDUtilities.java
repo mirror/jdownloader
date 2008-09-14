@@ -156,8 +156,8 @@ public class JDUtilities {
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
 
-    public static final String[] JD_REVISION = new Regex("$Id$", "JDUtilities\\.java (\\d+?) ").getRow(0);
-    public static final int JD_REVISION_NUM = Integer.parseInt(JD_REVISION[0]);
+    public static final int JD_REVISION_NUM = Integer.parseInt(new Regex("$Id$", "JDUtilities\\.java (\\d+?) ").getMatch(0));
+
     /**
      * Versionsstring der Applikation
      */
@@ -1104,18 +1104,6 @@ public class JDUtilities {
             ret += " " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:") + " " + JDUtilities.getController().getWaitingUpdates().size();
         }
         return ret;
-    }
-
-    /**
-     * parsed den JD_REVISION String auf
-     * 
-     * @return Name des programmierers der die letzten Änderungen durchgeführt
-     *         hat
-     */
-    public static String getLastChangeAuthor() {
-
-        if (JD_REVISION.length == 3) { return JD_REVISION[2]; }
-        return null;
     }
 
     public static Locale getLocale() {

@@ -104,7 +104,7 @@ public class Main {
                 try {
                     Browser.download(file, path);
                 } catch (IOException e) {
-                   return "Downloaderror";
+                    return "Downloaderror";
                 }
 
             } else {
@@ -296,7 +296,7 @@ public class Main {
             try {
 
                 // listen for command line arguments from new jD instances //
-            	final Server server = new Server();
+                final Server server = new Server();
                 server.go();
                 final String[] processArgs = args;
 
@@ -306,17 +306,17 @@ public class Main {
 
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
-                            
-                        	Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
+
+                            Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
-                            
+
                             // post start parameters //
                             try {
-								server.processParameters(processArgs);
-							} catch (RemoteException e) {
-								e.printStackTrace();
-							}
-                            
+                                server.processParameters(processArgs);
+                            } catch (RemoteException e) {
+                                e.printStackTrace();
+                            }
+
                         }
                     });
 
@@ -378,7 +378,7 @@ public class Main {
         init.init();
         init.loadImages();
 
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "lade Konfiguration"));
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
         init.loadConfiguration();
         if (debug) {
@@ -417,11 +417,11 @@ public class Main {
             }
         }
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
-        
+
         init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
-        
+
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
-        
+
         init.initPlugins();
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
 
@@ -451,8 +451,7 @@ public class Main {
 
         logger.info("Revision: " + JDUtilities.getJDTitle());
         logger.info("Runtype: " + JDUtilities.getRunType());
-        logger.info("Last author: " + JDUtilities.getLastChangeAuthor());
-       
+
         try {
             splashScreen.finish();
         } catch (Exception e) {

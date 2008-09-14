@@ -93,7 +93,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             case 0:
                 return configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
             case 1:
-                return pluginsOptional.get(rowIndex).getHost();
+                return pluginsOptional.get(rowIndex).getPlugin().getHost();
             case 2:
                 return pluginsOptional.get(rowIndex).getVersion();
             case 3:
