@@ -1,0 +1,43 @@
+#Based upon the Danish Royalty Free Stock Icons by Jonas Rask
+#Themeified and Modified by Zoot
+gui.images.add = danishRoyalty/add
+gui.images.clipboard = danishRoyalty/clipboard
+gui.images.config.database = danishRoyalty/database
+gui.images.config.edit_redo = danishRoyalty/edit_redo
+gui.images.config.find = danishRoyalty/find
+gui.images.config.home = danishRoyalty/home
+gui.images.config.load = ddanishRoyalty/load
+gui.images.config.network_local = danishRoyalty/network_local
+gui.images.config.ocr = danishRoyalty/ocr
+gui.images.config.package = danishRoyalty/package
+gui.images.config.reboot = default/reboot
+gui.images.config.star = danishRoyalty/star
+gui.images.config.switch = default/switch
+gui.images.config.tip = default/tip
+gui.images.configuration = danishRoyalty/configuration
+gui.images.delete = danishRoyalty/delete
+gui.images.down = danishRoyalty/down
+gui.images.exit = danishRoyalty/exit
+gui.images.find = danishRoyalty/find
+gui.images.go_bottom = danishRoyalty/go_bottom
+gui.images.go_top = danishRoyalty/go_top
+gui.images.jd_logo = jd_logo
+gui.images.led_empty = led_empty
+gui.images.led_green = led_green
+gui.images.load = danishRoyalty/load
+gui.images.next = danishRoyalty/next
+gui.images.reconnect = danishRoyalty/reconnect
+gui.images.reconnect_bad = danishRoyalty/reconnect_bad
+gui.images.reconnect_ok = danishRoyalty/reconnect_ok
+gui.images.save = danishRoyalty/save
+gui.images.stop = danishRoyalty/stop
+gui.images.stop_after = danishRoyalty/stop_after
+gui.images.stop_after_active = danishRoyalty/stop_after_active
+gui.images.terminal = danishRoyalty/terminal
+gui.images.top = danishRoyalty/top
+gui.images.update_manager = danishRoyalty/update_manager
+gui.images.help = danishRoyalty/help
+
+#1.1
+gui.images.package_opened = danishRoyalty/package_opened
+gui.images.package_closed = danishRoyalty/package_closed
