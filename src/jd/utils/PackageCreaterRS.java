@@ -41,7 +41,7 @@ public class PackageCreaterRS {
         frame.pack();
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 
-        File srcDir = new File("G:/jd_jdu");
+        File srcDir = new File("G:/pluginressourcen");
 
         String[] packages = srcDir.list(new FilenameFilter() {
             public boolean accept(File dir, String name) {
@@ -188,6 +188,7 @@ public class PackageCreaterRS {
         sb.append("</packages>");
 
         System.out.println(list + "");
+        JDUtilities.writeLocalFile(new File(listphp.getParentFile(),"list2.php"), list+"");
 
     }
 }

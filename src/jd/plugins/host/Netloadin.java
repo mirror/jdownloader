@@ -74,8 +74,8 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            
-             ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
         br.setDebug(false);
@@ -224,7 +224,8 @@ public class Netloadin extends PluginForHost {
         Browser br = new Browser();
 
         br.postPage("http://" + getHost() + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=");
-        if (br.getRedirectLocation() == null) {
+
+        if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) {
             ai.setValid(false);
             return ai;
         }
@@ -251,8 +252,8 @@ public class Netloadin extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-            
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+
             return;
         }
 
@@ -263,6 +264,11 @@ public class Netloadin extends PluginForHost {
         br.setAuth("netload.in", account.getUser(), account.getPass());
         br.openGetConnection(downloadLink.getDownloadURL());
         HTTPConnection con;
+        String user = br.getCookie("http://netload.in", "cookie_user");
+        if (user == null) {
+            logger.severe("Account Infos invalid");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
         if (br.getRedirectLocation() == null) {
             br.followConnection();
             checkPassword(downloadLink, linkStatus);
@@ -337,8 +343,7 @@ public class Netloadin extends PluginForHost {
             br.clearCookies(getHost());
 
             br.setConnectTimeout(15000);
-            
-      
+
             String id = Netloadin.getID(downloadLink.getDownloadURL());
             String page = br.getPage("http://netload.in/share/fileinfos2.php?file_id=" + id);
             for (int i = 0; i < 3 && page == null; i++) {

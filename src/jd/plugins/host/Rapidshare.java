@@ -228,11 +228,17 @@ public class Rapidshare extends PluginForHost {
                 if (!isRSCom) return ret;
                 PostRequest r = new PostRequest("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi");
                 r.setPostVariable("urls", post);
+                post = null;
                 r.setPostVariable("toolmode", "1");
                 String page = r.load();
-
+                r = null;
                 String[] lines = Regex.getLines(page);
-                if (lines.length != i - c) { return null; }
+                page = null;
+                if (lines.length != i - c) {
+                    lines = null;
+                    System.gc();
+                    return null;
+                }
 
                 for (String line : lines) {
 
@@ -254,16 +260,21 @@ public class Rapidshare extends PluginForHost {
                     c++;
 
                 }
-                if (c >= urls.length) { return ret; }
+                if (c >= urls.length) {
+                    lines = null;
+                    System.gc();
+                    return ret;
+                }
                 Thread.sleep(400);
             }
 
         } catch (MalformedURLException e) {
 
+            System.gc();
             e.printStackTrace();
             return null;
         } catch (Exception e) {
-
+            System.gc();
             e.printStackTrace();
             return null;
         }
@@ -272,7 +283,7 @@ public class Rapidshare extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-             ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
         if (downloadLink.getLinkType() != DownloadLink.LINKTYPE_NORMAL) {
@@ -442,7 +453,7 @@ public class Rapidshare extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-             ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
 

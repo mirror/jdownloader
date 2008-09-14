@@ -35,6 +35,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -285,6 +286,11 @@ public class FileFactory extends PluginForHost {
         login.put("password", account.getPass());
         br.submitForm(login);
         br.setFollowRedirects(true);
+       String error= br.getRegex("<div class=\"box error\">.*?<p>(.*?)<").getMatch(0);
+       if(error!=null){
+    
+           throw new PluginException(LinkStatus.ERROR_PREMIUM,error,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+       }
         HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getHeaderField("Content-Disposition") == null) {
             br.followConnection();

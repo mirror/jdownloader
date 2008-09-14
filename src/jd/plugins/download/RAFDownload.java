@@ -136,9 +136,14 @@ public class RAFDownload extends DownloadInterface {
         long fileSize = getFileSize();
         int chunks = downloadLink.getChunksProgress().length;
         long part = fileSize / chunks;
-
+        long dif;
+        long last=-1;
         for (int i = 0; i < chunks; i++) {
-            loaded += downloadLink.getChunksProgress()[i] - i * part;
+            dif=downloadLink.getChunksProgress()[i] - i * part;
+            if(dif<0)return false;
+            if(downloadLink.getChunksProgress()[i]<=last)return false;
+            last=downloadLink.getChunksProgress()[i];
+            loaded += dif;
         }
         if (chunks > 0) {
 

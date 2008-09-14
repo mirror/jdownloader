@@ -21,7 +21,9 @@ import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.CookieHandler;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -31,6 +33,8 @@ import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+
+import sun.security.pkcs.PKCS7;
 
 import jd.config.CFGConfig;
 import jd.config.Configuration;
@@ -159,7 +163,7 @@ public class JDInit {
     private void afterConfigIsLoaded() {
 
     }
-
+    
     public void checkUpdate() {
         File updater = JDUtilities.getResourceFile("webupdater.jar");
         if (updater.exists()) {
