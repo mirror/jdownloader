@@ -314,7 +314,8 @@ public class DistributeData extends ControlBroadcaster {
                     PluginForDecrypt plg = (PluginForDecrypt)pDecrypt.getNewPluginInstance();
 
 
-                    CryptedLink[] decryptableLinks = plg.getDecryptableLinks(pDecrypt.isAcceptOnlyURIs() ? data : orgData);
+                    CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
+    
                     if (plg.isAcceptOnlyURIs()) {
 
                         data =plg.cutMatches(data);
