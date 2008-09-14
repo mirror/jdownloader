@@ -64,7 +64,7 @@ public class getMacadress {
     {
         ProcessBuilder pb = new ProcessBuilder(new String[] {"ping", ipAddress});
         pb.start();
-        String out = JDUtilities.runCommand("arp", new String[] {"-a", ipAddress}, null,10);
+        String out = JDUtilities.runCommand("arp", new String[] {ipAddress}, null,10);
         pb.directory();
         return out;
      }
