@@ -63,7 +63,6 @@ import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
 import jd.HostPluginWrapper;
-import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
@@ -151,8 +150,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             save();
             dispose();
         } else if (e.getSource() == premium) {
-            final JDInit init = new JDInit(null);
-            init.initPlugins();
             JPopupMenu popup = new JPopupMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
             for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
                 HostPluginWrapper wrapper = it.next();
