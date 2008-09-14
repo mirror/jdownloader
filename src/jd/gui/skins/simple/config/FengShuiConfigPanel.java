@@ -594,7 +594,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
             public void run() {
                 String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-                if (config.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).endsWith(lh)) {
+                if (config.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).equals(lh)) {
                     if (routerIp == null || routerIp.matches("[\\s]*")) {
                         // System.out.println(routerIp);
                         ip.setText(new GetRouterInfo(prog).getAdress());
