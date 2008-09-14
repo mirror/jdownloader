@@ -33,6 +33,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
+import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
@@ -56,6 +57,7 @@ public class PackageInfo extends JDialog {
     private FilePackage fp;
     private int i = 0;
     private JPanel panel;
+    private JSlider slider = new JSlider();
     private DecimalFormat c = new DecimalFormat("0.00");
     private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
 
@@ -78,13 +80,19 @@ public class PackageInfo extends JDialog {
         panel.setBackground(Color.WHITE);
         panel.setForeground(Color.WHITE);
         this.add(new JScrollPane(panel));
-
+        slider.setMaximum(5000);
+        slider.setMinimum(500);
+        slider.setValue(1000);
+        slider.setOpaque(false);
+        slider.setBorder(BorderFactory.createEmptyBorder());
+        addEntry("Aktualisierungsrate", slider);
+        
         new Thread() {
             @Override
             public void run() {
                 do {
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(slider.getValue());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -107,6 +115,7 @@ public class PackageInfo extends JDialog {
             JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
             JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+            
             key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
             value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
             i++;
@@ -119,9 +128,13 @@ public class PackageInfo extends JDialog {
                 tmpJBar.setString(((JProgressBar) value).getString());
                 tmpJBar.setEnabled(((JProgressBar) value).isEnabled());
                 tmpJBar.setBackground((((JProgressBar) value).getBackground()));
-
                 JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + string);
-                tmpJLbl.setForeground(tmpJBar.getBackground());
+                if (tmpJBar.getBackground().getRed() != 150 &&  tmpJBar.getBackground().getGreen() != 150 && tmpJBar.getBackground().getBlue() != 150) {
+                    tmpJLbl.setForeground(new Color(50, new Float(200f / tmpJBar.getMaximum() * tmpJBar.getValue()).intValue(), 50));
+                    tmpJBar.setForeground(tmpJLbl.getForeground());
+                } else {
+                    tmpJLbl.setForeground(tmpJBar.getBackground());
+                }
             } else if (hmObjects.get(string).getClass() == JTextField.class) {
                 JTextField tmp = (JTextField) hmObjects.get(string);
                 tmp.setText(((JTextField) value).getText());
