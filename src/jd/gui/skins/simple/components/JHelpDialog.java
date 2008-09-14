@@ -36,7 +36,6 @@ import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 
-import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

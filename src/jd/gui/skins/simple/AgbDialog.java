@@ -29,7 +29,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

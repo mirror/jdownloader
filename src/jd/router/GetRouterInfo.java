@@ -36,9 +36,9 @@ import javax.swing.JTextField;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
-import jd.gui.skins.simple.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
+import jd.gui.skins.simple.components.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.gui.skins.simple.config.GUIConfigEntry;

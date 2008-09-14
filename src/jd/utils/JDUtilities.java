@@ -136,7 +136,7 @@ public class JDUtilities {
 
     private static HashMap<String, PluginsC> containerPlugins = new HashMap<String, PluginsC>();
 
-    /** 
+    /**
      * Der DownloadController
      */
     private static JDController controller = null;
@@ -1100,11 +1100,8 @@ public class JDUtilities {
 
     public static String getJDTitle() {
         String ret = JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision();
-        // + ") - "
-        // + JDUtilities.getConfiguration().getIntegerProperty(
-        // Configuration.CID, -1);
         if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
-            ret += "  " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
+            ret += " " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR: ") + JDUtilities.getController().getWaitingUpdates().size();
         }
         return ret;
     }
@@ -1355,6 +1352,7 @@ public class JDUtilities {
         }
         return null;
     }
+
     public static PluginForHost getNewPluginForHostInstanz(String host) {
         for (int i = 0; i < HostPluginWrapper.getHostWrapper().size(); i++) {
             if (HostPluginWrapper.getHostWrapper().get(i).getHost().equals(host.toLowerCase())) { return (PluginForHost) HostPluginWrapper.getHostWrapper().get(i).getNewPluginInstance(); }
@@ -2020,30 +2018,27 @@ public class JDUtilities {
         }
         return dbconnect;
     }
-    
+
     /**
      * The format describing an http date.
      */
     private static SimpleDateFormat dateFormat;
     static {
-	dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z",
-		Locale.US);
-	dateFormat.setTimeZone(new SimpleTimeZone(0, "GMT"));
-	dateFormat.setLenient(true);
+        dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US);
+        dateFormat.setTimeZone(new SimpleTimeZone(0, "GMT"));
+        dateFormat.setLenient(true);
     }
-    
-    
+
     /**
      * Returns a string containing an HTTP-formatted date.
-     *
-     * @param	time
-     *		The date to format (current time in msec).
-     *
-     * @return	HTTP date string representing the given time.
+     * 
+     * @param time
+     *            The date to format (current time in msec).
+     * 
+     * @return HTTP date string representing the given time.
      */
-    public static String formatTime(long time)
-    {
-	return dateFormat.format(new Date(time)).substring(0, 29);
+    public static String formatTime(long time) {
+        return dateFormat.format(new Date(time)).substring(0, 29);
     }
 
 }

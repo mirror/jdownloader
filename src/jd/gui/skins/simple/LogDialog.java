@@ -44,7 +44,7 @@ import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
-import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Encoding;
 import jd.plugins.LogFormatter;

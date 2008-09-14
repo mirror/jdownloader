@@ -46,7 +46,7 @@ import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

@@ -52,7 +52,6 @@ public class RsLayerCom extends PluginForDecrypt {
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return true;
-
         }
         return false;
     }
@@ -99,7 +98,7 @@ public class RsLayerCom extends PluginForDecrypt {
                     return null;
                 }
             }
-            String layerLinks[][] = br.getRegex(linkPattern).getMatches();
+            String layerLinks[] = br.getRegex(linkPattern).getColumn(0);
             if (layerLinks.length == 0) {
                 if (!add_container(parameter, ".dlc", decryptedLinks)) {
                     if (!add_container(parameter, ".rsdf", decryptedLinks)) {
@@ -108,10 +107,9 @@ public class RsLayerCom extends PluginForDecrypt {
                 }
             } else {
                 progress.setRange(layerLinks.length);
-                for (String[] element : layerLinks) {
-                    String layerLink = "http://rs-layer.com/link-" + element[0] + ".html";
-                    String page = br.getPage(layerLink);
-                    String link = new Regex(page, "<iframe src=\"(.*?)\" ", Pattern.CASE_INSENSITIVE).getMatch(0);
+                for (String element : layerLinks) {
+                    br.getPage("http://rs-layer.com/link-" + element + ".html");
+                    String link = br.getRegex("<iframe src=\"(.*?)\" ").getMatch(0);
                     if (link != null) decryptedLinks.add(createDownloadlink(link));
                     progress.increase(1);
                 }

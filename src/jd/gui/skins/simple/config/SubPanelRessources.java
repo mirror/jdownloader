@@ -42,7 +42,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.UIInterface;
-import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;

@@ -53,7 +53,7 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;

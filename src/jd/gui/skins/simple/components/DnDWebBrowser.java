@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.gui.skins.simple.Link;
+package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -64,7 +64,7 @@ public class DnDWebBrowser extends JDialog {
         public void dragOver(DropTargetDragEvent event) {
         }
 
-        @SuppressWarnings( { "unchecked", "deprecation" })
+        @SuppressWarnings("unchecked")
         public void drop(DropTargetDropEvent event) {
             Transferable transferable = event.getTransferable();
             if (transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
@@ -76,7 +76,7 @@ public class DnDWebBrowser extends JDialog {
 
                     while (iterator.hasNext()) {
                         File file = (File) iterator.next();
-                        browserPane.goToURL(file.toURL());
+                        browserPane.goToURL(file.toURI().toURL());
                     }
                     event.dropComplete(true);
                 } catch (UnsupportedFlavorException flavorException) {
@@ -96,16 +96,9 @@ public class DnDWebBrowser extends JDialog {
 
     }
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     private WebBrowserPane browserPane = new WebBrowserPane();
-
-    /**
-     * 
-     */
 
     private WebToolBar toolBar;
 
@@ -134,18 +127,7 @@ public class DnDWebBrowser extends JDialog {
 
 class WebBrowserPane extends JEditorPane {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
-
-    /**
-     * 
-     */
-
-    /**
-     * 
-     */
 
     private List<URL> history = new ArrayList<URL>();
 
@@ -195,9 +177,6 @@ class WebBrowserPane extends JEditorPane {
 
 class WebToolBar extends JToolBar implements HyperlinkListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     private JButton backButton;
@@ -205,10 +184,6 @@ class WebToolBar extends JToolBar implements HyperlinkListener {
     private JButton forwardButton;
 
     public JTextField urlTextField;
-
-    /**
-     * 
-     */
 
     private WebBrowserPane webBrowserPane;
 

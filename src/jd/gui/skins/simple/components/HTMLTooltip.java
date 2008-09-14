@@ -31,7 +31,6 @@ import javax.swing.JWindow;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.gui.skins.simple.Link.JLinkButton;
 import jd.utils.JDTheme;
 
 public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkListener {

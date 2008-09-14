@@ -54,8 +54,8 @@ import javax.swing.text.PlainDocument;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.gui.skins.simple.Link.JLinkButton;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.panels.PremiumPanel;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;

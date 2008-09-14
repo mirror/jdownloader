@@ -42,7 +42,7 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.Link.JLinkButton;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.plugins.PluginOptional;
 import jd.utils.GetExplorer;
 import jd.utils.JDLocale;
