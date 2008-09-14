@@ -18,8 +18,6 @@ package jd;
 import java.io.File;
 import java.io.FileFilter;
 
-//import jd.utils.JDLocale;
-
 /**
  * Mit dieser Klasse kann man sowohl bestimmte Dateien aus einem Verzeichnis
  * auflisten als auch einen FileFilter in einem JDFileChooser nutzen
@@ -35,8 +33,6 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
     /**
      * Beschreibung vom FileFilter
      */
-    // private String description = JDLocale.L("gui.filefilter.desc",
-    // "Containerfiles");
     private String description = "Containerfiles";
 
     /**

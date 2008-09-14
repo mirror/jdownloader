@@ -741,7 +741,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         String[][] matches;
         for (File file : getSourceFiles(sourceFolder)) {
 
-            matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*\"?(.*?)\"?[\\s]*[,\\)]")).getMatches();
+            matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]")).getMatches();
 
             for (String[] match : matches) {
 
@@ -751,7 +751,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 if (match[0].indexOf("\"") == -1) {
 
                     match[0] = Encoding.UTF8Decode(match[0]);
-                    match[1] = Encoding.UTF8Decode(match[1]);
+                    match[1] = Encoding.UTF8Decode(match[1].substring(1, match[1].length() - 1));
                     keys.add(match[0]);
                     sourceEntries.add(new String[] { match[0], match[1] });
 

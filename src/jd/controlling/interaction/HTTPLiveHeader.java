@@ -338,7 +338,7 @@ public class HTTPLiveHeader extends Interaction {
         retries++;
         logger.info("Starting  #" + retries);
         ProgressController progress = new ProgressController(JDLocale.L("interaction.liveHeader.progress.0_title", "HTTPLiveHeader Reconnect"), 10);
-        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry", "HTTPLiveHeader #" + retries));
+        progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry", "HTTPLiveHeader #") + retries);
         if (user != null || pass != null) {
             Authenticator.setDefault(new InternalAuthenticator(user, pass));
         }

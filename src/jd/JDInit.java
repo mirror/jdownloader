@@ -156,10 +156,6 @@ public class JDInit {
         this.splashScreen = splashScreen;
     }
 
-    private void afterConfigIsLoaded() {
-
-    }
-    
     public void checkUpdate() {
         File updater = JDUtilities.getResourceFile("webupdater.jar");
         if (updater.exists()) {
@@ -462,7 +458,7 @@ public class JDInit {
                 }
                 if (!home.canWrite()) {
                     logger.info("INSTALL abgebrochen");
-                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to " + home));
+                    JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
                     JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
                     System.exit(1);
                 }
@@ -477,7 +473,6 @@ public class JDInit {
             }
         }
 
-        afterConfigIsLoaded();
         return JDUtilities.getConfiguration();
     }
 
