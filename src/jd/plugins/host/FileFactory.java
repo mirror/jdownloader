@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -28,16 +27,13 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
-import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
@@ -59,15 +55,7 @@ public class FileFactory extends PluginForHost {
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
-    private static final String WAIT_TIME = "wait ([0-9]+) (minutes|seconds)";
-    private String actionString;
-
-    private String captchaAddress;
-    private File captchaFile;
-    private String postTarget;
-    private RequestInfo requestInfo;
-
-    private int wait;
+    private static final String WAIT_TIME = "wait ([0-9]+ [minutes|seconds])";
 
     public FileFactory(PluginWrapper wrapper) {
         super(wrapper);
@@ -77,130 +65,62 @@ public class FileFactory extends PluginForHost {
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         if (parameter.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(parameter);
-           
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(parameter);
             return;
         }
+
+        br.setFollowRedirects(true);
         LinkStatus linkStatus = parameter.getLinkStatus();
-        parameter.setUrlDownload(parameter.getDownloadURL().replaceAll(".com//", ".com/"));
-        parameter.setUrlDownload(parameter.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
+        br.getPage(parameter.getDownloadURL());
 
-        DownloadLink downloadLink = null;
-
-        downloadLink = parameter;
-        requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()), null, null, true);
-
-        if (requestInfo.containsHTML(NOT_AVAILABLE)) {
+        if (br.containsHTML(NOT_AVAILABLE)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
-
-        } else if (requestInfo.containsHTML(SERVER_DOWN)) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-
-        } else if (requestInfo.containsHTML(NO_SLOT)) {
+        } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
 
-        String newURL = "http://" + requestInfo.getConnection().getURL().getHost() + new Regex(requestInfo.getHtmlCode(), baseLink).getMatch(0);
+        br.getPage(Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0)));
 
-        if (newURL != null) {
+        br.setCookie(br.getURL(), "viewad11", "yes");
+        br.getPage(Encoding.htmlDecode("http://www.filefactory.com/" + br.getRegex(frameForCaptcha).getMatch(0)));
 
-            newURL = newURL.replaceAll("' \\+ '", "");
-            requestInfo = HTTP.getRequest((new URL(newURL)), null, downloadLink.getName(), true);
-            actionString = "http://www.filefactory.com/" + new Regex(requestInfo.getHtmlCode(), frameForCaptcha).getMatch(0);
-            actionString = actionString.replaceAll("&amp;", "&");
-            requestInfo = HTTP.getRequest((new URL(actionString)), "viewad11=yes", newURL, true);
-            // captcha Adresse finden
-            captchaAddress = "http://www.filefactory.com" + new Regex(requestInfo.getHtmlCode(), patternForCaptcha).getMatch(0);
-            captchaAddress = captchaAddress.replaceAll("&amp;", "&");
-            // post daten lesen
-            postTarget = HTMLParser.getFormInputHidden(requestInfo.getHtmlCode());
+        File captchaFile = this.getLocalCaptchaFile(this);
+        Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
+        String captchaCode = this.getCaptchaCode(captchaFile, parameter);
 
-        }
-
-        captchaFile = this.getLocalCaptchaFile(this);
-
-        Browser.download(captchaFile, captchaAddress);
-         
-        String captchaCode = this.getCaptchaCode(captchaFile, downloadLink);
-
-        captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_." + JDUtilities.getFileExtension(captchaFile)));
-        try {
-            requestInfo = HTTP.postRequest((new URL(actionString)), requestInfo.getCookie(), actionString, null, postTarget + "&captcha=" + captchaCode, true);
-
-            if (requestInfo.getHtmlCode().contains(CAPTCHA_WRONG)) {
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-                return;
-            }
-
-            postTarget = new Regex(requestInfo.getHtmlCode(), patternForDownloadlink).getMatch(0);
-            postTarget = postTarget.replaceAll("&amp;", "&");
-
-        } catch (Exception e) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            e.printStackTrace();
-            return;
-
-        }
-
-        requestInfo = HTTP.postRequestWithoutHtmlCode((new URL(postTarget)), requestInfo.getCookie(), actionString, "", false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
-
-        // downloadlimit reached
-        if (urlConnection.getHeaderField("Location") != null) {
-            requestInfo = HTTP.getRequest(new URL(urlConnection.getHeaderField("Location")), null, null, true);
-
-            if (requestInfo.getHtmlCode().contains(DOWNLOAD_LIMIT)) {
-
-                logger.severe("Download limit reached as free user");
-                String waitTime = new Regex(requestInfo.getHtmlCode(), WAIT_TIME).getMatch(0);
-                String unit = new Regex(requestInfo.getHtmlCode(), WAIT_TIME).getMatch(1);
-                wait = 0;
-
-                if (unit.equals("minutes")) {
-                    wait = Integer.parseInt(waitTime);
-                    logger.severe("wait" + " " + String.valueOf(wait + 1) + " minutes");
-                    wait = wait * 60000 + 60000;
-                } else if (unit.equals("seconds")) {
-                    wait = Integer.parseInt(waitTime);
-                    logger.severe("wait" + " " + String.valueOf(wait + 5) + " seconds");
-                    wait = wait * 1000 + 5000;
-                }
-
-                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                linkStatus.setValue(wait);
-                logger.severe("Traffic Limit reached....");
-
-                return;
-
-            } else {
-
-                requestInfo = HTTP.postRequestWithoutHtmlCode((new URL(postTarget)), requestInfo.getCookie(), actionString, "", false);
-                urlConnection = requestInfo.getConnection();
-
-            }
-
-        }
-
-        if (requestInfo.getConnection().getHeaderField("Location") != null) {
-            requestInfo = HTTP.getRequest(new URL(requestInfo.getConnection().getHeaderField("Location")));
-
-            if (requestInfo.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
-
-                logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) an retry afterwards");
-                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                linkStatus.setValue(60000l);
-                return;
-            }
-            logger.severe(requestInfo.getHtmlCode());
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+        if (captchaCode == null) {
+            /* abbruch geklickt */
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+
+        Form captchaForm = br.getForm(0);
+        captchaForm.put("captcha", captchaCode);
+        br.submitForm(captchaForm);
+
+        if (br.containsHTML(CAPTCHA_WRONG)) {
+            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+            return;
+        }
+
+        br.postPage(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), "");
+
+        if (br.containsHTML(DOWNLOAD_LIMIT)) {
+            logger.info("Traffic Limit for Free User reached");
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            linkStatus.setValue(Regex.getMilliSeconds(br.getRegex(WAIT_TIME).getMatch(0)));
+            return;
+        } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
+            logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            linkStatus.setValue(60000l);
+            return;
+        }
+
+        dl = new RAFDownload(this, parameter, br.getHttpConnection());
         dl.startDownload();
 
     }
@@ -263,8 +183,8 @@ public class FileFactory extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
-            ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-            
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+
             return;
         }
         String user = account.getUser();
@@ -286,11 +206,10 @@ public class FileFactory extends PluginForHost {
         login.put("password", account.getPass());
         br.submitForm(login);
         br.setFollowRedirects(true);
-       String error= br.getRegex("<div class=\"box error\">.*?<p>(.*?)<").getMatch(0);
-       if(error!=null){
-    
-           throw new PluginException(LinkStatus.ERROR_PREMIUM,error,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-       }
+        String error = br.getRegex("<div class=\"box error\">.*?<p>(.*?)<").getMatch(0);
+        if (error != null) {
+
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getHeaderField("Content-Disposition") == null) {
             br.followConnection();
@@ -375,23 +294,10 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void reset() {
-
-        captchaAddress = null;
-        postTarget = null;
-        actionString = null;
-        requestInfo = null;
-        wait = 0;
     }
 
     @Override
     public void resetPluginGlobals() {
-
-        captchaAddress = null;
-        postTarget = null;
-        actionString = null;
-        requestInfo = null;
-        wait = 0;
-
     }
 
 }
