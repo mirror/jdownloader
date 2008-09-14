@@ -22,6 +22,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -119,6 +120,7 @@ import jd.unrar.zip.UnZip;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
+import jd.utils.JDTwitter;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -187,6 +189,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
             lblMessage.setIcon(statusIcon);
+            
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
             chbPremium.addChangeListener(this);
@@ -281,6 +284,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         public void setText(String text) {
+        	/*
+        	if((text == JDLocale.L("sys.message.welcome", "Welcome to JDownloader"))||(text == null))
+        	{
+        	//TODO: Schrift bei Twitter-Meldung fett setzen & wieder zurück
+        	 *Code unten sollte funktionieren, tut es aber nicht :-/
+            	lblMessage.setFont(new Font(lblMessage.getFont().getFontName(),Font.PLAIN, lblMessage.getFont().getSize()));
+        	}
+        	else
+        	{
+            	lblMessage.setFont(new Font(lblMessage.getFont().getFontName(), Font.BOLD, lblMessage.getFont().getSize()));
+        	}
+        	*/
+        	
             lblMessage.setText((text == null) ? JDLocale.L("sys.message.welcome", "Welcome to JDownloader") : text);
         }
 
@@ -734,6 +750,25 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
+        
+        new Thread("twitter") {
+            public void run() {
+                while (true) {
+                    EventQueue.invokeLater(new Runnable() {
+                        public void run() {
+                          //System.out.println("trigger");
+                          SimpleGUI.CURRENTGUI.statusBar.setText(JDTwitter.RefreshTwitterMessage());
+                        }
+                    });
+                    try {
+                        Thread.sleep(300000);
+                        //Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }.start();
 
     }
 
@@ -1071,8 +1106,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Deaktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction zu ende. rest status");
-
-                        statusBar.setText(null);
+                        new Thread("twitterinit") {
+                            public void run() {
+                                    EventQueue.invokeLater(new Runnable() {
+                                        public void run() {
+                                          statusBar.setText(JDTwitter.RefreshTwitterMessage());
+                                        }
+                                    });
+                                }
+                        }.start();
                         frame.setTitle(JDUtilities.getJDTitle());
                     }
                     break;

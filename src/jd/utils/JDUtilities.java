@@ -57,14 +57,17 @@ import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.SimpleTimeZone;
 import java.util.Vector;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
@@ -2016,6 +2019,31 @@ public class JDUtilities {
             dbconnect = new DatabaseConnector();
         }
         return dbconnect;
+    }
+    
+    /**
+     * The format describing an http date.
+     */
+    private static SimpleDateFormat dateFormat;
+    static {
+	dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z",
+		Locale.US);
+	dateFormat.setTimeZone(new SimpleTimeZone(0, "GMT"));
+	dateFormat.setLenient(true);
+    }
+    
+    
+    /**
+     * Returns a string containing an HTTP-formatted date.
+     *
+     * @param	time
+     *		The date to format (current time in msec).
+     *
+     * @return	HTTP date string representing the given time.
+     */
+    public static String formatTime(long time)
+    {
+	return dateFormat.format(new Date(time)).substring(0, 29);
     }
 
 }
