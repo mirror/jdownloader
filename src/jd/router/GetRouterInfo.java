@@ -16,8 +16,11 @@
 
 package jd.router;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.Authenticator;
 import java.net.InetAddress;
 import java.net.PasswordAuthentication;
@@ -150,8 +153,27 @@ public class GetRouterInfo {
 
     public String getAdress() {
         if (adress != null && !adress.matches("\\s*")) { return adress; }
-        setProgressText("try to find the router ip");
+        try {
+            
 
+        setProgressText("try to find the router ip");
+        String _255 = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+        String exIP = "(?:" + _255 + "\\.){3}" + _255;
+        Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}("+exIP+").*");
+        Process proc;
+           proc = Runtime.getRuntime().exec("netstat -rn");
+           InputStream inputstream = proc.getInputStream();
+           InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
+           BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
+           String line;
+           while ((line = bufferedreader.readLine()) != null) {
+              Matcher m = pat.matcher(line);
+              if(m.matches()){
+                 return  m.group(1);
+              }
+           }
+        } catch (Exception e) {
+        }
         if (new File("/sbin/route").exists()) {
             try {
                 String routingt = JDUtilities.runCommand("/sbin/route", null, "/", 2).replaceFirst(".*\n.*", "");
