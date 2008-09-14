@@ -24,12 +24,13 @@ import jd.utils.JDUtilities;
 public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public static final int LOAD_ON_INIT = 1 << 1;
+    public static final int ACCEPTONLYSURLSFALSE = 1 << 2;
     private Pattern pattern;
     private String host;
     private String className;
     protected Logger logger = JDUtilities.getLogger();
     protected Plugin loadedPlugin = null;
-    private boolean acceptOnlyURIs;
+    private boolean acceptOnlyURIs = true;
     @SuppressWarnings("unused")
     private String pluginName;
     private static URLClassLoader CL;
@@ -43,7 +44,8 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         this.host = host.toLowerCase();
         this.className = className;
         this.pluginName = name.toLowerCase();
-        if ((flags & PluginWrapper.LOAD_ON_INIT) > 0) this.getPlugin();
+        if ((flags & PluginWrapper.LOAD_ON_INIT) != 0) this.getPlugin();
+        if((flags & ACCEPTONLYSURLSFALSE)!=0)this.acceptOnlyURIs=false;
         WRAPPER.put(className, this);
 
     }
