@@ -31,10 +31,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
+import jd.config.SubConfiguration;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
@@ -45,9 +49,11 @@ import jd.utils.JDUtilities;
 /**
  * Dies Klasse ziegt informationen zu einem DownloadLink an
  */
-public class DownloadInfo extends JFrame {
+public class DownloadInfo extends JFrame implements ChangeListener {
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
+    private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private static final String PROPERTY_REFRESHRATE = "PROPERTY_LINK_REFRESHRATE";
     /**
      * 
      */
@@ -55,6 +61,8 @@ public class DownloadInfo extends JFrame {
     private DownloadLink downloadLink;
     private int i = 0;
     private JPanel panel;
+    private JSlider slider;
+    private JLabel lblSlider;
     private DecimalFormat c = new DecimalFormat("0.00");
 
     /**
@@ -65,7 +73,7 @@ public class DownloadInfo extends JFrame {
         super();
         downloadLink = dLink;
         setLayout(new BorderLayout(2, 2));
-        setTitle(JDLocale.L("gui.linkinfo.title", "Link Information: ") + downloadLink.getName());
+        setTitle(JDLocale.L("gui.linkinfo.title", "Link Information:") + " " + downloadLink.getName());
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
         setResizable(false);
         setAlwaysOnTop(true);
@@ -77,12 +85,26 @@ public class DownloadInfo extends JFrame {
         panel.setForeground(Color.WHITE);
         this.add(new JScrollPane(panel));
 
+        slider = new JSlider();
+        slider.setMaximum(5000);
+        slider.setMinimum(500);
+        slider.setValue(subConfig.getIntegerProperty(PROPERTY_REFRESHRATE, 1000));
+        slider.setOpaque(false);
+        slider.setBorder(BorderFactory.createEmptyBorder());
+        slider.addChangeListener(this);
+        lblSlider = new JLabel(JDLocale.L("gui.linkinfo.rate", "Refreshrate") + " [" + slider.getValue() + "ms]");
+        JPanel topPanel = new JPanel(new BorderLayout(2, 2));
+        topPanel.setBorder(new EmptyBorder(0, n, 0, n));
+        topPanel.add(lblSlider, BorderLayout.LINE_START);
+        topPanel.add(slider, BorderLayout.LINE_END);
+        this.add(topPanel, BorderLayout.PAGE_START);
+
         new Thread() {
             @Override
             public void run() {
                 do {
                     try {
-                        Thread.sleep(5000);
+                        Thread.sleep(slider.getValue());
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -177,6 +199,14 @@ public class DownloadInfo extends JFrame {
                 p.setString(c.format(chunk.getPercent() / 100.0) + " % @ " + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s");
             }
 
+        }
+    }
+
+    public void stateChanged(ChangeEvent e) {
+        if (e.getSource() == slider) {
+            lblSlider.setText(JDLocale.L("gui.linkinfo.rate", "Refreshrate") + " [" + slider.getValue() + "ms]");
+            subConfig.setProperty(PROPERTY_REFRESHRATE, slider.getValue());
+            subConfig.save();
         }
     }
 }

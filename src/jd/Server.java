@@ -28,8 +28,6 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.event.UIEvent;
-
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
 import jd.controlling.JDController;

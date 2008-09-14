@@ -218,7 +218,6 @@ public class PackageManager extends Interaction implements Serializable {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized void onDownloadedPackage(final DownloadLink downloadLink) {
         PackageData d = (PackageData) downloadLink.getProperty("JDU");
         final PackageData dat;

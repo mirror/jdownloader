@@ -37,7 +37,10 @@ import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
+import jd.config.SubConfiguration;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.utils.JDLocale;
@@ -47,9 +50,11 @@ import jd.utils.JDUtilities;
 /**
  * Dies Klasse ziegt informationen zu einem FilePackage an
  */
-public class PackageInfo extends JDialog {
+public class PackageInfo extends JDialog implements ChangeListener {
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
+    private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private static final String PROPERTY_REFRESHRATE = "PROPERTY_PACKAGE_REFRESHRATE";
     /**
      * 
      */
@@ -57,7 +62,8 @@ public class PackageInfo extends JDialog {
     private FilePackage fp;
     private int i = 0;
     private JPanel panel;
-    private JSlider slider = new JSlider();
+    private JSlider slider;
+    private JLabel lblSlider;
     private DecimalFormat c = new DecimalFormat("0.00");
     private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
 
@@ -69,7 +75,7 @@ public class PackageInfo extends JDialog {
         super();
         this.fp = fp;
         setLayout(new BorderLayout(2, 2));
-        setTitle(JDLocale.L("gui.packageinfo.title", "Package Information: ") + fp.getName());
+        setTitle(JDLocale.L("gui.packageinfo.title", "Package Information:") + " " + fp.getName());
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.package_opened")));
         setResizable(true);
         setAlwaysOnTop(true);
@@ -80,13 +86,21 @@ public class PackageInfo extends JDialog {
         panel.setBackground(Color.WHITE);
         panel.setForeground(Color.WHITE);
         this.add(new JScrollPane(panel));
+
+        slider = new JSlider();
         slider.setMaximum(5000);
         slider.setMinimum(500);
-        slider.setValue(1000);
+        slider.setValue(subConfig.getIntegerProperty(PROPERTY_REFRESHRATE, 1000));
         slider.setOpaque(false);
         slider.setBorder(BorderFactory.createEmptyBorder());
-        addEntry("Aktualisierungsrate", slider);
-        
+        slider.addChangeListener(this);
+        lblSlider = new JLabel(JDLocale.L("gui.packageinfo.rate", "Refreshrate") + " [" + slider.getValue() + "ms]");
+        JPanel topPanel = new JPanel(new BorderLayout(2, 2));
+        topPanel.setBorder(new EmptyBorder(0, n, 0, n));
+        topPanel.add(lblSlider, BorderLayout.LINE_START);
+        topPanel.add(slider, BorderLayout.LINE_END);
+        this.add(topPanel, BorderLayout.PAGE_START);
+
         new Thread() {
             @Override
             public void run() {
@@ -115,7 +129,7 @@ public class PackageInfo extends JDialog {
             JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
             JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-            
+
             key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
             value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
             i++;
@@ -129,7 +143,7 @@ public class PackageInfo extends JDialog {
                 tmpJBar.setEnabled(((JProgressBar) value).isEnabled());
                 tmpJBar.setBackground((((JProgressBar) value).getBackground()));
                 JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + string);
-                if (tmpJBar.getBackground().getRed() != 150 &&  tmpJBar.getBackground().getGreen() != 150 && tmpJBar.getBackground().getBlue() != 150) {
+                if (tmpJBar.getBackground().getRed() != 150 && tmpJBar.getBackground().getGreen() != 150 && tmpJBar.getBackground().getBlue() != 150) {
                     tmpJLbl.setForeground(new Color(50, new Float(200f / tmpJBar.getMaximum() * tmpJBar.getValue()).intValue(), 50));
                     tmpJBar.setForeground(tmpJLbl.getForeground());
                 } else {
@@ -199,6 +213,14 @@ public class PackageInfo extends JDialog {
                 p.setBackground(new Color(0, 0, 0));
             }
             addEntry(++i + ". " + link.getName(), p);
+        }
+    }
+
+    public void stateChanged(ChangeEvent e) {
+        if (e.getSource() == slider) {
+            lblSlider.setText(JDLocale.L("gui.packageinfo.rate", "Refreshrate") + " [" + slider.getValue() + "ms]");
+            subConfig.setProperty(PROPERTY_REFRESHRATE, slider.getValue());
+            subConfig.save();
         }
     }
 }

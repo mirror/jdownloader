@@ -66,7 +66,7 @@ public class Wordpress extends PluginForDecrypt {
         }
 
         /* Passwort suchen */
-        String password = br.getRegex(Pattern.compile("<.*?>Passwort[<|:].*?[>|:](.*?)[\\|<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String password = br.getRegex(Pattern.compile("<.*?>Passwort[<|:].*?[>|:](.*?)[\\||<]", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (password != null) link_passwds.add(password.trim());
 
         /* Alle Parts suchen */
