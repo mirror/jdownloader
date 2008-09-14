@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -25,6 +26,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -43,6 +45,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -86,9 +89,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private ArrayList<Account> accounts;
     private JLabel[] usernamesLabels;
     private JLabel[] passwordsLabels;
-    private JLabel[] statiLabels;
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
+    private JButton[] delete;
 
     private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
     private ChartRefresh loader;
@@ -133,9 +136,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             usernames[i].setEnabled(account.isEnabled());
             stati[i].setEnabled(account.isEnabled());
             checkBtns[i].setEnabled(account.isEnabled());
-            passwordsLabels[i].setEnabled(enables[i].isSelected());
-            usernamesLabels[i].setEnabled(enables[i].isSelected());
-            statiLabels[i].setEnabled(enables[i].isSelected());
+            passwordsLabels[i].setEnabled(account.isEnabled());
+            usernamesLabels[i].setEnabled(account.isEnabled());
             i++;
         }
         createDataset();
@@ -161,14 +163,14 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         passwords = new JPasswordField[accountNum];
         usernamesLabels = new JLabel[accountNum];
         passwordsLabels = new JLabel[accountNum];
-        statiLabels = new JLabel[accountNum];
         stati = new JTextField[accountNum];
         checkBtns = new JButton[accountNum];
+        delete = new JButton[accountNum];
         ArrayList<Account> list = new ArrayList<Account>();
 
-        for (int i = 1; i <= accountNum; i++) {
+        for (int i = 0; i < accountNum; i++) {
             list.add(new Account("", ""));
-            final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i));
+            final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i + 1));
             active.setForeground(INACTIVE);
             active.addItemListener(new ItemListener() {
                 public void itemStateChanged(ItemEvent e) {
@@ -180,29 +182,27 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 }
             });
             active.setSelected(true);
-            enables[i - 1] = active;
-            enables[i - 1].addChangeListener(this);
+            enables[i] = active;
+            enables[i].addChangeListener(this);
             add(active, "alignleft");
 
-            JButton bt = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status"));
-            checkBtns[i - 1] = bt;
-            add(bt, "w pref:pref:pref, split 2");
-            bt.addActionListener(this);
-            add(new JSeparator(), "w 30:push, growx, pushx");
+            add(checkBtns[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
+            checkBtns[i].addActionListener(this);
+
+            add(delete[i] = new JButton(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")).getScaledInstance(-1, 16, Image.SCALE_SMOOTH))));
+            delete[i].addActionListener(this);
 
             add(new JSeparator(), "w 30:push, growx, pushx");
-            statiLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.accountstatus", "Last Account Status"));
-            JTextField status = new JTextField("");
-            stati[i - 1] = status;
-            status.setEditable(false);
-            add(status, "spanx, pushx, growx");
+            add(stati[i] = new JTextField(""), "spanx, pushx, growx");
+            stati[i].setEditable(false);
 
-            add(usernamesLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
-            add(usernames[i - 1] = new JTextField(""));
-            usernames[i - 1].addFocusListener(this);
-            add(passwordsLabels[i - 1] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-            add(passwords[i - 1] = new JPasswordField(""), "span, gapbottom 10:10:push");
-            passwords[i - 1].addFocusListener(this);
+            add(usernamesLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
+            add(usernames[i] = new JTextField(""));
+            usernames[i].addFocusListener(this);
+
+            add(passwordsLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
+            add(passwords[i] = new JPasswordField(""), "span, gapbottom 10:10:push");
+            passwords[i].addFocusListener(this);
 
             for (JCheckBox e : enables) {
                 if (e != null) e.setSelected(false);
@@ -221,7 +221,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 checkBtns[i].setEnabled(enables[i].isSelected());
                 passwordsLabels[i].setEnabled(enables[i].isSelected());
                 usernamesLabels[i].setEnabled(enables[i].isSelected());
-                statiLabels[i].setEnabled(enables[i].isSelected());
             }
         }
     }
@@ -232,6 +231,12 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         for (int i = 0; i < accountNum; i++) {
             if (e.getSource() == this.checkBtns[i]) {
                 JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), acc.get(i));
+            } else if (e.getSource() == this.delete[i]) {
+                acc.remove(i);
+                acc.add(i, new Account("", ""));
+                usernames[i].setText("");
+                passwords[i].setText("");
+                enables[i].setSelected(false);
             }
         }
     }
