@@ -232,8 +232,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             if (e.getSource() == this.checkBtns[i]) {
                 JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), acc.get(i));
             } else if (e.getSource() == this.delete[i]) {
-                acc.remove(i);
-                acc.add(i, new Account("", ""));
                 usernames[i].setText("");
                 passwords[i].setText("");
                 enables[i].setSelected(false);
