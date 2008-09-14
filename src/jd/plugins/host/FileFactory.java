@@ -68,7 +68,7 @@ public class FileFactory extends PluginForHost {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(parameter);
             return;
         }
-
+        br.setDebug(true);
         br.setFollowRedirects(true);
         LinkStatus linkStatus = parameter.getLinkStatus();
         br.getPage(parameter.getDownloadURL());
@@ -96,7 +96,7 @@ public class FileFactory extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
-
+        br = br;
         Form captchaForm = br.getForm(0);
         captchaForm.put("captcha", captchaCode);
         br.submitForm(captchaForm);
@@ -105,23 +105,29 @@ public class FileFactory extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
+        // Match die verbindung auf, Alle header werden ausgetauscht, aber keine
+        // Daten geladen
+        br.openPostConnection(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), "");
+        // Prüft ob content disposition header da sind
+        if (br.getHttpConnection().isContentDisposition()) {
+            dl = new RAFDownload(this, parameter, br.getHttpConnection());
+            dl.startDownload();
+        } else {
+            // Falls nicht wird die html seite geladen
+            br.followConnection();
+            if (br.containsHTML(DOWNLOAD_LIMIT)) {
+                logger.info("Traffic Limit for Free User reached");
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                linkStatus.setValue(Regex.getMilliSeconds(br.getRegex(WAIT_TIME).getMatch(0)));
+                return;
+            } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
+                logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
+                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+                linkStatus.setValue(60000l);
+                return;
+            }
 
-        br.postPage(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), "");
-
-        if (br.containsHTML(DOWNLOAD_LIMIT)) {
-            logger.info("Traffic Limit for Free User reached");
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(Regex.getMilliSeconds(br.getRegex(WAIT_TIME).getMatch(0)));
-            return;
-        } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
-            logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(60000l);
-            return;
         }
-
-        dl = new RAFDownload(this, parameter, br.getHttpConnection());
-        dl.startDownload();
 
     }
 
