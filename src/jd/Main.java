@@ -296,8 +296,9 @@ public class Main {
             try {
 
                 // listen for command line arguments from new jD instances //
-                Server server = new Server();
+            	final Server server = new Server();
                 server.go();
+                final String[] processArgs = args;
 
                 if (!stop) {
 
@@ -305,13 +306,19 @@ public class Main {
 
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
-                            Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
+                            
+                        	Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
+                            
+                            // post start parameters //
+                            try {
+								server.processParameters(processArgs);
+							} catch (RemoteException e) {
+								e.printStackTrace();
+							}
+                            
                         }
                     });
-
-                    // post start parameters //
-                    server.processParameters(args);
 
                 }
 
