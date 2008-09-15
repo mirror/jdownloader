@@ -40,12 +40,12 @@ public class SharebankWs extends PluginForDecrypt {
 
         progress.setRange(links.length);
         for (String element : links) {
-            /* Get the security ids and save them */
-            String[] securityIds = new Regex(br.getPage("http://sharebank.ws/?go=" + element), Pattern.compile("go=(.*?)&q1\\=(.*?)\\&q2\\=(.*?)>")).getRow(0);
+            /* Get the security id and save them */
+            String securityId = new Regex(br.getPage("http://sharebank.ws/?go=" + element), Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
 
-            /* Follow the link with the security ids and filter out the hoster link */
-            String finalLink = new Regex(br.getPage("http://sharebank.ws/?go=" + securityIds[0] + "&q1=" + securityIds[1] + "&q2=" + securityIds[2]), Pattern.compile("<iframe src='(.*)' marginheight=")).getMatch(0);
-            
+            /* Follow the link with the securityId and filter out the finalLink */
+            String finalLink = new Regex(br.getPage("http://sharebank.ws/?" + securityId), Pattern.compile("<iframe src='(.*)' marginheight=")).getMatch(0);
+
             decryptedLinks.add(createDownloadlink(finalLink));
             progress.increase(1);
         }
