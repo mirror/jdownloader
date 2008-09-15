@@ -386,7 +386,7 @@ public class JDInit {
         for (OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!plg.isLoaded()) continue;
             try {
-                if (JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPlugin().getHost(), false) && !plg.getPlugin().initAddon()) {
+                if (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false) && !plg.getPlugin().initAddon()) {
                     logger.severe("Error loading Optional Plugin: FALSE");
                 }
             } catch (Throwable e) {
@@ -725,8 +725,7 @@ public class JDInit {
         new HostPluginWrapper("Zippyshare.com", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html");
         new HostPluginWrapper("zshare.net", "zShare", "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*");
         new HostPluginWrapper("gigasize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*");
-        
-        
+
     }
 
     public void loadPluginOptional() {

@@ -314,7 +314,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 interrupt();
             }
 
-            if (trayIconPopup != null && trayIconPopup.isVisible()) return;
+            if (trayIconPopup != null && trayIconPopup.isShowing()) return;
 
             toolLabel.setText(createHTMLInfoString());
             toolParent.pack();

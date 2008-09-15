@@ -143,6 +143,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             } else {
                 pluginsOptional.get(rowIndex).getPlugin().onExit();
             }
+            ((SimpleGUI) JDUtilities.getGUI()).createOptionalPluginsMenuEntries();
         } else if (e.getSource() == openPluginDir) {
             try {
                 new GetExplorer().openExplorer(JDUtilities.getResourceFile("plugins"));

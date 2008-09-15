@@ -653,6 +653,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private JMenuBar menuBar;
 
+    private JMenu menAddons;
+
     private JMenuItem menViewLog = null;
 
     /**
@@ -765,7 +767,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
-        
+
     }
 
     /**
@@ -1380,55 +1382,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public void initMenuBar() {
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file", "File"));
         JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
-        JMenu menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
+        menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
 
         menViewLog = SimpleGUI.createMenuItem(actionLog);
         // add menus to parents
 
         // Adds the menus form the Addons
-
         JMenuItem mi;
-        menAddons.add(SimpleGUI.createMenuItem(actioninstallJDU));
-        menAddons.addSeparator();
-
-        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (!plg.isLoaded()) continue;
-            if (plg.getPlugin().createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPlugin().getHost(), false)) {
-
-                MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPlugin().getHost(), 0);
-                m.setItems(plg.getPlugin().createMenuitems());
-                mi = SimpleGUI.getJMenuItem(m);
-                if (mi != null) {
-                    menAddons.add(mi);
-
-                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                    ((JMenu) mi).addMenuListener(new MenuListener() {
-                        public void menuCanceled(MenuEvent e) {
-                        }
-
-                        public void menuDeselected(MenuEvent e) {
-                        }
-
-                        public void menuSelected(MenuEvent e) {
-                            JMenu m = (JMenu) e.getSource();
-
-                            m.removeAll();
-                            for (MenuItem menuItem : plg.getPlugin().createMenuitems()) {
-                                m.add(SimpleGUI.getJMenuItem(menuItem));
-                            }
-                        }
-
-                    });
-                } else {
-                    menAddons.addSeparator();
-                }
-            }
-        }
-
-        if (menAddons.getItem(menAddons.getItemCount() - 1) == null) {
-            menAddons.remove(menAddons.getItemCount() - 1);
-        }
+        createOptionalPluginsMenuEntries();
 
         // Adds the menus form the plugins
         JMenu menHosts = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
@@ -1536,6 +1498,51 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         frame.setJMenuBar(menuBar);
 
+    }
+
+    public void createOptionalPluginsMenuEntries() {
+        Component temp = (menAddons.getComponentCount() != 0) ? menAddons.getComponent(0) : SimpleGUI.createMenuItem(actioninstallJDU);
+        menAddons.removeAll();
+        menAddons.add(temp);
+        menAddons.addSeparator();
+
+        for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (!plg.isLoaded()) continue;
+            if (plg.getPlugin().createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false)) {
+
+                MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPlugin().getHost(), 0);
+                m.setItems(plg.getPlugin().createMenuitems());
+                JMenuItem mi = SimpleGUI.getJMenuItem(m);
+                if (mi != null) {
+                    menAddons.add(mi);
+
+                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                    ((JMenu) mi).addMenuListener(new MenuListener() {
+                        public void menuCanceled(MenuEvent e) {
+                        }
+
+                        public void menuDeselected(MenuEvent e) {
+                        }
+
+                        public void menuSelected(MenuEvent e) {
+                            JMenu m = (JMenu) e.getSource();
+
+                            m.removeAll();
+                            for (MenuItem menuItem : plg.getPlugin().createMenuitems()) {
+                                m.add(SimpleGUI.getJMenuItem(menuItem));
+                            }
+                        }
+
+                    });
+                } else {
+                    menAddons.addSeparator();
+                }
+            }
+        }
+
+        if (menAddons.getItem(menAddons.getItemCount() - 1) == null) {
+            menAddons.remove(menAddons.getItemCount() - 1);
+        }
     }
 
     /**
