@@ -88,6 +88,7 @@ jd.plugins.decrypt.Secured
 jd.plugins.decrypt.SeCurNet
 jd.plugins.decrypt.Serienjunkies
 jd.plugins.decrypt.Sexuriacom
+jd.plugins.decrypt.SharebankWs
 jd.plugins.decrypt.SharebeeCom
 jd.plugins.decrypt.ShareOnAll
 jd.plugins.decrypt.ShareProtect
