@@ -1696,7 +1696,7 @@ public class JDUtilities {
      * @param waitForReturn
      * @return null oder die rückgabe des befehls falls waitforreturn == true
      *         ist
-     */
+     */ 
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
         Executer exec = new Executer(command);
         exec.addParameters(parameter);
