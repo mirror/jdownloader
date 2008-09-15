@@ -394,6 +394,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
             chbExtract.setSelected(true);
+            //Vorrübergehend noch ohne Funktion
+            chbExtract.setEnabled(false);
             chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
             brwSaveTo.setEditable(true);
