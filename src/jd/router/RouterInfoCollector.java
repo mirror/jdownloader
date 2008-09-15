@@ -5,26 +5,12 @@ import java.io.Serializable;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.cybergarage.upnp.Device;
-import org.cybergarage.upnp.DeviceList;
-import org.cybergarage.upnp.ServiceList;
-import org.cybergarage.upnp.UPnP;
-
-import com.sun.org.apache.bcel.internal.generic.GOTO;
-
-import jd.http.HTTPConnection;
 
 import jd.JDInit;
-
-import jd.controlling.interaction.HTTPLiveHeader;
-
-import jd.http.Browser;
-
-import jd.utils.JDLocale;
-
 import jd.config.Configuration;
+import jd.controlling.interaction.HTTPLiveHeader;
+import jd.http.Browser;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class RouterInfoCollector implements Serializable {
