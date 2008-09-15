@@ -17,6 +17,8 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
@@ -29,6 +31,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.config.CFGConfig;
@@ -163,6 +166,25 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
         table = new JTable(tableModel);
         table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+
+            private static final long serialVersionUID = 1L;
+
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                if (isSelected) {
+                    c.setBackground(Color.LIGHT_GRAY);
+                } else if (column == 0 && packageData.get(row).getInstalledVersion() != 0 && packageData.get(row).getInstalledVersion() <= Integer.valueOf(packageData.get(row).getStringProperty("version"))) {
+                    c.setBackground(Color.GREEN);
+                } else {
+                    c.setBackground(Color.WHITE);
+                }
+
+                return c;
+            }
+
+        });
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); ++c) {

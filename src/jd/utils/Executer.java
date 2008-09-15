@@ -24,9 +24,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import jd.plugins.optional.jdunrar.UnrarListener;
-import jd.plugins.optional.jdunrar.UnrarWrapper;
-
 public class Executer extends Thread {
     class StreamObserver extends Thread {
 
@@ -47,7 +44,7 @@ public class Executer extends Thread {
                 while ((line = readLine(reader)) != null) {
 
                     sb.append(line + "\r\n");
-                    if(line.length()>0)fireEvent(line);
+                    if (line.length() > 0) fireEvent(line);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -55,15 +52,15 @@ public class Executer extends Thread {
         }
 
         private String readLine(BufferedReader reader2) throws IOException {
-            StringBuffer s = new StringBuffer();   
+            StringBuffer s = new StringBuffer();
             char[] buffer = new char[1];
             for (;;) {
-                if(reader2.read(buffer)<0)return s.length()==0?null:s.toString();
-                if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n' ) {
-                   if(s.length() > 0)
-                    return s.toString();
-                }else{
-                s.append(buffer);}
+                if (reader2.read(buffer) < 0) return s.length() == 0 ? null : s.toString();
+                if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
+                    if (s.length() > 0) return s.toString();
+                } else {
+                    s.append(buffer);
+                }
             }
 
         }
