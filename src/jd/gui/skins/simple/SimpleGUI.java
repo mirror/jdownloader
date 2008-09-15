@@ -36,6 +36,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -768,7 +769,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
-
+        
     }
 
     /**

@@ -22,6 +22,7 @@ import java.awt.Component;
 import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.datatransfer.DataFlavor;
@@ -48,6 +49,7 @@ import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -276,6 +278,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private JMenuItem mContextNewPackage;
 
+        private JCheckBox chbExtract;
+
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
             _this = this;
@@ -388,17 +392,21 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             txtPassword = new JTextField();
             txtComment = new JTextField();
 
+            chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
+            chbExtract.setSelected(true);
+            chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
             brwSaveTo.setEditable(true);
             brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
 
             txtName.setPreferredSize(new Dimension(450, 20));
-            txtPassword.setPreferredSize(new Dimension(450, 20));
+//            txtPassword.setPreferredSize(new Dimension(450, 20));
+            // chbExtract.setPreferredSize(new Dimension(200, 20));
             txtComment.setPreferredSize(new Dimension(450, 20));
             brwSaveTo.setPreferredSize(new Dimension(450, 20));
             txtName.setMinimumSize(new Dimension(250, 20));
-            txtPassword.setMinimumSize(new Dimension(250, 20));
+//            txtPassword.setMinimumSize(new Dimension(250, 20));
             txtComment.setMinimumSize(new Dimension(250, 20));
             brwSaveTo.setMinimumSize(new Dimension(250, 20));
 
@@ -468,9 +476,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             JPanel north = new JPanel(new BorderLayout(n, n));
             JPanel east = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
             JPanel center = new JPanel(new GridLayout(0, 1, n / 2, n / 2));
+            JPanel extractPW = new JPanel(new GridBagLayout());
             north.add(east, BorderLayout.WEST);
             north.add(center, BorderLayout.CENTER);
-
+            // extractPW.add(this.txtPassword);
+            JDUtilities.addToGridBag(extractPW, txtPassword, 0, 0, 1, 1, 100, 100, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+            JDUtilities.addToGridBag(extractPW, chbExtract, 1, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
+            
+        
             east.add(lblName);
             east.add(lblSaveto);
             east.add(lblPassword);
@@ -478,7 +491,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             center.add(txtName);
             center.add(brwSaveTo);
-            center.add(txtPassword);
+            center.add(extractPW);
+//            JDUtilities.addToGridBag(center, extractPW, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+            
             center.add(txtComment);
 
             setLayout(new BorderLayout(n, n));
@@ -549,7 +564,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         public String getPackageName() {
             return txtName.getText().trim();
         }
-
+public boolean isExtract(){
+    return this.chbExtract.isSelected();
+}
         public String getPassword() {
             return txtPassword.getText();
         }
@@ -1257,7 +1274,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setProperty("color", c);
         fp.setName(tab.getPackageName());
         fp.setComment(tab.getComment());
-        fp.setPassword(tab.getPassword());        
+        fp.setPassword(tab.getPassword());
+        fp.setExtractAfterDownload(tab.isExtract());
         UnrarPassword.addToPasswordlist(tab.getPassword());
         UnrarPassword.pushPasswordToTop(tab.getPassword());
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
@@ -1410,7 +1428,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         ArrayList<HostPluginWrapper> pfh = JDUtilities.getPluginsForHost();
 
         for (int b = 0; b < pfh.size(); b++) {
-           HostPluginWrapper plugin = pfh.get(b);
+            HostPluginWrapper plugin = pfh.get(b);
 
             for (int c = 0; c < mirrors.size(); c++) {
                 DownloadLink mirror = mirrors.get(c);

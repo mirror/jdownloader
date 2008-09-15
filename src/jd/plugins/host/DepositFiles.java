@@ -70,13 +70,15 @@ public class DepositFiles extends PluginForHost {
 
         DownloadLink downloadLink = parameter;
         Browser br = new Browser();
+        
+        
+        br.setDebug(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
 
-        String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
-        link = link.replace("com/ru/files/", "com/de/files/");
-        link = link.replace("com/files/", "com/de/files/");
-        downloadLink.setUrlDownload(link);
+        String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
+       
+    br.setCookie("http://depositfiles.com", "lang_current", "de");
 
         String finalURL = link;
 
@@ -210,10 +212,9 @@ public class DepositFiles extends PluginForHost {
 
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-
-        String link = downloadLink.getDownloadURL().replace("com/en/files/", "com/de/files/");
-        link = link.replace("com/ru/files/", "com/de/files/");
-        link = link.replace("com/files/", "com/de/files/");
+        br.setCookie("http://depositfiles.com", "lang_current", "de");
+        String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
+   
         downloadLink.setUrlDownload(link);
 
         br.getPage(link);
@@ -305,12 +306,12 @@ public class DepositFiles extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
-        String link = downloadLink.getDownloadURL().replace("/en/files/", "/de/files/");
-        link = link.replace("/ru/files/", "/de/files/");
-
+        String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
+        
+        
         br.setFollowRedirects(true);
         br.getPage(link);
-
+        br.setCookie("http://depositfiles.com", "lang_current", "de");
         br.setFollowRedirects(false);
 
         // Datei geloescht?

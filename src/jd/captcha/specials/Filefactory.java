@@ -152,13 +152,13 @@ public class Filefactory {
             }
             if (akt.getArea() > 2200) {
 
-            } else if (akt.getArea() < 130) {
+            } else if (akt.getArea() < 230) {
 
             } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
 
             } else if (akt.getArea() / akt.getSize() > 10) {
 
-            } else if (akt.getHeight() < 15 || akt.getWidth() < 5) {
+            } else if (akt.getHeight() < 20 || akt.getWidth() < 5) {
 
             } else {
                 ret.add(let);
@@ -192,6 +192,7 @@ public class Filefactory {
         //
         // }
         // ret=ret.subList(0,4).toArray(a);
+        if(ret.size()<4)return null;
         return ret.toArray(new Letter[] {});
 
     }
@@ -229,6 +230,7 @@ public class Filefactory {
         List<Letter> list;
         try {
             list = r.subList(0, 4);
+            list=r;
         } catch (Exception e) {
             return null;
         }
@@ -242,6 +244,7 @@ public class Filefactory {
             }
         });
 
+        if(list.size()<4)return null;
         return list.toArray(new Letter[] {});
     }
 

@@ -47,6 +47,7 @@ public class Wiireloaded extends PluginForDecrypt {
         link_passwds.add("wii-reloaded.info");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
+        br.setDebug(true);
         progress.setRange(3);
         br.getPage(parameter);
         String page = br.getPage(parameter);
@@ -73,6 +74,7 @@ public class Wiireloaded extends PluginForDecrypt {
             }
         }
         String[][] ids = new Regex(page, "onClick=\"popup_dl\\((.*?)\\)\"").getMatches();
+        logger.finer("ids found"+ids.length);
         progress.addToMax(ids.length);
         for (String[] element : ids) {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];

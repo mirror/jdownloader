@@ -59,7 +59,7 @@ public class PackageCreaterRS {
 
         StringBuffer sb = new StringBuffer();
         sb.append("<packages>");
-        String uid = "jdown3";
+        String uid = "jdown4";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
         JDFileChooser fc = new JDFileChooser();
         fc.setApproveButtonText("Select list.php");
@@ -101,22 +101,27 @@ public class PackageCreaterRS {
                 if (true || JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
                         String url = null;
-                         System.out.println(url=Upload.toRapidshareComPremium( new File(srcDir, filename), uid, pw));
+                        System.out.println(url = Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
 
-                        String tot = "<category>(.*?)</category>.*?<name>(.*?)</name>.*?<version>(.*?)</version>.*?<url>(.*?" + name + ".*?v[\\d{1,4}]\\.jdu)</url>.*?<filename>(.*?)</filename>.*?<infourl>(.*?)</infourl>.*?<preselected>(.*?)</preselected>.*?<id>(.*?)</id>";
+                        String tot = "<url>(.*?" + name + ".*?v\\d+?\\.jdu)</url>";
                         String all = "<packages>\r\n";
-
+                  
                         for (int ii = 0; ii < matches.length; ii++) {
-                            String[] entries = new Regex(matches[ii][0], tot).getRow(0);
-                            if (entries != null) {
+                            boolean entries = new Regex(matches[ii][0], tot).matches();
+                            if (entries) {
+                              
+                                String v = new Regex(matches[ii][0], "<version>(.*?)</version>").getMatch(0).trim();
 
-                                matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + (Integer.parseInt(entries[2]) + 1) + "</version>");
+                                int versionid = JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
+
+                                matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
                                 matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
                                 System.out.println(matches[ii][0]);
                             }
                             all += matches[ii][0] + "\r\n";
-                          
+
                         }
+                      
                         all += "</packages>";
                         list = all;
                         // sb.append("<package>");
@@ -156,27 +161,30 @@ public class PackageCreaterRS {
                 zip.zip();
                 if (true || JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
-                       
+
                         String url = null;
-                        System.out.println(url=Upload.toRapidshareComPremium( new File(srcDir, filename), uid, pw));
+                        System.out.println(url = Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
 
-                       String tot = "<category>(.*?)</category>.*?<name>(.*?)</name>.*?<version>(.*?)</version>.*?<url>(.*?" + name + ".*?LIGHT\\_\\.jdu)</url>.*?<filename>(.*?)</filename>.*?<infourl>(.*?)</infourl>.*?<preselected>(.*?)</preselected>.*?<id>(.*?)</id>";
-                       String all = "<packages>\r\n";
+                        String tot = "<url>(.*?" + name + ".*?LIGHT\\_\\.jdu)</url>";
+                        String all = "<packages>\r\n";
+                  
+                        for (int ii = 0; ii < matches.length; ii++) {
+                            boolean entries = new Regex(matches[ii][0], tot).matches();
+                            if (entries) {
+                                String v = new Regex(matches[ii][0], "<version>(.*?)</version>").getMatch(0).trim();
 
-                       for (int ii = 0; ii < matches.length; ii++) {
-                           String[] entries = new Regex(matches[ii][0], tot).getRow(0);
-                           if (entries != null) {
+                                int versionid = JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
+                                matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
+                                matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
+                                System.out.println(matches[ii][0]);
+                            }
+                            all += matches[ii][0] + "\r\n";
 
-                               matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + (Integer.parseInt(entries[2]) + 1) + "</version>");
-                               matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
-                               System.out.println(matches[ii][0]);
-                           }
-                           all += matches[ii][0] + "\r\n";
-                       
-                       }
-                       all += "</packages>";
-                       list = all;
-                        
+                        }
+                     
+                        all += "</packages>";
+                        list = all;
+
                     }
                 }
             } catch (Exception e) {
@@ -188,7 +196,7 @@ public class PackageCreaterRS {
         sb.append("</packages>");
 
         System.out.println(list + "");
-        JDUtilities.writeLocalFile(new File(listphp.getParentFile(),"list2.php"), list+"");
+        JDUtilities.writeLocalFile(new File(listphp.getParentFile(), "list2.php"), list + "");
 
     }
 }

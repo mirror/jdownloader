@@ -39,7 +39,7 @@ public class JACTest {
 
     private void go() {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
-        String hoster = "megashares.com";
+        String hoster = "gigasize.com";
 
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
 
@@ -61,7 +61,7 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"),
         // 4);
 
-        jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "29.08.2008_23.33.32.750" + ".jpg"));
+      jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "cap_1" + ".png"));
 
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),

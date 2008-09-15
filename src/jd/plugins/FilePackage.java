@@ -64,6 +64,9 @@ public class FilePackage extends Property implements Serializable {
     private String name;
 
     private String password;
+    private boolean extractAfterDownload=true;
+
+ 
 
     private int totalBytesLoaded;
 
@@ -105,7 +108,13 @@ public class FilePackage extends Property implements Serializable {
             add(links.get(i));
         }
     }
+    public boolean isExtractAfterDownload() {
+        return extractAfterDownload;
+    }
 
+    public void setExtractAfterDownload(boolean extractAfterDownload) {
+        this.extractAfterDownload = extractAfterDownload;
+    }
     public void addAllAt(Vector<DownloadLink> links, int index) {
         for (int i = 0; i < links.size(); i++) {
             add(index + i, links.get(i));

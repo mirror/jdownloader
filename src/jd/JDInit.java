@@ -674,7 +674,7 @@ public class JDInit {
         new HostPluginWrapper("clipfish.de", "ClipfishDe", "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv");
         new HostPluginWrapper("data.hu", "DataHu", "http://[\\w\\.]*?data.hu/get/.+/.+");
         new HostPluginWrapper("dataup.de", "Dataupde", "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)");
-        new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/en/|/de/|/ru/|/)files/[0-9]+", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com/\\w{1,3}/files/[0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("fast-load.net", "FastLoadNet", "http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+");
         new HostPluginWrapper("fastshare.org", "FastShareorg", "http://[\\w\\.]*?fastshare\\.org/download/(.*)");
         new HostPluginWrapper("FileBase.To", "FileBaseTo", "http://[\\w\\.]*?filebase\\.to/files/\\d{1,}/.*");
@@ -703,7 +703,8 @@ public class JDInit {
         new HostPluginWrapper("Roms.Zophar.Net", "RomsZopharNet", "http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}");
         new HostPluginWrapper("RomHustler.Net", "RomHustlerNet", "http://[\\w.]*?romhustler\\.net/download/.*?/\\d+");
         new HostPluginWrapper("Serienjunkies.org", "Serienjunkies", "http://[\\w\\.]*?sjdownload.org.*");
-        new HostPluginWrapper("ShareBase.De", "ShareBaseDe", "http://[\\w\\.]*?sharebase\\.de/files/[a-zA-Z0-9]+\\.html");
+
+        new HostPluginWrapper("ShareBase.De", "ShareBaseDe", "http://[\\w\\.]*?sharebase\\.(de|to)/files/[a-zA-Z0-9]+\\.html");
         new HostPluginWrapper("SharedZilla.com", "SharedZillacom", "http://[\\w\\.]*?sharedzilla\\.com/(en|ru)/get\\?id=\\d+");
         new HostPluginWrapper("Share-Now.net", "ShareNownet", "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html");
         new HostPluginWrapper("Share-Online.Biz", "ShareOnlineBiz", "http://[\\w\\.]*?share\\-online\\.biz/download.php\\?id\\=[a-zA-Z0-9]+");
@@ -723,7 +724,9 @@ public class JDInit {
         new HostPluginWrapper("Youtube.com", "Youtube", "http://[\\w\\.]*?youtube\\.com/get_video\\?video_id=.+&t=.+(&fmt=\\d+)?", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Zippyshare.com", "Zippysharecom", "http://www\\d{0,}\\.zippyshare\\.com/v/\\d+/file\\.html");
         new HostPluginWrapper("zshare.net", "zShare", "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*");
-
+        new HostPluginWrapper("gigasize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*");
+        
+        
     }
 
     public void loadPluginOptional() {
@@ -742,7 +745,7 @@ public class JDInit {
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
         new OptionalPluginWrapper("StreamingShareTool", 1.5);
         new OptionalPluginWrapper("LangFileEditor", 1.5);
-
+        new OptionalPluginWrapper("JDUnrar", 1.5);
     }
 
     public void removeFiles() {

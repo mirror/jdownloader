@@ -601,6 +601,11 @@ public class Captcha extends PixelGrid {
          * 
          * iter.remove(); } } }
          */
+//        
+//        for(PixelObject oo:objects){
+//          int hh = objects.elementAt(i++).getArea();
+//          hh=hh;
+//        }
         while (i < objects.size() && objects.elementAt(i++).getArea() > minArea && found < letterNum) {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.info(objects.elementAt(i - 1).getWidth() + " Element: " + found + " : " + objects.elementAt(i - 1).getArea());

@@ -367,6 +367,7 @@ public class HTTPLiveHeader extends Interaction {
         variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
+        Browser br = null;
         try {
             xmlScript = HTTPLiveHeader.parseXmlString(script, false);
             Node root = xmlScript.getChildNodes().item(0);
@@ -444,7 +445,7 @@ public class HTTPLiveHeader extends Interaction {
 
                         logger.finer("Variables set: " + variables);
                     }
-                    Browser br = null;
+                 
                     if (toDo.getNodeName().equalsIgnoreCase("REQUEST")) {
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
@@ -775,10 +776,11 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     private void getVariables(String patStr, String[] keys, Browser br) {
-
+logger.info("GetVariables");
         if (br == null) return;
         // patStr="<title>(.*?)</title>";
-        Pattern pattern = Pattern.compile(patStr);
+        logger.finer(patStr);
+        Pattern pattern = Pattern.compile(patStr,Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
 
         // logger.info(requestInfo.getHtmlCode());
         Matcher matcher = pattern.matcher(br + "");

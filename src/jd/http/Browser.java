@@ -201,6 +201,12 @@ public class Browser {
         }
         return null;
     }
+    public Form getFormbyID(String id) {
+        for (Form f : getForms()) {
+            if (f.formProperties.get("id") != null && f.formProperties.get("id").equals(id)) return f;
+        }
+        return null;
+    }
 
     public HashMap<String, String> getHeaders() {
         if (headers == null) {
@@ -1007,5 +1013,7 @@ public class Browser {
         return getPage(url + "");
 
     }
+
+  
 
 }

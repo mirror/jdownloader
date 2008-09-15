@@ -286,7 +286,7 @@ public class Rapidshare extends PluginForHost {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
-        if (downloadLink.getLinkType() != DownloadLink.LINKTYPE_NORMAL) {
+        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
             if (Sniffy.hasSniffer()) throw new SnifferException();
         }
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -457,7 +457,7 @@ public class Rapidshare extends PluginForHost {
             return;
         }
 
-        if (downloadLink.getLinkType() != DownloadLink.LINKTYPE_NORMAL) {
+        if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
             if (Sniffy.hasSniffer()) throw new SnifferException();
         }
         Rapidshare.correctURL(downloadLink);
