@@ -175,7 +175,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
                 if (isSelected) {
                     c.setBackground(Color.LIGHT_GRAY);
-                } else if (column == 0 && packageData.get(row).getInstalledVersion() != 0 && packageData.get(row).getInstalledVersion() <= Integer.valueOf(packageData.get(row).getStringProperty("version"))) {
+                } else if (column == 0 && packageData.get(row).getInstalledVersion() != 0 && packageData.get(row).getInstalledVersion() < Integer.valueOf(packageData.get(row).getStringProperty("version"))) {
                     c.setBackground(Color.GREEN);
                 } else {
                     c.setBackground(Color.WHITE);
