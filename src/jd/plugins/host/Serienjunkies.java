@@ -306,6 +306,19 @@ public class Serienjunkies extends PluginForHost {
             if (reqinfo.getLocation() != null) {
                 reqinfo = HTTP.getRequest(url, null, null, true);
             }
+            if(reqinfo.containsHTML("Du hast zu oft das Captcha falsch")){
+                if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                    logger.info("Reconnect successfull. try again");
+                    reqinfo = HTTP.getRequest(url, null, null, true);
+                    if (reqinfo.getLocation() != null) {
+                        reqinfo = HTTP.getRequest(url, null, null, true);
+                    }
+                } else {
+                    logger.severe("Reconnect failed. abort.");
+                    return decryptedLinks;
+                }  
+                
+            }
             if (reqinfo.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
@@ -367,6 +380,7 @@ public class Serienjunkies extends PluginForHost {
                 }
             }
         } catch (Exception e) {
+            e.printStackTrace();
             // TODO: handle exception
         }
         return decryptedLinks;
@@ -428,17 +442,18 @@ public class Serienjunkies extends PluginForHost {
             boolean online = false;
             while (it2.hasNext()) {
                 DownloadLink downloadLink3 = (DownloadLink) it2.next();
-                if (downloadLink3.isAvailable()) {
+//                if (downloadLink3.isAvailable()) {
                     fp.add(index, downloadLink3);
                     online = true;
-                } else {
-                    down.add(i);
-                }
+//                } else {
+//                    down.add(i);
+//                }
 
             }
             if (online) {
                 ret.addAll(links);
             }
+//            ret.addAll(down);
         }
         if (mirrors != null) {
             for (String element : mirrors) {

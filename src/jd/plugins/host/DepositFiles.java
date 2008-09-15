@@ -70,15 +70,14 @@ public class DepositFiles extends PluginForHost {
 
         DownloadLink downloadLink = parameter;
         Browser br = new Browser();
-        
-        
-        br.setDebug(true);
+
+   
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
 
         String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
-       
-    br.setCookie("http://depositfiles.com", "lang_current", "de");
+
+        br.setCookie("http://depositfiles.com", "lang_current", "de");
 
         String finalURL = link;
 
@@ -110,7 +109,8 @@ public class DepositFiles extends PluginForHost {
         }
 
         Form form = br.getFormbyValue("Kostenlosen download");
-        if (form == null) {
+
+        if (form != null) {
             String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
             if (wait != null) {
                 linkStatus.setValue(Regex.getMilliSeconds(wait));
@@ -118,11 +118,11 @@ public class DepositFiles extends PluginForHost {
                 return;
             }
 
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            return;
-        }
-        br.submitForm(form);
+            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            // return;
 
+            br.submitForm(form);
+        }
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             // MUss wohl noch angepasst werden
             String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
@@ -134,6 +134,7 @@ public class DepositFiles extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
         }
+
         form = br.getFormbyValue("Die Datei downloaden");
         HTTPConnection con = br.openFormConnection(form);
 
@@ -214,7 +215,7 @@ public class DepositFiles extends PluginForHost {
         br.clearCookies(getHost());
         br.setCookie("http://depositfiles.com", "lang_current", "de");
         String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
-   
+
         downloadLink.setUrlDownload(link);
 
         br.getPage(link);
@@ -307,12 +308,11 @@ public class DepositFiles extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
-        
-        
+
         br.setFollowRedirects(true);
-        br.getPage(link);
         br.setCookie("http://depositfiles.com", "lang_current", "de");
         br.setFollowRedirects(false);
+        br.getPage(link);
 
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) { return false; }
@@ -321,7 +321,7 @@ public class DepositFiles extends PluginForHost {
         downloadLink.setName(fileName);
         String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
         long length = Regex.getSize(fileSizeString);
-
+        length = length;
         downloadLink.setDownloadSize(length);
 
         return true;

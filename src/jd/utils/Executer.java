@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -41,9 +42,16 @@ public class Executer extends Thread {
             this.started = true;
             String line;
             try {
-                while ((line = readLine(reader)) != null) {
+                while ((line = reader.readLine()) != null) {
 
                     sb.append(line + "\r\n");
+                    if (line.startsWith("Enter password")) {
+                        to.println("\"%test \r\n");
+                        to.flush();
+                        to.close();
+                  
+
+                    }
                     if (line.length() > 0) fireEvent(line);
                 }
             } catch (IOException e) {
@@ -55,8 +63,11 @@ public class Executer extends Thread {
             StringBuffer s = new StringBuffer();
             char[] buffer = new char[1];
             for (;;) {
-                if (reader2.read(buffer) < 0) return s.length() == 0 ? null : s.toString();
+                if (reader2.read(buffer) < 0) {
+                    return s.length() == 0 ? null : s.toString();
+                }
                 if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
+                    
                     if (s.length() > 0) return s.toString();
                 } else {
                     s.append(buffer);
@@ -80,6 +91,7 @@ public class Executer extends Thread {
     private ArrayList<ProcessListener> listener = new ArrayList<ProcessListener>();
     private int waitTimeout = 60;
     private int exitValue = -1;
+    private PrintWriter to;
 
     public Executer(String command) {
         this.command = command;
@@ -156,6 +168,16 @@ public class Executer extends Thread {
         try {
             process = pb.start();
 
+            // OutputStream out = child.getOutputStream();
+            //            
+            // out.write("some text".getBytes());
+            // out.close();
+
+        to = new PrintWriter(process.getOutputStream());
+//            to.println("net view");
+//            to.println("exit");
+//            to.close();
+      
             if (waitTimeout == 0) { return; }
             StreamObserver sbeObserver = new StreamObserver(process.getErrorStream(), sbe);
             StreamObserver sbObserver = new StreamObserver(process.getInputStream(), sb);

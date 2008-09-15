@@ -253,12 +253,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         OptionalPluginWrapper plgWrapper = new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
         JDUnrar unrar = new JDUnrar(plgWrapper);
         unrar.initAddon();
-        DownloadLink link = new DownloadLink(null, "jdtest2.rar", "host.de", "http://download.bla", true);
+        DownloadLink link = new DownloadLink(null, "FretsOnFire-1.2.512-win32.rar", "host.de", "http://download.bla", true);
         FilePackage fp = new FilePackage();
         fp.setDownloadDirectory("D:\\jdtest2");
        
         link.setFilePackage(fp);
-        fp.setPassword("serienfreaks.to");
+        fp.setPassword("\"\\\"\\%test \"");
         unrar.addToQueue(link);
 
     }

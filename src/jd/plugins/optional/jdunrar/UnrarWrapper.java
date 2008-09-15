@@ -148,7 +148,8 @@ public class UnrarWrapper extends Thread implements ProcessListener {
         int i = 0;
         fireEvent(JDUnrarConstants.EXTRACTION_OPEN_ARCHIVE);
         while (true) {
-            String[] params = new String[6];
+            Executer exec = new Executer(unrarCommand);
+//            String[] params = new String[6];
             if (i > 0) {
                 if (passwordList.length < i) {
                     this.status = COULD_NOT_FIND_PASSWORD;
@@ -159,18 +160,24 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
             i++;
             if (pass == null || pass == "") {
-                params[0] = "-p-";
+//                exec.addParameter("-p-");
             } else {
-                params[0] = "-p" + pass;
+//                exec.addParameter("-p" + pass);
             }
 
-            params[1] = "-v";
-            params[2] = "-c-";
-            params[3] = "-ierr";
-            params[4] = "v";
-            params[5] = file.getName();
-            Executer exec = new Executer(unrarCommand);
-            exec.addParameters(params);
+            exec.addParameter("-v");
+            exec.addParameter("-c-");
+//            exec.addParameter("-ierr");
+            exec.addParameter("v");
+            exec.addParameter(file.getName());           
+            exec.addProcessListener(new ProcessListener(){
+
+                public void onProcess(Executer exec, String err, String out, String latest) {
+                   System.out.println(latest);
+                    
+                }
+                
+            });
             exec.setRunin(file.getParentFile().getAbsolutePath());
             exec.setWaitTimeout(-1);
             exec.start();

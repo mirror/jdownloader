@@ -78,7 +78,7 @@ public class Netloadin extends PluginForHost {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
-        br.setDebug(false);
+        br.setDebug(true);
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         checkMirrorsInProgress(downloadLink);
