@@ -74,15 +74,15 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
 
         ret.pack();
         Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
-        if (loc.x + (ret.getWidth() / 2) > size.width) {
-            loc.x = size.width - (ret.getWidth() / 2);
-        } else if (loc.x - (ret.getWidth() / 2) < 0) {
-            loc.x = ret.getWidth() / 2;
+        if (loc.x + ret.getWidth() > size.width) {
+            loc.x = size.width - ret.getWidth();
+        } else if (loc.x - ret.getWidth() < 0) {
+            loc.x = 0;
         }
         if (loc.y + ret.getHeight() > size.height) {
             loc.y = size.height - ret.getHeight();
         } else if (loc.y - ret.getHeight() < 0) {
-            loc.y = ret.getHeight();
+            loc.y = 0;
         }
         ret.setLocation(loc);
         return ret;
@@ -144,39 +144,24 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
 
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-
             JLinkButton.openURL(e.getURL());
-
         }
-
     }
 
     public void mouseClicked(MouseEvent e) {
-
     }
 
     public void mouseEntered(MouseEvent e) {
-
     }
 
     public void mouseExited(MouseEvent e) {
         destroy();
-
     }
 
     public void mousePressed(MouseEvent e) {
-
     }
 
     public void mouseReleased(MouseEvent e) {
-
-    }
-
-    @Override
-    public void setLocation(Point p) {
-        p.x -= getWidth() / 2;
-        p.y -= getHeight() + 3;
-        super.setLocation(p);
     }
 
     public void setStyleEntry(String key, HashMap<String, String> value) {
