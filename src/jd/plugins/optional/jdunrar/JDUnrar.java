@@ -16,22 +16,29 @@
 
 package jd.plugins.optional.jdunrar;
 
+import java.io.File;
 import java.util.ArrayList;
 
+import jd.JDInit;
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
+import jd.config.SubConfiguration;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class JDUnrar extends PluginOptional implements ControlListener {
+public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
     public static final String CODER = "JD-Team";
 
@@ -49,11 +56,15 @@ public class JDUnrar extends PluginOptional implements ControlListener {
      */
     private ArrayList<DownloadLink> waitQueue;
 
+    @SuppressWarnings("unchecked")
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
-        this.queue = new ArrayList<DownloadLink>();
-        this.waitQueue = new ArrayList<DownloadLink>();
+        this.queue = (ArrayList<DownloadLink>) this.getPluginConfig().getProperty(JDUnrarConstants.CONFIG_KEY_LIST, new ArrayList<DownloadLink>());
+
+        this.waitQueue = (ArrayList<DownloadLink>) this.getPluginConfig().getProperty(JDUnrarConstants.CONFIG_KEY_WAITLIST, new ArrayList<DownloadLink>());
+
         initConfig();
+
     }
 
     /**
@@ -96,19 +107,24 @@ public class JDUnrar extends PluginOptional implements ControlListener {
             for (int i = waitQueue.size() - 1; i >= 0; i--) {
                 if (archiveIsComplete(waitQueue.get(i))) {
                     this.addToQueue(waitQueue.remove(i));
+                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_WAITLIST, queue);
                 }
             }
         }
 
     }
-/**
- * Fügt downloadlinks, bei denen der startart zwar schon geladen ist, aber die folgeparts noch nicht zu einer wartequeue 
- * @TODO: Diese Wartequeue muss sessionübergreifend gespeichert werden.
- * @param link
- */
+
+    /**
+     * Fügt downloadlinks, bei denen der startart zwar schon geladen ist, aber
+     * die folgeparts noch nicht zu einer wartequeue
+     * 
+     * @param link
+     */
     private void addToWaitQueue(DownloadLink link) {
         synchronized (waitQueue) {
             waitQueue.add(link);
+            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_WAITLIST, waitQueue);
+            this.getPluginConfig();
         }
     }
 
@@ -153,7 +169,10 @@ public class JDUnrar extends PluginOptional implements ControlListener {
      */
     private void addToQueue(DownloadLink link) {
         synchronized (queue) {
+            queue.clear();
             this.queue.add(link);
+            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
+            this.getPluginConfig().save();
         }
         this.startExtraction();
 
@@ -163,7 +182,17 @@ public class JDUnrar extends PluginOptional implements ControlListener {
      * Startet das abwarbeiten der extractqueue
      */
     private void startExtraction() {
-        // TODO Auto-generated method stub
+        DownloadLink link;
+        if (queue.size() == 0) return;
+        synchronized (queue) {
+            link = queue.remove(0);
+            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
+        }
+        UnrarWrapper wrapper = new UnrarWrapper(link);
+        wrapper.addUnrarListener(this);
+        wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
+        wrapper.setPasswordList(PasswordList.passwordStringtoArray(link.getFilePackage().getPassword()));
+        wrapper.start();
 
     }
 
@@ -201,7 +230,12 @@ public class JDUnrar extends PluginOptional implements ControlListener {
     }
 
     public void initConfig() {
+        SubConfiguration subConfig = getPluginConfig();
 
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
+
+       
     }
 
     @Override
@@ -209,4 +243,23 @@ public class JDUnrar extends PluginOptional implements ControlListener {
         JDUtilities.getController().removeControlListener(this);
     }
 
+    public void onUnrarEvent(int id, UnrarWrapper wrapper) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public static void main(String[] args) {
+        new JDInit().initController();
+        OptionalPluginWrapper plgWrapper = new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
+        JDUnrar unrar = new JDUnrar(plgWrapper);
+        unrar.initAddon();
+        DownloadLink link = new DownloadLink(null, "jdtest2.rar", "host.de", "http://download.bla", true);
+        FilePackage fp = new FilePackage();
+        fp.setDownloadDirectory("D:\\jdtest2");
+       
+        link.setFilePackage(fp);
+        fp.setPassword("serienfreaks.to");
+        unrar.addToQueue(link);
+
+    }
 }

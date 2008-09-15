@@ -24,11 +24,15 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import jd.plugins.optional.jdunrar.UnrarListener;
+import jd.plugins.optional.jdunrar.UnrarWrapper;
+
 public class Executer extends Thread {
     class StreamObserver extends Thread {
 
         private BufferedReader reader;
         private StringBuffer sb;
+        private boolean started;
 
         public StreamObserver(InputStream stream, StringBuffer sb) {
             reader = new BufferedReader(new InputStreamReader(stream));
@@ -37,15 +41,35 @@ public class Executer extends Thread {
 
         @Override
         public void run() {
+            this.started = true;
             String line;
             try {
-                while ((line = reader.readLine()) != null) {
+                while ((line = readLine(reader)) != null) {
 
                     sb.append(line + "\r\n");
+                    if(line.length()>0)fireEvent(line);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             }
+        }
+
+        private String readLine(BufferedReader reader2) throws IOException {
+            StringBuffer s = new StringBuffer();   
+            char[] buffer = new char[1];
+            for (;;) {
+                if(reader2.read(buffer)<0)return s.length()==0?null:s.toString();
+                if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n' ) {
+                   if(s.length() > 0)
+                    return s.toString();
+                }else{
+                s.append(buffer);}
+            }
+
+        }
+
+        public boolean isStarted() {
+            return started;
         }
 
     }
@@ -56,7 +80,7 @@ public class Executer extends Thread {
     private String runIn;
     private StringBuffer sb;
     private StringBuffer sbe;
-
+    private ArrayList<ProcessListener> listener = new ArrayList<ProcessListener>();
     private int waitTimeout = 60;
     private int exitValue = -1;
 
@@ -114,7 +138,7 @@ public class Executer extends Thread {
         params.add(command);
         params.addAll(parameter);
 
-        // r.info("RUN: " + params);
+        System.out.println(params + "");
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -142,7 +166,8 @@ public class Executer extends Thread {
             sbObserver.start();
 
             long waiter = System.currentTimeMillis() + waitTimeout * 1000;
-            while (waiter > System.currentTimeMillis() && (sbeObserver.isAlive() || sbObserver.isAlive())) {
+            if (waitTimeout < 0) waiter = Long.MAX_VALUE;
+            while ((!sbObserver.isStarted() || !sbeObserver.isStarted()) || (waiter > System.currentTimeMillis() && (sbeObserver.isAlive() || sbObserver.isAlive()))) {
 
                 try {
                     Thread.sleep(50);
@@ -203,4 +228,23 @@ public class Executer extends Thread {
     public int getExitValue() {
         return exitValue;
     }
+
+    public void addProcessListener(ProcessListener listener) {
+        this.removeProcessListener(listener);
+        this.listener.add(listener);
+
+    }
+
+    private void fireEvent(String line) {
+
+        for (ProcessListener listener : this.listener) {
+            listener.onProcess(this, sbe.toString(), sb.toString(), line);
+        }
+    }
+
+    private void removeProcessListener(ProcessListener listener) {
+        this.listener.remove(listener);
+
+    }
+
 }

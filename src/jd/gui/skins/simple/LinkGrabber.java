@@ -1036,6 +1036,7 @@ public boolean isExtract(){
             if (isDupe(element)) {
                 continue;
             }
+//            System.out.println(element.getDownloadURL()+" - "+element.getDownloadSize());
             totalLinkList.add(element);
             if (element.isAvailabilityChecked()) {
                 attachLinkToPackage(element);
