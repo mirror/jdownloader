@@ -72,19 +72,15 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private static final Color HIGHLIGHT_COLOR = Color.BLUE;
     private static final Insets INSETS = new Insets(1, 1, 1, 1);
     private static final int MARGIN = 2;
-    // private static final int FILL_BOTH = GridBagConstraints.BOTH;
     private static final int MENUENTRY_HEIGHT = 16;
     private static final int MENUENTRY_ICON_WIDTH = MENUENTRY_HEIGHT + 12;
     private static final int MENUENTRY_LABEL_WIDTH = 220;
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = 1L;
     private JPanel bottomPanel;
     private boolean enteredPopup;
     private ArrayList<Integer> entries = new ArrayList<Integer>();
     private JPanel leftPanel;
-    // private JDLightTray owner;
     private int midPanelCounter = 0;
     private int mouseOverRow;
     private Point point;
@@ -93,8 +89,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
     private JSpinner spMaxDls;
     private JPanel topPanel;
 
-    TrayIconPopup(JDLightTray tracIcon) {
-        // this.owner = tracIcon;
+    public TrayIconPopup() {
         setLayout(new GridBagLayout());
         addMouseMotionListener(this);
         addMouseListener(this);
@@ -102,35 +97,30 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         setAlwaysOnTop(true);
 
         init();
-
         initTopPanel();
+
         addMenuEntry(ACTION_LOAD, JDTheme.II("gui.images.load"), JDLocale.L("plugins.trayicon.popup.menu.load", "Container laden"));
+
         switch (JDUtilities.getController().getDownloadStatus()) {
         case JDController.DOWNLOAD_NOT_RUNNING:
             addMenuEntry(ACTION_START, JDTheme.II("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
-
             break;
         case JDController.DOWNLOAD_RUNNING:
             addMenuEntry(ACTION_STOP, JDTheme.II("gui.images.stop"), JDLocale.L("plugins.trayicon.popup.menu.stop", "Download anhalten"));
-
             break;
         default:
             addDisabledMenuEntry(JDTheme.II("gui.images.next"), JDLocale.L("plugins.trayicon.popup.menu.start", "Download Starten"));
-
         }
+
         if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
             addMenuEntry(ACTION_PAUSE, JDTheme.II("gui.images.stop_after"), JDLocale.L("plugins.trayicon.popup.menu.pause", "Nach diesem Download anhalten"));
         }
+
         addMenuEntry(ACTION_ADD, JDTheme.II("gui.images.add"), JDLocale.L("plugins.trayicon.popup.menu.add", "Downloads hinzufügen"));
-
         addMenuEntry(ACTION_UPDATE, JDTheme.II("gui.images.update_manager"), JDLocale.L("plugins.trayicon.popup.menu.update", "JD aktualisieren"));
-
         addMenuEntry(ACTION_CONFIG, JDTheme.II("gui.images.configuration"), JDLocale.L("plugins.trayicon.popup.menu.config", "Konfiguration"));
-
         addMenuEntry(ACTION_LOG, JDTheme.II("gui.images.terminal"), JDLocale.L("plugins.trayicon.popup.menu.log", "Log anzeigen"));
-
         addMenuEntry(ACTION_RECONNECT, JDTheme.II("gui.images.reconnect"), JDLocale.L("plugins.trayicon.popup.menu.reconnect", "Reconnect durchführen"));
-
         addMenuEntry(ACTION_TOGGLE_CLIPBOARD, getClipBoardImage(), JDLocale.L("plugins.trayicon.popup.menu.toggleClipboard", "Zwischenablage an/aus"));
         addMenuEntry(ACTION_TOGGLE_RECONNECT, getReconnectImage(), JDLocale.L("plugins.trayicon.popup.menu.toggleReconnect", "Reconnect an/aus"));
         addMenuEntry(ACTION_EXIT, JDTheme.II("gui.images.exit"), JDLocale.L("plugins.trayicon.popup.menu.exit", "Beenden"));
@@ -195,17 +185,14 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         } else {
             return JDTheme.II("gui.images.clipboardoff");
         }
-
     }
 
     private ImageIcon getReconnectImage() {
-
         if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false)) {
             return JDTheme.II("gui.images.reconnect_ok");
         } else {
             return JDTheme.II("gui.images.reconnect_bad");
         }
-
     }
 
     private int getRow(Point e) {
@@ -215,7 +202,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         y /= rightPanel.getHeight() / midPanelCounter;
 
         return y;
-
     }
 
     private void init() {
@@ -265,53 +251,39 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         JDUtilities.addToGridBag(bottomPanel, spMax, 1, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
         JDUtilities.addToGridBag(bottomPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.bottom.simDls", "Gleichzeitige Downloads")), 0, 1, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_WEST);
         JDUtilities.addToGridBag(bottomPanel, spMaxDls, 1, 1, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
-
     }
 
     private void initTopPanel() {
         ImageIcon logo = new ImageIcon(JDTheme.II("gui.images.jd_logo").getImage().getScaledInstance(MENUENTRY_HEIGHT, MENUENTRY_HEIGHT, Image.SCALE_SMOOTH));
         JDUtilities.addToGridBag(topPanel, new JLabel(JDLocale.L("plugins.trayicon.popup.title", "JDownloader") + " 0." + JDUtilities.getRevision(), logo, SwingConstants.LEFT), 0, 0, 1, 1, 0, 0, INSETS, FILL_NONE, ANCHOR_NORTH_WEST);
-        // JDUtilities.addToGridBag(topPanel,new JSeparator(), 0, 1, 1, 1, 0,
-        // 0,INSETS, FILL_BOTH, ANCHOR_NORTH_WEST);
-        // JDUtilities.addToGridBag(topPanel,new JLabel(""), 0, 1, 1, 1, 0,
-        // 0,INSETS, FILL_BOTH, ANCHOR_NORTH_WEST);
-        //      
     }
 
     public void mouseClicked(MouseEvent e) {
-
     }
 
     public void mouseDragged(MouseEvent e) {
         point = e.getPoint();
         checkUpdate(point);
-
     }
 
     public void mouseEntered(MouseEvent e) {
         enteredPopup = true;
-
     }
 
     public void mouseExited(MouseEvent e) {
         if (e.getSource() == this && enteredPopup && !this.contains(e.getPoint())) {
-
             dispose();
-
         }
-
     }
 
     public void mouseMoved(MouseEvent e) {
         point = e.getPoint();
         checkUpdate(point);
-
     }
 
     public void mousePressed(MouseEvent e) {
         point = e.getPoint();
         checkUpdate(point);
-
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -342,7 +314,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             break;
         case TrayIconPopup.ACTION_LOG:
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_LOG, null));
-
             break;
         case TrayIconPopup.ACTION_PAUSE:
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
@@ -359,7 +330,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-
             JDUtilities.saveConfig();
             break;
         case TrayIconPopup.ACTION_UPDATE:
@@ -379,7 +349,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         Point p = rightPanel.getLocation();
 
         int y = 0;
-        // g.clearRect(0, p.y, getWidth(), rightPanel.getHeight());
+
         for (int i = 0; i < midPanelCounter; i++) {
             y = i * (rightPanel.getHeight() / midPanelCounter) + p.y;
 
@@ -389,16 +359,10 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
                 } else {
                     g.setColor(DISABLED_COLOR);
                 }
-
             } else {
                 g.setColor(BACKGROUNDCOLOR);
             }
             g.drawRect(2, y, getWidth() - 4, rightPanel.getHeight() / midPanelCounter - 1);
-            // if (i % 2 == 0) {
-            // g.setColor(Color.RED);
-            // } else {
-            // g.setColor(Color.BLUE);
-            // }
 
         }
 

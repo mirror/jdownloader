@@ -125,6 +125,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         if (JDUtilities.getJavaVersion() >= 1.6) {
             try {
                 JDUtilities.getController().addControlListener(this);
+                if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI.getFrame() != null) {
+                    guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+                    guiFrame.addWindowStateListener(this);
+                }
                 logger.info("Systemtray OK");
                 initGUI();
             } catch (Exception e) {
@@ -201,7 +205,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     trayIconPopup.dispose();
                     trayIconPopup = null;
                 } else if (SwingUtilities.isRightMouseButton(e)) {
-                    trayIconPopup = new TrayIconPopup(this);
+                    trayIconPopup = new TrayIconPopup();
                     calcLocation(trayIconPopup, e.getPoint());
                     trayIconPopup.setVisible(true);
                 }

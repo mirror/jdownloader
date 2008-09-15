@@ -242,8 +242,10 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     public boolean initAddon() {
         if (JDUtilities.getJavaVersion() >= 1.6) {
             try {
-
                 JDUtilities.getController().addControlListener(this);
+                if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI.getFrame() != null) {
+                    SimpleGUI.CURRENTGUI.getFrame().addWindowStateListener(this);
+                }
                 logger.info("Systemtray OK");
                 initGUI();
                 return true;
