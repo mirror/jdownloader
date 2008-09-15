@@ -5,10 +5,20 @@ import java.io.Serializable;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
-import jd.controlling.interaction.HTTPLiveHeader;
+import org.cybergarage.upnp.Device;
+import org.cybergarage.upnp.DeviceList;
+import org.cybergarage.upnp.ServiceList;
+import org.cybergarage.upnp.UPnP;
+
+import com.sun.org.apache.bcel.internal.generic.GOTO;
+
+import jd.http.HTTPConnection;
 
 import jd.JDInit;
+
+import jd.controlling.interaction.HTTPLiveHeader;
 
 import jd.http.Browser;
 
@@ -21,7 +31,7 @@ public class RouterInfoCollector implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
-    protected boolean isLiveHeaderReconnect = true;
+    protected boolean isLiveHeaderReconnect = true, haveSip = false;
     protected String routerIp = null;
     protected String routerSite = null;
     protected String routerErrorPage = null;
@@ -61,6 +71,7 @@ public class RouterInfoCollector implements Serializable {
             }
             routerMethodeNames = rmn.toArray(new String[rmn.size()]);
         }
+        haveSip = GetRouterInfo.checkport(routerIp, 5060);
     }
 
     @Override
@@ -74,7 +85,7 @@ public class RouterInfoCollector implements Serializable {
                 ret += "RouterMethodeName[" + i + "]:" + routerMethodeNames[i] + sep;
             }
         }
-        ret += "ReconnectMethode:" + reconnectMethode + sep + "isLiveHeaderReconnect:" + isLiveHeaderReconnect + sep + "RouterIp:" + routerIp + sep + "RouterMAC:" + routerMAC + sep + "RouterSite:" + routerSite + sep + "RouterErrorPage:" + routerErrorPage;
+        ret += "ReconnectMethode:" + reconnectMethode + sep + "HaveSip:" + haveSip + sep + "isLiveHeaderReconnect:" + isLiveHeaderReconnect + sep + "RouterIp:" + routerIp + sep + "RouterMAC:" + routerMAC + sep + "RouterSite:" + routerSite + sep + "RouterErrorPage:" + routerErrorPage;
         return ret;
     }
 
@@ -84,8 +95,27 @@ public class RouterInfoCollector implements Serializable {
         return routerIp;
     }
 
+    /**
+     * Gibt einen Prozentwert zurück zu welcher Wahrscheinlichkeit es sich um
+     * diesen router handelt
+     * 
+     * @param routerInfo
+     * @return
+     */
+    public int compare(RouterInfoCollector routerInfo) {
+        int ret = 0;
+        if (routerMAC.substring(0, 8).equalsIgnoreCase(routerInfo.routerMAC.substring(0, 8))) ret += 40;
+        if (routerSite.equalsIgnoreCase(routerInfo.routerSite)) ret += 25;
+        if (routerErrorPage.equalsIgnoreCase(routerInfo.routerErrorPage)) ret += 25;
+        if (haveSip == routerInfo.haveSip) ret += 10;
+        return ret;
+    }
+
     public static void main(String[] args) {
         new JDInit().loadConfiguration();
-        System.out.println(new RouterInfoCollector().toString());
+        RouterInfoCollector rc = new RouterInfoCollector();
+        System.out.println(rc.routerMAC.substring(0, 8));
+        // System.out.println(rc.compare(rc));
+
     }
 }

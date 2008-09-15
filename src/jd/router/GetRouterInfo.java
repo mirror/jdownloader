@@ -137,8 +137,19 @@ public class GetRouterInfo {
             progressBar.setMaximum(100);
         }
     }
+    public static boolean checkport(String host, int port) {
+        Socket sock;
+        try {
+            sock = new Socket(host, port);
+            sock.setSoTimeout(200);
+            return true;
+        } catch (UnknownHostException e) {
+        } catch (IOException e) {
+        }
+        return false;
 
-    private boolean checkport80(String host) {
+    }
+    public static boolean checkport80(String host) {
         Socket sock;
         try {
             sock = new Socket(host, 80);
