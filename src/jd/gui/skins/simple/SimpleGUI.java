@@ -43,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -1264,9 +1263,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public void fireUIEvent(UIEvent uiEvent) {
         synchronized (uiListener) {
-            Iterator<UIListener> recIt = uiListener.iterator();
-            while (recIt.hasNext()) {
-                ((UIListener) recIt.next()).uiEvent(uiEvent);
+            for (UIListener lstn : uiListener) {
+                lstn.uiEvent(uiEvent);
             }
         }
     }
@@ -1435,16 +1433,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         // Adds the menus form the plugins
         JMenu menHosts = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
 
-        for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
-            HostPluginWrapper wrapper = it.next();
-
+        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             if (wrapper.isLoaded()) {
-
                 final Plugin helpPlugin = wrapper.getPlugin();
                 if (helpPlugin.createMenuitems() != null) {
-                    MenuItem m = new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0);
-                    // m.setItems(helpplugin.createMenuitems());
-                    mi = SimpleGUI.getJMenuItem(m);
+                    mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
                     if (mi != null) {
                         menHosts.add(mi);
 
@@ -1467,11 +1460,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                                     } else {
                                         m.add(c);
                                     }
-
                                 }
-
                             }
-
                         });
                     } else {
                         menHosts.addSeparator();

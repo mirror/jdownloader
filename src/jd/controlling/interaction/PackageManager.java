@@ -65,16 +65,14 @@ public class PackageManager extends Interaction implements Serializable {
                     links += JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl"));
                 }
                 pa.setInstalled(false);
-                
-                for(OptionalPluginWrapper plg:OptionalPluginWrapper.getOptionalWrapper()){
-                  if(JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPlugin().getHost(), false)!=JDUtilities.getConfiguration().getBooleanProperty("OPTIONAL_PLUGIN_" + plg.getPlugin().getHost(), true)){
-                      JDUtilities.getConfiguration().setProperty("OPTIONAL_PLUGIN_" + plg.getPlugin().getHost(), true);
-                      plg.getPlugin().initAddon();
-                  }
+
+                for (OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
+                    if (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false) != JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), true)) {
+                        JDUtilities.getConfiguration().setProperty(plg.getConfigParamKey(), true);
+                        plg.getPlugin().initAddon();
+                    }
                 }
-             
-                
-                
+
             }
         }
 

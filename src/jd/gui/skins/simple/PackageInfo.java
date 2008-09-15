@@ -98,7 +98,7 @@ public class PackageInfo extends JDialog implements ChangeListener {
         JPanel topPanel = new JPanel(new BorderLayout(2, 2));
         topPanel.setBorder(new EmptyBorder(0, n, 0, n));
         topPanel.add(lblSlider, BorderLayout.LINE_START);
-        topPanel.add(slider, BorderLayout.LINE_END);
+        topPanel.add(slider);
         this.add(topPanel, BorderLayout.PAGE_START);
 
         new Thread() {

@@ -73,4 +73,8 @@ public class OptionalPluginWrapper extends PluginWrapper {
 
     }
 
+    public String getConfigParamKey() {
+        return "OPTIONAL_PLUGIN_" + loadedPlugin.getHost();
+    }
+
 }

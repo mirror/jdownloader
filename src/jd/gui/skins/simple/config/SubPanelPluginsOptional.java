@@ -43,7 +43,6 @@ import jd.config.Configuration;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.plugins.PluginOptional;
 import jd.utils.GetExplorer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -91,7 +90,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
+                return configuration.getBooleanProperty(pluginsOptional.get(rowIndex).getConfigParamKey(), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
             case 1:
                 return pluginsOptional.get(rowIndex).getPlugin().getHost();
             case 2:
@@ -135,13 +134,13 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             editEntry();
         } else if (e.getSource() == enableDisable) {
             int rowIndex = table.getSelectedRow();
-            boolean b = configuration.getBooleanProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), false);
-            configuration.setProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), !b);
+            boolean b = configuration.getBooleanProperty(pluginsOptional.get(rowIndex).getConfigParamKey(), false);
+            configuration.setProperty(pluginsOptional.get(rowIndex).getConfigParamKey(), !b);
             tableModel.fireTableRowsUpdated(rowIndex, rowIndex);
             table.getSelectionModel().setSelectionInterval(rowIndex, rowIndex);
             if (!b) {
                 pluginsOptional.get(rowIndex).getPlugin().initAddon();
-            }else{
+            } else {
                 pluginsOptional.get(rowIndex).getPlugin().onExit();
             }
         } else if (e.getSource() == openPluginDir) {
@@ -154,10 +153,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     private void editEntry() {
         SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsOptional.get(table.getSelectedRow()).getPlugin());
-    }
-
-    private String getConfigParamKey(PluginOptional pluginOptional) {
-        return "OPTIONAL_PLUGIN_" + pluginOptional.getHost();
     }
 
     @Override
