@@ -61,13 +61,12 @@ import jd.utils.JDUtilities;
 public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     public JDTrayIcon(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
-    private class info extends Thread {
+    private class Info extends Thread {
         private Point p;
 
-        public info(Point p) {
+        public Info(Point p) {
             this.p = p;
         }
 
@@ -124,7 +123,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     private int counter = 0;
     private JMenuItem dnd;
     private JMenuItem exit;
-    private info i;
+    private Info i;
     private JPopupMenu popupMenu;
     private JCheckBoxMenuItem reconnect;
     private JMenuItem speed1;
@@ -423,7 +422,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
 
                 counter = 2;
 
-                i = new info(e.getPoint());
+                i = new Info(e.getPoint());
                 i.start();
             }
         });

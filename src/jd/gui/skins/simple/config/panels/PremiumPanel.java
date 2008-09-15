@@ -235,6 +235,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 usernames[i].setText("");
                 passwords[i].setText("");
                 enables[i].setSelected(false);
+                createDataset();
             }
         }
     }

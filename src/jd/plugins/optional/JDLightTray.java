@@ -17,18 +17,23 @@
 package jd.plugins.optional;
 
 import java.awt.AWTException;
+import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
 import jd.Main;
@@ -43,24 +48,33 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDLightTray extends PluginOptional implements MouseListener, WindowStateListener {
-    public JDLightTray(PluginWrapper wrapper) {
-        super(wrapper);
-        // TODO Auto-generated constructor stub
-    }
-
+public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowStateListener {
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLIGHTTRAY");
 
     private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
 
-    private TrayIconPopup popup;
+    private static final int INIT_COUNTER = 5;
+
+    private int counter = 0;
+
+    private JWindow toolParent;
+
+    private JLabel toolLabel;
+
+    private TrayIconPopup trayIconPopup;
 
     private TrayIcon trayIcon;
+
+    private TrayInfo trayInfo;
 
     private JFrame guiFrame;
 
     public static int getAddonInterfaceVersion() {
         return 2;
+    }
+
+    public JDLightTray(PluginWrapper wrapper) {
+        super(wrapper);
     }
 
     @Override
@@ -143,6 +157,18 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
         trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(this);
         trayIcon.addMouseListener(this);
+        trayIcon.addMouseMotionListener(this);
+
+        toolLabel = new JLabel("jDownloader");
+        toolLabel.setVisible(true);
+        toolLabel.setOpaque(true);
+        toolLabel.setBackground(new Color(0xb9cee9));
+
+        toolParent = new JWindow();
+        toolParent.setAlwaysOnTop(true);
+        toolParent.add(toolLabel);
+        toolParent.pack();
+        toolParent.setVisible(false);
 
         SystemTray systemTray = SystemTray.getSystemTray();
         try {
@@ -163,39 +189,21 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
 
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
+            if (toolParent.isVisible()) {
+                hideTooltip();
+            }
+
             if (e.getClickCount() >= 1 && !SwingUtilities.isRightMouseButton(e)) {
                 guiFrame.setVisible(!guiFrame.isVisible());
                 if (guiFrame.isVisible()) guiFrame.setState(JFrame.NORMAL);
             } else {
-                if (popup != null && popup.isShowing()) {
-                    popup.dispose();
-                    popup = null;
+                if (trayIconPopup != null && trayIconPopup.isShowing()) {
+                    trayIconPopup.dispose();
+                    trayIconPopup = null;
                 } else if (SwingUtilities.isRightMouseButton(e)) {
-
-                    int x = e.getPoint().x;
-                    int y = e.getPoint().y;
-
-                    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                    int limitX = (int) screenSize.getWidth() / 2;
-                    int limitY = (int) screenSize.getHeight() / 2;
-
-                    popup = new TrayIconPopup(this);
-
-                    if (x <= limitX && y <= limitY) {
-                        // top left
-                        popup.setLocation(x, y);
-                    } else if (x <= limitX && y >= limitY) {
-                        // bottom left
-                        popup.setLocation(x, y - popup.getHeight());
-                    } else if (x >= limitX && y <= limitY) {
-                        // top right
-                        popup.setLocation(x - popup.getWidth(), y);
-                    } else if (x >= limitX && y >= limitY) {
-                        // bottom right
-                        popup.setLocation(x - popup.getWidth(), y - popup.getHeight());
-                    }
-                    popup.setVisible(true);
-
+                    trayIconPopup = new TrayIconPopup(this);
+                    calcLocation(trayIconPopup, e.getPoint());
+                    trayIconPopup.setVisible(true);
                 }
             }
 
@@ -204,6 +212,24 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
     }
 
     public void mouseReleased(MouseEvent e) {
+    }
+
+    public void mouseDragged(MouseEvent e) {
+    }
+
+    public void mouseMoved(MouseEvent e) {
+        if (trayIconPopup != null && trayIconPopup.isVisible()) return;
+        if (counter > 0) {
+            counter = INIT_COUNTER;
+            return;
+        }
+
+        counter = INIT_COUNTER;
+
+        trayInfo = new TrayInfo(e.getPoint());
+        trayInfo.start();
+        // trayIcon.displayMessage("jDownloader", "Erstmal nur ein Test, ok?",
+        // TrayIcon.MessageType.INFO);
     }
 
     @Override
@@ -218,6 +244,96 @@ public class JDLightTray extends PluginOptional implements MouseListener, Window
             if ((arg0.getNewState() & JFrame.ICONIFIED) != 0) {
                 guiFrame.setVisible(false);
             }
+        }
+    }
+
+    private void calcLocation(final JWindow window, final Point p) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                int limitX = (int) screenSize.getWidth() / 2;
+                int limitY = (int) screenSize.getHeight() / 2;
+
+                if (p.x <= limitX) {
+                    if (p.y <= limitY) {
+                        // top left
+                        window.setLocation(p.x, p.y);
+                    } else {
+                        // bottom left
+                        window.setLocation(p.x, p.y - window.getHeight());
+                    }
+                } else {
+                    if (p.y <= limitY) {
+                        // top right
+                        window.setLocation(p.x - window.getWidth(), p.y);
+                    } else {
+                        // bottom right
+                        window.setLocation(p.x - window.getWidth(), p.y - window.getHeight());
+                    }
+                }
+
+            }
+        });
+    }
+
+    private void hideTooltip() {
+        toolParent.setVisible(false);
+        counter = 0;
+    }
+
+    private String createHTMLInfoString() {
+        StringBuilder creater = new StringBuilder();
+        creater.append("<html><center><b>jDownloader</b></center><hr>");
+        int downloads = JDUtilities.getController().getRunningDownloadNum();
+        if (downloads == 0) {
+            creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>");
+        } else {
+            creater.append("<table>");
+            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td>" + downloads + "</tr>");
+            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </tr>");
+            creater.append("</table>");
+        }
+        creater.append("</html>");
+
+        return creater.toString();
+    }
+
+    private class TrayInfo extends Thread {
+        private Point p;
+
+        public TrayInfo(Point p) {
+            this.p = p;
+        }
+
+        public void run() {
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
+                interrupt();
+            }
+
+            if (trayIconPopup != null && trayIconPopup.isVisible()) return;
+
+            toolLabel.setText(createHTMLInfoString());
+            toolParent.pack();
+            calcLocation(toolParent, p);
+            toolParent.setVisible(true);
+            toolParent.toFront();
+
+            while (counter > 0) {
+                toolLabel.setText(createHTMLInfoString());
+                toolParent.pack();
+
+                counter--;
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    interrupt();
+                }
+            }
+
+            hideTooltip();
         }
     }
 

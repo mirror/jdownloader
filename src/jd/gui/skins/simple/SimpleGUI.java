@@ -36,7 +36,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.File;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
@@ -189,7 +188,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
             lblMessage.setIcon(statusIcon);
-            
+
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
             chbPremium.addChangeListener(this);
@@ -284,19 +283,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         public void setText(String text) {
-        	/*
-        	if((text == JDLocale.L("sys.message.welcome", "Welcome to JDownloader"))||(text == null))
-        	{
-        	//TODO: Schrift bei Twitter-Meldung fett setzen & wieder zurück
-        	 *Code unten sollte funktionieren, tut es aber nicht :-/
-            	lblMessage.setFont(new Font(lblMessage.getFont().getFontName(),Font.PLAIN, lblMessage.getFont().getSize()));
-        	}
-        	else
-        	{
-            	lblMessage.setFont(new Font(lblMessage.getFont().getFontName(), Font.BOLD, lblMessage.getFont().getSize()));
-        	}
-        	*/
-        	
+            /*
+             * if((text == JDLocale.L("sys.message.welcome",
+             * "Welcome to JDownloader"))||(text == null)) { //TODO: Schrift bei
+             * Twitter-Meldung fett setzen & wieder zurückCode unten sollte
+             * funktionieren, tut es aber nicht :-/ lblMessage.setFont(new
+             * Font(lblMessage.getFont().getFontName(),Font.PLAIN,
+             * lblMessage.getFont().getSize())); } else { lblMessage.setFont(new
+             * Font(lblMessage.getFont().getFontName(), Font.BOLD,
+             * lblMessage.getFont().getSize())); }
+             */
+
             lblMessage.setText((text == null) ? JDLocale.L("sys.message.welcome", "Welcome to JDownloader") : text);
         }
 
@@ -750,19 +747,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
-        
+
         new Thread("twitter") {
             public void run() {
                 while (true) {
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
-                          //System.out.println("trigger");
-                          SimpleGUI.CURRENTGUI.statusBar.setText(JDTwitter.RefreshTwitterMessage());
+                            // System.out.println("trigger");
+                            SimpleGUI.CURRENTGUI.statusBar.setText(JDTwitter.RefreshTwitterMessage());
                         }
                     });
                     try {
                         Thread.sleep(300000);
-                        //Thread.sleep(2000);
+                        // Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -1038,7 +1035,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(btnStartStop);
         toolBar.add(btnPause);
         toolBar.add(createMenuButton(actionItemsAdd));
-//        toolBar.add(createMenuButton(actionLoadDLC));
+        toolBar.add(createMenuButton(actionLoadDLC));
         toolBar.add(createMenuButton(actionItemsDelete));
         toolBar.addSeparator();
         toolBar.add(createMenuButton(actionItemsBottom));
@@ -1108,12 +1105,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                         logger.info("Interaction zu ende. rest status");
                         new Thread("twitterinit") {
                             public void run() {
-                                    EventQueue.invokeLater(new Runnable() {
-                                        public void run() {
-                                          statusBar.setText(JDTwitter.RefreshTwitterMessage());
-                                        }
-                                    });
-                                }
+                                EventQueue.invokeLater(new Runnable() {
+                                    public void run() {
+                                        statusBar.setText(JDTwitter.RefreshTwitterMessage());
+                                    }
+                                });
+                            }
                         }.start();
                         frame.setTitle(JDUtilities.getJDTitle());
                     }
@@ -1436,23 +1433,20 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         // Adds the menus form the plugins
-        JMenu menPlugins = new JMenu(JDLocale.L("gui.menu.plugins", "Plugins"));
-        JMenu helpHost = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
-
-        menPlugins.add(helpHost);
+        JMenu menHosts = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
 
         for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
             HostPluginWrapper wrapper = it.next();
 
             if (wrapper.isLoaded()) {
 
-                final Plugin helpplugin = wrapper.getPlugin();
-                if (helpplugin.createMenuitems() != null) {
-                    MenuItem m = new MenuItem(MenuItem.CONTAINER, helpplugin.getHost(), 0);
+                final Plugin helpPlugin = wrapper.getPlugin();
+                if (helpPlugin.createMenuitems() != null) {
+                    MenuItem m = new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0);
                     // m.setItems(helpplugin.createMenuitems());
                     mi = SimpleGUI.getJMenuItem(m);
                     if (mi != null) {
-                        helpHost.add(mi);
+                        menHosts.add(mi);
 
                         ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
                         ((JMenu) mi).addMenuListener(new MenuListener() {
@@ -1466,7 +1460,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                                 JMenu m = (JMenu) e.getSource();
                                 JMenuItem c;
                                 m.removeAll();
-                                for (MenuItem menuItem : helpplugin.createMenuitems()) {
+                                for (MenuItem menuItem : helpPlugin.createMenuitems()) {
                                     c = SimpleGUI.getJMenuItem(menuItem);
                                     if (c == null) {
                                         m.addSeparator();
@@ -1480,13 +1474,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                         });
                     } else {
-                        helpHost.addSeparator();
+                        menHosts.addSeparator();
                     }
                 }
             }
         }
-        if (helpHost.getItemCount() == 0) {
-            helpHost.setEnabled(false);
+        if (menHosts.getItemCount() == 0) {
+            menHosts.setEnabled(false);
         }
 
         JMenu menAdd = createMenu(JDLocale.L("gui.menu.add", "Add"), "gui.images.add");
@@ -1527,7 +1521,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JDUtilities.addToGridBag(menuBar, menFile, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menExtra, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menAddons, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        JDUtilities.addToGridBag(menuBar, menPlugins, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
+        JDUtilities.addToGridBag(menuBar, menHosts, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, menHelp, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(menuBar, new JLabel(""), m++, 0, 1, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
 
