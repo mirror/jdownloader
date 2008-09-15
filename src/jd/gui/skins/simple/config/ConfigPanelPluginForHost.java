@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.dnd.DropTarget;
@@ -31,7 +30,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.EventObject;
 import java.util.Vector;
 
 import javax.swing.AbstractAction;
@@ -42,12 +40,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.CellEditorListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.HostPluginWrapper;
@@ -129,68 +124,21 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex > 3;
+            return columnIndex == 4 || columnIndex == 5;
         }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if ((Boolean) value) {
-                String msg = String.format(JDLocale.L("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!"), pluginsForHost.get(row).getHost());
-                if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) {
+            if (col == 5) {
+                if ((Boolean) value) {
+                    String msg = JDLocale.LF("gui.config.plugin.abg_confirm", "Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden!", pluginsForHost.get(row).getHost());
+                    if (JOptionPane.showConfirmDialog(ConfigurationDialog.DIALOG, msg) == JOptionPane.OK_OPTION) {
+                        pluginsForHost.get(row).setAGBChecked((Boolean) value);
+                    }
+                } else {
                     pluginsForHost.get(row).setAGBChecked((Boolean) value);
                 }
-            } else {
-                pluginsForHost.get(row).setAGBChecked((Boolean) value);
             }
-        }
-    }
-
-    private class JLinkButtonEditor implements TableCellEditor, ActionListener {
-
-        private JLinkButton btn;
-
-        private boolean stop = false;
-
-        public void actionPerformed(ActionEvent e) {
-            stop = true;
-        }
-
-        public void addCellEditorListener(CellEditorListener l) {
-        }
-
-        public void cancelCellEditing() {
-        }
-
-        public Object getCellEditorValue() {
-            return null;
-        }
-
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            btn = (JLinkButton) value;
-            btn.addActionListener(this);
-            return btn;
-        }
-
-        public boolean isCellEditable(EventObject anEvent) {
-            return true;
-        }
-
-        public void removeCellEditorListener(CellEditorListener l) {
-        }
-
-        public boolean shouldSelectCell(EventObject anEvent) {
-            return false;
-        }
-
-        public boolean stopCellEditing() {
-            return stop;
-        }
-
-    }
-
-    private class JLinkButtonRenderer implements TableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return (JLinkButton) value;
         }
     }
 
@@ -310,8 +258,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 column.setPreferredWidth(70);
                 column.setMaxWidth(70);
                 column.setMinWidth(70);
-                column.setCellRenderer(new JLinkButtonRenderer());
-                column.setCellEditor(new JLinkButtonEditor());
+                column.setCellRenderer(JLinkButton.getJLinkButtonRenderer());
+                column.setCellEditor(JLinkButton.getJLinkButtonEditor());
                 break;
             case 5:
                 column.setPreferredWidth(90);

@@ -17,6 +17,7 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -25,6 +26,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.EventObject;
 import java.util.List;
 
 import javax.swing.Action;
@@ -32,9 +34,13 @@ import javax.swing.ButtonModel;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JTable;
 import javax.swing.WindowConstants;
+import javax.swing.event.CellEditorListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalButtonUI;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
@@ -95,10 +101,57 @@ class BasicLinkButtonUI extends MetalButtonUI {
     }
 }
 
+class JLinkButtonEditor implements TableCellEditor, ActionListener {
+
+    private boolean stop = false;
+
+    public void actionPerformed(ActionEvent e) {
+        stop = true;
+    }
+
+    public void addCellEditorListener(CellEditorListener l) {
+    }
+
+    public void cancelCellEditing() {
+    }
+
+    public Object getCellEditorValue() {
+        return null;
+    }
+
+    public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
+        stop = false;
+        JLinkButton btn = (JLinkButton) value;
+        btn.addActionListener(this);
+        return btn;
+    }
+
+    public boolean isCellEditable(EventObject anEvent) {
+        return true;
+    }
+
+    public void removeCellEditorListener(CellEditorListener l) {
+    }
+
+    public boolean shouldSelectCell(EventObject anEvent) {
+        return false;
+    }
+
+    public boolean stopCellEditing() {
+        return stop;
+    }
+
+}
+
+class JLinkButtonRenderer implements TableCellRenderer {
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        return (JLinkButton) value;
+    }
+}
+
 public class JLinkButton extends JButton {
-    /**
-     * 
-     */
+
+    private static final long serialVersionUID = 1L;
 
     public static final int ALWAYS_UNDERLINE = 0;
 
@@ -106,12 +159,15 @@ public class JLinkButton extends JButton {
 
     public static final int NEVER_UNDERLINE = 2;
 
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1L;
-
     public static final int SYSTEM_DEFAULT = 3;
+
+    public static JLinkButtonEditor getJLinkButtonEditor() {
+        return new JLinkButtonEditor();
+    }
+
+    public static JLinkButtonRenderer getJLinkButtonRenderer() {
+        return new JLinkButtonRenderer();
+    }
 
     public static void openURL(String url) throws MalformedURLException {
         JLinkButton.openURL(new URL(url));
@@ -317,8 +373,6 @@ public class JLinkButton extends JButton {
     public JLinkButton(URL url) {
         this(null, null, url);
     }
-
-
 
     private void checkLinkBehaviour(int beha) {
         if (beha != ALWAYS_UNDERLINE && beha != HOVER_UNDERLINE && beha != NEVER_UNDERLINE && beha != SYSTEM_DEFAULT) {

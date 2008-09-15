@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
@@ -25,15 +24,11 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EventObject;
 
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.event.CellEditorListener;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import jd.config.CFGConfig;
@@ -115,57 +110,10 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            PackageData element = packageData.get(row);
-          
-            element.setSelected(element.isSelected());
-         
-        }
-    }
-
-    private class JLinkButtonEditor implements TableCellEditor, ActionListener {
-
-        private boolean stop = false;
-
-        public void actionPerformed(ActionEvent e) {
-            stop = true;
-        }
-
-        public void addCellEditorListener(CellEditorListener l) {
-        }
-
-        public void cancelCellEditing() {
-        }
-
-        public Object getCellEditorValue() {
-            return null;
-        }
-
-        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row, int column) {
-            JLinkButton btn = (JLinkButton) value;
-            btn.addActionListener(this);
-            return btn;
-        }
-
-        public boolean isCellEditable(EventObject anEvent) {
-            return true;
-        }
-
-        public void removeCellEditorListener(CellEditorListener l) {
-        }
-
-        public boolean shouldSelectCell(EventObject anEvent) {
-            return false;
-        }
-
-        public boolean stopCellEditing() {
-            return stop;
-        }
-
-    }
-
-    private class JLinkButtonRenderer implements TableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            return (JLinkButton) value;
+            if (col == 5) {
+                PackageData element = packageData.get(row);
+                element.setSelected(!element.isSelected());
+            }
         }
     }
 
@@ -229,8 +177,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
                 break;
             case 2:
                 column.setPreferredWidth(50);
-                column.setCellRenderer(new JLinkButtonRenderer());
-                column.setCellEditor(new JLinkButtonEditor());
+                column.setCellRenderer(JLinkButton.getJLinkButtonRenderer());
+                column.setCellEditor(JLinkButton.getJLinkButtonEditor());
                 break;
             case 3:
                 column.setPreferredWidth(30);
