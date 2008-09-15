@@ -1460,10 +1460,8 @@ public class JDUtilities {
      * @return RevissionID
      */
     public static String getRevision() {
-
         double r = (double) JD_REVISION_NUM / 1000.0;
-        return r + "";
-
+        return new DecimalFormat("0.000").format(r).replace(",", ".");
     }
 
     /**
@@ -1696,7 +1694,7 @@ public class JDUtilities {
      * @param waitForReturn
      * @return null oder die rückgabe des befehls falls waitforreturn == true
      *         ist
-     */ 
+     */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
         Executer exec = new Executer(command);
         exec.addParameters(parameter);
