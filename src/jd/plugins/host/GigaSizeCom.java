@@ -58,7 +58,7 @@ public class GigaSizeCom extends PluginForHost {
                 logger.severe("User account " + getPluginConfig().getStringProperty("FREE_USER") + "not valid.");
                 getPluginConfig().setProperty("USE_FREE_ACCOUNT", false);
                 getPluginConfig().save();
-            }
+            } 
         }
         if (forms.length < 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         Form captchaForm = forms[1];
