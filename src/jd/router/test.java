@@ -15,21 +15,15 @@ import org.cybergarage.xml.parser.kXML2Parser;
 public class test extends ControlPoint implements SearchResponseListener{
 
     public void deviceSearchResponseReceived(SSDPPacket packet) {
-        String url = packet.getLocation();
-        System.out.println(url);
-        try {
-            URLConnection con = new URL(url).openConnection();
-           Node in = new kXML2Parser().parse(con.getInputStream());
-           System.out.println(in.getNode("device").getNode("deviceList").getNode("device").getNode("deviceList").getNode("device").getNode("serviceList").getNode(1));
+//        String url = packet.getLocation();
+//        System.out.println(url);
+//            URLConnection con = new URL(url).openConnection();
+//            System.out.println(url);
+            System.out.println(packet.toString());
+//           Node in = new kXML2Parser().parse(con.getInputStream());
+//           System.out.println(in.getNode("device").getNode("deviceList").getNode("device").getNode("deviceList").getNode("device").getNode("serviceList").getNode(1));
 
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ParserException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        this.stop();
+       
 //        System.out.println("device search res : uuid = " + uuid + ", ST = " + st + ", location = " + url); 
     }
     public static void main(String[] args) {
@@ -37,5 +31,13 @@ public class test extends ControlPoint implements SearchResponseListener{
          t.start();
     
          t.addSearchResponseListener(t);
+         try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+         t.stop();
+         System.exit(0);
     }
 }
