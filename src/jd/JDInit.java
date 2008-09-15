@@ -745,7 +745,7 @@ public class JDInit {
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
         new OptionalPluginWrapper("StreamingShareTool", 1.5);
         new OptionalPluginWrapper("LangFileEditor", 1.5);
-        new OptionalPluginWrapper("JDUnrar", 1.5);
+        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
     }
 
     public void removeFiles() {

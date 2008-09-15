@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://gnu.org/licenses/>.
 
-package jd.plugins.optional;
+package jd.plugins.optional.jdunrar;
 
 import java.util.ArrayList;
 

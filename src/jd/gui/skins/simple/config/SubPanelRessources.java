@@ -116,7 +116,9 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
         @Override
         public void setValueAt(Object value, int row, int col) {
             PackageData element = packageData.get(row);
-            element.setSelected(!element.isSelected());
+          
+            element.setSelected(element.isSelected());
+         
         }
     }
 

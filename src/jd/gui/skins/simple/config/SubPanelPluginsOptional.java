@@ -139,6 +139,11 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             configuration.setProperty(getConfigParamKey(pluginsOptional.get(rowIndex).getPlugin()), !b);
             tableModel.fireTableRowsUpdated(rowIndex, rowIndex);
             table.getSelectionModel().setSelectionInterval(rowIndex, rowIndex);
+            if (!b) {
+                pluginsOptional.get(rowIndex).getPlugin().initAddon();
+            }else{
+                pluginsOptional.get(rowIndex).getPlugin().onExit();
+            }
         } else if (e.getSource() == openPluginDir) {
             try {
                 new GetExplorer().openExplorer(JDUtilities.getResourceFile("plugins"));

@@ -1,4 +1,4 @@
-package jd.plugins.optional;
+package jd.plugins.optional.jdunrar;
 
 public class JDUnrarConstants {
 

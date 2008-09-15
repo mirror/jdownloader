@@ -236,6 +236,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void onExit() {
         if (trayIcon != null) {
             SystemTray.getSystemTray().remove(trayIcon);
+            if (guiFrame != null) guiFrame.removeWindowStateListener(this);
         }
     }
 
