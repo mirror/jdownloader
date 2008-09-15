@@ -136,11 +136,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     protected boolean write(Object arg) {
 
-        // if
-        // (!JDUtilities.getConfiguration().getBooleanProperty(
-        // "INFOFILEWRITER_ENABLED",
-        // false)) { return false; }
-
         String content = subConfig.getStringProperty(PARAM_INFO_STRING, INFO_STRING_DEFAULT);
         String filename = subConfig.getStringProperty(PARAM_FILENAME, FILENAME_DEFAULT);
 

@@ -28,72 +28,70 @@ import jd.plugins.DownloadLink;
  */
 public class Replacer {
 
-    public static String[][] KEYS = new String[][] { new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", "Last finished package: Password" }, new String[] { "LAST_FINISHED_PACKAGE.FILELIST", "Last finished package: Filelist" }, new String[] { "SYSTEM.DATE", "Current Date" }, new String[] { "SYSTEM.TIME", "Current Time" }, new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", "Last finished package: packagename" }, new String[] { "LAST_FINISHED_PACKAGE.COMMENT", "Last finished package: Comment" }, new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", "Last finished package: Download Directory" }, new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", "Last finished File: Filepath" }, new String[] { "LAST_FINISHED_FILE.INFOSTRING", "Last finished File: Plugin given informationstring" }, new String[] { "LAST_FINISHED_FILE.HOST", "Last finished File: Hoster" },
-            new String[] { "LAST_FINISHED_FILE.NAME", "Last finished File: Filename" }, new String[] { "LAST_FINISHED_FILE.FILESIZE", "Last finished File: Filesize" }, new String[] { "LAST_FINISHED_FILE.AVAILABLE", "Last finished File: is Available (Yes,No)" }, new String[] { "JD.LAST_CHANGE_DATE", "jDownloader: Compiledate" }, new String[] { "JD.LAST_CHANGE_TIME", "jDownloader: Compiletime" }, new String[] { "SYSTEM.IP", "Current IP Address" }, new String[] { "SYSTEM.DATE", "Current Date" }, new String[] { "SYSTEM.TIME", "Current Time" }, new String[] { "JD.REVISION", "jDownloader: Revision/Version" }, new String[] { "SYSTEM.JAVA_VERSION", "Used Java Version" }, new String[] { "JD.HOME_DIR", "jDownloader: Homedirectory/Installdirectory" } };
+    public static String[][] KEYS = new String[][] { new String[] { "LAST_FINISHED_PACKAGE.PASSWORD", "Last finished package: Password" }, new String[] { "LAST_FINISHED_PACKAGE.FILELIST", "Last finished package: Filelist" }, new String[] { "LAST_FINISHED_PACKAGE.PACKAGENAME", "Last finished package: Packagename" }, new String[] { "LAST_FINISHED_PACKAGE.COMMENT", "Last finished package: Comment" }, new String[] { "LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY", "Last finished package: Download Directory" }, new String[] { "LAST_FINISHED_FILE.DOWNLOAD_PATH", "Last finished File: Filepath" }, new String[] { "LAST_FINISHED_FILE.INFOSTRING", "Last finished File: Plugin given informationstring" }, new String[] { "LAST_FINISHED_FILE.HOST", "Last finished File: Hoster" }, new String[] { "LAST_FINISHED_FILE.NAME", "Last finished File: Filename" },
+            new String[] { "LAST_FINISHED_FILE.FILESIZE", "Last finished File: Filesize" }, new String[] { "LAST_FINISHED_FILE.AVAILABLE", "Last finished File: is Available (Yes,No)" }, new String[] { "SYSTEM.IP", "Current IP Address" }, new String[] { "SYSTEM.DATE", "Current Date" }, new String[] { "SYSTEM.TIME", "Current Time" }, new String[] { "SYSTEM.JAVA_VERSION", "Used Java Version" }, new String[] { "JD.REVISION", "jDownloader: Revision/Version" }, new String[] { "JD.HOME_DIR", "jDownloader: Homedirectory/Installdirectory" } };
 
     public static String getReplacement(String key) {
         JDController controller = JDUtilities.getController();
         DownloadLink dLink = controller.getLastFinishedDownloadLink();
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PASSWORD")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getFilePackage().getPassword();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.FILELIST")) {
-            // Vector<DownloadLink> files = controller.getPackageFiles(dLink);
+            if (dLink == null) return "";
             Vector<DownloadLink> files = dLink.getFilePackage().getDownloadLinks();
             return files.toString();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.PACKAGENAME")) {
-            if (dLink == null) { return ""; }
-            if (dLink.getFilePackage().getName() == null || dLink.getFilePackage().getName().length() == 0) { return dLink.getName(); }
-
+            if (dLink == null) return "";
+            if (dLink.getFilePackage().getName() == null || dLink.getFilePackage().getName().length() == 0) return dLink.getName();
             return dLink.getFilePackage().getName();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.COMMENT")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getFilePackage().getComment();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getFilePackage().getDownloadDirectory();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.DOWNLOAD_PATH")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getFileOutput();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.INFOSTRING")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getFileInfomationString();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.HOST")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getHost();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.NAME")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getName();
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.FILESIZE")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.getDownloadSize() + "";
         }
 
         if (key.equalsIgnoreCase("LAST_FINISHED_FILE.AVAILABLE")) {
-            if (dLink == null) { return ""; }
+            if (dLink == null) return "";
             return dLink.isAvailable() ? "YES" : "NO";
         }
 
-     
         if (key.equalsIgnoreCase("SYSTEM.IP")) return JDUtilities.getIPAddress();
 
         if (key.equalsIgnoreCase("SYSTEM.DATE")) {
@@ -106,7 +104,6 @@ public class Replacer {
             return JDUtilities.fillInteger(c.get(Calendar.HOUR_OF_DAY), 2, "0") + ":" + JDUtilities.fillInteger(c.get(Calendar.MINUTE), 2, "0") + ":" + JDUtilities.fillInteger(c.get(Calendar.SECOND), 2, "0");
         }
 
-     
         if (key.equalsIgnoreCase("JD.REVISION")) return JDUtilities.getRevision();
 
         if (key.equalsIgnoreCase("SYSTEM.JAVA_VERSION")) return JDUtilities.getJavaVersion().toString();
