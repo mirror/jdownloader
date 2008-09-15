@@ -1009,11 +1009,10 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 PluginForHost plg = (PluginForHost) link.getPlugin();
 
                 sb.append("<h1>" + plg.getPluginID() + "</h1><hr>");
-                sb.append("<p>");
-                sb.append(JDLocale.L("gui.downloadlist.tooltip.connections", "Akt. Verbindungen: ") + "" + plg.getCurrentConnections() + "/" + plg.getMaxConnections());
-                sb.append("<br>");
-                sb.append(JDLocale.L("gui.downloadlist.tooltip.simultan_downloads", "Max. gleichzeitige Downloads:") + " " + plg.getMaxSimultanDownloadNum(link));
-                sb.append("</p>");
+                sb.append("<table>");
+                sb.append("<tr><td>" + JDLocale.L("gui.downloadlist.tooltip.connections", "Akt. Verbindungen:") + "</td><td>" + plg.getCurrentConnections() + "/" + plg.getMaxConnections() + "</td></tr>");
+                sb.append("<tr><td>" + JDLocale.L("gui.downloadlist.tooltip.simultan_downloads", "Max. gleichzeitige Downloads:") + "</td><td>" + plg.getMaxSimultanDownloadNum(link) + "</td></tr>");
+                sb.append("</table>");
                 break;
             case DownloadTreeTableModel.COL_STATUS:
                 sb.append("<p>" + link.getLinkStatus().getStatusString() + "</p>");
@@ -1021,23 +1020,20 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             case DownloadTreeTableModel.COL_PROGRESS:
                 if (link.getDownloadInstance() == null) { return; }
                 DownloadInterface dl = link.getDownloadInstance();
-                String table = "<p><table>";
+                sb.append("<h1>" + link.getFileOutput() + "</h1><hr>");
+                sb.append("<table>");
                 for (Chunk chunk : dl.getChunks()) {
                     long loaded = chunk.getBytesLoaded();
                     long total = chunk.getChunkSize();
                     long percent = chunk.getPercent() / 100;
-                    table += "<tr>";
-                    table += "<td> Verbindung " + chunk.getID() + "</td>";
-                    table += "<td>" + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s" + "</td>";
-                    table += "<td>" + JDUtilities.formatKbReadable(loaded / 1024) + "/" + JDUtilities.formatKbReadable(total / 1024) + "</td>";
-
-                    table += "<td>" + "<table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='" + percent + "%' bgcolor='#000000'/><td width='" + (100 - percent) + "%' bgcolor='#cccccc'/></tr> </table>" + "</td>";
-                    table += "</tr>";
+                    sb.append("<tr>");
+                    sb.append("<td> Verbindung " + chunk.getID() + "</td>");
+                    sb.append("<td>" + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s</td>");
+                    sb.append("<td>" + JDUtilities.formatKbReadable(loaded / 1024) + "/" + JDUtilities.formatKbReadable(total / 1024) + "</td>");
+                    sb.append("<td><table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='" + percent + "%' bgcolor='#000000'/><td width='" + (100 - percent) + "%' bgcolor='#cccccc'/></tr> </table></td>");
+                    sb.append("</tr>");
                 }
-                table += "</table></p>";
-
-                sb.append("<h1>" + link.getFileOutput() + "</h1><hr>");
-                sb.append(table);
+                sb.append("</table>");
             }
         } else {
             FilePackage fp = (FilePackage) obj;
@@ -1045,37 +1041,24 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             switch (column) {
             case DownloadTreeTableModel.COL_PART:
                 sb.append("<h1>" + fp.getName() + "</h1><hr>");
-                if (fp.hasComment()) {
-                    sb.append("<p>" + fp.getComment() + "</p>");
-                }
-                if (fp.hasPassword()) {
-                    sb.append("<p>" + fp.getPassword() + "</p>");
-                }
-                if (fp.hasDownloadDirectory()) {
-                    sb.append("<p>" + fp.getDownloadDirectory() + "</p>");
-                }
+                if (fp.hasComment()) sb.append("<p>" + fp.getComment() + "</p>");
+                if (fp.hasPassword()) sb.append("<p>" + fp.getPassword() + "</p>");
+                if (fp.hasDownloadDirectory()) sb.append("<p>" + fp.getDownloadDirectory() + "</p>");
                 break;
             case DownloadTreeTableModel.COL_FILE:
                 sb.append("<h1>" + fp.getName() + "</h1><hr>");
-                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partnum", "Teile: ") + fp.size() + "</p>");
-                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsfinished", "Davon fertig: ") + fp.getLinksFinished() + "</p>");
-                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsfailed", "Davon fehlerhaft: ") + fp.getLinksFailed() + "</p>");
-                sb.append("<p>" + JDLocale.L("gui.downloadlist.tooltip.partsactive", "Gerade aktiv: ") + fp.getLinksInProgress() + "</p>");
+                sb.append("<table>");
+                sb.append("<tr><td>" + JDLocale.L("gui.downloadlist.tooltip.partnum", "Teile:") + "</td><td>" + fp.size() + "</td></tr>");
+                sb.append("<tr><td>" + JDLocale.L("gui.downloadlist.tooltip.partsfinished", "Davon fertig:") + "</td><td>" + fp.getLinksFinished() + "</td></tr>");
+                sb.append("<tr><td>" + JDLocale.L("gui.downloadlist.tooltip.partsfailed", "Davon fehlerhaft:") + "</td><td>" + fp.getLinksFailed() + "</td></tr>");
+                sb.append("<tr><td>" + JDLocale.L("gui.downloadlist.tooltip.partsactive", "Gerade aktiv:") + "</td><td>" + fp.getLinksInProgress() + "</td></tr>");
+                sb.append("</table>");
                 break;
             case DownloadTreeTableModel.COL_HOSTER:
                 return;
             case DownloadTreeTableModel.COL_STATUS:
-                // sb.append("<h1>" + fp.getName() + "</h1><hr>");
-                // sb.append("<p>" +
-                // this.getDownladTreeTableModel().getValueAt(fp, column) +
-                // "</p>");
-                // break;
                 return;
             case DownloadTreeTableModel.COL_PROGRESS:
-                // sb.append("<h1>" + fp.getName() + "</h1><hr>");
-                // sb.append("<p>" +
-                // this.getDownladTreeTableModel().getValueAt(fp, column - 1) +
-                // "</p>");
                 return;
             }
         }

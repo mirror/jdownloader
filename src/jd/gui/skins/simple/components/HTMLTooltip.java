@@ -18,7 +18,9 @@ package jd.gui.skins.simple.components;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.HashMap;
@@ -71,6 +73,17 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
         ret.setVisible(true);
 
         ret.pack();
+        Dimension size = Toolkit.getDefaultToolkit().getScreenSize();
+        if (loc.x + (ret.getWidth() / 2) > size.width) {
+            loc.x = size.width - (ret.getWidth() / 2);
+        } else if (loc.x - (ret.getWidth() / 2) < 0) {
+            loc.x = ret.getWidth() / 2;
+        }
+        if (loc.y + ret.getHeight() > size.height) {
+            loc.y = size.height - ret.getHeight();
+        } else if (loc.y - ret.getHeight() < 0) {
+            loc.y = ret.getHeight();
+        }
         ret.setLocation(loc);
         return ret;
     }

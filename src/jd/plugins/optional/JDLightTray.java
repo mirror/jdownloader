@@ -238,10 +238,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     @Override
     public void onExit() {
-        if (trayIcon != null) {
-            SystemTray.getSystemTray().remove(trayIcon);
-            if (guiFrame != null) guiFrame.removeWindowStateListener(this);
-        }
+        if (trayIcon != null) SystemTray.getSystemTray().remove(trayIcon);
+        JDUtilities.getController().removeControlListener(this);
+        if (guiFrame != null) guiFrame.removeWindowStateListener(this);
     }
 
     public void windowStateChanged(WindowEvent arg0) {
@@ -295,8 +294,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>");
         } else {
             creater.append("<table>");
-            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td>" + downloads + "</tr>");
-            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </tr>");
+            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td><td>" + downloads + "</td></tr>");
+            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </td></tr>");
             creater.append("</table>");
         }
         creater.append("</html>");
