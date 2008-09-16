@@ -323,15 +323,25 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         case TreeTableAction.DOWNLOAD_RESET:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
-
-            for (int i = 0; i < links.size(); i++) {
-                // if (!links.elementAt(i).isPluginActive()) {
-                links.elementAt(i).getLinkStatus().reset();
-                links.elementAt(i).reset();
-                links.elementAt(i).getPlugin().resetHosterWaitTime();
-
+            if (!guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?"))) {
+                    for (int i = 0; i < links.size(); i++) {
+                        // if (!links.elementAt(i).isPluginActive()) {
+                        links.elementAt(i).getLinkStatus().reset();
+                        links.elementAt(i).reset();
+                        links.elementAt(i).getPlugin().resetHosterWaitTime();
+                    }
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                }
+            } else {
+                for (int i = 0; i < links.size(); i++) {
+                    // if (!links.elementAt(i).isPluginActive()) {
+                    links.elementAt(i).getLinkStatus().reset();
+                    links.elementAt(i).reset();
+                    links.elementAt(i).getPlugin().resetHosterWaitTime();
+                }
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
 
             break;
 
@@ -452,23 +462,39 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             break;
 
         case TreeTableAction.PACKAGE_RESET:
+            if (!guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?"))) {
+                    fps = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
 
-            fps = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
+                    for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
+                        next = it.next();
+                        for (int i = 0; i < next.size(); i++) {
+                            if (!next.get(i).getLinkStatus().isPluginActive()) {
+                                next.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                                next.get(i).getLinkStatus().setStatusText("");
+                                next.get(i).getPlugin().resetHosterWaitTime();
+                                next.get(i).reset();
+                            }
+                        }
+                    }
+                    JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+                }
+            } else {
+                fps = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
 
-            for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
-                next = it.next();
-                for (int i = 0; i < next.size(); i++) {
-                    if (!next.get(i).getLinkStatus().isPluginActive()) {
-                        next.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
-                        next.get(i).getLinkStatus().setStatusText("");
-                        next.get(i).getPlugin().resetHosterWaitTime();
-                        next.get(i).reset();
+                for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
+                    next = it.next();
+                    for (int i = 0; i < next.size(); i++) {
+                        if (!next.get(i).getLinkStatus().isPluginActive()) {
+                            next.get(i).getLinkStatus().setStatus(LinkStatus.TODO);
+                            next.get(i).getLinkStatus().setStatusText("");
+                            next.get(i).getPlugin().resetHosterWaitTime();
+                            next.get(i).reset();
+                        }
                     }
                 }
-
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
-
             break;
         case TreeTableAction.PACKAGE_SORT:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
