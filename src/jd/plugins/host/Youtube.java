@@ -105,7 +105,7 @@ public class Youtube extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         login(account);
-        if (!br.getRegex(">YouTube - " + account.getUser() + "'s YouTube<").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        if (!br.getRegex("<title>YouTube - Mein YouTube: " + account.getUser() + "</title>").matches()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
