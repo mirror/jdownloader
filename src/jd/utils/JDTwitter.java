@@ -18,11 +18,12 @@ public class JDTwitter {
             e.printStackTrace();
         }
 
-        if (status.matches(".*defaultmessage.*")) status = "";
+     
 
         if ((status == null) || (status == "")) {
             status = JDLocale.L("sys.message.welcome", "Welcome to JDownloader");
         } else {
+            if (status.matches(".*defaultmessage.*")) status = "";
             if (status.length() > 70) status = status.substring(0, 70) + "...";
         }
 
