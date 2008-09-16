@@ -726,7 +726,7 @@ public boolean isExtract(){
 
     public static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
-    public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V2";
+    public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V3";
 
     private static final String PROPERTY_HOSTSELECTIONPACKAGEONLY = "PROPERTY_HOSTSELECTIONPACKAGEONLY";
 
@@ -1109,7 +1109,7 @@ public boolean isExtract(){
                 }
             }
             // logger.info("Best sym: "+bestSim);
-            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 90)) {
+            if (bestSim < guiConfig.getIntegerProperty(PROPERTY_AUTOPACKAGE_LIMIT, 99)) {
 
                 addLinksToTab(new DownloadLink[] { link }, tabList.size());
                 tabList.get(tabList.size() - 1).setPackageName(packageName);

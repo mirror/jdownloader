@@ -46,10 +46,10 @@ public class Executer extends Thread {
 
                     sb.append(line + "\r\n");
                     if (line.startsWith("Enter password")) {
-                        to.println("\"%test \r\n");
+                        to.println("test\r\n");
+                     
                         to.flush();
                         to.close();
-                  
 
                     }
                     if (line.length() > 0) fireEvent(line);
@@ -63,11 +63,9 @@ public class Executer extends Thread {
             StringBuffer s = new StringBuffer();
             char[] buffer = new char[1];
             for (;;) {
-                if (reader2.read(buffer) < 0) {
-                    return s.length() == 0 ? null : s.toString();
-                }
+                if (reader2.read(buffer) < 0) { return s.length() == 0 ? null : s.toString(); }
                 if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
-                    
+
                     if (s.length() > 0) return s.toString();
                 } else {
                     s.append(buffer);
@@ -147,7 +145,7 @@ public class Executer extends Thread {
         params.add(command);
         params.addAll(parameter);
 
-        System.out.println(params + "");
+//        System.out.println(params + "");
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -173,11 +171,11 @@ public class Executer extends Thread {
             // out.write("some text".getBytes());
             // out.close();
 
-        to = new PrintWriter(process.getOutputStream());
-//            to.println("net view");
-//            to.println("exit");
-//            to.close();
-      
+            to = new PrintWriter(process.getOutputStream());
+            // to.println("net view");
+            // to.println("exit");
+            // to.close();
+
             if (waitTimeout == 0) { return; }
             StreamObserver sbeObserver = new StreamObserver(process.getErrorStream(), sbe);
             StreamObserver sbObserver = new StreamObserver(process.getInputStream(), sb);
@@ -263,6 +261,32 @@ public class Executer extends Thread {
 
     private void removeProcessListener(ProcessListener listener) {
         this.listener.remove(listener);
+
+    }
+
+    public static void main(String args[]) {
+
+        Executer exec = new Executer("C:\\Users\\coalado\\.jd_home\\tools\\windows\\unrarw32\\unrar.exe");
+
+        exec.addParameter("-v");
+        exec.addParameter("-c-");
+        // exec.addParameter("-ierr");
+        exec.addParameter("v");
+        exec.addParameter("links.rar");
+        // exec.addProcessListener(new ProcessListener(){
+        //
+        // public void onProcess(Executer exec, String err, String out, String
+        // latest) {
+        // System.out.println(latest);
+        //              
+        // }
+        //          
+        // });
+        exec.setRunin("d:\\jdtest2");
+        exec.setWaitTimeout(-1);
+        exec.start();
+        exec.waitTimeout();
+        String res = exec.getStream() + " \r\n " + exec.getErrorStream();
 
     }
 
