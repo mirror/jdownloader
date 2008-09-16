@@ -33,14 +33,12 @@ public class JDFileChooser extends JFileChooser {
 
     private static final long serialVersionUID = 3315263822025280362L;
     private String fcID;
-    private Logger logger;
+    @SuppressWarnings("unused")
+    private Logger logger = JDUtilities.getLogger();
 
     public JDFileChooser() {
         super();
-        logger = JDUtilities.getLogger();
-
         setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(null));
-
     }
 
     /**
@@ -52,27 +50,18 @@ public class JDFileChooser extends JFileChooser {
     public JDFileChooser(String id) {
         super();
         fcID = id;
-        logger = JDUtilities.getLogger();
-
         setCurrentDirectory(JDUtilities.getCurrentWorkingDirectory(fcID));
-
     }
 
     @Override
     public File getSelectedFile() {
-
         File ret = super.getSelectedFile();
-        if (ret == null) { return null; }
+        if (ret == null) return null;
         if (ret.isDirectory()) {
             JDUtilities.setCurrentWorkingDirectory(ret, fcID);
-            logger.info("Save working path in :" + ret);
         } else {
             JDUtilities.setCurrentWorkingDirectory(ret.getParentFile(), fcID);
-
-            logger.info("Save working path in :" + ret.getParentFile());
         }
-        logger.info("Get Working path to: " + JDUtilities.getCurrentWorkingDirectory(fcID));
-        JDUtilities.saveConfig();
         return ret;
     }
 

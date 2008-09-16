@@ -768,21 +768,19 @@ public class JDUtilities {
      * @return
      */
     public static File getCurrentWorkingDirectory(String id) {
-        if (id == null) {
-            id = "";
-        }
+        if (id == null) id = "";
+
         String dlDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, null);
         String lastDir = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, null);
 
         File dlDirectory;
-        // File lastDirectory;
         if (dlDir == null) {
             dlDirectory = new File("");
         } else {
             dlDirectory = new File(dlDir);
         }
 
-        if (lastDir == null) { return dlDirectory; }
+        if (lastDir == null) return dlDirectory;
         return new File(lastDir);
 
     }
@@ -1862,12 +1860,12 @@ public class JDUtilities {
      * Setztd as aktuelle woringdirectory für den filebrowser
      * 
      * @param f
+     * @param id
      */
     public static void setCurrentWorkingDirectory(File f, String id) {
-        if (id == null) {
-            id = "";
-        }
+        if (id == null) id = "";
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
+        JDUtilities.saveConfig();
     }
 
     public static void setLocale(Locale locale) {
