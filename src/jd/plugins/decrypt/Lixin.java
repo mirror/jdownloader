@@ -47,28 +47,33 @@ public class Lixin extends PluginForDecrypt {
 
         try {
 
-            boolean lix_continue = false;
+            boolean lix_continue = true;
             Matcher matcher;
             Form form;
             /* zuerst mal den evtl captcha abarbeiten */
 
             br.getPage(parameter);
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                matcher = patternCaptcha.matcher(br + "");
-                if (matcher.find()) {
-                    form = br.getForm(0);
-
-                    String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
-                    File captchaFile = this.getLocalCaptchaFile(this);
-                    Browser.download(captchaFile, captchaAddress);
-                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                    if (captchaCode == null) {
-                        /* abbruch geklickt */
-                        return null;
+                form = br.getForm(0);
+                if (form != null) {
+                    matcher = patternCaptcha.matcher(br + "");
+                    if (matcher.find()) {
+                        lix_continue = false;
+                        form = br.getForm(0);
+                        String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
+                        File captchaFile = this.getLocalCaptchaFile(this);
+                        Browser.download(captchaFile, captchaAddress);
+                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
+                        if (captchaCode == null) {
+                            /* abbruch geklickt */
+                            return null;
+                        }
+                        captchaCode = captchaCode.toUpperCase();
+                        form.put("capt", captchaCode);
+                        br.submitForm(form);
+                    } else {
+                        br.submitForm(form);
                     }
-                    captchaCode = captchaCode.toUpperCase();
-                    form.put("capt", captchaCode);
-                    br.submitForm(form);
                 } else {
                     lix_continue = true;
                     break;

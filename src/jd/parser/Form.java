@@ -67,12 +67,16 @@ public class Form {
     public static Form[] getForms(Object requestInfo, String matcher) {
         LinkedList<Form> forms = new LinkedList<Form>();
 
-        Pattern pattern = Pattern.compile("<[\\s]*form(.*?)>(.*?)<[\\s]*/[\\s]*form[\\s]*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        Pattern pattern = Pattern.compile("<[\\s]*form(.*?)>(.*?)<[\\s]*/[\\s]*form[\\s]*>|<[\\s]*form(.*?)>(.+)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
         Matcher formmatcher = pattern.matcher(requestInfo.toString().replaceAll("(?s)<!--.*?-->", ""));
         while (formmatcher.find()) {
             String formPropertie = formmatcher.group(1);
             String inForm = formmatcher.group(2);
-
+            if (formPropertie == null) {
+                /* falls die form nicht geschlossen wird */
+                formPropertie = formmatcher.group(3);
+                inForm = formmatcher.group(4);
+            }
             // System.out.println(inForm);
             if (inForm.matches("(?s)" + matcher)) {
                 Form form = new Form();
@@ -392,7 +396,7 @@ public class Form {
     public void setSubmitValues(String[] submitValues) {
         this.submitValues = submitValues;
     }
-    
+
     public Regex getRegex(String string) {
         return new Regex(htmlcode, string);
     }
