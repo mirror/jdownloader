@@ -40,6 +40,8 @@ public class Form {
 
     public static final int METHOD_UNKNOWN = 99;
 
+    private String htmlcode = null;
+
     /**
      * Ein Array mit allen Forms einer Seite
      */
@@ -48,6 +50,10 @@ public class Form {
     }
 
     private String[] submitValues;
+
+    public String gethtmlcode() {
+        return htmlcode;
+    }
 
     public boolean equals(Form f) {
         return this.toString().equalsIgnoreCase(f.toString());
@@ -70,6 +76,7 @@ public class Form {
             // System.out.println(inForm);
             if (inForm.matches("(?s)" + matcher)) {
                 Form form = new Form();
+                form.htmlcode = inForm;
                 String[] submits = new Regex(inForm, "<input.*?>").getColumn(-1);
                 ArrayList<String> tmp = new ArrayList<String>();
                 // 
@@ -174,7 +181,7 @@ public class Form {
             try {
                 if (submit == value || submit.equals(value)) return true;
             } catch (NullPointerException e) {
-//                e.printStackTrace();
+                // e.printStackTrace();
             }
         }
         return false;
@@ -300,7 +307,7 @@ public class Form {
         for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
             String key = it.next();
             if (--i < 0) {
-              
+
                 vars.put(key, value);
                 return key;
             }
@@ -381,8 +388,16 @@ public class Form {
     public String[] getSubmitValues() {
         return submitValues;
     }
-    
+
     public void setSubmitValues(String[] submitValues) {
-        this.submitValues=submitValues;
+        this.submitValues = submitValues;
+    }
+    
+    public Regex getRegex(String string) {
+        return new Regex(htmlcode, string);
+    }
+
+    public Regex getRegex(Pattern compile) {
+        return new Regex(htmlcode, compile);
     }
 }

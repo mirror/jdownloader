@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -55,11 +56,11 @@ public class Odsiebiecom extends PluginForHost {
         try {
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
-                String filename = br.getRegex("Nazwa pliku: <strong>(.*?)</strong>").getMatch(0);
+                String filename = br.getRegex(Pattern.compile("<dt>Nazwa pliku:</dt>.*?<dd>(.*?)</dd>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                 String filesize;
-                if ((filesize = br.getRegex("Rozmiar pliku: <strong>(.*?)MB</strong>").getMatch(0)) != null) {
+                if ((filesize = br.getRegex(Pattern.compile("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)MB</dd>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024 * 1024));
-                } else if ((filesize = br.getRegex("Rozmiar pliku: <strong>(.*?)KB</strong>").getMatch(0)) != null) {
+                } else if ((filesize = br.getRegex(Pattern.compile("<dt>Rozmiar pliku:</dt>.*?<dd>(.*?)KB</dd>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0)) != null) {
                     downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize) * 1024));
                 }
                 downloadLink.setName(filename);
@@ -91,7 +92,7 @@ public class Odsiebiecom extends PluginForHost {
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
          */
-        String steplink = br.getRegex("<a href=\"/pobierz/(.*?)\"  style=\"font-size: 18px\">(.*?)</a>").getMatch(0);
+        String steplink = br.getRegex("<a class=\".*?\" href=\"/pobierz/(.*?)\">Pobierz plik</a>").getMatch(0);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */
             /* Film,Mp3 */
@@ -112,17 +113,16 @@ public class Odsiebiecom extends PluginForHost {
         } else {
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
-            br.getPage(downloadurl);            
-            downloadurl = "http://odsiebie.com/pobierz/" + steplink + ".html";
             br.getPage(downloadurl);
             if (br.getRedirectLocation() != null) {
                 /* Weiterleitung auf andere Seite, evtl mit Captcha */
                 downloadurl = br.getRedirectLocation();
                 br.getPage(downloadurl);
             }
-            if (br.getRegex(Pattern.compile("<img src=\"(.*?odsiebie.*?ca.*?php)\">", Pattern.CASE_INSENSITIVE)).matches()) {
+            Form capform = br.getFormbyName("wer");
+            if (capform != null) {
                 /* Captcha File holen */
-                String captchaurl = br.getRegex(Pattern.compile("<img src=\"(.*?odsiebie.*?ca.*?php)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                String captchaurl = capform.getRegex(Pattern.compile("<img src=\"(.*?ca.*?php.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 captchaFile = getLocalCaptchaFile(this);
                 Browser cap_br = br.cloneBrowser();
                 HTTPConnection captcha_con = cap_br.openGetConnection(captchaurl);
@@ -139,8 +139,9 @@ public class Odsiebiecom extends PluginForHost {
                     linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                     return;
                 }
+                capform.setVariable(0, captchaCode);
                 /* Überprüfen(Captcha,Password) */
-                downloadurl = "http://odsiebie.com/pobierz/" + steplink + ".html?captcha=" + captchaCode;
+                downloadurl = "http://odsiebie.com/pobierz/" + steplink + "?captcha=" + captchaCode;
                 br.getPage(downloadurl);
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("html?err")) {
                     linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
