@@ -56,7 +56,10 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
@@ -88,13 +91,19 @@ import net.miginfocom.swing.MigLayout;
 
 public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
+    private static final String WRAP_BETWEEN_ROWS = ", wrap 10!";
+    private static final String WRAP = ", wrap 20";
     private static final long serialVersionUID = 1715405893428812995L;
-    private static final String GAPLEFT = "gapleft 15!, ";
-    private static final String GAPBOTTOM = ", gapbottom :10:push";
-    private static final String SPAN = ", spanx" + GAPBOTTOM;
+    private static final String GAPLEFT = "gapleft 10!, ";
+    private static final String GAPRIGHT = "gapright 26!, ";
+    private static final String PUSHGAP =  " :70";
 
-    public static void main(String[] args) {
-        new FengShuiConfigPanel();
+    public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        FengShuiConfigPanel fengShuiConfigPanel = new FengShuiConfigPanel();
+        fengShuiConfigPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        fengShuiConfigPanel.setResizable(true);
+        fengShuiConfigPanel.setAlwaysOnTop(true);
     }
 
     private JButton more, apply, cancel, premium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
@@ -133,7 +142,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         if (SimpleGUI.CURRENTGUI != null) this.setLocation(SimpleGUI.getLastLocation(SimpleGUI.CURRENTGUI.getFrame(), null, this));
         this.setResizable(false);
         this.setVisible(true);
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -316,7 +324,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                 }
             });
 
-            // !!! Eclipse Clear Console Icon
+            // Eclipse Clear Console Icon should be used
             ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
             imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
             JButton reset = new JButton(imageIcon);
@@ -334,7 +342,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                 }
             });
             searchField.setText(text);
-            // !!! Lupen-Icon
+            // !!! Lupen-Icon should be used
             Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
             JPanel p = new JPanel(new BorderLayout(5, 5));
             p.add(searchField, BorderLayout.CENTER);
@@ -383,29 +391,29 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         }
     }
 
-    private void addComponents(JPanel panel, String label, JComponent... components) {
+    private void addComponents(JPanel panel, String label, JComponent component, String comp_constraints) {
+        JLabel l = getLabel(label);
+        panel.add(l, "gapleft 22, growx 0");
+//        l.setBorder(new LineBorder(Color.green, 3));
+        panel.add(component, comp_constraints + ", growx");
+    }
 
-        panel.add(new JLabel("<html><b color=\"#4169E1\">" + label), "gapleft 22, gaptop 5" + GAPBOTTOM);
-        for (int i = 0; i < components.length; i++) {
-            if (i == components.length - 1) {
-                panel.add(components[i], GAPLEFT + SPAN + ", gapright 5");
-            } else {
-                panel.add(components[i], GAPLEFT);
-            }
-        }
+    private JLabel getLabel(String label) {
+        return new JLabel("<html><b color=\"#4169E1\">" + label);
     }
 
     private void addSeparator(JPanel panel, String title, Icon icon, String help) {
         try {
             JLinkButton label = new JLinkButton("<html><u><b  color=\"#006400\">" + title, icon, new URL(wikiurl + (title.replaceAll("\\s", "_"))));
             label.setIconTextGap(8);
+            label.setBorder(null);
             panel.add(label, "align left, split 2");
             panel.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
             panel.add(new JSeparator(), "span 3, pushx, growx");
 
             JLabel tip = new JLabel(JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
             tip.setToolTipText(help);
-            panel.add(tip, GAPLEFT + "w pref!, wrap");
+            panel.add(tip, GAPLEFT + "w pref!" + WRAP);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
@@ -496,18 +504,19 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         progresspanel.add(new JSeparator());
 
         progresspanel.validate();
-
     }
+    
+    private static final String DEBUG = ""; 
+//    private static final String DEBUG = "debug, "; 
 
     private JPanel getPanel() {
-        panel = new JPanel(new MigLayout("ins 32 22 15 22", "[right, pref!]0[right,grow,fill]0[]"));
+        panel = new JPanel(new MigLayout(DEBUG + "ins dialog", "[right, pref!]0[grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
         Reconnectmethode = config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
         addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
 
         languages = new JComboBox(JDLocale.getLocaleIDs().toArray(new String[] {}));
         languages.setSelectedItem(guiConfig.getProperty(SimpleGUI.PARAM_LOCALE, Locale.getDefault()));
-        addComponents(panel, JDLocale.L("gui.config.gui.language", "Sprache"), languages);
         addWindowListener(new WindowAdapter() {
             public void windowOpened(WindowEvent e) {
                 downloadDirectory.requestFocus();
@@ -517,12 +526,18 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         downloadDirectory.setEditable(true);
         downloadDirectory.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         downloadDirectory.setText(getDownloadDirectory());
-        addComponents(panel, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis"), downloadDirectory);
+        
+        addComponents(panel, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis"), downloadDirectory, GAPLEFT + GAPRIGHT + ", spanx" + WRAP_BETWEEN_ROWS);
+        addComponents(panel, JDLocale.L("gui.config.gui.language", "Sprache"), languages, GAPLEFT + GAPRIGHT + ", w pref!, wrap " + PUSHGAP);
 
-        addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.config.host"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
-
-        panel.add(premium = new JButton(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster")), GAPLEFT + "align leading, wmax pref" + SPAN);
+        
+//        premium = new JButton(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
+        premium = new JButton("Einstellungen");
         premium.addActionListener(this);
+        
+        addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.next"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
+        addComponents(panel, JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), premium, GAPLEFT + GAPRIGHT + ", w pref!, wrap" + PUSHGAP);
+//        panel.add(premium, GAPLEFT + "align leading, wmax pref" + SPANGAPBOTTOM);
 
         JLinkButton label;
         try {
@@ -530,9 +545,10 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             label = new JLinkButton("<html><u><b  color=\"#006400\">" + titl, JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.reconnect"), 32, 32), new URL(wikiurl + (titl.replaceAll("\\s", "_"))));
 
             label.setIconTextGap(8);
+            label.setBorder(null);
             panel.add(label, "align left, split 2");
             panel.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
-            progresspanel = new JPanel(new MigLayout("ins 0, aligny 49%", "fill, grow"));
+            progresspanel = new JPanel(new MigLayout(DEBUG + "ins 0, aligny 49%", "fill, grow"));
             panel.add(progresspanel, "pushx, span 3, growx");
             if (routerIp == null || routerIp.matches("\\s*"))
                 showProgressbar();
@@ -541,42 +557,84 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
             JLabel tip = new JLabel(JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
             tip.setToolTipText(JDLocale.L("gui.fengshuiconfig.reconnect.tooltip", "<html>Somtimes you need to change your ip via reconnect, to skip the waittime!"));
-            panel.add(tip, GAPLEFT + "w pref!, wrap");
+            panel.add(tip, GAPLEFT + "w pref!" + WRAP);
         } catch (MalformedURLException e) {
             e.printStackTrace();
         }
 
-        JPanel reconnectPanel = new JPanel(new MigLayout());
-        reconnectPanel.add(btnAutoConfig = new JButton(JDLocale.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten")), "pushx");
+//        JPanel reconnectPanel = new JPanel(new MigLayout(DEBUG));
+//        btnAutoConfig = new JButton(JDLocale.L("gui.config.liveHeader.autoConfig", "Router automatisch setzten"));
+//        btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Router auswählen"));
+        btnTestReconnect = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test reconnect"));
+        
+        btnAutoConfig = new JButton("Automatisch");
+        btnSelectRouter = new JButton("Manuell");
+
         btnAutoConfig.addActionListener(this);
-        reconnectPanel.add(btnSelectRouter = new JButton(JDLocale.L("gui.config.liveHeader.selectRouter", "Router auswählen")), "w pref!");
         btnSelectRouter.addActionListener(this);
-        reconnectPanel.add(btnTestReconnect = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test reconnect")), "w pref!, wrap");
         btnTestReconnect.addActionListener(this);
 
-        panel.add(reconnectPanel, "spanx, pushx, growx");
-        reconnectPanel = new JPanel(new MigLayout());
+//        reconnectPanel.add(btnAutoConfig, "pushx");
+//        reconnectPanel.add(btnSelectRouter, "w pref!");
+//        reconnectPanel.add(btnTestReconnect, "w pref!, wrap");
+        
+        addComponents(panel, "Router erkennen", btnAutoConfig, GAPLEFT + ", w pref!, split 2");
+        panel.add(btnSelectRouter, GAPLEFT + GAPRIGHT + ", w pref!" + WRAP_BETWEEN_ROWS);
+        
+        
+//        panel.add(reconnectPanel, "spanx, pushx, growx");
+        
+//        reconnectPanel = new JPanel(new MigLayout(DEBUG + ", ins 0"));
 
-        reconnectPanel.add(new JLabel(JDLocale.L("gui.config.fengshui.routerip", "RouterIP:")));
-        reconnectPanel.add(ip = new JTextField(12));
+//        JLabel ip_label = new JLabel(JDLocale.L("gui.config.fengshui.routerip", "RouterIP:"));
+//        JLabel routername_label = new JLabel(JDLocale.L("gui.config.fengshui.routername", "Routername:"));
+//        JLabel username_label = new JLabel(JDLocale.L("gui.config.fengshui.user", "Username:"));
+//        JLabel password_label = new JLabel(JDLocale.L("gui.config.fengshui.password", "Password:"));
+        
+        
+//        reconnectPanel.add(ip_label);
+//        reconnectPanel.add(ip);
+//        reconnectPanel.add(routername_label);
+//        reconnectPanel.add(routername, "wrap");
+//        reconnectPanel.add(username_label);
+//        reconnectPanel.add(username);
+//        reconnectPanel.add(password_label);
+//        reconnectPanel.add(password);
+//        panel.add(reconnectPanel, GAPRIGHT + "gapleft 22, spanx, pushx, growx, wrap 10!");
+
+        int n = 10;
+        ip = new JTextField(n);
+        routername = new JTextField(n);
+        username = new JTextField(n);
+        password = new JPasswordField(n);
+        
         ip.setText(routerIp);
-        reconnectPanel.add(new JLabel(JDLocale.L("gui.config.fengshui.routername", "Routername:")));
-        reconnectPanel.add(routername = new JTextField(12), "wrap");
         routername.setEnabled(false);
         routername.setEditable(false);
+        
         routername.setText(config.getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, ""));
-        reconnectPanel.add(new JLabel(JDLocale.L("gui.config.fengshui.user", "Username:")));
-        reconnectPanel.add(username = new JTextField(12));
         username.setText(config.getStringProperty(Configuration.PARAM_HTTPSEND_USER, ""));
-        reconnectPanel.add(new JLabel(JDLocale.L("gui.config.fengshui.password", "Password:")));
-        reconnectPanel.add(password = new JPasswordField(12));
         password.setText(config.getStringProperty(Configuration.PARAM_HTTPSEND_PASS, ""));
-        panel.add(reconnectPanel, "spanx, pushx, growx, gapbottom :10:push");
 
+//        String left =  GAPLEFT +  ", w pref!, growx, split 3";
+//        String right = GAPLEFT +  ", w pref, growx" + WRAP_BETWEEN_ROWS;
+//        addComponents(panel, "RouterIP:",   ip, left);
+//        addComponents(panel, "Routername:", routername, right);
+//        addComponents(panel, "Username:",   username, left);
+//        addComponents(panel, "Password:",   password, right);
+        
+        
+        String constr =  GAPLEFT +  ", w pref!, growx, spanx" + WRAP_BETWEEN_ROWS;
+        addComponents(panel, "RouterIP:",   subpanel(ip, "Routername:", routername), constr);
+        addComponents(panel, "Username:",   subpanel(username, "Password:", password), constr);
+        
+        
+        addComponents(panel, "Einstellungen testen", btnTestReconnect, GAPLEFT + ", w pref!, wrap" + PUSHGAP + ":push");
+        
         getRouterIp();
 
-        JPanel bpanel = new JPanel(new MigLayout());
-        bpanel.add(new JSeparator(), "growy,spanx, pushx, growx, gapbottom :100:push");
+        JPanel bpanel = new JPanel(new MigLayout(DEBUG));
+        bpanel.add(new JSeparator(), "spanx, pushx, growx");
         bpanel.add(more = new JButton(JDLocale.L("gui.config.fengshui.expertview", "expert view")), "tag help2");
         more.addActionListener(this);
         bpanel.add(apply = new JButton(JDLocale.L("gui.config.btn_save", "save")), "w pref!, tag apply");
@@ -587,6 +645,17 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
         return panel;
     }
+    
+    
+
+private JComponent subpanel(JTextField c1, String l2, JTextField c2) {
+    JPanel subpanel = new JPanel(new MigLayout(DEBUG + ", ins 0", "[grow,fill]10[right, 70!]10[grow,fill]"));
+    subpanel.add(c1);
+    subpanel.add(getLabel(l2));
+    subpanel.add(c2);
+    return subpanel;
+}
+    
 
     public void getRouterIp() {
 
