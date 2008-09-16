@@ -306,7 +306,8 @@ public class DepositFiles extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
-        String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("\\.com[/..]?/files", ".com/de/files"));
+        String link = downloadLink.getDownloadURL();
 
         br.setFollowRedirects(true);
         br.setCookie("http://depositfiles.com", "lang_current", "de");

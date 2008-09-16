@@ -36,14 +36,17 @@ public class Hideurlbiz extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String links[][] = new Regex(br.getPage(parameter), Pattern.compile("value=\"(Download|Free Download)\" onclick=\"openlink\\('(.*?)','.*?'\\);\"", Pattern.CASE_INSENSITIVE)).getMatches();
+        br.setFollowRedirects(false);
+        br.getPage(parameter);
+        String links[] = br.getRegex(Pattern.compile("value=\"[Free ]?Download\" onclick=\"openlink\\('(.*?)','.*?'\\);\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+
         progress.setRange(links.length);
-        for (String[] element : links) {
-            String page = br.getPage(element[1]);
+        for (String element : links) {
+            br.getPage(element);
             if (br.getRedirectLocation() != null) {
                 decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
             } else {
-                String link = new Regex(page, Pattern.compile("action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                String link = br.getRegex(Pattern.compile("action=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 if (link != null) decryptedLinks.add(createDownloadlink(link));
             }
             progress.increase(1);
