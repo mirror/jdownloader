@@ -35,7 +35,6 @@ public class BluehostTo extends PluginForHost {
 
     public BluehostTo(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     static private final String CODER = "JD-Team";
@@ -48,22 +47,21 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+//        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String page = null;
+//        String page = null;
         Browser br = new Browser();
 
         correctUrl(downloadLink);
 
-        page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
-        String[] dat = page.split("\\, ");
+//        page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
+//        String[] dat = page.split("\\, ");
 
-        
         //vorrübergehen abgeschalten, bis api wieder online ist
-        if (dat.length != 5) {
+//        if (dat.length != 5) {
 //            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
 //            return;
-        }
+//        }
 
 //        br.getPage("http://bluehost.to/fetchinfo");
         br.getPage(downloadLink.getDownloadURL());
@@ -101,7 +99,7 @@ public class BluehostTo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
    
             correctUrl(downloadLink);
-            String page;
+//            String page;
             // dateiname, dateihash, dateisize, dateidownloads, zeit bis
             // happyhour
             Browser br = new Browser();

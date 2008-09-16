@@ -197,7 +197,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 hideTooltip();
             }
 
-            if (e.getClickCount() >= 1 && !SwingUtilities.isRightMouseButton(e)) {
+            if (e.getClickCount() > 1 && !SwingUtilities.isRightMouseButton(e)) {
                 guiFrame.setVisible(!guiFrame.isVisible());
                 if (guiFrame.isVisible()) guiFrame.setState(JFrame.NORMAL);
             } else {

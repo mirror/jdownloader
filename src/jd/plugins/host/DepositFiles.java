@@ -71,7 +71,6 @@ public class DepositFiles extends PluginForHost {
         DownloadLink downloadLink = parameter;
         Browser br = new Browser();
 
-   
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
 
@@ -321,7 +320,6 @@ public class DepositFiles extends PluginForHost {
         downloadLink.setName(fileName);
         String fileSizeString = br.getRegex(FILE_INFO_SIZE).getMatch(0);
         long length = Regex.getSize(fileSizeString);
-        length = length;
         downloadLink.setDownloadSize(length);
 
         return true;
