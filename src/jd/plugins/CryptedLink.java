@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import jd.config.Property;
+import jd.controlling.ProgressController;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Crypted Link
@@ -32,6 +33,8 @@ public class CryptedLink extends Property {
      */
     private String cryptedUrl;
 
+    private ProgressController progress;
+
     /**
      * Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
      */
@@ -40,11 +43,21 @@ public class CryptedLink extends Property {
     public CryptedLink(String cryptedUrl) {
         this.cryptedUrl = cryptedUrl;
         this.decrypterPassword = null;
+        this.progress = null;
     }
 
     public CryptedLink(String cryptedUrl, String pw) {
         this.cryptedUrl = cryptedUrl;
         this.decrypterPassword = pw;
+        this.progress = null;
+    }
+
+    public void setProgressController(ProgressController progress) {
+        this.progress = progress;
+    }
+
+    public ProgressController getProgressController() {
+        return this.progress;
     }
 
     /**

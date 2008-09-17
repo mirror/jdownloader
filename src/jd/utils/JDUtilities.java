@@ -69,6 +69,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.SimpleTimeZone;
 import java.util.Vector;
+import java.util.concurrent.Semaphore;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -107,6 +108,7 @@ import jd.gui.UIInterface;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LogFormatter;
@@ -196,6 +198,8 @@ public class JDUtilities {
     private static Vector<File> saveReadObject = new Vector<File>();
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
+
+    private static Semaphore sem = new Semaphore(1);
 
     public static String getSimString(String a, String b) {
 
@@ -597,6 +601,13 @@ public class JDUtilities {
         return JDUtilities.fillInteger(hours, 2, "0") + ":" + JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0");
     }
 
+    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) {
+        link.getProgressController().setProgressText("Waiting for User-Input");
+        String code = getCaptcha(plugin, method, file, forceJAC);
+        link.getProgressController().setProgressText(null);
+        return code;
+    }
+
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.
@@ -611,13 +622,17 @@ public class JDUtilities {
      * @return Der vom Benutzer eingegebene Text
      */
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) {
+        try {
+            sem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         String host;
         if (method == null) {
             host = plugin.getHost();
         } else {
             host = method.toLowerCase();
         }
-
         JDUtilities.getController().fireControlEvent(new ControlEvent(plugin, ControlEvent.CONTROL_CAPTCHA_LOADED, file));
 
         logger.info("JAC has Method for: " + host + ": " + JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host));
@@ -631,6 +646,7 @@ public class JDUtilities {
             try {
                 mediaTracker.waitForID(0);
             } catch (InterruptedException e) {
+                sem.release();
                 return null;
             }
             mediaTracker.removeImage(captchaImage);
@@ -668,20 +684,24 @@ public class JDUtilities {
             logger.info("worst letter: " + vp);
             if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
-                System.out.println(code);
                 code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-                System.out.println(code);
             } else {
+                sem.release();
                 return captchaCode;
             }
 
-            if (code != null && code.equals(captchaCode)) { return captchaCode; }
-
+            if (code != null && code.equals(captchaCode)) {
+                sem.release();
+                return captchaCode;
+            }
+            sem.release();
             return code;
         }
 
         else {
-            return JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
+            String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
+            sem.release();
+            return code;
         }
     }
 

@@ -89,6 +89,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
         progress = new ProgressController("Decrypter: " + getLinkName());
         progress.setStatusText("decrypt-" + getHost() + ": " + getLinkName());
+        cryptedLink.setProgressController(progress);
         ArrayList<DownloadLink> tmpLinks = null;
         try {
             tmpLinks = decryptIt(cryptedLink);

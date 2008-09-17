@@ -236,7 +236,8 @@ public class TabProgress extends JPanel implements ActionListener {
                 if (controllers.indexOf(source) < bars.size()) {
                     bars.get(controllers.indexOf(source)).setMaximum((int) source.getMax());
                     bars.get(controllers.indexOf(source)).setValue((int) source.getValue());
-                    if (source.getColor()!=null) bars.get(controllers.indexOf(source)).setForeground(source.getColor());
+                    if (source.getColor() != null) bars.get(controllers.indexOf(source)).setForeground(source.getColor());
+                    bars.get(controllers.indexOf(source)).setString(source.getProgressText());
                 }
 
             }

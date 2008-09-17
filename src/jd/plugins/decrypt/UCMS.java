@@ -29,6 +29,7 @@ import jd.http.Encoding;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
@@ -82,7 +83,8 @@ public class UCMS extends PluginForDecrypt {
                         String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                         captchaFile = getLocalCaptchaFile(this);
                         Browser.download(captchaFile, captchaAdress);
-                        capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false);
+                        capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false, param);
+                        if (capTxt == null) throw new DecrypterException("Wrong Captcha Code");
                         String posthelp = HTMLParser.getFormInputHidden(element[2]);
                         if (element[0].startsWith("http")) {
                             reqinfo = HTTP.postRequest(new URL(element[0]), posthelp + "&code=" + capTxt);

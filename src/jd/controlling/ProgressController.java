@@ -42,9 +42,11 @@ public class ProgressController {
     private Object source;
     private String statusText;
     private Color progresscolor;
+    private String progressText;
 
     public ProgressController(String name) {
         this(name, 100l);
+        progressText = null;
     }
 
     public ProgressController(String name, long max) {
@@ -54,6 +56,7 @@ public class ProgressController {
         currentValue = 0;
         finished = false;
         progresscolor = null;
+        progressText = null;
         fireChanges();
     }
 
@@ -160,8 +163,16 @@ public class ProgressController {
         fireChanges();
     }
 
+    public void setProgressText(String text) {
+        progressText = text;
+        fireChanges();
+    }
+
+    public String getProgressText() {
+        return progressText;
+    }
+
     public void setStatusText(String statusText) {
-        System.out.println(statusText);
         this.statusText = statusText;
         fireChanges();
     }

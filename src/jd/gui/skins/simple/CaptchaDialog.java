@@ -111,7 +111,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 cd.countdown = countdown;
                 countdown = -1;
                 cd.setVisible(true);
-                captchaText = cd.getCaptchaText();
+                //captchaText = cd.getCaptchaText();
                 dispose();
 
             }
