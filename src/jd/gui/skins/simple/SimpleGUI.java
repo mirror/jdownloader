@@ -1449,8 +1449,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menFile.addSeparator();
         menFile.add(SimpleGUI.createMenuItem(actionSaveDLC));
         menFile.addSeparator();
-        menFile.add(SimpleGUI.createMenuItem(actionExit));
         menFile.add(SimpleGUI.createMenuItem(actionRestart));
+        menFile.add(SimpleGUI.createMenuItem(actionExit));
 
         menExtra.add(SimpleGUI.createMenuItem(actionConfig));
         menExtra.addSeparator();
