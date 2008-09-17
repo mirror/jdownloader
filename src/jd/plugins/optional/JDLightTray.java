@@ -17,7 +17,6 @@
 package jd.plugins.optional;
 
 import java.awt.AWTException;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.SystemTray;
@@ -32,7 +31,6 @@ import java.awt.event.WindowStateListener;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
@@ -53,19 +51,19 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
 
-    private static final int INIT_COUNTER = 5;
+//    private static final int INIT_COUNTER = 5;
 
-    private int counter = 0;
+//    private int counter = 0;
 
-    private JWindow toolParent;
+//    private JWindow toolParent;
 
-    private JLabel toolLabel;
+//    private JLabel toolLabel;
 
     private TrayIconPopup trayIconPopup;
 
     private TrayIcon trayIcon;
 
-    private TrayInfo trayInfo;
+//    private TrayInfo trayInfo;
 
     private JFrame guiFrame;
 
@@ -163,16 +161,16 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         trayIcon.addMouseListener(this);
         trayIcon.addMouseMotionListener(this);
 
-        toolLabel = new JLabel("jDownloader");
-        toolLabel.setVisible(true);
-        toolLabel.setOpaque(true);
-        toolLabel.setBackground(new Color(0xb9cee9));
+//        toolLabel = new JLabel("jDownloader");
+//        toolLabel.setVisible(true);
+//        toolLabel.setOpaque(true);
+//        toolLabel.setBackground(new Color(0xb9cee9));
 
-        toolParent = new JWindow();
-        toolParent.setAlwaysOnTop(true);
-        toolParent.add(toolLabel);
-        toolParent.pack();
-        toolParent.setVisible(false);
+//        toolParent = new JWindow();
+//        toolParent.setAlwaysOnTop(true);
+//        toolParent.add(toolLabel);
+//        toolParent.pack();
+//        toolParent.setVisible(false);
 
         SystemTray systemTray = SystemTray.getSystemTray();
         try {
@@ -183,22 +181,19 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseClicked(MouseEvent e) {
-
     }
 
     public void mouseEntered(MouseEvent e) {
-      
     }
 
     public void mouseExited(MouseEvent e) {
-    
     }
 
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
-            if (toolParent.isVisible()) {
-                hideTooltip();
-            }
+//            if (toolParent.isVisible()) {
+//                hideTooltip();
+//            }
 
             if (e.getClickCount() > 1 && !SwingUtilities.isRightMouseButton(e)) {
                 guiFrame.setVisible(!guiFrame.isVisible());
@@ -219,19 +214,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseReleased(MouseEvent e) {
-        e=e; 
     }  
 
     public void mouseDragged(MouseEvent e) {
-        e=e;
     }
 
     public void mouseMoved(MouseEvent e) {
-      
-        
+
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
-        
-        
+
 //        if (counter > 0) {
 //            counter = INIT_COUNTER;
 //            return;
@@ -243,6 +234,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 //        trayInfo.start();
         // trayIcon.displayMessage("jDownloader", "Erstmal nur ein Test, ok?",
         // TrayIcon.MessageType.INFO);
+        trayIcon.setToolTip(createInfoString());
     }
 
     @Override
@@ -290,64 +282,77 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         });
     }
 
-    private void hideTooltip() {
-        toolParent.setVisible(false);
-        counter = 0;
-    }
+//    private void hideTooltip() {
+//        toolParent.setVisible(false);
+//        counter = 0;
+//    }
 
-    private String createHTMLInfoString() {
+    private String createInfoString() {
         StringBuilder creater = new StringBuilder();
-        creater.append("<html><center><b>jDownloader</b></center><hr>");
+        creater.append(JDUtilities.getJDTitle() + "\n");
         int downloads = JDUtilities.getController().getRunningDownloadNum();
         if (downloads == 0) {
-            creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>");
+            creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress"));
         } else {
-            creater.append("<table>");
-            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td><td>" + downloads + "</td></tr>");
-            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </td></tr>");
-            creater.append("</table>");
+            creater.append(JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + " " + downloads + " @ " + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s");
         }
-        creater.append("</html>");
 
         return creater.toString();
     }
+    
+//    private String createHTMLInfoString() {
+//        StringBuilder creater = new StringBuilder();
+//        creater.append("<html><center><b>jDownloader</b></center><hr>");
+//        int downloads = JDUtilities.getController().getRunningDownloadNum();
+//        if (downloads == 0) {
+//            creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>");
+//        } else {
+//            creater.append("<table>");
+//            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td><td>" + downloads + "</td></tr>");
+//            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </td></tr>");
+//            creater.append("</table>");
+//        }
+//        creater.append("</html>");
+//
+//        return creater.toString();
+//    }
 
-    private class TrayInfo extends Thread {
-        private Point p;
-
-        public TrayInfo(Point p) {
-            this.p = p;
-        }
-
-        public void run() {
-            try {
-                Thread.sleep(250);
-            } catch (InterruptedException e) {
-                interrupt();
-            }
-
-            if (trayIconPopup != null && trayIconPopup.isShowing()) return;
-
-            toolLabel.setText(createHTMLInfoString());
-            toolParent.pack();
-            calcLocation(toolParent, p);
-            toolParent.setVisible(true);
-            toolParent.toFront();
-
-            while (counter > 0) {
-                toolLabel.setText(createHTMLInfoString());
-                toolParent.pack();
-
-                counter--;
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    interrupt();
-                }
-            }
-
-            hideTooltip();
-        }
-    }
+//    private class TrayInfo extends Thread {
+//        private Point p;
+//
+//        public TrayInfo(Point p) {
+//            this.p = p;
+//        }
+//
+//        public void run() {
+//            try {
+//                Thread.sleep(250);
+//            } catch (InterruptedException e) {
+//                interrupt();
+//            }
+//
+//            if (trayIconPopup != null && trayIconPopup.isShowing()) return;
+//
+//            toolLabel.setText(createHTMLInfoString());
+//            toolParent.pack();
+//            calcLocation(toolParent, p);
+//            toolParent.setVisible(true);
+//            toolParent.toFront();
+//
+//            while (counter > 0) {
+//                toolLabel.setText(createHTMLInfoString());
+//                toolParent.pack();
+//
+//                counter--;
+//                try {
+//                    Thread.sleep(500);
+//                } catch (InterruptedException e) {
+//                    interrupt();
+//                }
+//            }
+//
+//            hideTooltip();
+//        }
+//    }
 
 }
