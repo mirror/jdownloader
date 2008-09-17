@@ -1083,6 +1083,7 @@ public boolean isExtract(){
             autoPackage = true;
             packageName = removeExtension(link.getName());
         }
+//        System.out.println(link.getDownloadURL());
         if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
             // logger.finer("No Auto package");
             int lastIndex = tabList.size() - 1;

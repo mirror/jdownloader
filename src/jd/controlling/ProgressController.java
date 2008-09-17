@@ -161,6 +161,7 @@ public class ProgressController {
     }
 
     public void setStatusText(String statusText) {
+        System.out.println(statusText);
         this.statusText = statusText;
         fireChanges();
     }

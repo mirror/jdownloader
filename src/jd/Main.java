@@ -408,8 +408,8 @@ public class Main {
         if (debug || JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
             try {
                 File log = JDUtilities.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
-                log.getParentFile().mkdirs();
-                log.createNewFile();
+               
+               
                 controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
             } catch (IOException e) {
 

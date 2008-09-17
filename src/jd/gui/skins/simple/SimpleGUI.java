@@ -752,10 +752,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         new Thread("twitter") {
             public void run() {
                 while (true) {
+                    final String twitterText = JDTwitter.RefreshTwitterMessage();
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
                             // System.out.println("trigger");
-                            SimpleGUI.CURRENTGUI.statusBar.setText(JDTwitter.RefreshTwitterMessage());
+                            SimpleGUI.CURRENTGUI.statusBar.setText(twitterText);
                         }
                     });
                     try {

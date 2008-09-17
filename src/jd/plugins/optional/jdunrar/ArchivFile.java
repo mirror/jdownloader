@@ -1,5 +1,7 @@
 package jd.plugins.optional.jdunrar;
 
+import java.util.ArrayList;
+
 public class ArchivFile {
 
     private String filepath;
@@ -34,9 +36,12 @@ public class ArchivFile {
 
     private long size = 0;
     private boolean isProtected = false;
+  
+    private ArrayList<String> volumes;
 
     public ArchivFile(String name) {
         this.filepath = name;
+        volumes=new ArrayList<String>();
     }
 
     public void setSize(long size) {
@@ -47,6 +52,17 @@ public class ArchivFile {
     public void setProtected(boolean b) {
         this.isProtected = b;
 
+    }
+
+    public void addVolume(String vol) {
+        if(vol==null)return;
+        if(volumes.indexOf(vol)>=0)return;
+        this.volumes.add(vol);
+        
+    }
+
+    public ArrayList<String> getVolumes() {
+        return volumes;
     }
 
 }

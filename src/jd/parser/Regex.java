@@ -30,7 +30,7 @@ import jd.utils.JDUtilities;
 public class Regex {
     public static String[] getLines(String arg) {
         if (arg == null) { return new String[] {}; }
-        return arg.split("[\r|\n]{1,2}");
+        return arg.split("[\r\n]{1,2}");
     }
 
     /**

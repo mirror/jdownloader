@@ -183,12 +183,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseClicked(MouseEvent e) {
+
     }
 
     public void mouseEntered(MouseEvent e) {
+      
     }
 
     public void mouseExited(MouseEvent e) {
+    
     }
 
     public void mousePressed(MouseEvent e) {
@@ -216,22 +219,28 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseReleased(MouseEvent e) {
-    }
+        e=e; 
+    }  
 
     public void mouseDragged(MouseEvent e) {
+        e=e;
     }
 
     public void mouseMoved(MouseEvent e) {
+      
+        
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
-        if (counter > 0) {
-            counter = INIT_COUNTER;
-            return;
-        }
-
-        counter = INIT_COUNTER;
-
-        trayInfo = new TrayInfo(e.getPoint());
-        trayInfo.start();
+        
+        
+//        if (counter > 0) {
+//            counter = INIT_COUNTER;
+//            return;
+//        }
+//
+//        counter = INIT_COUNTER;
+//
+//        trayInfo = new TrayInfo(e.getPoint());
+//        trayInfo.start();
         // trayIcon.displayMessage("jDownloader", "Erstmal nur ein Test, ok?",
         // TrayIcon.MessageType.INFO);
     }
