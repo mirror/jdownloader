@@ -24,6 +24,7 @@ import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
@@ -38,7 +39,7 @@ public class UUCannaTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        boolean valid = false;
         br.getPage(parameter);
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             String captchaUrl = br.getRegex("<img src=\"(captcha/captcha\\.php\\?id=[\\d]+)\"").getMatch(0);
@@ -48,7 +49,7 @@ public class UUCannaTo extends PluginForDecrypt {
             String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
             if (captchaCode == null) {
                 /* abbruch geklickt */
-                return null;
+                throw new DecrypterException("Wrong Captcha Code");
             }
 
             Form captchaForm = br.getForm(1);
@@ -59,11 +60,12 @@ public class UUCannaTo extends PluginForDecrypt {
                 /* Falscher Captcha, Seite neu laden */
                 br.getPage(parameter);
             } else {
+                valid = true;
                 decryptedLinks.add(createDownloadlink(br.getRegex("URL=(.*?)\"").getMatch(0)));
                 break;
             }
         }
-
+        if (valid == false) throw new DecrypterException("Wrong Captcha Code");
         return decryptedLinks;
     }
 
