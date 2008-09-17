@@ -1,0 +1,42 @@
+﻿7Z:::377a0000271c.*:::7-Zip Archiv:::.*\.7z
+RAR:::526172211a07.*:::Rar Archiv:::.*\.rar
+AVI:::52494646.*:::AVI Video Container:::.*\.avi
+BZ2:::425a68363141.*::::::.*\.bz2
+DOC:::d0cf11e0a1b1.*:::Document Format:::.*\.doc
+GZ:::1f8b0800.*::::::.*\.gz
+JPG:::ffd8ffe00010.*:::JPG Image:::.*\.(jpg|jpeg)
+JPG:::ffd8ffe127de.*:::JPG Image:::.*\.(jpg|jpeg)
+M4A:::000000206674.*::::::.*\.m4a
+MDF:::00ffffffffff.*::::::.*\.mdf
+MKV:::1a457e3004200.*::::::.*\.mkv
+MP3:::4944330400.*::::::.*\.mp3
+MP3:::000040[a-f0-9]{2}[a-f0-9]{2}00.*::::::.*\.mp3
+MP3:::000064000000.*::::::.*\.mp3
+MP3:::000044[a-f0-9]{2}[a-f0-9]{2}00.*::::::.*\.mp3
+MP3:::4944330300[a-f0-9]{2}.*::::::.*\.mp3
+MP3:::fffb68[a-f0-9]{2}00[a-f0-9]{2}.*::::::.*\.mp3
+MP3:::fffb40[a-f0-9]{2}00[a-f0-9]{2}.*::::::.*\.mp3
+MP4:::000000[a-f0-9]{2}6674.*::::::.*\.mp4
+MPEG:::000001ba[a-f0-9]{2}00.*::::::.*\.(mpeg|mpg)
+MPEG:::000001002100.*::::::.*\.(mpeg|mpg)
+NRG:::000000000000.*::::::.*\.nrg
+PDF:::255044462d31.*:::Portable Document Format:::.*\.pdf
+WMA:::3026b2758e66.*:::Windows Media Audio:::.*\.wma
+WMV:::3026[a-f0-9]{2}75[a-f0-9]{2}66.*:::Windows Media Video:::.*\.wmv
+XCF:::67696d702078.*::::::.*\.xcf
+ZIP:::504b0304.*::::::.*\.zip
+JAR:::504b030414.*:::Java executable:::.*\.jar
+SWF:::4[a-f0-9]{1}575307.*:::Shockwave film:::.+\.swf
+JPG:::ffd8ffe117.*:::JPG Image:::.*\.(jpg|jpeg)
+CLASS:::cafebabe.*:::Java binary:::.+\.class
+BMP:::424d1.*:::Bitmap:::.+\.bmp
+CUE:::46494c452022.*:::Queue file:::.+\.cue
+BIN:::63070.*:::Binary image:::.+\.bin
+DLL:::4d5a53010100.*:::Library:::.+\.dll
+CAB:::495363280400.*::::::.+\.cab
+PNG:::89504e470d0a.*:::PNG Imagefile:::.+\.png
+ICO:::000001000a00.*:::Icon Imagefile:::.+\.ico
+MP3:::fffb904.*:::Mp3 Audio:::.+\.mp3
+MP3:::fffba0040000.*:::Mp3 Audio:::.+\.mp3
+EXE:::4d5a[a-f0-9]{2}000[a-f0-9]{1}00.*:::Windows executable:::.+\.exe
+GIF:::474946383961.*:::Gif Image:::.+\.gif
