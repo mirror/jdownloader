@@ -982,7 +982,15 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, false)) {
                 ConfigurationDialog.showConfig(frame, this);
             } else {
-                new FengShuiConfigPanel();
+                if (ConfigurationDialog.DIALOG != null) {
+                    if (ConfigurationDialog.DIALOG.isVisible() == false) {
+                        FengShuiConfigPanel.getInstance();
+                    } else {
+                        ConfigurationDialog.showConfig(frame, this);
+                    }
+                } else {
+                    FengShuiConfigPanel.getInstance();
+                }
             }
             break;
         }

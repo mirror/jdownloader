@@ -97,7 +97,8 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     private static final String GAPLEFT = "gapleft 10!, ";
     private static final String GAPRIGHT = "gapright 26!, ";
     private static final String PUSHGAP =  " :70";
-
+    private static FengShuiConfigPanel instance;
+    
     public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         FengShuiConfigPanel fengShuiConfigPanel = new FengShuiConfigPanel();
@@ -737,5 +738,11 @@ private JComponent subpanel(JTextField c1, String l2, JTextField c2) {
         if (saveit) JDUtilities.saveConfig();
         if (restart) JDUtilities.restartJD();
 
+    }
+    
+    public static FengShuiConfigPanel getInstance() {
+        if(instance == null) instance = new FengShuiConfigPanel();
+        else if(instance.isVisible() == false) instance = new FengShuiConfigPanel();
+        return instance;
     }
 }
