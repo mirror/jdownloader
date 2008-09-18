@@ -1199,8 +1199,7 @@ public boolean isExtract(){
         mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true));
         mHostSelectionRemove.addActionListener(this);
         submenu.add(mHostSelectionRemove);
-        submenu.addSeparator();
-        submenu.addSeparator();
+        submenu.addSeparator();        
         ArrayList<HostPluginWrapper> hosts = JDUtilities.getPluginsForHost();
         mHostSelection = new JMenuItem[hosts.size()];
         subsubmenu = null;
