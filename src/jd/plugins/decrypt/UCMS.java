@@ -83,8 +83,7 @@ public class UCMS extends PluginForDecrypt {
                         String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                         captchaFile = getLocalCaptchaFile(this);
                         Browser.download(captchaFile, captchaAdress);
-                        capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false, param);
-                        if (capTxt == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+                        capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false, param);                        
                         String posthelp = HTMLParser.getFormInputHidden(element[2]);
                         if (element[0].startsWith("http")) {
                             reqinfo = HTTP.postRequest(new URL(element[0]), posthelp + "&code=" + capTxt);
