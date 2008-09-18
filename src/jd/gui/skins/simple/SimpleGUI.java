@@ -1530,7 +1530,13 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                             m.removeAll();
                             for (MenuItem menuItem : plg.getPlugin().createMenuitems()) {
-                                m.add(SimpleGUI.getJMenuItem(menuItem));
+                               JMenuItem c = SimpleGUI.getJMenuItem(menuItem);
+                                
+                                if ( c== null) {
+                                    m.addSeparator();
+                                } else {
+                                    m.add(c);
+                                }
                             }
                         }
 

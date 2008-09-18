@@ -17,9 +17,16 @@
 package jd.plugins.optional.jdunrar;
 
 import java.awt.Color;
+import java.awt.event.ActionEvent;
 import java.io.File;
-import java.util.ArrayList;
 
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import javax.swing.filechooser.FileFilter;
+
+import jd.JDFileFilter;
 import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
@@ -31,6 +38,8 @@ import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.JDFileChooser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -43,6 +52,7 @@ import jd.utils.JDUtilities;
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
     public static final String CODER = "JD-Team";
+    private static final String LOCALE_PREFIX = "plugins.optional.jdunrar.";
 
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -57,13 +67,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * wird der link auf die wartequeue geschoben
      */
     // private ArrayList<DownloadLink> waitQueue;
-    private ProgressController progress;
+    private HashMap<UnrarWrapper, ProgressController> progress;
+    private int wrappersActive = 0;
 
     @SuppressWarnings("unchecked")
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
         this.queue = (ArrayList<DownloadLink>) this.getPluginConfig().getProperty(JDUnrarConstants.CONFIG_KEY_LIST, new ArrayList<DownloadLink>());
-
+        progress = new HashMap<UnrarWrapper, ProgressController>();
         // this.waitQueue = (ArrayList<DownloadLink>)
         // this.getPluginConfig().getProperty
         // (JDUnrarConstants.CONFIG_KEY_WAITLIST, new
@@ -76,6 +87,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     /**
      * das controllevent fängt heruntergeladene file ab und wertet sie aus
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
@@ -86,6 +98,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (!(event.getSource() instanceof PluginForHost)) { return; }
             DownloadLink link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             link = findStartLink(link);
+            link = link;
             if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 if (link.getFilePackage().isExtractAfterDownload()) {
                     if (getArchivePartType(link) == JDUnrarConstants.MULTIPART_START_PART || getArchivePartType(link) == JDUnrarConstants.SINGLE_PART_ARCHIVE) {
@@ -99,6 +112,20 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
                 }
             }
+            break;
+        case ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS:
+            ArrayList<DownloadLink> list = (ArrayList<DownloadLink>) event.getParameter();
+            FilePackage old = null;
+            for (DownloadLink l : list) {
+                if (l.getFilePackage() == old) continue;
+                old = l.getFilePackage();
+                String[] pws = PasswordList.passwordStringtoArray(l.getFilePackage().getPassword());
+                for (String pw : pws) {
+                    PasswordList.addPassword(pw);
+                }
+            }
+            PasswordList.save();
+            break;
         }
 
     }
@@ -146,11 +173,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private boolean archiveIsComplete(DownloadLink link) {
         DownloadLink l;
-        String pattern = link.getFileOutput().replaceAll(".*part[0-9]+.rar$", "");
-        pattern = pattern.replaceAll(".*rar$", "");
+        String pattern = link.getFileOutput().replaceAll("\\.part[0-9]+.rar$", "");
+        pattern = pattern.replaceAll("\\.rar$", "");
         for (int i = 0; i < link.getFilePackage().size(); i++) {
             l = link.getFilePackage().get(i);
-            if (l.getFileOutput().startsWith(pattern) && !l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) return false;
+            if (l.getFileOutput().startsWith(pattern) && (!l.getLinkStatus().hasStatus(LinkStatus.FINISHED) && !l.getLinkStatus().isFailed() && l.isEnabled())) return false;
         }
         return true;
     }
@@ -196,7 +223,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             fp.setDownloadDirectory(file.getParent());
             dlink.setFilePackage(fp);
 
-            
         }
         return dlink;
     }
@@ -208,7 +234,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private void addToQueue(DownloadLink link) {
         synchronized (queue) {
-            queue.clear();
+
             this.queue.add(link);
             this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
             this.getPluginConfig().save();
@@ -220,25 +246,122 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     /**
      * Startet das abwarbeiten der extractqueue
      */
-    private void startExtraction() {
+    private synchronized void startExtraction() {
+
+        if (wrappersActive > 2) return;
         DownloadLink link;
-        if (queue.size() == 0) return;
+        if (queue.size() == 0) {
+
+        return; }
+        wrappersActive++;
         synchronized (queue) {
             link = queue.remove(0);
             this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
         }
-        this.progress = new ProgressController("JD-Unrar", 100);
+
         UnrarWrapper wrapper = new UnrarWrapper(link);
         wrapper.addUnrarListener(this);
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
-        wrapper.setPasswordList(PasswordList.passwordStringtoArray(link.getFilePackage().getPassword()));
+        wrapper.setPasswordList(PasswordList.getPasswordList().toArray(new String[] {}));
+        this.progress.put(wrapper, new ProgressController("JD-Unrar", 100));
         wrapper.start();
 
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        return null;
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        MenuItem m;
+
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L(LOCALE_PREFIX + "menu.toggle", "Activate"), 1).setActionListener(this));
+        m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
+        menu.add(m = new MenuItem(MenuItem.SEPARATOR));
+
+        MenuItem extract;
+        extract = new MenuItem(MenuItem.CONTAINER, JDLocale.L(LOCALE_PREFIX + "menu.extract", "Extract"), 2);
+
+        m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.extract.singlefils", "Extract archive(s)"), 21);
+        m.setActionListener(this);
+        extract.addMenuItem(m);
+        m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.extract.clear", "Clear extract queue"), 22);
+        m.setActionListener(this);
+        extract.addMenuItem(m);
+        menu.add(extract);
+        return menu;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+
+        if (e.getSource() instanceof MenuItem) {
+            menuitemActionPerformed(e, (MenuItem) e.getSource());
+        }
+
+    }
+
+    private void menuitemActionPerformed(ActionEvent e, MenuItem source) {
+        SubConfiguration cfg = this.getPluginConfig();
+        switch (source.getActionID()) {
+        case 0:
+            boolean newValue;
+            cfg.setProperty("ACTIVATED", newValue = !cfg.getBooleanProperty("ACTIVATED", true));
+            if (newValue) {
+                JDUtilities.getController().addControlListener(this);
+            } else {
+                JDUtilities.getController().removeControlListener(this);
+            }
+            break;
+        case 21:
+            JDFileChooser fc = new JDFileChooser("_JDUNRAR_");
+            fc.setMultiSelectionEnabled(true);
+            FileFilter ff = new FileFilter() {
+
+                public boolean accept(File pathname) {
+                    if (pathname.getName().matches(".*part[0]*[1].rar$")) return true;
+                    if (!pathname.getName().matches(".*part[0-9]+.rar$") && pathname.getName().matches(".*rar$")) { return true; }
+                    return false;
+                }
+
+                @Override
+                public String getDescription() {
+                    // TODO Auto-generated method stub
+                    return null;
+                }
+
+            };
+            fc.setFileFilter((javax.swing.filechooser.FileFilter) ff);
+            fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
+            File[] list = fc.getSelectedFiles();
+            DownloadLink link;
+            for (File archiveStartFile : list) {
+                link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile);
+
+                if (link == null) {
+                    link = new DownloadLink(null, archiveStartFile.getName(), "dummy.de", "", true);
+                    link.setDownloadSize(archiveStartFile.length());
+                    FilePackage fp = new FilePackage();
+                    fp.setDownloadDirectory(archiveStartFile.getParent());
+                    link.setFilePackage(fp);
+                }
+                link = this.findStartLink(link);
+                if (link == null) {
+                    continue;
+                }
+                final DownloadLink finalLink = link;
+                System.out.print("queued to extract: " + archiveStartFile);
+                new Thread() {
+                    public void run() {
+
+                        addToQueue(finalLink);
+                    }
+                }.start();
+
+            }
+            break;
+        case 22:
+            this.queue.clear();
+            break;
+        }
+
     }
 
     @Override
@@ -264,7 +387,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     @Override
     public boolean initAddon() {
-        JDUtilities.getController().addControlListener(this);
+        if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+            JDUtilities.getController().addControlListener(this);
+        }
         return true;
 
     }
@@ -274,6 +399,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
+        ConfigContainer pws = new ConfigContainer(this, JDLocale.L(LOCALE_PREFIX + "config.passwordtab", "List of passwords"));
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, pws));
+        pws.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig("PASSWORDLIST"), "LIST", JDLocale.L(LOCALE_PREFIX + "config.passwordlist", "List of all passwords. Each line one password")));
 
     }
 
@@ -285,55 +413,64 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     public void onUnrarEvent(int id, UnrarWrapper wrapper) {
         switch (id) {
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
-            progress.setStatusText("Extraction failed");
-            progress.setColor(Color.RED);
-            progress.finalize(10000l);
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Extraction failed");
+            progress.get(wrapper).setColor(Color.RED);
+
+            this.onFinished(wrapper);
+
             break;
         case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
-            progress.setStatusText("Extraction failed (wrong password)");
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Extraction failed (wrong password)");
+            progress.get(wrapper).setColor(Color.RED);
+            this.onFinished(wrapper);
+
             break;
         case JDUnrarConstants.WRAPPER_NEW_STATUS:
-            progress.setStatusText("New status " + wrapper.getStatus());
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "New status " + wrapper.getStatus());
             break;
         case JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE:
-            progress.setStatusText("Start opening archive");
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Start opening archive");
             break;
         case JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
-            progress.setStatusText("Archive opened successfull");
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Archive opened successfull");
             break;
         case JDUnrarConstants.WRAPPER_PASSWORD_FOUND:
-            progress.setColor(Color.GREEN);
-            progress.setStatusText("Password found " + wrapper.getPassword());
+            progress.get(wrapper).setColor(Color.GREEN);
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Password found " + wrapper.getPassword());
             break;
         case JDUnrarConstants.WRAPPER_ON_PROGRESS:
-            progress.setRange(wrapper.getTotalSize());
-            progress.setStatus(wrapper.getExtractedSize());
-            progress.setStatusText("Progress: " + JDUtilities.getPercent(wrapper.getExtractedSize(), wrapper.getTotalSize()));
+            progress.get(wrapper).setRange(wrapper.getTotalSize());
+            progress.get(wrapper).setStatus(wrapper.getExtractedSize());
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Progress: " + JDUtilities.getPercent(wrapper.getExtractedSize(), wrapper.getTotalSize()));
             break;
         case JDUnrarConstants.WRAPPER_START_EXTRACTION:
-            progress.setStatusText("Extraction started");
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Extraction started");
             break;
         case JDUnrarConstants.WRAPPER_STARTED:
-            progress.setStatusText("Started Unrarprocess");
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Started Unrarprocess");
             break;
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC:
-            progress.setStatusText("CRC Failure");
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "CRC Failure");
+            progress.get(wrapper).setColor(Color.RED);
+            this.onFinished(wrapper);
+
             break;
-            
+
         case JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED:
-            progress.setColor(Color.YELLOW);
+            progress.get(wrapper).setColor(Color.YELLOW);
             try {
-                Thread.sleep(400);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
 
             }
-            progress.setColor(Color.GREEN);
-            progress.setStatusText("Progress. SingleFile finished: " + wrapper.getCurrentFile());
+            progress.get(wrapper).setColor(Color.GREEN);
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Progress. SingleFile finished: " + wrapper.getCurrentFile());
             break;
         case JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL:
-            progress.setStatusText("SUCCESSFULL");
-            progress.setColor(Color.GREEN);
-            progress.finalize(10000l);
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "SUCCESSFULL");
+            progress.get(wrapper).setColor(Color.GREEN);
+            this.onFinished(wrapper);
+
             break;
 
         default:
@@ -342,14 +479,23 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
     }
 
+    private void onFinished(UnrarWrapper wrapper) {
+        progress.get(wrapper).finalize(3000l);
+        this.wrappersActive--;
+
+        this.startExtraction();
+
+    }
+
     public static void main(String[] args) {
         new JDInit().initController();
         OptionalPluginWrapper plgWrapper = new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
         JDUnrar unrar = new JDUnrar(plgWrapper);
         unrar.initAddon();
-        DownloadLink link = new DownloadLink(null, "scrubs-701-itg.part1.rar", "host.de", "http://download.bla", true);
+        DownloadLink link = new DownloadLink(null, "mdk-heroes-203.part1.rar", "host.de", "http://download.bla", true);
+        link.setDownloadSize(100 * 1024 * 1024);
         FilePackage fp = new FilePackage();
-        fp.setDownloadDirectory("C:\\Users\\coalado\\.jd_home\\downloads");
+        fp.setDownloadDirectory("D:\\serien\\heroes");
 
         link.setFilePackage(fp);
         fp.setPassword("serienjunkies.org");

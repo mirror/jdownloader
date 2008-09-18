@@ -296,6 +296,9 @@ public class JDController implements ControlListener, UIListener {
 
             }
         }
+        ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
+        dl.add(link);
+        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS,dl);
 
     }
 
@@ -395,13 +398,22 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public void addPackage(FilePackage fp) {
+        ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
         synchronized (packages) {
             packages.add(fp);
+            
+            dl.addAll(fp.getDownloadLinks());
         }
+        
+        
+      
+       
+        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS,dl);
 
     }
 
     public void addPackageAt(FilePackage fp, int index) {
+        ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
         if (packages.size() == 0) {
             addPackage(fp);
             return;
@@ -414,7 +426,10 @@ public class JDController implements ControlListener, UIListener {
         }
         synchronized (packages) {
             packages.add(index, fp);
+            dl.addAll(fp.getDownloadLinks());
         }
+        
+        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS,dl);
 
     }
 

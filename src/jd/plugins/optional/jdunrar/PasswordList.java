@@ -1,13 +1,16 @@
 package jd.plugins.optional.jdunrar;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 import jd.config.SubConfiguration;
+import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class PasswordList {
     public static LinkedList<String> PASSWORDLIST;
     private static SubConfiguration CONFIG = null;
+    private static ArrayList<String> LIST;
     private static final String PROPERTY_PASSWORDLIST = "PASSWORDLIST";
 
     private static SubConfiguration getConfig() {
@@ -44,6 +47,33 @@ public class PasswordList {
             }
         }
         return ret;
+
+    }
+
+    public static void addPassword(String pw) {
+        ArrayList<String> list = getPasswordList();
+        list.remove(pw);
+        list.add(0, pw);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static ArrayList<String> getPasswordList() {
+        if(LIST!=null)return LIST;
+        ArrayList<String> list=new ArrayList<String>();        
+        String[] spl = Regex.getLines(getConfig().getStringProperty("LIST",""));
+        for(String pw:spl)list.add(pw);
+        LIST = list;
+        return list;
+    }
+
+    public static void save() {
+        StringBuffer sb= new StringBuffer();        
+        for(String pw:getPasswordList()){
+            sb.append(pw+"\r\n");
+        }  
+        getConfig().setProperty("LIST",  sb.substring(0, sb.length()-2));  
+        
+        getConfig().save();
 
     }
 

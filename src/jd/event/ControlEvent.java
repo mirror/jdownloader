@@ -132,6 +132,8 @@ public class ControlEvent extends AWTEvent {
      */
     public static final int CONTROL_SYSTEM_EXIT = 26;
     public static final int CONTROL_INIT_COMPLETE = 30;
+    public static final int CONTROL_DOWNLOADLIST_ADDED_LINKS = 31;
+    public static final int CONTROL_DOWNLOADLIST_REMOVED_LINKS = 32;
     /**
      * serialVersionUID
      */
