@@ -23,7 +23,6 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class XrlUs extends PluginForDecrypt {
 

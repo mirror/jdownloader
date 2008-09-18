@@ -30,6 +30,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
@@ -67,7 +68,7 @@ public class XinkIt extends PluginForDecrypt {
                     captchaFile = getLocalCaptchaFile(this);
                     Browser.download(captchaFile, captchaAdress);
 
-                    capTxt = JDUtilities.getCaptcha(this, "xink.it", captchaFile, false);
+                    capTxt = Plugin.getCaptchaCode(captchaFile, this, param);
 
                     String post = "captcha=" + capTxt.toUpperCase() + "&x=70&y=11&" + session;
 

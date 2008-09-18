@@ -20,13 +20,11 @@ import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
 
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.swing.filechooser.FileFilter;
 
-import jd.JDFileFilter;
 import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;

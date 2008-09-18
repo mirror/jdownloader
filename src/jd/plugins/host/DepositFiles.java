@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -81,17 +80,6 @@ public class DepositFiles extends PluginForHost {
         String finalURL = link;
 
         br.getPage(finalURL);
-        if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-            return;
-        }
-
-        if (new File(downloadLink.getFileOutput()).exists()) {
-            logger.severe("File already exists. " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            return;
-        }
 
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) {
@@ -124,7 +112,7 @@ public class DepositFiles extends PluginForHost {
         }
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             // MUss wohl noch angepasst werden
-            String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+            String password = Plugin.getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), downloadLink);
             br.postPage(finalURL, "go=1&gateway_result=1&file_password=" + password);
         }
 
@@ -219,18 +207,6 @@ public class DepositFiles extends PluginForHost {
 
         br.getPage(link);
 
-        if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-            return;
-        }
-
-        if (new File(downloadLink.getFileOutput()).exists()) {
-            logger.severe("File already exists. " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            return;
-        }
-
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) {
             logger.severe("Download not found");
@@ -262,7 +238,7 @@ public class DepositFiles extends PluginForHost {
         link = br.getRegex(PATTERN_PREMIUM_REDIRECT).getMatch(0);
         br.getPage(link);
         if (br.containsHTML(PASSWORD_PROTECTED)) {
-            String password = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+            String password = Plugin.getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), downloadLink);
             br.postPage(link, "go=1&gateway_result=1&file_password=" + password);
         } else {
             // logger.info(br + "");

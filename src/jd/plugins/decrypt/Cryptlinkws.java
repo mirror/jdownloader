@@ -29,7 +29,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class Cryptlinkws extends PluginForDecrypt {
 

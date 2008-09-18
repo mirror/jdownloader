@@ -14,11 +14,11 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class SpeedySharecom extends PluginForHost {
 
@@ -79,7 +79,7 @@ public class SpeedySharecom extends PluginForHost {
         postdata = postdata + "&id=" + Encoding.urlEncode(submitvalues.get("id"));
         postdata = postdata + "&fname=" + Encoding.urlEncode(submitvalues.get("fname"));
         if (requestInfo.containsHTML("type=\"password\" name=\"password\"")) {
-            String password = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.speedysharecom.password", "Enter Password:"));
+            String password = Plugin.getUserInput(JDLocale.L("plugins.decrypt.speedysharecom.password", "Enter Password:"), downloadLink);
             if (password != null && password != "") {
                 postdata = postdata + "&password=" + Encoding.urlEncode(password);
             }

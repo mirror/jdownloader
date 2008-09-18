@@ -32,10 +32,10 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
@@ -126,7 +126,7 @@ public class MegasharesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean checkPassword(DownloadLink link) throws IOException {
+    private boolean checkPassword(DownloadLink link) throws IOException, PluginException {
 
         if (br.containsHTML("This link requires a password")) {
             Form form = br.getFormbyValue("Validate Password");
@@ -144,7 +144,7 @@ public class MegasharesCom extends PluginForHost {
             }
             int i = 0;
             while ((i++) < 5) {
-                pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.hoster.passquestion", "Link '%s' is passwordprotected. Enter password:", link.getName()));
+                pass = Plugin.getUserInput(JDLocale.LF("plugins.hoster.passquestion", "Link '%s' is passwordprotected. Enter password:", link.getName()), link);
                 if (pass != null) {
                     form.put("passText", pass);
                     br.submitForm(form);

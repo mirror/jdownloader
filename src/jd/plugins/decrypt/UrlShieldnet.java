@@ -33,8 +33,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
-
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 

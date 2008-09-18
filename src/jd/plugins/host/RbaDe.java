@@ -27,7 +27,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class RbaDe extends PluginForHost {
 
@@ -112,16 +111,6 @@ public class RbaDe extends PluginForHost {
                 herausforderer = rapperNamen[0][0].replaceAll(REGEX_ALLOWED_FILENAME_CHARS, "");
                 gegner = rapperNamen[1][0].replaceAll(REGEX_ALLOWED_FILENAME_CHARS, "");
             } catch (ArrayIndexOutOfBoundsException e) {
-                if (herausforderer != null) {
-                    gegner = JDUtilities.getGUI().showUserInputDialog("Der Name des Battlegegner von " + herausforderer + " konnt nicht ermittelt werden. Entweder dieser hat noch keine Runde hochgeladen, oder das Plugin ist defeckt.");
-                } else {
-                    herausforderer = JDUtilities.getGUI().showUserInputDialog("Plugin defeckt, bitte geben sie den Namen der Herausforderers ein.");
-                    gegner = JDUtilities.getGUI().showUserInputDialog("Plugin defeckt, bitte geben sie den Namen der Battlegegners ein.");
-                }
-            }
-            if (herausforderer == null || gegner == null) {
-                linkstatus.setStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                linkstatus.setErrorMessage(ERR_MC_NAME_NOT_FOUND);
                 return false;
             }
             String fileName = getFileName(herausforderer, gegner, rundenId, battleId);

@@ -34,7 +34,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class XupIn extends PluginForHost {
     // http://xup.raidrush.ws/.*?/
@@ -162,22 +161,6 @@ public class XupIn extends PluginForHost {
         }
 
         cookie = requestInfo.getCookie();
-
-        if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
-
-            logger.severe("File already is in progress: " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-            return;
-
-        }
-
-        if (new File(downloadLink.getFileOutput()).exists()) {
-
-            logger.severe("File already exists: " + downloadLink.getFileOutput());
-            linkStatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            return;
-
-        }
 
         vid = new Regex(requestInfo.getHtmlCode(), VID).getMatch(0);
         vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);

@@ -26,10 +26,10 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class SharedZillacom extends PluginForHost {
     private static final String CODER = "JD-Team";
@@ -91,9 +91,7 @@ public class SharedZillacom extends PluginForHost {
         /* Password checken */
         if (requestInfo.containsHTML("Password protected")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
-                    passCode = "";
-                }
+                passCode = Plugin.getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

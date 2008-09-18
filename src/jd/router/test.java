@@ -1,15 +1,8 @@
 package jd.router;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-
 import org.cybergarage.upnp.ControlPoint;
 import org.cybergarage.upnp.device.SearchResponseListener;
 import org.cybergarage.upnp.ssdp.SSDPPacket;
-import org.cybergarage.xml.Node;
-import org.cybergarage.xml.ParserException;
-import org.cybergarage.xml.parser.kXML2Parser;
 
 
 public class test extends ControlPoint implements SearchResponseListener{

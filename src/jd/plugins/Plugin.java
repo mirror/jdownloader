@@ -44,7 +44,6 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.unrar.UnrarPassword;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**

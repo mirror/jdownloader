@@ -25,8 +25,8 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.utils.JDUtilities;
 
 public class Gamezam extends PluginForDecrypt {
     static private final Pattern patternSupported = Pattern.compile("javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", Pattern.CASE_INSENSITIVE);
@@ -51,7 +51,7 @@ public class Gamezam extends PluginForDecrypt {
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.openGetConnection("http://www.gamez.am/captcha.php"));
-            String captchaCode = JDUtilities.getCaptcha(this, "gamez.am", captchaFile, false);
+            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
             if (captchaCode == null) {
                 /* Abbruch geklickt */
                 return null;

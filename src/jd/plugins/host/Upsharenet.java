@@ -29,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class Upsharenet extends PluginForHost {
     private static final String CODER = "JD-Team";

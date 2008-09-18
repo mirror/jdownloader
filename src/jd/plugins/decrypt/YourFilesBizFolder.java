@@ -29,8 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
-import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class YourFilesBizFolder extends PluginForDecrypt {
 

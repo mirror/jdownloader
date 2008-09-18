@@ -228,7 +228,7 @@ public class Megauploadcom extends PluginForHost {
         String pwdata = HTMLParser.getFormInputHidden(requestInfo.getHtmlCode(), "passwordbox", "passwordcountdown");
         if (pwdata != null && pwdata.indexOf("passkey") > 0) {
             logger.info("Password protected");
-            String pass = JDUtilities.getController().getUiInterface().showUserInputDialog("Password:");
+            String pass = Plugin.getUserInput(null, parameter);
             if (pass == null) {
 
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);

@@ -205,7 +205,7 @@ public class Netloadin extends PluginForHost {
         while (br.containsHTML("download_password") && maxretries-- >= 0) {
             Form[] forms = br.getForms();
             Form pw = forms[forms.length - 1];
-            pw.put("password", pass = JDUtilities.getGUI().showUserInputDialog(String.format(JDLocale.L("plugins.netload.downloadPassword_question", "Password protected. Enter Password for %s"), downloadLink.getName())));
+            pw.put("password", pass = Plugin.getUserInput(JDLocale.LF("plugins.netload.downloadPassword_question", "Password protected. Enter Password for %s", downloadLink.getName()), downloadLink));
             br.submitForm(pw);
         }
         // falls falsch abbruch

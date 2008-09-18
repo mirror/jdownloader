@@ -31,8 +31,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
-
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 

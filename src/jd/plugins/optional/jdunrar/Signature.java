@@ -1,6 +1,5 @@
 package jd.plugins.optional.jdunrar;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Signature {
