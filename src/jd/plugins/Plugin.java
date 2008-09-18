@@ -97,6 +97,18 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         return captchaText;
     }
 
+    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws PluginException {
+        String captchaText = JDUtilities.getCaptcha(plugin, method, file, forceJAC, link);
+        if (captchaText == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        return captchaText;
+    }
+
+    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws DecrypterException {
+        String captchaText = JDUtilities.getCaptcha(plugin, method, file, forceJAC, link);
+        if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+        return captchaText;
+    }
+
     public static String getCaptchaCode(File file, Plugin plugin, CryptedLink link) throws DecrypterException {
         String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
         if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);

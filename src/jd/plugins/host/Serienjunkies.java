@@ -41,6 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
@@ -53,12 +54,12 @@ public class Serienjunkies extends PluginForHost {
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
     private DownloadLink downloadLink;
-   
+
     private static boolean active = false;
 
     public Serienjunkies(PluginWrapper wrapper) {
         super(wrapper);
-    
+
     }
 
     public boolean collectCaptchas() {
@@ -68,7 +69,7 @@ public class Serienjunkies extends PluginForHost {
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) throws InterruptedException {
         Vector<String> links = new Vector<String>();
-      
+
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
         }
@@ -110,17 +111,17 @@ public class Serienjunkies extends PluginForHost {
 
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
 
-                   try{
-                       Browser.download(captchaFile, con);
-                   }catch(Exception e){
-                      
-                           Thread.sleep(1000);
-                           reqinfo = HTTP.getRequest(new URL(url));
-                           cookie = reqinfo.getCookie();
-                      
-                       continue;
-                   }
-                  
+                    try {
+                        Browser.download(captchaFile, con);
+                    } catch (Exception e) {
+
+                        Thread.sleep(1000);
+                        reqinfo = HTTP.getRequest(new URL(url));
+                        cookie = reqinfo.getCookie();
+
+                        continue;
+                    }
+
                     logger.info("captchafile: " + captchaFile);
                     capTxt = Plugin.getCaptchaCode(captchaFile, this);
 
@@ -195,9 +196,9 @@ public class Serienjunkies extends PluginForHost {
     }
 
     // Für Links die gleich auf den Hoster relocaten
-    private String EinzelLinks(String url) throws InterruptedException {
+    private String EinzelLinks(String url) throws InterruptedException, PluginException {
         String links = "";
-      
+
         if (!url.startsWith("http://")) {
             url = "http://" + url;
         }
@@ -218,18 +219,18 @@ public class Serienjunkies extends PluginForHost {
                     }
                     String captchaAdress = "http://serienjunkies.org" + matcher.group(2);
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
-                    try{
-                    Browser.download(captchaFile, captchaAdress);
-   
-                    }catch(Exception e){
+                    try {
+                        Browser.download(captchaFile, captchaAdress);
+
+                    } catch (Exception e) {
                         logger.severe("Captcha nicht heruntergeladen, warte und versuche es erneut");
-                    
-                            Thread.sleep(1000);
-                            reqinfo = HTTP.getRequest(new URL(url));
-                      
+
+                        Thread.sleep(1000);
+                        reqinfo = HTTP.getRequest(new URL(url));
+
                         continue;
                     }
-                    capTxt = JDUtilities.getCaptcha(this, "einzellinks.serienjunkies.org", captchaFile, false);
+                    capTxt = Plugin.getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
                     reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     if (captchaFile != null && capTxt != null) {
@@ -307,7 +308,7 @@ public class Serienjunkies extends PluginForHost {
             if (reqinfo.getLocation() != null) {
                 reqinfo = HTTP.getRequest(url, null, null, true);
             }
-            if(reqinfo.containsHTML("Du hast zu oft das Captcha falsch")){
+            if (reqinfo.containsHTML("Du hast zu oft das Captcha falsch")) {
                 downloadLink.getLinkStatus().setStatusText("Reconnect required");
                 downloadLink.requestGuiUpdate();
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
@@ -321,8 +322,8 @@ public class Serienjunkies extends PluginForHost {
                 } else {
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
-                }  
-                
+                }
+
             }
             if (reqinfo.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
@@ -412,16 +413,16 @@ public class Serienjunkies extends PluginForHost {
 
     public void handle0(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-this.downloadLink=downloadLink;
+        this.downloadLink = downloadLink;
         String link = (String) downloadLink.getProperty("link");
         String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
         int c = 0;
         while (active) {
             if (c++ == 120) break;
-    
-                downloadLink.getLinkStatus().setStatusText("waiting for decryption");
-                Thread.sleep(1000);
-           
+
+            downloadLink.getLinkStatus().setStatusText("waiting for decryption");
+            Thread.sleep(1000);
+
         }
         active = true;
         downloadLink.getLinkStatus().setStatusText("decrypt");
@@ -442,8 +443,8 @@ this.downloadLink=downloadLink;
         fp.setProperties(downloadLink.getFilePackage().getProperties());
         fp.setPassword(downloadLink.getFilePackage().getPassword());
         fp.setName(downloadLink.getName());
-//        int index = fp.indexOf(downloadLink);
-//        fp.remove(downloadLink);
+        // int index = fp.indexOf(downloadLink);
+        // fp.remove(downloadLink);
         Vector<Integer> down = new Vector<Integer>();
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         for (int i = dls.size() - 1; i >= 0; i--) {
@@ -453,21 +454,21 @@ this.downloadLink=downloadLink;
             boolean online = false;
             while (it2.hasNext()) {
                 DownloadLink downloadLink3 = (DownloadLink) it2.next();
-//                if (downloadLink3.isAvailable()) {
-                    fp.add(downloadLink3);
-                  
-                    online = true;
-//                } else {
-//                    down.add(i);
-//                }
+                // if (downloadLink3.isAvailable()) {
+                fp.add(downloadLink3);
+
+                online = true;
+                // } else {
+                // down.add(i);
+                // }
 
             }
             if (online) {
                 ret.addAll(links);
             }
-//            ret.addAll(down);
+            // ret.addAll(down);
         }
-       
+
         if (mirrors != null) {
             for (String element : mirrors) {
                 if (down.size() > 0) {
@@ -495,7 +496,7 @@ this.downloadLink=downloadLink;
                             }
                         }
                     } catch (Exception e) {
-                       e.printStackTrace();
+                        e.printStackTrace();
                     }
 
                 } else {
@@ -504,12 +505,12 @@ this.downloadLink=downloadLink;
             }
         }
         if (down.size() > 0) {
-//            fp.add(downloadLink);
+            // fp.add(downloadLink);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
             active = false;
             return;
-        }else{
+        } else {
             JDUtilities.getController().removeDownloadLink(downloadLink);
             JDUtilities.getController().addPackage(fp);
         }
