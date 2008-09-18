@@ -282,6 +282,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         cfg.setDefaultValue("400");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "SPEED5", JDLocale.L("plugins.optional.trayIcon.speed5", "Speed 5:"), 1, 100000).setDefaultValue(500));
         cfg.setDefaultValue("500");
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "Tooltipp", JDLocale.L("plugins.optional.trayIcon.tooltipp", "Tooltipp aktiv:")).setDefaultValue(true));
+        cfg.setDefaultValue(true);
 
         popupMenu = new JPopupMenu();
         update = createMenuItem(JDLocale.L("plugins.optional.trayIcon.update", "Update"));
@@ -453,32 +455,34 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     }
 
     private void showTooltip(final Point p) {
-        toolparent.setVisible(true);
-        toolparent.toFront();
-
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-
-                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                int limitX = (int) screenSize.getWidth() / 2;
-                int limitY = (int) screenSize.getHeight() / 2;
-
-                if (p.x <= limitX && p.y <= limitY) {
-                    // top left
-                    toolparent.setLocation(p.x, p.y);
-                } else if (p.x <= limitX && p.y >= limitY) {
-                    // bottom left
-                    toolparent.setLocation(p.x, p.y - toolparent.getHeight());
-                } else if (p.x >= limitX && p.y <= limitY) {
-                    // top right
-                    toolparent.setLocation(p.x - toolparent.getWidth(), p.y);
-                } else if (p.x >= limitX && p.y >= limitY) {
-                    // bottom right
-                    toolparent.setLocation(p.x - toolparent.getWidth(), p.y - toolparent.getHeight());
-                }
-
-            };
-        });
+        if(getPluginConfig().getBooleanProperty("Tooltipp", true)) {
+            toolparent.setVisible(true);
+            toolparent.toFront();
+            
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    
+                    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                    int limitX = (int) screenSize.getWidth() / 2;
+                    int limitY = (int) screenSize.getHeight() / 2;
+                    
+                    if (p.x <= limitX && p.y <= limitY) {
+                        // top left
+                        toolparent.setLocation(p.x, p.y);
+                    } else if (p.x <= limitX && p.y >= limitY) {
+                        // bottom left
+                        toolparent.setLocation(p.x, p.y - toolparent.getHeight());
+                    } else if (p.x >= limitX && p.y <= limitY) {
+                        // top right
+                        toolparent.setLocation(p.x - toolparent.getWidth(), p.y);
+                    } else if (p.x >= limitX && p.y >= limitY) {
+                        // bottom right
+                        toolparent.setLocation(p.x - toolparent.getWidth(), p.y - toolparent.getHeight());
+                    }
+                    
+                };
+            });            
+        }
     }
 
     public void windowStateChanged(WindowEvent arg0) {
