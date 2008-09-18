@@ -192,8 +192,8 @@ public class ConfigPanelDownload extends ConfigPanel {
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "USEWRITERTHREAD", JDLocale.L("gui.config.download.downloadThread", "Gleichzeitig downloaden und auf Festplatte schreiben")));
         ce.setDefaultValue(false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"), 3, 30));
-        ce.setDefaultValue(4);
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, "MAX_BUFFER_SIZE", JDLocale.L("gui.config.download.buffersize", "Max. Buffersize[MB]"), 1, 4));
+        ce.setDefaultValue(1);
 
         return container;
 

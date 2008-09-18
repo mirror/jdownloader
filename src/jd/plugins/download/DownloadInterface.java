@@ -45,7 +45,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 abstract public class DownloadInterface {
-    
+
     /**
      * Chunk Klasse verwaltet eine einzellne Downloadverbindung.
      * 
@@ -287,12 +287,14 @@ abstract public class DownloadInterface {
                 long timer;
 
                 long bytes;
-                long block = 0;
+                long miniblock = 0;
                 long tempBuff = 0;
                 long addWait;
-                ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 128);
+                ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
+                miniBuffer.clear();
                 int ti = 0;
                 blockStart = System.currentTimeMillis();
+
                 while (!isExternalyAborted()) {
                     bytes = 0;
                     ti = getTimeInterval();
@@ -304,57 +306,44 @@ abstract public class DownloadInterface {
                     // boolean a2 = isExternalyAborted();
                     // long a4 = (System.currentTimeMillis() - timer);
                     // boolean a3 = ((System.currentTimeMillis() - timer) < ti);
-                    //                    
+                    //
+
                     while (buffer.hasRemaining() && !isExternalyAborted() && System.currentTimeMillis() - timer < ti) {
-                        block = 0;
 
                         // PrÃŒft ob bytes zum Lesen anliegen.
 
                         // kann den connectiontimeout nicht auswerten
 
                         try {
-
-                            if (miniBuffer.capacity() > buffer.remaining()) {
-                                // int j = buffer.remaining();
-                                // int c=buffer.capacity();
-                                block = source.read(buffer);
-                            } else {
-                                miniBuffer.clear();
-                                block = source.read(miniBuffer);
-                                miniBuffer.flip();
-                                buffer.put(miniBuffer);
-
+                            miniBuffer.clear();
+                            if (miniBuffer.remaining() > buffer.remaining()) {
+                                miniBuffer.limit(buffer.remaining());
                             }
-                            if (block > 0) {
-                                blockStart = System.currentTimeMillis();
-                            }
+                            miniblock = source.read(miniBuffer);
+                            miniBuffer.flip();
+                            buffer.put(miniBuffer);
                         } catch (ClosedByInterruptException e) {
                             if (isExternalyAborted()) {
-
                             } else {
                                 logger.severe("Timeout detected");
-
                                 error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
-
                             }
-
-                            block = -1;
+                            miniblock = -1;
                             break;
                         }
-
-                        if (block == -1) {
-
+                        if (miniblock > 0) {
+                            blockStart = System.currentTimeMillis();
+                        }
+                        if (miniblock == -1) {
                             break;
                         }
-
-                        addPartBytes(block);
-                        addToTotalLinkBytesLoaded(block);
-                        addChunkBytesLoaded(block);
-                        bytes += block;
-
+                        addPartBytes(miniblock);
+                        addToTotalLinkBytesLoaded(miniblock);
+                        addChunkBytesLoaded(miniblock);
+                        bytes += miniblock;
                     }
 
-                    if (block == -1 && bytes == 0) {
+                    if (miniblock == -1 && bytes == 0) {
                         break;
                     }
                     // if(bytes==0)continue;
@@ -377,12 +366,11 @@ abstract public class DownloadInterface {
                     // bytesLoaded + ":" + (100.0 * (currentBytePosition -
                     // startByte) / (double) (endByte - startByte)));
 
-                    if (block == -1 || isExternalyAborted()) {
+                    if (miniblock == -1 || isExternalyAborted()) {
                         break;
                     }
 
                     if (getCurrentBytesPosition() > endByte && endByte > 0) {
-
                         if (speedDebug) {
                             logger.severe(getID() + " OVERLOAD!!! " + (getCurrentBytesPosition() - endByte - 1));
                         }
@@ -393,28 +381,29 @@ abstract public class DownloadInterface {
                      * War der download des buffers zu schnell, wird heir eine
                      * pause eingelegt
                      */
-                    int sp = getMaximalSpeed();
-                    tempBuff = getBufferSize(sp);
+                    tempBuff = getBufferSize(getMaximalSpeed());
                     // Falls der Server bei den Ranges schlampt und als endByte
                     // immer das dateiende angibt wird hier der buffer
                     // korrigiert um overhead zu vermeiden
                     if (tempBuff > endByte - getCurrentBytesPosition() + 1 && endByte > 0) {
                         tempBuff = (int) (endByte - getCurrentBytesPosition()) + 1;
                     }
-                    if (Math.abs(bufferSize - tempBuff) > 1000) {
-                        bufferSize = tempBuff;
-                        try {
-                            /* max 2gb buffer */
-                            buffer = ByteBuffer.allocateDirect((int) Math.max(128, bufferSize));
 
-                        } catch (Exception e) {
-                            error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
-
-                            return;
+                    bufferSize = Math.max(128, tempBuff);
+                    try {
+                        /* max 2gb buffer */
+                        if ((int) bufferSize > buffer.capacity()) {
+                            buffer = ByteBuffer.allocateDirect((int) bufferSize);
+                            buffer.clear();
+                        } else {
+                            buffer.clear();
+                            buffer.limit((int) bufferSize);
                         }
 
-                        buffer.clear();
+                    } catch (Exception e) {
+                        error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
 
+                        return;
                     }
                     try {
                         // 0.995 ist eine Anpassung an die Zeit, die die
@@ -510,7 +499,7 @@ abstract public class DownloadInterface {
         public void finalize() {
             if (speedDebug) {
                 logger.finer("Finalized: " + downloadLink + " : " + getID());
-            }
+            }            
             buffer = null;
             System.gc();
             System.runFinalization();
@@ -531,7 +520,7 @@ abstract public class DownloadInterface {
             maxspeed *= TIME_BASE / 1000;
             long max = Math.max(MIN_BUFFERSIZE, maxspeed);
             long bufferSize = Math.min(MAX_BUFFERSIZE, max);
-            // logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
+            //logger.finer(MIN_BUFFERSIZE+"<>"+maxspeed+"-"+MAX_BUFFERSIZE+"><"+
             // max);
             bufferTimeFaktor = Math.max(0.1, (double) bufferSize / maxspeed);
             if (speedDebug) {
@@ -605,13 +594,11 @@ abstract public class DownloadInterface {
          */
         public int getMaximalSpeed() {
             try {
-                if (maxSpeed <= 0) {
-                    maxSpeed = downloadLink.getSpeedLimit() / getRunningChunks();
-                    if (speedDebug) {
-                        logger.finer("Def speed: " + downloadLink.getSpeedLimit() + "/" + getRunningChunks() + "=" + maxSpeed);
-                    }
-
+                maxSpeed = downloadLink.getSpeedLimit() / getRunningChunks();
+                if (speedDebug) {
+                    logger.finer("Def speed: " + downloadLink.getSpeedLimit() + "/" + getRunningChunks() + "=" + maxSpeed);
                 }
+
                 if (speedDebug) {
                     logger.finer("return speed: min " + maxSpeed + " - " + desiredBps * 1.5);
                 }
@@ -1401,7 +1388,7 @@ abstract public class DownloadInterface {
             fileOutput.getParentFile().mkdirs();
         }
 
-        loop:if (fileOutput.exists()) {
+        loop: if (fileOutput.exists()) {
 
             logger.severe("File already exists. " + fileOutput);
             if (this.downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
