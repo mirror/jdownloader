@@ -60,13 +60,14 @@ public class PackageInfo extends JDialog implements ChangeListener {
      */
     private static final long serialVersionUID = -9146764850581039090L;
     private FilePackage fp;
+    private int dlLinksSize = 0;
     private int i = 0;
     private JPanel panel;
     private JSlider slider;
     private JLabel lblSlider;
     private DecimalFormat c = new DecimalFormat("0.00");
     private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
-
+    private boolean firstRun = true;
     /**
      * @param frame
      * @param dlink
@@ -113,7 +114,6 @@ public class PackageInfo extends JDialog implements ChangeListener {
                     initDialog();
                     validate();
                 } while (isVisible());
-                initDialog();
             }
         }.start();
         initDialog();
@@ -144,7 +144,12 @@ public class PackageInfo extends JDialog implements ChangeListener {
                 tmpJBar.setBackground((((JProgressBar) value).getBackground()));
                 JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + string);
                 if (tmpJBar.getBackground().getRed() != 150 && tmpJBar.getBackground().getGreen() != 150 && tmpJBar.getBackground().getBlue() != 150) {
-                    tmpJLbl.setForeground(new Color(50, new Float(200f / tmpJBar.getMaximum() * tmpJBar.getValue()).intValue(), 50));
+                    int col = new Float(200f / tmpJBar.getMaximum() * tmpJBar.getValue()).intValue();
+                    if(col <= 50) {
+                        tmpJLbl.setForeground(new Color(col, col, col));                        
+                    } else {
+                        tmpJLbl.setForeground(new Color(50, col, 50));
+                    }
                     tmpJBar.setForeground(tmpJLbl.getForeground());
                 } else {
                     tmpJLbl.setForeground(tmpJBar.getBackground());
@@ -152,6 +157,7 @@ public class PackageInfo extends JDialog implements ChangeListener {
             } else if (hmObjects.get(string).getClass() == JTextField.class) {
                 JTextField tmp = (JTextField) hmObjects.get(string);
                 tmp.setText(((JTextField) value).getText());
+                tmp.setHorizontalAlignment(JTextField.RIGHT);
             }
             hmObjects.get(string).repaint();
         }
@@ -189,6 +195,16 @@ public class PackageInfo extends JDialog implements ChangeListener {
     }
 
     private void initDialog() {
+        if(firstRun == true) {
+            panel.setVisible(false);
+        }
+            
+        if(dlLinksSize != fp.getDownloadLinks().size()) {
+            hmObjects.clear();
+            dlLinksSize = fp.getDownloadLinks().size();
+            panel.removeAll();
+        }
+        
         addEntry(JDLocale.L("gui.packageinfo.name", "Name"), fp.getName());
         if (fp.hasPassword()) addEntry(JDLocale.L("gui.packageinfo.password", "Password"), new JTextField(fp.getPassword()));
         if (fp.hasComment()) addEntry(JDLocale.L("gui.packageinfo.comment", "Comment"), fp.getComment());
@@ -213,6 +229,14 @@ public class PackageInfo extends JDialog implements ChangeListener {
                 p.setBackground(new Color(0, 0, 0));
             }
             addEntry(++i + ". " + link.getName(), p);
+        }
+        
+        /* Gewisse Formatierungsgeschichten werden erst beim zweiten Durchlauf gesetzt. Um nicht eine Timerperiode abwarten zu müssen
+           wird nach dem ersten (unsichtbarem) Durchlauf direkt ein zweiter gestartet. */
+        if(firstRun == true) {
+            firstRun = false;
+            initDialog();
+            panel.setVisible(true);
         }
     }
 
