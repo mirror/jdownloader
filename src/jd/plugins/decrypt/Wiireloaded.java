@@ -65,7 +65,7 @@ public class Wiireloaded extends PluginForDecrypt {
             if (!captchaFile.exists() || captchaFile.length() == 0) {
                 return null;
             } else {
-                String capTxt = Plugin.getCaptchaCode(captchaFile, this);
+                String capTxt = Plugin.getCaptchaCode(captchaFile, this, param);
                 br.getPage(parameter);
                 Form[] forms = br.getForms();
                 Form post = forms[0];
@@ -74,7 +74,7 @@ public class Wiireloaded extends PluginForDecrypt {
             }
         }
         String[][] ids = new Regex(page, "onClick=\"popup_dl\\((.*?)\\)\"").getMatches();
-        logger.finer("ids found"+ids.length);
+        logger.finer("ids found" + ids.length);
         progress.addToMax(ids.length);
         for (String[] element : ids) {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];

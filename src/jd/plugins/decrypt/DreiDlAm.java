@@ -39,6 +39,7 @@ public class DreiDlAm extends PluginForDecrypt {
     private final static Pattern patternSupported_3 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
 
     private String password;
+    private CryptedLink link;
 
     public DreiDlAm(PluginWrapper wrapper) {
         super(wrapper);
@@ -62,8 +63,7 @@ public class DreiDlAm extends PluginForDecrypt {
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(3);
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://3dl.am/images/captcha5.php" + captcha));
-                String capTxt = Plugin.getCaptchaCode(file, this);
-                if (capTxt == null) throw new DecrypterException("Wrong Captcha Code");
+                String capTxt = Plugin.getCaptchaCode(file, this, link);
                 form.put("antwort", capTxt);
                 br.submitForm(form);
                 if (!br.containsHTML("/failed.html';")) break;
@@ -99,7 +99,7 @@ public class DreiDlAm extends PluginForDecrypt {
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.clearCookies("3dl.am");
-
+        link = param;
         if (new Regex(parameter, patternSupported_2).matches()) {
             ArrayList<String> links = decryptFromStart(parameter);
             progress.setRange(links.size());

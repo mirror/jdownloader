@@ -163,8 +163,8 @@ public class FilesTo extends PluginForHost {
         }
 
         File file = this.getLocalCaptchaFile(this);
-Browser.download(file, captchaAddress);
-       
+        Browser.download(file, captchaAddress);
+
         String code = this.getCaptchaCode(file, downloadLink);
 
         HashMap<String, String> requestHeaders = new HashMap<String, String>();

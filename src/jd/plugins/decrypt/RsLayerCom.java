@@ -81,11 +81,7 @@ public class RsLayerCom extends PluginForDecrypt {
                 File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
 
-                String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                if (null == captchaCode || captchaCode.length() == 0) {
-                    logger.info(JDLocale.L("plugins.decrypt.rslayer.invalidCaptchaCode", "ungültiger Captcha Code"));
-                    return null;
-                }
+                String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
                 captchaForm.put("captcha_input", captchaCode);
                 br.submitForm(captchaForm);
 

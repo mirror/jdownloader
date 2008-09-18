@@ -16,20 +16,26 @@
 
 package jd.plugins;
 
+import jd.utils.JDLocale;
+
 public class DecrypterException extends Exception {
 
-    private static final long serialVersionUID = -413359039728789194L;    
+    private static final long serialVersionUID = -413359039728789194L;
     private String errorMessage = null;
-    
+
+    public static String CAPTCHA = JDLocale.L("decrypter.wrongcaptcha", "Wrong captcha code");
+    public static String PASSWORD = JDLocale.L("decrypter.wrongpassword", "Wrong password");
+    public static String ACCOUNT = JDLocale.L("decrypter.invalidaccount", "No valid account found");
+
     public DecrypterException() {
-        this.errorMessage="Unknown Error";
+        this.errorMessage = JDLocale.L("decrypter.unknownerror", "Unknown error");
     }
 
     public DecrypterException(String errorMessage) {
         this.errorMessage = errorMessage;
     }
-    
+
     public String getErrorMessage() {
         return errorMessage;
-    }    
+    }
 }

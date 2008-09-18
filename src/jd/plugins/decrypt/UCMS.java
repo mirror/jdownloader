@@ -84,7 +84,7 @@ public class UCMS extends PluginForDecrypt {
                         captchaFile = getLocalCaptchaFile(this);
                         Browser.download(captchaFile, captchaAdress);
                         capTxt = JDUtilities.getCaptcha(this, "hardcoremetal.biz", captchaFile, false, param);
-                        if (capTxt == null) throw new DecrypterException("Wrong Captcha Code");
+                        if (capTxt == null) throw new DecrypterException(DecrypterException.CAPTCHA);
                         String posthelp = HTMLParser.getFormInputHidden(element[2]);
                         if (element[0].startsWith("http")) {
                             reqinfo = HTTP.postRequest(new URL(element[0]), posthelp + "&code=" + capTxt);

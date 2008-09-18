@@ -110,7 +110,7 @@ public class YouTubeCom extends PluginForDecrypt {
             if (f != null && f.action == null) {
                 br.submitForm(f);
             } else {
-                if (br.getURL().contains("verify_age?")) { throw new DecrypterException("No Valid Account for Age Check"); }
+                if (br.getURL().contains("verify_age?")) { throw new DecrypterException(DecrypterException.ACCOUNT); }
             }
             String video_id = "";
             String t = "";

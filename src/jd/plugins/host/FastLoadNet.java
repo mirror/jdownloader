@@ -121,8 +121,7 @@ public class FastLoadNet extends PluginForHost {
                     Browser captchabr = br.cloneBrowser();
                     String captchaAddress=br.getRegex("<img .*src=\"(.*?)\".*?alt=\"Captcha\" />").getMatch(0);
                     Browser.download(file, captchabr.openGetConnection(captchaAddress));
-                    String code = this.getCaptchaCode(file, downloadLink);
-                    if (code == null) break;
+                    String code = this.getCaptchaCode(file, downloadLink);                    
                     captcha_form.setVariable(1, code);                
                     br.openFormConnection(captcha_form);
                     if (br.getHttpConnection().isContentDisposition()) {

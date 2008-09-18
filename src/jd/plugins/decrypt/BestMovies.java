@@ -54,11 +54,7 @@ public class BestMovies extends PluginForDecrypt {
                 /* Captcha vorhanden */
                 File captchaFile = this.getLocalCaptchaFile(this);
                 Browser.download(captchaFile, br.openGetConnection("http://crypt.best-movies.us/captcha.php"));
-                String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                if (captchaCode == null) {
-                    /* abbruch geklickt */
-                    return null;
-                }
+                String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
                 br.postPage(parameter, "sicherheitscode=" + captchaCode + "&submit=Submit+Query");
             } else {
                 /* Kein Captcha */

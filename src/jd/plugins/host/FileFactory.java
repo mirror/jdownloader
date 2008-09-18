@@ -74,9 +74,7 @@ public class FileFactory extends PluginForHost {
 
         if (br.containsHTML(NOT_AVAILABLE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-        }
+        } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
 
         br.getPage(Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(baseLink).getMatch(0)));
 
@@ -86,18 +84,11 @@ public class FileFactory extends PluginForHost {
         File captchaFile = this.getLocalCaptchaFile(this);
         Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
         String captchaCode = this.getCaptchaCode(captchaFile, parameter);
-
-        if (captchaCode == null) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-
         Form captchaForm = br.getForm(0);
         captchaForm.put("captcha", captchaCode);
         br.submitForm(captchaForm);
 
-        if (br.containsHTML(CAPTCHA_WRONG)) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
+        if (br.containsHTML(CAPTCHA_WRONG)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
 
         // Match die verbindung auf, Alle header werden ausgetauscht, aber keine
         // Daten geladen

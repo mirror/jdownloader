@@ -93,6 +93,13 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         return captchaText;
     }
 
+    public static String getCaptchaCode(File file, Plugin plugin, CryptedLink link) throws DecrypterException {
+        String captchaText = null;
+        captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
+        if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
+        return captchaText;
+    }
+
     /**
      * Gibt die Date zurück in die der aktuelle captcha geladne werden soll.
      * 
@@ -281,12 +288,13 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
-    public String getCaptchaCode(File file, DownloadLink downloadLink) {
+    public String getCaptchaCode(File file, DownloadLink downloadLink) throws PluginException {
 
         String tmp = downloadLink.getLinkStatus().getStatusText();
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.statustext.captchadetection", "Get captchacode"));
         downloadLink.requestGuiUpdate();
         String ret = Plugin.getCaptchaCode(file, this);
+        if (ret == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         downloadLink.getLinkStatus().setStatusText(tmp);
         downloadLink.requestGuiUpdate();
         return ret;

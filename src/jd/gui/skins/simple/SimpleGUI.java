@@ -127,6 +127,9 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
+    
+    public static String WAITING_USER_IO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
+    
     /**
      * Toggled das MenuItem fuer die Ansicht des Log Fensters
      * 
@@ -156,7 +159,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         /**
          * serialVersionUID
          */
-        private static final long serialVersionUID = 3676496738341246846L;
+        private static final long serialVersionUID = 3676496738341246846L;       
 
         private JCheckBox chbPremium;
 

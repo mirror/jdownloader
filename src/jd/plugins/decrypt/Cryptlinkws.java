@@ -95,7 +95,7 @@ public class Cryptlinkws extends PluginForDecrypt {
                         String captchaCode;
                         br.cloneBrowser().downloadFile(captchaFile, "http://www.cryptlink.ws/captcha.php");
                         /* CaptchaCode holen */
-                        if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) { return decryptedLinks; }
+                        captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
                         forms[0].put("captchainput", captchaCode);
 
                     }

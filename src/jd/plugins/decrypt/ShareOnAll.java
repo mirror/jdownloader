@@ -57,11 +57,7 @@ public class ShareOnAll extends PluginForDecrypt {
 
                     File captchaFile = this.getLocalCaptchaFile(this);
                     Browser.download(captchaFile, br.openGetConnection(captchaAddress));
-                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-                    if (captchaCode == null) {
-                        /* abbruch geklickt */
-                        return null;
-                    }
+                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
                     captchaCode = captchaCode.toUpperCase();
                     form.put("c", captchaCode);
                     br.submitForm(form);

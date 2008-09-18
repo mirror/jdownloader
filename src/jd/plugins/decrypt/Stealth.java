@@ -76,7 +76,8 @@ public class Stealth extends PluginForDecrypt {
                     File file = this.getLocalCaptchaFile(this);
                     Form form = br.getForm(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection(captchaAdress));
-                    form.put("txtCode", getCaptchaCode(file, this));
+                    String code = getCaptchaCode(file, this, param);
+                    form.put("txtCode", code);
                     br.submitForm(form);
                 } else if (br.containsHTML("libs/captcha.php")) {
                     /* Neue Captcha Seite */
@@ -85,7 +86,8 @@ public class Stealth extends PluginForDecrypt {
                     File file = this.getLocalCaptchaFile(this);
                     Form form = br.getForm(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://stealth.to/libs/captcha.php"));
-                    form.put("code", getCaptchaCode(file, this));
+                    String code = getCaptchaCode(file, this, param);
+                    form.put("code", code);
                     br.submitForm(form);
                 } else if (br.containsHTML("libs/crosshair.php")) {
                     /* Neue Crosshair Seite */
@@ -105,7 +107,7 @@ public class Stealth extends PluginForDecrypt {
                     break;
                 }
             }
-            if (valid == false) throw new DecrypterException("Wrong Captcha Code");
+            if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
             /* Alte Links Seite */
             String[] links = br.getRegex("popup.php\\?id=(\\d+?)\"\\,'dl'").getColumn(0);
             if (links.length > 0) {

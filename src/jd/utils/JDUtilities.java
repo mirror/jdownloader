@@ -105,6 +105,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -199,7 +200,10 @@ public class JDUtilities {
 
     private static HashMap<String, SubConfiguration> subConfigs = new HashMap<String, SubConfiguration>();
 
-    private static Semaphore sem = new Semaphore(1);
+    /*
+     * nur 1 UserIO Dialog gleichzeitig (z.b.PW,Captcha)
+     */
+    private static Semaphore userio_sem = new Semaphore(1);
 
     public static String getSimString(String a, String b) {
 
@@ -602,7 +606,7 @@ public class JDUtilities {
     }
 
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) {
-        link.getProgressController().setProgressText("Waiting for User-Input");
+        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
         String code = getCaptcha(plugin, method, file, forceJAC);
         link.getProgressController().setProgressText(null);
         return code;
@@ -623,7 +627,7 @@ public class JDUtilities {
      */
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) {
         try {
-            sem.acquire();
+            userio_sem.acquire();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -646,7 +650,7 @@ public class JDUtilities {
             try {
                 mediaTracker.waitForID(0);
             } catch (InterruptedException e) {
-                sem.release();
+                userio_sem.release();
                 return null;
             }
             mediaTracker.removeImage(captchaImage);
@@ -686,21 +690,21 @@ public class JDUtilities {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
             } else {
-                sem.release();
+                userio_sem.release();
                 return captchaCode;
             }
 
             if (code != null && code.equals(captchaCode)) {
-                sem.release();
+                userio_sem.release();
                 return captchaCode;
             }
-            sem.release();
+            userio_sem.release();
             return code;
         }
 
         else {
             String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
-            sem.release();
+            userio_sem.release();
             return code;
         }
     }
