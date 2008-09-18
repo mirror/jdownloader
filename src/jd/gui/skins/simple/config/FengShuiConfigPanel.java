@@ -148,13 +148,12 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == cancel)
             dispose();
-        else if (e.getSource() == more) {
+        else if (e.getSource() == more) {           
             save();
             dispose();
-            UIInterface ui = JDUtilities.getGUI();
-            ConfigurationDialog.showConfig(((SimpleGUI) ui).getFrame(), ui);
-            // ConfigurationDialog.showConfig(new JFrame(), ui);
 
+            SimpleGUI.CURRENTGUI.getGuiConfig().setProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, false);
+            SimpleGUI.CURRENTGUI.showConfig();
         } else if (e.getSource() == apply) {
             save();
             dispose();

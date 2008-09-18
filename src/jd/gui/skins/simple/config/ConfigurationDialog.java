@@ -88,6 +88,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         return true;
     }
 
+    private JButton btnFengShuiConfig;
+    
     private JButton btnCancel;
 
     private JButton btnRestart;
@@ -168,7 +170,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         btnCancel.addActionListener(this);
         btnRestart = new JButton(JDLocale.L("gui.config.btn_restart", "Speichern und neu starten"));
         btnRestart.addActionListener(this);
-
+        btnFengShuiConfig = new JButton(JDLocale.L("gui.config.btn_fengshui", "Vereinfachte Ansicht"));
+        btnFengShuiConfig.addActionListener(this);
+        
         setLayout(new GridBagLayout());
 
         int n = 5;
@@ -179,12 +183,15 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         JPanel sp = new JPanel(new BorderLayout(n, n));
         sp.setOpaque(false);
         JPanel btPanel = new JPanel(new FlowLayout(n, n, FlowLayout.RIGHT));
+        JPanel btPanelLeft = new JPanel(new FlowLayout(n, n, FlowLayout.RIGHT));
         btPanel.setOpaque(false);
+        btPanelLeft.add(btnFengShuiConfig);
         btPanel.add(btnRestart);
         btPanel.add(btnSave);
         btPanel.add(btnCancel);
         sp.add(btPanel, BorderLayout.EAST);
-
+        sp.add(btPanelLeft, BorderLayout.WEST);
+        
         cp.add(tabbedPane, BorderLayout.CENTER);
         cp.add(sp, BorderLayout.SOUTH);
 
@@ -229,7 +236,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             JDUtilities.saveConfig();
             JDUtilities.restartJD();
 
-        } else if (e.getSource() == btnSave) {
+        } else if (e.getSource() == btnSave || e.getSource() == btnFengShuiConfig) {
             for (int i = 0; i < configPanels.size(); i++) {
                 if (configPanels.elementAt(i) != null) {
                     configPanels.elementAt(i).save();
@@ -239,10 +246,14 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             JDUtilities.saveConfig();
 
         }
-
+        
+        setVisible(false);
         dispose();
 
-        setVisible(false);
+        if (e.getSource() == btnFengShuiConfig) {
+            SimpleGUI.CURRENTGUI.getGuiConfig().setProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, true);
+            SimpleGUI.CURRENTGUI.showConfig();
+        }
     }
 
     /**

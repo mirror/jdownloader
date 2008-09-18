@@ -979,24 +979,28 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
             break;
         case JDAction.APP_CONFIGURATION:
-            if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, false)) {
-                ConfigurationDialog.showConfig(frame, this);
-            } else {
-                if (ConfigurationDialog.DIALOG != null) {
-                    if (ConfigurationDialog.DIALOG.isVisible() == false) {
-                        FengShuiConfigPanel.getInstance();
-                    } else {
-                        ConfigurationDialog.showConfig(frame, this);
-                    }
-                } else {
-                    FengShuiConfigPanel.getInstance();
-                }
-            }
+            showConfig();
             break;
         }
 
     }
 
+    public void showConfig() {
+        if (guiConfig.getBooleanProperty(PARAM_SHOW_FENGSHUI, true) == false) {
+            ConfigurationDialog.showConfig(frame, this);
+        } else {
+            if (ConfigurationDialog.DIALOG != null) {
+                if (ConfigurationDialog.DIALOG.isVisible() == false) {
+                    FengShuiConfigPanel.getInstance();
+                } else {
+                    ConfigurationDialog.showConfig(frame, this);
+                }
+            } else {
+                FengShuiConfigPanel.getInstance();
+            }
+        }
+    }
+    
     public synchronized void addLinksToGrabber(Vector<DownloadLink> links) {
         logger.info("GRAB");
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
@@ -1850,6 +1854,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         JDTheme.setTheme("default");
         JDUtilities.getGUI().showHelpMessage(JDLocale.LF("system.update.message.title", "Update to version %s", version), html.toString(), false, JDLocale.L("system.update.changelogurl", "http://jdownloader.org/changes?toolmode=1"), JDLocale.L("system.update.showchangelog", "Show all changes"), 60);
+    }
+
+    public SubConfiguration getGuiConfig() {
+        return guiConfig;
     }
 
 }
