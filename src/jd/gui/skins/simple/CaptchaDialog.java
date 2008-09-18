@@ -67,6 +67,8 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
      */
     private String captchaText = null;
 
+    boolean abort = false;
+
     public int countdown = 0;
     private Thread countdownThread;
 
@@ -111,7 +113,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 cd.countdown = countdown;
                 countdown = -1;
                 cd.setVisible(true);
-                //captchaText = cd.getCaptchaText();
+                // captchaText = cd.getCaptchaText();
                 dispose();
 
             }
@@ -229,7 +231,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
         }
         this.pack();
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
-       
+
         this.toFront();
         this.setAlwaysOnTop(true);
         this.requestFocus();
@@ -244,6 +246,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
         if (e.getSource() == btnOK) {
             captchaText = textField.getText();
         } else if (e.getSource() == btnBAD) {
+            abort = true;
             captchaText = null;
         }
         dispose();
@@ -263,11 +266,12 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
      * @return Der Text, den der Benutzer eingetippt hat
      */
     public String getCaptchaText() {
+        if (abort == true) return null;
         return captchaText;
     }
 
     public void keyPressed(KeyEvent e) {
-        countdown=-1;
+        countdown = -1;
         if (countdownThread != null && countdownThread.isAlive()) {
             countdownThread.interrupt();
         }
