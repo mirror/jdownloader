@@ -510,7 +510,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 //    private static final String DEBUG = "debug, "; 
 
     private JPanel getPanel() {
-        panel = new JPanel(new MigLayout(DEBUG + "ins dialog", "[right, pref!]0[grow,fill]0[]"));
+        panel = new JPanel(new MigLayout(DEBUG + "ins 20", "[right, pref!]0[grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
         Reconnectmethode = config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
         addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
