@@ -612,6 +612,25 @@ public class JDUtilities {
         return code;
     }
 
+    public static String getPassword(String message, CryptedLink link) {
+        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
+        String password = getPassword(message);
+        link.getProgressController().setProgressText(null);
+        return password;
+    }
+
+    public static String getPassword(String message) {
+        try {
+            userio_sem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
+        String password = JDUtilities.getGUI().showUserInputDialog(message);
+        userio_sem.release();
+        return password;
+    }
+
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
      * eingegebenen Text zurück.

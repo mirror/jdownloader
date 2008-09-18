@@ -70,10 +70,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                     do_continue = false;
                     /* Passwort */
                     form = br.getForm(0);
-                    if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
-                        do_continue = false;
-                        break;
-                    }
+                    passCode = getPassword(null, param);
                     form.getVars().put("password", passCode);
 
                     br.submitForm(form);

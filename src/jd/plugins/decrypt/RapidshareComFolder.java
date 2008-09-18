@@ -43,8 +43,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
         for (int retry = 1; retry < 5; retry++) {
             if (page.contains("input type=\"password\" name=\"password\"")) {
-                password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                if (password == null) return null;
+                password = getPassword(null, param);
                 page = br.postPage(parameter, "password=" + password);
             } else {
                 break;

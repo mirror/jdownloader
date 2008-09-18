@@ -48,8 +48,7 @@ public class NetfolderIn extends PluginForDecrypt {
             for (int retrycounter = 1; retrycounter <= 5; ++retrycounter) {
                 int check = new Regex(page, Pattern.compile("input type=\"password\" name=\"password\"", Pattern.CASE_INSENSITIVE)).count();
                 if (check > 0) {
-                    password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:");
-                    if (password == null) return null;
+                    password = getPassword(null, param);
                     page = br.postPage(parameter, "password=" + password + "&save=Absenden");
                 } else {
                     break;

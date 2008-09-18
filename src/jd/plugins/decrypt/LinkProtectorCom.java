@@ -65,9 +65,7 @@ public class LinkProtectorCom extends PluginForDecrypt {
                     referrer = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Site below:<br><a href=(.*?)>", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     requestInfo = HTTP.getRequest(url, null, referrer, false);
                 } else if (requestInfo.containsHTML("<h1>PASSWORD PROTECTED LINK</h1>") || requestInfo.containsHTML("Incorrect Password")) {
-                    if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
-                        break;
-                    }
+                    passCode = getPassword(null, param);
                     requestInfo = HTTP.postRequest(url, null, referrer, null, "u_name=user&u_password=" + Encoding.urlEncode(passCode), false);
                 } else {
                     do_continue = true;
