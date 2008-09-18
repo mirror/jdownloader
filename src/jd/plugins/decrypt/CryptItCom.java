@@ -35,6 +35,7 @@ import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.HTTP;
@@ -88,7 +89,7 @@ public class CryptItCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private ArrayList<DownloadLink> containerStep(CryptedLink param) {
+    private ArrayList<DownloadLink> containerStep(CryptedLink param) throws DecrypterException {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -105,12 +106,11 @@ public class CryptItCom extends PluginForDecrypt {
                 String cookie = requestInfo.getCookie();
                 if (requestInfo.containsHTML(PATTERN_PW)) {
 
-                    String pass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword());
+                    String pass = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
                     String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
                     requestInfo = HTTP.postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
                     if (requestInfo.containsHTML(PATTERN_PW)) {
                         logger.warning("Password wrong");
-                        JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("plugins.decrypt.general.passwordWrong", "Passwort falsch"));
                         return decryptedLinks;
                     }
                 }
@@ -195,7 +195,7 @@ public class CryptItCom extends PluginForDecrypt {
                 pass = param.getDecrypterPassword();
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     if (pass == null) {
-                        pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword());
+                        pass = getUserInput(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword(), param);
                         if (pass == null) {
                             /* auf abbruch geklickt */
                             return null;

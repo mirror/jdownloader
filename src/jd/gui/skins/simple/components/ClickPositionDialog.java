@@ -58,6 +58,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
     private JTextPane htmlArea;
     public Point result = new Point(-1, -1);
+    public boolean abort = false;
 
     private String titleText;
     private JLabel button;
@@ -153,6 +154,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
         if (e.getSource() == btnCnTh) {
             countdownThread = null;
         } else if (e.getSource() == btnBAD) {
+            abort = true;
             setVisible(false);
             dispose();
         }

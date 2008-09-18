@@ -79,7 +79,7 @@ public class Cryptlinkws extends PluginForDecrypt {
 
                     if (forms[0].getVars().containsKey("folderpass")) {
                         /* Eingabefeld für Passwort vorhanden */
-                        String password = getPassword(null, param);
+                        String password = getUserInput(null, param);
                         forms[0].put("folderpass", password);
 
                     }

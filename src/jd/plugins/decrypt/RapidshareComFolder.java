@@ -43,7 +43,7 @@ public class RapidshareComFolder extends PluginForDecrypt {
 
         for (int retry = 1; retry < 5; retry++) {
             if (page.contains("input type=\"password\" name=\"password\"")) {
-                password = getPassword(null, param);
+                password = getUserInput(null, param);
                 page = br.postPage(parameter, "password=" + password);
             } else {
                 break;

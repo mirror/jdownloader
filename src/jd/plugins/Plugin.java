@@ -88,18 +88,24 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @return captchacode
      */
     public static String getCaptchaCode(File file, Plugin plugin) {
-        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false);         
+        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false);
         return captchaText;
     }
 
     public static String getCaptchaCode(File file, Plugin plugin, CryptedLink link) throws DecrypterException {
-        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);        
+        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
         if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return captchaText;
     }
-    
-    public static String getPassword(String message, CryptedLink link) throws DecrypterException{
-        String password = JDUtilities.getPassword(message,link);
+
+    public static String getUserInput(String message, CryptedLink link) throws DecrypterException {
+        String password = JDUtilities.getUserInput(message, link);
+        if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
+        return password;
+    }
+
+    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws DecrypterException {
+        String password = JDUtilities.getUserInput(message, defaultmessage, link);
         if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
         return password;
     }

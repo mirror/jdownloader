@@ -66,7 +66,7 @@ public class EinsKhDe extends PluginForDecrypt {
                 valid = false;
                 /* Ordner ist Passwort geschützt */
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                    String password = getPassword(null, param);
+                    String password = getUserInput(null, param);
                     forms[0].put("Password", password);
                     br.submitForm(forms[0]);
 

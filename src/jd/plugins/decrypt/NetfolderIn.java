@@ -48,7 +48,7 @@ public class NetfolderIn extends PluginForDecrypt {
             for (int retrycounter = 1; retrycounter <= 5; ++retrycounter) {
                 int check = new Regex(page, Pattern.compile("input type=\"password\" name=\"password\"", Pattern.CASE_INSENSITIVE)).count();
                 if (check > 0) {
-                    password = getPassword(null, param);
+                    password = getUserInput(null, param);
                     page = br.postPage(parameter, "password=" + password + "&save=Absenden");
                 } else {
                     break;

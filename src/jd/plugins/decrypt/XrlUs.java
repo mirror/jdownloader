@@ -40,7 +40,7 @@ public class XrlUs extends PluginForDecrypt {
 
         if (br.containsHTML("That url is protected by a secret.")) {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                String password = getPassword(null, param);
+                String password = getUserInput(null, param);
                 br.getPage(parameter + "-" + password);
                 if (!br.containsHTML("That url is protected by a secret.")) {
                     break;

@@ -48,7 +48,7 @@ public class YourFilesBizFolder extends PluginForDecrypt {
             if (reqinfo.getHtmlCode().contains("Ordner Passwort")) {
                 String url = parameter.substring(0, parameter.lastIndexOf("/") + 1) + new Regex(reqinfo.getHtmlCode(), "action\\=(folders\\.php\\?fid\\=.*)method\\=post>").getMatch(0).trim();
                 String cookie = reqinfo.getCookie();
-                String password = getPassword(null, param);
+                String password = getUserInput(null, param);
                 String post = "act=login&password=" + password + "&login=Einloggen";
                 HashMap<String, String> reqinfoHeaders = new HashMap<String, String>();
                 reqinfoHeaders.put("Content-Type", "application/x-www-form-urlencoded");

@@ -92,7 +92,7 @@ public class LinkProtectIn extends PluginForDecrypt {
                          */
                         matcher = patternPassword.matcher(source);
                         if (matcher.find()) {
-                            password = getPassword(null, param);
+                            password = getUserInput(null, param);
                             form.put("pw", password);
                         }
                     } catch (Exception e) {
@@ -107,14 +107,13 @@ public class LinkProtectIn extends PluginForDecrypt {
                      * abfragen (Falls nur ein PW ohne Captcha Abfrage!)
                      */
                     form = br.getForm(0);
-                    password = JDUtilities.getController().getUiInterface().showUserInputDialog("Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein!");
-                    if (password == null) return decryptedLinks;
+                    password = getUserInput(null, param);
 
                     form.put("pw", password);
                     br.setFollowRedirects(true);
                     br.submitForm(form);
                 } else if (matcherpwwrong.find()) {
-                    password = getPassword(null, param);
+                    password = getUserInput(null, param);
                     form.put("pw", password);
                     br.setFollowRedirects(true);
                     br.submitForm(form);

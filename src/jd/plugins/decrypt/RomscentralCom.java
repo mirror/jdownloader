@@ -51,7 +51,7 @@ public class RomscentralCom extends PluginForDecrypt {
             String file = new Regex(br, patternSupportedWay1.pattern()).getMatch(0);
             decryptedLinks.add(createDownloadlink(file));
         } else if (matcher2.find()) {
-            String rootUrl = JDUtilities.getGUI().showUserInputDialog("Bitte gebe die URL an, von woher du den Quelltext eingefügt hast!", lastRootCatUrl);
+            String rootUrl = getUserInput("Bitte gebe die URL an, von woher du den Quelltext eingefügt hast!", lastRootCatUrl, param);
 
             matcher = patternSupportedWay1.matcher(rootUrl);
             if (matcher.find() && !rootUrl.equals("http://www.romscentral.com/<kategorie>/<htmlseite>")) {

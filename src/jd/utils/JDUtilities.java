@@ -216,6 +216,18 @@ public class JDUtilities {
         return ret;
     }
 
+    public static void acquireUserIO_Semaphore() {
+        try {
+            userio_sem.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void releaseUserIO_Semaphore() {
+        userio_sem.release();
+    }
+
     /**
      * Fügt ein Bild zur Map hinzu
      * 
@@ -612,22 +624,34 @@ public class JDUtilities {
         return code;
     }
 
-    public static String getPassword(String message, CryptedLink link) {
+    public static String getUserInput(String message, CryptedLink link) {
         link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
-        String password = getPassword(message);
+        String password = getUserInput(message);
         link.getProgressController().setProgressText(null);
         return password;
     }
 
-    public static String getPassword(String message) {
-        try {
-            userio_sem.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+    public static String getUserInput(String message, String defaultmessage, CryptedLink link) {
+        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
+        String password = getUserInput(message, defaultmessage);
+        link.getProgressController().setProgressText(null);
+        return password;
+    }
+
+    public static String getUserInput(String message) {
+        acquireUserIO_Semaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
         String password = JDUtilities.getGUI().showUserInputDialog(message);
-        userio_sem.release();
+        releaseUserIO_Semaphore();
+        return password;
+    }
+
+    public static String getUserInput(String message, String defaultmessage) {
+        acquireUserIO_Semaphore();
+        if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
+        if (defaultmessage == null) defaultmessage = "";
+        String password = JDUtilities.getGUI().showUserInputDialog(message, defaultmessage);
+        releaseUserIO_Semaphore();
         return password;
     }
 
@@ -645,11 +669,7 @@ public class JDUtilities {
      * @return Der vom Benutzer eingegebene Text
      */
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) {
-        try {
-            userio_sem.acquire();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        acquireUserIO_Semaphore();
         String host;
         if (method == null) {
             host = plugin.getHost();
@@ -669,7 +689,7 @@ public class JDUtilities {
             try {
                 mediaTracker.waitForID(0);
             } catch (InterruptedException e) {
-                userio_sem.release();
+                releaseUserIO_Semaphore();
                 return null;
             }
             mediaTracker.removeImage(captchaImage);
@@ -709,21 +729,21 @@ public class JDUtilities {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
                 code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
             } else {
-                userio_sem.release();
+                releaseUserIO_Semaphore();
                 return captchaCode;
             }
 
             if (code != null && code.equals(captchaCode)) {
-                userio_sem.release();
+                releaseUserIO_Semaphore();
                 return captchaCode;
             }
-            userio_sem.release();
+            releaseUserIO_Semaphore();
             return code;
         }
 
         else {
             String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
-            userio_sem.release();
+            releaseUserIO_Semaphore();
             return code;
         }
     }
