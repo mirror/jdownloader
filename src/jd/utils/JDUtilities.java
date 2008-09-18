@@ -112,6 +112,7 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
+import jd.plugins.LinkStatus;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -625,31 +626,28 @@ public class JDUtilities {
     }
 
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) {
-        String tmp = link.getLinkStatus().getStatusText();
-        link.getLinkStatus().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         String code = getCaptcha(plugin, method, file, forceJAC);
-        link.getLinkStatus().setStatusText(tmp);
+        link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         return code;
     }
 
     public static String getUserInput(String message, DownloadLink link) {
-        String tmp = link.getLinkStatus().getStatusText();
-        link.getLinkStatus().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         String code = getUserInput(message);
-        link.getLinkStatus().setStatusText(tmp);
+        link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         return code;
     }
 
     public static String getUserInput(String message, String defaultmessage, DownloadLink link) {
-        String tmp = link.getLinkStatus().getStatusText();
-        link.getLinkStatus().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         String code = getUserInput(message, defaultmessage);
-        link.getLinkStatus().setStatusText(tmp);
+        link.getLinkStatus().removeStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         return code;
     }

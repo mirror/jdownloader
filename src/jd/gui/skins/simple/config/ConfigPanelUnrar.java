@@ -70,7 +70,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
     @Override
     public void initPanel() {
         configuration = JDUtilities.getConfiguration();
-        String unrarcmd = JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND");
+        String unrarcmd = JDUtilities.getConfiguration().getStringProperty("GUNRARCOMMAND", null);
         if (unrarcmd == null) {
             unrarcmd = new JUnrar(false).getUnrarCommand();
             if (unrarcmd == null) {
@@ -111,7 +111,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, configuration, Unrar.PROPERTY_EXTRACTFOLDER, JDLocale.L("gui.config.unrar.extractfolder", "Zielordner: ")).setDefaultValue(null)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_ENABLE_EXTRACTFOLDER, JDLocale.L("gui.config.unrar.extractfolderenabled", "Im Zielordner entpacken (Wenn die Dateien nicht im Downloadordner entpackt werden sollen)")).setDefaultValue(false)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_DELETE_INFOFILE, JDLocale.L("gui.config.unrar.deleteinfofile", "Info-Datei nach erfolgreichem Entpacken löschen")).setDefaultValue(true)));
-        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Unrar.PROPERTY_AUTOFOLDER_COUNT, JDLocale.L("gui.config.unrar.autofoldercount", "Ab X Dateien in einen eigenen Ordner verschieben (0 ist aus)"), 0,1000).setDefaultValue(2)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Unrar.PROPERTY_AUTOFOLDER_COUNT, JDLocale.L("gui.config.unrar.autofoldercount", "Ab X Dateien in einen eigenen Ordner verschieben (0 ist aus)"), 0, 1000).setDefaultValue(2)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.menu.action.passwordlist.name", "Edit list of passwords"))));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, Unrar.PROPERTY_USE_HJMERGE, JDLocale.L("gui.config.unrar.usehjmerge", "HJSplit Dateien automatisch zusammenfügen")).setDefaultValue(true)));

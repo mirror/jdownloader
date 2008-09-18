@@ -49,7 +49,6 @@ public class XupIn extends PluginForHost {
 
     private static final String VID = "value=\"(.*?)\" name=\"vid\"";
     private static final String VTIME = "value=\"([0-9]+)\" name=\"vtime\"";
-    private String captchaAddress = "";
     private String cookie = "";
     private String vid = "";
     private String vpass = "";
@@ -164,7 +163,7 @@ public class XupIn extends PluginForHost {
 
         vid = new Regex(requestInfo.getHtmlCode(), VID).getMatch(0);
         vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
-        captchaAddress = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
+        new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
 
         File file = this.getLocalCaptchaFile(this);
 
@@ -207,7 +206,6 @@ public class XupIn extends PluginForHost {
         vid = "";
         vtime = "";
         vpass = "";
-        captchaAddress = "";
         cookie = "";
 
     }

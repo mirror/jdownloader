@@ -121,6 +121,11 @@ public class LinkStatus implements Serializable {
      */
     public static final int PLUGIN_IN_PROGRESS = 1 << 18;
 
+    /**
+     * Zeigt an, das auf User-Eingaben gewartet wird
+     */
+    public static final int WAITING_USERIO = 1 << 23;
+
     private static final long serialVersionUID = 3885661829491436448L;
     /**
      * Controlling: Link muß noch bearbeitet werden.
@@ -184,6 +189,8 @@ public class LinkStatus implements Serializable {
             return JDLocale.L("downloadlink.status.error.temp_unavailable", "Temp. unavailable");
         case LinkStatus.ERROR_FATAL:
             return JDLocale.L("downloadlink.status.error.fatal", "Fatal Error");
+        case LinkStatus.WAITING_USERIO:
+            return JDLocale.L("downloadlink.status.waitinguserio", "Waiting for user input");
         }
         return null;
 
@@ -304,7 +311,7 @@ public class LinkStatus implements Serializable {
     }
 
     public boolean isFailed() {
-        return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS);
+        return !hasOnlyStatus(FINISHED | ERROR_IP_BLOCKED | TODO | PLUGIN_IN_PROGRESS | DOWNLOADINTERFACE_IN_PROGRESS | WAITING_USERIO);
     }
 
     public boolean isPluginActive() {

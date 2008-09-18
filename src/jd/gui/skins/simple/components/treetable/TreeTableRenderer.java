@@ -29,6 +29,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
+import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -175,15 +176,14 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             return miniBar;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof DownloadLink) {
             dLink = (DownloadLink) value;
-            if(dLink.getPlugin()==null){
+            if (dLink.getPlugin() == null) {
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
                     ui.setSelectionForeground(DONE_COLOR_FONT_A);
                     ui.setSelectionBackground(DONE_COLOR_FONT_B);
                 }
                 progress.setString("Plugin loading failed");
-            }
-            else if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
+            } else if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         progress.setForeground(DONE_COLOR);
@@ -206,7 +206,11 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                         ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
                         ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
                     }
-                    progress.setString(c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize())) + ")");
+                    if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
+                        progress.setString(SimpleGUI.WAITING_USER_IO);
+                    } else {
+                        progress.setString(c.format(dLink.getPercent() / 100.0) + "% (" + JDUtilities.formatBytesToMB(dLink.getDownloadCurrent()) + "/" + JDUtilities.formatBytesToMB(Math.max(1, dLink.getDownloadSize())) + ")");
+                    }
                 }
                 progress.setMaximum(10000);
                 progress.setValue(dLink.getPercent());
@@ -220,6 +224,14 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 }
                 progress.setValue((int) dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
+                return progress;
+            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
+                progress.setForeground(ACTIVE_PROGRESS_COLOR);
+                if (ui != null) {
+                    ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
+                }
+                progress.setString(SimpleGUI.WAITING_USER_IO);
                 return progress;
             }
             label.setText("");

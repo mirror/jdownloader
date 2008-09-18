@@ -39,7 +39,6 @@ public class RbaDe extends PluginForHost {
     private static final Pattern REGEX_RAPPERNAMEN = Pattern.compile(REGEX_NICKNAME, Pattern.CASE_INSENSITIVE);
 
     private static final String ERR_IDS_NOT_FOUND = "Konnte BattleId und Rundennummer nicht herausfinden. Plugin defeckt!";
-    private static final String ERR_MC_NAME_NOT_FOUND = "Konnte Herausforderer oder Gegner nicht ermitteln. Plugin defeckt!";
     private static final String ERR_FILE_NOT_FOUND = "Datei Konnte nicht gefunden werden. Entweder der Link ist ungültig oder das Plugin defeckt!";
     private static final String REGEX_ALLOWED_FILENAME_CHARS = "[^\\w$_ ~]";
     /** Downloads will be downloaded to DOWNLOAD_DIR + PackageName */
