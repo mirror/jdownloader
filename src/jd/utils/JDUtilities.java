@@ -624,6 +624,36 @@ public class JDUtilities {
         return code;
     }
 
+    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) {
+        String tmp = link.getLinkStatus().getStatusText();
+        link.getLinkStatus().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.requestGuiUpdate();
+        String code = getCaptcha(plugin, method, file, forceJAC);
+        link.getLinkStatus().setStatusText(tmp);
+        link.requestGuiUpdate();
+        return code;
+    }
+
+    public static String getUserInput(String message, DownloadLink link) {
+        String tmp = link.getLinkStatus().getStatusText();
+        link.getLinkStatus().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.requestGuiUpdate();
+        String code = getUserInput(message);
+        link.getLinkStatus().setStatusText(tmp);
+        link.requestGuiUpdate();
+        return code;
+    }
+
+    public static String getUserInput(String message, String defaultmessage, DownloadLink link) {
+        String tmp = link.getLinkStatus().getStatusText();
+        link.getLinkStatus().setStatusText(SimpleGUI.WAITING_USER_IO);
+        link.requestGuiUpdate();
+        String code = getUserInput(message, defaultmessage);
+        link.getLinkStatus().setStatusText(tmp);
+        link.requestGuiUpdate();
+        return code;
+    }
+
     public static String getUserInput(String message, CryptedLink link) {
         link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
         String password = getUserInput(message);
@@ -687,7 +717,7 @@ public class JDUtilities {
             mediaTracker.addImage(captchaImage, 0);
             try {
                 mediaTracker.waitForID(0);
-            } catch (InterruptedException e) {                
+            } catch (InterruptedException e) {
                 return null;
             }
             mediaTracker.removeImage(captchaImage);

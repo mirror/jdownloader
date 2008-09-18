@@ -106,20 +106,15 @@ public class Upsharenet extends PluginForHost {
         captchaFile = getLocalCaptchaFile(this);
 
         br.downloadFile(captchaFile, "http://www.upshare.net/captcha.php");
-         
+
         /* CaptchaCode holen */
-        if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+        captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+
         form.put("captchacode", captchaCode);
         /* Passwort holen holen */
         if (form.getVars().containsKey("downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
-                    passCode = "";
-                }
+                passCode = Plugin.getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

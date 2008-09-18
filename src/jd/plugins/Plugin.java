@@ -92,6 +92,12 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         return captchaText;
     }
 
+    public static String getCaptchaCode(File file, Plugin plugin, DownloadLink link) throws PluginException {
+        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
+        if (captchaText == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        return captchaText;
+    }
+
     public static String getCaptchaCode(File file, Plugin plugin, CryptedLink link) throws DecrypterException {
         String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
         if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -101,6 +107,18 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public static String getUserInput(String message, CryptedLink link) throws DecrypterException {
         String password = JDUtilities.getUserInput(message, link);
         if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
+        return password;
+    }
+
+    public static String getUserInput(String message, DownloadLink link) throws PluginException {
+        String password = JDUtilities.getUserInput(message, link);
+        if (password == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        return password;
+    }
+
+    public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws PluginException {
+        String password = JDUtilities.getUserInput(message, defaultmessage, link);
+        if (password == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
         return password;
     }
 
@@ -296,18 +314,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     public void fireControlEvent(int controlID, Object param) {
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
-    }
-
-    public String getCaptchaCode(File file, DownloadLink downloadLink) throws PluginException {
-
-        String tmp = downloadLink.getLinkStatus().getStatusText();
-        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.statustext.captchadetection", "Get captchacode"));
-        downloadLink.requestGuiUpdate();
-        String ret = Plugin.getCaptchaCode(file, this);
-        if (ret == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        downloadLink.getLinkStatus().setStatusText(tmp);
-        downloadLink.requestGuiUpdate();
-        return ret;
     }
 
     public int getCaptchaDetectionID() {

@@ -29,6 +29,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -141,7 +142,7 @@ public class XupIn extends PluginForHost {
 
         if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
 
-            vpass = JDUtilities.getController().getUiInterface().showUserInputDialog(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"));
+            vpass = Plugin.getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), downloadLink);
 
         }
 
@@ -188,8 +189,7 @@ public class XupIn extends PluginForHost {
 
         Browser.download(file, requestInfo.getConnection());
 
-
-        String vchep = this.getCaptchaCode(file, downloadLink);
+        String vchep = Plugin.getCaptchaCode(file, this, downloadLink);
 
         if (vpass != "") {
             requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vpass=" + vpass + "&vchep=" + vchep, true);

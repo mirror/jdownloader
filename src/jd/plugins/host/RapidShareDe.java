@@ -50,12 +50,11 @@ public class RapidShareDe extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
-       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		 ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-   		return;
-   		}
-       	checkMirrorsInProgress(downloadLink);
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+            return;
+        }
+        checkMirrorsInProgress(downloadLink);
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -106,15 +105,7 @@ public class RapidShareDe extends PluginForHost {
         }
         String code = null;
 
-        code = Plugin.getCaptchaCode(captchaFile, this);
-
-        if (code == null || code == "") {
-            logger.severe("Bot erkannt");
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(60000);
-            JDUtilities.appendInfoToFilename(this, captchaFile, "_NULL", false);
-            return;
-        }
+        code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
         form.put("captcha", code);
 
         dl = new RAFDownload(this, downloadLink, br.openFormConnection(form));
@@ -136,11 +127,10 @@ public class RapidShareDe extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
 
-       	if(downloadLink.getDownloadURL().matches("sjdp://.*"))
-   		{
-   		 ((PluginForHost)PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-   		return;
-   		}
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
+            ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
+            return;
+        }
 
         String user = account.getUser();
         String pass = account.getPass();

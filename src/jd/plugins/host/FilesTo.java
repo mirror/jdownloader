@@ -32,6 +32,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
@@ -165,7 +166,7 @@ public class FilesTo extends PluginForHost {
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, captchaAddress);
 
-        String code = this.getCaptchaCode(file, downloadLink);
+        String code = Plugin.getCaptchaCode(file, this, downloadLink);
 
         HashMap<String, String> requestHeaders = new HashMap<String, String>();
         requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");

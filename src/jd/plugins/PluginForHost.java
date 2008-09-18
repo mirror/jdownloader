@@ -49,8 +49,6 @@ import jd.utils.JDUtilities;
  */
 public abstract class PluginForHost extends Plugin {
 
-  
-  
     public PluginForHost(PluginWrapper wrapper) {
         super(wrapper);
 
@@ -133,8 +131,7 @@ public abstract class PluginForHost extends Plugin {
             logger.severe("Captcha Download fehlgeschlagen: " + captchaAddress);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this);
-        if (captchaCode == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
         return captchaCode;
 
     }
@@ -235,20 +232,20 @@ public abstract class PluginForHost extends Plugin {
                 try {
                     // Zwecks Multidownload braucht jeder Link seine eigene
                     // Plugininstanz
-                    PluginForHost plg = (PluginForHost)wrapper.getNewPluginInstance();
+                    PluginForHost plg = (PluginForHost) wrapper.getNewPluginInstance();
                     DownloadLink link = new DownloadLink(plg, file.substring(file.lastIndexOf("/") + 1, file.length()), getHost(), file, true);
                     links.add(link);
                     if (fp != null) {
                         link.setFilePackage(fp);
                     }
-      
+
                 } catch (IllegalArgumentException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 } catch (SecurityException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
-                } 
+                }
             }
         }
         return links;

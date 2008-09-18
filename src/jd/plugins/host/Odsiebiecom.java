@@ -135,10 +135,7 @@ public class Odsiebiecom extends PluginForHost {
                 }
                 Browser.download(captchaFile, captcha_con);
                 /* CaptchaCode holen */
-                if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                    linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-                    return;
-                }
+                captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
                 capform.setVariable(0, captchaCode);
                 /* Überprüfen(Captcha,Password) */
                 downloadurl = "http://odsiebie.com/pobierz/" + steplink + "?captcha=" + captchaCode;

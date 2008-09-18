@@ -31,6 +31,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -84,11 +85,10 @@ public class MegasharesCom extends PluginForHost {
             File file = this.getLocalCaptchaFile(this);
             Browser c = br.cloneBrowser();
             Browser.download(file, c.openGetConnection(captchaAddress));
-             
 
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
-            String code = this.getCaptchaCode(file, downloadLink);
+            String code = Plugin.getCaptchaCode(file, this, downloadLink);
             // /?d01=ec0acc7&
             String geturl = link + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
             br.getPage(geturl);

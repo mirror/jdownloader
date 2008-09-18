@@ -31,6 +31,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -141,7 +142,7 @@ public class Netloadin extends PluginForHost {
         File file = this.getLocalCaptchaFile(this);
         Browser c = br.cloneBrowser();
         Browser.download(file, c.openGetConnection(captchaURL));
-        captchaPost.getVars().put("captcha_check", this.getCaptchaCode(file, downloadLink));
+        captchaPost.getVars().put("captcha_check", Plugin.getCaptchaCode(file, this, downloadLink));
         br.submitForm(captchaPost);
         if (br.containsHTML(FILE_NOT_FOUND)) {
 

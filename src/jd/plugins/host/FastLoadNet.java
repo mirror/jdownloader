@@ -28,6 +28,7 @@ import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -111,7 +112,7 @@ public class FastLoadNet extends PluginForHost {
         }
 
         Form captcha_form = getDownloadForm();
- 
+
         if (captcha_form != null) {
             boolean valid = false;
             for (int retry = 1; retry <= 5; retry++) {
@@ -119,10 +120,10 @@ public class FastLoadNet extends PluginForHost {
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
                     Browser captchabr = br.cloneBrowser();
-                    String captchaAddress=br.getRegex("<img .*src=\"(.*?)\".*?alt=\"Captcha\" />").getMatch(0);
+                    String captchaAddress = br.getRegex("<img .*src=\"(.*?)\".*?alt=\"Captcha\" />").getMatch(0);
                     Browser.download(file, captchabr.openGetConnection(captchaAddress));
-                    String code = this.getCaptchaCode(file, downloadLink);                    
-                    captcha_form.setVariable(1, code);                
+                    String code = Plugin.getCaptchaCode(file, this, downloadLink);
+                    captcha_form.setVariable(1, code);
                     br.openFormConnection(captcha_form);
                     if (br.getHttpConnection().isContentDisposition()) {
                         valid = true;
@@ -190,7 +191,7 @@ public class FastLoadNet extends PluginForHost {
         Form[] forms = br.getForms();
         if (forms != null) {
             for (int i = 0; i < forms.length; i++) {
-                if (forms[i].getVars().size()>=2) { return forms[i]; }
+                if (forms[i].getVars().size() >= 2) { return forms[i]; }
             }
         }
         return null;

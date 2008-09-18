@@ -32,6 +32,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -83,7 +84,7 @@ public class FileFactory extends PluginForHost {
 
         File captchaFile = this.getLocalCaptchaFile(this);
         Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
-        String captchaCode = this.getCaptchaCode(captchaFile, parameter);
+        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
         Form captchaForm = br.getForm(0);
         captchaForm.put("captcha", captchaCode);
         br.submitForm(captchaForm);

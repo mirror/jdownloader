@@ -60,7 +60,7 @@ public class Filer extends PluginForHost {
         while (tries < maxCaptchaTries) {
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
             Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-            code = Plugin.getCaptchaCode(captchaFile, this);
+            code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
             page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
             tries++;
             if (!page.contains("captcha.png")) {
@@ -163,7 +163,7 @@ public class Filer extends PluginForHost {
                 br.getPage(downloadLink.getDownloadURL());
                 captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
                 Browser.download(captchaFile, br.openGetConnection("http://www.filer.net/captcha.png"));
-                code = Plugin.getCaptchaCode(captchaFile, this);
+                code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
                 bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getMatch(0));

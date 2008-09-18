@@ -115,24 +115,19 @@ public class ShareOnlineBiz extends PluginForHost {
         HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.share-online.biz/captcha.php").openConnection());
         captcha_con.setRequestProperty("Referer", url);
         captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
-        if (!captcha_con.getContentType().contains("text")){
+        if (!captcha_con.getContentType().contains("text")) {
             /* Fehler beim Captcha */
             logger.severe("Captcha Download fehlgeschlagen!");
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
-       Browser.download(captchaFile, captcha_con);
+        Browser.download(captchaFile, captcha_con);
         /* CaptchaCode holen */
-        if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+        captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
         /* Passwort holen holen */
         if (requestInfo.getHtmlCode().contains("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                if ((passCode = JDUtilities.getGUI().showUserInputDialog("Code?")) == null) {
-                    passCode = "";
-                }
+                passCode = Plugin.getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);

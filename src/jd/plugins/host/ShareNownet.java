@@ -104,14 +104,10 @@ public class ShareNownet extends PluginForHost {
             /* Captcha File holen */
             captchaFile = getLocalCaptchaFile(this);
 
-           br.downloadFile(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download"));
-           
+            br.downloadFile(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download"));
+
             /* CaptchaCode holen */
-            if ((captchaCode = Plugin.getCaptchaCode(captchaFile, this)) == null) {
-                // step.setStatus(PluginStep.STATUS_ERROR);
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-                return;
-            }
+            captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
             form.put("captcha", captchaCode);
         }
         /* DownloadLink holen/Captcha check */
