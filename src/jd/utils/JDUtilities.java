@@ -669,7 +669,6 @@ public class JDUtilities {
      * @return Der vom Benutzer eingegebene Text
      */
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) {
-        acquireUserIO_Semaphore();
         String host;
         if (method == null) {
             host = plugin.getHost();
@@ -688,8 +687,7 @@ public class JDUtilities {
             mediaTracker.addImage(captchaImage, 0);
             try {
                 mediaTracker.waitForID(0);
-            } catch (InterruptedException e) {
-                releaseUserIO_Semaphore();
+            } catch (InterruptedException e) {                
                 return null;
             }
             mediaTracker.removeImage(captchaImage);
@@ -727,21 +725,19 @@ public class JDUtilities {
             logger.info("worst letter: " + vp);
             if (plugin.useUserinputIfCaptchaUnknown() && vp > (double) JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18)) {
                 plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
+                acquireUserIO_Semaphore();
                 code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, captchaCode);
-            } else {
                 releaseUserIO_Semaphore();
+            } else {
                 return captchaCode;
             }
 
-            if (code != null && code.equals(captchaCode)) {
-                releaseUserIO_Semaphore();
-                return captchaCode;
-            }
-            releaseUserIO_Semaphore();
+            if (code != null && code.equals(captchaCode)) { return captchaCode; }
             return code;
         }
 
         else {
+            acquireUserIO_Semaphore();
             String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
             releaseUserIO_Semaphore();
             return code;
