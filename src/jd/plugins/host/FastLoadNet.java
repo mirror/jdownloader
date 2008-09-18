@@ -162,6 +162,10 @@ public class FastLoadNet extends PluginForHost {
                     logger.severe("File not found: File is deleted from Server");
                     linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     return;
+                } else if (length == 529) {
+                    logger.severe("File not found: Unkown 404 Error");
+                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    return;
                 } else {
                     logger.severe("Unknown error page - [Length: " + length + "]");
                     linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
