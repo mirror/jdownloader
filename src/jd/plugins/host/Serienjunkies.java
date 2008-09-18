@@ -52,6 +52,7 @@ public class Serienjunkies extends PluginForHost {
     private String dynamicCaptcha = "(?s)<FORM ACTION=\".*?\" METHOD=\"post\".*?<INPUT TYPE=\"HIDDEN\" NAME=\"s\" VALUE=\"(.*?)\">.*?<IMG SRC=\"([^\"]*)\"";
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
+    private DownloadLink downloadLink;
    
     private static boolean active = false;
 
@@ -307,12 +308,16 @@ public class Serienjunkies extends PluginForHost {
                 reqinfo = HTTP.getRequest(url, null, null, true);
             }
             if(reqinfo.containsHTML("Du hast zu oft das Captcha falsch")){
+                downloadLink.getLinkStatus().setStatusText("Reconnect required");
+                downloadLink.requestGuiUpdate();
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
                     logger.info("Reconnect successfull. try again");
                     reqinfo = HTTP.getRequest(url, null, null, true);
                     if (reqinfo.getLocation() != null) {
                         reqinfo = HTTP.getRequest(url, null, null, true);
                     }
+                    downloadLink.getLinkStatus().setStatusText("Decrypt");
+                    downloadLink.requestGuiUpdate();
                 } else {
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
@@ -321,12 +326,16 @@ public class Serienjunkies extends PluginForHost {
             }
             if (reqinfo.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
+                downloadLink.getLinkStatus().setStatusText("Reconnect required");
+                downloadLink.requestGuiUpdate();
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
                     logger.info("Reconnect successfull. try again");
                     reqinfo = HTTP.getRequest(url, null, null, true);
                     if (reqinfo.getLocation() != null) {
                         reqinfo = HTTP.getRequest(url, null, null, true);
                     }
+                    downloadLink.getLinkStatus().setStatusText("Decrypt");
+                    downloadLink.requestGuiUpdate();
                 } else {
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
@@ -403,19 +412,16 @@ public class Serienjunkies extends PluginForHost {
 
     public void handle0(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
+this.downloadLink=downloadLink;
         String link = (String) downloadLink.getProperty("link");
         String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
         int c = 0;
         while (active) {
             if (c++ == 120) break;
-            try {
+    
                 downloadLink.getLinkStatus().setStatusText("waiting for decryption");
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
+           
         }
         active = true;
         downloadLink.getLinkStatus().setStatusText("decrypt");
@@ -430,9 +436,14 @@ public class Serienjunkies extends PluginForHost {
             return;
         }
 
-        FilePackage fp = downloadLink.getFilePackage();
-        int index = fp.indexOf(downloadLink);
-        fp.remove(downloadLink);
+        FilePackage fp = new FilePackage();
+        fp.setDownloadDirectory(downloadLink.getFilePackage().getDownloadDirectory());
+        fp.setExtractAfterDownload(downloadLink.getFilePackage().isExtractAfterDownload());
+        fp.setProperties(downloadLink.getFilePackage().getProperties());
+        fp.setPassword(downloadLink.getFilePackage().getPassword());
+        fp.setName(downloadLink.getName());
+//        int index = fp.indexOf(downloadLink);
+//        fp.remove(downloadLink);
         Vector<Integer> down = new Vector<Integer>();
         Vector<DownloadLink> ret = new Vector<DownloadLink>();
         for (int i = dls.size() - 1; i >= 0; i--) {
@@ -443,7 +454,8 @@ public class Serienjunkies extends PluginForHost {
             while (it2.hasNext()) {
                 DownloadLink downloadLink3 = (DownloadLink) it2.next();
 //                if (downloadLink3.isAvailable()) {
-                    fp.add(index, downloadLink3);
+                    fp.add(downloadLink3);
+                  
                     online = true;
 //                } else {
 //                    down.add(i);
@@ -455,6 +467,7 @@ public class Serienjunkies extends PluginForHost {
             }
 //            ret.addAll(down);
         }
+       
         if (mirrors != null) {
             for (String element : mirrors) {
                 if (down.size() > 0) {
@@ -471,7 +484,7 @@ public class Serienjunkies extends PluginForHost {
                             while (it2.hasNext()) {
                                 DownloadLink downloadLink3 = (DownloadLink) it2.next();
                                 if (downloadLink3.isAvailable()) {
-                                    fp.add(index, downloadLink3);
+                                    fp.add(downloadLink3);
                                     online = true;
                                     iter.remove();
                                 }
@@ -482,7 +495,7 @@ public class Serienjunkies extends PluginForHost {
                             }
                         }
                     } catch (Exception e) {
-                        // TODO: handle exception
+                       e.printStackTrace();
                     }
 
                 } else {
@@ -491,11 +504,14 @@ public class Serienjunkies extends PluginForHost {
             }
         }
         if (down.size() > 0) {
-            fp.add(downloadLink);
+//            fp.add(downloadLink);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
             active = false;
             return;
+        }else{
+            JDUtilities.getController().removeDownloadLink(downloadLink);
+            JDUtilities.getController().addPackage(fp);
         }
         active = false;
     }

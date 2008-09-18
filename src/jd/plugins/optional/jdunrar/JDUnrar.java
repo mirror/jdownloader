@@ -318,13 +318,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 public boolean accept(File pathname) {
                     if (pathname.getName().matches(".*part[0]*[1].rar$")) return true;
                     if (!pathname.getName().matches(".*part[0-9]+.rar$") && pathname.getName().matches(".*rar$")) { return true; }
+                    if(pathname.isDirectory())return true;
                     return false;
                 }
 
                 @Override
                 public String getDescription() {
                     // TODO Auto-generated method stub
-                    return null;
+                    return "Rar-Startvolumes";
                 }
 
             };
