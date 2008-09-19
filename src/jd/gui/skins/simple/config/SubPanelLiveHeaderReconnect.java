@@ -193,13 +193,23 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
                 @Override
                 public void focusGained(FocusEvent e) {
-                    if (onInit) {
+                    /*if (onInit) {
                         onInit = !onInit;
                         return;
-                    }
+                    }*/
                     searchField.setForeground(Color.black);
                     if (searchField.getText().equals(text)) {
                         searchField.setText("");
+                    }
+                }
+                
+                public void focusLost(FocusEvent e) {
+                    if (searchField.getText().equals("")) {
+                        searchField.setForeground(Color.lightGray);
+                        searchField.setText(text);
+                        for (String element : d) {
+                            defaultListModel.addElement(element);
+                        }
                     }
                 }
             });
@@ -208,6 +218,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
             imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
             JButton reset = new JButton(imageIcon);
+            
             reset.setBorder(null);
             reset.setOpaque(false);
             reset.setContentAreaFilled(false);
