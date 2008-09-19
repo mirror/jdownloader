@@ -112,6 +112,12 @@
 				<include name="jd/plugins/optional/LangFileEditor*" />
 			</fileset>
 		</jar>
+		
+		<jar jarfile="${dist}/pluginressourcen/123_JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDUnrar/*" />
+			</fileset>
+		</jar>
 	
 		<jar jarfile="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
