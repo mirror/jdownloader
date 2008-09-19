@@ -214,13 +214,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         switch (e.getID()) {
 
         case TreeTableAction.DOWNLOAD_INFO:
-            link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
-            if(dlInfoWindows.get(link) == null) {
-                dlInfoWindows.put(link, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), link));
-            } else {
-                if(dlInfoWindows.get(link).isVisible() == false) dlInfoWindows.put(link, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), link));
+            links = getSelectedDownloadLinks();
+            for(DownloadLink tmpLink : links) {
+                if(dlInfoWindows.get(tmpLink) == null) {
+                    dlInfoWindows.put(tmpLink, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), tmpLink));
+                } else {
+                    if(dlInfoWindows.get(tmpLink).isVisible() == false) dlInfoWindows.put(tmpLink, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), tmpLink));
+                }
             }
-
             break;
 
         case TreeTableAction.DOWNLOAD_BROWSE_LINK:
