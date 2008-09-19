@@ -167,6 +167,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private long updateTimer = 0;
 
+    private HashMap<DownloadLink, DownloadInfo> dlInfoWindows = new HashMap<DownloadLink, DownloadInfo>();
+    
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -213,7 +215,11 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         case TreeTableAction.DOWNLOAD_INFO:
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
-            new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), link);
+            if(dlInfoWindows.get(link) == null) {
+                dlInfoWindows.put(link, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), link));
+            } else {
+                if(dlInfoWindows.get(link).isVisible() == false) dlInfoWindows.put(link, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), link));
+            }
 
             break;
 
