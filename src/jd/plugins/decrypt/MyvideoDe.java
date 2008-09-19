@@ -16,8 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -29,15 +27,9 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class MyvideoDe extends PluginForDecrypt {
-
-    static private final Pattern FILENAME = Pattern.compile("GetThis\\('(.*?)',", Pattern.CASE_INSENSITIVE);
-
-    static public final Pattern DOWNLOADURL = Pattern.compile("SWFObject\\('http://myvideo.*?/player/.*?swf\\?(http://[\\w\\.\\-0-9]*//*.*?flv)&amp;ID=[0-9]+', 'video_player_swf'", Pattern.CASE_INSENSITIVE);
 
     public MyvideoDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,28 +41,30 @@ public class MyvideoDe extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
 
-            String link = new Regex(reqinfo.getHtmlCode(), DOWNLOADURL).getMatch(0);
-            String name = Encoding.UTF8Decode(new Regex(reqinfo.getHtmlCode(), FILENAME).getMatch(0).trim());
-            possibleconverts.add(ConversionMode.AUDIOMP3);
-            possibleconverts.add(ConversionMode.VIDEOFLV);
-            possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
+        // String server =
+        // br.getRegex(Pattern.compile("p\\.addVariable\\('SERVER','(.*?)'\\)",
+        // Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String videoid = br.getRegex(Pattern.compile("p\\.addVariable\\('_videoid','(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String serverpath = br.getRegex(Pattern.compile("<link rel='image_src'.*?href='(.*?)thumbs/.*?'.*?/><link", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (videoid == null || serverpath == null) return null;
+        String link = serverpath + videoid + ".flv";
+        String name = Encoding.htmlDecode(br.getRegex(Pattern.compile("<td class='globalHd'>(.*?)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0).trim());
+        possibleconverts.add(ConversionMode.AUDIOMP3);
+        possibleconverts.add(ConversionMode.VIDEOFLV);
+        possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
+        ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
 
-            DownloadLink thislink = createDownloadlink(link);
-            thislink.setBrowserUrl(parameter);
-            thislink.setStaticFileName(name + ".tmp");
-            thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
-            thislink.setProperty("convertto", ConvertTo.name());
-            decryptedLinks.add(thislink);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        DownloadLink thislink = createDownloadlink(link);
+        thislink.setBrowserUrl(parameter);
+        thislink.setStaticFileName(name + ".tmp");
+        thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
+        thislink.setProperty("convertto", ConvertTo.name());
+        decryptedLinks.add(thislink);
+
         return decryptedLinks;
     }
 
