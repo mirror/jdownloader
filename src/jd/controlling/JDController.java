@@ -298,7 +298,7 @@ public class JDController implements ControlListener, UIListener {
         }
         ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
         dl.add(link);
-        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS,dl);
+        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS, dl);
 
     }
 
@@ -401,14 +401,11 @@ public class JDController implements ControlListener, UIListener {
         ArrayList<DownloadLink> dl = new ArrayList<DownloadLink>();
         synchronized (packages) {
             packages.add(fp);
-            
+
             dl.addAll(fp.getDownloadLinks());
         }
-        
-        
-      
-       
-        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS,dl);
+
+        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS, dl);
 
     }
 
@@ -428,8 +425,8 @@ public class JDController implements ControlListener, UIListener {
             packages.add(index, fp);
             dl.addAll(fp.getDownloadLinks());
         }
-        
-        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS,dl);
+
+        fireControlEvent(ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS, dl);
 
     }
 
@@ -784,6 +781,19 @@ public class JDController implements ControlListener, UIListener {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void fireControlEventDirect(ControlEvent controlEvent) {
+        synchronized (controlListener) {
+            if (controlListener.size() > 0) {
+                for (int i = controlListener.size() - 1; i >= 0; i--) {
+                    ControlListener currentListener = controlListener.get(i);
+                    currentListener.controlEvent(controlEvent);
+
+                }
+            }
+        }
+
     }
 
     public void fireControlEvent(int controlID, Object param) {
@@ -2044,13 +2054,13 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile()))return nextDownloadLink;
+                    if (new File(nextDownloadLink.getFileOutput()).getAbsoluteFile().equals(file.getAbsoluteFile())) return nextDownloadLink;
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
-        
+
     }
 }

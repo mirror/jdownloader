@@ -138,6 +138,12 @@ public class ControlEvent extends AWTEvent {
      * serialVersionUID
      */
     private static final long serialVersionUID = 1639354503246054870L;
+/**
+ * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird (oder package);
+ * soiu7rce: link/packlage
+ * parameter:menuitem arraylist
+ */
+    public static final int CONTROL_LINKLIST_CONTEXT_MENU = 22;
 
     /**
      * Die ID des Ereignisses

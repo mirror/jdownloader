@@ -845,23 +845,24 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.info", "Detailansicht"), TreeTableAction.DOWNLOAD_INFO, new Property("downloadlink", obj))));
 
                 JMenu packagePopup = new JMenu(JDLocale.L("gui.table.contextmenu.packagesubmenu", "Paket"));
-                JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.pluginsubmenu", "Plugin") + " (" + plg.getHost() + ")");
+                JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.extrassubmenu", "Extras"));
+                ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
+                JDUtilities.getController().fireControlEventDirect(new ControlEvent((DownloadLink) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
 
-                ArrayList<MenuItem> pluginMenuEntries = plg.createMenuitems();
-                if (pluginMenuEntries != null) {
-                    for (MenuItem next : pluginMenuEntries) {
+                if (entries != null&&entries.size()>0) {
+                    for (MenuItem next : entries) {
                         JMenuItem mi = SimpleGUI.getJMenuItem(next);
-
                         if (mi == null) {
                             pluginPopup.addSeparator();
                         } else {
                             pluginPopup.add(mi);
                         }
                     }
+                }else{
+                    pluginPopup.setEnabled(false);
                 }
 
-                if (pluginMenuEntries != null && pluginMenuEntries.size() == 0) pluginPopup.setEnabled(false);
-
+              
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
 
@@ -907,6 +908,26 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
     private Vector<Component> createPackageMenu(FilePackage fp, Vector<FilePackage> fps) {
         Vector<Component> res = new Vector<Component>();
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packageinfo", "Detailansicht"), TreeTableAction.PACKAGE_INFO, new Property("package", fp))));
+        JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu..package.extrasSubmenu", "Extras"));
+        ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
+        JDUtilities.getController().fireControlEventDirect(new ControlEvent(fp, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
+
+        if (entries != null&&entries.size()>0) {
+            for (MenuItem next : entries) {
+                JMenuItem mi = SimpleGUI.getJMenuItem(next);
+                if (mi == null) {
+                    pluginPopup.addSeparator();
+                } else {
+                    pluginPopup.add(mi);
+                }
+            }
+        }else{
+            pluginPopup.setEnabled(false);
+        }
+        
+        res.add(pluginPopup);
+        
+        
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.PACKAGE_SORT, new Property("package", fp))));
 
         res.add(new JSeparator());
