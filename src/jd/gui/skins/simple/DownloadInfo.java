@@ -22,6 +22,7 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.io.File;
 import java.text.DecimalFormat;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
@@ -31,6 +32,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
@@ -64,7 +66,8 @@ public class DownloadInfo extends JFrame implements ChangeListener {
     private JSlider slider;
     private JLabel lblSlider;
     private DecimalFormat c = new DecimalFormat("0.00");
-
+    private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
+    private boolean firstRun = true;
     /**
      * @param frame
      * @param dlink
@@ -75,7 +78,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
         setLayout(new BorderLayout(2, 2));
         setTitle(JDLocale.L("gui.linkinfo.title", "Link Information:") + " " + downloadLink.getName());
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.link")));
-        setResizable(false);
+        setResizable(true);
         setAlwaysOnTop(true);
 
         panel = new JPanel(new GridBagLayout());
@@ -111,7 +114,6 @@ public class DownloadInfo extends JFrame implements ChangeListener {
                     initDialog();
                     validate();
                 } while (isVisible());
-                initDialog();
             }
         }.start();
         initDialog();
@@ -121,84 +123,197 @@ public class DownloadInfo extends JFrame implements ChangeListener {
         frame.setMaximumSize(getToolkit().getScreenSize());
     }
 
-    private void addEntry(String label, JComponent value) {
-        JLabel key;
-        JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
-        key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+    private void addEntry(String name, String string, JComponent value) {
+        if (hmObjects.get(name) == null) {
+            JLabel key;
+            JDUtilities.addToGridBag(panel, key = new JLabel(string), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
 
-        JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+            JDUtilities.addToGridBag(panel, value, 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
 
-        i++;
+            key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+            value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+            i++;
+            hmObjects.put(name, value);
+            hmObjects.put("JLabel_" + name, key);
+        } else {
+            if (hmObjects.get(name).getClass() == JProgressBar.class) {
+                JProgressBar tmpJBar = (JProgressBar) hmObjects.get(name);
+                tmpJBar.setValue(((JProgressBar) value).getValue());
+                tmpJBar.setString(((JProgressBar) value).getString());
+                tmpJBar.setEnabled(((JProgressBar) value).isEnabled());
+                tmpJBar.setBackground((((JProgressBar) value).getBackground()));
+                JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + name);
+                if (tmpJBar.getBackground().getRed() != 150 && tmpJBar.getBackground().getGreen() != 150 && tmpJBar.getBackground().getBlue() != 150) {
+                    int col = new Float(200f / tmpJBar.getMaximum() * tmpJBar.getValue()).intValue();
+                    if(col <= 50) {
+                        tmpJLbl.setForeground(new Color(col, col, col));                        
+                    } else {
+                        tmpJLbl.setForeground(new Color(50, col, 50));
+                    }
+                    tmpJBar.setForeground(tmpJLbl.getForeground());
+                } else {
+                    tmpJLbl.setForeground(tmpJBar.getBackground());
+                }
+            } else if (hmObjects.get(name).getClass() == JTextField.class) {
+                JTextField tmp = (JTextField) hmObjects.get(name);
+                tmp.setText(((JTextField) value).getText());
+                tmp.setHorizontalAlignment(JTextField.RIGHT);
+            }
+            i++;
+            hmObjects.get(name).repaint();
+        }
     }
 
-    private void addEntry(String label, String data) {
-        JLabel value = new JLabel(data);
-        value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
-        value.setHorizontalAlignment(SwingConstants.RIGHT);
-        value.setForeground(Color.DARK_GRAY);
-        addEntry(label, value);
+    private void addEntry(String name, String label, String data) {
+        if (hmObjects.get("JLabelCaption_" + name) == null) {
+            if (label == null && data == null) {
+                JDUtilities.addToGridBag(panel, new JSeparator(), 0, i, 2, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+                return;
+            }
+
+            JLabel key;
+            JDUtilities.addToGridBag(panel, key = new JLabel(label), 0, i, 1, 1, 0, 1, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
+            key.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+
+            JLabel value;
+            JDUtilities.addToGridBag(panel, value = new JLabel(data), 1, i, 1, 1, 1, 0, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
+            value.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Color.GRAY));
+            value.setHorizontalAlignment(SwingConstants.RIGHT);
+            value.setForeground(Color.DARK_GRAY);
+            hmObjects.put("JLabelCaption_" + name, key);
+            hmObjects.put("JLabelValue_" + name, value);
+
+            i++;
+        } else {
+            if (label != null && data != null) {
+                JLabel key = (JLabel) hmObjects.get("JLabelCaption_" + name);
+                JLabel value = (JLabel) hmObjects.get("JLabelValue_" + name);
+                key.setText(label);
+                value.setText(data);
+                i++;
+            }
+        }
     }
 
+    private void removeEntry(String name) {
+        if (hmObjects.get("JLabelCaption_" + name) != null) {
+            panel.remove(hmObjects.get("JLabelCaption_" + name));
+            panel.remove(hmObjects.get("JLabelValue_" + name));
+            
+            hmObjects.remove("JLabelCaption_" + name);
+            hmObjects.remove("JLabelValue_" + name);
+            i--;
+        } else if(hmObjects.get(name) != null) {
+            panel.remove(hmObjects.get(name));
+            panel.remove(hmObjects.get("JLabel_" + name));
+            
+            hmObjects.remove(name);
+            hmObjects.remove("JLabel_" + name);
+            i--;
+        }
+    }
+    
     private void initDialog() {
-        this.i = 0;
-        panel.removeAll();
-        addEntry(JDLocale.L("gui.linkinfo.file", "File"), new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
+        if(firstRun == true) {
+            panel.setVisible(false);
+        }
+        
+        //this.i = 0;
+        addEntry("file", JDLocale.L("gui.linkinfo.file", "File"), new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
+        
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasPassword()) {
-            addEntry(JDLocale.L("gui.linkinfo.password", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
+            addEntry("pass", JDLocale.L("gui.linkinfo.password", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
+        } else {
+            removeEntry("pass");
         }
+        
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasComment()) {
-            addEntry(JDLocale.L("gui.linkinfo.comment", "Kommentar"), downloadLink.getFilePackage().getComment());
+            addEntry("comment", JDLocale.L("gui.linkinfo.comment", "Kommentar"), downloadLink.getFilePackage().getComment());
+        } else {
+            removeEntry("comment");
         }
+        
         if (downloadLink.getFilePackage() != null) {
-            addEntry(JDLocale.L("gui.linkinfo.package", "Packet"), downloadLink.getFilePackage().toString());
+            addEntry("package", JDLocale.L("gui.linkinfo.package", "Packet"), downloadLink.getFilePackage().toString());
+        } else {
+            removeEntry("package");
         }
+        
         if (downloadLink.getDownloadSize() > 0) {
-            addEntry(JDLocale.L("gui.linkinfo.filesize", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
+            addEntry("filesize", JDLocale.L("gui.linkinfo.filesize", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
+        } else {
+            removeEntry("filesize");
         }
+        
         if (downloadLink.isAborted()) {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
+            addEntry("aborted", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
+        } else {
+            removeEntry("aborted");
         }
+        
         if (downloadLink.isAvailabilityChecked()) {
-            addEntry(JDLocale.L("gui.linkinfo.available", "Verfügbar"), downloadLink.isAvailable() ? JDLocale.L("gui.linkinfo.available.ok", "Datei OK") : JDLocale.L("linkinformation.available.error", "Fehler!"));
+            addEntry("avaible", JDLocale.L("gui.linkinfo.available", "Verfügbar"), downloadLink.isAvailable() ? JDLocale.L("gui.linkinfo.available.ok", "Datei OK") : JDLocale.L("linkinformation.available.error", "Fehler!"));
         } else {
-            addEntry(JDLocale.L("gui.linkinfo.available", "Verfügbar"), JDLocale.L("gui.linkinfo.available.notchecked", "noch nicht überprüft"));
+            addEntry("avaible", JDLocale.L("gui.linkinfo.available", "Verfügbar"), JDLocale.L("gui.linkinfo.available.notchecked", "noch nicht überprüft"));
         }
+        
         if (downloadLink.getDownloadSpeed() > 0) {
-            addEntry(JDLocale.L("gui.linkinfo.speed", "Geschwindigkeit"), downloadLink.getDownloadSpeed() / 1024 + " kb/s");
+            addEntry("speed", JDLocale.L("gui.linkinfo.speed", "Geschwindigkeit"), downloadLink.getDownloadSpeed() / 1024 + " kb/s");
+        } else {
+            removeEntry("speed");
         }
+        
         if (downloadLink.getFileOutput() != null) {
-            addEntry(JDLocale.L("gui.linkinfo.saveto", "Speichern in"), downloadLink.getFileOutput());
+            addEntry("saveto", JDLocale.L("gui.linkinfo.saveto", "Speichern in"), downloadLink.getFileOutput());
+        } else {
+            removeEntry("saveto");
         }
+        
         if (downloadLink.getLinkStatus().getRemainingWaittime() > 0) {
-            addEntry(JDLocale.L("gui.linkinfo.waittime", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
+            addEntry("waittime", JDLocale.L("gui.linkinfo.waittime", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
+        } else {
+            removeEntry("waittime");
         }
+        
         if (downloadLink.getLinkStatus().isPluginActive()) {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.underway", "ist in Bearbeitung"));
+            addEntry("linkstatus", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.underway", "ist in Bearbeitung"));
         } else {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.notunderway", "ist nicht in Bearbeitung"));
+            addEntry("linkstatus", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.notunderway", "ist nicht in Bearbeitung"));
         }
+        
         if (!downloadLink.isEnabled()) {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.deactivated", "ist deaktiviert"));
+            addEntry("enabled", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.deactivated", "ist deaktiviert"));
         } else {
-            addEntry(JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.activated", "ist aktiviert"));
+            addEntry("enabled", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.activated", "ist aktiviert"));
         }
 
-        addEntry("download.status", downloadLink.getLinkStatus().getStatusString());
+        addEntry("dlstatus", "download.status", downloadLink.getLinkStatus().getStatusString());
 
         DownloadInterface dl = downloadLink.getDownloadInstance();
         if (downloadLink.getLinkStatus().isPluginActive() && dl != null) {
-            addEntry(JDLocale.L("download.chunks.label", "Chunks"), "");
-            int i = 1;
+            addEntry("chunks", JDLocale.L("download.chunks.label", "Chunks"), "");
+            int j = 0;
             JProgressBar p;
             for (Chunk chunk : dl.getChunks()) {
-                addEntry(JDLocale.L("download.chunks.connection", "Verbindung") + " " + i, p = new JProgressBar(0, 100));
+                j++;
+                p = new JProgressBar(0, 100);
                 p.setMaximum(10000);
                 p.setValue(chunk.getPercent());
                 p.setStringPainted(true);
                 p.setString(c.format(chunk.getPercent() / 100.0) + " % @ " + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s");
+                addEntry("conn_" + j, JDLocale.L("download.chunks.connection", "Verbindung") + " " + j, p);
             }
-
+        } else {
+            removeEntry("chunks");
+            for (int j = 0; j <= 20; ++j) {
+                removeEntry("conn_" + j);
+            }
+        }
+        
+        if(firstRun == true) {
+            firstRun = false;
+            initDialog();
+            panel.setVisible(true);
         }
     }
 
