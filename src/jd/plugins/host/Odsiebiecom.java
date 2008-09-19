@@ -122,7 +122,7 @@ public class Odsiebiecom extends PluginForHost {
             Form capform = br.getFormbyName("wer");
             if (capform != null) {
                 /* Captcha File holen */
-                String captchaurl = capform.getRegex(Pattern.compile("<img src=\"(.*?ca.*?php.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                String captchaurl = capform.getRegex(Pattern.compile("<img src=\"(.*?securimage.*?php.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 captchaFile = getLocalCaptchaFile(this);
                 Browser cap_br = br.cloneBrowser();
                 HTTPConnection captcha_con = cap_br.openGetConnection(captchaurl);
