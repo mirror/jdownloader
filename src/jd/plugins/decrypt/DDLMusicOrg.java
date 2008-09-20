@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import jd.PluginPattern;
 import jd.PluginWrapper;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -27,9 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class DDLMusicOrg extends PluginForDecrypt {
-
-    private static final Pattern patternLink_Main = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
 
     public DDLMusicOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,27 +38,30 @@ public class DDLMusicOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (new Regex(parameter, patternLink_Crypt).matches()) {
-            br.getPage(parameter);
-            try {
-                Thread.sleep(2500);
-            } catch (InterruptedException e) {
+        if (new Regex(parameter, PluginPattern.decrypterPattern_DDLMusic_Crypt).matches()) {
+            for (int i = 1; i < 5; i++) {
+                br.getPage(parameter);
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException e) {
+                }
+                Form captchaForm = br.getForm(0);
+                String[] calc = br.getRegex(Pattern.compile("method=\"post\">[\\s]*?(\\d*?) (\\+|-) (\\d*?) =", Pattern.DOTALL)).getRow(0);
+                if (calc[1].equals("+")) {
+                    captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
+                } else {
+                    captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
+                }
+                br.submitForm(captchaForm);
+                if (!br.containsHTML("Du bist ein Angeber")) {
+                    decryptedLinks.add(createDownloadlink(br.getRegex(Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+                    break;
+                }
             }
-
-            Form captchaForm = br.getForm(0);
-            String[] calc = br.getRegex(Pattern.compile("method=\"post\">[\\s]*?(\\d*?) (\\+|-) (\\d*?) =", Pattern.DOTALL)).getRow(0);
-            if (calc[1].equals("+")) {
-                captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
-            } else {
-                captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
-            }
-            br.submitForm(captchaForm);
-
-            decryptedLinks.add(createDownloadlink(br.getRegex(Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-        } else if (new Regex(parameter, patternLink_Main).matches()) {
+        } else if (new Regex(parameter, PluginPattern.decrypterPattern_DDLMusic_Main).matches()) {
             br.getPage(parameter);
 
-            String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE|Pattern.DOTALL)).getMatch(0);
+            String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (password != null && password.contains("kein Passwort")) {
                 password = null;
             }
