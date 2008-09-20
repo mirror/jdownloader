@@ -39,10 +39,11 @@ public class DDLMusicOrg extends PluginForDecrypt {
         String parameter = param.toString();
 
         if (new Regex(parameter, PluginPattern.decrypterPattern_DDLMusic_Crypt).matches()) {
+            int add = 0;
             for (int i = 1; i < 5; i++) {
                 br.getPage(parameter);
                 try {
-                    Thread.sleep(3000);
+                    Thread.sleep(3000 + add);
                 } catch (InterruptedException e) {
                 }
                 Form captchaForm = br.getForm(0);
@@ -57,6 +58,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                     decryptedLinks.add(createDownloadlink(br.getRegex(Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getMatch(0)));
                     break;
                 }
+                add += 500;
             }
         } else if (new Regex(parameter, PluginPattern.decrypterPattern_DDLMusic_Main).matches()) {
             br.getPage(parameter);
