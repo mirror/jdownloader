@@ -56,10 +56,9 @@ public class Lixin extends PluginForDecrypt {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 form = br.getForm(0);
                 if (form != null) {
-                    matcher = patternCaptcha.matcher(br + "");
+                    matcher = patternCaptcha.matcher(form.gethtmlcode());
                     if (matcher.find()) {
                         lix_continue = false;
-                        form = br.getForm(0);
                         String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
                         File captchaFile = this.getLocalCaptchaFile(this);
                         Browser.download(captchaFile, captchaAddress);
@@ -68,7 +67,12 @@ public class Lixin extends PluginForDecrypt {
                         form.put("capt", captchaCode);
                         br.submitForm(form);
                     } else {
-                        br.submitForm(form);
+                        if (form.hasSubmitValue("continue")) {
+                            br.submitForm(form);
+                        } else {
+                            lix_continue = true;
+                            break;
+                        }
                     }
                 } else {
                     lix_continue = true;
