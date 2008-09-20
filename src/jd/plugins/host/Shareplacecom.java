@@ -17,8 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -26,16 +24,12 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class Shareplacecom extends PluginForHost {
 
-    private String postdata;
-    private RequestInfo requestInfo;
     private String url;
 
     public Shareplacecom(PluginWrapper wrapper) {
@@ -53,31 +47,24 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (requestInfo.getLocation() == null) {
-                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-                String filesize = null;
-                if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)MB<b>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
-                } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)KB<b>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
-                } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "File size: </b>(.*)byte<b>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)));
-                }
-                return true;
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        if (br.getRedirectLocation() == null) {
+            downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+            String filesize = null;
+            if ((filesize = br.getRegex("File size: </b>(.*)MB<b>").getMatch(0)) != null) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
+            } else if ((filesize = br.getRegex("File size: </b>(.*)KB<b>").getMatch(0)) != null) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
+            } else if ((filesize = br.getRegex("File size: </b>(.*)byte<b>").getMatch(0)) != null) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)));
             }
-        } catch (MalformedURLException e) {
+            return true;
+        } else
+            return false;
 
-            e.printStackTrace();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-        downloadLink.setAvailable(false);
-        return false;
     }
 
     @Override
@@ -97,18 +84,24 @@ public class Shareplacecom extends PluginForHost {
             return;
         }
         /* Link holen */
-        url = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        url = Encoding.htmlDecode(br.getRegex(Pattern.compile("document.location=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
         /* Zwangswarten, 20seks */
         sleep(20000, downloadLink);
 
         /* Datei herunterladen */
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        HTTPConnection urlConnection = br.openGetConnection(url);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
+        }
+        /* nötig da der contentheader fehlerhaft ist */
+        String filename = new Regex(url, "&name=(.+)").getMatch(0);
+        if (filename != null) {
+            downloadLink.setStaticFileName(filename);
+        } else {
+            logger.severe("Pls Update Filename Pattern");
         }
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.setResume(false);
