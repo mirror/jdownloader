@@ -43,7 +43,7 @@ public class HTTPConnection {
     private String postData;
 
     private HashMap<String, List<String>> requestProperties = null;
-    private int[] ranges;
+    private long[] ranges;
 
     public HTTPConnection(URLConnection openConnection) {
         connection = (HttpURLConnection) openConnection;
@@ -225,13 +225,13 @@ public class HTTPConnection {
         }
     }
 
-    public int[] getRange() {
+    public long[] getRange() {
         String range;
         if (ranges != null) return ranges;
         if ((range = this.getHeaderField("Content-Range")) == null) return null;
         // bytes 174239-735270911/735270912
         String[] ranges = new Regex(range, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
-        this.ranges = new int[] { Integer.parseInt(ranges[0]), Integer.parseInt(ranges[1]), Integer.parseInt(ranges[2]) };
+        this.ranges = new long[] { Long.parseLong(ranges[0]), Long.parseLong(ranges[1]), Long.parseLong(ranges[2]) };
         return this.ranges;
     }
 
