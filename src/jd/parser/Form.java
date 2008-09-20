@@ -404,4 +404,8 @@ public class Form {
     public Regex getRegex(Pattern compile) {
         return new Regex(htmlcode, compile);
     }
+
+    public boolean containsHTML(String fileNotFound) {
+        return new Regex(htmlcode, fileNotFound).matches();
+    }
 }

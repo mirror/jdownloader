@@ -17,20 +17,19 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
@@ -40,7 +39,6 @@ public class ShareOnlineBiz extends PluginForHost {
     private String captchaCode;
     private File captchaFile;
     private String passCode;
-    private RequestInfo requestInfo;
     private String url;
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
@@ -65,22 +63,12 @@ public class ShareOnlineBiz extends PluginForHost {
                 Thread.sleep(1000);/*
                                     * Sicherheitspause, sonst gibts 403 Response
                                     */
-                requestInfo = HTTP.getRequest(new URL(url));
-                if (requestInfo != null && requestInfo.getLocation() == null) {
-                    String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    String sizev[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("</font> \\((.*?) (.*?)\\) angefordert", Pattern.CASE_INSENSITIVE)).getMatches();
-
-                    double size = Double.parseDouble(sizev[0][0].trim());
-                    String type = sizev[0][1].trim().toLowerCase();
-                    int filesize = 0;
-                    if (type.equals("mb")) {
-                        filesize = (int) (1024 * 1024 * size);
-                    } else if (type.equals("kb")) {
-                        filesize = (int) (1024 * size);
-                    } else {
-                        filesize = (int) size;
-                    }
-                    downloadLink.setDownloadSize(filesize);
+                String page = br.getPage(url);
+                if (page != null && br.getRedirectLocation() == null) {
+                    String filename = br.getRegex(Pattern.compile("<span class=\"locatedActive\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    String sizev = br.getRegex(Pattern.compile("<div><b>You have requested <font color=.*?</font>(.*?).</b></div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    if (filename == null || sizev == null) return false;
+                    downloadLink.setDownloadSize(Regex.getSize(sizev));
                     downloadLink.setName(filename);
                     return true;
                 }
@@ -110,10 +98,8 @@ public class ShareOnlineBiz extends PluginForHost {
 
         /* Captcha File holen */
         captchaFile = getLocalCaptchaFile(this);
-        HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.share-online.biz/captcha.php").openConnection());
-        captcha_con.setRequestProperty("Referer", url);
-        captcha_con.setRequestProperty("Cookie", requestInfo.getCookie());
-        if (!captcha_con.getContentType().contains("text")) {
+        HTTPConnection captcha_con = br.cloneBrowser().openGetConnection("http://www.share-online.biz/captcha.php");
+        if (captcha_con.getContentType().contains("text")) {
             /* Fehler beim Captcha */
             logger.severe("Captcha Download fehlgeschlagen!");
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
@@ -122,20 +108,22 @@ public class ShareOnlineBiz extends PluginForHost {
         Browser.download(captchaFile, captcha_con);
         /* CaptchaCode holen */
         captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
-        /* Passwort holen holen */
-        if (requestInfo.getHtmlCode().contains("name=downloadpw")) {
+        Form form = br.getForm(1);
+        if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
             } else {
                 /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
             }
+            form.put("downloadpw", passCode);
         }
 
         /* Überprüfen(Captcha,Password) */
-        requestInfo = HTTP.postRequest((new URL(url)), requestInfo.getCookie(), url, null, "captchacode=" + captchaCode + "&downloadpw=" + passCode, true);
-        if (requestInfo.getHtmlCode().contains("<span>Die Nummer ist leider nicht richtig oder ausgelaufen!</span>") || requestInfo.getHtmlCode().contains("Tippfehler")) {
-            if (requestInfo.getHtmlCode().contains("Tippfehler")) {
+        form.put("captchacode", captchaCode);
+        br.submitForm(form);
+        if (br.containsHTML("<span>Captcha number error or expired!</span>") || br.containsHTML("Unfortunately the password you entered is not correct")) {
+            if (br.containsHTML("Unfortunately the password you entered is not correct")) {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
             }
@@ -144,7 +132,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
 
         /* Downloadlimit erreicht */
-        if (requestInfo.getHtmlCode().contains("<span>Entschuldigung")) {
+        if (br.containsHTML("max allowed download sessions")) {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(3600000l);
             return;
@@ -153,8 +141,8 @@ public class ShareOnlineBiz extends PluginForHost {
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
         /* DownloadLink holen, thx @dwd */
-        String all = requestInfo.getRegexp("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
-        String dec = requestInfo.getRegexp("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
+        String all = br.getRegex("eval\\(unescape\\(.*?\"\\)\\)\\);").getMatch(-1);
+        String dec = br.getRegex("loadfilelink\\.decode\\(\".*?\"\\);").getMatch(-1);
         Context cx = Context.enter();
         Scriptable scope = cx.initStandardObjects();
         String fun = "function f(){ " + all + "\nreturn " + dec + "} f()";
@@ -166,8 +154,7 @@ public class ShareOnlineBiz extends PluginForHost {
         sleep(15000, downloadLink);
 
         /* Datei herunterladen */
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        HTTPConnection urlConnection = br.openGetConnection(url);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
