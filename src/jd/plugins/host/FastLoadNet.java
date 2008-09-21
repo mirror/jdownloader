@@ -120,6 +120,8 @@ public class FastLoadNet extends PluginForHost {
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
                     String captcha = captcha_form.getRegex(Pattern.compile("document.write.*?/(.*?)\\.php", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+                    
+                    captcha="captcha";
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://fast-load.net/includes/" + captcha + ".php"));
                     String code = Plugin.getCaptchaCode(file, this, downloadLink);
                     String captcha_input_name = captcha_form.getRegex("<input.*?type=\"text\".*?name=\"(.*?)\".*?/>").getMatch(0);
