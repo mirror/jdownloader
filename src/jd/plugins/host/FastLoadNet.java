@@ -20,6 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -119,10 +122,16 @@ public class FastLoadNet extends PluginForHost {
                 captcha_form = getDownloadForm();
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
-                    String captcha = captcha_form.getRegex(Pattern.compile("document.write.*?/(.*?)\\.php", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-                    
-                    captcha="captcha";
-                    Browser.download(file, br.cloneBrowser().openGetConnection("http://fast-load.net/includes/" + captcha + ".php"));
+                    String captcha = captcha_form.getRegex(Pattern.compile("document.write\\((.*?)\\);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+
+                    Context cx = Context.enter();
+                    Scriptable scope = cx.initStandardObjects();
+                    String fun = "function f(){\nreturn " + captcha + "} f()";
+                    Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+                    captcha = Context.toString(result);
+                    Context.exit();
+                    captcha = new Regex(captcha, "src=\"(.*?)\"").getMatch(0);
+                    Browser.download(file, br.cloneBrowser().openGetConnection("http://fast-load.net/" + captcha));
                     String code = Plugin.getCaptchaCode(file, this, downloadLink);
                     String captcha_input_name = captcha_form.getRegex("<input.*?type=\"text\".*?name=\"(.*?)\".*?/>").getMatch(0);
                     captcha_form.put(captcha_input_name, code);
