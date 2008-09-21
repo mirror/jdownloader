@@ -72,7 +72,9 @@ public class FileFactory extends PluginForHost {
 
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
-
+        if(br.containsHTML("there are currently no free download slots")){
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,3*60*1000l);
+        }
         if (br.containsHTML(NOT_AVAILABLE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
@@ -239,20 +241,25 @@ public class FileFactory extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(NOT_AVAILABLE)) {
+        if (br.containsHTML(NOT_AVAILABLE)&&!br.containsHTML("there are currently no free download slots")) {
             br.setFollowRedirects(false);
             return false;
         } else if (br.containsHTML(SERVER_DOWN)) {
             br.setFollowRedirects(false);
             return false;
         } else {
-
+if(br.containsHTML("there are currently no free download slots")){
+    downloadLink.getLinkStatus().setErrorMessage("No slots available atm");
+    downloadLink.getLinkStatus().setStatusText("No slots available atm");
+}else{
             String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
 
             String fileSize = new Regex(br.toString(), FILESIZE).getMatch(-1);
 
             downloadLink.setName(fileName);
             downloadLink.setDownloadSize(Regex.getSize(fileSize));
+            
+}
 
         }
         br.setFollowRedirects(false);
