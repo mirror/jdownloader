@@ -112,7 +112,7 @@ public class PackageCreaterRS {
                               
                                 String v = new Regex(matches[ii][0], "<version>(.*?)</version>").getMatch(0).trim();
 
-                                int versionid = JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
+                                int versionid = (true||JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION) ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
 
                                 matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
                                 matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
@@ -173,7 +173,7 @@ public class PackageCreaterRS {
                             if (entries) {
                                 String v = new Regex(matches[ii][0], "<version>(.*?)</version>").getMatch(0).trim();
 
-                                int versionid = JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
+                                int versionid = (true||JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION)  ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
                                 matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
                                 matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
                                 System.out.println(matches[ii][0]);

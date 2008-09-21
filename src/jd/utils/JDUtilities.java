@@ -1149,7 +1149,7 @@ public class JDUtilities {
             if (currentDir.isFile()) {
                 currentDir = currentDir.getParentFile();
             }
-
+ 
         } catch (URISyntaxException e) {
 
             e.printStackTrace();

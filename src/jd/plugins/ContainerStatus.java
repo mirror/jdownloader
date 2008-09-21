@@ -17,6 +17,9 @@
 package jd.plugins;
 
 import java.io.File;
+import java.lang.reflect.Field;
+
+import jd.utils.JDUtilities;
 
 public class ContainerStatus {
 
@@ -25,6 +28,8 @@ public class ContainerStatus {
     public static final int TODO = 1 << 0;
     private File container;
     private int status = TODO;
+    private String statusText;
+    private int latestStatus;
 
     public ContainerStatus() {
 
@@ -41,6 +46,7 @@ public class ContainerStatus {
      * @param status
      */
     public void addStatus(int status) {
+       latestStatus = status;
         this.status |= status;
 
     }
@@ -49,10 +55,7 @@ public class ContainerStatus {
         return container;
     }
 
-    public int getLatestStatus() {
 
-        return 0;
-    }
 
     /**
      * Gibt zurück ob der zugehörige Link einen bestimmten status hat.
@@ -62,7 +65,7 @@ public class ContainerStatus {
      */
     public boolean hasStatus(int status) {
 
-        return (this.status | status) > 0;
+        return (this.status & status) > 0;
     }
 
     public boolean isStatus(int status) {
@@ -72,10 +75,6 @@ public class ContainerStatus {
     /** Entfernt eine Statusid */
     public void removeStatus(int status) {
         this.status ^= status;
-    }
-
-    public void setErrorMessage(String string) {
-
     }
 
     /**
@@ -89,7 +88,49 @@ public class ContainerStatus {
     }
 
     public void setStatusText(String l) {
-
+        this.statusText = l;
     }
 
+    public String getStatusText() {
+        return statusText;
+    }
+    public String toString() {
+        Class<? extends ContainerStatus> cl = this.getClass();
+        Field[] fields = cl.getDeclaredFields();
+        StringBuffer sb = new StringBuffer();
+        sb.append(JDUtilities.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
+        String latest = "";
+        for (Field field : fields) {
+            if (field.getModifiers() == 25) {
+                int value;
+                try {
+                    value = field.getInt(this);
+                    if (hasStatus(value)) {
+                        if (value == latestStatus) {
+                            latest = "latest:" + field.getName() + "\r\n";
+                            sb.append(JDUtilities.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
+
+                        } else {
+
+                            sb.append(JDUtilities.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
+                        }
+                    }
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+
+        String ret = latest + sb;
+
+        if (statusText != null) {
+            ret += "StatusText: " + statusText + "\r\n";
+        }
+      
+        return ret;
+    }
 }
