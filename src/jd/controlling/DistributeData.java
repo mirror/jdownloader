@@ -114,6 +114,28 @@ public class DistributeData extends ControlBroadcaster {
         this.startDownload = startDownload;
     }
 
+    static public boolean hasPluginfor(String tmp) {
+        String data=tmp;
+        if (DecryptPluginWrapper.getDecryptWrapper() == null) return false;
+        Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
+        while (iteratorDecrypt.hasNext()) {
+            DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
+            if (pDecrypt.canHandle(data)) { return true; }
+        }
+        Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+            HostPluginWrapper pHost = iteratorHost.next();
+            if (pHost.canHandle(data)) { return true; }
+        }
+        data = data.replaceAll("http://", "httpviajd://");
+        iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+            HostPluginWrapper pHost = iteratorHost.next();
+            if (pHost.canHandle(data)) { return true; }
+        }
+        return false;
+    }
+
     /**
      * Sucht in dem übergebenen vector nach weiteren decryptbaren Links und
      * decrypted diese
@@ -145,7 +167,7 @@ public class DistributeData extends ControlBroadcaster {
                 DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
                 if (pDecrypt.canHandle(url)) {
                     try {
-                        PluginForDecrypt plg = (PluginForDecrypt)pDecrypt.getNewPluginInstance();
+                        PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
                         CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
                         url = plg.cutMatches(url);
@@ -311,14 +333,13 @@ public class DistributeData extends ControlBroadcaster {
             if (pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
-                    PluginForDecrypt plg = (PluginForDecrypt)pDecrypt.getNewPluginInstance();
-
+                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
                     CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
-    
+
                     if (plg.isAcceptOnlyURIs()) {
 
-                        data =plg.cutMatches(data);
+                        data = plg.cutMatches(data);
                     } else {
                         orgData = plg.cutMatches(orgData);
                     }

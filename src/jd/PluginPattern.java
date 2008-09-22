@@ -28,10 +28,11 @@ public class PluginPattern {
 
     static public final Pattern decrypterPattern_DDLMusic_Main = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/index\\.php\\?site=view_download&cat=.+&id=\\d+", Pattern.CASE_INSENSITIVE);
     static public final Pattern decrypterPattern_DDLMusic_Crypt = Pattern.compile("http://[\\w\\.]*?ddl-music\\.org/captcha/ddlm_cr\\d\\.php\\?\\d+\\?\\d+", Pattern.CASE_INSENSITIVE);
-    
+
     static public final Pattern decrypterPattern_DreiDlAm_1 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     static public final Pattern decrypterPattern_DreiDlAm_2 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/", Pattern.CASE_INSENSITIVE);
     static public final Pattern decrypterPattern_DreiDlAm_3 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
 
+    static public final Pattern decrypterPattern_Wordpress = Pattern.compile("http://[\\w\\.]*?(hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+|movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*", Pattern.CASE_INSENSITIVE);
 
 }

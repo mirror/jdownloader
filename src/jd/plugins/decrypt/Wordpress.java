@@ -21,6 +21,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.DistributeData;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -29,9 +30,6 @@ import jd.plugins.PluginForDecrypt;
 public class Wordpress extends PluginForDecrypt {
 
     private ArrayList<String[]> defaultPasswords = new ArrayList<String[]>();
-
-    @SuppressWarnings("unused")
-    private Pattern patternSupported = Pattern.compile("http://[\\w\\.]*?(hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+|movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*", Pattern.CASE_INSENSITIVE);
 
     public Wordpress(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,10 +68,10 @@ public class Wordpress extends PluginForDecrypt {
         if (password != null) link_passwds.add(password.trim());
 
         /* Alle Parts suchen */
-        String[] links = br.getRegex(Pattern.compile("<a(.*?)href=\".*?(http://.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(1);
+        String[] links = br.getRegex(Pattern.compile("href=.*?(http://[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String link : links) {
-            if (!new Regex(link, this.getSupportedLinks()).matches()) {
+            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginfor(link)) {
                 DownloadLink dLink = createDownloadlink(link);
                 dLink.setSourcePluginPasswords(link_passwds);
                 decryptedLinks.add(dLink);
