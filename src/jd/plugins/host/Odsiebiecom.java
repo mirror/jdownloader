@@ -27,6 +27,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
@@ -122,16 +123,23 @@ public class Odsiebiecom extends PluginForHost {
             Form capform = br.getFormbyName("wer");
             if (capform != null) {
                 /* Captcha File holen */
-               
+
                 String[] captchaurls = capform.getRegex("<img(.*?src=\".*?\".*?)/>").getColumn(0);
-                String captchaurl="";
-                
-                for(String url :captchaurls){
-                    if(!url.contains("style")){
-                        captchaurl=new Regex(url,"src.*?=.*?\"(.*?)\"").getMatch(0);
+                String captchaurl = null;
+
+                for (String url : captchaurls) {
+                    if (!url.contains("style")) {
+                        captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
                         break;
                     }
+                    if (url.contains("style")) {
+                        if (!url.contains(".*?none\"")) {
+                            captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
+                            break;
+                        }
+                    }
                 }
+                if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 captchaFile = getLocalCaptchaFile(this);
                 Browser cap_br = br.cloneBrowser();
                 HTTPConnection captcha_con = cap_br.openGetConnection(captchaurl);
