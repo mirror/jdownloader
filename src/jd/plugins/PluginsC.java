@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.HostPluginWrapper;
+import jd.JDInit;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
@@ -311,6 +312,7 @@ public abstract class PluginsC extends Plugin {
                 progress.setColor(Color.RED);
                 progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
                 progress.finalize(5000);
+                new JDInit().doWebupdate(0, false);
             } else {
                 progress.finalize();
             }

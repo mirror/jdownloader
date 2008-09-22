@@ -155,6 +155,8 @@ public class WebUpdater implements Serializable {
 
     private boolean ignorePlugins = true;
 
+    private static long LASTREQUEST=0;
+
     /**
      * @param path
      *            (Dir Pfad zum Updateserver)
@@ -347,6 +349,10 @@ public class WebUpdater implements Serializable {
         }
         HashMap<String, Vector<String>> plugins = new HashMap<String, Vector<String>>();
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
+        if((System.currentTimeMillis()-LASTREQUEST)<(30*60*1000l)){
+            
+            return ret;
+        }
         try {
             if (progresslist != null) {
                 progresslist.setValue(20);
@@ -500,6 +506,8 @@ public class WebUpdater implements Serializable {
      * @return String inhalt von urlStr
      */
     public String getRequest(URL link) throws Exception {
+        
+        LASTREQUEST = System.currentTimeMillis();
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
 
         if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {

@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
@@ -54,7 +55,7 @@ public class Filefactory {
                 for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
                     PixelObject o = it.next();
 
-                    if (o.isTouching(x, y, true, 5, 5) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 15) {
+                    if (o.isTouching(x, y, true, 3, 3) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 25) {
 
                         merge.add(o);
                         // n.add(o);
@@ -90,32 +91,38 @@ public class Filefactory {
     public static Letter[] getLetters(Captcha captcha) {
         captcha.cleanByRGBDistance(-1, 20);
         // long t = System.currentTimeMillis();
+        clearCaptcha(captcha);
+
         ArrayList<PixelObject> os = getObjects(captcha, 0);
 
         Collections.sort(os);
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
-            // if(akt.getSize()>20)
-            // BasicWindow.showImage(akt.toLetter().getImage(5), "fil " +
-            // akt.getArea() + " -" + ((double) akt.getArea() / (double)
-            // akt.getSize()) + " - " + akt.getHeight() + " - " +
-            // akt.getWidth());
+          
             if (akt.getArea() == 1224) {
 
-                System.out.println("II");
+                
 
             }
+            
+//            if (akt.getArea() > 20) BasicWindow.showImage(akt.toLetter().getImage(4));
             if (akt.getArea() > 1800) {
+//                it.remove();
+            } else if (akt.getArea() < 180) {
                 it.remove();
-            } else if (akt.getArea() < 130) {
-                it.remove();
+                continue;
             } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
-                it.remove();
+               it.remove();
+               continue;
             } else if (akt.getArea() / akt.getSize() > 10) {
-                it.remove();
+               it.remove();
+               continue;
             } else if (akt.getHeight() < 15 || akt.getWidth() < 5) {
-                it.remove();
+               it.remove();
+               continue;
             }
+            
+           
             // if (true && (|| akt.getArea() < 130 || (akt.getArea() > 600 &&
             // (double) akt.getArea() / (double) akt.getSize() < 1.2) ||
             // akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 ||
@@ -142,17 +149,22 @@ public class Filefactory {
             let.removeSmallObjects(0.8, 0.8, 30);
             let.clean();
             let = let.align(-40, 40);
-
+           
+            
             i++;
+            if(let==null){
+               continue;
+            }
             PixelObject akt = let.toPixelObject(OBJECTDETECTIONCONTRAST);
             if (pixelObject.getArea() == 1224) {
 
-                System.out.println("II");
+
 
             }
-            if (akt.getArea() > 2200) {
-
-            } else if (akt.getArea() < 230) {
+    if(akt.getSize()>1000){
+        
+    }
+    else  if (akt.getArea() < 230) {
 
             } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
 
@@ -162,6 +174,7 @@ public class Filefactory {
 
             } else {
                 ret.add(let);
+               
             }
 
             // }
@@ -192,8 +205,64 @@ public class Filefactory {
         //
         // }
         // ret=ret.subList(0,4).toArray(a);
-        if(ret.size()<4)return null;
+        if (ret.size() < 4) return null;
         return ret.toArray(new Letter[] {});
+
+    }
+
+    private static void clearCaptcha(Captcha captcha) {
+    
+       
+        int color = -1;
+        int count = 0;
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            int refColor = 0;
+            for (int y = 0; y < captcha.getHeight(); y++) {
+                if (y == 0) {
+                    refColor = captcha.grid[x][0];
+                    if (UTILITIES.getColorDifference(refColor, captcha.getMaxPixelValue()) < 5) break;
+                }
+                if (y == captcha.getHeight() - 1) {
+
+                    if (UTILITIES.getColorDifference(refColor, captcha.grid[x][y]) <10) {
+                        if (color < 0) {
+                            color = captcha.grid[x][y];
+                        } else {
+                            color = UTILITIES.mixColors(color, captcha.grid[x][y], count, 1);
+                        }
+                        captcha.grid[x][y] = captcha.getMaxPixelValue();
+                        count++;
+                    }
+                } else {
+                    if (UTILITIES.getColorDifference(refColor, captcha.grid[x][y + 1]) <10) {
+
+                        if (color < 0) {
+                            color = captcha.grid[x][y];
+                        } else {
+                            color = UTILITIES.mixColors(color, captcha.grid[x][y], count, 1);
+                        }
+                        count++;
+                        captcha.grid[x][y] = captcha.getMaxPixelValue();
+                    } else {
+                        // break;
+                    }
+                }
+
+            }
+        }
+      
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            double mid;
+            for (int y = 0; y < captcha.getHeight(); y++) {
+                
+              
+                if ((mid=UTILITIES.getColorDifference(color, captcha.grid[x][y])) <15) {
+                    captcha.grid[x][y] = captcha.getMaxPixelValue();
+                }
+               
+            }
+        }
+     
 
     }
 
@@ -214,7 +283,7 @@ public class Filefactory {
         for (Iterator<Letter> it = r.iterator(); it.hasNext();) {
             Letter akt = it.next();
 
-            if (akt.detected.getDecodedValue().equals("1") || akt.detected.getDecodedValue().equals(".")) {
+            if (false&&(akt.detected.getDecodedValue().equals("1") || akt.detected.getDecodedValue().equals("."))) {
                 it.remove();
             } else {
                 akt.id = id++;
@@ -230,7 +299,7 @@ public class Filefactory {
         List<Letter> list;
         try {
             list = r.subList(0, 4);
-            list=r;
+            list = r;
         } catch (Exception e) {
             return null;
         }
@@ -244,7 +313,7 @@ public class Filefactory {
             }
         });
 
-        if(list.size()<4)return null;
+        if (list.size() < 4) return null;
         return list.toArray(new Letter[] {});
     }
 

@@ -450,7 +450,7 @@ public class Form {
                     ret.add(vars.get(key));                    
                 }
         }
-        return null;       
+        return ret;       
         
     }
 

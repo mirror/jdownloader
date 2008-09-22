@@ -9,8 +9,8 @@ public class test {
         // /home/dwd/.jd_home/downloads/Read Me.rar
         try {
 
-            ProcessBuilder pb = new ProcessBuilder(new String[] {"unrar", "e", "ad.rar"});
-            pb.directory(new File("/home/dwd/.jd_home/downloads/"));
+            ProcessBuilder pb = new ProcessBuilder(new String[] {"C:\\Users\\coalado\\.jd_home\\tools\\windows\\unrarw32\\unrar.exe", "e", "test.rar"});
+            pb.directory(new File("c:\\"));
             pb.redirectErrorStream(true);
             Process p = pb.start();
             InputStreamReader inp = new InputStreamReader(p.getInputStream());

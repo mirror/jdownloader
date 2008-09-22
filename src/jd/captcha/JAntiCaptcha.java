@@ -2202,7 +2202,13 @@ public class JAntiCaptcha {
                     if (lcs[i] != null) {
                         lcs[i].getB().markGood();
                     }
-
+if(lcs[i].getValityPercent()>30){
+    letters[i].setOwner(this);
+    // letters[i].setTextGrid(letters[i].getPixelString());
+    letters[i].setSourcehash(captchaHash);
+    letters[i].setDecodedValue(code.substring(i, i + 1));
+    letterDB.add(letters[i]);
+}
                     if (!jas.getBoolean("TrainOnlyUnknown")) {
                         letters[i].setOwner(this);
                         // letters[i].setTextGrid(letters[i].getPixelString());
