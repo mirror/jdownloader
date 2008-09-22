@@ -87,7 +87,7 @@ public class StreamingShareTool extends PluginOptional {
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("plugins.optional.streamsharingtool.gui.openfile", "Open List"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.streamsharingtool.gui.desc", "StreamShraring-File"), "." + extension, true));
+            fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.streamsharingtool.gui.desc", "StreamSharing-File"), "." + extension, true));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null || !ret.exists()) { return; }
@@ -105,7 +105,7 @@ public class StreamingShareTool extends PluginOptional {
             JDFileChooser fc = new JDFileChooser();
             fc.setApproveButtonText(JDLocale.L("plugins.optional.streamsharingtool.gui.savefile", "Save List"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.streamsharingtool.gui.desc", "StreamShraring-File"), "." + extension, true));
+            fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.streamsharingtool.gui.desc", "StreamSharing-File"), "." + extension, true));
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }
