@@ -279,7 +279,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private JMenuItem mContextNewPackage;
 
         private JCheckBox chbExtract;
-
+                
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
             _this = this;
@@ -397,6 +397,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             //Vorrübergehend noch ohne Funktion
             chbExtract.setEnabled(false);
             chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
+            
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
             brwSaveTo.setEditable(true);
             brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
@@ -800,6 +801,7 @@ public boolean isExtract(){
 
     private Vector<DownloadLink> waitingLinkList;
 
+    private JCheckBox chbStartAfterAdding;
     /**
      * @param parent
      *            GUI
@@ -824,7 +826,9 @@ public boolean isExtract(){
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == mAutoPackage) {
+        if (e.getSource() == chbStartAfterAdding) {
+            JDUtilities.getConfiguration().setProperty("gui.linkgrabber.packagetab.chb.startAfterAdding", chbStartAfterAdding.isSelected());
+        } else if (e.getSource() == mAutoPackage) {
             guiConfig.setProperty(PROPERTY_AUTOPACKAGE, mAutoPackage.isSelected());
             JDUtilities.saveConfig();
             return;
@@ -917,10 +921,12 @@ public boolean isExtract(){
             confirmPackage(idx);
             removePackageAt(idx);
             emptyCheck();
+            if(chbStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
         } else if (e.getSource() == acceptAll) {
             confirmAll();
             setVisible(false);
             dispose();
+            if(chbStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads(); 
         } else if (e.getSource() == sortPackages) {
             reprintTabbedPane();
         } else if (e.getSource() == mMerge) {
@@ -1453,6 +1459,11 @@ public boolean isExtract(){
     private void initGUI() {
         buildMenu();
 
+        chbStartAfterAdding = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.startAfterAdding", "Downloadstart nach Hinzufügen"));
+        chbStartAfterAdding.setSelected(JDUtilities.getConfiguration().getBooleanProperty("gui.linkgrabber.packagetab.chb.startAfterAdding", false));
+        chbStartAfterAdding.setHorizontalTextPosition(SwingConstants.LEFT);
+        chbStartAfterAdding.addActionListener(this);
+        
         sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
         sortPackages.addActionListener(this);
         acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
@@ -1482,7 +1493,7 @@ public boolean isExtract(){
 
         setName("LINKGRABBER");
 
-        int n = 5;
+        int n = 7;
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
         setContentPane(panel);
@@ -1495,9 +1506,16 @@ public boolean isExtract(){
         south.add(sortPackages, BorderLayout.WEST);
         bpanel.add(new JLabel(JDLocale.L("gui.linkgrabber.cmb.insertAtPosition", "Einfügen an Position:")));
         bpanel.add(insertAtPosition);
+        
         JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
         separator.setPreferredSize(new Dimension(5, 20));
+        
+        JSeparator separator2 = new JSeparator(SwingConstants.VERTICAL);
+        separator2.setPreferredSize(new Dimension(5, 20));
+        
         bpanel.add(separator);
+        bpanel.add(chbStartAfterAdding);
+        bpanel.add(separator2);
         bpanel.add(acceptAll);
         bpanel.add(accept);
         south.add(bpanel, BorderLayout.CENTER);
