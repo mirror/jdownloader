@@ -258,7 +258,7 @@ public class Form {
     }
 
     private InputField getNameValue(String data) {
-     
+
         String[][] matches = new Regex(data, "(\\w+?)[ ]*=[ ]*[\"'](.*?)[\"']").getMatches();
         String[][] matches2 = new Regex(data, "(\\w+?)[ ]*=[ ]*([^\"^'.]+?)[ />]").getMatches();
         InputField ret = new InputField();
@@ -287,7 +287,7 @@ public class Form {
             }
         }
 
-        if (ret.getType().equalsIgnoreCase("file")) {
+        if (ret.getType() != null && ret.getType().equalsIgnoreCase("file")) {
             method = METHOD_FILEPOST;
             setFiletoPostName("");
 
@@ -441,17 +441,16 @@ public class Form {
     public void setSubmitValues(String[] submitValues) {
         this.submitValues = submitValues;
     }
-    
-    public ArrayList<InputField> getInputFieldsByType(String type){
-        ArrayList<InputField> ret= new ArrayList<InputField>();
+
+    public ArrayList<InputField> getInputFieldsByType(String type) {
+        ArrayList<InputField> ret = new ArrayList<InputField>();
         for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
-            String key = it.next();       
-                if(Regex.matches(vars.get(key).getType(), type)){
-                    ret.add(vars.get(key));                    
-                }
+            String key = it.next();
+            if (Regex.matches(vars.get(key).getType(), type)) {
+                ret.add(vars.get(key));
+            }
         }
-        return ret;       
-        
+        return ret;
     }
 
     /**
@@ -498,8 +497,9 @@ public class Form {
             this.key = key;
             this.value = value;
         }
-        public String toString(){
-            return this.key+"("+this.type+")"+" = "+this.value+" ["+super.toString()+"]";
+
+        public String toString() {
+            return this.key + "(" + this.type + ")" + " = " + this.value + " [" + super.toString() + "]";
         }
 
         public String getType() {
@@ -507,13 +507,13 @@ public class Form {
         }
 
         public void setKey(String string) {
-            if(string!=null)string=string.trim();
+            if (string != null) string = string.trim();
             this.key = string;
 
         }
 
         public void setType(String string) {
-            if(string!=null)string=string.trim();
+            if (string != null) string = string.trim();
             this.type = string;
 
         }
@@ -533,7 +533,7 @@ public class Form {
         }
 
         public void setValue(String value) {
-            if(value!=null)value=value.trim();
+            if (value != null) value = value.trim();
             this.value = value;
 
         }
@@ -550,12 +550,12 @@ public class Form {
         }
         return ret;
     }
-    
-    public static void main(String[] args){
 
-       String form="<form> <img name=\"hansi\" id=captchaimg src=\"includes/captcha123.php\" alt=\"Captcha zur Identifikation zulässiger Downloader\" /><input type=\"hidden\" name=fid value=\"b508ebe05cef57954307942f5a9e36c1\" /><input type=\"hidden\" name=\"captchaco\" size=1 /><input type=\"text\" name=\"mooo\" size=\"6\" /><input style=\"font-weight: bold;\" type=\"submit\" value=\"Download starten\" /><br /><div style=\"text-align:left; padding-left:80px;\"><a style=\"font-size:8pt; color:grey;\" href=\"#\" onClick=\"javascript:refreshimage();\">Reload Captcha</a><br /></div></form>";
-     Form[] forms = Form.getForms(form);
-     forms=forms;
-      
+    public static void main(String[] args) {
+
+        String form = "<form> <img name=\"hansi\" id=captchaimg src=\"includes/captcha123.php\" alt=\"Captcha zur Identifikation zulässiger Downloader\" /><input type=\"hidden\" name=fid value=\"b508ebe05cef57954307942f5a9e36c1\" /><input type=\"hidden\" name=\"captchaco\" size=1 /><input type=\"text\" name=\"mooo\" size=\"6\" /><input style=\"font-weight: bold;\" type=\"submit\" value=\"Download starten\" /><br /><div style=\"text-align:left; padding-left:80px;\"><a style=\"font-size:8pt; color:grey;\" href=\"#\" onClick=\"javascript:refreshimage();\">Reload Captcha</a><br /></div></form>";
+        @SuppressWarnings("unused")
+        Form[] forms = Form.getForms(form);
+
     }
 }

@@ -37,9 +37,6 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JavaScript;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 public class FastLoadNet extends PluginForHost {
 
     private static final String CODER = "eXecuTe";
@@ -117,12 +114,10 @@ public class FastLoadNet extends PluginForHost {
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-  
-        
-        String page= JavaScript.evalPage(br);
+
+        String page = JavaScript.evalPage(br);
         br.getRequest().setHtmlCode(page);
         Form captcha_form = getDownloadForm();
-
 
         if (captcha_form != null) {
             boolean valid = false;
@@ -131,19 +126,19 @@ public class FastLoadNet extends PluginForHost {
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
                     String captcha = captcha_form.getRegex("src=\"(.*?)\"").getMatch(0);
-               
+
                     Browser.download(file, br.cloneBrowser().openGetConnection(captcha));
                     String code = Plugin.getCaptchaCode(file, this, downloadLink);
-                    
+
                     ArrayList<InputField> fields = captcha_form.getInputFieldsByType("text");
-                    InputField txt=null;
-                    for(InputField f:fields){
-                        if(f.getStringProperty("style","").contains("none"))continue;
-                        txt=f;
+                    InputField txt = null;
+                    for (InputField f : fields) {
+                        if (f.getStringProperty("style", "").contains("none")) continue;
+                        txt = f;
                         break;
                     }
                     txt.setValue(code);
-                   
+
                     br.openFormConnection(captcha_form);
                     if (br.getHttpConnection().isContentDisposition()) {
                         valid = true;
