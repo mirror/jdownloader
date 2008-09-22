@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -36,10 +37,13 @@ public class BlogXXNet extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        String password = br.getRegex(Pattern.compile("<div align=\"center\">Password:</div>.*?<div align=\"center\">(.*?)</div>", Pattern.DOTALL)).getMatch(0);
         String[] links = br.getRegex("url=(.*?)\" target").getColumn(0);
         progress.setRange(links.length);
+        DownloadLink dLink;
         for (String link : links) {
-            decryptedLinks.add(createDownloadlink(link));
+            decryptedLinks.add(dLink = createDownloadlink(link));
+            dLink.addSourcePluginPassword(password);
             progress.increase(1);
         }
 
