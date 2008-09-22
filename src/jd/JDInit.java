@@ -558,7 +558,7 @@ public class JDInit {
         // "http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html");
         new DecryptPluginWrapper("doperoms.net", "DoperomsCom", "http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html");
         new DecryptPluginWrapper("downloads.pes-arena.com", "DownloadsPesArenacom", "http://downloads\\.pes-arena\\.com/\\?id=(\\d+)");
-        new DecryptPluginWrapper("3dl.am", "DreiDlAm", "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+|http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/|http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html");
+        new DecryptPluginWrapper("3dl.am", "DreiDlAm", PluginPattern.decrypterPattern_DreiDlAm_1.pattern() + "|" + PluginPattern.decrypterPattern_DreiDlAm_2.pattern() + "|" + PluginPattern.decrypterPattern_DreiDlAm_3.pattern());
         new DecryptPluginWrapper("1kh.de", "EinsKhDe", "http://[\\w\\.]*?1kh\\.de/f/[0-9/]+|http://[\\w\\.]*?1kh\\.de/[0-9]+");
         new DecryptPluginWrapper("falinks.com", "FalinksCom", "http://[\\w\\.]*?falinks\\.com/\\?fa=link&id=\\d+");
         new DecryptPluginWrapper("filefactory.com", "FileFactoryFolder", "http://[\\w\\.]*?filefactory\\.com(/|//)f/[a-zA-Z0-9]+");
