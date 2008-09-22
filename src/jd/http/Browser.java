@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
+import jd.parser.Form.InputField;
 import jd.utils.JDUtilities;
 import jd.utils.SnifferException;
 import jd.utils.Sniffy;
@@ -318,7 +319,7 @@ public class Browser {
         case Form.METHOD_GET:
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
-            for (Map.Entry<String, String> entry : form.getVars().entrySet()) {
+            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
                 if (first) {
                     first = false;
                 } else {
@@ -326,7 +327,7 @@ public class Browser {
                 }
                 stbuffer.append(entry.getKey());
                 stbuffer.append("=");
-                stbuffer.append(Encoding.urlEncode(entry.getValue()));
+                stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
@@ -341,7 +342,7 @@ public class Browser {
 
         case Form.METHOD_POST:
 
-            return this.openPostConnection(action, form.getVars());
+            return this.openPostConnection(action, form.getVarsMap());
         }
         return null;
 
@@ -675,7 +676,7 @@ public class Browser {
         case Form.METHOD_GET:
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
-            for (Map.Entry<String, String> entry : form.getVars().entrySet()) {
+            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
                 if (first) {
                     first = false;
                 } else {
@@ -683,7 +684,7 @@ public class Browser {
                 }
                 stbuffer.append(entry.getKey());
                 stbuffer.append("=");
-                stbuffer.append(Encoding.urlEncode(entry.getValue()));
+                stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
@@ -698,7 +699,7 @@ public class Browser {
 
         case Form.METHOD_POST:
 
-            return this.postPage(action, form.getVars());
+            return this.postPage(action, form.getVarsMap());
 
         case Form.METHOD_FILEPOST:
 
@@ -715,8 +716,8 @@ public class Browser {
                 up.getConnection().setRequestProperty(entry.getKey(), entry.getValue());
             }
 
-            for (Map.Entry<String, String> entry : form.getVars().entrySet()) {
-                up.sendVariable(entry.getKey(), Encoding.urlEncode(entry.getValue()));
+            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
+                up.sendVariable(entry.getKey(), Encoding.urlEncode(entry.getValue().getValue()));
             }
             up.sendFile(form.getFileToPost().toString(), form.getFiletoPostName());
 

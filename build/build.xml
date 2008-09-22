@@ -115,7 +115,7 @@
 		
 		<jar jarfile="${dist}/pluginressourcen/123_JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDUnrar/*" />
+				<include name="jd/plugins/optional/jdunrar/**" />
 			</fileset>
 		</jar>
 	

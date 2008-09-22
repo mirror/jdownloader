@@ -20,14 +20,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
+
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -35,6 +33,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
+import jd.utils.JavaScript;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class FastLoadNet extends PluginForHost {
 
@@ -113,7 +115,10 @@ public class FastLoadNet extends PluginForHost {
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-
+  
+        
+        String page= JavaScript.evalPage(br);
+        br.getRequest().setHtmlCode(page);
         Form captcha_form = getDownloadForm();
 
         if (captcha_form != null) {
@@ -122,15 +127,7 @@ public class FastLoadNet extends PluginForHost {
                 captcha_form = getDownloadForm();
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
-                    String captcha = captcha_form.getRegex(Pattern.compile("document.write\\((.*?)\\);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-
-                    Context cx = Context.enter();
-                    Scriptable scope = cx.initStandardObjects();
-                    String fun = "function f(){\nreturn " + captcha + "} f()";
-                    Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                    captcha = Context.toString(result);
-                    Context.exit();
-                    captcha = new Regex(captcha, "src=\"(.*?)\"").getMatch(0);
+                    String captcha = captcha_form.getRegex("src=\"(.*?)\"").getMatch(0);
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://fast-load.net/" + captcha));
                     String code = Plugin.getCaptchaCode(file, this, downloadLink);
                     String captcha_input_name = captcha_form.getRegex("<input.*?type=\"text\".*?name=\"(.*?)\".*?/>").getMatch(0);

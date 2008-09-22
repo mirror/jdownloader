@@ -30,7 +30,7 @@ public class PostRequest extends Request {
     public PostRequest(Form form) throws MalformedURLException {
         super(form.getAction(null));
 
-        postData = form.getVars();
+        postData = form.getVarsMap();
     }
 
     public PostRequest(String url) throws MalformedURLException {

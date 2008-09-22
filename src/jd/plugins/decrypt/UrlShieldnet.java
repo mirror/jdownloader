@@ -69,7 +69,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                     /* Passwort */
                     form = br.getForm(0);
                     passCode = getUserInput(null, param);
-                    form.getVars().put("password", passCode);
+                    form.put("password", passCode);
 
                     br.submitForm(form);
                 } else {
@@ -115,7 +115,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                         Browser.download(captchaFile, captcha_con);
                         /* CaptchaCode holen */
                         captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
-                        form.getVars().put("userkey", captchaCode);
+                        form.put("userkey", captchaCode);
 
                         br.submitForm(form);
                     }

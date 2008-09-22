@@ -56,7 +56,7 @@ public class Lixin extends PluginForDecrypt {
             for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                 form = br.getForm(0);
                 if (form != null) {
-                    matcher = patternCaptcha.matcher(form.gethtmlcode());
+                    matcher = patternCaptcha.matcher(form.getHtmlCode());
                     if (matcher.find()) {
                         lix_continue = false;
                         String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);

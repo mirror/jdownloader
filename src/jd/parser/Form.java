@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.config.Property;
 import jd.http.Encoding;
+import jd.utils.JDUtilities;
 
 public class Form {
     public static final int METHOD_FILEPOST = 3;
@@ -51,7 +53,7 @@ public class Form {
 
     private String[] submitValues;
 
-    public String gethtmlcode() {
+    public String getHtmlCode() {
         return htmlcode;
     }
 
@@ -178,7 +180,7 @@ public class Form {
      * Value und name von Inputs/Textareas/Selectoren HashMap<name, value>
      * Achtung müssen zum teil noch ausgefüllt werden
      */
-    private HashMap<String, String> vars = new HashMap<String, String>();
+    private HashMap<String, InputField> vars = new HashMap<String, InputField>();
 
     public boolean hasSubmitValue(String value) {
         for (String submit : this.submitValues) {
@@ -241,82 +243,110 @@ public class Form {
     /**
      * Gibt alle Input fields zurück Object[0]=vars Object[1]=varsWithoutValue
      */
-    public HashMap<String, String> getInputFields(String data) {
-        HashMap<String, String> ret = new HashMap<String, String>();
+    private HashMap<String, InputField> getInputFields(String data) {
+        HashMap<String, InputField> ret = new HashMap<String, InputField>();
         Matcher matcher = Pattern.compile("(?s)<[\\s]*(input|textarea|select)(.*?)>", Pattern.CASE_INSENSITIVE).matcher(data);
         while (matcher.find()) {
-            String[] nv = getNameValue(matcher.group(2));
+            InputField nv = getNameValue(matcher.group(2));
             if (nv != null) {
-                if (!ret.containsKey(nv[0]) || ret.get(nv[0]).equals("")) {
-                    ret.put(nv[0], (nv[1] == null ? "" : nv[1]));
-                }
+                // if (!ret.containsKey(nv[0]) || ret.get(nv[0]).equals("")) {
+                ret.put(nv.getKey(), nv);
+                // }
             }
         }
         return ret;
     }
 
-    private String[] getNameValue(String data) {
-        Matcher matcher = Pattern.compile("name=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE).matcher(data);
-        String key, value;
-        key = value = null;
-        if (matcher.find()) {
-            key = matcher.group(1);
-        } else {
-            matcher = Pattern.compile("name=(.*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
-            if (matcher.find()) {
-                key = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
-            }
-        }
-        if (key == null) {
+    private InputField getNameValue(String data) {
+     
+        String[][] matches = new Regex(data, "(\\w+?)[ ]*=[ ]*[\"'](.*?)[\"']").getMatches();
+        String[][] matches2 = new Regex(data, "(\\w+?)[ ]*=[ ]*([^\"^'.]+?)[ />]").getMatches();
+        InputField ret = new InputField();
 
-            if (data.toLowerCase().matches(".*type=[\"']?file.*")) {
-                method = METHOD_FILEPOST;
-                setFiletoPostName("");
-                return null;
+        for (String[] match : matches) {
+            if (match[0].equalsIgnoreCase("type")) {
+                ret.setType(match[1]);
+            } else if (match[0].equalsIgnoreCase("name")) {
+                ret.setKey(match[1]);
+            } else if (match[0].equalsIgnoreCase("value")) {
+                ret.setValue(match[1]);
+            } else {
+                ret.setProperty(match[0], match[1]);
             }
-            return null;
         }
 
-        matcher = Pattern.compile("value=['\"]([^'\"]*?)['\"]", Pattern.CASE_INSENSITIVE).matcher(data);
-        if (matcher.find()) {
-            value = matcher.group(1);
-        } else {
-            matcher = Pattern.compile("value=([^ '\"]*)", Pattern.CASE_INSENSITIVE).matcher(data + " ");
-            if (matcher.find()) {
-                value = matcher.group(1).replaceAll(" [^\\s]+\\=.*", "").trim();
+        for (String[] match : matches2) {
+            if (match[0].equalsIgnoreCase("type")) {
+                ret.setType(match[1]);
+            } else if (match[0].equalsIgnoreCase("name")) {
+                ret.setKey(match[1]);
+            } else if (match[0].equalsIgnoreCase("value")) {
+                ret.setValue(match[1]);
+            } else {
+                ret.setProperty(match[0], match[1]);
             }
         }
-        if (value != null && value.matches("[\\s]*")) {
-            value = null;
-        }
-        if (value == null && data.toLowerCase().matches(".*type=[\"']?file.*")) {
+
+        if (ret.getType().equalsIgnoreCase("file")) {
             method = METHOD_FILEPOST;
-            setFiletoPostName(key);
-            return null;
+            setFiletoPostName("");
+
         }
 
-        return new String[] { key, value };
+        return ret;
     }
 
     public void put(String key, String value) {
-        vars.put(key, value);
+        if (vars.containsKey(key)) {
+            vars.get(key).setValue(value);
+        } else {
+            vars.put(key, new InputField(key, value));
+        }
     }
 
     public void remove(String key) {
         vars.remove(key);
     }
 
+    /**
+     * Setzt die i-te Variable
+     * 
+     * @param i
+     * @param value
+     * @return
+     */
     public String setVariable(int i, String value) {
 
         for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
             String key = it.next();
             if (--i < 0) {
+                vars.get(key).setValue(value);
 
-                vars.put(key, value);
                 return key;
             }
         }
         return null;
+
+    }
+
+    /**
+     * Gibt den variablennamen der am besten zu varname passt zurück.
+     * 
+     * @param varname
+     * @return
+     */
+    public String getBestVariable(String varname) {
+        String best = null;
+        int bestDist = Integer.MAX_VALUE;
+
+        for (Map.Entry<String, InputField> entry : vars.entrySet()) {
+            int dist = JDUtilities.getLevenshteinDistance(varname, entry.getKey());
+            if (dist < bestDist) {
+                best = entry.getKey();
+                bestDist = dist;
+            }
+        }
+        return best;
 
     }
 
@@ -338,8 +368,8 @@ public class Form {
         } else if (method == METHOD_UNKNOWN) {
             ret += "Method: Unknown\n";
         }
-        for (Map.Entry<String, String> entry : vars.entrySet()) {
-            ret += "var: " + entry.getKey() + "=" + entry.getValue() + "\n";
+        for (Map.Entry<String, InputField> entry : vars.entrySet()) {
+            ret += "var: " + entry.getValue() + "\n";
         }
         for (Map.Entry<String, String> entry : formProperties.entrySet()) {
             ret += "formProperty: " + entry.getKey() + "=" + entry.getValue() + "\n";
@@ -348,10 +378,15 @@ public class Form {
         return ret;
     }
 
+    /**
+     * GIbt alle variablen als propertyString zurück
+     * 
+     * @return
+     */
     public String getPropertyString() {
         StringBuffer stbuffer = new StringBuffer();
         boolean first = true;
-        for (Map.Entry<String, String> entry : vars.entrySet()) {
+        for (Map.Entry<String, InputField> entry : vars.entrySet()) {
             if (first) {
                 first = false;
             } else {
@@ -359,21 +394,21 @@ public class Form {
             }
             stbuffer.append(entry.getKey());
             stbuffer.append("=");
-            stbuffer.append(Encoding.urlEncode(entry.getValue()));
+            stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
         }
         return stbuffer.toString();
 
     }
 
-    public HashMap<String, String> getVars() {
+    public HashMap<String, InputField> getVars() {
         return vars;
     }
 
-    public void setVars(HashMap<String, String> vars) {
+    public void setVars(HashMap<String, InputField> vars) {
         this.vars = vars;
     }
 
-    public void setFiletoPostName(String filetoPostName) {
+    private void setFiletoPostName(String filetoPostName) {
         this.filetoPostName = filetoPostName;
     }
 
@@ -389,23 +424,138 @@ public class Form {
         return fileToPost;
     }
 
+    /**
+     * Gibt die gefrundene Submitvalues zurück.
+     * 
+     * @return
+     */
     public String[] getSubmitValues() {
         return submitValues;
     }
 
+    /**
+     * Gibt alle gefundenen Submitvalues zurück
+     * 
+     * @param submitValues
+     */
     public void setSubmitValues(String[] submitValues) {
         this.submitValues = submitValues;
     }
+    
+    public ArrayList<InputField> getInputFieldsByType(String type){
+        ArrayList<InputField> ret= new ArrayList<InputField>();
+        for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
+            String key = it.next();       
+                if(Regex.matches(vars.get(key).getType(), type)){
+                    ret.add(vars.get(key));                    
+                }
+        }
+        return null;       
+        
+    }
 
+    /**
+     * Gibt ein RegexObject bezüglich des Form htmltextes zurück
+     * 
+     * @param compile
+     * @return
+     */
     public Regex getRegex(String string) {
         return new Regex(htmlcode, string);
     }
 
+    /**
+     * Gibt ein RegexObject bezüglich des Form htmltextes zurück
+     * 
+     * @param compile
+     * @return
+     */
     public Regex getRegex(Pattern compile) {
         return new Regex(htmlcode, compile);
     }
 
-    public boolean containsHTML(String fileNotFound) {
-        return new Regex(htmlcode, fileNotFound).matches();
+    /**
+     * Gibt zurück ob der gesuchte needle String im html Text bgefunden wurde
+     * 
+     * @param fileNotFound
+     * @return
+     */
+    public boolean containsHTML(String needle) {
+        return new Regex(htmlcode, needle).matches();
+    }
+
+    public class InputField extends Property {
+
+        /**
+         * 
+         */
+        private static final long serialVersionUID = 7859094911920903660L;
+        private String key = null;
+        private String value = null;
+        private String type;
+
+        public InputField(String key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+        public String toString(){
+            return this.key+"("+this.type+")"+" = "+this.value+" ["+super.toString()+"]";
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setKey(String string) {
+            if(string!=null)string=string.trim();
+            this.key = string;
+
+        }
+
+        public void setType(String string) {
+            if(string!=null)string=string.trim();
+            this.type = string;
+
+        }
+
+        public String getValue() {
+            // TODO Auto-generated method stub
+            return value;
+        }
+
+        public InputField() {
+            // TODO Auto-generated constructor stub
+        }
+
+        public String getKey() {
+            // TODO Auto-generated method stub
+            return key;
+        }
+
+        public void setValue(String value) {
+            if(value!=null)value=value.trim();
+            this.value = value;
+
+        }
+
+    }
+
+    public HashMap<String, String> getVarsMap() {
+        HashMap<String, String> ret = new HashMap<String, String>();
+        for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
+
+            String key = it.next();
+            ret.put(key, vars.get(key).getValue());
+
+        }
+        return ret;
+    }
+    
+    public static void main(String[] args){
+
+       String form="<form> <img name=\"hansi\" id=captchaimg src=\"includes/captcha123.php\" alt=\"Captcha zur Identifikation zulässiger Downloader\" /><input type=\"hidden\" name=fid value=\"b508ebe05cef57954307942f5a9e36c1\" /><input type=\"hidden\" name=\"captchaco\" size=1 /><input type=\"text\" name=\"mooo\" size=\"6\" /><input style=\"font-weight: bold;\" type=\"submit\" value=\"Download starten\" /><br /><div style=\"text-align:left; padding-left:80px;\"><a style=\"font-size:8pt; color:grey;\" href=\"#\" onClick=\"javascript:refreshimage();\">Reload Captcha</a><br /></div></form>";
+     Form[] forms = Form.getForms(form);
+     forms=forms;
+      
     }
 }
