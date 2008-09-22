@@ -25,15 +25,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-public class Datenbankorg extends PluginForDecrypt {
+public class ILoadTo extends PluginForDecrypt {
 
-    // private Pattern patternSupported_Go =
-    // Pattern.compile("http://daten-bank\\.org/go/\\d+/",
-    // Pattern.CASE_INSENSITIVE);
+    private Pattern patternSupported_Info = Pattern.compile("http://iload\\.to/view/.*?/", Pattern.CASE_INSENSITIVE);
 
-    private Pattern patternSupported_Info = Pattern.compile("http://daten-bank\\.org/view/.*?/", Pattern.CASE_INSENSITIVE);
-
-    public Datenbankorg(PluginWrapper wrapper) {
+    public ILoadTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -49,7 +45,7 @@ public class Datenbankorg extends PluginForDecrypt {
             String links[] = new Regex(links_page, Pattern.compile("href='/go/(\\d+)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
             if (links == null) return null;
             for (String link : links) {
-                DownloadLink dl_link = createDownloadlink("http://daten-bank.org/go/" + link + "/");
+                DownloadLink dl_link = createDownloadlink("http://iload.to/go/" + link + "/");
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
             }

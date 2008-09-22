@@ -67,7 +67,6 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
@@ -168,7 +167,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
     private long updateTimer = 0;
 
     private HashMap<DownloadLink, DownloadInfo> dlInfoWindows = new HashMap<DownloadLink, DownloadInfo>();
-    
+
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
 
@@ -215,11 +214,11 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         case TreeTableAction.DOWNLOAD_INFO:
             links = getSelectedDownloadLinks();
-            for(DownloadLink tmpLink : links) {
-                if(dlInfoWindows.get(tmpLink) == null) {
+            for (DownloadLink tmpLink : links) {
+                if (dlInfoWindows.get(tmpLink) == null) {
                     dlInfoWindows.put(tmpLink, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), tmpLink));
                 } else {
-                    if(dlInfoWindows.get(tmpLink).isVisible() == false) dlInfoWindows.put(tmpLink, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), tmpLink));
+                    if (dlInfoWindows.get(tmpLink).isVisible() == false) dlInfoWindows.put(tmpLink, new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), tmpLink));
                 }
             }
             break;
@@ -841,7 +840,6 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                     }
                 }
 
-                Plugin plg = ((DownloadLink) obj).getPlugin();
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.info", "Detailansicht"), TreeTableAction.DOWNLOAD_INFO, new Property("downloadlink", obj))));
 
                 JMenu packagePopup = new JMenu(JDLocale.L("gui.table.contextmenu.packagesubmenu", "Paket"));
@@ -849,7 +847,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
                 JDUtilities.getController().fireControlEventDirect(new ControlEvent((DownloadLink) obj, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
 
-                if (entries != null&&entries.size()>0) {
+                if (entries != null && entries.size() > 0) {
                     for (MenuItem next : entries) {
                         JMenuItem mi = SimpleGUI.getJMenuItem(next);
                         if (mi == null) {
@@ -858,11 +856,10 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                             pluginPopup.add(mi);
                         }
                     }
-                }else{
+                } else {
                     pluginPopup.setEnabled(false);
                 }
 
-              
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
 
@@ -912,7 +909,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
         JDUtilities.getController().fireControlEventDirect(new ControlEvent(fp, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
 
-        if (entries != null&&entries.size()>0) {
+        if (entries != null && entries.size() > 0) {
             for (MenuItem next : entries) {
                 JMenuItem mi = SimpleGUI.getJMenuItem(next);
                 if (mi == null) {
@@ -921,13 +918,12 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                     pluginPopup.add(mi);
                 }
             }
-        }else{
+        } else {
             pluginPopup.setEnabled(false);
         }
-        
+
         res.add(pluginPopup);
-        
-        
+
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.PACKAGE_SORT, new Property("package", fp))));
 
         res.add(new JSeparator());

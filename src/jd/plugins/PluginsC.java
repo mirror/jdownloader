@@ -41,7 +41,6 @@ import jd.utils.JDUtilities;
 
 public abstract class PluginsC extends Plugin {
 
-
     public PluginsC(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
@@ -59,12 +58,9 @@ public abstract class PluginsC extends Plugin {
 
     protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
 
-    @SuppressWarnings("unused")
     private ContainerStatus containerStatus;
 
     protected Vector<String> downloadLinksURL;
-
-   
 
     protected String md5;
     protected byte[] k;
@@ -77,9 +73,9 @@ public abstract class PluginsC extends Plugin {
     @Override
     public synchronized boolean canHandle(String data) {
         if (data == null) { return false; }
-        String match = new Regex(data,this.getSupportedLinks()).getMatch(-1);
-        
-        return match!=null &&match.equalsIgnoreCase(data);
+        String match = new Regex(data, this.getSupportedLinks()).getMatch(-1);
+
+        return match != null && match.equalsIgnoreCase(data);
     }
 
     public String createContainerString(Vector<DownloadLink> downloadLinks) {
@@ -237,8 +233,6 @@ public abstract class PluginsC extends Plugin {
         return containedLinks == null ? new Vector<DownloadLink>() : containedLinks;
     }
 
- 
-
     @Override
     public String getLinkName() {
         return null;
@@ -292,7 +286,7 @@ public abstract class PluginsC extends Plugin {
             if (bs != null) k = bs;
             doDecryption(filename);
             progress.increase(1);
-        
+
             progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
             logger.info(filename + " Parse");
             if (containedLinks != null && downloadLinksURL != null) {
@@ -313,12 +307,12 @@ public abstract class PluginsC extends Plugin {
                 CONTAINER.put(filename, containedLinks);
                 CONTAINERLINKS.put(filename, downloadLinksURL);
             }
-            if(!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)){
+            if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
                 progress.setColor(Color.RED);
-                progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s",containerStatus.getStatusText()));
+                progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
                 progress.finalize(5000);
-            }else{
-            progress.finalize();
+            } else {
+                progress.finalize();
             }
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, this);
 
