@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -27,6 +28,7 @@ import jd.http.HTTPConnection;
 import jd.parser.Form;
 
 import jd.parser.Regex;
+import jd.parser.Form.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -121,6 +123,7 @@ public class FastLoadNet extends PluginForHost {
         br.getRequest().setHtmlCode(page);
         Form captcha_form = getDownloadForm();
 
+
         if (captcha_form != null) {
             boolean valid = false;
             for (int retry = 1; retry <= 5; retry++) {
@@ -128,10 +131,19 @@ public class FastLoadNet extends PluginForHost {
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
                     String captcha = captcha_form.getRegex("src=\"(.*?)\"").getMatch(0);
+               
                     Browser.download(file, br.cloneBrowser().openGetConnection("http://fast-load.net/" + captcha));
                     String code = Plugin.getCaptchaCode(file, this, downloadLink);
-                    String captcha_input_name = captcha_form.getRegex("<input.*?type=\"text\".*?name=\"(.*?)\".*?/>").getMatch(0);
-                    captcha_form.put(captcha_input_name, code);
+                    
+                    ArrayList<InputField> fields = captcha_form.getInputFieldsByType("text");
+                    InputField txt=null;
+                    for(InputField f:fields){
+                        if(f.getStringProperty("style","").contains("none"))continue;
+                        txt=f;
+                        break;
+                    }
+                    txt.setValue(code);
+                   
                     br.openFormConnection(captcha_form);
                     if (br.getHttpConnection().isContentDisposition()) {
                         valid = true;
