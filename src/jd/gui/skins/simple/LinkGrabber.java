@@ -727,6 +727,8 @@ public boolean isExtract(){
 
     public static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
+    public static final String PROPERTY_STARTAFTERADDING = "PROPERTY_STARTAFTERADDING";
+    
     public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V3";
 
     private static final String PROPERTY_HOSTSELECTIONPACKAGEONLY = "PROPERTY_HOSTSELECTIONPACKAGEONLY";
@@ -756,7 +758,9 @@ public boolean isExtract(){
     protected Logger logger = JDUtilities.getLogger();
 
     private JCheckBoxMenuItem mAutoPackage;
-
+    
+    private JCheckBoxMenuItem mStartAfterAdding;
+    
     private JMenuItem mFreeMirror;
 
     private JMenuItem[] mHostSelection;
@@ -801,7 +805,6 @@ public boolean isExtract(){
 
     private Vector<DownloadLink> waitingLinkList;
 
-    private JCheckBox chbStartAfterAdding;
     /**
      * @param parent
      *            GUI
@@ -826,8 +829,8 @@ public boolean isExtract(){
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == chbStartAfterAdding) {
-            JDUtilities.getConfiguration().setProperty("gui.linkgrabber.packagetab.chb.startAfterAdding", chbStartAfterAdding.isSelected());
+        if (e.getSource() == mStartAfterAdding) {
+            guiConfig.setProperty(PROPERTY_STARTAFTERADDING, mStartAfterAdding.isSelected());
         } else if (e.getSource() == mAutoPackage) {
             guiConfig.setProperty(PROPERTY_AUTOPACKAGE, mAutoPackage.isSelected());
             JDUtilities.saveConfig();
@@ -921,12 +924,12 @@ public boolean isExtract(){
             confirmPackage(idx);
             removePackageAt(idx);
             emptyCheck();
-            if(chbStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
+            if(mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
         } else if (e.getSource() == acceptAll) {
             confirmAll();
             setVisible(false);
             dispose();
-            if(chbStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads(); 
+            if(mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads(); 
         } else if (e.getSource() == sortPackages) {
             reprintTabbedPane();
         } else if (e.getSource() == mMerge) {
@@ -1149,7 +1152,13 @@ public boolean isExtract(){
         mAutoPackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
         mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
         mAutoPackage.addActionListener(this);
+        
+        mStartAfterAdding = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.startafteradding", "Automatischer  Downloadstart nach dem Hinzufügen von Paketen in die Downloadliste"));
+        mStartAfterAdding.setSelected(guiConfig.getBooleanProperty(PROPERTY_STARTAFTERADDING, false));
+        mStartAfterAdding.addActionListener(this);
+        
         menu.add(mAutoPackage);
+        menu.add(mStartAfterAdding);
 
         // Edit Menü
         menu = new JMenu(JDLocale.L("gui.linkgrabber.menu.edit", "Bearbeiten"));
@@ -1458,11 +1467,6 @@ public boolean isExtract(){
 
     private void initGUI() {
         buildMenu();
-
-        chbStartAfterAdding = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.startAfterAdding", "Downloadstart nach Hinzufügen"));
-        chbStartAfterAdding.setSelected(JDUtilities.getConfiguration().getBooleanProperty("gui.linkgrabber.packagetab.chb.startAfterAdding", false));
-        chbStartAfterAdding.setHorizontalTextPosition(SwingConstants.LEFT);
-        chbStartAfterAdding.addActionListener(this);
         
         sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
         sortPackages.addActionListener(this);
@@ -1510,12 +1514,7 @@ public boolean isExtract(){
         JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
         separator.setPreferredSize(new Dimension(5, 20));
         
-        JSeparator separator2 = new JSeparator(SwingConstants.VERTICAL);
-        separator2.setPreferredSize(new Dimension(5, 20));
-        
         bpanel.add(separator);
-        bpanel.add(chbStartAfterAdding);
-        bpanel.add(separator2);
         bpanel.add(acceptAll);
         bpanel.add(accept);
         south.add(bpanel, BorderLayout.CENTER);
