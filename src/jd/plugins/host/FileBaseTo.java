@@ -86,8 +86,9 @@ public class FileBaseTo extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        Form dl_form = br.getForm(2);
+        Form dl_form = br.getFormbyName("waitform");
         String value = br.getRegex(Pattern.compile("document\\.waitform\\.wait\\.value = \"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0);
+  
         dl_form.put("wait", value);
         HTTPConnection urlConnection = br.openFormConnection(dl_form);
         downloadLink.setDownloadSize(urlConnection.getContentLength());
