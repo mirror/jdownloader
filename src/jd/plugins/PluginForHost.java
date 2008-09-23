@@ -548,4 +548,9 @@ public abstract class PluginForHost extends Plugin {
         return br;
     }
 
+    public void setDownloadInterface(DownloadInterface dl2) {
+        this.dl = dl2;
+
+    }
+
 }

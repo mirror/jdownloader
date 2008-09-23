@@ -137,12 +137,12 @@ public class RAFDownload extends DownloadInterface {
         int chunks = downloadLink.getChunksProgress().length;
         long part = fileSize / chunks;
         long dif;
-        long last=-1;
+        long last = -1;
         for (int i = 0; i < chunks; i++) {
-            dif=downloadLink.getChunksProgress()[i] - i * part;
-            if(dif<0)return false;
-            if(downloadLink.getChunksProgress()[i]<=last)return false;
-            last=downloadLink.getChunksProgress()[i];
+            dif = downloadLink.getChunksProgress()[i] - i * part;
+            if (dif < 0) return false;
+            if (downloadLink.getChunksProgress()[i] <= last) return false;
+            last = downloadLink.getChunksProgress()[i];
             loaded += dif;
         }
         if (chunks > 0) {
@@ -229,10 +229,10 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                            // downloadLink.getLinkStatus().addStatus(LinkStatus.
+                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
                             // CRC_STATUS_OK);
                         } else {
-                            // downloadLink.getLinkStatus().addStatus(LinkStatus.
+                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
                             // ERROR_CRC_STATUS_BAD);
                             error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("system.download.errors.crcfailed", "CRC Check failed"));
 
@@ -277,22 +277,23 @@ public class RAFDownload extends DownloadInterface {
 
                 outputChannel = outputFile.getChannel();
                 addToChunksInProgress(getChunkNum());
-                boolean maintainOroginalConnection=false;
+                boolean maintainOroginalConnection = false;
                 for (int i = 0; i < getChunkNum(); i++) {
                     if (i == getChunkNum() - 1) {
-                        if(downloadLink.getChunksProgress()[i]<=0)maintainOroginalConnection=true;
+                        if (downloadLink.getChunksProgress()[i] <= 0) maintainOroginalConnection = true;
                         chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, -1, connection);
                         chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
                     } else {
-                        if(downloadLink.getChunksProgress()[i]<=0)maintainOroginalConnection=true;
+                        if (downloadLink.getChunksProgress()[i] <= 0) maintainOroginalConnection = true;
                         chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
                         chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
                     }
 
                     addChunk(chunk);
                 }
-                //Schließt allte verbiundung wenn sie nicht mehr gebraucht wird.
-                if(!maintainOroginalConnection){
+                // Schließt allte verbiundung wenn sie nicht mehr gebraucht
+                // wird.
+                if (!maintainOroginalConnection) {
                     logger.info("Disconnect original connection");
                     connection.getHTTPURLConnection().disconnect();
                 }
@@ -400,6 +401,16 @@ public class RAFDownload extends DownloadInterface {
 
         }
         return true;
+
+    }
+
+    public static DownloadInterface download(DownloadLink downloadLink, HTTPConnection con, boolean b, int i) {
+        DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, con);
+        downloadLink.getPlugin().setDownloadInterface(dl);
+        dl.setResume(b);
+        dl.setChunkNum(i<=0?JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2):i);
+        dl.startDownload();
+        return dl;
 
     }
 }
