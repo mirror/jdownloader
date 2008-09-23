@@ -127,9 +127,9 @@ import org.jdesktop.swingx.JXTitledSeparator;
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
-    
+
     public static String WAITING_USER_IO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
-    
+
     /**
      * Toggled das MenuItem fuer die Ansicht des Log Fensters
      * 
@@ -159,7 +159,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         /**
          * serialVersionUID
          */
-        private static final long serialVersionUID = 3676496738341246846L;       
+        private static final long serialVersionUID = 3676496738341246846L;
 
         private JCheckBox chbPremium;
 
@@ -266,16 +266,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          * @param speed
          *            bytes pro sekunde
          */
-        public void setSpeed(Integer speed) {
+        public void setSpeed(int speed) {
             if (speed <= 0) {
                 lblSpeed.setText(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
-                return;
-            }
-
-            if (speed > 1024) {
-                lblSpeed.setText("(" + speed / 1024 + JDLocale.L("gui.download.kbps", "kb/s") + ")");
             } else {
-                lblSpeed.setText("(" + speed + JDLocale.L("gui.download.bps", "bytes/s") + ")");
+                lblSpeed.setText("(" + JDUtilities.formatKbReadable(speed / 1024) + "/s)");
             }
         }
 
@@ -1000,7 +995,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
         }
     }
-    
+
     public synchronized void addLinksToGrabber(Vector<DownloadLink> links) {
         logger.info("GRAB");
         DownloadLink[] linkList = links.toArray(new DownloadLink[] {});
@@ -1545,9 +1540,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
                             m.removeAll();
                             for (MenuItem menuItem : plg.getPlugin().createMenuitems()) {
-                               JMenuItem c = SimpleGUI.getJMenuItem(menuItem);
-                                
-                                if ( c== null) {
+                                JMenuItem c = SimpleGUI.getJMenuItem(menuItem);
+
+                                if (c == null) {
                                     m.addSeparator();
                                 } else {
                                     m.add(c);

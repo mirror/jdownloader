@@ -279,7 +279,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private JMenuItem mContextNewPackage;
 
         private JCheckBox chbExtract;
-                
+
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
             _this = this;
@@ -394,22 +394,22 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
             chbExtract.setSelected(true);
-            //Vorrübergehend noch ohne Funktion
+            // Vorrübergehend noch ohne Funktion
             chbExtract.setEnabled(false);
             chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
-            
+
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
             brwSaveTo.setEditable(true);
             brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
 
             txtName.setPreferredSize(new Dimension(450, 20));
-//            txtPassword.setPreferredSize(new Dimension(450, 20));
+            // txtPassword.setPreferredSize(new Dimension(450, 20));
             // chbExtract.setPreferredSize(new Dimension(200, 20));
             txtComment.setPreferredSize(new Dimension(450, 20));
             brwSaveTo.setPreferredSize(new Dimension(450, 20));
             txtName.setMinimumSize(new Dimension(250, 20));
-//            txtPassword.setMinimumSize(new Dimension(250, 20));
+            // txtPassword.setMinimumSize(new Dimension(250, 20));
             txtComment.setMinimumSize(new Dimension(250, 20));
             brwSaveTo.setMinimumSize(new Dimension(250, 20));
 
@@ -485,8 +485,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             // extractPW.add(this.txtPassword);
             JDUtilities.addToGridBag(extractPW, txtPassword, 0, 0, 1, 1, 100, 100, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(extractPW, chbExtract, 1, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-            
-        
+
             east.add(lblName);
             east.add(lblSaveto);
             east.add(lblPassword);
@@ -495,8 +494,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             center.add(txtName);
             center.add(brwSaveTo);
             center.add(extractPW);
-//            JDUtilities.addToGridBag(center, extractPW, 0, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
-            
+            // JDUtilities.addToGridBag(center, extractPW, 0, 0, 1, 1, 0, 0,
+            // null, GridBagConstraints.NONE, GridBagConstraints.WEST);
+
             center.add(txtComment);
 
             setLayout(new BorderLayout(n, n));
@@ -567,9 +567,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         public String getPackageName() {
             return txtName.getText().trim();
         }
-public boolean isExtract(){
-    return this.chbExtract.isSelected();
-}
+
+        public boolean isExtract() {
+            return this.chbExtract.isSelected();
+        }
+
         public String getPassword() {
             return txtPassword.getText();
         }
@@ -728,7 +730,7 @@ public boolean isExtract(){
     public static final String PROPERTY_AUTOPACKAGE = "PROPERTY_AUTOPACKAGE";
 
     public static final String PROPERTY_STARTAFTERADDING = "PROPERTY_STARTAFTERADDING";
-    
+
     public static final String PROPERTY_AUTOPACKAGE_LIMIT = "AUTOPACKAGE_LIMIT_V3";
 
     private static final String PROPERTY_HOSTSELECTIONPACKAGEONLY = "PROPERTY_HOSTSELECTIONPACKAGEONLY";
@@ -758,9 +760,9 @@ public boolean isExtract(){
     protected Logger logger = JDUtilities.getLogger();
 
     private JCheckBoxMenuItem mAutoPackage;
-    
+
     private JCheckBoxMenuItem mStartAfterAdding;
-    
+
     private JMenuItem mFreeMirror;
 
     private JMenuItem[] mHostSelection;
@@ -924,12 +926,12 @@ public boolean isExtract(){
             confirmPackage(idx);
             removePackageAt(idx);
             emptyCheck();
-            if(mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
+            if (mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
         } else if (e.getSource() == acceptAll) {
             confirmAll();
             setVisible(false);
             dispose();
-            if(mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads(); 
+            if (mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
         } else if (e.getSource() == sortPackages) {
             reprintTabbedPane();
         } else if (e.getSource() == mMerge) {
@@ -1045,7 +1047,8 @@ public boolean isExtract(){
             if (isDupe(element)) {
                 continue;
             }
-//            System.out.println(element.getDownloadURL()+" - "+element.getDownloadSize());
+            // System.out.println(element.getDownloadURL()+" - "+element.
+            // getDownloadSize());
             totalLinkList.add(element);
             if (element.isAvailabilityChecked()) {
                 attachLinkToPackage(element);
@@ -1092,7 +1095,7 @@ public boolean isExtract(){
             autoPackage = true;
             packageName = removeExtension(link.getName());
         }
-//        System.out.println(link.getDownloadURL());
+        // System.out.println(link.getDownloadURL());
         if (!guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true)) {
             // logger.finer("No Auto package");
             int lastIndex = tabList.size() - 1;
@@ -1152,11 +1155,11 @@ public boolean isExtract(){
         mAutoPackage = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.autopackage", "Auto. Pakete"));
         mAutoPackage.setSelected(guiConfig.getBooleanProperty(PROPERTY_AUTOPACKAGE, true));
         mAutoPackage.addActionListener(this);
-        
-        mStartAfterAdding = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.startafteradding", "Automatischer  Downloadstart nach dem Hinzufügen von Paketen in die Downloadliste"));
+
+        mStartAfterAdding = new JCheckBoxMenuItem(JDLocale.L("gui.linkgrabber.menu.extras.startafteradding", "Automatischer Downloadstart"));
         mStartAfterAdding.setSelected(guiConfig.getBooleanProperty(PROPERTY_STARTAFTERADDING, false));
         mStartAfterAdding.addActionListener(this);
-        
+
         menu.add(mAutoPackage);
         menu.add(mStartAfterAdding);
 
@@ -1214,7 +1217,7 @@ public boolean isExtract(){
         mHostSelectionRemove.setSelected(guiConfig.getBooleanProperty(PROPERTY_HOSTSELECTIONREMOVE, true));
         mHostSelectionRemove.addActionListener(this);
         submenu.add(mHostSelectionRemove);
-        submenu.addSeparator();        
+        submenu.addSeparator();
         ArrayList<HostPluginWrapper> hosts = JDUtilities.getPluginsForHost();
         mHostSelection = new JMenuItem[hosts.size()];
         subsubmenu = null;
@@ -1467,7 +1470,7 @@ public boolean isExtract(){
 
     private void initGUI() {
         buildMenu();
-        
+
         sortPackages = new JButton(JDLocale.L("gui.linkgrabber.btn.sortPackages", "Pakete sortieren"));
         sortPackages.addActionListener(this);
         acceptAll = new JButton(JDLocale.L("gui.linkgrabber.btn.acceptAll", "Alle übernehmen"));
@@ -1510,10 +1513,10 @@ public boolean isExtract(){
         south.add(sortPackages, BorderLayout.WEST);
         bpanel.add(new JLabel(JDLocale.L("gui.linkgrabber.cmb.insertAtPosition", "Einfügen an Position:")));
         bpanel.add(insertAtPosition);
-        
+
         JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
         separator.setPreferredSize(new Dimension(5, 20));
-        
+
         bpanel.add(separator);
         bpanel.add(acceptAll);
         bpanel.add(accept);
