@@ -20,13 +20,14 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
@@ -43,7 +44,6 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team
@@ -122,6 +122,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     private static final long serialVersionUID = 1L;
 
+    private ConfigEntriesPanel cep;
+
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
 
     private JTable table;
@@ -150,16 +152,13 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     @Override
     public void initPanel() {
-        this.setPreferredSize(new Dimension(650, 350));
+        this.setLayout(new BorderLayout());
 
         packageData = new PackageManager().getPackageData();
-
         Collections.sort(packageData, new Comparator<PackageData>() {
-
             public int compare(PackageData a, PackageData b) {
                 return ((Integer) a.getSortID()).compareTo((Integer) b.getSortID());
             }
-
         });
 
         tableModel = new InternalTableModel();
@@ -218,20 +217,24 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
-        JDUtilities.addToGridBag(panel, scrollpane, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
-        JDUtilities.addToGridBag(panel, new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"))), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-        this.add(panel, BorderLayout.CENTER);
+
+        JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
+        bpanel.add(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"))));
+
+        ConfigContainer container = new ConfigContainer(this);
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CFGConfig.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(false));
+        this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
+        this.add(scrollpane);
+        this.add(bpanel, BorderLayout.SOUTH);
     }
 
     @Override
     public void load() {
-        loadConfigEntries();
     }
 
     @Override
     public void save() {
-        saveConfigEntries();
-        CFGConfig.getConfig("JDU").save();
+        cep.save();
     }
 
 }

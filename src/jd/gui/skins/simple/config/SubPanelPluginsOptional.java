@@ -27,12 +27,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
-import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -175,7 +173,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             }
         });
         // table.setDefaultRenderer(Object.class, new
-        // PluginTableCellRenderer<PluginOptional>(pluginsOptional));
+        // PluginTableCellRenderer<OptionalPluginWrapper>(pluginsOptional));
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
@@ -203,19 +201,13 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         openPluginDir = new JButton(JDLocale.L("gui.config.plugin.optional.btn_openDir", "Addon Ordner öffnen"));
         openPluginDir.addActionListener(this);
 
-        int n = 5;
-        JPanel contentPanel = new JPanel(new BorderLayout(n, n));
-        contentPanel.setBorder(new EmptyBorder(0, n, 0, n));
-        contentPanel.add(new JLabel(JDLocale.L("gui.warning.restartNeeded", "JD-Restart needed after changes!")), BorderLayout.NORTH);
-        contentPanel.add(scrollpane, BorderLayout.CENTER);
-
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         bpanel.add(btnEdit);
         bpanel.add(enableDisable);
         bpanel.add(openPluginDir);
         bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
 
-        this.add(contentPanel);
+        this.add(scrollpane);
         this.add(bpanel, BorderLayout.SOUTH);
     }
 

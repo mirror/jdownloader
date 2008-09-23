@@ -98,7 +98,12 @@ public class PackageManager extends Interaction implements Serializable {
             if (pkg.isSelected() && !pkg.isUptodate() && !pkg.isUpdating()) {
                 pkg.setUpdating(true);
 
-                DistributeData distributeData = new DistributeData(pkg.getStringProperty("url"));
+                DistributeData distributeData = null;
+                if (CFGConfig.getConfig("JDU").getBooleanProperty("SUPPORT_JD", false)) {
+                    distributeData = new DistributeData(pkg.getStringProperty("url"));
+                } else {
+                    distributeData = new DistributeData(pkg.getStringProperty("light-url"));
+                }
                 Vector<DownloadLink> links = distributeData.findLinks();
                 for (DownloadLink link : links) {
                     logger.info("Add link " + link + " : " + pkg);
