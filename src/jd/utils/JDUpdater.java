@@ -107,29 +107,34 @@ public class JDUpdater {
         fc.setApproveButtonText("Select as woringdir");
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.setSelectedFile((File) CONFIG.getProperty("LASTSELECTEDDIR1", new File(new File(wd).getParentFile(), "jd_update_dif")));
-        if(fc.showOpenDialog(null)!=JFileChooser.APPROVE_OPTION){
+        if (fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
             logger.severe("ABBRUCH");
             return;
         }
+
         workingdir = fc.getSelectedFile();
         if (workingdir == null) {
             logger.severe("ABBRUCH");
             return;
 
         }
-
+      
         CONFIG.setProperty("LASTSELECTEDDIR1", workingdir);
 
         System.out.print(": " + workingdir.getAbsolutePath() + "\r\n");
         //
-
+        if (!new File("").getAbsolutePath().equals(workingdir.getAbsolutePath())) {
+            System.out.print("\r\n\r\n");
+            System.err.println("JDUpdater muss in " + workingdir + " ausgeführt werden! Aktuell ausgeführt in: "+new File("").getAbsolutePath());
+            return;
+        }
         fc = new JFileChooser();
         System.out.print("\r\nUpdate Ordner auswählen. Der Updateordner muss alle aktualisierten files enthalten. Die Ordnerstruktur muss gegeben sein!");
 
         fc.setApproveButtonText("Select as update dir");
         fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         fc.setSelectedFile((File) CONFIG.getProperty("LASTSELECTEDDIR2", new File(new File(wd).getParentFile(), "jd_update_dif")));
-        if(fc.showOpenDialog(null)!=JFileChooser.APPROVE_OPTION){
+        if (fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
             logger.severe("ABBRUCH");
             return;
         }
@@ -158,7 +163,7 @@ public class JDUpdater {
 
         ArrayList<File> localfiles = getLocalFileList(workingdir);
         HashMap<String, String> webupdaterfiles = new HashMap<String, String>();
-
+        if (files == null) files = new Vector<Vector<String>>();
         for (int i = 0; i < files.size(); i++) {
             String path = files.get(i).get(0).split("\\?")[0];
             File f = new File(this.workingdir, path);
@@ -168,10 +173,14 @@ public class JDUpdater {
         System.out.println("Working dir überprüfen");
         for (File f : localfiles) {
             if (!webupdaterfiles.containsKey(f.getAbsolutePath())) {
-                if (!f.isDirectory() && JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " ist im Workingdir, aber nicht in der Updatelist. entfernen?") == JOptionPane.OK_OPTION) {
-                    if (!f.delete()) {
-                        logger.severe("Datei " + f + " konnte nicht entfernt werden. ABBRUCH");
-                        return;
+                if (!f.isDirectory()) {
+                    int answer = JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " ist im Workingdir, aber nicht in der Updatelist. entfernen?");
+                    if (answer == JOptionPane.CANCEL_OPTION) break;
+                    if (answer == JOptionPane.OK_OPTION) {
+                        if (!f.delete()) {
+                            logger.severe("Datei " + f + " konnte nicht entfernt werden. ABBRUCH");
+                            return;
+                        }
                     }
                 }
 
@@ -191,7 +200,7 @@ public class JDUpdater {
             fc.setApproveButtonText("Select file to DELETE");
             fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
             fc.setSelectedFile(this.workingdir);
-            if(fc.showOpenDialog(null)!=JFileChooser.APPROVE_OPTION){
+            if (fc.showOpenDialog(null) != JFileChooser.APPROVE_OPTION) {
                 break;
             }
             File[] filesToRemove = fc.getSelectedFiles();
@@ -203,15 +212,15 @@ public class JDUpdater {
                 if (JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " wirklich entfernen?") == JOptionPane.OK_OPTION) {
                     if (!JDUtilities.removeDirectoryOrFile(f)) {
                         logger.severe("Datei " + f + " konnte nicht entfernt werden. ABBRUCH");
-                    }else{
-                        System.out.println("Datei/Ordner entfernt: "+f);
+                    } else {
+                        System.out.println("Datei/Ordner entfernt: " + f);
                     }
                     return;
                 }
 
             }
         }
-     
+
         if (!update()) {
             logger.severe("UPDATE FAILED");
             return;
