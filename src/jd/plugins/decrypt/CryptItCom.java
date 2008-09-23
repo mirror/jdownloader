@@ -196,10 +196,6 @@ public class CryptItCom extends PluginForDecrypt {
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     if (pass == null) {
                         pass = getUserInput(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword(), param);
-                        if (pass == null) {
-                            /* auf abbruch geklickt */
-                            return null;
-                        }
                     }
                     String post = "a=pw&pw=" + Encoding.urlEncode(pass);
                     ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
@@ -243,6 +239,8 @@ public class CryptItCom extends PluginForDecrypt {
                 progress.increase(1);
             }
             if (decryptedLinks.size() == 0) { return containerStep(param); }
+        } catch (DecrypterException j) {
+            throw j;
         } catch (Exception e) {
             e.printStackTrace();
             return null;
