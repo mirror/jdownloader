@@ -19,7 +19,6 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -31,7 +30,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class MeinUpload extends PluginForHost {
 
@@ -65,9 +63,8 @@ public class MeinUpload extends PluginForHost {
         con = br.openGetConnection(url);
 
         dl = new RAFDownload(this, downloadLink, con);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
-
+        dl.setChunkNum(1);
+        dl.setResume(false);
         dl.startDownload();
     }
 
@@ -76,8 +73,9 @@ public class MeinUpload extends PluginForHost {
         br.setFollowRedirects(true);
         br.clearCookies(getHost());
 
-        br.getPage("http://meinupload.com");
+        br.getPage("http://meinupload.com/index.php");
         Form login = br.getFormbyValue("Login");
+        login.put("act", "login");
         login.put("user", account.getUser());
         login.put("pass", account.getPass());
         br.submitForm(login);
@@ -87,23 +85,23 @@ public class MeinUpload extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
 
         login(account);
-
-        String expire = br.getRegex("<b>Paket l.*?uft ab am</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        br.getPage("http://meinupload.com/members.php");
+        String expire = br.getRegex("<b>Packet runs out on</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
         if (expire == null) {
             ai.setValid(false);
             ai.setStatus("Account invalid. Logins wrong?");
             return ai;
         }
 
-        String points = br.getRegex("Bonuspunkte insgesamt</b></td>.*?<td align=.*?>(\\d+?)\\&nbsp\\;\\((\\d+?)&#x80;\\)</t").getMatch(0);
-        String cash = br.getRegex("Bonuspunkte insgesamt</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\((\\d+?)&#x80;\\)</t").getMatch(1);
-        String files = br.getRegex("Hochgeladene Dateien</b></td>.*?<td align=.*?>(.*?)  <a href").getMatch(0);
+        String points = br.getRegex("Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t").getMatch(0);
+        String cash = br.getRegex("Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t").getMatch(1);
+        String files = br.getRegex("Hosted Files</b></td>.*?<td align=.*?>(.*?)  <a href").getMatch(0);
 
         ai.setStatus("Account is ok.");
         ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
 
         ai.setPremiumPoints(Integer.parseInt(points));
-        ai.setAccountBalance(Integer.parseInt(cash) * 100);
+        ai.setAccountBalance(Integer.parseInt(cash.replaceAll("\\.", "")));
         ai.setFilesNum(Integer.parseInt(files));
 
         return ai;
@@ -122,10 +120,9 @@ public class MeinUpload extends PluginForHost {
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
         HTTPConnection con = br.openGetConnection(url);
         dl = new RAFDownload(this, downloadLink, con);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setChunkNum(1);
         dl.setResume(true);
         dl.startDownload();
-
     }
 
     @Override
