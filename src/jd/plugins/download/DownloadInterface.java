@@ -192,6 +192,8 @@ abstract public class DownloadInterface {
                 logger.finer("Übernehme Verbindung bei " + connection.getRange()[0]);
                 return connection;
             }
+//            connection.getHTTPURLConnection().disconnect();
+            
             try {
                 Browser br = plugin.getBrowser().cloneBrowser();
                 br.setReadTimeout(getReadTimeout());

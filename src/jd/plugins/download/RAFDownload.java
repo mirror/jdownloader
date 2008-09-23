@@ -277,16 +277,24 @@ public class RAFDownload extends DownloadInterface {
 
                 outputChannel = outputFile.getChannel();
                 addToChunksInProgress(getChunkNum());
+                boolean maintainOroginalConnection=false;
                 for (int i = 0; i < getChunkNum(); i++) {
                     if (i == getChunkNum() - 1) {
+                        if(downloadLink.getChunksProgress()[i]<=0)maintainOroginalConnection=true;
                         chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, -1, connection);
                         chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
                     } else {
+                        if(downloadLink.getChunksProgress()[i]<=0)maintainOroginalConnection=true;
                         chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
                         chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
                     }
 
                     addChunk(chunk);
+                }
+                //Schließt allte verbiundung wenn sie nicht mehr gebraucht wird.
+                if(!maintainOroginalConnection){
+                    logger.info("Disconnect original connection");
+                    connection.getHTTPURLConnection().disconnect();
                 }
 
             } else {

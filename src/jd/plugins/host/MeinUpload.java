@@ -110,6 +110,7 @@ public class MeinUpload extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         login(account);
+        br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
@@ -121,7 +122,7 @@ public class MeinUpload extends PluginForHost {
         HTTPConnection con = br.openGetConnection(url);
         dl = new RAFDownload(this, downloadLink, con);
         dl.setChunkNum(1);
-        dl.setResume(false);
+        dl.setResume(true);
         dl.startDownload();
     }
 
