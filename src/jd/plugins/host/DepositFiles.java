@@ -168,7 +168,7 @@ public class DepositFiles extends PluginForHost {
         login.put("password", account.getPass());
 
         br.submitForm(login);
-        if (br.containsHTML("Your password or login is incorrect")) {
+        if (br.containsHTML("Your password or login is incorrect")|| br.containsHTML("Benutzername-Passwort-Kombination")) {
 
             ai.setValid(false);
             return ai;
