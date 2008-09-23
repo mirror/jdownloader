@@ -138,6 +138,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private static final long UPDATE_INTERVAL = 200;
 
+    private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+
     private TableCellRenderer cellRenderer;
 
     private DownloadLink currentLink;
@@ -205,7 +207,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         DownloadLink link;
-        SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+
         FilePackage fp;
         Vector<DownloadLink> links;
         Vector<FilePackage> fps;
@@ -687,7 +689,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
             }
 
-            if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
+            if (!guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.delete", "Ausgewählte Links wirklich entfernen?"))) {
                     // zuerst Pakete entfernen
                     for (FilePackage filePackage : fps) {
@@ -1037,7 +1039,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             tooltip = null;
         }
 
-        if (!SimpleGUI.CURRENTGUI.getFrame().isActive() || transferHandler.isDragging) { return; }
+        if (!SimpleGUI.CURRENTGUI.getFrame().isActive() || transferHandler.isDragging || guiConfig.getBooleanProperty(SimpleGUI.PARAM_DISABLE_TREETABLE_TOOLTIPPS, false)) return;
+
         StringBuffer sb = new StringBuffer();
         sb.append("<div>");
         Object obj = getPathForRow(mouseOverRow).getLastPathComponent();

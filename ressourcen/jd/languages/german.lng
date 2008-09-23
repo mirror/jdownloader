@@ -214,6 +214,7 @@ gui.config.gui.autopackagelimit = Schwelle der Auto. Paketverwaltung.
 gui.config.gui.Browser = Browser
 gui.config.gui.container.tab = Downloadlinks
 gui.config.gui.disabledialogs = Bestätigungsdialoge abschalten
+gui.config.gui.disabletooltipps = ToolTipps der DownloadListe abschalten
 gui.config.gui.extended = Erweiterte Einstellungen
 gui.config.gui.gui = Benutzeroberfläche
 gui.config.gui.language = Sprache
