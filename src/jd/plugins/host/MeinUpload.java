@@ -121,7 +121,7 @@ public class MeinUpload extends PluginForHost {
         HTTPConnection con = br.openGetConnection(url);
         dl = new RAFDownload(this, downloadLink, con);
         dl.setChunkNum(1);
-        dl.setResume(true);
+        dl.setResume(false);
         dl.startDownload();
     }
 
