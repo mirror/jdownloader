@@ -105,7 +105,7 @@ public class Netloadin extends PluginForHost {
 
         if (!br.containsHTML(DOWNLOAD_START) || url == null) {
             linkStatus.setErrorMessage("Download link not found");
-
+            logger.severe(br.toString());
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
             return;
         }
