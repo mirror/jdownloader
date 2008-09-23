@@ -34,6 +34,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -98,17 +99,17 @@ public class DepositFiles extends PluginForHost {
         Form form = br.getFormbyValue("Kostenlosen download");
 
         if (form != null) {
-            String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
-            if (wait != null) {
-                linkStatus.setValue(Regex.getMilliSeconds(wait));
-                linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-                return;
-            }
-
-            // linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            // return;
-
             br.submitForm(form);
+
+            String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
+
+            }
+        }else{
+            String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
+            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
+
+            }
         }
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             // MUss wohl noch angepasst werden
@@ -227,7 +228,7 @@ public class DepositFiles extends PluginForHost {
 
         br.submitForm(login);
 
-        if (br.containsHTML("Your password or login is incorrect")) {
+        if (br.containsHTML("Your password or login is incorrect") || br.containsHTML("Benutzername-Passwort-Kombination")) {
             linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
             linkStatus.setValue(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             downloadLink.getLinkStatus().setErrorMessage("Your password or login is incorrect");

@@ -219,8 +219,7 @@ public class JDInit {
 
         cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
         cfg.save();
-        final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
-
+    
         logger.finer("Init Webupdater");
         if (!guiCall) {
             if ((System.currentTimeMillis() - LASTREQUEST) < (30 * 60 * 1000l)) {
@@ -231,6 +230,7 @@ public class JDInit {
                 logger.finer("30 sekunden sperre");
             return; }
         }
+        final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         LASTREQUEST = System.currentTimeMillis();
         final WebUpdater updater = new WebUpdater(null);
