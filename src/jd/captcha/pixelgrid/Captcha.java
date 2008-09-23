@@ -836,6 +836,7 @@ public class Captcha extends PixelGrid {
     public Letter[] getLetters(int letterNum) {
         if (seperatedLetters != null) { return seperatedLetters; }
         Letter[] ret = getLetters0(letterNum);
+        if(ret==null)return null;
         if (owner.getJas().getString("useLetterFilter") != null && owner.getJas().getString("useLetterFilter").length() > 0) {
             String[] ref = owner.getJas().getString("useLetterFilter").split("\\.");
             if (ref.length != 2) {

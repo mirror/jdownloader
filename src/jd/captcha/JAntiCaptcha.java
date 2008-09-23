@@ -2207,6 +2207,8 @@ if(lcs[i].getValityPercent()>30){
     // letters[i].setTextGrid(letters[i].getPixelString());
     letters[i].setSourcehash(captchaHash);
     letters[i].setDecodedValue(code.substring(i, i + 1));
+    
+    BasicWindow.showImage( letters[i].getImage(2),""+letters[i].getDecodedValue());
     letterDB.add(letters[i]);
 }
                     if (!jas.getBoolean("TrainOnlyUnknown")) {
@@ -2234,7 +2236,7 @@ if(lcs[i].getValityPercent()>30){
                     letters[i].setDecodedValue(code.substring(i, i + 1));
 
                     letterDB.add(letters[i]);
-
+                    BasicWindow.showImage( letters[i].getImage(2),""+letters[i].getDecodedValue());
                     f.add(new JLabel("NO +"), UTILITIES.getGBC(i + 1, 13, 1, 1));
                     f.pack();
                 }

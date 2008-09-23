@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.captcha.LetterComperator;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -72,9 +73,7 @@ public class FileFactory extends PluginForHost {
 
         br.setFollowRedirects(true);
         br.getPage(parameter.getDownloadURL());
-        if(br.containsHTML("there are currently no free download slots")){
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,3*60*1000l);
-        }
+        if (br.containsHTML("there are currently no free download slots")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 3 * 60 * 1000l); }
         if (br.containsHTML(NOT_AVAILABLE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(SERVER_DOWN) || br.containsHTML(NO_SLOT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
@@ -83,10 +82,29 @@ public class FileFactory extends PluginForHost {
 
         br.setCookie(br.getURL(), "viewad11", "yes");
         br.getPage(Encoding.htmlDecode("http://www.filefactory.com/" + br.getRegex(frameForCaptcha).getMatch(0)));
+        String captchaCode = null;
+        int vp = JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
+        JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 100);
+        int i = 30;
+        while (i-- > 0) {
+            File captchaFile = this.getLocalCaptchaFile(this);
+            Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
+     
+            captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
+         
+            if (this.getLastCaptcha() == null) continue;
+            double worst = 0.0;
+            for (LetterComperator l : this.getLastCaptcha().getLetterComperators()) {
+                if (l.getValityPercent() > worst) worst = l.getValityPercent();
 
-        File captchaFile = this.getLocalCaptchaFile(this);
-        Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
+            }
+            logger.info("CAPTCHA: " + captchaCode + "(" + worst + "/" + this.getLastCaptcha().getValityPercent() + ")");
+            if (captchaCode != null && worst < 30) {
+                captchaCode = captchaCode.trim().replace("-", "");
+                if (captchaCode.length() == 4) break;
+            }
+        }
+        JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
         Form captchaForm = br.getForm(0);
         captchaForm.put("captcha", captchaCode);
         br.submitForm(captchaForm);
@@ -113,7 +131,9 @@ public class FileFactory extends PluginForHost {
         }
 
     }
-
+    public int getMaxRetries() {
+        return 20;
+    }
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
@@ -241,25 +261,25 @@ public class FileFactory extends PluginForHost {
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(NOT_AVAILABLE)&&!br.containsHTML("there are currently no free download slots")) {
+        if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML("there are currently no free download slots")) {
             br.setFollowRedirects(false);
             return false;
         } else if (br.containsHTML(SERVER_DOWN)) {
             br.setFollowRedirects(false);
             return false;
         } else {
-if(br.containsHTML("there are currently no free download slots")){
-    downloadLink.getLinkStatus().setErrorMessage("No slots available atm");
-    downloadLink.getLinkStatus().setStatusText("No slots available atm");
-}else{
-            String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
+            if (br.containsHTML("there are currently no free download slots")) {
+                downloadLink.getLinkStatus().setErrorMessage("No slots available atm");
+                downloadLink.getLinkStatus().setStatusText("No slots available atm");
+            } else {
+                String fileName = Encoding.htmlDecode(new Regex(br.toString().replaceAll("\\&\\#8203\\;", ""), FILENAME).getMatch(0));
 
-            String fileSize = new Regex(br.toString(), FILESIZE).getMatch(-1);
+                String fileSize = new Regex(br.toString(), FILESIZE).getMatch(-1);
 
-            downloadLink.setName(fileName);
-            downloadLink.setDownloadSize(Regex.getSize(fileSize));
-            
-}
+                downloadLink.setName(fileName);
+                downloadLink.setDownloadSize(Regex.getSize(fileSize));
+
+            }
 
         }
         br.setFollowRedirects(false);

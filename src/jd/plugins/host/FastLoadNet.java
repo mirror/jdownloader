@@ -81,8 +81,8 @@ public class FastLoadNet extends PluginForHost {
             return false;
         }
 
-        String fileName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<th.*?><b>Datei</b></th>.*?<font.*?;\">(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
-        String fileSize = Encoding.htmlDecode(br.getRegex(Pattern.compile("<td.*?><b>Gr&ouml;sse</b></td>.*?<font.*?;\">(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        String fileName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<th width=.*? style=.*?><strong>Datei</strong></th>.*?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        String fileSize = Encoding.htmlDecode(br.getRegex(Pattern.compile("<td width=.*?><b>Gr&ouml;sse</b></td>.*?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
 
         // downloadinfos gefunden? -> download verfügbar
         if (fileName != null && fileSize != null) {

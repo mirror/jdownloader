@@ -147,6 +147,8 @@ public class JDInit {
 
     private SplashScreen splashScreen;
 
+    private static long LASTREQUEST = 0;
+
     // private Vector<Vector<String>> files;
 
     public JDInit() {
@@ -220,6 +222,17 @@ public class JDInit {
         final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         logger.finer("Init Webupdater");
+        if (!guiCall) {
+            if ((System.currentTimeMillis() - LASTREQUEST) < (30 * 60 * 1000l)) {
+                logger.finer("30 min sperre");
+            return; }
+        } else {
+            if ((System.currentTimeMillis() - LASTREQUEST) < (1 * 30 * 1000l)) {
+                logger.finer("30 sekunden sperre");
+            return; }
+        }
+
+        LASTREQUEST = System.currentTimeMillis();
         final WebUpdater updater = new WebUpdater(null);
         updater.setCid(oldCid);
         logger.finer("Get available files");

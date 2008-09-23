@@ -282,8 +282,9 @@ public class Filefactory {
         int id = 0;
         for (Iterator<Letter> it = r.iterator(); it.hasNext();) {
             Letter akt = it.next();
-
-            if (false&&(akt.detected.getDecodedValue().equals("1") || akt.detected.getDecodedValue().equals("."))) {
+//  |||
+//  |||
+            if (true&&(akt.detected.getDecodedValue().equals("1") || akt.detected.getDecodedValue().equals("."))) {
                 it.remove();
             } else {
                 akt.id = id++;
@@ -299,7 +300,7 @@ public class Filefactory {
         List<Letter> list;
         try {
             list = r.subList(0, 4);
-            list = r;
+            //list = r;
         } catch (Exception e) {
             return null;
         }
