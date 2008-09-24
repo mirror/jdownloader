@@ -26,7 +26,7 @@ public class JavaScript {
 
         Scriptable scope = cx.initStandardObjects();
         cx.evaluateString(scope, clazz, "<cmd>", 1, null);
-       page= eval(page, cx, scope, br);
+        page = eval(page, cx, scope, br);
 
         Context.exit();
         return page;
@@ -42,9 +42,8 @@ public class JavaScript {
             }
             String rep = "";
             try {
-                if (lib != null&&!isForbidden(lib)) {
+                if (lib != null && !isForbidden(lib)) {
                     br = br.cloneBrowser();
-                    String libb = lib;
                     lib = br.getPage(lib);
                     if (br.getHttpConnection().isOK()) {
                         Object result = cx.evaluateString(scope, lib + "\r\nfunction f(){\r\nreturn document.getMyOutput();} f()", "<cmd>", 1, null);
@@ -55,8 +54,8 @@ public class JavaScript {
                 }
             } catch (Exception e) {
                 // TODO Auto-generated catch block
-          
-                System.out.println( e.getMessage()+"\r\n"+lib);
+
+                System.out.println(e.getMessage() + "\r\n" + lib);
             }
             String content = new Regex(code, ">(.+?)</script").getMatch(0);
             if (content != null) {
@@ -69,29 +68,28 @@ public class JavaScript {
 
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
-                  
-                    System.out.println(  e.getMessage()+"\r\n"+content);
+
+                    System.out.println(e.getMessage() + "\r\n" + content);
                 }
             }
             page = page.replace(code, rep);
         }
-        page=page;
         return page;
     }
 
     private static boolean isForbidden(String lib) {
-        ArrayList<String> pattern= new ArrayList<String>();
+        ArrayList<String> pattern = new ArrayList<String>();
         pattern.add("http://.*?mirando.de/.*");
         pattern.add("http://ads\\..*");
         pattern.add(".*adition\\.com.*");
         pattern.add(".*google.*");
-        for(String p:pattern){
-            if(Regex.matches(lib, p)){
-                System.out.println("Filtered JS library: "+lib);
+        for (String p : pattern) {
+            if (Regex.matches(lib, p)) {
+                System.out.println("Filtered JS library: " + lib);
                 return true;
             }
         }
-        System.out.println("Loaded JS library: "+lib);
+        System.out.println("Loaded JS library: " + lib);
         return false;
     }
 

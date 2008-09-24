@@ -85,11 +85,20 @@ public class PackageManager extends Interaction implements Serializable {
     public boolean doInteraction(Object arg) {
         checkNewInstalled();
 
+        boolean oldUpdatePackage = false;
         FilePackage fp = new FilePackage();
         fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
         fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
 
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
+        // Existiert schon ein JD-Update Package in der DownloadListe?
+        for (FilePackage fp_cur : JDUtilities.getController().getPackages()) {
+            if (fp_cur.getName().equals(fp.getName()) && fp_cur.getDownloadDirectory().equals(fp.getDownloadDirectory())) {
+                fp = fp_cur;
+                oldUpdatePackage = true;
+                break;
+            }
+        }
+
         ArrayList<PackageData> data = getPackageData();
         logger.finer("PM: " + data.size() + " packages found");
         for (PackageData pkg : data) {
@@ -99,7 +108,7 @@ public class PackageManager extends Interaction implements Serializable {
                 pkg.setUpdating(true);
 
                 DistributeData distributeData = null;
-                if (CFGConfig.getConfig("JDU").getBooleanProperty("SUPPORT_JD", false)) {
+                if (CFGConfig.getConfig("JDU").getBooleanProperty("SUPPORT_JD", true)) {
                     distributeData = new DistributeData(pkg.getStringProperty("url"));
                 } else {
                     distributeData = new DistributeData(pkg.getStringProperty("light-url"));
@@ -111,15 +120,11 @@ public class PackageManager extends Interaction implements Serializable {
                     link.setLinkType(DownloadLink.LINKTYPE_JDU);
                     link.setProperty("JDU", pkg);
                 }
-
-                // Decryptersystem wird verwendet, allerdings wird der weg über
-                // den linkgrabber vermieden
-                ret.addAll(links);
             }
         }
         CFGConfig.getConfig("JDU").save();
         if (fp.size() > 0) {
-            JDUtilities.getController().addPackageAt(fp, 0);
+            if (!oldUpdatePackage) JDUtilities.getController().addPackageAt(fp, 0);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
         }
         return true;
@@ -133,7 +138,7 @@ public class PackageManager extends Interaction implements Serializable {
             dat.setUpdating(false);
         }
         // Updatelink wurde vermutlich aus der Liste entfernt
-        if (!dat.isDownloaded() && dat.isUpdating() && !JDUtilities.getController().hasDownloadLinkURL(dat.getStringProperty("url"))) {
+        if (!dat.isDownloaded() && dat.isUpdating() && !(JDUtilities.getController().hasDownloadLinkURL(dat.getStringProperty("url")) || JDUtilities.getController().hasDownloadLinkURL(dat.getStringProperty("light-url")))) {
             logger.info("PM: validate restet2");
             dat.setUpdating(false);
         }
