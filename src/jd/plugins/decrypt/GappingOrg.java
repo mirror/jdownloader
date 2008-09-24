@@ -54,13 +54,10 @@ public class GappingOrg extends PluginForDecrypt {
         } else if (new Regex(parameter, patternSupported_container).matches()) {
             logger.info("bla");
         } else if (new Regex(parameter, patternSupported_folder2).matches()) {
-            //String[] links = new Regex(br.getPage(parameter), Pattern.compile("http://gapping\\.org/d/(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getColumn(-1);
-            String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a target=\"_blank\" onclick=\"image\\d+\\.src.*? href=\"(.*?)\">.*?</a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(-1);
+            String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a target=\"_blank\" onclick=\"image\\d+\\.src.*? href=\"(.*?)\".*?>.*?</a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
-                //String dl_link = new Regex(br.getPage(element), Pattern.compile("src=\"(.*?)\"", Pattern.DOTALL)).getMatch(0);
-                String dl_link = new Regex(element, Pattern.compile("href=\"(.*?)\"", Pattern.DOTALL)).getMatch(0);
-                decryptedLinks.add(createDownloadlink(dl_link.trim()));
+                decryptedLinks.add(createDownloadlink(element.trim()));
                 progress.increase(1);
             }
         }
