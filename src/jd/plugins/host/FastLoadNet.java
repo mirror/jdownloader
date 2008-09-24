@@ -26,7 +26,6 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
-
 import jd.parser.Regex;
 import jd.parser.Form.InputField;
 import jd.plugins.DownloadLink;
@@ -80,10 +79,13 @@ public class FastLoadNet extends PluginForHost {
             downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4));
             return false;
         }
-
-        String fileName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<th width=.*?><strong>Datei</strong></th>.*?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
-        String fileSize = Encoding.htmlDecode(br.getRegex(Pattern.compile("<td width=.*?><strong>Gr&ouml;sse</strong></td>.*?<font style=.*?>(.*?)</font>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
-
+        String txt = (br + "").replaceAll("<.*?>", "|");
+        txt = txt.replaceAll("\r", "|");
+        txt = txt.replaceAll("\n", "|");
+        txt = txt.replaceAll("\\|\\s+\\|", "|");
+        txt = txt.replaceAll("[|]+", "|");
+        String fileName = Encoding.htmlDecode(new Regex(txt, "Datei\\|(.+?)\\|").getMatch(0));
+        String fileSize = Encoding.htmlDecode(new Regex(txt, "Gr&ouml;sse\\|(.+?)\\|").getMatch(0));
         // downloadinfos gefunden? -> download verfügbar
         if (fileName != null && fileSize != null) {
             downloadLink.setName(fileName.trim());
