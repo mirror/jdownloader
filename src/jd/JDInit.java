@@ -586,7 +586,7 @@ public class JDInit {
         new DecryptPluginWrapper("fucktheindustry.ru", "FuckTheIndustryRu", "http://[\\w\\.]*?92\\.241\\.164\\.63/file\\.php\\?id=[\\d]+");
         new DecryptPluginWrapper("fyad.org", "Fyadorg", "http://[\\w\\.]*?fyad\\.org/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("Gamez.am", "Gamezam", "javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", PluginWrapper.ACCEPTONLYSURLSFALSE);
-        new DecryptPluginWrapper("gapping.org", "GappingOrg", "http://[\\w\\.]*?gapping\\.org/index\\.php\\?folderid=\\d+|http://[\\w\\.]*?gapping\\.org/f/\\d+\\.html|http://[\\w\\.]*?gapping\\.org/file\\.php\\?id=.+|http://[\\w\\.]*?gapping\\.org/g.*?\\.html");
+        new DecryptPluginWrapper("gapping.org", "GappingOrg", "http://[\\w\\.]*?gapping\\.org/index\\.php\\?folderid=\\d+|http://[\\w\\.]*?gapping\\.org/f/\\d+\\.html|http://[\\w\\.]*?gapping\\.org/file\\.php\\?id=.+|http://[\\w\\.]*?gapping\\.org/g.*?\\.html|http://[\\w\\.]*?gapping\\.org/d/.*\\.html");
         new DecryptPluginWrapper("gwarez.cc", "Gwarezcc", "http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/");
         new DecryptPluginWrapper("Hider.ath.cx", "HiderAthCx", "http://[\\w\\.]*?hider\\.ath\\.cx/\\d+");
         new DecryptPluginWrapper("hideurl.biz", "Hideurlbiz", "http://[\\w\\.]*?hideurl\\.biz/[a-zA-Z0-9]+");
