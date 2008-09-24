@@ -34,6 +34,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 import jd.utils.JavaScript;
 
 public class FastLoadNet extends PluginForHost {
@@ -127,8 +128,30 @@ public class FastLoadNet extends PluginForHost {
                 captcha_form = getDownloadForm();
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
-                    String captcha = captcha_form.getRegex("src=\"(.*?)\"").getMatch(0);
+                    String url = "includes/captcha.php";
+                    String[] phps = br.getRegex("\"(\\w+?\\.php)").getColumn(0);
+                    String captcha = null;
+                    int best = Integer.MAX_VALUE;
+                    if (phps != null) {
+                        for (int i = 0; i < phps.length; i++) {
+                            int lev = JDUtilities.getLevenshteinDistance(url, phps[i]);
+                            if (lev < best) {
+                                best = lev;
+                                captcha = phps[i];
+                            }
+                        }
+                    }
+                    phps = br.getRegex("'(.+?\\.php)").getColumn(0);
+                    if (phps != null) {
+                        for (int i = 0; i < phps.length; i++) {
+                            int lev = JDUtilities.getLevenshteinDistance(url, phps[i]);
+                            if (lev < best) {
+                                best = lev;
+                                captcha = phps[i];
+                            }
 
+                        }
+                    }
                     Browser.download(file, br.cloneBrowser().openGetConnection(captcha));
                     String code = Plugin.getCaptchaCode(file, this, downloadLink);
 

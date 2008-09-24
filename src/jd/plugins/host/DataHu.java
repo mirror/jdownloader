@@ -16,25 +16,17 @@
 
 package jd.plugins.host;
 
-import java.net.URL;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
-import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
+import jd.utils.JDLocale;
 
 public class DataHu extends PluginForHost {
-
-  
 
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,24 +44,18 @@ public class DataHu extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
-        try {
-            Browser br = new Browser();
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        String[] dat = br.getRegex("<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">").getRow(0);
+        long length = Regex.getSize(dat[1].trim());
+        downloadLink.setDownloadSize(length);
+        downloadLink.setName(dat[0].trim());
+        return true;
 
-            String url = downloadLink.getDownloadURL();
-            String page = br.getPage(url);
-
-            if (page == null || page.length() == 0) { return false; }
-            String[][] dat = new Regex(br, "<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).getMatches();
-            long length = Regex.getSize(dat[0][1].trim());
-            downloadLink.setDownloadSize(length);
-            downloadLink.setName(dat[0][0].trim());
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     @Override
@@ -80,34 +66,35 @@ public class DataHu extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        String url = downloadLink.getDownloadURL();
-        RequestInfo requestInfo = HTTP.getRequest(new URL(url));
+        br.setFollowRedirects(true);
+        getFileInformation(downloadLink);
+        String link = br.getRegex(Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
+    
 
-        String link = new Regex(requestInfo.getHtmlCode(), Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String[] test = link.split("/");
-        String name = test[test.length - 1];
-        downloadLink.setName(name);
+     
+        //data.hu lässt max 3 verbindungen zu.. ob die durch chunkload oder sumultane verbindungen zu stande kommen ist egal...
+        int free=this.waitForFreeConnection(downloadLink);
+        
+      
 
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), null, url, false);
-
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
-        dl.startDownload();
-        return;
+        RAFDownload.download(downloadLink, br.openGetConnection(link), true, free * -1);
 
     }
 
+ 
+
+    public int getTimegapBetweenConnections() {
+        return 500;
+    }
+
+    public int getMaxConnections() {
+        return 3;
+    }
+
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 3;
+
     }
 
     @Override

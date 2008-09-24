@@ -79,7 +79,16 @@ public abstract class PluginForHost extends Plugin {
         dl = null;
         super.clean();
     }
-
+    protected int waitForFreeConnection(DownloadLink downloadLink) throws InterruptedException {
+        int free;    
+        while ((free = this.getMaxConnections() - getCurrentConnections()) <= 0) {
+            Thread.sleep(1000);
+            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("download.system.waitForconnection","Cur. %s/%s connections...waiting",getCurrentConnections()+"",this.getMaxConnections()+""));
+            downloadLink.requestGuiUpdate();
+        }
+        return free;
+        
+    }
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {

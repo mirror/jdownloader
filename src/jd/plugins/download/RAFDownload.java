@@ -403,13 +403,21 @@ public class RAFDownload extends DownloadInterface {
         return true;
 
     }
-
+/**
+ * 
+ * @param downloadLink  downloadlink der geladne werden soll (wird zur darstellung verwendet)
+ * @param con   Verbindung die geladen werden soll
+ * @param b  Resumefähige verbindung
+ * @param i  max chunks. für negative werte wirden die chunks aus der config verwendet. Bsp: -3 :  Min(3,Configwert);
+ * @return
+ */
     public static DownloadInterface download(DownloadLink downloadLink, HTTPConnection con, boolean b, int i) {
         DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, con);
         downloadLink.getPlugin().setDownloadInterface(dl);
         dl.setResume(b);
-        dl.setChunkNum(i<=0?JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2):i);
+        dl.setChunkNum(i<=0?Math.min(i*-1, JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)):i);
         dl.startDownload();
+        
         return dl;
 
     }
