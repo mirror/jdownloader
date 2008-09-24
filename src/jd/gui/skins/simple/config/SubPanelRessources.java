@@ -23,10 +23,13 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -48,7 +51,7 @@ import jd.utils.JDLocale;
 /**
  * @author JD-Team
  */
-public class SubPanelRessources extends ConfigPanel implements ActionListener {
+public class SubPanelRessources extends ConfigPanel implements ActionListener, PropertyChangeListener {
 
     private class InternalTableModel extends AbstractTableModel {
 
@@ -122,6 +125,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
 
     private static final long serialVersionUID = 1L;
 
+    private JButton btnReset;
+
     private ConfigEntriesPanel cep;
 
     private ArrayList<PackageData> packageData = new ArrayList<PackageData>();
@@ -137,12 +142,20 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        for (PackageData pkg : packageData) {
-            pkg.setInstalledVersion(0);
-            pkg.setUpdating(false);
-            pkg.setDownloaded(false);
+        if (e.getSource() == btnReset) {
+            for (PackageData pkg : packageData) {
+                pkg.setInstalledVersion(0);
+                pkg.setUpdating(false);
+                pkg.setDownloaded(false);
+            }
+            tableModel.fireTableDataChanged();
         }
-        tableModel.fireTableDataChanged();
+    }
+
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getSource() == cep) {
+            cep.save();
+        }
     }
 
     @Override
@@ -218,12 +231,16 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener {
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
+        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
+        btnReset.addActionListener(this);
+
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
-        bpanel.add(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurÃ¼cksetzen"))));
+        bpanel.add(btnReset);
 
         ConfigContainer container = new ConfigContainer(this);
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CFGConfig.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(false));
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
+        cep.addPropertyChangeListener(this);
         this.add(scrollpane);
         this.add(bpanel, BorderLayout.SOUTH);
     }
