@@ -47,8 +47,14 @@ public class Wiireloaded extends PluginForDecrypt {
         link_passwds.add("wii-reloaded.info");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
+        br.setCookiesExclusive(true);
+        br.clearCookies("wii-reloaded.ath.cx");
         progress.setRange(3);
         br.getPage(parameter);
+        try {
+            Thread.sleep(500);
+        } catch (Exception e) {
+        }
         String page = br.getPage(parameter);
         progress.increase(1);
         int max = 10;
@@ -59,28 +65,32 @@ public class Wiireloaded extends PluginForDecrypt {
             }
             String adr = "http://wii-reloaded.ath.cx/protect/captcha/captcha.php";
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
-            Browser.download(captchaFile, br.openGetConnection(adr));
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(adr));
             progress.addToMax(1);
             if (!captchaFile.exists() || captchaFile.length() == 0) {
                 return null;
             } else {
                 String capTxt = Plugin.getCaptchaCode(captchaFile, this, param);
-                br.getPage(parameter);
                 Form post = br.getForm(0);
                 post.setVariable(1, capTxt);
+                try {
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                }
                 page = br.submitForm(post);
             }
         }
         String[][] ids = new Regex(page, "onClick=\"popup_dl\\((.*?)\\)\"").getMatches();
         logger.finer("ids found" + ids.length);
         progress.addToMax(ids.length);
+        Browser brc = br.cloneBrowser();
         for (String[] element : ids) {
             String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
-            br.getPage(u);
-            Form form = br.getForm(0);
+            brc.getPage(u);
+            Form form = brc.getForm(0);
             form.setVariable(0, submitvalue + "");
-            br.submitForm(form);
-            if (br.getRedirectLocation() == null) {
+            brc.submitForm(form);
+            if (brc.getRedirectLocation() == null) {
                 /* neuer submit value suchen */
                 logger.info("Searching new SubmitValue");
                 boolean found = false;
@@ -90,8 +100,8 @@ public class Wiireloaded extends PluginForDecrypt {
                     } catch (Exception e) {
                     }
                     form.setVariable(0, i + "");
-                    br.submitForm(form);
-                    if (br.getRedirectLocation() != null) {
+                    brc.submitForm(form);
+                    if (brc.getRedirectLocation() != null) {
                         found = true;
                         getPluginConfig().setProperty("WIIReloaded_SubmitValue", i);
                         submitvalue = i;
@@ -105,8 +115,8 @@ public class Wiireloaded extends PluginForDecrypt {
                     return null;
                 }
             }
-            if (br.getRedirectLocation() != null) {
-                DownloadLink link = createDownloadlink(br.getRedirectLocation());
+            if (brc.getRedirectLocation() != null) {
+                DownloadLink link = createDownloadlink(brc.getRedirectLocation());
                 link.setSourcePluginPasswords(link_passwds);
                 decryptedLinks.add(link);
             }
