@@ -32,8 +32,8 @@ import jd.http.PostRequest;
 import jd.parser.Regex;
 
 /**
- * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
- * werte einzusetzen
+ * Diese Klasse stellt Methoden zur Verfügung um in einen String
+ * mitPlatzhaltern werte einzusetzen
  */
 public class JDLocale {
 
@@ -79,6 +79,7 @@ public class JDLocale {
             JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, JDLocale.isGerman() ? "german" : "english"));
         }
 
+        key = key.toLowerCase();
         if (def == null) def = key;
         if (data.containsKey(key)) { return data.get(key); }
 
@@ -129,10 +130,10 @@ public class JDLocale {
             if (split <= 0 || element.startsWith("#")) {
                 continue;
             }
-            String key = element.substring(0, split).trim();
+            String key = element.substring(0, split).trim().toLowerCase();
             String value = element.substring(split + 1).trim() + (element.endsWith(" ") ? " " : "");
-           value=value.replace("\\r", "\r").replace("\\n", "\n");
-           value=Encoding.UTF8Decode(value);
+            value = value.replace("\\r", "\r").replace("\\n", "\n");
+            value = Encoding.UTF8Decode(value);
             if (dat.containsKey(key)) {
                 logger.severe("Dupe found: " + key);
                 dat.put(key, value);

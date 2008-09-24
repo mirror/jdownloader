@@ -69,6 +69,7 @@ import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -100,7 +101,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private ChartAPI_Entity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
     private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
-    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
+    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuEditComment, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
@@ -108,6 +109,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     private Vector<String[]> sourceEntries = new Vector<String[]>();
     private Vector<Pattern> sourcePatterns = new Vector<Pattern>();
+    private Vector<String[]> fileEntries = new Vector<String[]>();
+    private Vector<String> fileComment = new Vector<String>();
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
@@ -190,6 +193,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         if (sourceFolder != null) getSourceEntries();
         languageFile = cmboFile.getCurrentPath();
         if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
+        getLanguageFileEntries();
         initLocaleData();
 
     }
@@ -250,6 +254,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuKey.add(mnuEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
         mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteSelectedKeys", "Delete Selected Key(s)")));
         mnuKey.addSeparator();
+        mnuKey.add(mnuEditComment = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editComment", "Edit Comment")));
+        mnuKey.addSeparator();
         mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
         mnuKey.add(mnuClearAll = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearAllValues", "Clear All Values")));
         mnuKey.addSeparator();
@@ -261,6 +267,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuAdd.addActionListener(this);
         mnuEdit.addActionListener(this);
         mnuDelete.addActionListener(this);
+        mnuEditComment.addActionListener(this);
         mnuClear.addActionListener(this);
         mnuClearAll.addActionListener(this);
         mnuAdopt.addActionListener(this);
@@ -354,6 +361,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             File languageFile = cmboFile.getCurrentPath();
             if (languageFile != this.languageFile && languageFile != null) {
                 this.languageFile = languageFile;
+                getLanguageFileEntries();
                 initLocaleData();
             }
 
@@ -421,6 +429,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         } else if (e.getSource() == mnuReload) {
 
             getSourceEntries();
+            getLanguageFileEntries();
             initLocaleData();
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
@@ -579,6 +588,25 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 }
             }
 
+        } else if (e.getSource() == mnuEditComment) {
+
+            String comment = "";
+            if (fileComment.size() > 0) {
+                StringBuilder sb = new StringBuilder();
+                for (String line : fileComment)
+                    sb.append(line + "\r\n");
+                comment = sb.substring(0, sb.length() - 2);
+            }
+
+            String newComment = TextAreaDialog.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.editComment", "Edit Comment"), JDLocale.L("plugins.optional.langfileeditor.editComment.message", "Edit the comment of the current language file"), comment);
+            if (newComment != null) {
+                fileComment.clear();
+                if (!newComment.equals("")) {
+                    for (String line : Regex.getLines(newComment))
+                        fileComment.add(Encoding.UTF8Decode(line));
+                }
+            }
+
         }
 
     }
@@ -613,6 +641,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private void saveLanguageFile(File file) {
         StringBuilder sb = new StringBuilder();
 
+        if (fileComment.size() > 0) {
+            for (String line : fileComment)
+                sb.append("# " + line + "\n");
+        }
+
         for (String[] entry : data) {
             if (!entry[2].equals("")) sb.append(entry[0] + " = " + entry[2] + "\n");
         }
@@ -636,8 +669,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         data.clear();
         dupes.clear();
         lngKey = null;
-
-        Vector<String[]> fileEntries = (languageFile == null) ? new Vector<String[]>() : getLanguageFileEntries();
 
         String value;
         String[] temp;
@@ -698,7 +729,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         for (String[] entry : vector) {
 
-            if (entry[0].equals(key)) return entry[1];
+            if (entry[0].equalsIgnoreCase(key)) return entry[1];
 
         }
 
@@ -706,29 +737,39 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    private Vector<String[]> getLanguageFileEntries() {
+    private void getLanguageFileEntries() {
 
-        Vector<String[]> entries = new Vector<String[]>();
+        fileEntries.clear();
+        fileComment.clear();
         Vector<String> keys = new Vector<String>();
 
-        String[][] matches = new Regex(JDUtilities.getLocalFile(languageFile), Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n")).getMatches();
+        String file = JDUtilities.getLocalFile(languageFile);
+
+        // KommentarBlock am Anfang der Datei einlesen
+        for (String line : Regex.getLines(file)) {
+            if (line.startsWith("#")) {
+                fileComment.add(Encoding.UTF8Decode(line.substring(1).trim()));
+            } else {
+                break;
+            }
+        }
+
+        String[][] matches = new Regex(file, Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n")).getMatches();
 
         for (String[] match : matches) {
 
-            match[0] = match[0].trim();
+            match[0] = match[0].trim().toLowerCase();
             match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
             if (!keys.contains(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
                 match[0] = Encoding.UTF8Decode(match[0]);
                 match[1] = Encoding.UTF8Decode(match[1]);
                 keys.add(match[0]);
-                entries.add(new String[] { match[0], match[1] });
+                fileEntries.add(new String[] { match[0], match[1] });
 
             }
 
         }
-
-        return entries;
 
     }
 
@@ -745,7 +786,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             for (String[] match : matches) {
 
-                match[0] = match[0].trim();
+                match[0] = match[0].trim().toLowerCase();
                 if (keys.contains(match[0])) continue;
 
                 if (match[0].indexOf("\"") == -1) {
@@ -972,7 +1013,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             }
 
             public boolean isCellEditable(int row, int col) {
-                return false;
+                return col == 1 || col == 2;
             }
 
         }
@@ -983,8 +1024,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         private static final long serialVersionUID = 1L;
 
-        private JButton btnOK = new JButton(JDLocale.L("plugins.optional.langfileeditor.ok", "OK"));
-        private JButton btnCancel = new JButton(JDLocale.L("plugins.optional.langfileeditor.cancel", "Cancel"));
+        private JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        private JButton btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
         private JButton btnAdopt = new JButton(JDLocale.L("plugins.optional.langfileeditor.adoptDefaultValue", "Adopt Default Value"));
 
         private JTextArea taSourceValue = new JTextArea(5, 20);
@@ -1057,8 +1098,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         private static final long serialVersionUID = 1L;
 
-        private JButton btnOK = new JButton(JDLocale.L("plugins.optional.langfileeditor.ok", "OK"));
-        private JButton btnCancel = new JButton(JDLocale.L("plugins.optional.langfileeditor.cancel", "Cancel"));
+        private JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        private JButton btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
 
         private JTextField tfKey = new JTextField(20);
         private JTextArea taValue = new JTextArea(5, 20);

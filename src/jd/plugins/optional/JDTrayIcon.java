@@ -334,7 +334,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
 
         popupMenu.add(reconnect);
         popupMenu.addSeparator();
-        exit = createMenuItem(JDLocale.L("plugins.optional.trayIcon.exit", "Exit"));
+        exit = createMenuItem(JDLocale.L("gui.btn_exit", "Exit"));
 
         trayIcon = new TrayIcon(JDUtilities.getImage(JDTheme.V("gui.images.jd_logo")));
         trayIcon.setImageAutoSize(true);
@@ -455,17 +455,17 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     }
 
     private void showTooltip(final Point p) {
-        if(getPluginConfig().getBooleanProperty("Tooltipp", true)) {
+        if (getPluginConfig().getBooleanProperty("Tooltipp", true)) {
             toolparent.setVisible(true);
             toolparent.toFront();
-            
+
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    
+
                     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                     int limitX = (int) screenSize.getWidth() / 2;
                     int limitY = (int) screenSize.getHeight() / 2;
-                    
+
                     if (p.x <= limitX && p.y <= limitY) {
                         // top left
                         toolparent.setLocation(p.x, p.y);
@@ -479,9 +479,9 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
                         // bottom right
                         toolparent.setLocation(p.x - toolparent.getWidth(), p.y - toolparent.getHeight());
                     }
-                    
+
                 };
-            });            
+            });
         }
     }
 

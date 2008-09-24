@@ -76,9 +76,9 @@ public class ConfigurationSubPanel extends JPanel implements ActionListener {
         this.configuration = configuration;
 
         this.panel = panel;
-        btnSave = new JButton(JDLocale.L("gui.config.subPanel.btn_ok", "OK"));
+        btnSave = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnSave.addActionListener(this);
-        btnCancel = new JButton(JDLocale.L("gui.config.subPanel.btn_cancel", "Abbrechen"));
+        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
         Insets insets = new Insets(5, 5, 5, 5);

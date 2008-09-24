@@ -24,13 +24,11 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 
 public class DataHu extends PluginForHost {
 
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     @Override
@@ -70,19 +68,14 @@ public class DataHu extends PluginForHost {
         br.setFollowRedirects(true);
         getFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
-    
 
-     
-        //data.hu lässt max 3 verbindungen zu.. ob die durch chunkload oder sumultane verbindungen zu stande kommen ist egal...
-        int free=this.waitForFreeConnection(downloadLink);
-        
-      
+        // data.hu lässt max 3 verbindungen zu.. ob die durch chunkload oder
+        // sumultane verbindungen zu stande kommen ist egal...
+        int free = this.waitForFreeConnection(downloadLink);
 
         RAFDownload.download(downloadLink, br.openGetConnection(link), true, free * -1);
 
     }
-
- 
 
     public int getTimegapBetweenConnections() {
         return 500;

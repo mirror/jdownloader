@@ -67,9 +67,9 @@ public class ConfigurationPopup extends JDialog implements ActionListener {
         this.setModal(true);
         this.setLayout(new GridBagLayout());
 
-        btnSave = new JButton(JDLocale.L("gui.config.popup.btn_ok", "OK"));
+        btnSave = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnSave.addActionListener(this);
-        btnCancel = new JButton(JDLocale.L("gui.config.popup.btn_cancel", "Abbrechen"));
+        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
         Container bpanel = new JPanel(new MigLayout("", "[grow][]"));

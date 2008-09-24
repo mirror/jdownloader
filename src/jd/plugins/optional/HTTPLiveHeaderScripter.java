@@ -161,7 +161,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         } else if (e.getSource() == menSave) {
             JDFileChooser fc = new JDFileChooser();
-            fc.setApproveButtonText(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.avefile", "Save"));
+            fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.setFileFilter(new JDFileFilter(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.desc", "XML-File"), ".xml", true));
             fc.showSaveDialog(frame);
@@ -569,7 +569,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         menImportFile = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.importfile", "Open file"));
         menSave = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.save", "Save file"));
 
-        menExit = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.file.exit", "Exit"));
+        menExit = new JMenuItem(JDLocale.L("gui.btn_exit", "Exit"));
         menImportHTTPLive.addActionListener(this);
         menImportJDLH.addActionListener(this);
         menImportFile.addActionListener(this);

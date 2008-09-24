@@ -255,7 +255,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bpanel.add(btnAdd = new JButton(JDLocale.L("gui.config.eventmanager.btn_add", "+")));
         bpanel.add(btnRemove = new JButton(JDLocale.L("gui.config.eventmanager.btn_remove", "-")));
-        bpanel.add(btnEdit = new JButton(JDLocale.L("gui.config.eventmanager.btn_settings", "Einstellungen")));
+        bpanel.add(btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen")));
 
         btnEdit.setEnabled(false);
 

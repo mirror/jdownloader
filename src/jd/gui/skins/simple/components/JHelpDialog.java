@@ -68,7 +68,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
         d.pack();
         d.getBtn3().setVisible(false);
         d.getBtn1().setText(helpMsg);
-        d.getBtn2().setText(JDLocale.L("gui.dialogs.helpDialog.btn.ok", "OK"));
+        d.getBtn2().setText(JDLocale.L("gui.btn_ok", "OK"));
         d.action1 = d.new Action() {
             @Override
             public boolean doAction() {

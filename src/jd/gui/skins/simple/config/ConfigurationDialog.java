@@ -89,7 +89,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
     }
 
     private JButton btnFengShuiConfig;
-    
+
     private JButton btnCancel;
 
     private JButton btnRestart;
@@ -164,15 +164,15 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         } catch (Exception e) {
         }
 
-        btnSave = new JButton(JDLocale.L("gui.config.btn_save", "Speichern"));
+        btnSave = new JButton(JDLocale.L("gui.btn_save", "Speichern"));
         btnSave.addActionListener(this);
-        btnCancel = new JButton(JDLocale.L("gui.config.btn_cancel", "Abbrechen"));
+        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
         btnRestart = new JButton(JDLocale.L("gui.config.btn_restart", "Speichern und neu starten"));
         btnRestart.addActionListener(this);
         btnFengShuiConfig = new JButton(JDLocale.L("gui.config.btn_fengshui", "Vereinfachte Ansicht"));
         btnFengShuiConfig.addActionListener(this);
-        
+
         setLayout(new GridBagLayout());
 
         int n = 5;
@@ -191,7 +191,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         btPanel.add(btnCancel);
         sp.add(btPanel, BorderLayout.EAST);
         sp.add(btPanelLeft, BorderLayout.WEST);
-        
+
         cp.add(tabbedPane, BorderLayout.CENTER);
         cp.add(sp, BorderLayout.SOUTH);
 
@@ -246,7 +246,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             JDUtilities.saveConfig();
 
         }
-        
+
         setVisible(false);
         dispose();
 

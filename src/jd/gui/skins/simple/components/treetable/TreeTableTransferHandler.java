@@ -240,7 +240,7 @@ public class TreeTableTransferHandler extends TransferHandler {
                 }
 
             }
-            popup.add(m = new JMenuItem(JDLocale.L("gui.table.draganddrop.cancel", "Abbrechen")));
+            popup.add(m = new JMenuItem(JDLocale.L("gui.btn_cancel", "Abbrechen")));
             m.setIcon(JDTheme.II("gui.images.unselected", 16, 16));
 
             popup.show(treeTable, point.x, point.y);

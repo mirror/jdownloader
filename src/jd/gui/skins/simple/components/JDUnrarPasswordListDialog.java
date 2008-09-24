@@ -70,12 +70,10 @@ public class JDUnrarPasswordListDialog extends JDialog implements ActionListener
         this.setModal(true);
         int n = 10;
 
-        btnCancel = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.name", "Abbrechen"));
-        btnCancel.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_cancel.mnem", "a").charAt(0));
+        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
 
-        btnSave = new JButton(JDLocale.L("gui.config.unrar.passwordlist.btn_save.name", "Speichern"));
-        btnSave.setMnemonic(JDLocale.L("gui.config.unrar.passwordlist.btn_save.mnem", "s").charAt(0));
+        btnSave = new JButton(JDLocale.L("gui.btn_save", "Speichern"));
         btnSave.addActionListener(this);
 
         pwField = new JTextArea();

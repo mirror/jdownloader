@@ -177,7 +177,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnEdit = new JButton(JDLocale.L("gui.config.plugin.decrypt.btn_settings", "Einstellungen"));
+        btnEdit = new JButton(JDLocale.L("gui.btn_settings", "Einstellungen"));
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 

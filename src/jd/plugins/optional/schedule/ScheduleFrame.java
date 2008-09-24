@@ -123,7 +123,7 @@ public class ScheduleFrame extends JPanel implements ActionListener {
                 start.setText(JDLocale.L("addons.schedule.menu.start", "Start"));
                 t.stop();
                 c.stop();
-                status.setText(JDLocale.L("addons.schedule.menu.abort", " Aborted!"));
+                status.setText(JDLocale.L("gui.btn_cancel", " Aborted!"));
                 time.setEnabled(true);
             }
         } else {

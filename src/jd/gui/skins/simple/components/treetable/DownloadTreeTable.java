@@ -906,8 +906,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private Vector<Component> createPackageMenu(FilePackage fp, Vector<FilePackage> fps) {
         Vector<Component> res = new Vector<Component>();
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packageinfo", "Detailansicht"), TreeTableAction.PACKAGE_INFO, new Property("package", fp))));
-        JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.package.extrasSubmenu", "Extras"));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.info", "Detailansicht"), TreeTableAction.PACKAGE_INFO, new Property("package", fp))));
+        JMenu pluginPopup = new JMenu(JDLocale.L("gui.table.contextmenu.extrasSubmenu", "Extras"));
         ArrayList<MenuItem> entries = new ArrayList<MenuItem>();
         JDUtilities.getController().fireControlEventDirect(new ControlEvent(fp, ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU, entries));
 
@@ -930,20 +930,20 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         res.add(new JSeparator());
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.editdownloadDir", "Zielordner ändern"), TreeTableAction.PACKAGE_EDIT_DIR, new Property("package", fp))));
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packagedownloadDir", "Zielordner öffnen"), TreeTableAction.PACKAGE_DOWNLOAD_DIR, new Property("package", fp))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.PACKAGE_DOWNLOAD_DIR, new Property("package", fp))));
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.editpackagename", "Paketname ändern"), TreeTableAction.PACKAGE_EDIT_NAME, new Property("package", fp))));
 
         res.add(new JSeparator());
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.deletepackage", "entfernen"), TreeTableAction.PACKAGE_DELETE, new Property("packages", fps))));
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enablepackage", "aktivieren"), TreeTableAction.PACKAGE_ENABLE, new Property("packages", fps))));
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disablepackage", "deaktivieren"), TreeTableAction.PACKAGE_DISABLE, new Property("packages", fps))));
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resetpackage", "zurücksetzen"), TreeTableAction.PACKAGE_RESET, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.delete", "entfernen"), TreeTableAction.PACKAGE_DELETE, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enable", "aktivieren"), TreeTableAction.PACKAGE_ENABLE, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren"), TreeTableAction.PACKAGE_DISABLE, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen"), TreeTableAction.PACKAGE_RESET, new Property("packages", fps))));
 
         res.add(new JSeparator());
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyPassword_package", "Copy Password"), TreeTableAction.PACKAGE_COPY_PASSWORD, new Property("package", fp))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyPassword", "Copy Password"), TreeTableAction.PACKAGE_COPY_PASSWORD, new Property("package", fp))));
 
         res.add(new JSeparator());
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc_package", "DLC erstellen"), TreeTableAction.PACKAGE_DLC, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen"), TreeTableAction.PACKAGE_DLC, new Property("packages", fps))));
 
         return res;
     }

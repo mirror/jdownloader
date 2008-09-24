@@ -79,7 +79,7 @@ public class JACController {
         JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, new JLabel(chooserText), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(panel, chooser, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 0, insets, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
-        JButton btnOK = new JButton(JDLocale.L("gui.btn_continue", "OK"));
+        JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {

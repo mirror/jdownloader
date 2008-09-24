@@ -164,7 +164,7 @@ public class Serienjunkies extends PluginForDecrypt {
         try {
             linkName = ((title.length() > 10 ? title.substring(0, 10) : title) + "#" + name).replaceAll("\\.", " ").replaceAll("[^\\w \\#]", "").trim() + ".rar";
         } catch (Exception e) {
-          e.printStackTrace();
+            e.printStackTrace();
         }
         if (linkName == null || parameter.matches("http://serienjunkies.org/sa[fv]e/.*") || parameter.matches("http://download.serienjunkies.org/..\\-.*")) {
             size = 100;
@@ -447,11 +447,10 @@ public class Serienjunkies extends PluginForDecrypt {
             for (String element2 : sp) {
                 String size = new Regex(element2, "(\\d+)").getMatch(0);
                 String[][] links = new Regex(element2.replaceAll("<a href=\"http://vote.serienjunkies.org.*?</a>", ""), "<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
-             
+
                 for (String[] element3 : links) {
                     try {
-                        if (element3[1].toLowerCase().contains(Encoding.UTF8Decode(link).toLowerCase())) { 
-                            return new String[] { size, element3[0], element3[1], title }; }
+                        if (element3[1].toLowerCase().contains(Encoding.UTF8Decode(link).toLowerCase())) { return new String[] { size, element3[0], element3[1], title }; }
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
@@ -599,7 +598,7 @@ public class Serienjunkies extends PluginForDecrypt {
                 JDUtilities.addToGridBag(panel, new JLabel(JDLocale.L("plugins.SerienJunkies.CatDialog.action", "Wählen sie eine Aktion aus:")), GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 JDUtilities.addToGridBag(panel, methods, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
                 JDUtilities.addToGridBag(panel, checkScat, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
-                JButton btnOK = new JButton(JDLocale.L("gui.btn_continue", "OK"));
+                JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
                 btnOK.addActionListener(new ActionListener() {
 
                     public void actionPerformed(ActionEvent e) {

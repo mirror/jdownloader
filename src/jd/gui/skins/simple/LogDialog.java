@@ -160,7 +160,7 @@ public class LogDialog extends JFrame implements ActionListener {
         int n = 10;
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
         bpanel.add(btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK")));
-        bpanel.add(btnSave = new JButton(JDLocale.L("gui.btn_saveToFile", "Save to file")));
+        bpanel.add(btnSave = new JButton(JDLocale.L("gui.btn_save", "Save")));
         bpanel.add(btnUpload = new JButton(JDLocale.L("gui.logDialog.btn_uploadLog", "Upload Log")));
 
         btnOK.addActionListener(this);
@@ -216,7 +216,7 @@ public class LogDialog extends JFrame implements ActionListener {
 
         } else if (e.getSource() == btnSave) {
             JFileChooser fc = new JFileChooser();
-            fc.setApproveButtonText(JDLocale.L("gui.logDialog.btn_save", "Save"));
+            fc.setApproveButtonText(JDLocale.L("gui.btn_save", "Save"));
             fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
             fc.showOpenDialog(this);
             File ret = fc.getSelectedFile();

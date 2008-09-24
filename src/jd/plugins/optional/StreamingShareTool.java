@@ -268,7 +268,7 @@ public class StreamingShareTool extends PluginOptional {
         menOpenList = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.open.list", "Open List"));
         menSaveDLC = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.save.dlc", "Save DLC"));
         menSaveList = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.save.list", "Save List"));
-        menExit = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.exit", "Exit"));
+        menExit = new JMenuItem(JDLocale.L("gui.btn_exit", "Exit"));
         menFileValidate = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.validate", "Validate"));
         menHelpHelp = new JMenuItem(JDLocale.L("plugins.optional.streamsharingtool.gui.menu.help.help", "Help"));
 
