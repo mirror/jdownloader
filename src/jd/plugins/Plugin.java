@@ -43,6 +43,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
+import jd.parser.Regex;
 import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
 
@@ -358,15 +359,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     static public String getFileNameFormHeader(HTTPConnection urlConnection) {
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
 
-        String cd = urlConnection.getHeaderField("content-disposition").toLowerCase();
-        String ret = urlConnection.getHeaderField("content-disposition").substring(cd.indexOf("filename=") + 9);
-        while (ret.startsWith("\"") || ret.startsWith("'")) {
-            ret = ret.substring(1);
-        }
-        while (ret.endsWith("\"") || ret.endsWith("'") || ret.endsWith(";")) {
-            ret = ret.substring(0, ret.length() - 1);
-        }
-        ret = Encoding.htmlDecode(ret);
+        String ret = Encoding.htmlDecode(new Regex(urlConnection.getHeaderField("content-disposition"), "filename[ ]*=[ ]*[\"'](.*)[\"']\\;").getMatch(0));
         return ret;
     }
 

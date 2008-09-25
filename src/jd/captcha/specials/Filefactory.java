@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import jd.captcha.JAntiCaptcha;
+import jd.captcha.gui.BasicWindow;
+import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
@@ -54,7 +56,7 @@ public class Filefactory {
                 for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
                     PixelObject o = it.next();
 
-                    if (o.isTouching(x, y, true, 3, 3) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 25) {
+                    if (o.isTouching(x, y, true, 6, 6) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 20) {
 
                         merge.add(o);
                         // n.add(o);
@@ -93,7 +95,7 @@ public class Filefactory {
         clearCaptcha(captcha);
 
         ArrayList<PixelObject> os = getObjects(captcha, 0);
-
+        mergeObjects(os);
         Collections.sort(os);
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
@@ -102,8 +104,7 @@ public class Filefactory {
 
             }
 
-            // if (akt.getArea() > 20)
-            // BasicWindow.showImage(akt.toLetter().getImage(4));
+            if (akt.getArea() > 20) BasicWindow.showImage(akt.toLetter().getImage(4), akt + "");
             if (akt.getArea() > 1800) {
                 // it.remove();
             } else if (akt.getArea() < 180) {
@@ -146,7 +147,6 @@ public class Filefactory {
             let.removeSmallObjects(0.8, 0.8, 30);
             let.clean();
             let = let.align(-40, 40);
-
             i++;
             if (let == null) {
                 continue;
@@ -163,7 +163,7 @@ public class Filefactory {
 
             } else if (akt.getArea() / akt.getSize() > 10) {
 
-            } else if (akt.getHeight() < 20 || akt.getWidth() < 5) {
+            } else if (akt.getHeight() < 15 || akt.getWidth() < 5) {
 
             } else {
                 ret.add(let);
@@ -203,7 +203,89 @@ public class Filefactory {
 
     }
 
+    private static void mergeObjects(ArrayList<PixelObject> os) {
+        for (PixelObject a : os) {
+            for (PixelObject b : os) {
+                if (a == b) continue;
+
+                int xMin = Math.max(a.getXMin(), b.getXMin());
+                int xMax = Math.min(a.getXMin() + a.getWidth(), b.getXMin() + b.getWidth());
+                if (xMax <= xMin) continue;
+                int yMin = Math.max(a.getYMin(), b.getYMin());
+                int yMax = Math.min(a.getYMin() + a.getHeight(), b.getYMin() + b.getHeight());
+                if (yMax <= yMin) continue;
+                int area = (xMax - xMin) * (yMax - yMin);
+                if (area > 10) {
+                    if (a.getArea() < area * 1.4 || b.getArea() < area * 1.4) {
+                        if (UTILITIES.getColorDifference(a.getAverage(), b.getAverage()) < 50) {
+
+                            ScrollPaneWindow w = new ScrollPaneWindow(null);
+                            w.setImage(0, 1, a.toLetter().getImage(3));
+                            w.setImage(0, 2, b.toLetter().getImage(3));
+                            a.add(b);
+                            w.setImage(0, 3, a.toLetter().getImage(3));
+                            os.remove(b);
+                            mergeObjects(os);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
     private static void clearCaptcha(Captcha captcha) {
+        int[][] copy = captcha.getGridCopy();
+        cleanVerticalLines(captcha, copy);
+
+        cleanHorizontalLines(captcha, copy);
+
+        cleanXLinesY(captcha, copy);
+captcha=captcha;
+    }
+
+    private static void cleanXLinesY(Captcha captcha, int[][] copy) {
+        for (int y = 0; y < captcha.getHeight(); y++) {
+            double dist01 = y+1<captcha.getHeight()?UTILITIES.getColorDifference(copy[0][y], copy[1][y + 1]):0;
+            double dist02 = y+2<captcha.getHeight()?UTILITIES.getColorDifference(copy[0][y], copy[2][y + 2]):0;
+            double dist03 = y+3<captcha.getHeight()?UTILITIES.getColorDifference(copy[0][y], copy[3][y + 3]):0;
+            if (dist01 < 10 && dist02 < 10 && dist03 < 10) {
+                int c = 0;
+                while (c < captcha.getWidth() && (y + c) < captcha.getHeight()) {
+                  
+                    if (UTILITIES.getColorDifference(copy[0][y], captcha.grid[c][y + c]) < 5) {
+                        captcha.grid[c][y + c] = captcha.getMaxPixelValue();
+                    }
+                    c++;
+                }
+
+            }
+        }
+
+    }
+
+    private static void cleanHorizontalLines(Captcha captcha, int[][] copy) {
+        int color = -1;
+        int count = 0;
+
+        for (int y = 0; y < captcha.getHeight(); y++) {
+            double dist01 = UTILITIES.getColorDifference(copy[0][y], copy[2][y]);
+            double dist0last = UTILITIES.getColorDifference(copy[0][y], copy[captcha.getWidth() - 1][y]);
+            if (dist01 < 10 && dist0last < 10) {
+                for (int x = 0; x < captcha.getWidth(); x++) {
+                    if (UTILITIES.getColorDifference(copy[0][y], captcha.grid[x][y]) < 5) {
+
+                        captcha.grid[x][y] = captcha.getMaxPixelValue();
+                    }
+                }
+
+            }
+        }
+
+    }
+
+    private static void cleanVerticalLines(Captcha captcha, int[][] copy) {
 
         int color = -1;
         int count = 0;
@@ -211,27 +293,27 @@ public class Filefactory {
             int refColor = 0;
             for (int y = 0; y < captcha.getHeight(); y++) {
                 if (y == 0) {
-                    refColor = captcha.grid[x][0];
+                    refColor = copy[x][0];
                     if (UTILITIES.getColorDifference(refColor, captcha.getMaxPixelValue()) < 5) break;
                 }
                 if (y == captcha.getHeight() - 1) {
 
-                    if (UTILITIES.getColorDifference(refColor, captcha.grid[x][y]) < 10) {
+                    if (UTILITIES.getColorDifference(refColor, copy[x][y]) < 10) {
                         if (color < 0) {
-                            color = captcha.grid[x][y];
+                            color = copy[x][y];
                         } else {
-                            color = UTILITIES.mixColors(color, captcha.grid[x][y], count, 1);
+                            color = UTILITIES.mixColors(color, copy[x][y], count, 1);
                         }
                         captcha.grid[x][y] = captcha.getMaxPixelValue();
                         count++;
                     }
                 } else {
-                    if (UTILITIES.getColorDifference(refColor, captcha.grid[x][y + 1]) < 10) {
+                    if (UTILITIES.getColorDifference(refColor, copy[x][y + 1]) < 10) {
 
                         if (color < 0) {
-                            color = captcha.grid[x][y];
+                            color = copy[x][y];
                         } else {
-                            color = UTILITIES.mixColors(color, captcha.grid[x][y], count, 1);
+                            color = UTILITIES.mixColors(color, copy[x][y], count, 1);
                         }
                         count++;
                         captcha.grid[x][y] = captcha.getMaxPixelValue();
@@ -242,18 +324,6 @@ public class Filefactory {
 
             }
         }
-
-        for (int x = 0; x < captcha.getWidth(); x++) {
-
-            for (int y = 0; y < captcha.getHeight(); y++) {
-
-                if (UTILITIES.getColorDifference(color, captcha.grid[x][y]) < 15) {
-                    captcha.grid[x][y] = captcha.getMaxPixelValue();
-                }
-
-            }
-        }
-
     }
 
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {

@@ -104,8 +104,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    public void handleFree(DownloadLink downloadLink) throws Exception {        LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -117,9 +116,9 @@ public class FastLoadNet extends PluginForHost {
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-
+      String pre=  br.toString();
         String page = JavaScript.evalPage(br);
-        br.getRequest().setHtmlCode(page);
+        br.getRequest().setHtmlCode(page+pre);
         Form captcha_form = getDownloadForm();
 
         if (captcha_form != null) {
@@ -129,7 +128,7 @@ public class FastLoadNet extends PluginForHost {
                 if (captcha_form != null) {
                     File file = this.getLocalCaptchaFile(this);
                     String url = "includes/captcha.php";
-                    String[] phps = br.getRegex("\"(\\w+?\\.php)").getColumn(0);
+                    String[] phps = br.getRegex("\"(.{5,40}\\.php)").getColumn(0);
                     String captcha = null;
                     int best = Integer.MAX_VALUE;
                     if (phps != null) {
@@ -141,7 +140,7 @@ public class FastLoadNet extends PluginForHost {
                             }
                         }
                     }
-                    phps = br.getRegex("'(.+?\\.php)").getColumn(0);
+                    phps = br.getRegex("'(.{5,40}\\.php)").getColumn(0);
                     if (phps != null) {
                         for (int i = 0; i < phps.length; i++) {
                             int lev = JDUtilities.getLevenshteinDistance(url, phps[i]);
@@ -152,7 +151,9 @@ public class FastLoadNet extends PluginForHost {
 
                         }
                     }
-                    Browser.download(file, br.cloneBrowser().openGetConnection(captcha));
+                
+
+                    Browser.download(file, br.cloneBrowser().openGetConnection("/includes/captcha123.php"));
                     String code = Plugin.getCaptchaCode(file, this, downloadLink);
 
                     ArrayList<InputField> fields = captcha_form.getInputFieldsByType("text");
@@ -162,7 +163,7 @@ public class FastLoadNet extends PluginForHost {
                         txt = f;
                         break;
                     }
-                    txt.setValue(code);
+                    if(txt!=null)                    txt.setValue(code);
 
                     br.openFormConnection(captcha_form);
                     if (br.getHttpConnection().isContentDisposition()) {

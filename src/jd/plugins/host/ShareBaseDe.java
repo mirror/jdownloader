@@ -72,7 +72,7 @@ public class ShareBaseDe extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setDebug(true);
+
         br.setFollowRedirects(true);
         String page = br.getPage(downloadLink.getDownloadURL());
         String fileName = Encoding.htmlDecode(new Regex(page, FILEINFO).getMatch(0));
@@ -94,6 +94,10 @@ public class ShareBaseDe extends PluginForHost {
             br.followConnection();
             String wait = br.getRegex("Du musst noch <strong>(.*?)</strong> warten!").getMatch(0);
             if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds2(wait)); }
+            if(br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")){
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,br.toString(),30*60*1000l);  
+            }
+            
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
 

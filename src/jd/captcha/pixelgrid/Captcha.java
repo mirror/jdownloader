@@ -981,8 +981,9 @@ public class Captcha extends PixelGrid {
 
             Class newClass;
             try {
+                logger.severe("Special detection :"+"jd.captcha.specials." + cl);
                 newClass = Class.forName("jd.captcha.specials." + cl);
-
+               
                 Class[] parameterTypes = new Class[] { this.getClass() };
                 Method method = newClass.getMethod(methodname, parameterTypes);
                 Object[] arguments = new Object[] { this };

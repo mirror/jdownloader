@@ -88,6 +88,7 @@ public class FourShareCom extends PluginForHost {
     public void handleFree0(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\"dbtn\" tabindex=\"1\">").getMatch(0);
+      
         br.getPage(url);
         this.sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
         url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
@@ -97,8 +98,7 @@ public class FourShareCom extends PluginForHost {
         while (COUNTER > 0) {
             Thread.sleep(100);
         }
-        increaseCounter();
-        HTTPConnection con = br.openGetConnection(url);
+        increaseCounter();        HTTPConnection con = br.openGetConnection(url);
 
         String error = new Regex(con.getURL(), "\\?error(.*)").getMatch(0);
         if (error != null) { throw new PluginException(LinkStatus.ERROR_RETRY, error); }
