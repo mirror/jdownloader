@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -31,8 +30,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class ShareBaseTo extends PluginForHost {
-
-    private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
     private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
 
@@ -54,8 +51,7 @@ public class ShareBaseTo extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.setFollowRedirects(true);
-        String page = br.getPage(downloadLink.getDownloadURL());
-        String[] infos = new Regex(page, FILEINFO).getRow(0);
+        String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), FILEINFO).getRow(0);
 
         downloadLink.setName(infos[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
@@ -72,36 +68,31 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
 
-        br.setFollowRedirects(true);
-        String page = br.getPage(downloadLink.getDownloadURL());
-        String fileName = Encoding.htmlDecode(new Regex(page, FILEINFO).getMatch(0));
+        String url = downloadLink.getDownloadURL();
 
-        if (br.containsHTML(DOWLOAD_RUNNING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l); }
+        br.getPage(url);
 
-        // DownloadInfos nicht gefunden? --> Datei nicht vorhanden
-        if (fileName == null) {
-            logger.severe("download not found");
+        if (br.containsHTML("Der Download existiert nicht")) {
+            logger.severe("ShareBaseTo Error: File not found");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
         }
 
         Form form = br.getFormbyValue("Please Activate Javascript");
         form.setVariable(0, "Download+Now+%21");
-        HTTPConnection urlConnection = br.openFormConnection(form);
+        br.submitForm(form);
 
-        if (!urlConnection.isContentDisposition()) {
-            br.followConnection();
-            String wait = br.getRegex("Du musst noch <strong>(.*?)</strong> warten!").getMatch(0);
-            if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds2(wait)); }
-            if(br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")){
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,br.toString(),30*60*1000l);  
-            }
-            
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {
+            logger.severe("ShareBaseTo Error: Too many downloads");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur ein Download gleichzeitig!", 5000);
+        } else if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
+            logger.severe("ShareBaseTo Error: Maintenance");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wartungsarbeiten", 30 * 60 * 1000l);
         }
 
-        // Download starten
+        HTTPConnection urlConnection = br.openGetConnection(br.getRedirectLocation());
         dl = new RAFDownload(this, downloadLink, urlConnection);
         dl.startDownload();
     }
