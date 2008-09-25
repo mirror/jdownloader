@@ -68,7 +68,7 @@ param.intersectionDimensionWeight=8.0;
 param.inverseFontWeight=100.0;
 
 ##Letter Scan Limits
-param.LetterSearchLimitPerfectPercent=2;
+param.LetterSearchLimitPerfectPercent=0;
 
 ## Quickscan
 param.quickScanReliabilityLimit=0;
