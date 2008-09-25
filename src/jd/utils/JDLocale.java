@@ -53,7 +53,7 @@ public class JDLocale {
 
     private static File localeFile;
 
-    private static Logger logger = JDUtilities.getLogger();
+
 
     public static String getLocale() {
         return localeID;
@@ -83,7 +83,7 @@ public class JDLocale {
         if (def == null) def = key;
         if (data.containsKey(key)) { return data.get(key); }
 
-        logger.info("Key not found: " + key);
+        System.out.println("Key not found: " + key);
         if (defaultData.containsKey(key)) {
             def = defaultData.get(key);
         }
@@ -119,7 +119,7 @@ public class JDLocale {
     private static HashMap<String, String> parseLanguageFile(File file) {
         HashMap<String, String> dat = new HashMap<String, String>();
         if (!file.exists()) {
-            logger.severe("JDLocale: " + file + " not found");
+            System.out.println("JDLocale: " + file + " not found");
             return dat;
         }
         String str = JDUtilities.getLocalFile(file);
@@ -135,7 +135,7 @@ public class JDLocale {
             value = value.replace("\\r", "\r").replace("\\n", "\n");
             value = Encoding.UTF8Decode(value);
             if (dat.containsKey(key)) {
-                logger.severe("Dupe found: " + key);
+                System.out.println("Dupe found: " + key);
                 dat.put(key, value);
                 dupes = true;
             } else {
@@ -144,7 +144,7 @@ public class JDLocale {
 
         }
         if (dupes) {
-            logger.warning("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
+            System.out.println("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
             JDLocale.saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
         }
         return dat;
@@ -177,7 +177,7 @@ public class JDLocale {
         File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
 
         if (!localeFile.exists()) {
-            logger.severe("Language " + localeID + " not installed");
+            System.out.println("Language " + localeID + " not installed");
             return;
         }
 
@@ -186,7 +186,7 @@ public class JDLocale {
         if (defaultFile.exists()) {
             defaultData = JDLocale.parseLanguageFile(defaultFile);
         } else {
-            logger.warning("Could not load the default languagefile: " + defaultFile);
+            System.out.println("Could not load the default languagefile: " + defaultFile);
         }
         missingData = JDLocale.parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
 
