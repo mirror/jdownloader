@@ -51,19 +51,21 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
 
-//    private static final int INIT_COUNTER = 5;
+    private static final String PROPERTY_MINIMIZE_TO_TRAY = "PROPERTY_MINIMIZE_TO_TRAY";
 
-//    private int counter = 0;
+    // private static final int INIT_COUNTER = 5;
 
-//    private JWindow toolParent;
+    // private int counter = 0;
 
-//    private JLabel toolLabel;
+    // private JWindow toolParent;
+
+    // private JLabel toolLabel;
 
     private TrayIconPopup trayIconPopup;
 
     private TrayIcon trayIcon;
 
-//    private TrayInfo trayInfo;
+    // private TrayInfo trayInfo;
 
     private JFrame guiFrame;
 
@@ -78,22 +80,34 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem) {
-            subConfig.setProperty(PROPERTY_START_MINIMIZED, (((MenuItem) e.getSource()).getActionID() == 0));
-            subConfig.save();
+            
+            switch(((MenuItem) e.getSource()).getActionID()){
+            case 0:
+                subConfig.setProperty(PROPERTY_START_MINIMIZED, !subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false));
+                subConfig.save();
+                break;
+            case 1:
+                subConfig.setProperty(PROPERTY_MINIMIZE_TO_TRAY, !subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, false));
+                subConfig.save();
+            }
+           
         }
+
+      
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
-        if (!subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false)) {
+        
             menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized"), 0).setActionListener(this));
-            m.setSelected(false);
-        } else {
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized"), 1).setActionListener(this));
-            m.setSelected(true);
-        }
+            m.setSelected(subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false));
+     
+
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.minimizetotray", "Minimize to tray"), 1).setActionListener(this));
+        m.setSelected(subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true));
+
         return menu;
     }
 
@@ -161,16 +175,16 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         trayIcon.addMouseListener(this);
         trayIcon.addMouseMotionListener(this);
 
-//        toolLabel = new JLabel("jDownloader");
-//        toolLabel.setVisible(true);
-//        toolLabel.setOpaque(true);
-//        toolLabel.setBackground(new Color(0xb9cee9));
+        // toolLabel = new JLabel("jDownloader");
+        // toolLabel.setVisible(true);
+        // toolLabel.setOpaque(true);
+        // toolLabel.setBackground(new Color(0xb9cee9));
 
-//        toolParent = new JWindow();
-//        toolParent.setAlwaysOnTop(true);
-//        toolParent.add(toolLabel);
-//        toolParent.pack();
-//        toolParent.setVisible(false);
+        // toolParent = new JWindow();
+        // toolParent.setAlwaysOnTop(true);
+        // toolParent.add(toolLabel);
+        // toolParent.pack();
+        // toolParent.setVisible(false);
 
         SystemTray systemTray = SystemTray.getSystemTray();
         try {
@@ -191,9 +205,9 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
-//            if (toolParent.isVisible()) {
-//                hideTooltip();
-//            }
+            // if (toolParent.isVisible()) {
+            // hideTooltip();
+            // }
 
             if (e.getClickCount() > 1 && !SwingUtilities.isRightMouseButton(e)) {
                 guiFrame.setVisible(!guiFrame.isVisible());
@@ -214,7 +228,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseReleased(MouseEvent e) {
-    }  
+    }
 
     public void mouseDragged(MouseEvent e) {
     }
@@ -223,15 +237,15 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
 
-//        if (counter > 0) {
-//            counter = INIT_COUNTER;
-//            return;
-//        }
-//
-//        counter = INIT_COUNTER;
-//
-//        trayInfo = new TrayInfo(e.getPoint());
-//        trayInfo.start();
+        // if (counter > 0) {
+        // counter = INIT_COUNTER;
+        // return;
+        // }
+        //
+        // counter = INIT_COUNTER;
+        //
+        // trayInfo = new TrayInfo(e.getPoint());
+        // trayInfo.start();
         // trayIcon.displayMessage("jDownloader", "Erstmal nur ein Test, ok?",
         // TrayIcon.MessageType.INFO);
         trayIcon.setToolTip(createInfoString());
@@ -245,9 +259,11 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowStateChanged(WindowEvent arg0) {
-        if ((arg0.getOldState() & JFrame.ICONIFIED) == 0) {
-            if ((arg0.getNewState() & JFrame.ICONIFIED) != 0) {
-                guiFrame.setVisible(false);
+        if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
+            if ((arg0.getOldState() & JFrame.ICONIFIED) == 0) {
+                if ((arg0.getNewState() & JFrame.ICONIFIED) != 0) {
+                    guiFrame.setVisible(false);
+                }
             }
         }
     }
@@ -282,10 +298,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         });
     }
 
-//    private void hideTooltip() {
-//        toolParent.setVisible(false);
-//        counter = 0;
-//    }
+    // private void hideTooltip() {
+    // toolParent.setVisible(false);
+    // counter = 0;
+    // }
 
     private String createInfoString() {
         StringBuilder creater = new StringBuilder();
@@ -299,60 +315,67 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
         return creater.toString();
     }
-    
-//    private String createHTMLInfoString() {
-//        StringBuilder creater = new StringBuilder();
-//        creater.append("<html><center><b>jDownloader</b></center><hr>");
-//        int downloads = JDUtilities.getController().getRunningDownloadNum();
-//        if (downloads == 0) {
-//            creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>");
-//        } else {
-//            creater.append("<table>");
-//            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td><td>" + downloads + "</td></tr>");
-//            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </td></tr>");
-//            creater.append("</table>");
-//        }
-//        creater.append("</html>");
-//
-//        return creater.toString();
-//    }
 
-//    private class TrayInfo extends Thread {
-//        private Point p;
-//
-//        public TrayInfo(Point p) {
-//            this.p = p;
-//        }
-//
-//        public void run() {
-//            try {
-//                Thread.sleep(250);
-//            } catch (InterruptedException e) {
-//                interrupt();
-//            }
-//
-//            if (trayIconPopup != null && trayIconPopup.isShowing()) return;
-//
-//            toolLabel.setText(createHTMLInfoString());
-//            toolParent.pack();
-//            calcLocation(toolParent, p);
-//            toolParent.setVisible(true);
-//            toolParent.toFront();
-//
-//            while (counter > 0) {
-//                toolLabel.setText(createHTMLInfoString());
-//                toolParent.pack();
-//
-//                counter--;
-//                try {
-//                    Thread.sleep(500);
-//                } catch (InterruptedException e) {
-//                    interrupt();
-//                }
-//            }
-//
-//            hideTooltip();
-//        }
-//    }
+    // private String createHTMLInfoString() {
+    // StringBuilder creater = new StringBuilder();
+    // creater.append("<html><center><b>jDownloader</b></center><hr>");
+    // int downloads = JDUtilities.getController().getRunningDownloadNum();
+    // if (downloads == 0) {
+    // creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload",
+    // "No Download in progress") + "<br>");
+    // } else {
+    // creater.append("<table>");
+    // creater.append("<tr><td><i>" +
+    // JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") +
+    // "</i></td><td>" + downloads + "</td></tr>");
+    // creater.append("<tr><td><i>" +
+    // JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>"
+    // +
+    // JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter()
+    // / 1024) + "/s </td></tr>");
+    // creater.append("</table>");
+    // }
+    // creater.append("</html>");
+    //
+    // return creater.toString();
+    // }
+
+    // private class TrayInfo extends Thread {
+    // private Point p;
+    //
+    // public TrayInfo(Point p) {
+    // this.p = p;
+    // }
+    //
+    // public void run() {
+    // try {
+    // Thread.sleep(250);
+    // } catch (InterruptedException e) {
+    // interrupt();
+    // }
+    //
+    // if (trayIconPopup != null && trayIconPopup.isShowing()) return;
+    //
+    // toolLabel.setText(createHTMLInfoString());
+    // toolParent.pack();
+    // calcLocation(toolParent, p);
+    // toolParent.setVisible(true);
+    // toolParent.toFront();
+    //
+    // while (counter > 0) {
+    // toolLabel.setText(createHTMLInfoString());
+    // toolParent.pack();
+    //
+    // counter--;
+    // try {
+    // Thread.sleep(500);
+    // } catch (InterruptedException e) {
+    // interrupt();
+    // }
+    // }
+    //
+    // hideTooltip();
+    // }
+    // }
 
 }
