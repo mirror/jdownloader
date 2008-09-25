@@ -92,16 +92,12 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     private JButton btnEdit;
 
-    @SuppressWarnings("unused")
-    private Configuration configuration;
-
     private ArrayList<CPluginWrapper> pluginsForContainer;
 
     private JTable table;
 
     public ConfigPanelPluginForContainer(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration = configuration;
         pluginsForContainer = CPluginWrapper.getCWrapper();
         Collections.sort(pluginsForContainer);
         initPanel();

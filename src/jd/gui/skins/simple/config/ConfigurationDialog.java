@@ -81,10 +81,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
      * @return
      */
     public static boolean showConfig(final JFrame frame, final UIInterface uiinterface) {
-        if (CURRENTDIALOG != null && CURRENTDIALOG.isVisible()) { return false; }
-
+        if (CURRENTDIALOG != null && CURRENTDIALOG.isVisible()) return false;
         CURRENTDIALOG = new ConfigurationDialog(frame, uiinterface);
-
         return true;
     }
 
@@ -96,8 +94,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private JButton btnSave;
 
-    @SuppressWarnings("unchecked")
-    private Vector<Class> configClasses = new Vector<Class>();
+    private Vector<Class<?>> configClasses = new Vector<Class<?>>();
 
     private Vector<ConfigPanel> configPanels = new Vector<ConfigPanel>();
 
@@ -260,8 +257,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
      * @author JD-Team Fügt einen neuen ConfigTab hinzu
      * @param configPanel
      */
-    @SuppressWarnings("unchecked")
-    private void addConfigPanel(Class configPanelClass, String img, String title) {
+    private void addConfigPanel(Class<?> configPanelClass, String img, String title) {
         configClasses.add(configPanelClass);
 
         int n = 10;
@@ -296,30 +292,23 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         return s;
     }
 
-    @SuppressWarnings("unchecked")
-    public ConfigPanel initSubPanel(Class class1) {
+    public ConfigPanel initSubPanel(Class<?> class1) {
         try {
-
-            Class[] classes = new Class[] { Configuration.class, UIInterface.class };
-            Constructor con = class1.getConstructor(classes);
+            Constructor<?> con = class1.getConstructor(new Class[] { Configuration.class, UIInterface.class });
             return (ConfigPanel) con.newInstance(new Object[] { configuration, uiinterface });
-        }
-
-        catch (Exception e) {
-
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     private void paintPanel(int i) {
 
         if (i < configPanels.size() && configPanels.get(i) != null) { return; }
         if (i > containerPanels.size() - 1) {
             i = containerPanels.size() - 1;
         }
-        Class class1 = configClasses.get(i);
+        Class<?> class1 = configClasses.get(i);
         ConfigPanel panel = initSubPanel(class1);
         configPanels.remove(i);
         configPanels.add(i, panel);

@@ -94,9 +94,6 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     private JButton btnLoad;
 
-    @SuppressWarnings("unused")
-    private Configuration configuration;
-
     private ArrayList<DecryptPluginWrapper> pluginsForDecrypt;
 
     private JTable table;
@@ -105,7 +102,6 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
         super(uiinterface);
-        this.configuration = configuration;
         pluginsForDecrypt = DecryptPluginWrapper.getDecryptWrapper();
         Collections.sort(pluginsForDecrypt);
         initPanel();

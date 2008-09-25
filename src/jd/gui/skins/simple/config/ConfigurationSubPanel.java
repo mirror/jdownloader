@@ -25,8 +25,6 @@ import java.awt.event.ActionListener;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -39,22 +37,13 @@ import jd.utils.JDUtilities;
  */
 public class ConfigurationSubPanel extends JPanel implements ActionListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 3815946152967454931L;
 
     private JButton btnCancel;
 
     private JButton btnSave;
 
-    @SuppressWarnings("unused")
-    private Configuration configuration;
-
     private ConfigPanel panel;
-
-    @SuppressWarnings("unused")
-    private UIInterface uiinterface;
 
     /**
      * Erstellt einen Neuen Dialog
@@ -65,15 +54,10 @@ public class ConfigurationSubPanel extends JPanel implements ActionListener {
      *            (ConfigPanel (panel inkl. ok/close buttons etc)
      * @param jpanel
      *            (panel des eigentlichen Konfigfenster)
-     * @param uiinterface
-     * @param configuration
      */
-    public ConfigurationSubPanel(ConfigPanel panel, JPanel jpanel, UIInterface uiinterface, Configuration configuration) {
-
-        this.uiinterface = uiinterface;
+    public ConfigurationSubPanel(ConfigPanel panel, JPanel jpanel) {
 
         setLayout(new GridBagLayout());
-        this.configuration = configuration;
 
         this.panel = panel;
         btnSave = new JButton(JDLocale.L("gui.btn_ok", "OK"));
