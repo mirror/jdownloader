@@ -56,8 +56,6 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -96,14 +94,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     private static final String GAPRIGHT = "gapright 26!, ";
     private static final String PUSHGAP = " :70";
     private static FengShuiConfigPanel instance;
-
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException, IllegalAccessException, UnsupportedLookAndFeelException {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        FengShuiConfigPanel fengShuiConfigPanel = new FengShuiConfigPanel();
-        fengShuiConfigPanel.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        fengShuiConfigPanel.setResizable(true);
-        fengShuiConfigPanel.setAlwaysOnTop(true);
-    }
 
     private JButton more, apply, cancel, premium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
     private JComboBox languages;

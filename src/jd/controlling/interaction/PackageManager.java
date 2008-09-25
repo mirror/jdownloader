@@ -85,6 +85,7 @@ public class PackageManager extends Interaction implements Serializable {
     public boolean doInteraction(Object arg) {
         checkNewInstalled();
 
+        CFGConfig config = CFGConfig.getConfig("JDU");
         boolean oldUpdatePackage = false;
         FilePackage fp = new FilePackage();
         fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
@@ -108,7 +109,7 @@ public class PackageManager extends Interaction implements Serializable {
                 pkg.setUpdating(true);
 
                 DistributeData distributeData = null;
-                if (CFGConfig.getConfig("JDU").getBooleanProperty("SUPPORT_JD", true)) {
+                if (config.getBooleanProperty("SUPPORT_JD", true)) {
                     distributeData = new DistributeData(pkg.getStringProperty("url"));
                 } else {
                     distributeData = new DistributeData(pkg.getStringProperty("light-url"));
@@ -122,7 +123,7 @@ public class PackageManager extends Interaction implements Serializable {
                 }
             }
         }
-        CFGConfig.getConfig("JDU").save();
+        config.save();
         if (fp.size() > 0) {
             if (!oldUpdatePackage) JDUtilities.getController().addPackageAt(fp, 0);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
@@ -153,27 +154,28 @@ public class PackageManager extends Interaction implements Serializable {
     @SuppressWarnings("unchecked")
     public ArrayList<PackageData> getPackageData() {
         if (PACKAGE_DATA != null) return PACKAGE_DATA;
+        CFGConfig config = CFGConfig.getConfig("JDU");
         Browser br = new Browser();
         br.setFollowRedirects(true);
-        ArrayList<PackageData> data = (ArrayList<PackageData>) CFGConfig.getConfig("JDU").getProperty("PACKAGEDATA", new ArrayList<PackageData>());
-        for (PackageData pd : data) {
-            pd.setSortID(-1);
+        ArrayList<PackageData> data = (ArrayList<PackageData>) config.getProperty("PACKAGEDATA", new ArrayList<PackageData>());
+        for (int i = data.size() - 1; i >= 0; --i) {
+            if (data.get(i).getStringProperty("category").indexOf("[LIGHT]") >= 0) {
+                data.remove(i);
+                continue;
+            }
+            data.get(i).setSortID(-1);
         }
-        CFGConfig.getConfig("JDU").setProperty("PACKAGEDATA", data);
+        config.setProperty("PACKAGEDATA", data);
 
         try {
             br.getPage("http://service.jdownloader.org/update/packages/list.php?jd=" + JDUtilities.getRevision() + "&r=" + System.currentTimeMillis());
 
-            String xml = "<packages>" + br.getMatch("<packages>(.*?)</packages>") + "</packages>";
-            // xml=xml.replaceAll("<!\\-\\-", "").replaceAll("\\-\\->", "");
-            DocumentBuilderFactory factory;
-            InputSource inSource;
-            Document doc;
+            String xml = br.getRegex("<packages>(.*?)</packages>").getMatch(-1);
 
-            factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setValidating(false);
-            inSource = new InputSource(new StringReader(xml));
-            doc = factory.newDocumentBuilder().parse(inSource);
+            InputSource inSource = new InputSource(new StringReader(xml));
+            Document doc = factory.newDocumentBuilder().parse(inSource);
             NodeList packages = doc.getFirstChild().getChildNodes();
             PackageData tmp;
             int ii = 0;
@@ -213,9 +215,9 @@ public class PackageManager extends Interaction implements Serializable {
             }
             PACKAGE_DATA = data;
 
-            CFGConfig.getConfig("JDU").setProperty("PACKAGEDATA", PACKAGE_DATA);
+            config.setProperty("PACKAGEDATA", PACKAGE_DATA);
+            config.save();
 
-            CFGConfig.getConfig("JDU").save();
             return data;
         } catch (Exception e) {
             return new ArrayList<PackageData>();

@@ -15,8 +15,10 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.host;
+
 import java.io.IOException;
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -43,8 +45,8 @@ public class DataHu extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.setCookiesExclusive(true);
-        br.clearCookies(getHost());   
-        br.getPage( downloadLink.getDownloadURL());
+        br.clearCookies(getHost());
+        br.getPage(downloadLink.getDownloadURL());
         String[] dat = br.getRegex("<div class=\"download_filename\">(.*?)<\\/div>.*\\:(.*?)<div class=\"download_not_start\">").getRow(0);
         long length = Regex.getSize(dat[1].trim());
         downloadLink.setDownloadSize(length);

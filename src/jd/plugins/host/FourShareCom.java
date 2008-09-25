@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.HTTPConnection;
-
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -62,7 +61,7 @@ public class FourShareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 3047 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
     }
 
@@ -94,7 +93,7 @@ public class FourShareCom extends PluginForHost {
         url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
         downloadLink.getLinkStatus().setStatusText("Waiting...");
         downloadLink.requestGuiUpdate();
-        //Das wartesystem lässt link b warten während link a lädt
+        // Das wartesystem lässt link b warten während link a lädt
         while (COUNTER > 0) {
             Thread.sleep(100);
         }

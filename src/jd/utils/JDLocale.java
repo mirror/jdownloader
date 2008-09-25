@@ -23,7 +23,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
@@ -32,8 +31,8 @@ import jd.http.PostRequest;
 import jd.parser.Regex;
 
 /**
- * Diese Klasse stellt Methoden zur Verfügung um in einen String
- * mitPlatzhaltern werte einzusetzen
+ * Diese Klasse stellt Methoden zur Verfügung um in einen String mit
+ * Platzhaltern werte einzusetzen
  */
 public class JDLocale {
 
@@ -52,8 +51,6 @@ public class JDLocale {
     private static String localeID;
 
     private static File localeFile;
-
-
 
     public static String getLocale() {
         return localeID;
