@@ -30,19 +30,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
-public class ShareBaseDe extends PluginForHost {
+public class ShareBaseTo extends PluginForHost {
 
     private static final String DOWLOAD_RUNNING = "Von deinem Computer ist noch ein Download aktiv";
 
     private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
 
-    public ShareBaseDe(PluginWrapper wrapper) {
+    public ShareBaseTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://sharebase.de/pp.html";
+        return "http://sharebase.to/terms/";
     }
 
     @Override

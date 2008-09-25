@@ -37,18 +37,18 @@ public class RelinkaNet extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        
+
         String links[] = br.getRegex("<a href=\"http://relinka.net\\/out\\/[a-z0-9]{8}-[a-z0-9]{4}\\/(.*?)\" class=").getColumn(0);
         String folderId = new Regex(parameter, "http://relinka.net\\/folder\\/([a-z0-9]{8}-[a-z0-9]{4})").getMatch(0);
-        
+
         progress.setRange(links.length);
         for (String element : links) {
             String encodedLink = Encoding.htmlDecode(new Regex(br.getPage("http://relinka.net/out/" + folderId + "/" + element), "<iframe src=\"(.*)\" marginhe").getMatch(0));
-            
+
             decryptedLinks.add(createDownloadlink(encodedLink));
             progress.increase(1);
         }
-        
+
         return decryptedLinks;
     }
 
