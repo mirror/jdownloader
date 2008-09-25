@@ -169,6 +169,8 @@ public class JDLocale {
     }
 
     public static void setLocale(String lID) {
+        if (data != null && localeFile != null) return;
+
         localeID = lID;
         localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
         File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
