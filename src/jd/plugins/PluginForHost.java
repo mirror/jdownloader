@@ -79,16 +79,18 @@ public abstract class PluginForHost extends Plugin {
         dl = null;
         super.clean();
     }
+
     protected int waitForFreeConnection(DownloadLink downloadLink) throws InterruptedException {
-        int free;    
+        int free;
         while ((free = this.getMaxConnections() - getCurrentConnections()) <= 0) {
             Thread.sleep(1000);
-            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("download.system.waitForconnection","Cur. %s/%s connections...waiting",getCurrentConnections()+"",this.getMaxConnections()+""));
+            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("download.system.waitForconnection", "Cur. %s/%s connections...waiting", getCurrentConnections() + "", this.getMaxConnections() + ""));
             downloadLink.requestGuiUpdate();
         }
         return free;
-        
+
     }
+
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
@@ -156,12 +158,10 @@ public abstract class PluginForHost extends Plugin {
         ArrayList<MenuItem> menuList = new ArrayList<MenuItem>();
         if (!this.enablePremium) return null;
         MenuItem account;
-        MenuItem m;
-        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.menu.configs", "Configuration"), 1);
+        MenuItem m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.menu.configs", "Configuration"), 1);
         m.setActionListener(this);
         MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.menu.accounts", "Accounts"), 0);
         menuList.add(m);
-        menuList.add(premium);
         ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
 
         int i = 1;
@@ -183,6 +183,12 @@ public abstract class PluginForHost extends Plugin {
 
             premium.addMenuItem(account);
         }
+        if (premium.getSize() != 0) {
+            menuList.add(premium);
+        } else {
+            menuList.add(new MenuItem(JDLocale.L("plugins.menu.noAccountsYet", "No accounts yet"), -1));
+        }
+
         return menuList;
 
     }

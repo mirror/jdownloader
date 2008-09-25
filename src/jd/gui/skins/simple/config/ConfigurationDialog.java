@@ -146,7 +146,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         addConfigPanel(ConfigPanelAddons.class, JDTheme.V("gui.images.config.packagemanager"), JDLocale.L("gui.config.tabLables.addons", "Addon manager"));
         addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.V("gui.images.config.container"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
         addConfigPanel(ConfigPanelEventmanager.class, JDTheme.V("gui.images.config.eventmanager", "eventmanager"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
-        addConfigPanel(ConfigPanelUpdater.class, JDTheme.V("gui.images.config.updater"), JDLocale.L("gui.config.tabLables.updater", "Update"));
+        // addConfigPanel(ConfigPanelUpdater.class,
+        // JDTheme.V("gui.images.config.updater"),
+        // JDLocale.L("gui.config.tabLables.updater", "Update"));
 
         try {
             tabbedPane.setFont(new Font("Courier", Font.PLAIN, 12));
@@ -308,8 +310,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         if (i > containerPanels.size() - 1) {
             i = containerPanels.size() - 1;
         }
-        Class<?> class1 = configClasses.get(i);
-        ConfigPanel panel = initSubPanel(class1);
+
+        ConfigPanel panel = initSubPanel(configClasses.get(i));
         configPanels.remove(i);
         configPanels.add(i, panel);
         JPanel container = containerPanels.get(i);
