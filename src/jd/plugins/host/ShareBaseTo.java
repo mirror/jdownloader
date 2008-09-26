@@ -74,7 +74,6 @@ public class ShareBaseTo extends PluginForHost {
         String url = downloadLink.getDownloadURL();
 
         br.getPage(url);
-
         if (br.containsHTML("Der Download existiert nicht")) {
             logger.severe("ShareBaseTo Error: File not found");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -91,10 +90,13 @@ public class ShareBaseTo extends PluginForHost {
             logger.severe("ShareBaseTo Error: Maintenance");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wartungsarbeiten", 30 * 60 * 1000l);
         }
-
-        HTTPConnection urlConnection = br.openGetConnection(br.getRedirectLocation());
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.startDownload();
+        String[] wait = br.getRegex("Du musst noch <strong>(\\d*?)min (\\d*?)sec</strong> warten").getRow(0);
+        if (wait != null) {
+            long waitTime = (Integer.parseInt(wait[0]) * 60 + Integer.parseInt(wait[1])) * 1000l;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+        }
+        HTTPConnection urlConnection = br.openGetConnection(br.getRedirectLocation());      
+        RAFDownload.download(downloadLink, urlConnection, false, 1);
     }
 
     public int getMaxSimultanFreeDownloadNum() {
