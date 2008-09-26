@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -34,8 +35,8 @@ public class LinkBucks extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        String link = new Regex(br.getPage(parameter), "Site will load in.*?<a href=\"(.*?)\" id=\"[^\"]*\">").getMatch(0);
+        br.getPage(parameter);
+        String link = br.getRegex(Pattern.compile("var LinkURL = '(.*?)';", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(link));
 
