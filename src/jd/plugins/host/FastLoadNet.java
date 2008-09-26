@@ -106,7 +106,25 @@ public class FastLoadNet extends PluginForHost {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FATAL, getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
 
         }
-
+        String bandwidth = br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) MBit").getMatch(0);
+long bandw=0;
+        if (bandwidth == null) {
+            bandwidth = br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) KBit").getMatch(0);
+            bandw=(long)Double.parseDouble(bandwidth.trim())*1024l;
+        }else{
+            bandw=(long)Double.parseDouble(bandwidth.trim())*1024l*1024l; 
+        }
+        
+        downloadLink.setLocalSpeedLimit(-1);
+        if(bandw>1500000000l){
+            logger.warning("fastload Auslastung sehr hoch.. verringere Speed auf 200 kb/s");
+            downloadLink.setLocalSpeedLimit(200*1024);
+        }
+        if(bandw>1800000000l){
+            logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 50 kb/s");
+            downloadLink.setLocalSpeedLimit(75*1024);
+        }
+        br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) MBit").getMatch(0);
         Form captcha_form = getDownloadForm();
 
         captcha_form.put("downloadbutton", "Download+starten");

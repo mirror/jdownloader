@@ -161,6 +161,7 @@ public class JDUpdater {
             e.printStackTrace();
         }
 
+   
         ArrayList<File> localfiles = getLocalFileList(workingdir);
         HashMap<String, String> webupdaterfiles = new HashMap<String, String>();
         if (files == null) files = new Vector<Vector<String>>();
