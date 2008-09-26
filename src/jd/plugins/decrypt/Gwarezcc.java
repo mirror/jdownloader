@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.DistributeData;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -111,7 +112,10 @@ public class Gwarezcc extends PluginForDecrypt {
 
                 for (int ii = 0; ii < parts.length; ii++) {
                     /* Parts decrypten und adden */
-                    DownloadLink link = createDownloadlink(gwarezdecrypt(parts[ii]));
+                    String linkString=gwarezdecrypt(parts[ii]);
+                    Vector<DownloadLink> links=new DistributeData(linkString).findLinks(false);
+                    if(links.size()==0)continue;
+                    DownloadLink link = links.lastElement();
                     link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
                     link.addSourcePluginPassword(password);
                     decryptedLinks.add(link);

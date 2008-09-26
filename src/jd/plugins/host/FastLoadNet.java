@@ -17,17 +17,20 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.XPath;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
+import jd.utils.JavaScript;
 
 public class FastLoadNet extends PluginForHost {
 
@@ -72,20 +75,19 @@ public class FastLoadNet extends PluginForHost {
             downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4));
             return false;
         }
-        String txt = (br + "").replaceAll("<.*?>", "|");
-        txt = txt.replaceAll("\r", "|");
-        txt = txt.replaceAll("\n", "|");
-        txt = txt.replaceAll("\\|\\s+\\|", "|");
-        txt = txt.replaceAll("[|]+", "|");
-        String fileName = Encoding.htmlDecode(new Regex(txt, "Datei\\|(.+?)\\|").getMatch(0));
-        String fileSize = Encoding.htmlDecode(new Regex(txt, "Gr&ouml;sse\\|(.+?)\\|").getMatch(0));
+       
+       
+        String page=JavaScript.evalPage(br);
+        String filename= new XPath(page,"/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr/th[2]/font").getFirstMatch();
+        String size= new XPath(page,"/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr[2]/td[2]/font").getFirstMatch();
+
         // downloadinfos gefunden? -> download verfügbar
-        if (fileName != null && fileSize != null) {
-            downloadLink.setName(fileName.trim());
-            downloadLink.setDownloadSize(Regex.getSize(fileSize));
+        if (filename != null && size != null) {
+            downloadLink.setName(filename.trim());
+            downloadLink.setDownloadSize(Regex.getSize(size));
             return true;
         }
-        downloadLink.setName(downloadurl.substring(downloadurl.indexOf("pid=") + 4));
+     
         return false;
     }
 
@@ -103,26 +105,25 @@ public class FastLoadNet extends PluginForHost {
         br.setFollowRedirects(true);
         br.clearCookies(getHost());
 
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FATAL, getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+        if (!getFileInformation(downloadLink)) { 
+            
+            //throw new PluginException(LinkStatus.ERROR_FATAL, getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
 
         }
         String bandwidth = br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) MBit").getMatch(0);
-long bandw=0;
+        long bandw = 0;
         if (bandwidth == null) {
             bandwidth = br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) KBit").getMatch(0);
-            bandw=(long)Double.parseDouble(bandwidth.trim())*1024l;
-        }else{
-            bandw=(long)Double.parseDouble(bandwidth.trim())*1024l*1024l; 
+            bandw = (long) Double.parseDouble(bandwidth.trim()) * 1024l;
+        } else {
+            bandw = (long) Double.parseDouble(bandwidth.trim()) * 1024l * 1024l;
         }
-        
+
         downloadLink.setLocalSpeedLimit(-1);
-        if(bandw>1500000000l){
-            logger.warning("fastload Auslastung sehr hoch.. verringere Speed auf 200 kb/s");
-            downloadLink.setLocalSpeedLimit(200*1024);
-        }
-        if(bandw>1800000000l){
-            logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 50 kb/s");
-            downloadLink.setLocalSpeedLimit(75*1024);
+       
+        if (bandw > 1.9*1024l*1024l*1024l) {
+            logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
+            downloadLink.setLocalSpeedLimit(20 * 1024);
         }
         br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) MBit").getMatch(0);
         Form captcha_form = getDownloadForm();

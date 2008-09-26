@@ -360,6 +360,15 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
 
         String ret = Encoding.htmlDecode(new Regex(urlConnection.getHeaderField("content-disposition"), "filename[ ]*=[ ]*[\"'](.*)[\"']\\;").getMatch(0));
+        if (ret == null) {
+
+            ret = Encoding.htmlDecode(new Regex(urlConnection.getHeaderField("content-disposition"), "filename[ ]*=(.*)").getMatch(0));
+            if (ret != null) {
+                ret = ret.trim();
+                while (ret.endsWith(";"))
+                    ret = ret.substring(0, ret.length() - 1);
+            }
+        }
         return ret;
     }
 

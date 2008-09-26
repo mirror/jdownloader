@@ -47,23 +47,24 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-//        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        // LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-//        String page = null;
+        // String page = null;
         Browser br = new Browser();
 
         correctUrl(downloadLink);
 
-//        page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
-//        String[] dat = page.split("\\, ");
+        // String page = br.getPage("http://bluehost.to/fileinfo/url=" +
+        // downloadLink.getDownloadURL());
+        // String[] dat = page.split("\\, ");
 
-        //vorrübergehen abgeschalten, bis api wieder online ist
-//        if (dat.length != 5) {
-//            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-//            return;
-//        }
+        // vorrübergehen abgeschalten, bis api wieder online ist
+        // if (dat.length != 5) {
+        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+        // return;
+        // }
 
-//        br.getPage("http://bluehost.to/fetchinfo");
+        // br.getPage("http://bluehost.to/fetchinfo");
         br.getPage(downloadLink.getDownloadURL());
         if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
 
@@ -97,26 +98,28 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-   
-            correctUrl(downloadLink);
-//            String page;
-            // dateiname, dateihash, dateisize, dateidownloads, zeit bis
-            // happyhour
+
+        correctUrl(downloadLink);
+        // String page;
+        // dateiname, dateihash, dateisize, dateidownloads, zeit bis
+        // happyhour
+        //           
+        String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
+       
+        String[] dat = page.split("\\, ");
+
+        if (dat.length != 5) {
             Browser br = new Browser();
-            
+            //              
             br.getPage(downloadLink.getDownloadURL());
-            downloadLink.setName( br.getRegex("dl_filename2\">(.*?)</div>").getMatch(0));
-            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(0)+" "+br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(1)));
-//            page = br.getPage("http://bluehost.to/fileinfo/url=" + downloadLink.getDownloadURL());
-//            String[] dat = page.split("\\, ");
-//            
-//            if (dat.length != 5) { 
-//               
-//                return false; }
-//            downloadLink.setName(dat[0]);
-//            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
+            downloadLink.setName(br.getRegex("dl_filename2\">(.*?)</div>").getMatch(0).trim());
+            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(0).trim() + " " + br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(1).trim()));
             return true;
-  
+        }
+        downloadLink.setName(dat[0]);
+        downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
+        return true;
+
     }
 
     @Override
