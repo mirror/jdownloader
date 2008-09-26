@@ -1206,7 +1206,7 @@ public class JDUtilities {
         int cost;
         for (i = 0; i <= n; i++) {
             p[i] = i;
-        }
+        } 
         for (j = 1; j <= m; j++) {
             t_j = t.charAt(j - 1);
             d[0] = j;
