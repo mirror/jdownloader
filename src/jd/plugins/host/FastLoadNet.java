@@ -16,26 +16,18 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.parser.Form.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
-import jd.utils.JavaScript;
 
 public class FastLoadNet extends PluginForHost {
 
@@ -104,127 +96,46 @@ public class FastLoadNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setFollowRedirects(true);
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        String downloadurl = downloadLink.getDownloadURL() + "&lg=de";
-        HTTPConnection urlConnection;
+    public void handleFree(DownloadLink downloadLink) throws Exception {
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
-            return;
+        br.setCookiesExclusive(true);
+        br.setFollowRedirects(true);
+        br.clearCookies(getHost());
+
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FATAL, getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
+
         }
-      String pre=  br.toString();
-        String page = JavaScript.evalPage(br);
-        br.getRequest().setHtmlCode(page+pre);
+
         Form captcha_form = getDownloadForm();
 
-        if (captcha_form != null) {
-            boolean valid = false;
-            for (int retry = 1; retry <= 5; retry++) {
-                captcha_form = getDownloadForm();
-                if (captcha_form != null) {
-                    File file = this.getLocalCaptchaFile(this);
-                    String url = "includes/captcha.php";
-                    String[] phps = br.getRegex("\"(.{5,40}\\.php)").getColumn(0);
-                    String captcha = null;
-                    int best = Integer.MAX_VALUE;
-                    if (phps != null) {
-                        for (int i = 0; i < phps.length; i++) {
-                            int lev = JDUtilities.getLevenshteinDistance(url, phps[i]);
-                            if (lev < best) {
-                                best = lev;
-                                captcha = phps[i];
-                            }
-                        }
-                    }
-                    phps = br.getRegex("'(.{5,40}\\.php)").getColumn(0);
-                    if (phps != null) {
-                        for (int i = 0; i < phps.length; i++) {
-                            int lev = JDUtilities.getLevenshteinDistance(url, phps[i]);
-                            if (lev < best) {
-                                best = lev;
-                                captcha = phps[i];
-                            }
+        captcha_form.put("downloadbutton", "Download+starten");
+        br.openFormConnection(captcha_form);
 
-                        }
-                    }
-                
+        if (!br.getHttpConnection().isContentDisposition()) {
 
-                    Browser.download(file, br.cloneBrowser().openGetConnection("/includes/captcha123.php"));
-                    String code = Plugin.getCaptchaCode(file, this, downloadLink);
-
-                    ArrayList<InputField> fields = captcha_form.getInputFieldsByType("text");
-                    InputField txt = null;
-                    for (InputField f : fields) {
-                        if (f.getStringProperty("style", "").contains("none")) continue;
-                        txt = f;
-                        break;
-                    }
-                    if(txt!=null)                    txt.setValue(code);
-
-                    br.openFormConnection(captcha_form);
-                    if (br.getHttpConnection().isContentDisposition()) {
-                        valid = true;
-                        break;
-                    } else {
-                        br.getPage(downloadurl);
-                    }
-                } else {
-                    valid = true;
-                    break;
-                }
-            }
-
-            if (valid == false) {
-                linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
+            if (br.getHttpConnection().getContentLength() == 184) {
+                logger.info("System overload: Retry in 20 seconds");
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setValue(20 * 60 * 1000l);
+                return;
+            } else if (br.getHttpConnection().getContentLength() == 169) {
+                logger.severe("File not found: File is deleted from Server");
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                return;
+            } else if (br.getHttpConnection().getContentLength() == 529) {
+                logger.severe("File not found: Unkown 404 Error");
+                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                return;
+            } else {
+                logger.severe("Unknown error page");
+                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 return;
             }
-            urlConnection = br.getHttpConnection();
-        } else {
-            String dl_url = br.getRegex(Pattern.compile("type=\"button\" onclick=\"location='(.*?)'\" value=\"download", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            urlConnection = br.openGetConnection(dl_url);
         }
 
-        long length = urlConnection.getContentLength();
+        RAFDownload.download(downloadLink, br.getHttpConnection(), false, 1);
 
-        if (urlConnection.getContentType() != null) {
-
-            if (urlConnection.getContentType().contains("text/html")) {
-
-                if (length == 184) {
-                    logger.info("System overload: Retry in 20 seconds");
-                    linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                    linkStatus.setValue(20 * 60 * 1000l);
-                    return;
-                } else if (length == 169) {
-                    logger.severe("File not found: File is deleted from Server");
-                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    return;
-                } else if (length == 529) {
-                    logger.severe("File not found: Unkown 404 Error");
-                    linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    return;
-                } else {
-                    logger.severe("Unknown error page - [Length: " + length + "]");
-                    linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                    return;
-                }
-            }
-            // Download starten
-            dl = new RAFDownload(this, downloadLink, urlConnection);
-            dl.setResume(false);
-            dl.setChunkNum(1);
-            dl.startDownload();
-            return;
-
-        } else {
-            logger.severe("Couldn't get HTTP connection");
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-        }
     }
 
     private Form getDownloadForm() {

@@ -80,8 +80,8 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem) {
-            
-            switch(((MenuItem) e.getSource()).getActionID()){
+
+            switch (((MenuItem) e.getSource()).getActionID()) {
             case 0:
                 subConfig.setProperty(PROPERTY_START_MINIMIZED, !subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false));
                 subConfig.save();
@@ -90,20 +90,18 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 subConfig.setProperty(PROPERTY_MINIMIZE_TO_TRAY, !subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, false));
                 subConfig.save();
             }
-           
+
         }
 
-      
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
-        
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized"), 0).setActionListener(this));
-            m.setSelected(subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false));
-     
+
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized"), 0).setActionListener(this));
+        m.setSelected(subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false));
 
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.minimizetotray", "Minimize to tray"), 1).setActionListener(this));
         m.setSelected(subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true));
