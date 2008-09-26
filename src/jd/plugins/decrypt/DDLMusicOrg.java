@@ -48,13 +48,14 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 }
                 Form captchaForm = br.getForm(0);
                 String[] calc = br.getRegex(Pattern.compile("method=\"post\">[\\s]*?(\\d*?) (\\+|-) (\\d*?) =", Pattern.DOTALL)).getRow(0);
+                String inputname = captchaForm.getInputFieldsByType("text").get(0).getKey();
                 if (calc[1].equals("+")) {
-                    captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
+                    captchaForm.put(inputname, String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
                 } else {
-                    captchaForm.put("calc" + captchaForm.getVars().get("linknr"), String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
+                    captchaForm.put(inputname, String.valueOf(Integer.parseInt(calc[0]) + Integer.parseInt(calc[2])));
                 }
                 br.submitForm(captchaForm);
-                if (!br.containsHTML("Du bist ein Angeber")) {
+                if (!br.containsHTML("Du bist ein Angeber") && !br.containsHTML("Mein Gott, wo bist denn du zur Schule gegangen!")) {
                     decryptedLinks.add(createDownloadlink(br.getRegex(Pattern.compile("<form action=\"(.*?)\" method=\"post\">", Pattern.CASE_INSENSITIVE)).getMatch(0)));
                     break;
                 }
