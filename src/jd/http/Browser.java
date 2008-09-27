@@ -36,7 +36,6 @@ import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.Form.InputField;
-import jd.plugins.host.Request;
 import jd.utils.JDUtilities;
 import jd.utils.SnifferException;
 import jd.utils.Sniffy;
@@ -342,7 +341,7 @@ public class Browser {
 
     }
 
-    public Request createFormRequest(Form form) throws IOException {
+    public Request createFormRequest(Form form) throws Exception {
         if (form == null) return null;
         String base = null;
         if (request != null) base = request.getUrl().toString();
@@ -421,11 +420,11 @@ public class Browser {
 
     }
 
-    public Request createGetRequest(String string) throws IOException {
+    public Request createGetRequest(String string) throws Exception {
         string = getURL(string);
-         if (currentURL == null) {
-         currentURL = new URL(string);
-         }
+        if (currentURL == null) {
+            currentURL = new URL(string);
+        }
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
@@ -440,7 +439,7 @@ public class Browser {
         request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
-          request.getHeaders().put("Referer", currentURL.toString());
+        request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
@@ -534,10 +533,12 @@ public class Browser {
         return request;
 
     }
+
     public Request createPostRequest(String url, String post) throws MalformedURLException, IOException {
-   
+
         return createPostRequest(url, Request.parseQuery(post));
     }
+
     public HTTPConnection openPostConnection(String url, String post) throws IOException {
 
         return openPostConnection(url, Request.parseQuery(post));
@@ -1118,15 +1119,13 @@ public class Browser {
 
     }
 
-    public Request createRequest(Form form) throws IOException {      
+    public Request createRequest(Form form) throws Exception {
         return createFormRequest(form);
     }
 
-    public Request createRequest(String downloadURL) {
+    public Request createRequest(String downloadURL) throws Exception {
         // TODO Auto-generated method stub
         return createGetRequest(downloadURL);
     }
-
- 
 
 }
