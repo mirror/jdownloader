@@ -368,6 +368,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     }
 
     static public String getFileNameFromDispositionHeader(String header) {
+        //http://greenbytes.de/tech/tc2231/
         String contentdisposition = header;
         String filename = null;
         try {
