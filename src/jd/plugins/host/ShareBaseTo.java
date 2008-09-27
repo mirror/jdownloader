@@ -49,7 +49,8 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
+        /* damit neue links mit .de als .to in die liste kommen */
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         br.setFollowRedirects(true);
         String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), FILEINFO).getRow(0);
 
@@ -71,9 +72,9 @@ public class ShareBaseTo extends PluginForHost {
         br.setDebug(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-
+        /* für links welche noch mit .de in der liste stehen */
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         String url = downloadLink.getDownloadURL();
-
         br.getPage(url);
         if (br.containsHTML("Der Download existiert nicht")) {
             logger.severe("ShareBaseTo Error: File not found");
@@ -96,7 +97,7 @@ public class ShareBaseTo extends PluginForHost {
             long waitTime = (Integer.parseInt(wait[0]) * 60 + Integer.parseInt(wait[1])) * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
-        HTTPConnection urlConnection = br.openGetConnection(br.getRedirectLocation());      
+        HTTPConnection urlConnection = br.openGetConnection(br.getRedirectLocation());
         RAFDownload.download(downloadLink, urlConnection, false, 1);
     }
 
