@@ -133,7 +133,7 @@ public class RAFDownload extends DownloadInterface {
     // , false);
     // }
 
-    public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException {
+    public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws Exception {
         super(plugin, downloadLink, request);
         writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
 
@@ -410,7 +410,7 @@ public class RAFDownload extends DownloadInterface {
      * @return
      * @throws IOException
      */
-    public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws IOException {
+    public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws Exception {
         DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
         downloadLink.getPlugin().setDownloadInterface(dl);
         dl.setResume(b);
@@ -426,8 +426,8 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
-    public static DownloadInterface download(DownloadLink downloadLink, Request request) throws IOException {
+    public static DownloadInterface download(DownloadLink downloadLink, Request request) throws Exception {
         // TODO Auto-generated method stub
-        return download(downloadLink,request,false,1);
+        return download(downloadLink, request, false, 1);
     }
 }
