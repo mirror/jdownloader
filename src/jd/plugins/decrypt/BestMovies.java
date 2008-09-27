@@ -22,16 +22,18 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class BestMovies extends PluginForDecrypt {
 
-    static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"captcha.php\"");
-    static private final Pattern patternCaptcha_Wrong = Pattern.compile("Der Sicherheitscode ist falsch");
+    static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"clockcaptcha.php\"");
+    static private final Pattern patternCaptcha_Wrong = Pattern.compile("<b>Falsch</b>");
     static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
 
     public BestMovies(PluginWrapper wrapper) {
@@ -53,9 +55,16 @@ public class BestMovies extends PluginForDecrypt {
             if (br.getRegex(patternCaptcha_Needed).matches()) {
                 /* Captcha vorhanden */
                 File captchaFile = this.getLocalCaptchaFile(this);
-                Browser.download(captchaFile, br.openGetConnection("http://crypt.best-movies.us/captcha.php"));
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://crypt.best-movies.us/clockcaptcha.php"));
                 String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
-                br.postPage(parameter, "sicherheitscode=" + captchaCode + "&submit=Submit+Query");
+                Form form = br.getForm(0);
+                String time[] = new Regex(captchaCode, "(\\d+):(\\d+)").getRow(0);
+                if (time.length != 2) throw new DecrypterException(DecrypterException.CAPTCHA);
+                int hour = new Integer(time[0]);
+                if (hour > 12) hour = hour - 12;
+                form.put("clockhour", hour + "");
+                form.put("clockmin", time[1]);
+                br.submitForm(form);
             } else {
                 /* Kein Captcha */
                 String link = br.getRegex(patternIframe).getMatch(0);

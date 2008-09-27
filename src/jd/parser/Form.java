@@ -228,6 +228,13 @@ public class Form {
                 } else {
                     ret = base + "/" + ret;
                 }
+            } else if (ret.charAt(0) == '#') {
+                String base = baseurl.toString();
+                if (base.matches("http://.*/.*")) {
+                    ret = base + ret;
+                } else {
+                    ret = base + "/" + ret;
+                }
             } else {
                 String base = baseurl.toString();
                 if (base.matches("http://.*/.*")) {
