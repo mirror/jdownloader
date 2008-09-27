@@ -22,7 +22,9 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -46,6 +48,9 @@ import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
+
+import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ContentDisposition;
+import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
@@ -355,21 +360,48 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * 
      * @param urlConnection
      * @return Filename aus dem header (content disposition) extrahiert
+     * @throws Exception
      */
     static public String getFileNameFormHeader(HTTPConnection urlConnection) {
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
+        return getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
+    }
 
-        String ret = Encoding.htmlDecode(new Regex(urlConnection.getHeaderField("content-disposition"), "filename[ ]*=[ ]*[\"'](.*)[\"']\\;").getMatch(0));
-        if (ret == null) {
-
-            ret = Encoding.htmlDecode(new Regex(urlConnection.getHeaderField("content-disposition"), "filename[ ]*=(.*)").getMatch(0));
-            if (ret != null) {
-                ret = ret.trim();
-                while (ret.endsWith(";"))
-                    ret = ret.substring(0, ret.length() - 1);
+    static public String getFileNameFromDispositionHeader(String header) {
+        String contentdisposition = header;
+        String filename = null;
+        try {
+            if (contentdisposition.contains("filename*")) {
+                /* Codierung */
+                contentdisposition = contentdisposition.replaceFirst("filename\\*", "filename");
+                String format = new Regex(contentdisposition, ".*?=[ ]*(.*?)''").getMatch(0);
+                if (format == null) {
+                    logger.severe("Content-Disposition: invalid format");
+                }
+                contentdisposition = contentdisposition.replaceAll(format + "''", "");
+                filename = new ContentDisposition(contentdisposition).getParameter("filename");
+                if (filename == null) {
+                    logger.severe("Content-Disposition: no filename found");
+                }
+                try {
+                    filename = URLDecoder.decode(filename, format);
+                } catch (UnsupportedEncodingException e) {
+                    logger.severe("Content-Disposition: could not decode filename");
+                    filename = null;
+                }
+            } else {
+                /* ohne Codierung */
+                filename = new ContentDisposition(contentdisposition).getParameter("filename");
+                if (filename == null) {
+                    logger.severe("Content-Disposition: no filename found");
+                }
             }
+        } catch (ParseException e) {
+            logger.severe("Content-Disposition: could not parse header");
+            filename = null;
         }
-        return ret;
+        if (filename != null) filename = filename.trim();
+        return filename;
     }
 
     static public String getFileNameFormURL(URL url) {
