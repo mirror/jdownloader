@@ -368,38 +368,47 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
     }
 
     static public String getFileNameFromDispositionHeader(String header) {
-        //http://greenbytes.de/tech/tc2231/
+        // http://greenbytes.de/tech/tc2231/
         String contentdisposition = header;
         String filename = null;
-        try {
-            if (contentdisposition.contains("filename*")) {
-                /* Codierung */
-                contentdisposition = contentdisposition.replaceFirst("filename\\*", "filename");
-                String format = new Regex(contentdisposition, ".*?=[ ]*(.*?)''").getMatch(0);
-                if (format == null) {
-                    logger.severe("Content-Disposition: invalid format");
+        for (int i = 0; i < 2; i++) {
+            try {
+                if (contentdisposition.contains("filename*")) {
+                    /* Codierung */
+                    contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
+                    String format = new Regex(contentdisposition, ".*?=[ \"]*(.*?)''").getMatch(0);
+                    if (format == null) {
+                        logger.severe("Content-Disposition: invalid format: " + header);
+                    }
+                    contentdisposition = contentdisposition.replaceAll(format + "''", "");
+                    filename = new ContentDisposition(contentdisposition).getParameter("filename");
+                    if (filename == null) {
+                        logger.severe("Content-Disposition: no filename found: " + header);
+                    }
+                    try {
+                        filename = URLDecoder.decode(filename, format);
+                    } catch (UnsupportedEncodingException e) {
+                        logger.severe("Content-Disposition: could not decode filename: " + header);
+                        filename = null;
+                    }
+                } else {
+                    /* ohne Codierung */
+                    filename = new ContentDisposition(contentdisposition).getParameter("filename");
+                    if (filename == null) {
+                        logger.severe("Content-Disposition: no filename found: " + header);
+                    }
                 }
-                contentdisposition = contentdisposition.replaceAll(format + "''", "");
-                filename = new ContentDisposition(contentdisposition).getParameter("filename");
-                if (filename == null) {
-                    logger.severe("Content-Disposition: no filename found");
-                }
-                try {
-                    filename = URLDecoder.decode(filename, format);
-                } catch (UnsupportedEncodingException e) {
-                    logger.severe("Content-Disposition: could not decode filename");
-                    filename = null;
-                }
-            } else {
-                /* ohne Codierung */
-                filename = new ContentDisposition(contentdisposition).getParameter("filename");
-                if (filename == null) {
-                    logger.severe("Content-Disposition: no filename found");
-                }
+            } catch (ParseException e) {
+                logger.severe("Content-Disposition: could not parse header: " + header);
+                filename = null;
             }
-        } catch (ParseException e) {
-            logger.severe("Content-Disposition: could not parse header");
-            filename = null;
+            if (filename != null) {
+                break;
+            } else {
+                logger.severe("Content-Disposition: try to fix header for parsing");
+                header = header.replaceAll("=", "=\"") + "\"";
+                contentdisposition = header;
+            }
         }
         if (filename != null) filename = filename.trim();
         return filename;
