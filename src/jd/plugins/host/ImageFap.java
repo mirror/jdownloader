@@ -19,14 +19,13 @@ package jd.plugins.host;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
@@ -83,7 +82,6 @@ public class ImageFap extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            Browser br = new Browser();
             br.getPage(downloadLink.getDownloadURL());
             String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -112,16 +110,10 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        Browser br = new Browser();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (picture_name == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        if (picture_name == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (gallery_name != null) {
             gallery_name = gallery_name.trim();
@@ -129,11 +121,11 @@ public class ImageFap extends PluginForHost {
 
         /* DownloadLink holen */
         String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        HTTPConnection con = br.openGetConnection(imagelink);
+
         String filename = Plugin.extractFileNameFromURL(imagelink);
         downloadLink.setStaticFileName(filename);
         downloadLink.addSubdirectory(gallery_name);
-        dl = new RAFDownload(this, downloadLink, con);
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(imagelink));
         dl.setResume(false);
         dl.setChunkNum(1);
         dl.startDownload();

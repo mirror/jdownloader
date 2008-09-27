@@ -16,29 +16,21 @@
 
 package jd.plugins.host;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
 
 public class MyVideo extends PluginForHost {
     static private final String CODER = "JD-Team";
 
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
-
-    private RequestInfo requestInfo;
 
     public MyVideo(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,16 +47,9 @@ public class MyVideo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadLink.getDownloadURL()), null, null, true);
-            if (requestInfo.getResponseCode() == 200) { return true; }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+        HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getResponseCode() == 200) { return true; }
         return false;
     }
 
@@ -76,15 +61,9 @@ public class MyVideo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
-            return;
-        }
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FATAL); }
 
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);
         if (dl.startDownload()) {
@@ -111,4 +90,5 @@ public class MyVideo extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
+
 }

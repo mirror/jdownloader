@@ -583,6 +583,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             e.printStackTrace();
             available = false;
         }
+        try {
+            ((PluginForHost) getPlugin()).getBrowser().getHttpConnection().disconnect();
+        } catch (Exception e) {
+        }
         return available;
     }
 

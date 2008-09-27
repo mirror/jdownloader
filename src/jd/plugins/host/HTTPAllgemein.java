@@ -25,6 +25,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -52,8 +53,7 @@ public class HTTPAllgemein extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
         String linkurl;
         downloadLink.setUrlDownload(linkurl = downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
 
@@ -63,21 +63,18 @@ public class HTTPAllgemein extends PluginForHost {
             HTTPConnection urlConnection;
             try {
                 urlConnection = br.openGetConnection(linkurl);
-
                 if (!urlConnection.isOK()) return false;
                 downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
                 downloadLink.setBrowserUrl(linkurl);
                 downloadLink.setDownloadSize(urlConnection.getContentLength());
+                urlConnection.disconnect();
                 this.contentType = urlConnection.getContentType();
                 return true;
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
-
-        linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return false;
-
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
@@ -88,24 +85,12 @@ public class HTTPAllgemein extends PluginForHost {
 
     @Override
     public void handle(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+        getFileInformation(downloadLink);
 
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
-        }
-
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
-
         dl.startDownload();
     }
 
