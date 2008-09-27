@@ -68,6 +68,7 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.setDebug(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
 
