@@ -36,6 +36,7 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -95,6 +96,8 @@ abstract public class DownloadInterface {
         private long startByte;
 
         private long totalPartBytes = 0;
+
+        private boolean started;
 
         /**
          * die connection wird entsprechend der start und endbytes neu
@@ -192,8 +195,8 @@ abstract public class DownloadInterface {
                 logger.finer("Übernehme Verbindung bei " + connection.getRange()[0]);
                 return connection;
             }
-//            connection.getHTTPURLConnection().disconnect();
-            
+            // connection.getHTTPURLConnection().disconnect();
+
             try {
                 Browser br = plugin.getBrowser().cloneBrowser();
                 br.setReadTimeout(getReadTimeout());
@@ -501,7 +504,7 @@ abstract public class DownloadInterface {
         public void finalize() {
             if (speedDebug) {
                 logger.finer("Finalized: " + downloadLink + " : " + getID());
-            }            
+            }
             buffer = null;
             System.gc();
             System.runFinalization();
@@ -720,9 +723,41 @@ abstract public class DownloadInterface {
          */
         public void run() {
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
+            this.started = true;
             run0();
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
+            while (!this.isExternalyAborted()) {
+                boolean allConnected = true;
+                synchronized (DownloadInterface.this.chunks) {
+                    for (Chunk chunk : DownloadInterface.this.chunks) {
+                        if (chunk.connection == null || !chunk.connection.isConnected()) {
+                            allConnected = false;
+                            break;
+                        }
+                    }
+                }
+                if (allConnected) {
+                    try {
+                        this.connection.disconnect();
+                    } catch (Exception e) {
+                    }
+                    break;
+
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (Exception e) {                   
+                    e.printStackTrace();
+                    break;
+                }
+            }
+            if(this.isExternalyAborted()){
+                try {
+                    this.connection.disconnect();
+                } catch (Exception e) {
+                }
+            }
             onChunkFinished();
         }
 
@@ -943,14 +978,170 @@ abstract public class DownloadInterface {
 
     private boolean doFileSizeCheck = true;
 
-    public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
+    private Request request = null;
+
+    private boolean fileSizeVerified = false;
+
+    private boolean connected;
+
+    // public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink,
+    // HTTPConnection urlConnection) {
+    // this(plugin, downloadLink);
+    // connection = urlConnection;
+    // if (connection.getContentLength() > 0)
+    // this.downloadLink.setDownloadSize(connection.getContentLength());
+    // this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+    //
+    // fileSize = getFileSize();
+    //
+    // //
+    // int tmp = Math.min(Math.max(1, (int) (fileSize / Chunk.MIN_CHUNKSIZE)),
+    // getChunkNum());
+    // setChunkNum(Math.min(tmp, plugin.getFreeConnections()));
+    // if (tmp != getChunkNum()) {
+    // logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
+    // setChunkNum(tmp);
+    // }
+    //
+    // }
+
+    private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
-        if (urlConnection.getContentLength() > 0) this.downloadLink.setDownloadSize(urlConnection.getContentLength());
-        this.downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
         linkStatus = downloadLink.getLinkStatus();
         downloadLink.setDownloadInstance(this);
-        connection = urlConnection;
         this.plugin = plugin;
+    }
+
+    public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException {
+        this(plugin, downloadLink);
+        this.request = request;
+        Request head = request.toHeadRequest();
+        head.load();
+
+        if (this.plugin.getBrowser().isDebug()) logger.finest(head.printHeaders());
+        if (head.getContentLength() > 1024) {
+            this.setFileSizeVerified(true);
+            logger.finer("Got filesze from Headrequest: " + head.getContentLength() + " bytes");
+            downloadLink.setDownloadSize(fileSize = head.getContentLength());
+        }
+    }
+
+    public boolean isFileSizeVerified() {
+        return fileSizeVerified;
+    }
+
+    public void setFileSizeVerified(boolean fileSizeVerified) {
+        this.fileSizeVerified = fileSizeVerified;
+    }
+
+    /**
+     * Validiert das Chunk Progress array
+     * 
+     * @return
+     */
+    protected boolean checkResumabled() {
+
+        if (downloadLink.getChunksProgress() == null || downloadLink.getChunksProgress().length == 0) { return false; }
+
+        long loaded = 0;
+        long fileSize = getFileSize();
+        int chunks = downloadLink.getChunksProgress().length;
+        long part = fileSize / chunks;
+        long dif;
+        long last = -1;
+        for (int i = 0; i < chunks; i++) {
+            dif = downloadLink.getChunksProgress()[i] - i * part;
+            if (dif < 0) return false;
+            if (downloadLink.getChunksProgress()[i] <= last) return false;
+            last = downloadLink.getChunksProgress()[i];
+            loaded += dif;
+        }
+        if (chunks > 0) {
+
+            setChunkNum(chunks);
+            logger.info("Resumeable with " + chunks + " chunks");
+
+            return true;
+        }
+        return false;
+
+    }
+    public HTTPConnection connect(Browser br) throws Exception {
+        HTTPConnection ret = connect();
+        br.setRequest(request);
+        return ret;
+    }
+    public HTTPConnection connect() throws Exception {
+       
+        if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
+        this.connected=true;
+        long[] chunkProgress = downloadLink.getChunksProgress();
+        if (this.isResume() && this.checkResumabled()) {
+            // TODO: endrange prüfen
+            if (this.isFileSizeVerified()) {
+                request.getHeaders().put("Range", "bytes=" + (chunkProgress[0] + 1) + "-" + ((fileSize / chunkProgress.length)));
+
+            } else {
+                request.getHeaders().put("Range", chunkProgress.length > 1 ? "bytes=" + (chunkProgress[0] + 1) + "-" + (chunkProgress[1] + 1) : "bytes=" + (chunkProgress[0] + 1) + "-");
+
+            }
+            request.connect();
+        } else {
+
+            if (downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1) {
+                // Korrigiere chunk num
+                int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
+                setChunkNum(Math.min(tmp, plugin.getFreeConnections()));
+                if (tmp != getChunkNum()) {
+                    logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
+                    setChunkNum(tmp);
+                }
+
+                long part = downloadLink.getDownloadSize() / this.getChunkNum();
+                request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
+                request.connect();
+                if (request.getHttpConnection().getRange() == null) {
+                    logger.warning("No Chunkload Support");
+                    setChunkNum(1);
+                } else {
+                    if (request.getHttpConnection().getRange()[0] != 0) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
+                    if (request.getHttpConnection().getRange()[1] < (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+
+                    }
+                    if (request.getHttpConnection().getRange()[1] == request.getHttpConnection().getRange()[2] - 1 && getChunkNum() > 1) {
+                        logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+
+                    } else if (request.getHttpConnection().getRange()[1] > (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+
+                    }
+
+                }
+            } else {
+                request.connect();
+            }
+        }
+
+        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+        if (request.getLocation() != null) { throw new Exception("Illegal Request: redirect to: " + request.getLocation()); }
+
+        connection = request.getHttpConnection();
+        if (connection.getRange() != null) {
+            // Dateigröße wird aus dem Range-Response gelesen
+            if (connection.getRange()[2] > 0) {
+                this.setFilesizeCheck(true);
+                this.downloadLink.setDownloadSize(connection.getRange()[2]);
+            }
+        } else {
+            if (connection.getContentLength() > 0) {
+                this.setFilesizeCheck(true);
+                this.downloadLink.setDownloadSize(connection.getContentLength());
+            }
+
+        }
+        this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+        fileSize = downloadLink.getDownloadSize();
+
+        return connection;
     }
 
     /**
@@ -1132,7 +1323,7 @@ abstract public class DownloadInterface {
         if (fileSize > 0) {
 
         return fileSize; }
-        if (connection.getContentLength() > 0) {
+        if (connection != null && connection.getContentLength() > 0) {
 
         return connection.getContentLength(); }
 
@@ -1186,6 +1377,10 @@ abstract public class DownloadInterface {
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
+
+            if (totaleLinkBytesLoaded > fileSize) {
+                logger.severe("loaded more than requested. filesize: " + fileSize + " loaded: " + totaleLinkBytesLoaded + ". This might be  a logic chunk setup error!");
+            }
             return false;
         }
 
@@ -1349,24 +1544,34 @@ abstract public class DownloadInterface {
      * @param value
      */
     public void setResume(boolean value) {
-        resume = value;
+        if (checkResumabled()) {
+
+            resume = value;
+        } else {
+            logger.warning("Resumepoint not valid");
+
+        }
     }
 
     /**
      * Wird aufgerufen um die Chunks zu initialisieren
      * 
+     * @throws Exception
+     * 
      * @throws IOException
      * 
      */
-    abstract protected void setupChunks();
+    abstract protected void setupChunks() throws Exception;
 
     /**
      * Startet den Download. Nach dem Aufruf dieser Funktion können keine
      * Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
      * 
      * @return
+     * @throws Exception 
      */
-    public boolean startDownload() {
+    public boolean startDownload() throws Exception {
+        if(!connected)connect();
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
 
         if (connection.getHeaderField("Location") != null) {
@@ -1560,5 +1765,7 @@ abstract public class DownloadInterface {
         this.doFileSizeCheck = b;
 
     }
+
+
 
 }

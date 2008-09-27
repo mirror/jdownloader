@@ -72,16 +72,17 @@ public class BluehostTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         }
         Form[] forms = br.getForms();
-        HTTPConnection con = br.openFormConnection(forms[2]);
+        HTTPConnection con;
+        dl = new RAFDownload(this, downloadLink, br.createFormRequest(forms[2]));
+        dl.setResume(false);
+        dl.setChunkNum(1);
+        con = dl.connect();
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
 
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
 
         }
 
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setResume(false);
-        dl.setChunkNum(1);
         dl.startDownload();
 
     }
@@ -105,7 +106,7 @@ public class BluehostTo extends PluginForHost {
         // happyhour
         //           
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
-       
+
         String[] dat = page.split("\\, ");
 
         if (dat.length != 5) {

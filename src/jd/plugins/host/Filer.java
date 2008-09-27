@@ -96,16 +96,7 @@ public class Filer extends PluginForHost {
         page = br.submitForm(forms[1]);
         sleep(61000, downloadLink);
 
-        HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-
-        logger.info("Filename: " + Plugin.getFileNameFormHeader(con));
-        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-        }
-
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setChunkNum(1);
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(null));
         dl.startDownload();
 
     }
@@ -124,16 +115,11 @@ public class Filer extends PluginForHost {
         String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getMatch(0);
         br.getPage("http://www.filer.net/dl/" + id);
 
-        HTTPConnection con = br.openGetConnection(br.getRedirectLocation());
-
-        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(null),true,0);
+        if (!dl.connect(br).isOK()) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
-        }
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
+        }  
         dl.startDownload();
 
     }

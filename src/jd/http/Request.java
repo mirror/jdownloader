@@ -112,47 +112,14 @@ public abstract class Request {
     }
 
     public String printHeaders() {
-        StringBuffer sb = new StringBuffer();
-        sb.append("-->" + url + "\r\n");
-        sb.append("----------------Request------------------\r\n");
-        sb.append(httpConnection.getRequestMethod() + " " + url.getPath() + (url.getQuery() != null ? "?" + url.getQuery() : "") + " HTTP/1.1\r\n");
-        sb.append("Host: " + url.getHost() + (":" + url.getPort()) + "\r\n");
-        for (Iterator<Entry<String, List<String>>> it = httpConnection.getRequestProperties().entrySet().iterator(); it.hasNext();) {
-            Entry<String, List<String>> next = it.next();
-            String value = "";
-            for (String v : next.getValue()) {
-                value += ";" + v;
-            }
-            if (value.length() > 0) value = value.substring(1);
-            sb.append(next.getKey() + ": " + value + "\r\n");
-        }
-        sb.append("\r\n");
-
-        if (httpConnection.getPostData() != null) {
-            sb.append(httpConnection.getPostData() + "\r\n");
-        }
-        sb.append("----------------Response------------------\r\n");
-
-        for (Iterator<Entry<String, List<String>>> it = httpConnection.getHTTPURLConnection().getHeaderFields().entrySet().iterator(); it.hasNext();) {
-            Entry<String, List<String>> next = it.next();
-            // Achtung cookie reihenfolge ist wichtig!!!
-            for (int i = next.getValue().size() - 1; i >= 0; i--) {
-                if (next.getKey() == null) {
-                    sb.append(next.getValue().get(i) + "\r\n");
-                } else {
-                    sb.append(next.getKey() + ": " + next.getValue().get(i) + "\r\n");
-                }
-            }
-        }
-        sb.append("\r\n");
-
-        return sb.toString();
+       return httpConnection.toString();
     }
 
     public Request(HTTPConnection con) {
         httpConnection = con;
         collectCookiesFromConnection();
     }
+ 
 
     private void collectCookiesFromConnection() {
         List<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
@@ -365,7 +332,19 @@ public abstract class Request {
 
     public String getLocation() {
         if (httpConnection == null) { return null; }
-        return httpConnection.getHeaderField("Location");
+        String red=httpConnection.getHeaderField("Location");
+        if(red==null)return null;
+        try {
+            new URL(red);
+        } catch (Exception e) {
+            String path=this.getHttpConnection().getURL().getFile();
+            if(!path.endsWith("/")){
+                path=path.substring(0, path.lastIndexOf("/"));
+            }
+            red = "http://" + this.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : path+"/" + red);
+        }
+        return red;
+        
     }
 
     public long getReadTime() {
@@ -404,6 +383,8 @@ public abstract class Request {
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
         headers.put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         headers.put("Connection", "close");
+        headers.put("Cache-Control", "no-cache");
+        headers.put("Pragma", "no-cache"); 
 
     }
 
@@ -504,10 +485,18 @@ public abstract class Request {
     public void setProxy(String ip, String port) throws NumberFormatException, MalformedURLException {
         proxyip = ip;
         proxyport = port;
-     
+     if(ip==null||port==null)return;
             url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
       
 
+    }
+
+    public String getProxyip() {
+        return proxyip;
+    }
+
+    public String getProxyport() {
+        return proxyport;
     }
 
     public void setReadTimeout(int readTimeout) {
@@ -526,6 +515,36 @@ public abstract class Request {
 
     public void setHtmlCode(String htmlCode) {
         this.htmlCode = htmlCode;
+    }
+
+    public Request toHeadRequest() throws MalformedURLException {
+        Request ret = new Request(this.getUrl()+""){
+
+            @Override
+            public void postRequest(HTTPConnection httpConnection) throws IOException {
+                // TODO Auto-generated method stub
+                
+            }
+
+            @Override
+            public void preRequest(HTTPConnection httpConnection) throws IOException {
+                httpConnection.setRequestMethod("HEAD");
+                
+            }
+            
+        };
+        ret.connectTimeout=this.connectTimeout;
+       
+        ret.cookies=(ArrayList<Cookie>) this.getCookies().clone();
+        ret.followRedirects=this.followRedirects;
+        ret.headers=(HashMap<String, String>) this.getHeaders().clone();    
+        ret.setProxy(proxyip, proxyport);
+        ret.readTime=this.readTimeout;
+     
+        ret.httpConnection=this.httpConnection;
+
+        return ret;
+        
     }
 
 }

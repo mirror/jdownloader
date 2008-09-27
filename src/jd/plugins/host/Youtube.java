@@ -20,7 +20,6 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -79,8 +78,8 @@ public class Youtube extends PluginForHost {
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-        HTTPConnection urlConnection = br.getHttpConnection();
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        br.getHttpConnection().disconnect();
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);
         if (dl.startDownload()) {
@@ -112,8 +111,8 @@ public class Youtube extends PluginForHost {
             linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
             return;
         }
-        HTTPConnection urlConnection = br.getHttpConnection();
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        br.getHttpConnection().disconnect();
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);
         if (dl.startDownload()) {

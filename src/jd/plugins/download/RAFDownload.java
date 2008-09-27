@@ -17,13 +17,15 @@
 package jd.plugins.download;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 
 import jd.config.Configuration;
-import jd.http.HTTPConnection;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -123,36 +125,17 @@ public class RAFDownload extends DownloadInterface {
 
     private Boolean writeType;
 
-    public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, HTTPConnection urlConnection) {
-        super(plugin, downloadLink, urlConnection);
+    // public RAFDownload(PluginForHost plugin, DownloadLink downloadLink,
+    // HTTPConnection urlConnection) {
+    // super(plugin, downloadLink, urlConnection);
+    // writeType =
+    // JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD"
+    // , false);
+    // }
+
+    public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException {
+        super(plugin, downloadLink, request);
         writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
-    }
-
-    private boolean checkResumabled() {
-
-        if (!isResume() || downloadLink.getChunksProgress() == null) { return false; }
-
-        long loaded = 0;
-        long fileSize = getFileSize();
-        int chunks = downloadLink.getChunksProgress().length;
-        long part = fileSize / chunks;
-        long dif;
-        long last = -1;
-        for (int i = 0; i < chunks; i++) {
-            dif = downloadLink.getChunksProgress()[i] - i * part;
-            if (dif < 0) return false;
-            if (downloadLink.getChunksProgress()[i] <= last) return false;
-            last = downloadLink.getChunksProgress()[i];
-            loaded += dif;
-        }
-        if (chunks > 0) {
-
-            setChunkNum(chunks);
-            logger.info("Resume with " + chunks + " chunks");
-
-            return true;
-        }
-        return false;
 
     }
 
@@ -204,7 +187,7 @@ public class RAFDownload extends DownloadInterface {
 
         return; }
         try {
-            logger.severe("no errors : rename");
+            logger.finest("no errors : rename");
             if (!new File(downloadLink.getFileOutput() + ".part").renameTo(new File(downloadLink.getFileOutput()))) {
 
                 logger.severe("Could not rename file " + new File(downloadLink.getFileOutput() + ".part") + " to " + downloadLink.getFileOutput());
@@ -214,6 +197,9 @@ public class RAFDownload extends DownloadInterface {
             DownloadLink sfv;
             if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
                 if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    sfv.getLinkStatus().setStatusText(JDLocale.L("system.download.doCRC", "CRC-Check running"));
+                    sfv.requestGuiUpdate();
+
                     long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
 
                     String sfvText = JDUtilities.getLocalFile(new File(sfv.getFileOutput()));
@@ -229,11 +215,11 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
-                            // CRC_STATUS_OK);
+                            sfv.getLinkStatus().setStatusText(JDLocale.L("system.download.doCRC.success", "CRC-Check OK"));
+                            sfv.requestGuiUpdate();
                         } else {
-                            //downloadLink.getLinkStatus().addStatus(LinkStatus.
-                            // ERROR_CRC_STATUS_BAD);
+                            sfv.getLinkStatus().setStatusText(JDLocale.L("system.download.doCRC.failed", "CRC-Check FAILED"));
+                            sfv.requestGuiUpdate();
                             error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("system.download.errors.crcfailed", "CRC Check failed"));
 
                         }
@@ -250,110 +236,115 @@ public class RAFDownload extends DownloadInterface {
     }
 
     @Override
-    protected void setupChunks() {
+    protected void setupChunks() throws Exception {
         try {
 
-            boolean correctChunks = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", true);
-            fileSize = getFileSize();
-            if (correctChunks) {
-
-                int tmp = Math.min(Math.max(1, (int) (fileSize / Chunk.MIN_CHUNKSIZE)), getChunkNum());
-                if (tmp != getChunkNum()) {
-                    logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
-                    setChunkNum(tmp);
-                }
-            }
-
-            // linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
-            downloadLink.setDownloadSize(fileSize);
-            setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
-            if (checkResumabled() && plugin.getFreeConnections() >= getChunkNum()) {
-                logger.info("Resume: " + fileSize);
-                long parts = fileSize / getChunkNum();
-
-                Chunk chunk;
-
-                outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
-
-                outputChannel = outputFile.getChannel();
-                addToChunksInProgress(getChunkNum());
-                boolean maintainOroginalConnection = false;
-                for (int i = 0; i < getChunkNum(); i++) {
-                    if (i == getChunkNum() - 1) {
-                        if (downloadLink.getChunksProgress()[i] <= 0) maintainOroginalConnection = true;
-                        chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, -1, connection);
-                        chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
-                    } else {
-                        if (downloadLink.getChunksProgress()[i] <= 0) maintainOroginalConnection = true;
-                        chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
-                        chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
-                    }
-
-                    addChunk(chunk);
-                }
-                // Schließt allte verbiundung wenn sie nicht mehr gebraucht
-                // wird.
-                if (!maintainOroginalConnection) {
-                    logger.info("Disconnect original connection");
-                    connection.getHTTPURLConnection().disconnect();
-                }
+            if (checkResumabled() && isResume()) {
+                this.setupResume();
 
             } else {
-
-                setChunkNum(Math.min(getChunkNum(), plugin.getFreeConnections()));
-                totaleLinkBytesLoaded = 0;
-                downloadLink.setDownloadCurrent(0);
-                long parts = fileSize > 0 ? fileSize / getChunkNum() : -1;
-                if (parts == -1) {
-                    logger.warning("Could not get Filesize.... reset chunks to 1");
-                    setChunkNum(1);
-                }
-                logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + parts);
-
-                // downloadLink.setChunksProgress(new int[chunkNum]);
-                Chunk chunk;
-                if (!new File(downloadLink.getFileOutput()).getParentFile().exists()) {
-                    new File(downloadLink.getFileOutput()).getParentFile().mkdirs();
-                }
-                outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
-
-                outputChannel = outputFile.getChannel();
-                downloadLink.setChunksProgress(new long[chunkNum]);
-                logger.info("Filesize = " + fileSize);
-                logger.info("Partsize = " + parts);
-                // int total=0;
-                addToChunksInProgress(getChunkNum());
-                for (int i = 0; i < getChunkNum(); i++) {
-
-                    if (i == getChunkNum() - 1) {
-
-                        chunk = new Chunk(i * parts, -1, connection);
-                        // total+=(fileSize-i * parts);
-                        logger.info("+part " + (fileSize - i * parts));
-
-                    } else {
-                        chunk = new Chunk(i * parts, (i + 1) * parts - 1, connection);
-                        // total+=((i + 1) * parts-i * parts);
-                        logger.info("+part " + ((i + 1) * parts - i * parts));
-                    }
-
-                    addChunk(chunk);
-                }
-                // logger.info("Total splitted size: "+total);
+                this.setupVirginStart();
             }
 
         } catch (Exception e) {
-            try {
-                outputChannel.force(false);
-                logger.info("CLOSE HD FILE");
-                outputFile.close();
-                outputChannel.close();
-                e.printStackTrace();
-            } catch (Exception e2) {
-                e.printStackTrace();
-            }
-            e.printStackTrace();
+            outputChannel.force(false);
+            logger.info("CLOSE HD FILE");
+            outputFile.close();
+            outputChannel.close();
             addException(e);
+            throw e;
+
+        }
+
+    }
+
+    private void setupVirginStart() throws FileNotFoundException {
+        Chunk chunk;
+
+        totaleLinkBytesLoaded = 0;
+        downloadLink.setDownloadCurrent(0);
+        long partSize = fileSize / getChunkNum();
+
+        if (connection.getRange() != null) {
+            if (connection.getRange()[1] == connection.getRange()[2] - 1) {
+                logger.warning("Chunkload protection. this may cause traffic errors");
+                partSize = fileSize / getChunkNum();
+            } else {
+                // Falls schon der 1. range angefordert wurde.... werden die
+                // estlichen chunks angepasst
+                partSize = (fileSize - connection.getContentLength()) / (getChunkNum() - 1);
+            }
+
+        }
+        if (partSize <= 0) {
+            logger.warning("Could not get Filesize.... reset chunks to 1");
+            setChunkNum(1);
+        }
+        logger.finer("Start Download in " + getChunkNum() + " chunks. Chunksize: " + partSize);
+
+        // downloadLink.setChunksProgress(new int[chunkNum]);
+
+        createOutputChannel();
+        downloadLink.setChunksProgress(new long[chunkNum]);
+
+        addToChunksInProgress(getChunkNum());
+        int start = 0;
+
+        long rangePosition = 0;
+        if (connection.getRange() != null && connection.getRange()[1] != connection.getRange()[2] - 1) {
+            // Erster range schon angefordert
+
+            chunk = new Chunk(0, rangePosition = connection.getRange()[1], connection);
+            rangePosition++;
+            addChunk(chunk);
+            start++;
+        }
+
+        for (int i = start; i < getChunkNum(); i++) {
+            if (i == getChunkNum() - 1) {
+                chunk = new Chunk(rangePosition, -1, connection);
+
+            } else {
+                chunk = new Chunk(rangePosition, rangePosition + partSize - 1, connection);
+                rangePosition = rangePosition + partSize;
+            }
+
+            addChunk(chunk);
+        }
+        // logger.info("Total splitted size: "+total);
+
+    }
+
+    private void createOutputChannel() throws FileNotFoundException {
+        if (!new File(downloadLink.getFileOutput()).getParentFile().exists()) {
+            new File(downloadLink.getFileOutput()).getParentFile().mkdirs();
+        }
+        outputFile = new RandomAccessFile(downloadLink.getFileOutput() + ".part", "rw");
+
+        outputChannel = outputFile.getChannel();
+    }
+
+    private void setupResume() throws FileNotFoundException {
+
+        long parts = fileSize / getChunkNum();
+        logger.info("Resume: " + fileSize + " parts: " + parts);
+        Chunk chunk;
+
+        this.createOutputChannel();
+        addToChunksInProgress(getChunkNum());
+
+        for (int i = 0; i < getChunkNum(); i++) {
+            if (i == getChunkNum() - 1) {
+
+                chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, -1, connection);
+                chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
+            } else {
+
+                chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
+                chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
+            }
+
+            addChunk(chunk);
         }
 
     }
@@ -403,22 +394,40 @@ public class RAFDownload extends DownloadInterface {
         return true;
 
     }
-/**
- * 
- * @param downloadLink  downloadlink der geladne werden soll (wird zur darstellung verwendet)
- * @param con   Verbindung die geladen werden soll
- * @param b  Resumefähige verbindung
- * @param i  max chunks. für negative werte wirden die chunks aus der config verwendet. Bsp: -3 :  Min(3,Configwert);
- * @return
- */
-    public static DownloadInterface download(DownloadLink downloadLink, HTTPConnection con, boolean b, int i) {
-        DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, con);
+
+    /**
+     * 
+     * @param downloadLink
+     *            downloadlink der geladne werden soll (wird zur darstellung
+     *            verwendet)
+     * @param request
+     *            Verbindung die geladen werden soll
+     * @param b
+     *            Resumefähige verbindung
+     * @param i
+     *            max chunks. für negative werte wirden die chunks aus der
+     *            config verwendet. Bsp: -3 : Min(3,Configwert);
+     * @return
+     * @throws IOException
+     */
+    public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws IOException {
+        DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
         downloadLink.getPlugin().setDownloadInterface(dl);
         dl.setResume(b);
-        dl.setChunkNum(i<=0?Math.min(i*-1, JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)):i);
-        dl.startDownload();
-        
+        if (i == 0) {
+            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+
+        } else {
+            dl.setChunkNum(i < 0 ? Math.min(i * -1, JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2)) : i);
+
+        }
+
         return dl;
 
+    }
+
+    public static DownloadInterface download(DownloadLink downloadLink, Request request) throws IOException {
+        // TODO Auto-generated method stub
+        return download(downloadLink,request,false,1);
     }
 }

@@ -44,12 +44,17 @@ public class HTTPConnection {
 
     private HashMap<String, List<String>> requestProperties = null;
     private long[] ranges;
+    private boolean connected = false;
+
+    public boolean isConnected() {
+        return connected;
+    }
 
     public HTTPConnection(URLConnection openConnection) {
         connection = (HttpURLConnection) openConnection;
         requestProperties = new HashMap<String, List<String>>();
         connection.setRequestProperty("Connection", "close");
-        
+
         connection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
@@ -78,7 +83,7 @@ public class HTTPConnection {
     }
 
     public void connect() throws IOException {
-
+        this.connected = true;
         connection.connect();
 
     }
@@ -236,7 +241,53 @@ public class HTTPConnection {
     }
 
     public boolean isContentDisposition() {
- 
-        return this.getHeaderField("Content-Disposition")!=null;
+
+        return this.getHeaderField("Content-Disposition") != null;
+    }
+
+    public void disconnect() {
+        if (!isConnected()) throw new IllegalStateException("Not connected");
+        this.connection.disconnect();
+
+    }
+
+    public String toString() {
+
+        StringBuffer sb = new StringBuffer();
+        sb.append("-->" + this.getURL() + "\r\n");
+        sb.append("----------------Request------------------\r\n");
+        sb.append(connection.getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
+        sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
+        for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
+            Entry<String, List<String>> next = it.next();
+            String value = "";
+            for (String v : next.getValue()) {
+                value += ";" + v;
+            }
+            if (value.length() > 0) value = value.substring(1);
+            sb.append(next.getKey() + ": " + value + "\r\n");
+        }
+        sb.append("\r\n");
+
+        if (this.postData != null) {
+            sb.append(this.postData + "\r\n");
+        }
+        sb.append("----------------Response------------------\r\n");
+
+        for (Iterator<Entry<String, List<String>>> it = connection.getHeaderFields().entrySet().iterator(); it.hasNext();) {
+            Entry<String, List<String>> next = it.next();
+            // Achtung cookie reihenfolge ist wichtig!!!
+            for (int i = next.getValue().size() - 1; i >= 0; i--) {
+                if (next.getKey() == null) {
+                    sb.append(next.getValue().get(i) + "\r\n");
+                } else {
+                    sb.append(next.getKey() + ": " + next.getValue().get(i) + "\r\n");
+                }
+            }
+        }
+        sb.append("\r\n");
+
+        return sb.toString();
+
     }
 }

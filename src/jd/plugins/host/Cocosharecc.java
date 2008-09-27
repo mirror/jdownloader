@@ -124,9 +124,7 @@ public class Cocosharecc extends PluginForHost {
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
+     
         dl.startDownload();
     }
 

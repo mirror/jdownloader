@@ -39,6 +39,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.http.PostRequest;
+import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -415,9 +416,13 @@ public class Rapidshare extends PluginForHost {
         // Falls Serverauswahl fehlerhaft war
         if (linkStatus.isFailed()) return;
 
-        HTTPConnection urlConnection = br.openPostConnection(postTarget, "mirror=on&x=" + Math.random() * 40 + "&y=" + Math.random() * 40);
+        Request request = br.createPostRequest(postTarget, "mirror=on&x=" + Math.random() * 40 + "&y=" + Math.random() * 40);
 
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        // Download
+        dl = new RAFDownload(this, downloadLink, request);
+
+        dl.connect();
+
         if (dl.startDownload()) {
 
             if (new File(downloadLink.getFileOutput()).length() < 8000) {
@@ -473,17 +478,42 @@ public class Rapidshare extends PluginForHost {
         // Sprache auf englisch setzen
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         // Redirects sollen automatisch geladen werden
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         // Setzt die Auths infos fürdiese browserinstanz. domain=null heißt,
         // dass die logins für alle Verbindungen verwendet werden sollen
         br.setAuth(null, account.getUser().trim(), account.getPass().trim());
         // Verbindung aufbauen
-        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+
+        Request request = br.createGetRequest(downloadLink.getDownloadURL());
+
+        // Download
+        dl = new RAFDownload(this, downloadLink, request);
+        // Premiumdownloads sind resumefähig
+        dl.setResume(true);
+        // Premiumdownloads erlauben chunkload
+        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        HTTPConnection urlConnection;
+        try {
+
+            urlConnection = dl.connect();
+        } catch (Exception e) {
+            br.setRequest(request);
+            request = br.createGetRequest(null);
+            // Download
+            dl = new RAFDownload(this, downloadLink, request);
+            // Premiumdownloads sind resumefähig
+            dl.setResume(true);
+            // Premiumdownloads erlauben chunkload
+            dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+            urlConnection = dl.connect();
+        }
+        // Download starten
         // prüft ob ein content disposition header geschickt wurde. Falls nicht,
         // ist es eintweder eine Bilddatei oder eine Fehlerseite. BIldfiles
         // haben keinen Cache-Control Header
         if (!urlConnection.isContentDisposition() && urlConnection.getHeaderField("Cache-Control") != null) {
             // Lädt die zuletzt aufgebaute vernindung
+            br.setRequest(request);
             br.followConnection();
 
             // Fehlerbehanldung
@@ -508,13 +538,7 @@ public class Rapidshare extends PluginForHost {
             }
 
         }
-        // Download
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        // Premiumdownloads sind resumefähig
-        dl.setResume(true);
-        // Premiumdownloads erlauben chunkload
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        // Download starten
+
         dl.startDownload();
 
     }
@@ -767,7 +791,7 @@ public class Rapidshare extends PluginForHost {
         String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getMatch(0).trim();
         String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
-        ai.setTrafficLeft(Regex.getSize(trafficLeft + " Mb")/1000);
+        ai.setTrafficLeft(Regex.getSize(trafficLeft + " Mb") / 1000);
         ai.setTrafficMax(50 * 1024 * 1024 * 1024l);
         ai.setFilesNum(Integer.parseInt(files));
         ai.setPremiumPoints(Integer.parseInt(rapidPoints));

@@ -16,11 +16,7 @@
 
 package jd.plugins.host;
 
-import java.io.IOException;
-import java.util.ArrayList;
-
 import jd.PluginWrapper;
-import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.XPath;
@@ -29,7 +25,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 import jd.utils.JavaScript;
 
 public class FastLoadNet extends PluginForHost {
@@ -54,32 +49,25 @@ public class FastLoadNet extends PluginForHost {
         return CODER;
     }
 
-    @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
+
         String downloadurl = downloadLink.getDownloadURL() + "&lg=de";
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadurl);
+        downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4));
 
-        if (br.containsHTML(NOT_FOUND)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4));
-            return false;
+        if (br.containsHTML(NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+
+        if (br.containsHTML(HARDWARE_DEFECT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+
         }
 
-        if (br.containsHTML(HARDWARE_DEFECT)) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4));
-            return false;
-        }
-       
-       
-        String page=JavaScript.evalPage(br);
-        String filename= new XPath(page,"/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr/th[2]/font").getFirstMatch();
-        String size= new XPath(page,"/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr[2]/td[2]/font").getFirstMatch();
+        String page = JavaScript.evalPage(br);
+
+        String filename = new XPath(page, "/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr/th[2]/span").getFirstMatch();
+        String size = new XPath(page, "/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr[2]/td[2]/span").getFirstMatch();
 
         // downloadinfos gefunden? -> download verfügbar
         if (filename != null && size != null) {
@@ -87,8 +75,9 @@ public class FastLoadNet extends PluginForHost {
             downloadLink.setDownloadSize(Regex.getSize(size));
             return true;
         }
-     
-        return false;
+
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
     }
 
     @Override
@@ -100,61 +89,44 @@ public class FastLoadNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
+        String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("pid=") + 4 + 32);
 
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        br.clearCookies(getHost());
-
-        if (!getFileInformation(downloadLink)) { 
-            
-            //throw new PluginException(LinkStatus.ERROR_FATAL, getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
-
-        }
-        String bandwidth = br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) MBit").getMatch(0);
-        long bandw = 0;
-        if (bandwidth == null) {
-            bandwidth = br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) KBit").getMatch(0);
-            bandw = (long) Double.parseDouble(bandwidth.trim()) * 1024l;
-        } else {
-            bandw = (long) Double.parseDouble(bandwidth.trim()) * 1024l * 1024l;
-        }
+        String serverStatusID = br.getPage("http://www.fast-load.net/api/jdownloader/" + pid);
+        getFileInformation(downloadLink);
 
         downloadLink.setLocalSpeedLimit(-1);
-       
-        if (bandw > 1.9*1024l*1024l*1024l) {
+
+        if (serverStatusID.equalsIgnoreCase("0")) {
             logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
             downloadLink.setLocalSpeedLimit(20 * 1024);
         }
         br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) MBit").getMatch(0);
-        Form captcha_form = getDownloadForm();
+        Form captchaForm = getDownloadForm();
 
-        captcha_form.put("downloadbutton", "Download+starten");
-        br.openFormConnection(captcha_form);
+        captchaForm.put("downloadbutton", "Download+starten");
 
+        dl = new RAFDownload(this, downloadLink, br.createFormRequest(captchaForm));
+        dl.setChunkNum(1);
+        dl.setResume(false);
+        dl.connect(br);
         if (!br.getHttpConnection().isContentDisposition()) {
 
             if (br.getHttpConnection().getContentLength() == 184) {
                 logger.info("System overload: Retry in 20 seconds");
-                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setValue(20 * 60 * 1000l);
-                return;
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+
             } else if (br.getHttpConnection().getContentLength() == 169) {
                 logger.severe("File not found: File is deleted from Server");
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getContentLength() == 529) {
                 logger.severe("File not found: Unkown 404 Error");
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 logger.severe("Unknown error page");
-                linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-                return;
+                throw new PluginException(LinkStatus.ERROR_FATAL);
             }
         }
-
-        RAFDownload.download(downloadLink, br.getHttpConnection(), false, 1);
-
+        dl.startDownload();
     }
 
     private Form getDownloadForm() {

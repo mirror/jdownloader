@@ -90,11 +90,9 @@ public class FileBaseTo extends PluginForHost {
         String value = br.getRegex(Pattern.compile("document\\.waitform\\.wait\\.value = \"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0);
   
         dl_form.put("wait", value);
-        HTTPConnection urlConnection = br.openFormConnection(dl_form);
-        downloadLink.setDownloadSize(urlConnection.getContentLength());
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(false);
-        dl.setChunkNum(1);
+
+     
+        dl=RAFDownload.download(downloadLink, br.createFormRequest(dl_form));
         dl.startDownload();
     }
 

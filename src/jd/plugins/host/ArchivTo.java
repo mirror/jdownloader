@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -76,7 +77,7 @@ public class ArchivTo extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws IOException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -86,8 +87,9 @@ public class ArchivTo extends PluginForHost {
             return;
         }
 
-        HTTPConnection urlConnection = br.openGetConnection("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"\\./(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        Request request = br.createGetRequest("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"\\./(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+      
+        dl = new RAFDownload(this, downloadLink, request);
         dl.startDownload();
     }
 

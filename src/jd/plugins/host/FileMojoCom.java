@@ -82,10 +82,8 @@ public class FileMojoCom extends PluginForHost {
             return;
         }
 
-        HTTPConnection urlConnection = br.openFormConnection(1);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(false);
-        dl.setChunkNum(1);
+      
+        dl = RAFDownload.download(downloadLink, br.createFormRequest(br.getForm(1)));  
         dl.startDownload();
     }
 

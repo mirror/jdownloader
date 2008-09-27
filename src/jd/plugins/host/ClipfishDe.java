@@ -87,16 +87,17 @@ public class ClipfishDe extends PluginForHost {
             return;
         }
         br.openGetConnection(downloadLink.getDownloadURL());
-        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-
+        HTTPConnection urlConnection;
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
+        dl.setChunkNum(1);
+        dl.setResume(false);
+        urlConnection=dl.connect();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
 
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
+      
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());

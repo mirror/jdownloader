@@ -113,10 +113,11 @@ public class FileFactory extends PluginForHost {
 
         // Match die verbindung auf, Alle header werden ausgetauscht, aber keine
         // Daten geladen
-        br.openPostConnection(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), "");
-        // Prüft ob content disposition header da sind
+       dl=RAFDownload.download(parameter, br.createPostRequest(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), ""));
+       dl.connect(br);
+       // Prüft ob content disposition header da sind
         if (br.getHttpConnection().isContentDisposition()) {
-            dl = new RAFDownload(this, parameter, br.getHttpConnection());
+          
             dl.startDownload();
         } else {
             // Falls nicht wird die html seite geladen
@@ -219,7 +220,9 @@ public class FileFactory extends PluginForHost {
         if (error != null) {
 
         throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-        HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
+        dl=RAFDownload.download(downloadLink, br.createGetRequest(downloadLink.getDownloadURL()),true,0);
+        HTTPConnection con = dl.connect(br);
+        
         if (con.getHeaderField("Content-Disposition") == null) {
             br.followConnection();
 
@@ -236,10 +239,6 @@ public class FileFactory extends PluginForHost {
 
             }
         }
-
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.startDownload();
         return;
     }

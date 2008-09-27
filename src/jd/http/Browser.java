@@ -128,16 +128,14 @@ public class Browser {
     }
 
     public static String getHost(Object url) throws MalformedURLException {
-     
-            String ret = new URL(url + "").getHost();
-            int id = 0;
-            while ((id = ret.indexOf(".")) != ret.lastIndexOf(".")) {
-                ret = ret.substring(id + 1);
 
-            }
-            return ret;
-      
-    
+        String ret = new URL(url + "").getHost();
+        int id = 0;
+        while ((id = ret.indexOf(".")) != ret.lastIndexOf(".")) {
+            ret = ret.substring(id + 1);
+
+        }
+        return ret;
 
     }
 
@@ -202,6 +200,7 @@ public class Browser {
         }
         return null;
     }
+
     public Form getFormbyID(String id) {
         for (Form f : getForms()) {
             if (f.formProperties.get("id") != null && f.formProperties.get("id").equals(id)) return f;
@@ -294,14 +293,8 @@ public class Browser {
 
     public String getRedirectLocation() {
         if (request == null) { return null; }
-        String red = request.getLocation();
-        if (red == null) return null;
-        try {
-            new URL(red);
-        } catch (Exception e) {
-            red = "http://" + request.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : "/" + red);
-        }
-        return red;
+        return request.getLocation();
+
     }
 
     public Request getRequest() {
@@ -348,6 +341,45 @@ public class Browser {
 
     }
 
+    public Request createFormRequest(Form form) throws IOException {
+        if (form == null) return null;
+        String base = null;
+        if (request != null) base = request.getUrl().toString();
+        String action = form.getAction(base);
+        switch (form.method) {
+
+        case Form.METHOD_GET:
+            StringBuffer stbuffer = new StringBuffer();
+            boolean first = true;
+            for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
+                if (first) {
+                    first = false;
+                } else {
+                    stbuffer.append("&");
+                }
+                stbuffer.append(entry.getKey());
+                stbuffer.append("=");
+                stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
+            }
+            String varString = stbuffer.toString();
+            if (varString != null && !varString.matches("[\\s]*")) {
+                if (action.matches(".*\\?.+")) {
+                    action += "&";
+                } else if (action.matches("[^\\?]*")) {
+                    action += "?";
+                }
+                action += varString;
+            }
+            return createGetRequest(action);
+
+        case Form.METHOD_POST:
+
+            return createPostRequest(action, form.getVarsMap());
+        }
+        return null;
+
+    }
+
     public HTTPConnection openGetConnection(String string) throws IOException {
         string = getURL(string);
 
@@ -388,9 +420,43 @@ public class Browser {
 
     }
 
+    public Request createGetRequest(String string) throws IOException {
+        string = getURL(string);
+         if (currentURL == null) {
+         currentURL = new URL(string);
+         }
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        GetRequest request = new GetRequest(string);
+        doAuth(request);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        forwardCookies(request);
+          request.getHeaders().put("Referer", currentURL.toString());
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+
+        // if (this.doRedirects && request.getLocation() != null) {
+        // this.openGetConnection(null);
+        // } else {
+        //
+        // currentURL = new URL(string);
+        // }
+        // return this.request.getHttpConnection();
+        return request;
+    }
+
     private String getURL(String string) {
         if (string == null) string = this.getRedirectLocation();
-
+        if (string == null) return null;
         try {
             string = string.replaceAll("\\s", "%20");
             new URL(string);
@@ -441,6 +507,36 @@ public class Browser {
 
     }
 
+    public Request createPostRequest(String url, HashMap<String, String> post) throws IOException {
+        url = getURL(url);
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        PostRequest request = new PostRequest(url);
+        doAuth(request);
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        if (post != null) {
+            request.getPostData().putAll(post);
+        }
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+        return request;
+
+    }
+    public Request createPostRequest(String url, String post) throws MalformedURLException, IOException {
+   
+        return createPostRequest(url, Request.parseQuery(post));
+    }
     public HTTPConnection openPostConnection(String url, String post) throws IOException {
 
         return openPostConnection(url, Request.parseQuery(post));
@@ -575,6 +671,7 @@ public class Browser {
 
         return postPage(url, Request.parseQuery(post));
     }
+
     public String postPageRaw(String url, String post) throws IOException {
         url = getURL(url);
 
@@ -618,6 +715,7 @@ public class Browser {
         }
         return ret;
     }
+
     public void setAcceptLanguage(String acceptLanguage) {
         this.acceptLanguage = acceptLanguage;
     }
@@ -627,9 +725,8 @@ public class Browser {
     }
 
     public void setCurrentURL(String string) throws MalformedURLException {
-      
-            currentURL = new URL(string);
-       
+
+        currentURL = new URL(string);
 
     }
 
@@ -746,9 +843,9 @@ public class Browser {
 
             updateCookies(request);
             this.request = request;
-         
-                currentURL = new URL(action);
-           
+
+            currentURL = new URL(action);
+
             up.close();
             return ret;
 
@@ -792,79 +889,76 @@ public class Browser {
      * @param file
      * @param con
      * @return Erfolg true/false
-     * @throws IOException 
+     * @throws IOException
      */
     public static void download(File file, HTTPConnection con) throws IOException {
-        
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    System.out.println("Konnte Datei nicht überschreiben " + file);
-                   throw new IOException("Could not overwrite file: "+file);
-                }
+
+        if (file.isFile()) {
+            if (!file.delete()) {
+                System.out.println("Konnte Datei nicht überschreiben " + file);
+                throw new IOException("Could not overwrite file: " + file);
             }
-            if (!file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-            byte[] b = new byte[1024];
-            int len;
-            while ((len = input.read(b)) != -1) {
-                output.write(b, 0, len);
-            }
-            output.close();
-            input.close();
-          
-    
+        }
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        file.createNewFile();
+        BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+        BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+        byte[] b = new byte[1024];
+        int len;
+        while ((len = input.read(b)) != -1) {
+            output.write(b, 0, len);
+        }
+        output.close();
+        input.close();
+
     }
 
     public static void downloadBinary(String filepath, String fileurl) throws IOException {
 
-       
-            fileurl = fileurl.replaceAll(" ", "%20");
-            fileurl = Encoding.urlEncode(fileurl.replaceAll("\\\\", "/"));
-            File file = new File(filepath);
-            if (file.isFile()) {
-                if (!file.delete()) {
-                    System.out.println("Konnte Datei nicht löschen " + file);
-                    throw new IOException("Could not overwrite file: "+file);
-                }
-
+        fileurl = fileurl.replaceAll(" ", "%20");
+        fileurl = Encoding.urlEncode(fileurl.replaceAll("\\\\", "/"));
+        File file = new File(filepath);
+        if (file.isFile()) {
+            if (!file.delete()) {
+                System.out.println("Konnte Datei nicht löschen " + file);
+                throw new IOException("Could not overwrite file: " + file);
             }
 
-            if (file.getParentFile() != null && !file.getParentFile().exists()) {
-                file.getParentFile().mkdirs();
-            }
-            file.createNewFile();
+        }
 
-            BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-            fileurl = URLDecoder.decode(fileurl, "UTF-8");
+        if (file.getParentFile() != null && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        file.createNewFile();
 
-            URL url = new URL(fileurl);
-            HTTPConnection con = new HTTPConnection(url.openConnection());
+        BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+        fileurl = URLDecoder.decode(fileurl, "UTF-8");
 
-            BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+        URL url = new URL(fileurl);
+        HTTPConnection con = new HTTPConnection(url.openConnection());
 
-            byte[] b = new byte[1024];
-            int len;
-            while ((len = input.read(b)) != -1) {
-                output.write(b, 0, len);
-            }
-            output.close();
-            input.close();
+        BufferedInputStream input = new BufferedInputStream(con.getInputStream());
 
+        byte[] b = new byte[1024];
+        int len;
+        while ((len = input.read(b)) != -1) {
+            output.write(b, 0, len);
+        }
+        output.close();
+        input.close();
 
     }
 
     public void downloadFile(File file, String urlString) throws IOException {
-      
-            urlString = URLDecoder.decode(urlString, "UTF-8");
 
-            HTTPConnection con = this.openGetConnection(urlString);
-            con.setInstanceFollowRedirects(true);
-            Browser.download(file, con);
-       
+        urlString = URLDecoder.decode(urlString, "UTF-8");
+
+        HTTPConnection con = this.openGetConnection(urlString);
+        con.setInstanceFollowRedirects(true);
+        Browser.download(file, con);
+
     }
 
     /**
@@ -873,16 +967,16 @@ public class Browser {
      * @param file
      * @param urlString
      * @return Erfolg true/false
-     * @throws IOException 
+     * @throws IOException
      */
     public static void download(File file, String urlString) throws IOException {
-      
-            urlString = URLDecoder.decode(urlString, "UTF-8");
-            URL url = new URL(urlString);
-            HTTPConnection con = new HTTPConnection(url.openConnection());
-            con.setInstanceFollowRedirects(true);
-           Browser.download(file, con);
-      
+
+        urlString = URLDecoder.decode(urlString, "UTF-8");
+        URL url = new URL(urlString);
+        HTTPConnection con = new HTTPConnection(url.openConnection());
+        con.setInstanceFollowRedirects(true);
+        Browser.download(file, con);
+
     }
 
     public Form getForm(int i) {
@@ -973,15 +1067,14 @@ public class Browser {
 
     public String followConnection() throws IOException {
         String ret = null;
-        
-            if (request.getHtmlCode() != null) {
-                JDUtilities.getLogger().warning("Request has already been read");
-                return null;
-            }
-            checkContentLengthLimit(request);
 
-            ret = request.read();
-      
+        if (request.getHtmlCode() != null) {
+            JDUtilities.getLogger().warning("Request has already been read");
+            return null;
+        }
+        checkContentLengthLimit(request);
+
+        ret = request.read();
 
         return ret;
 
@@ -1015,6 +1108,15 @@ public class Browser {
 
     }
 
-  
+    public void setRequest(Request request) throws MalformedURLException {
+
+        updateCookies(request);
+        this.request = request;
+
+        currentURL = request.getUrl();
+
+    }
+
+ 
 
 }

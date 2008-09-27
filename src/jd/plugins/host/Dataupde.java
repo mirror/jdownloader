@@ -35,8 +35,6 @@ public class Dataupde extends PluginForHost {
 
     private String downloadurl;
 
- 
-
     @Override
     public String getAGBLink() {
         return "http://www.dataup.de/agb";
@@ -89,24 +87,23 @@ public class Dataupde extends PluginForHost {
         Form form = br.getForms()[2];
 
         br.setFollowRedirects(false);
-        HTTPConnection urlConnection = br.openFormConnection(form);
 
-        /* DownloadLimit? */
-        if (br.getRedirectLocation() != null) {
-            linkStatus.setValue(120000L);
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            return;
-        }
-
+        dl = new RAFDownload(this, downloadLink, br.createFormRequest(form));
+        dl.setChunkNum(1);
+        dl.setResume(false);
+        HTTPConnection urlConnection = dl.connect(br);
         /* Datei herunterladen */
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        /* DownloadLimit? */
+        if (br.getRedirectLocation() != null) {
+            linkStatus.setValue(120000L);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            return;
+        }
         dl.startDownload();
     }
 

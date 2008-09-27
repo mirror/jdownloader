@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
@@ -86,8 +85,7 @@ public class zShare extends PluginForHost {
 
         String url = reg.getMatches()[0][0];
 
-        HTTPConnection urlConnection = br.openGetConnection(url);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(url));
 
         dl.startDownload();
     }

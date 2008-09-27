@@ -150,10 +150,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         conditionEntry.setDefaultValue(2);
         conditionEntry.setStep(1);
 
-        download.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, "PARAM_DOWNLOAD_AUTO_CORRECTCHUNKS", JDLocale.L("gui.config.download.autochunks", "Chunks an Dateigröße anpassen.")));
-        ce.setDefaultValue(true);
-        ce.setEnabledCondidtion(conditionEntry, ">", 1);
-
+  
         download.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_RETRIES, JDLocale.L("gui.config.download.retries", "Max. Neuversuche bei vorrübergehenden Hosterproblemen"), 0, 20));
         ce.setDefaultValue(3);
         ce.setStep(1);

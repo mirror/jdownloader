@@ -97,13 +97,15 @@ public class FastShareorg extends PluginForHost {
         /* Zwangswarten, 10seks */
         sleep(10000, downloadLink);
 
-        HTTPConnection urlConnection = br.openGetConnection(url);
+   
+        dl=RAFDownload.download(downloadLink, br.createGetRequest(url), false, 1);
+        HTTPConnection urlConnection = dl.connect(br);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+       
         dl.startDownload();
 
     }

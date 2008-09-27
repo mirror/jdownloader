@@ -187,11 +187,8 @@ public class FilesTo extends PluginForHost {
         finalURL = new Regex(requestInfo.getHtmlCode(), DOWNLOAD_URL).getMatch(0);
 
         // Download vorbereiten
-        urlConnection = new HTTPConnection(new URL(finalURL).openConnection());
 
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(finalURL), true, 0);
         dl.startDownload();
     }
 

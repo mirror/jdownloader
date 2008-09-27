@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -64,18 +63,15 @@ public class UploadStube extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws IOException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
 
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
 
-        HTTPConnection urlConnection = br.openGetConnection(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest((new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("onClick=\"window\\.location=..(http://www.uploadstube.de/.*?)..\"", Pattern.CASE_INSENSITIVE)).getMatch(0))));
         dl.startDownload();
     }
 

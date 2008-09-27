@@ -274,7 +274,7 @@ public abstract class PluginForHost extends Plugin {
      * @return true/false je nach dem ob die Datei noch online ist (verfügbar)
      * @throws IOException
      */
-    public abstract boolean getFileInformation(DownloadLink parameter) throws IOException;
+    public abstract boolean getFileInformation(DownloadLink parameter) throws Exception;
 
     /**
      * Gibt einen String mit den Dateiinformationen zurück. Die Defaultfunktion

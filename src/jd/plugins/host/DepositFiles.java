@@ -105,7 +105,7 @@ public class DepositFiles extends PluginForHost {
             if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
 
             }
-        }else{
+        } else {
             String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
             if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait));
 
@@ -124,7 +124,9 @@ public class DepositFiles extends PluginForHost {
         }
 
         form = br.getFormbyValue("Die Datei downloaden");
-        HTTPConnection con = br.openFormConnection(form);
+
+        dl = RAFDownload.download(downloadLink, br.createFormRequest(form), false, 1);
+        HTTPConnection con = dl.connect(br);
 
         if (con == null) {
             if (br.containsHTML("IP-Addresse werden schoneinige Files")) {
@@ -148,7 +150,6 @@ public class DepositFiles extends PluginForHost {
             return;
         }
 
-        dl = new RAFDownload(this, downloadLink, con);
         dl.startDownload();
 
     }
@@ -168,7 +169,7 @@ public class DepositFiles extends PluginForHost {
         login.put("password", account.getPass());
 
         br.submitForm(login);
-        if (br.containsHTML("Your password or login is incorrect")|| br.containsHTML("Benutzername-Passwort-Kombination")) {
+        if (br.containsHTML("Your password or login is incorrect") || br.containsHTML("Benutzername-Passwort-Kombination")) {
 
             ai.setValid(false);
             return ai;
@@ -251,8 +252,8 @@ public class DepositFiles extends PluginForHost {
             return;
         }
 
-        HTTPConnection con = br.openGetConnection(link);
-
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(link), true, 0);
+        HTTPConnection con = dl.connect(br);
         if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
@@ -263,9 +264,6 @@ public class DepositFiles extends PluginForHost {
             return;
         }
 
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.startDownload();
 
     }

@@ -18,6 +18,7 @@ package jd.http;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,6 +38,33 @@ public class PostRequest extends Request {
         super(url);
 
     }
+  
+//    public Request toHeadRequest() throws MalformedURLException {
+//        
+//  
+//        PostRequest ret = new PostRequest(this.getUrl()+"") {    
+//
+//            @Override
+//            public void preRequest(HTTPConnection httpConnection) throws IOException {
+//                httpConnection.setRequestMethod("HEAD");
+//                
+//            }            
+//        };
+//        ret.setConnectTimeout(this.getConnectTimeout());
+//        ret.getCookies().addAll(this.getCookies());
+//        ret.setFollowRedirects(this.isFollowRedirects());
+//        ret.getHeaders().putAll(this.getHeaders());
+//        ret.setProxy(this.getProxyip(), this.getProxyport());
+//        ret.postData=this.postData;
+//        ret.postDataString=this.postDataString;
+// 
+//        ret.setReadTimeout(this.getReadTimeout());        
+//    
+//        ret.httpConnection=this.httpConnection;
+//       
+//        return ret;
+//        
+//    }
 
     public HashMap<String, String> getPostData() {
         return postData;
