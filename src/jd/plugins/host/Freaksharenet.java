@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -89,17 +90,9 @@ public class Freaksharenet extends PluginForHost {
         form.put("wait", "Download");
 
         /* Datei herunterladen */
-        HTTPConnection urlConnection = br.openFormConnection(form);
 
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
         downloadLink.setLocalSpeedLimit(75 * 1024);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        dl = RAFDownload.download(downloadLink, br.createRequest(form));
         dl.startDownload();
     }
 
@@ -151,22 +144,25 @@ public class Freaksharenet extends PluginForHost {
 
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+        Request request;
+        request = br.createRequest(downloadLink.getDownloadURL());
+        dl = RAFDownload.download(downloadLink, request);
+
+        HTTPConnection urlConnection = dl.connect(br);
         if (urlConnection.getContentType().equals("text/html; charset=ISO-8859-1")) {
             logger.finer("Direct Download disabled");
             br.followConnection();
             form = br.getFormbyValue("Direkt-Download");
             urlConnection = br.openFormConnection(form);
+
+            request = br.createRequest(form);
+            dl = RAFDownload.download(downloadLink, request);
+
+            urlConnection = dl.connect(br);
         }
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
+
         downloadLink.setLocalSpeedLimit(-1);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
+
         dl.startDownload();
     }
 

@@ -41,6 +41,7 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -1012,7 +1013,7 @@ abstract public class DownloadInterface {
         this.plugin = plugin;
     }
 
-    public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException {
+    public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
         Request head = request.toHeadRequest();
@@ -1030,8 +1031,14 @@ abstract public class DownloadInterface {
         return fileSizeVerified;
     }
 
-    public void setFileSizeVerified(boolean fileSizeVerified) {
+    public void setFileSizeVerified(boolean fileSizeVerified) throws PluginException {
         this.fileSizeVerified = fileSizeVerified;
+        if(fileSize==0 && fileSizeVerified){  
+            logger.severe("Downloadsize==0");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,20 * 60 * 1000l);
+                
+            
+        }
     }
 
     /**
@@ -1764,6 +1771,11 @@ abstract public class DownloadInterface {
     public void setFilesizeCheck(boolean b) {
         this.doFileSizeCheck = b;
 
+    }
+
+    public HTTPConnection getConnection() {
+        // TODO Auto-generated method stub
+        return this.connection;
     }
 
 

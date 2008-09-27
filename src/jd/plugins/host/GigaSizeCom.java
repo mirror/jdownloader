@@ -66,9 +66,11 @@ public class GigaSizeCom extends PluginForHost {
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
         Form download = br.getFormbyID("formDownload");
-        HTTPConnection con = br.openFormConnection(download);
-        if (!con.isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        dl = new RAFDownload(this, downloadLink, con);
+        
+        dl=RAFDownload.download(downloadLink, br.createRequest(download));
+        
+        if (!dl.connect().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+
         dl.startDownload();
     }
 

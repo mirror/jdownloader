@@ -36,6 +36,7 @@ import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.Form.InputField;
+import jd.plugins.host.Request;
 import jd.utils.JDUtilities;
 import jd.utils.SnifferException;
 import jd.utils.Sniffy;
@@ -1115,6 +1116,15 @@ public class Browser {
 
         currentURL = request.getUrl();
 
+    }
+
+    public Request createRequest(Form form) throws IOException {      
+        return createFormRequest(form);
+    }
+
+    public Request createRequest(String downloadURL) {
+        // TODO Auto-generated method stub
+        return createGetRequest(downloadURL);
     }
 
  

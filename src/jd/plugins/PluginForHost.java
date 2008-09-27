@@ -384,6 +384,9 @@ public abstract class PluginForHost extends Plugin {
             }
             try {
                 handleFree(downloadLink);
+                if(dl!=null&& dl.getConnection()!=null){
+                    try {dl.getConnection().disconnect();}catch(Exception e){}
+                }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
             }
@@ -412,6 +415,9 @@ public abstract class PluginForHost extends Plugin {
         if (account != null) {
             try {
                 handlePremium(downloadLink, account);
+                if(dl!=null&& dl.getConnection()!=null){
+                    try {dl.getConnection().disconnect();}catch(Exception e){}
+                }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
             }
@@ -450,6 +456,9 @@ public abstract class PluginForHost extends Plugin {
             }
             try {
                 handleFree(downloadLink);
+                if(dl!=null&& dl.getConnection()!=null){
+                    try {dl.getConnection().disconnect();}catch(Exception e){}
+                }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
             }

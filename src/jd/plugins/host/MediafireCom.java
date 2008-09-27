@@ -104,8 +104,8 @@ public class MediafireCom extends PluginForHost {
             url = url.replaceAll("\\+ ?" + var + " ?\\+", value);
 
         }
-        HTTPConnection urlConnection = br.openGetConnection(url);
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+    
+        dl =RAFDownload.download(downloadLink, br.createRequest(url));
         dl.startDownload();
     }
 

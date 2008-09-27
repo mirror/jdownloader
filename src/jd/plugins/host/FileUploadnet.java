@@ -19,7 +19,7 @@ package jd.plugins.host;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
+import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -108,32 +108,23 @@ public class FileUploadnet extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-
+        Request request;
         if (new Regex(downloadLink.getDownloadURL(), Pattern.compile(PAT_Download.pattern() + "|" + PAT_Member.pattern(), Pattern.CASE_INSENSITIVE)).matches()) {
             /* DownloadFiles */
             downloadurl = br.getRegex("action=\"(.*?)\" method=\"post\"").getMatch(0);
             Form form = br.getForm(0);
-            br.openFormConnection(form);
+            request = br.createFormRequest(form);
 
         } else if (new Regex(downloadLink.getDownloadURL(), PAT_VIEW).matches()) {
             /* DownloadFiles */
             downloadurl = br.getRegex("<center>\n<a href=\"(.*?)\" rel=\"lightbox\"").getMatch(0);
-            br.openGetConnection(downloadurl);
+            request = br.createGetRequest(downloadurl);
         } else {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
 
-        /* Datei herunterladen */
-        HTTPConnection urlConnection = br.getHttpConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        dl = RAFDownload.download(downloadLink, request);
         dl.startDownload();
     }
 

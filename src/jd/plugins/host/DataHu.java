@@ -72,7 +72,7 @@ public class DataHu extends PluginForHost {
         // sumultane verbindungen zu stande kommen ist egal...
         int free = this.waitForFreeConnection(downloadLink);
 
-        RAFDownload.download(downloadLink, br.openGetConnection(link), true, free * -1);
+        RAFDownload.download(downloadLink, br.createGetRequest(link), true, free * -1);
 
     }
 
