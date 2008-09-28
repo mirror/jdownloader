@@ -122,7 +122,11 @@ public abstract class PluginForDecrypt extends Plugin {
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (CryptedLink element : cryptedLinks) {
-            decryptedLinks.addAll(decryptLink(element));
+            ArrayList<DownloadLink> links = decryptLink(element);
+            for (DownloadLink link : links) {
+                link.setBrowserUrl(element.getCryptedUrl());
+            }
+            decryptedLinks.addAll(links);
         }
 
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
