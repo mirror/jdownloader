@@ -24,7 +24,6 @@ import java.util.HashMap;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -37,15 +36,15 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class Megauploadcom extends PluginForHost {
 
-    static private final String COOKIE = "l=de; v=1; ve_view=1";
+//static private final String COOKIE = "l=de; v=1; ve_view=1";
 
     static private final String ERROR_FILENOTFOUND = "Die Datei konnte leider nicht gefunden werden";
 
@@ -136,13 +135,11 @@ public class Megauploadcom extends PluginForHost {
         br.setFollowRedirects(false);
         br.getPage("http://" + new URL(link).getHost() + "/mgr_dl.php?d=" + id + "&u=" + br.getCookie(url, "user"));
 
-        HTTPConnection urlConnection;
+        
         downloadLink.getLinkStatus().setStatusText("Premium");
-        urlConnection = br.openGetConnection(br.getRedirectLocation());
-        dl = new RAFDownload(this, downloadLink, urlConnection);
 
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);
+
         dl.startDownload();
 
     }
@@ -191,21 +188,29 @@ public class Megauploadcom extends PluginForHost {
 
         }
 
-        RequestInfo requestInfo = HTTP.getRequest(new URL(link), COOKIE, null, true);
-        if (requestInfo.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            tempUnavailable = true;
-            return;
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        br.setFollowRedirects(true);
+        
+     
+        br.setCookie(parameter.getDownloadURL(), "l", "de");
+        br.setCookie(parameter.getDownloadURL(), "v", "1");
+        br.setCookie(parameter.getDownloadURL(), "ve_view", "1");
+        br.getPage(link);
+        if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
+          
+
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,20 * 60 * 1000l);
+          
         }
-        if (requestInfo.containsHTML(ERROR_FILENOTFOUND)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
+        if (br.containsHTML(ERROR_FILENOTFOUND)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            
         }
 
-        captchaURL = "http://" + new URL(link).getHost() + "/capgen.php" + new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl).getMatch(0);
-        fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "checkverificationform", "passwordhtml");
-        captchaPost = new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_POST_URL).getMatch(0);
+        captchaURL = "http://" + new URL(link).getHost() + "/capgen.php" + br.getRegex( SIMPLEPATTERN_CAPTCHA_URl).getMatch(0);
+        fields = HTMLParser.getInputHiddenFields(br+"", "checkverificationform", "passwordhtml");
+        captchaPost = br.getRegex(SIMPLEPATTERN_CAPTCHA_POST_URL).getMatch(0);
 
         if (captchaURL.endsWith("null") || captchaPost == null) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
@@ -213,19 +218,20 @@ public class Megauploadcom extends PluginForHost {
 
         File file = this.getLocalCaptchaFile(this);
         logger.info("Captcha " + captchaURL);
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(captchaURL), COOKIE, requestInfo.getLocation(), true);
-        Browser.download(file, requestInfo.getConnection());
+        HTTPConnection con = br.cloneBrowser().openGetConnection(captchaURL);
+        
+        Browser.download(file, con);
 
         String code = Plugin.getCaptchaCode(file, this, downloadLink);
 
-        requestInfo = HTTP.postRequest(new URL(captchaPost), COOKIE, null, null, Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code, true);
-        if (new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_CAPTCHA_URl).getMatch(0) != null) {
+       br.postPage(captchaPost,Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code);
+        if ( br.getRegex(SIMPLEPATTERN_CAPTCHA_URl).getMatch(0) != null) {
 
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
 
-        String pwdata = HTMLParser.getFormInputHidden(requestInfo.getHtmlCode(), "passwordbox", "passwordcountdown");
+        String pwdata = HTMLParser.getFormInputHidden(br+"", "passwordbox", "passwordcountdown");
         if (pwdata != null && pwdata.indexOf("passkey") > 0) {
             logger.info("Password protected");
             String pass = Plugin.getUserInput(null, parameter);
@@ -237,13 +243,10 @@ public class Megauploadcom extends PluginForHost {
                 return;
             }
             if (countryID.equals("-")) {
-
-                requestInfo = HTTP.postRequest(new URL("http://" + new URL(link).getHost() + "/de/"), COOKIE, null, null, pwdata + "&pass=" + pass, true);
+               br.postPage("http://" + new URL(link).getHost() + "/de/", pwdata + "&pass=" + pass);
             } else {
-                requestInfo = HTTP.postRequest(new URL("http://" + new URL(link).getHost() + "/" + countryID + "/"), COOKIE, null, null, pwdata + "&pass=" + pass, true);
-
-            }
-            if (requestInfo.containsHTML(PATTERN_PASSWORD_WRONG)) {
+                br.postPage("http://" + new URL(link).getHost() + "/" + countryID + "/", pwdata + "&pass=" + pass); }
+            if ( br.containsHTML(PATTERN_PASSWORD_WRONG)) {
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
 
@@ -253,17 +256,22 @@ public class Megauploadcom extends PluginForHost {
         }
         sleep(PENDING_WAITTIME, downloadLink);
 
-        String[] tmp = new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
+        String[] tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
         Character l = (char) Math.abs(Integer.parseInt(tmp[1].trim()));
         String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
-        tmp = new Regex(requestInfo.getHtmlCode(), SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
+        tmp = br.getRegex( SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
         String url = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
 
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(url), COOKIE, null, true);
-        if (!requestInfo.isOK()) {
+   
+        
+
+        dl=RAFDownload.download(downloadLink, br.createRequest(url));
+
+        if (!dl.connect(br).isOK()) {
             logger.warning("Download Limit!");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            String wait = requestInfo.getConnection().getHeaderField("Retry-After");
+            String wait = dl.getConnection().getHeaderField("Retry-After");
+            dl.getConnection().disconnect();
             logger.finer("Warten: " + wait + " minuten");
             if (wait != null) {
                 linkStatus.setValue(Integer.parseInt(wait.trim()) * 60 * 1000);
@@ -274,7 +282,7 @@ public class Megauploadcom extends PluginForHost {
 
         }
 
-        dl = new RAFDownload(this, downloadLink, requestInfo.getConnection());
+      
 
         dl.startDownload();
 

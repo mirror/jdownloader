@@ -49,7 +49,7 @@ public class MeinUpload extends PluginForHost {
         }
         br.setDebug(true);
         Form form = br.getFormbyValue("Free");
-        HTTPConnection con;
+   
         if (form != null) {
             // Old version 1.9.08
             br.submitForm(form);
@@ -60,11 +60,9 @@ public class MeinUpload extends PluginForHost {
             br.submitForm(captcha);
         }
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        con = br.openGetConnection(url);
+      
 
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        dl = new RAFDownload(this, downloadLink, br.createRequest(url));      
         dl.startDownload();
     }
 
@@ -119,8 +117,8 @@ public class MeinUpload extends PluginForHost {
         }
 
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        HTTPConnection con = br.openGetConnection(url);
-        dl = new RAFDownload(this, downloadLink, con);
+      
+        dl = new RAFDownload(this, downloadLink, br.createRequest(url));
         dl.setChunkNum(1);
         dl.setResume(true);
         dl.startDownload();

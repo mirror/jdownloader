@@ -1123,7 +1123,9 @@ public class Browser {
         return createFormRequest(form);
     }
 
+
     public Request createRequest(String downloadURL) throws Exception {
+
         // TODO Auto-generated method stub
         return createGetRequest(downloadURL);
     }

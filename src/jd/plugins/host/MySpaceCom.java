@@ -85,17 +85,10 @@ public class MySpaceCom extends PluginForHost {
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
-        }
-        HTTPConnection urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
+        }   
 
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
-        }
-
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
+        dl = RAFDownload.download(downloadLink, br.createRequest(getDownloadUrl(downloadLink)),true,0);
+ 
         dl.startDownload();
     }
 }

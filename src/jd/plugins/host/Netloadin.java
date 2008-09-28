@@ -22,9 +22,9 @@ import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -36,7 +36,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class Netloadin extends PluginForHost {
     static private final String AGB_LINK = "http://netload.in/index.php?id=12";
@@ -183,7 +182,7 @@ public class Netloadin extends PluginForHost {
 
         sleep(20000, downloadLink);
 
-        dl = new RAFDownload(this, downloadLink, br.openGetConnection(finalURL));
+        dl = RAFDownload.download(downloadLink, br.createRequest(finalURL));
         dl.startDownload();
 
     }
@@ -264,7 +263,7 @@ public class Netloadin extends PluginForHost {
         br.setFollowRedirects(false);
         br.setAuth("netload.in", account.getUser(), account.getPass());
         br.openGetConnection(downloadLink.getDownloadURL());
-        HTTPConnection con;
+        Request con;
         String user = br.getCookie("http://netload.in", "cookie_user");
         if (user == null) {
             logger.severe("Account Infos invalid");
@@ -278,11 +277,14 @@ public class Netloadin extends PluginForHost {
             if (url == null) url = br.getRegex("<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier.<\\/a>").getMatch(0);
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Download link not found");
 
-            con = br.openGetConnection(url);
-            for (int i = 0; i < 10 && (!con.isOK()); i++) {
+            con = br.createRequest(url);
+            dl = RAFDownload.download(downloadLink, con, true, 0);
+            HTTPConnection connection = dl.connect(br);
+            for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
-                    con = br.openGetConnection(url);
-
+                    con = br.createRequest(url);
+                    dl = RAFDownload.download(downloadLink, con, true, 0);
+                    connection = dl.connect(br);
                 } catch (Exception e) {
                     try {
                         Thread.sleep(150);
@@ -293,10 +295,12 @@ public class Netloadin extends PluginForHost {
             }
 
         } else {
-            con = br.openGetConnection(null);
+            con = br.createGetRequest(null);
+            dl = RAFDownload.download(downloadLink, con, true, 0);
+            dl.connect(br);
         }
 
-        if (!con.isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
 
             // Serverfehler
             if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, "Server:Could not follow Link");
@@ -304,9 +308,6 @@ public class Netloadin extends PluginForHost {
             checkErrors(linkStatus);
 
         }
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.startDownload();
 
     }

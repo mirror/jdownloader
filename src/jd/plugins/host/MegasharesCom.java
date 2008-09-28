@@ -23,7 +23,6 @@ import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
@@ -36,6 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
+import jd.utils.JavaScript;
 
 public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
@@ -65,7 +65,7 @@ public class MegasharesCom extends PluginForHost {
 
         // Sie laden gerade eine datei herunter
         if (br.containsHTML("You already have the maximum")) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(60 * 1000l);
             return;
         }
@@ -107,22 +107,28 @@ public class MegasharesCom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-//        // aktuellen Fortschritt prüfen und range Header setzen
-//        long[] chunkProgress = downloadLink.getChunksProgress();
-//        if (chunkProgress != null) {
-//            br.getHeaders().put("Range", "bytes=" + (chunkProgress[0] + 1) + "-");
-//
-//        }
+        // // aktuellen Fortschritt prüfen und range Header setzen
+        // long[] chunkProgress = downloadLink.getChunksProgress();
+        // if (chunkProgress != null) {
+        // br.getHeaders().put("Range", "bytes=" + (chunkProgress[0] + 1) +
+        // "-");
+        //
+        // }
         // Dateigröße holen
         dat = br.getRegex("<dt>Filename:&nbsp;<strong>(.*?)</strong>&nbsp;&nbsp;&nbsp;(.*?)</dt>").getRow(0);
 
-        HTTPConnection con = br.openGetConnection(url);
+        br.setDebug(true);
 
-        dl = RAFDownload.download(downloadLink, br.createRequest(url),true,1);
-//        downloadLink.setDownloadSize(Regex.getSize(dat[1]));
-//        dl.setFilesize(Regex.getSize(dat[1]));
+        dl = RAFDownload.download(downloadLink, br.createRequest(url), true, 1);
+        if (!dl.connect(br).isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+
+        // downloadLink.setDownloadSize(Regex.getSize(dat[1]));
+        // dl.setFilesize(Regex.getSize(dat[1]));
         // dl.setFilesizeCheck(false);
-//        dl.setResume(true);
+        // dl.setResume(true);
         dl.startDownload();
     }
 
@@ -181,14 +187,16 @@ public class MegasharesCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         String link = downloadLink.getDownloadURL();
         br.getPage(link);
+      
+       
+      
+        if (br.containsHTML("continue using Free service")) {
+            br.getPage(link);
+        }
         if (br.containsHTML("You already have the maximum")) {
             downloadLink.getLinkStatus().setStatusText("Unchecked due to already loading");
             return true;
         }
-        if (br.containsHTML("continue using Free service")) {
-            br.getPage(link);
-        }
-
         if (br.containsHTML("This link requires a password")) {
 
             downloadLink.getLinkStatus().setStatusText("Password protected");

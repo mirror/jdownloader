@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -728,7 +729,7 @@ abstract public class DownloadInterface {
             run0();
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
-            while (!this.isExternalyAborted()) {
+          
                 boolean allConnected = true;
                 synchronized (DownloadInterface.this.chunks) {
                     for (Chunk chunk : DownloadInterface.this.chunks) {
@@ -743,17 +744,12 @@ abstract public class DownloadInterface {
                         this.connection.disconnect();
                     } catch (Exception e) {
                     }
-                    break;
+                
 
                 }
-                try {
-                    Thread.sleep(1000);
-                } catch (Exception e) {                   
-                    e.printStackTrace();
-                    break;
-                }
-            }
-            if(this.isExternalyAborted()){
+             
+            
+            if (this.isExternalyAborted()) {
                 try {
                     this.connection.disconnect();
                 } catch (Exception e) {
@@ -1016,15 +1012,22 @@ abstract public class DownloadInterface {
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
+
+    }
+
+    public long head() throws IOException, PluginException {
         Request head = request.toHeadRequest();
+
         head.load();
 
         if (this.plugin.getBrowser().isDebug()) logger.finest(head.printHeaders());
         if (head.getContentLength() > 1024) {
-            this.setFileSizeVerified(true);
+
             logger.finer("Got filesze from Headrequest: " + head.getContentLength() + " bytes");
             downloadLink.setDownloadSize(fileSize = head.getContentLength());
+            this.setFileSizeVerified(true);
         }
+        return fileSize;
     }
 
     public boolean isFileSizeVerified() {
@@ -1033,11 +1036,10 @@ abstract public class DownloadInterface {
 
     public void setFileSizeVerified(boolean fileSizeVerified) throws PluginException {
         this.fileSizeVerified = fileSizeVerified;
-        if(fileSize==0 && fileSizeVerified){  
+        if (fileSize == 0 && fileSizeVerified) {
             logger.severe("Downloadsize==0");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,20 * 60 * 1000l);
-                
-            
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+
         }
     }
 
@@ -1073,15 +1075,17 @@ abstract public class DownloadInterface {
         return false;
 
     }
+
     public HTTPConnection connect(Browser br) throws Exception {
         HTTPConnection ret = connect();
         br.setRequest(request);
         return ret;
     }
+
     public HTTPConnection connect() throws Exception {
-       
+
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
-        this.connected=true;
+        this.connected = true;
         long[] chunkProgress = downloadLink.getChunksProgress();
         if (this.isResume() && this.checkResumabled()) {
             // TODO: endrange prüfen
@@ -1575,10 +1579,10 @@ abstract public class DownloadInterface {
      * Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
      * 
      * @return
-     * @throws Exception 
+     * @throws Exception
      */
     public boolean startDownload() throws Exception {
-        if(!connected)connect();
+        if (!connected) connect();
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
 
         if (connection.getHeaderField("Location") != null) {
@@ -1777,7 +1781,5 @@ abstract public class DownloadInterface {
         // TODO Auto-generated method stub
         return this.connection;
     }
-
-
 
 }

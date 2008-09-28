@@ -245,9 +245,12 @@ public class HTTPConnection {
         return this.getHeaderField("Content-Disposition") != null;
     }
 
-    public void disconnect() {
-        if (!isConnected()) throw new IllegalStateException("Not connected");
-        this.connection.disconnect();
+    public boolean disconnect() {
+        if (isConnected()){
+            this.connection.disconnect();
+            return true;
+        }
+        return false;
 
     }
 

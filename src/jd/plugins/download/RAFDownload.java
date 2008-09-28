@@ -29,6 +29,7 @@ import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -133,7 +134,9 @@ public class RAFDownload extends DownloadInterface {
     // , false);
     // }
 
-    public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws Exception {
+
+    public RAFDownload(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
+
         super(plugin, downloadLink, request);
         writeType = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("USEWRITERTHREAD", false);
 
@@ -409,8 +412,11 @@ public class RAFDownload extends DownloadInterface {
      *            config verwendet. Bsp: -3 : Min(3,Configwert);
      * @return
      * @throws IOException
+     * @throws PluginException 
      */
-    public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws Exception {
+
+    public static DownloadInterface download(DownloadLink downloadLink, Request request, boolean b, int i) throws IOException, PluginException {
+
         DownloadInterface dl = new RAFDownload(downloadLink.getPlugin(), downloadLink, request);
         downloadLink.getPlugin().setDownloadInterface(dl);
         dl.setResume(b);
@@ -426,7 +432,9 @@ public class RAFDownload extends DownloadInterface {
 
     }
 
+
     public static DownloadInterface download(DownloadLink downloadLink, Request request) throws Exception {
+
         // TODO Auto-generated method stub
         return download(downloadLink, request, false, 1);
     }
