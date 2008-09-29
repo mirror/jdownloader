@@ -16,25 +16,21 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
 
 public class Vipfilecom extends PluginForHost {
     private static final String CODER = "JD-Team";
-
-    private String downloadurl;
-    private RequestInfo requestInfo;
 
     public Vipfilecom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,28 +47,27 @@ public class Vipfilecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        downloadurl = downloadLink.getDownloadURL();
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (!requestInfo.containsHTML("This file not found")) {
-                String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Size:.*?<b style=\"padding-left:5px;\">([0-9\\.]*) (.*?)</b>", Pattern.CASE_INSENSITIVE)).getMatches();
+    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+        String downloadurl = downloadLink.getDownloadURL();
+        this.setBrowserExclusive();
 
-                if (linkinfo[0][1].matches("Gb")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024 * 1024));
-                } else if (linkinfo[0][1].matches("Mb")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024));
-                } else if (linkinfo[0][1].matches("Kb")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
-                }
-                downloadLink.setName(new Regex(downloadurl, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0));
-                return true;
+        br.getPage(downloadurl);
+        if (!br.containsHTML("This file not found")) {
+            String linkinfo[][] = new Regex(br, Pattern.compile("Size:.*?<b style=\"padding-left:5px;\">([0-9\\.]*) (.*?)</b>", Pattern.CASE_INSENSITIVE)).getMatches();
+
+            if (linkinfo[0][1].matches("Gb")) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024 * 1024));
+            } else if (linkinfo[0][1].matches("Mb")) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024 * 1024));
+            } else if (linkinfo[0][1].matches("Kb")) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][0]) * 1024));
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+            downloadLink.setName(new Regex(downloadurl, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0));
+            return true;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setAvailable(false);
-        return false;
+
     }
 
     @Override
@@ -86,42 +81,30 @@ public class Vipfilecom extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
+        getFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
-        String link = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String link = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-        if (requestInfo.getLocation() == null) {
+        br.setFollowRedirects(false);
+        br.getPage(link);
+        if (br.getRedirectLocation() == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-        if (requestInfo.getLocation() == null) {
+        br.getPage(br.getRedirectLocation());
+
+        if (br.getRedirectLocation() == null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-        /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        dl.startDownload();
+        br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
