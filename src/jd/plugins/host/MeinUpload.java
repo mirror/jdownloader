@@ -19,7 +19,6 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;

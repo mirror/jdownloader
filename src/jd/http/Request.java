@@ -45,38 +45,35 @@ public abstract class Request {
      * @param query
      *            kann ein reines query ein (&key=value) oder eine url mit query
      * @return
-     * @throws MalformedURLException 
+     * @throws MalformedURLException
      */
 
     public static HashMap<String, String> parseQuery(String query) throws MalformedURLException {
         if (query == null) { return null; }
         HashMap<String, String> ret = new HashMap<String, String>();
         if (query.toLowerCase().trim().startsWith("http")) {
-         
-                query = new URL(query).getQuery();
-           
+
+            query = new URL(query).getQuery();
+
         }
 
         if (query == null) { return ret; }
-        
 
-            String[] split = query.trim().split("[\\&|=]");
-            int i = 0;
-            while (true) {
-                String key = null;
-                String value = null;
-                if (split.length > i) key = split[i++];
-                if (split.length > i) value = split[i++];
+        String[] split = query.trim().split("[\\&|=]");
+        int i = 0;
+        while (true) {
+            String key = null;
+            String value = null;
+            if (split.length > i) key = split[i++];
+            if (split.length > i) value = split[i++];
 
-                if (key != null) {
-                    ret.put(key, value);
-                } else {
-                    break;
-                }
-
+            if (key != null) {
+                ret.put(key, value);
+            } else {
+                break;
             }
 
-      
+        }
 
         return ret;
 
@@ -100,9 +97,9 @@ public abstract class Request {
     private URL url;
 
     public Request(String url) throws MalformedURLException {
-     
-            this.url = new URL(url);
-      
+
+        this.url = new URL(url);
+
         readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
 
         connectTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
@@ -112,14 +109,13 @@ public abstract class Request {
     }
 
     public String printHeaders() {
-       return httpConnection.toString();
+        return httpConnection.toString();
     }
 
     public Request(HTTPConnection con) {
         httpConnection = con;
         collectCookiesFromConnection();
     }
- 
 
     private void collectCookiesFromConnection() {
         List<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
@@ -136,36 +132,35 @@ public abstract class Request {
             String expires = null;
             String domain = null;
             HashMap<String, String> tmp = new HashMap<String, String>();
-          
-                StringTokenizer st = new StringTokenizer(header, ";=");
-                while (true) {
 
-                    String key = null;
-                    String value = null;
-                    if (st.hasMoreTokens()) key = st.nextToken().trim();
-                    if (st.hasMoreTokens()) value = st.nextToken().trim();
+            StringTokenizer st = new StringTokenizer(header, ";=");
+            while (true) {
 
-                    if (key != null) {
-                        if (key.equalsIgnoreCase("path")) {
-                            path = value;
-                            continue;
-                        }
-                        if (key.equalsIgnoreCase("expires")) {
-                            expires = value;
-                            continue;
-                        }
-                        if (key.equalsIgnoreCase("domain")) {
-                            domain = value;
-                            continue;
-                        }
+                String key = null;
+                String value = null;
+                if (st.hasMoreTokens()) key = st.nextToken().trim();
+                if (st.hasMoreTokens()) value = st.nextToken().trim();
 
-                        tmp.put(key, value);
-                    } else {
-                        break;
+                if (key != null) {
+                    if (key.equalsIgnoreCase("path")) {
+                        path = value;
+                        continue;
+                    }
+                    if (key.equalsIgnoreCase("expires")) {
+                        expires = value;
+                        continue;
+                    }
+                    if (key.equalsIgnoreCase("domain")) {
+                        domain = value;
+                        continue;
                     }
 
+                    tmp.put(key, value);
+                } else {
+                    break;
                 }
-         
+
+            }
 
             for (Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
                 Entry<String, String> next = it.next();
@@ -221,12 +216,11 @@ public abstract class Request {
      */
     public String followRedirect() throws IOException {
         if (getLocation() == null) { return null; }
-     
-            url = new URL(getLocation());
 
-            return load();
-      
-    
+        url = new URL(getLocation());
+
+        return load();
+
     }
 
     public int getConnectTimeout() {
@@ -332,19 +326,19 @@ public abstract class Request {
 
     public String getLocation() {
         if (httpConnection == null) { return null; }
-        String red=httpConnection.getHeaderField("Location");
-        if(red==null)return null;
+        String red = httpConnection.getHeaderField("Location");
+        if (red == null) return null;
         try {
             new URL(red);
         } catch (Exception e) {
-            String path=this.getHttpConnection().getURL().getFile();
-            if(!path.endsWith("/")){
-                path=path.substring(0, path.lastIndexOf("/"));
+            String path = this.getHttpConnection().getURL().getFile();
+            if (!path.endsWith("/")) {
+                path = path.substring(0, path.lastIndexOf("/"));
             }
-            red = "http://" + this.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : path+"/" + red);
+            red = "http://" + this.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : path + "/" + red);
         }
         return red;
-        
+
     }
 
     public long getReadTime() {
@@ -384,7 +378,7 @@ public abstract class Request {
         headers.put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
         headers.put("Connection", "close");
         headers.put("Cache-Control", "no-cache");
-        headers.put("Pragma", "no-cache"); 
+        headers.put("Pragma", "no-cache");
 
     }
 
@@ -411,29 +405,27 @@ public abstract class Request {
 
     public void openConnection() throws IOException {
 
-       
-            long tima = System.currentTimeMillis();
-            httpConnection = new HTTPConnection(url.openConnection());
-            httpConnection.setInstanceFollowRedirects(followRedirects);
-            requestTime = System.currentTimeMillis() - tima;
-            httpConnection.setReadTimeout(readTimeout);
-            httpConnection.setConnectTimeout(connectTimeout);
+        long tima = System.currentTimeMillis();
+        httpConnection = new HTTPConnection(url.openConnection());
+        httpConnection.setInstanceFollowRedirects(followRedirects);
+        requestTime = System.currentTimeMillis() - tima;
+        httpConnection.setReadTimeout(readTimeout);
+        httpConnection.setConnectTimeout(connectTimeout);
 
-            if (headers != null) {
-                Set<String> keys = headers.keySet();
-                Iterator<String> iterator = keys.iterator();
-                String key;
-                while (iterator.hasNext()) {
-                    key = iterator.next();
+        if (headers != null) {
+            Set<String> keys = headers.keySet();
+            Iterator<String> iterator = keys.iterator();
+            String key;
+            while (iterator.hasNext()) {
+                key = iterator.next();
 
-                    httpConnection.setRequestProperty(key, headers.get(key));
-                }
+                httpConnection.setRequestProperty(key, headers.get(key));
             }
-            preRequest(httpConnection);
-            if (hasCookies()) {
-                httpConnection.setRequestProperty("Cookie", getCookieString());
-            }
-      
+        }
+        preRequest(httpConnection);
+        if (hasCookies()) {
+            httpConnection.setRequestProperty("Cookie", getCookieString());
+        }
 
     }
 
@@ -485,9 +477,8 @@ public abstract class Request {
     public void setProxy(String ip, String port) throws NumberFormatException, MalformedURLException {
         proxyip = ip;
         proxyport = port;
-     if(ip==null||port==null)return;
-            url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
-      
+        if (ip == null || port == null) return;
+        url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
 
     }
 
@@ -517,34 +508,32 @@ public abstract class Request {
         this.htmlCode = htmlCode;
     }
 
+    @SuppressWarnings("unchecked")
     public Request toHeadRequest() throws MalformedURLException {
-        Request ret = new Request(this.getUrl()+""){
+        Request ret = new Request(this.getUrl() + "") {
 
             @Override
             public void postRequest(HTTPConnection httpConnection) throws IOException {
-                // TODO Auto-generated method stub
-                
             }
 
             @Override
             public void preRequest(HTTPConnection httpConnection) throws IOException {
                 httpConnection.setRequestMethod("HEAD");
-                
             }
-            
+
         };
-        ret.connectTimeout=this.connectTimeout;
-       
-        ret.cookies=(ArrayList<Cookie>) this.getCookies().clone();
-        ret.followRedirects=this.followRedirects;
-        ret.headers=(HashMap<String, String>) this.getHeaders().clone();    
+        ret.connectTimeout = this.connectTimeout;
+
+        ret.cookies = (ArrayList<Cookie>) this.getCookies().clone();
+        ret.followRedirects = this.followRedirects;
+        ret.headers = (HashMap<String, String>) this.getHeaders().clone();
         ret.setProxy(proxyip, proxyport);
-        ret.readTime=this.readTimeout;
-     
-        ret.httpConnection=this.httpConnection;
+        ret.readTime = this.readTimeout;
+
+        ret.httpConnection = this.httpConnection;
 
         return ret;
-        
+
     }
 
 }

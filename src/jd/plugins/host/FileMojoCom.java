@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;

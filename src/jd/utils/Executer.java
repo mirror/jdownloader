@@ -41,16 +41,16 @@ public class Executer extends Thread {
             this.started = true;
             String line;
             try {
-                while ((line = readLine(reader)) != null) {                 
-                    if (line.length() > 0){
-                        fireEvent(line,sb);
+                while ((line = readLine(reader)) != null) {
+                    if (line.length() > 0) {
+                        fireEvent(line, sb);
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
-//                e.printStackTrace();
+                // e.printStackTrace();
             }
         }
 
@@ -58,12 +58,11 @@ public class Executer extends Thread {
             StringBuffer s = new StringBuffer();
             char[] buffer = new char[1];
             for (;;) {
-              
-                  if(this.isInterrupted()){
-                      
-                    throw new InterruptedException();
-                  }
-                
+
+                if (this.isInterrupted()) {
+
+                throw new InterruptedException(); }
+
                 if (reader2.read(buffer) < 0) { return s.length() == 0 ? null : s.toString(); }
                 sb.append(buffer);
                 fireEvent(sb);
@@ -77,7 +76,6 @@ public class Executer extends Thread {
 
         }
 
-    
         public boolean isStarted() {
             return started;
         }
@@ -152,7 +150,7 @@ public class Executer extends Thread {
         params.add(command);
         params.addAll(parameter);
 
-       System.out.println(params + "");
+        System.out.println(params + "");
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -168,18 +166,14 @@ public class Executer extends Thread {
             }
         }
 
-
-
         try {
             process = pb.start();
 
-
             if (waitTimeout == 0) { return; }
-              sbeObserver = new StreamObserver(process.getErrorStream(), errorStreamBuffer);
-              sbObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);
+            sbeObserver = new StreamObserver(process.getErrorStream(), errorStreamBuffer);
+            sbObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);
             sbeObserver.start();
             sbObserver.start();
-            
 
             long waiter = System.currentTimeMillis() + waitTimeout * 1000;
             if (waitTimeout < 0) waiter = Long.MAX_VALUE;
@@ -188,7 +182,7 @@ public class Executer extends Thread {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
-//                    e.printStackTrace();
+                    // e.printStackTrace();
                 }
 
             }
@@ -216,26 +210,21 @@ public class Executer extends Thread {
     public Process getProcess() {
         return process;
     }
-public void interrupt(){
-    super.interrupt();
-    if(sbeObserver!=null)this.sbeObserver.interrupt();
-    if(sbObserver!=null)this.sbObserver.interrupt();
-    process.destroy();
-}
- 
+
+    public void interrupt() {
+        super.interrupt();
+        if (sbeObserver != null) this.sbeObserver.interrupt();
+        if (sbObserver != null) this.sbObserver.interrupt();
+        process.destroy();
+    }
 
     public StringBuffer getInputStreamBuffer() {
         return inputStreamBuffer;
     }
 
-
     public StringBuffer getErrorStreamBuffer() {
         return errorStreamBuffer;
     }
-
-
-
-
 
     public void setCommand(String command) {
         this.command = command;
@@ -275,47 +264,22 @@ public void interrupt(){
 
     }
 
-    private void fireEvent(String line,StringBuffer sb) {
+    private void fireEvent(String line, StringBuffer sb) {
 
         for (ProcessListener listener : this.listener) {
-            listener.onProcess(this, line,sb);
+            listener.onProcess(this, line, sb);
         }
     }
+
     private void fireEvent(StringBuffer sb) {
         for (ProcessListener listener : this.listener) {
             listener.onBufferChanged(this, sb);
         }
-        
+
     }
 
     private void removeProcessListener(ProcessListener listener) {
         this.listener.remove(listener);
-
-    }
-
-    public static void main1(String args[]) {
-
-        Executer exec = new Executer("C:\\Users\\coalado\\.jd_home\\tools\\windows\\unrarw32\\unrar.exe");
-
-        exec.addParameter("-v");
-        exec.addParameter("-c-");
-        // exec.addParameter("-ierr");
-        exec.addParameter("v");
-        exec.addParameter("links.rar");
-        // exec.addProcessListener(new ProcessListener(){
-        //
-        // public void onProcess(Executer exec, String err, String out, String
-        // latest) {
-        // System.out.println(latest);
-        //              
-        // }
-        //          
-        // });
-        exec.setRunin("d:\\jdtest2");
-        exec.setWaitTimeout(-1);
-        exec.start();
-        exec.waitTimeout();
-        String res = exec.getStream() + " \r\n " + exec.getErrorStream();
 
     }
 

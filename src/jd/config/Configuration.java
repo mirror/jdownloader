@@ -71,7 +71,8 @@ public class Configuration extends Property implements Serializable {
 
     // public static final String PARAM_MIN_FREE_SPACE = "MIN_FREE_SPACE";
 
-    public static final String PARAM_FILEWRITER_INSTANCE = "FILEWRITER_INSTANCE";
+    // public static final String PARAM_FILEWRITER_INSTANCE =
+    // "FILEWRITER_INSTANCE";
 
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
 
@@ -97,9 +98,9 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HTTPSEND_IPCHECKWAITTIME = "HTTPSEND_IPCHECKWAITTIME";
 
     public static final String PARAM_HTTPSEND_PASS = "HTTPSEND_PASS";
-    
+
     public static final String PARAM_HTTPSEND_ROUTERNAME = "PARAM_HTTPSEND_ROUTERNAME";
-    
+
     public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
 
     public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
@@ -131,7 +132,7 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
 
     // public static final String JAC_USE_CES = "JAC_USE_CES";
-    //
+
     // public static final String JAC_CES_LOGIN = "JAC_CES_LOGIN";
 
     public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
@@ -209,13 +210,9 @@ public class Configuration extends Property implements Serializable {
      * Konstruktor für ein Configuration Object
      */
     public Configuration() {
-        // WebUpdate updater=new WebUpdate();
-        // updater.setTrigger(Interaction.INTERACTION_APPSTART);
-        // interactions.add(updater);
     }
 
     public String getDefaultDownloadDirectory() {
-
         return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
     }
 

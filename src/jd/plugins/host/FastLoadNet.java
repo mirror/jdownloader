@@ -88,7 +88,7 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+//        LinkStatus linkStatus = downloadLink.getLinkStatus();
         String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("pid=") + 4 + 32);
 
         String serverStatusID = br.getPage("http://www.fast-load.net/api/jdownloader/" + pid);

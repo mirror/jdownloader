@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.gui.BasicWindow;
-import jd.captcha.gui.ScrollPaneWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;

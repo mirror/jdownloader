@@ -10,7 +10,7 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import org.cybergarage.upnp.*;
+import org.cybergarage.upnp.Device;
 
 public class DeviceTable extends TableModel
 {

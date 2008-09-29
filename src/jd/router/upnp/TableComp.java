@@ -10,7 +10,7 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import javax.swing.*;
+import javax.swing.JTable;
 
 public class TableComp extends JTable
 {

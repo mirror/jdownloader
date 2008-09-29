@@ -10,15 +10,18 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.Dimension;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 
-import org.cybergarage.util.*;
-import org.cybergarage.upnp.*;
-import org.cybergarage.upnp.ssdp.*;
-import org.cybergarage.upnp.device.*;
-import org.cybergarage.upnp.event.*;
+import org.cybergarage.upnp.ControlPoint;
+import org.cybergarage.upnp.device.NotifyListener;
+import org.cybergarage.upnp.device.SearchResponseListener;
+import org.cybergarage.upnp.event.EventListener;
+import org.cybergarage.upnp.ssdp.SSDPPacket;
+import org.cybergarage.util.Debug;
 
 public class CtrlPoint extends ControlPoint implements NotifyListener, EventListener, SearchResponseListener
 {

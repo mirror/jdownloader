@@ -10,11 +10,15 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Frame;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
-import org.cybergarage.upnp.*;
+import javax.swing.JButton;
+import javax.swing.JPanel;
+
+import org.cybergarage.upnp.Service;
 
 public class ServicePane extends JPanel  implements ActionListener
 {

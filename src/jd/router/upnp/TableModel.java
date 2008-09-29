@@ -10,9 +10,9 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import javax.swing.table.*;
+import javax.swing.table.DefaultTableModel;
 
-import org.cybergarage.xml.*;
+import org.cybergarage.xml.Node;
 
 public class TableModel extends DefaultTableModel
 {

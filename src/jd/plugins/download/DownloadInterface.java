@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
@@ -98,8 +97,6 @@ abstract public class DownloadInterface {
         private long startByte;
 
         private long totalPartBytes = 0;
-
-        private boolean started;
 
         /**
          * die connection wird entsprechend der start und endbytes neu
@@ -725,7 +722,6 @@ abstract public class DownloadInterface {
          */
         public void run() {
             plugin.setCurrentConnections(plugin.getCurrentConnections() + 1);
-            this.started = true;
             run0();
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);

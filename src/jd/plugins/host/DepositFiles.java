@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;

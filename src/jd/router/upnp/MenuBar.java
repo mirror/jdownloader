@@ -10,8 +10,12 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import java.awt.event.*;
-import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 
 public class MenuBar extends JMenuBar implements ActionListener
 {

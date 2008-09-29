@@ -10,7 +10,7 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import org.cybergarage.upnp.*;
+import org.cybergarage.upnp.Service;
 
 public class ServiceTable extends TableModel
 {

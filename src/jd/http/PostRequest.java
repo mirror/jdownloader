@@ -18,7 +18,6 @@ package jd.http;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,7 +25,7 @@ import jd.parser.Form;
 
 public class PostRequest extends Request {
     private HashMap<String, String> postData = new HashMap<String, String>();
-    private String postDataString=null;
+    private String postDataString = null;
 
     public PostRequest(Form form) throws MalformedURLException {
         super(form.getAction(null));
@@ -38,33 +37,34 @@ public class PostRequest extends Request {
         super(url);
 
     }
-  
-//    public Request toHeadRequest() throws MalformedURLException {
-//        
-//  
-//        PostRequest ret = new PostRequest(this.getUrl()+"") {    
-//
-//            @Override
-//            public void preRequest(HTTPConnection httpConnection) throws IOException {
-//                httpConnection.setRequestMethod("HEAD");
-//                
-//            }            
-//        };
-//        ret.setConnectTimeout(this.getConnectTimeout());
-//        ret.getCookies().addAll(this.getCookies());
-//        ret.setFollowRedirects(this.isFollowRedirects());
-//        ret.getHeaders().putAll(this.getHeaders());
-//        ret.setProxy(this.getProxyip(), this.getProxyport());
-//        ret.postData=this.postData;
-//        ret.postDataString=this.postDataString;
-// 
-//        ret.setReadTimeout(this.getReadTimeout());        
-//    
-//        ret.httpConnection=this.httpConnection;
-//       
-//        return ret;
-//        
-//    }
+
+    // public Request toHeadRequest() throws MalformedURLException {
+    //        
+    //  
+    // PostRequest ret = new PostRequest(this.getUrl()+"") {
+    //
+    // @Override
+    // public void preRequest(HTTPConnection httpConnection) throws IOException
+    // {
+    // httpConnection.setRequestMethod("HEAD");
+    //                
+    // }
+    // };
+    // ret.setConnectTimeout(this.getConnectTimeout());
+    // ret.getCookies().addAll(this.getCookies());
+    // ret.setFollowRedirects(this.isFollowRedirects());
+    // ret.getHeaders().putAll(this.getHeaders());
+    // ret.setProxy(this.getProxyip(), this.getProxyport());
+    // ret.postData=this.postData;
+    // ret.postDataString=this.postDataString;
+    // 
+    // ret.setReadTimeout(this.getReadTimeout());
+    //    
+    // ret.httpConnection=this.httpConnection;
+    //       
+    // return ret;
+    //        
+    // }
 
     public HashMap<String, String> getPostData() {
         return postData;
@@ -83,14 +83,15 @@ public class PostRequest extends Request {
         }
         return buffer.toString().substring(1);
     }
-    public void setPostDataString(String post){
-        this.postDataString=post;
+
+    public void setPostDataString(String post) {
+        this.postDataString = post;
     }
 
     @Override
     public void postRequest(HTTPConnection httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
-        String parameter = postDataString!=null?postDataString:getPostDataString();
+        String parameter = postDataString != null ? postDataString : getPostDataString();
         if (parameter != null) {
             parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");

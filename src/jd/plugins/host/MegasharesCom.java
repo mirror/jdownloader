@@ -35,7 +35,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JavaScript;
 
 public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";

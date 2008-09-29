@@ -24,10 +24,8 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -56,7 +54,6 @@ public class FilesTo extends PluginForHost {
     private String finalURL;
     private String session;
     private Pattern SESSION = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
-    private HTTPConnection urlConnection;
 
     public FilesTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -199,7 +196,6 @@ public class FilesTo extends PluginForHost {
     @Override
     public void reset() {
         finalURL = null;
-        urlConnection = null;
     }
 
     @Override

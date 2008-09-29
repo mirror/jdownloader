@@ -10,7 +10,7 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import javax.swing.tree.*;
+import javax.swing.tree.DefaultMutableTreeNode;
 
 public class TreeNode extends DefaultMutableTreeNode
 {

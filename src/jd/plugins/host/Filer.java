@@ -21,10 +21,8 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;

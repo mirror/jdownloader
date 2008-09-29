@@ -21,7 +21,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -29,8 +28,6 @@ import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class Cocosharecc extends PluginForHost {
     public Cocosharecc(PluginWrapper wrapper) {

@@ -17,14 +17,11 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDUtilities;
 
 public class Moosharede extends PluginForHost {
     private static final String CODER = "JD-Team";

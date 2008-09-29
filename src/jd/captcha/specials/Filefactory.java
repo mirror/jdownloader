@@ -242,18 +242,18 @@ public class Filefactory {
         cleanHorizontalLines(captcha, copy);
 
         cleanXLinesY(captcha, copy);
-captcha=captcha;
+
     }
 
     private static void cleanXLinesY(Captcha captcha, int[][] copy) {
         for (int y = 0; y < captcha.getHeight(); y++) {
-            double dist01 = y+1<captcha.getHeight()?UTILITIES.getColorDifference(copy[0][y], copy[1][y + 1]):0;
-            double dist02 = y+2<captcha.getHeight()?UTILITIES.getColorDifference(copy[0][y], copy[2][y + 2]):0;
-            double dist03 = y+3<captcha.getHeight()?UTILITIES.getColorDifference(copy[0][y], copy[3][y + 3]):0;
+            double dist01 = y + 1 < captcha.getHeight() ? UTILITIES.getColorDifference(copy[0][y], copy[1][y + 1]) : 0;
+            double dist02 = y + 2 < captcha.getHeight() ? UTILITIES.getColorDifference(copy[0][y], copy[2][y + 2]) : 0;
+            double dist03 = y + 3 < captcha.getHeight() ? UTILITIES.getColorDifference(copy[0][y], copy[3][y + 3]) : 0;
             if (dist01 < 10 && dist02 < 10 && dist03 < 10) {
                 int c = 0;
                 while (c < captcha.getWidth() && (y + c) < captcha.getHeight()) {
-                  
+
                     if (UTILITIES.getColorDifference(copy[0][y], captcha.grid[c][y + c]) < 5) {
                         captcha.grid[c][y + c] = captcha.getMaxPixelValue();
                     }
@@ -266,8 +266,6 @@ captcha=captcha;
     }
 
     private static void cleanHorizontalLines(Captcha captcha, int[][] copy) {
-        int color = -1;
-        int count = 0;
 
         for (int y = 0; y < captcha.getHeight(); y++) {
             double dist01 = UTILITIES.getColorDifference(copy[0][y], copy[2][y]);

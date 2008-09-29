@@ -10,13 +10,24 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import java.awt.*;
-import java.awt.event.*;
-import java.util.*;
-import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.GridLayout;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.Vector;
 
-import org.cybergarage.upnp.*;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
 import org.cybergarage.upnp.Action;
+import org.cybergarage.upnp.Argument;
+import org.cybergarage.upnp.ArgumentList;
 
 public class ActionDialog extends JDialog implements ActionListener
 {

@@ -10,12 +10,22 @@ package jd.router.upnp;
 *
 ******************************************************************/
 
-import javax.swing.*;
-import javax.swing.tree.*;
+import javax.swing.JTree;
+import javax.swing.tree.DefaultTreeModel;
 
-import org.cybergarage.upnp.*;
 import org.cybergarage.upnp.Action;
+import org.cybergarage.upnp.ActionList;
+import org.cybergarage.upnp.Argument;
+import org.cybergarage.upnp.ArgumentList;
+import org.cybergarage.upnp.ControlPoint;
+import org.cybergarage.upnp.Device;
+import org.cybergarage.upnp.DeviceList;
 import org.cybergarage.upnp.Icon;
+import org.cybergarage.upnp.IconList;
+import org.cybergarage.upnp.Service;
+import org.cybergarage.upnp.ServiceList;
+import org.cybergarage.upnp.ServiceStateTable;
+import org.cybergarage.upnp.StateVariable;
 
 public class TreeComp extends JTree
 {
