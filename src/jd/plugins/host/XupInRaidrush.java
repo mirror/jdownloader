@@ -68,8 +68,8 @@ public class XupInRaidrush extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         Form download = br.getForms()[0];
-        dl = new RAFDownload(this, downloadLink, br.openFormConnection(download));
-        dl.startDownload();
+        br.openDownload(downloadLink, download).startDownload();
+     
     }
 
     public int getMaxSimultanFreeDownloadNum() {
