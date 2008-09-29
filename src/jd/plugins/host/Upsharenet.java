@@ -150,23 +150,7 @@ public class Upsharenet extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-        br.openGetConnection(link);
-        if (br.getRedirectLocation() != null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
-        }
-        /* Datei herunterladen */
-        HTTPConnection urlConnection = br.getHttpConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        dl.startDownload();
+       br.openDownload(downloadLink, link).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
