@@ -64,7 +64,7 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws IOException {
+    public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -74,9 +74,8 @@ public class YourFilesBiz extends PluginForHost {
             return;
         }
 
-        HTTPConnection urlConnection = br.openGetConnection("http://" + new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("value='http://(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.startDownload();
+       br.openDownload(downloadLink, "http://" + new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("value='http://(.*?)'>", Pattern.CASE_INSENSITIVE))).startDownload();;
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {
