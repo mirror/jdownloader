@@ -16,43 +16,22 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class XupIn extends PluginForHost {
-    // http://xup.raidrush.ws/.*?/
+
     private static final String AGB_LINK = "http://www.xup.in/terms/";
     private static final String CODER = "JD-Team";
-    private static final String DOWNLOAD_NAME = "<legend> <b>Download: (.*?)</b> </legend>";
-
-    private static final String DOWNLOAD_SIZE = "<li class=\"iclist\">File Size: (.*?) Mbyte</li>";
-
-    private static final String NAME_FROM_URL = "http://.*?xup\\.in/dl,[0-9]+/(.*?)";
-    private static final String NOT_FOUND = "File does not exist";
-    private static final String PASSWORD_PROTECTED = "Bitte Passwort eingeben";
-
-    private static final String VID = "value=\"(.*?)\" name=\"vid\"";
-    private static final String VTIME = "value=\"([0-9]+)\" name=\"vtime\"";
-    private String cookie = "";
-    private String vid = "";
-    private String vpass = "";
-    private String vtime = "";
 
     public XupIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,49 +48,16 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        this.setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
 
-        try {
+        String filename = br.getXPathElement("/html/body/div/div/div/form/div/fieldset[2]/legend/b").substring(10).trim();
+        long size = Regex.getSize(br.getXPathElement("/html/body/div/div/div/form/div/div/fieldset/div/ul/li"));
+        downloadLink.setDownloadSize(size);
+        downloadLink.setName(filename);
 
-            RequestInfo requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-
-            if (requestInfo.containsHTML(NOT_FOUND)) {
-
-                if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0) != null) {
-                    downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0));
-                }
-                linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-                return false;
-
-            }
-
-            String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getMatch(0)).trim();
-            Integer length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getMatch(0).trim()) * 1024 * 1024);
-
-            // downloadinfos gefunden? -> download verfügbar
-            if (fileName != null && length != null) {
-
-                downloadLink.setName(fileName);
-
-                try {
-                    downloadLink.setDownloadSize(length);
-                } catch (Exception e) {
-                }
-
-                return true;
-
-            }
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // unbekannter fehler
-        return false;
-
+        return true;
     }
 
     @Override
@@ -122,75 +68,21 @@ public class XupIn extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        br.setDebug(true);
+        this.getFileInformation(downloadLink);
 
-        URL downloadUrl = new URL(downloadLink.getDownloadURL());
+        Form download = br.getForm(0);
 
-        RequestInfo requestInfo = HTTP.getRequest(downloadUrl);
-
-        if (requestInfo.containsHTML(NOT_FOUND)) {
-
-            if (new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0) != null) {
-                downloadLink.setName(new Regex(requestInfo.getHtmlCode(), NAME_FROM_URL).getMatch(0));
-            }
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-
+        if (download.getVars().containsKey("vpass")) {
+            download.put("vpass", Plugin.getUserInput(JDLocale.L("plugins.host.enterlinkpassword", "Please enter Linkpassword"), downloadLink));
         }
+        br.openDownload(downloadLink, download);
 
-        if (requestInfo.containsHTML(PASSWORD_PROTECTED)) {
-
-            vpass = Plugin.getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), downloadLink);
-
+        if (!dl.getConnection().isContentDisposition()) {
+            String page = br.loadConnection(dl.getConnection());
+            if (page.contains("richtige Passwort erneut ein")) { throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.host.xup", "Password wrong")); }
+            throw new PluginException(LinkStatus.ERROR_FATAL);
         }
-
-        String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_NAME).getMatch(0)).trim();
-        downloadLink.setName(fileName);
-
-        try {
-
-            int length = (int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), DOWNLOAD_SIZE).getMatch(0).trim()) * 1024 * 1024);
-            downloadLink.setDownloadSize(length);
-
-        } catch (Exception e) {
-
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-
-        }
-
-        cookie = requestInfo.getCookie();
-
-        vid = new Regex(requestInfo.getHtmlCode(), VID).getMatch(0);
-        vtime = new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
-        new Regex(requestInfo.getHtmlCode(), VTIME).getMatch(0);
-
-        File file = this.getLocalCaptchaFile(this);
-
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL("http://www.xup.in/captcha.php"), cookie, downloadLink.getDownloadURL(), true);
-
-        Browser.download(file, requestInfo.getConnection());
-
-        String vchep = Plugin.getCaptchaCode(file, this, downloadLink);
-
-        if (vpass != "") {
-            requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vpass=" + vpass + "&vchep=" + vchep, true);
-        } else {
-            requestInfo = HTTP.postRequestWithoutHtmlCode(downloadUrl, cookie, downloadLink.getDownloadURL(), "vid=" + vid + "&vtime=" + vtime + "&vchep=" + vchep, true);
-        }
-
-        HTTPConnection urlConnection = requestInfo.getConnection();
-
-        if (urlConnection.getContentType().contains("text/html")) {
-
-            logger.severe("Captcha code or password wrong");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-
-        }
-
-        // Download starten
-        dl = new RAFDownload(this, downloadLink, urlConnection);
 
         dl.startDownload();
 
@@ -202,11 +94,6 @@ public class XupIn extends PluginForHost {
 
     @Override
     public void reset() {
-
-        vid = "";
-        vtime = "";
-        vpass = "";
-        cookie = "";
 
     }
 

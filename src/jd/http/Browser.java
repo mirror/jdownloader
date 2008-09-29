@@ -35,6 +35,7 @@ import java.util.regex.Pattern;
 import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
+import jd.parser.XPath;
 import jd.parser.Form.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.download.DownloadInterface;
@@ -1134,7 +1135,7 @@ public class Browser {
 
     public DownloadInterface openDownload(DownloadLink downloadLink, String link) throws Exception {
 
-        DownloadInterface dl = RAFDownload.download(downloadLink, request);
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createGetRequest(link));
         dl.connect(this);
         if (downloadLink.getPlugin().getBrowser() == this) {
             downloadLink.getPlugin().setDownloadInterface(dl);
@@ -1144,12 +1145,26 @@ public class Browser {
 
     public DownloadInterface openDownload(DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
 
-        DownloadInterface dl = RAFDownload.download(downloadLink, request, b, c);
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createGetRequest(link), b, c);
         dl.connect(this);
         if (downloadLink.getPlugin().getBrowser() == this) {
             downloadLink.getPlugin().setDownloadInterface(dl);
         }
         return dl;
+    }
+
+    public DownloadInterface openDownload(DownloadLink downloadLink, Form form) throws Exception {
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createFormRequest(form));
+        dl.connect(this);
+        if (downloadLink.getPlugin().getBrowser() == this) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
+    }
+
+    public String getXPathElement(String xPath) {
+        return new XPath(this.toString(), xPath).getFirstMatch();
+      
     }
 
 }
