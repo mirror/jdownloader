@@ -38,8 +38,6 @@ public class YouPornCom extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-
-
     private static final String CODER = "JD-Team";
 
     private RequestInfo requestInfo;
@@ -50,40 +48,25 @@ public class YouPornCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink parameter) {
-        try {
-            requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter.getDownloadURL()), null, null, true);
-            HTTPConnection urlConnection = requestInfo.getConnection();
-            parameter.setName(Plugin.getFileNameFormHeader(urlConnection));
-            parameter.setDownloadSize(urlConnection.getContentLength());
-            return true;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        parameter.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-        return false;
+    public boolean getFileInformation(DownloadLink parameter) throws IOException {
+        this.setBrowserExclusive();
+
+        br.setFollowRedirects(true);
+        br.openGetConnection(parameter.getDownloadURL());
+        parameter.setName(Plugin.getFileNameFormHeader(br.getHttpConnection()));
+        parameter.setDownloadSize(br.getHttpConnection().getContentLength());
+        br.getHttpConnection().disconnect();
+        return true;
+
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        LinkStatus linkStatus = link.getLinkStatus();
-        if (!getFileInformation(link)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(getHost() + " " + JDLocale.L("plugins.host.server.unavailable", "Serverfehler"));
-            return;
-        }
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, link, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        dl.startDownload();
+
+        getFileInformation(link);
+
+        br.openDownload(link, link.getDownloadURL()).startDownload();
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {
