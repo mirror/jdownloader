@@ -17,14 +17,12 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -89,7 +87,6 @@ public class Vipfilecom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
         br.setFollowRedirects(false);
         br.getPage(link);
         if (br.getRedirectLocation() == null) {

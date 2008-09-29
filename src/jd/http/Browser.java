@@ -1167,4 +1167,14 @@ public class Browser {
       
     }
 
+    public DownloadInterface openDownload(DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url,postdata));
+        dl.connect(this);
+        if (downloadLink.getPlugin().getBrowser() == this) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
+        
+    }
+
 }

@@ -21,14 +21,12 @@ import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class Upsharenet extends PluginForHost {
     private static final String CODER = "JD-Team";

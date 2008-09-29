@@ -17,20 +17,13 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
-import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
-import jd.utils.JDLocale;
 
 public class YouPornCom extends PluginForHost {
     public YouPornCom(PluginWrapper wrapper) {

@@ -25,7 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class XupInRaidrush extends PluginForHost {
 

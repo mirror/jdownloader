@@ -17,23 +17,17 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
 
 public class UploadServiceinfo extends PluginForHost {
 

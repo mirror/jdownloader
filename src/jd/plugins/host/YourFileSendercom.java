@@ -17,19 +17,15 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class YourFileSendercom extends PluginForHost {
     private static final String CODER = "JD-Team";
