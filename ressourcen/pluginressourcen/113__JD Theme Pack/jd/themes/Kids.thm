@@ -1,0 +1,96 @@
+# Theme by GiaSoft
+# Icons by Everaldo Coelho
+# everaldo@everaldo.com
+# www.everaldo.com
+gui.images.add = kids/add
+gui.images.clipboard = kids/clipboard
+gui.images.clipboardon = kids/clipboardon
+gui.images.clipboardoff = kids/clipboardoff
+gui.images.ceson = kids/ceson
+gui.images.cesoff = kids/cesoff
+
+gui.images.config.container = kids/database
+gui.images.config.addons = kids/tool
+gui.images.config.find = kids/find
+gui.images.config.home = kids/home
+gui.images.config.infoFile = kids/attach
+gui.images.config.network_local = kids/network_local
+gui.images.config.ocr = kids/charset
+gui.images.config.unrar = kids/package
+gui.images.config.packagemanager = kids/run
+gui.images.config.eventmanager = kids/chronometer
+gui.images.config.tip = kids/help_hint
+gui.images.config.updater=kids/update_manager
+gui.images.config.gui=kids/style
+gui.images.config.reconnect=kids/clear_time
+gui.images.config.host=kids/host
+gui.images.config.decrypt=kids/decrypted
+
+
+
+gui.images.configuration = kids/configuration
+gui.images.delete = kids/delete
+gui.images.down = kids/down
+gui.images.exit = kids/stop_after
+gui.images.find = kids/find
+gui.images.go_bottom = kids/go_bottom
+gui.images.go_top = kids/go_top
+gui.images.jd_logo = jd_logo
+gui.images.led_empty = led_empty
+gui.images.led_green = led_green
+gui.images.load = kids/load
+gui.images.next = kids/start
+gui.images.reconnect = kids/reconnect
+gui.images.reconnect_bad = kids/reconnect_bad
+gui.images.reconnect_ok = kids/reconnect_ok
+gui.images.save = kids/save
+gui.images.stop = kids/stop
+gui.images.stop_after = kids/stop_after
+gui.images.stop_after_active = kids/stop_after_active
+gui.images.terminal = kids/terminal
+gui.images.top = kids/top
+gui.images.update_manager = kids/update_manager
+
+gui.images.help=kids/help
+gui.images.package_opened = kids/package_opened
+gui.images.package_closed = kids/package_closed
+gui.images.link=kids/link
+gui.images.selected=kids/checked
+gui.images.unselected=kids/unchecked
+gui.images.warning=kids/dialog_warning
+
+
+gui.icons.copy=kids/editcopy
+gui.icons.cut=kids/editcut
+gui.icons.paste=kids/clipboard
+gui.icons.select_all=kids/edit_select_all
+gui.icons.delete=kids/clipboardoff
+gui.color.downloadlist.font = 000000
+
+gui.color.downloadlist.row_a = EEEEEE
+gui.color.downloadlist.row_b = FFFFFF
+gui.color.downloadlist.row_selected = 7a98b9
+gui.color.downloadlist.row_selected_border = 7a98b9
+gui.color.downloadlist.row_package = AAAAAA
+gui.color.downloadlist.row_link_done = 7cd622
+gui.color.downloadlist.row_link_error = a40604
+gui.color.downloadlist.row_link_disabled = BBBBBB
+gui.color.downloadlist.grid = FFFFFF
+
+gui.color.downloadlist.package_progress = 94baff
+gui.color.downloadlist.progress_error = a40604
+gui.color.downloadlist.progress_done = 7cd622
+gui.color.downloadlist.progress_inactive = BBBBBB
+gui.color.downloadlist.progress_active = 94baff
+
+gui.color.downloadlist.package_progress_font_a = 000000
+gui.color.downloadlist.progress_error_font_a = 000000
+gui.color.downloadlist.progress_done_font_a = 000000
+gui.color.downloadlist.progress_inactive_font_a = 000000
+gui.color.downloadlist.progress_active_font_a = 000000
+
+gui.color.downloadlist.package_progress_font_b = 000000
+gui.color.downloadlist.progress_error_font_b = 000000
+gui.color.downloadlist.progress_done_font_b = 000000
+gui.color.downloadlist.progress_inactive_font_b = 000000
+gui.color.downloadlist.progress_active_font_b = 000000
