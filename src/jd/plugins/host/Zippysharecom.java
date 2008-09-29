@@ -34,7 +34,7 @@ import jd.plugins.download.RAFDownload;
 
 public class Zippysharecom extends PluginForHost {
 
-    private RequestInfo requestInfo;
+ 
     private String url;
 
     public Zippysharecom(PluginWrapper wrapper) {
@@ -52,27 +52,23 @@ public class Zippysharecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException {
+     this.setBrowserExclusive();
             String url = downloadLink.getDownloadURL();
             for (int i = 1; i < 3; i++) {
-                requestInfo = HTTP.getRequest(new URL(url));
-                if (!requestInfo.containsHTML("File does not exist")) {
-                    downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getMatch(0).replaceAll(",", "\\.")) * 1024 * 1024));
+          
+                br.getPage(url);
+                if (!br.containsHTML("File does not exist")) {
+                    downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(br.getRegex( Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getMatch(0).replaceAll(",", "\\.")) * 1024 * 1024));
                     return true;
                 }
                 Thread.sleep(250);
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        return false;
+     return true;
     }
+
+
 
     @Override
     public String getVersion() {
@@ -91,16 +87,10 @@ public class Zippysharecom extends PluginForHost {
         }
 
         /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         /* Datei herunterladen */
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+       dl=RAFDownload.download(downloadLink, br.createRequest(linkurl));
+
         dl.startDownload();
     }
 
