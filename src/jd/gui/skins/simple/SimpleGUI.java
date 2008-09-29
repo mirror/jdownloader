@@ -186,7 +186,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             // gruener Haken - everything ok
             // oranges Warnschild - ohoh
             // roter Kreis - we are roally f#$%cked!
-            ImageIcon statusIcon = JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.jd_logo"), 16, -1);
+            ImageIcon statusIcon = JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.jd_logo"), 16, -1);
 
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
             lblMessage.setIcon(statusIcon);
@@ -365,7 +365,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenuItem menuItem = new JMenuItem(action);
         if (menuItem.getIcon() instanceof ImageIcon) {
             ImageIcon icon = (ImageIcon) menuItem.getIcon();
-            menuItem.setIcon(JDUtilities.getscaledImageIcon(icon, 16, -1));
+            menuItem.setIcon(JDUtilities.getScaledImageIcon(icon, 16, -1));
         }
         if (action.getAccelerator() != null) {
             menuItem.setAccelerator(action.getAccelerator());
@@ -375,7 +375,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private static JMenu createMenu(String iconname, String ressourceName) {
         JMenu menu = new JMenu(iconname);
-        ImageIcon icon = JDUtilities.getscaledImageIcon(JDTheme.V(ressourceName), 16, -1);
+        ImageIcon icon = JDUtilities.getScaledImageIcon(JDTheme.V(ressourceName), 16, -1);
         if (icon != null) {
             menu.setIcon(icon);
         }
@@ -1497,7 +1497,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JDUtilities.addToGridBag(menuBar, warning, m++, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
         try {
-            ImageIcon icon = JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.update_manager"), 16, -1);
+            ImageIcon icon = JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.update_manager"), 16, -1);
             JLinkButton linkButton = new JLinkButton(JDLocale.L("jdownloader.org", "jDownloader.org"), icon, new URL("http://jdownloader.org"));
             linkButton.setHorizontalTextPosition(SwingConstants.LEFT);
             linkButton.setBorder(null);

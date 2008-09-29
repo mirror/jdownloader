@@ -1116,7 +1116,7 @@ public class JDUtilities {
      * zu laden
      * 
      * @return URLClassLoader
-     */ 
+     */
     public static JDClassLoader getJDClassLoader() {
         if (jdClassLoader == null) {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
@@ -1125,7 +1125,7 @@ public class JDUtilities {
             logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
-        } 
+        }
         return jdClassLoader;
     }
 
@@ -1149,7 +1149,7 @@ public class JDUtilities {
             if (currentDir.isFile()) {
                 currentDir = currentDir.getParentFile();
             }
- 
+
         } catch (URISyntaxException e) {
 
             e.printStackTrace();
@@ -1190,6 +1190,7 @@ public class JDUtilities {
         }
         return ret;
     }
+
     public static int getLevenshteinDistance(String s, String t) {
         if (s == null || t == null) { throw new IllegalArgumentException("Strings must not be null"); }
         int n = s.length();
@@ -1206,7 +1207,7 @@ public class JDUtilities {
         int cost;
         for (i = 0; i <= n; i++) {
             p[i] = i;
-        } 
+        }
         for (j = 1; j <= m; j++) {
             t_j = t.charAt(j - 1);
             d[0] = j;
@@ -1221,6 +1222,7 @@ public class JDUtilities {
 
         return p[n];
     }
+
     public static Locale getLocale() {
         return locale;
     }
@@ -1615,16 +1617,16 @@ public class JDUtilities {
 
     }
 
-    public static ImageIcon getscaledImageIcon(Image image, int width, int height) {
+    public static ImageIcon getScaledImageIcon(Image image, int width, int height) {
         return new ImageIcon(image.getScaledInstance(width, height, Image.SCALE_SMOOTH));
     }
 
-    public static ImageIcon getscaledImageIcon(ImageIcon icon, int width, int height) {
-        return JDUtilities.getscaledImageIcon(icon.getImage(), width, height);
+    public static ImageIcon getScaledImageIcon(ImageIcon icon, int width, int height) {
+        return JDUtilities.getScaledImageIcon(icon.getImage(), width, height);
     }
 
-    public static ImageIcon getscaledImageIcon(String imageName, int width, int height) {
-        return JDUtilities.getscaledImageIcon(JDUtilities.getImage(imageName), width, height);
+    public static ImageIcon getScaledImageIcon(String imageName, int width, int height) {
+        return JDUtilities.getScaledImageIcon(JDUtilities.getImage(imageName), width, height);
     }
 
     /**

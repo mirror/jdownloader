@@ -399,7 +399,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             panel.add(new JSeparator(), "gapleft 10, spanx, pushx, growx");
             panel.add(new JSeparator(), "span 3, pushx, growx");
 
-            JLabel tip = new JLabel(JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
+            JLabel tip = new JLabel(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
             tip.setToolTipText(help);
             panel.add(tip, GAPLEFT + "w pref!" + WRAP);
         } catch (MalformedURLException e) {
@@ -502,7 +502,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         panel = new JPanel(new MigLayout(DEBUG + "ins 20", "[right, pref!]0[grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
         Reconnectmethode = config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
-        addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
+        addSeparator(panel, JDLocale.L("gui.config.general.name", "Allgemein"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.configuration"), 32, 32), JDLocale.L("gui.fengshuiconfig.general.tooltip", "<html>You can set the Downloadpath and the language here"));
 
         languages = new JComboBox(JDLocale.getLocaleIDs().toArray(new String[] {}));
         languages.setSelectedItem(guiConfig.getProperty(SimpleGUI.PARAM_LOCALE, Locale.getDefault()));
@@ -524,13 +524,13 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         premium = new JButton("Einstellungen");
         premium.addActionListener(this);
 
-        addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.next"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
+        addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.next"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
         addComponents(panel, JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), premium, GAPLEFT + GAPRIGHT + ", w pref!, wrap" + PUSHGAP);
 
         JLinkButton label;
         try {
             String titl = JDLocale.L("gui.config.reconnect.name", "Reconnect");
-            label = new JLinkButton("<html><u><b  color=\"#006400\">" + titl, JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.reconnect"), 32, 32), new URL(wikiurl + (titl.replaceAll("\\s", "_"))));
+            label = new JLinkButton("<html><u><b  color=\"#006400\">" + titl, JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.reconnect"), 32, 32), new URL(wikiurl + (titl.replaceAll("\\s", "_"))));
 
             label.setIconTextGap(8);
             label.setBorder(null);
@@ -543,7 +543,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             else
                 progresspanel.add(new JSeparator());
 
-            JLabel tip = new JLabel(JDUtilities.getscaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
+            JLabel tip = new JLabel(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.config.tip"), 16, 16));
             tip.setToolTipText(JDLocale.L("gui.fengshuiconfig.reconnect.tooltip", "<html>Somtimes you need to change your ip via reconnect, to skip the waittime!"));
             panel.add(tip, GAPLEFT + "w pref!" + WRAP);
         } catch (MalformedURLException e) {

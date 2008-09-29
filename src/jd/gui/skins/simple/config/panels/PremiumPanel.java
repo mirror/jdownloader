@@ -17,7 +17,6 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -26,7 +25,6 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
-import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -189,7 +187,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             add(checkBtns[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
             checkBtns[i].addActionListener(this);
 
-            add(delete[i] = new JButton(new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")).getScaledInstance(-1, 14, Image.SCALE_SMOOTH))));
+            add(delete[i] = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
             delete[i].addActionListener(this);
 
             add(new JSeparator(), "w 30:push, growx, pushx");

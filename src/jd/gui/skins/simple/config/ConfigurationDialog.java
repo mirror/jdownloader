@@ -283,7 +283,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         headerPanel.add(new JXTitledSeparator(""), BorderLayout.SOUTH);
         p.add(headerPanel, BorderLayout.NORTH);
 
-        tabbedPane.addTab(title, JDUtilities.getscaledImageIcon(icon, 20, -1), p);
+        tabbedPane.addTab(title, JDUtilities.getScaledImageIcon(icon, 20, -1), p);
     }
 
     private String fill(String s, int maxLength) {
