@@ -30,15 +30,16 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class UploadServiceinfo extends PluginForHost {
 
-    private String postdata;
-    private RequestInfo requestInfo;
-    private String url;
+
+
+
 
     public UploadServiceinfo(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,25 +56,20 @@ public class UploadServiceinfo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            String url = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (!requestInfo.containsHTML("<strong>Die ausgew&auml;hlte Datei existiert nicht!</strong>")) {
-                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-                String filesize = null;
-                if ((filesize = new Regex(requestInfo.getHtmlCode(), "<td style=\"font-weight: bold;\">(\\d+) MB</td>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize(new Integer(filesize) * 1024 * 1024);
-                }
-                return true;
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        if (!br.containsHTML("<strong>Die ausgew&auml;hlte Datei existiert nicht!</strong>")) {
+            downloadLink.setName(Encoding.htmlDecode(new Regex(br, Pattern.compile("<input type=\"text\" value=\"(.*?)\" /></td>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+            String filesize = null;
+            if ((filesize = new Regex(br, "<td style=\"font-weight: bold;\">(\\d+) MB</td>").getMatch(0)) != null) {
+                downloadLink.setDownloadSize(new Integer(filesize) * 1024 * 1024);
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            return true;
         }
-        downloadLink.setAvailable(false);
-        return false;
+        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
@@ -89,15 +85,11 @@ public class UploadServiceinfo extends PluginForHost {
         // switch (step.getStep()) {
         // case PluginStep.STEP_PAGE:
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
+      getFileInformation(downloadLink);
         /* Link holen */
-        url = requestInfo.getForms()[0].action;
-        HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode());
-        postdata = "key=" + Encoding.urlEncode(submitvalues.get("key"));
+        String url = br.getForms()[0].action;
+        HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(br.toString());
+        String postdata = "key=" + Encoding.urlEncode(submitvalues.get("key"));
         postdata = postdata + "&mysubmit=Download";
 
         // case PluginStep.STEP_PENDING:
@@ -106,16 +98,8 @@ public class UploadServiceinfo extends PluginForHost {
 
         // case PluginStep.STEP_DOWNLOAD:
         /* Datei herunterladen */
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), requestInfo.getCookie(), downloadLink.getDownloadURL(), postdata, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        dl=br.openDownload(downloadLink,url,postdata);
+    
         dl.startDownload();
     }
 
