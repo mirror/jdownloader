@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.regex.Pattern;
 
@@ -26,15 +27,12 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class YourFileSendercom extends PluginForHost {
     private static final String CODER = "JD-Team";
-
-    private String downloadurl;
-    private RequestInfo requestInfo;
 
     public YourFileSendercom(PluginWrapper wrapper) {
         super(wrapper);
@@ -51,25 +49,22 @@ public class YourFileSendercom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        downloadurl = downloadLink.getDownloadURL();
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (!requestInfo.containsHTML("alert('File Not Found")) {
-                String linkinfo[][] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<P>You have requested the file <strong>(.*?)</strong> \\(([0-9\\.,]+) (.*?)\\)\\.<br", Pattern.CASE_INSENSITIVE)).getMatches();
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        String downloadurl = downloadLink.getDownloadURL();
+        this.setBrowserExclusive();
+        br.getPage(downloadurl);
+        if (!br.containsHTML("alert('File Not Found")) {
+            String linkinfo[][] = new Regex(br, Pattern.compile("<P>You have requested the file <strong>(.*?)</strong> \\(([0-9\\.,]+) (.*?)\\)\\.<br", Pattern.CASE_INSENSITIVE)).getMatches();
 
-                if (linkinfo[0][2].matches("KBytes")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
-                }
-                downloadLink.setName(linkinfo[0][0]);
-                return true;
+            if (linkinfo[0][2].matches("KBytes")) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
             }
-        } catch (Exception e) {
-
-            e.printStackTrace();
+            downloadLink.setName(linkinfo[0][0]);
+            return true;
+        } else {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        downloadLink.setAvailable(false);
-        return false;
+
     }
 
     @Override
@@ -80,47 +75,25 @@ public class YourFileSendercom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
-        if (requestInfo.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            // step.setParameter(60 * 60 * 1000L);
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            return;
+        getFileInformation(downloadLink);
+        if (br.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) {        
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,60 * 60 * 1000L);
+           
         }
 
-        String link = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("unescape\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String link = Encoding.htmlDecode(new Regex(br, Pattern.compile("unescape\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         /* 10 Seks warten */
         sleep(10000, downloadLink);
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(link), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-        if (requestInfo.getLocation() != null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
-        }
+
+     
         /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        // String filename = Plugin.getFileNameFormHeader(urlConnection);
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        dl=br.openDownload(downloadLink,link);
         dl.setFilesizeCheck(false);
-        dl.setChunkNum(1);
-        dl.setResume(false);
         dl.startDownload();
     }
 

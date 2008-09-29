@@ -90,7 +90,11 @@ public abstract class PluginForHost extends Plugin {
         return free;
 
     }
-
+    protected void setBrowserExclusive() {
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        
+    }
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {

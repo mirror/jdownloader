@@ -36,6 +36,9 @@ import jd.parser.Form;
 import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.parser.Form.InputField;
+import jd.plugins.DownloadLink;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 import jd.utils.SnifferException;
 import jd.utils.Sniffy;
@@ -1123,11 +1126,30 @@ public class Browser {
         return createFormRequest(form);
     }
 
-
     public Request createRequest(String downloadURL) throws Exception {
 
         // TODO Auto-generated method stub
         return createGetRequest(downloadURL);
+    }
+
+    public DownloadInterface openDownload(DownloadLink downloadLink, String link) throws Exception {
+
+        DownloadInterface dl = RAFDownload.download(downloadLink, request);
+        dl.connect(this);
+        if (downloadLink.getPlugin().getBrowser() == this) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
+    }
+
+    public DownloadInterface openDownload(DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
+
+        DownloadInterface dl = RAFDownload.download(downloadLink, request, b, c);
+        dl.connect(this);
+        if (downloadLink.getPlugin().getBrowser() == this) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
     }
 
 }

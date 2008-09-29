@@ -17,25 +17,19 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 
 public class Zippysharecom extends PluginForHost {
 
- 
-    private String url;
+
 
     public Zippysharecom(PluginWrapper wrapper) {
         super(wrapper);
@@ -53,22 +47,20 @@ public class Zippysharecom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException {
-     this.setBrowserExclusive();
-            String url = downloadLink.getDownloadURL();
-            for (int i = 1; i < 3; i++) {
-          
-                br.getPage(url);
-                if (!br.containsHTML("File does not exist")) {
-                    downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(br.getRegex( Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getMatch(0).replaceAll(",", "\\.")) * 1024 * 1024));
-                    return true;
-                }
-                Thread.sleep(250);
+        this.setBrowserExclusive();
+        String url = downloadLink.getDownloadURL();
+        for (int i = 1; i < 3; i++) {
+
+            br.getPage(url);
+            if (!br.containsHTML("File does not exist")) {
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getMatch(0).replaceAll(",", "\\.")) * 1024 * 1024));
+                return true;
             }
-     return true;
+            Thread.sleep(250);
+        }
+        return true;
     }
-
-
 
     @Override
     public String getVersion() {
@@ -79,7 +71,7 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        url = downloadLink.getDownloadURL();
+     
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -89,7 +81,7 @@ public class Zippysharecom extends PluginForHost {
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
         /* Datei herunterladen */
-       dl=RAFDownload.download(downloadLink, br.createRequest(linkurl));
+        dl = RAFDownload.download(downloadLink, br.createRequest(linkurl));
 
         dl.startDownload();
     }
