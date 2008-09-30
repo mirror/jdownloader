@@ -17,43 +17,20 @@
 package jd.plugins.host;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class FilesTo extends PluginForHost {
-
-    static private final String AGB_LINK = "http://www.files.to/content/aup";
-    static private final String CAPTCHA_WRONG = "Der eingegebene code ist falsch";
-
-    static private final String CODER = "JD-Team";
-    static private final String FILE_NOT_FOUND = "Die angeforderte Datei konnte nicht gefunden werden";
-
-    private Pattern CAPTCHA_FLE = Pattern.compile("<img src=\"(http://www.files\\.to/captcha_[0-9]+\\.jpg)");
-    private String captchaAddress;
-    private Pattern DOWNLOAD_URL = Pattern.compile("action\\=\"(http://.*?files\\.to/dl/.*?)\">");
-
-    private Pattern FILE_INFO_NAME = Pattern.compile("<p>Name: <span id=\"downloadname\">(.*?)</span></p>");
-    private Pattern FILE_INFO_SIZE = Pattern.compile("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B)<)/p>");
-
-    private String finalURL;
-    private String session;
-    private Pattern SESSION = Pattern.compile("action\\=\"\\?(PHPSESSID\\=.*?)\"");
 
     public FilesTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -61,70 +38,33 @@ public class FilesTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return AGB_LINK;
+        return "http://www.files.to/content/aup";
     }
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        RequestInfo requestInfo;
         try {
-
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL().toString()));
-
-            if (requestInfo.getHtmlCode() == null) {
-                return false;
-            } else {
-
-                // Datei gelöscht?
-                if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) { return false; }
-
-                String fileName = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_NAME).getMatch(0));
-                int fileSize = getFileSize(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), FILE_INFO_SIZE).getMatch(0)));
-                downloadLink.setName(fileName);
-
-                try {
-
-                    downloadLink.setDownloadSize(fileSize);
-
-                } catch (Exception e) {
-                }
-
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.containsHTML("Die angeforderte Datei konnte nicht gefunden werden")) {
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex("<p>Name: <span id=\"downloadname\">(.*?)</span></p>").getMatch(0)));
+                downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<p>Gr&ouml;&szlig;e: (.*? (KB|MB|B))</p>").getMatch(0)));
+                return true;
             }
-
-            return true;
-
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
+        downloadLink.setAvailable(false);
         return false;
-
     }
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
-    }
-
-    private int getFileSize(String source) {
-
-        int size = 0;
-
-        if (source.contains("KB")) {
-            source = new Regex(source, "(.*?) KB").getMatch(0);
-            size = Integer.parseInt(source) * 1024;
-        } else if (source.contains("MB")) {
-            source = new Regex(source, "(.*?) MB").getMatch(0);
-            size = Integer.parseInt(source) * 1024 * 1024;
-        }
-
-        return size;
-
     }
 
     @Override
@@ -135,58 +75,23 @@ public class FilesTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        RequestInfo requestInfo;
+        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        String parameterString = downloadLink.getDownloadURL().toString();
+        br.getPage(downloadLink.getDownloadURL());
+        String captchaAddress = br.getRegex("<img src=\"(http://www\\.files\\.to/captcha_[\\d]+\\.jpg\\?)").getMatch(0);
 
-        requestInfo = HTTP.getRequest(new URL(parameterString));
+        File captchaFile = this.getLocalCaptchaFile(this);
+        Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAddress));
+        String code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
 
-        // Datei gelöscht?
-        if (requestInfo.getHtmlCode().contains(FILE_NOT_FOUND)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
+        Form captchaForm = br.getForm(0);
+        captchaForm.put("txt_ccode", code);
+        br.submitForm(captchaForm);
 
-        }
+        if (br.containsHTML("Der eingegebene code ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
-        if (requestInfo.getHtmlCode() != null) {
-            session = new Regex(requestInfo.getHtmlCode(), SESSION).getMatch(0);
-            captchaAddress = new Regex(requestInfo.getHtmlCode(), CAPTCHA_FLE).getMatch(0) + "?" + session;
-        } else {
-            logger.severe("Unknown error.. retry in 20 sekunden");
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            sleep(20000, downloadLink);
-            return;
-        }
-
-        File file = this.getLocalCaptchaFile(this);
-        Browser.download(file, captchaAddress);
-
-        String code = Plugin.getCaptchaCode(file, this, downloadLink);
-
-        HashMap<String, String> requestHeaders = new HashMap<String, String>();
-        requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-
-        requestInfo = HTTP.postRequest(new URL(parameterString + "?"), session, parameterString + "?" + session, requestHeaders, "txt_ccode=" + code + "&btn_next=", true);
-
-        if (requestInfo.getHtmlCode() == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            sleep(20000, downloadLink);
-            return;
-
-        } else if (requestInfo.containsHTML(CAPTCHA_WRONG)) {
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-
-        }
-
-        finalURL = new Regex(requestInfo.getHtmlCode(), DOWNLOAD_URL).getMatch(0);
-
-        // Download vorbereiten
-
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(finalURL), true, 0);
-        dl.startDownload();
+        br.openDownload(downloadLink, br.getRegex("action\\=\"(http://.*?files\\.to/dl/.*?)\">").getMatch(0), true, 1).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -195,7 +100,6 @@ public class FilesTo extends PluginForHost {
 
     @Override
     public void reset() {
-        finalURL = null;
     }
 
     @Override
