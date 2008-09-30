@@ -17,25 +17,16 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
 
 public class Przeslijnet extends PluginForHost {
-
-    private RequestInfo requestInfo;
-    private String url;
 
     public Przeslijnet(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,21 +45,12 @@ public class Przeslijnet extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            String url = downloadLink.getDownloadURL();
-
-            requestInfo = HTTP.getRequest(new URL(url));
-            if (!requestInfo.containsHTML("Invalid download link")) {
-                downloadLink.setName(Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), Pattern.compile("<font color=#000000>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-                String filesize = null;
-                if ((filesize = new Regex(requestInfo.getHtmlCode(), "File Size:</td><td bgcolor=\\#EEF4FB background=\"img\\/button03.gif\"><font color=#000080>(.*)MB</td>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024 * 1024);
-                } else if ((filesize = new Regex(requestInfo.getHtmlCode(), "File Size:</td><td bgcolor=\\#EEF4FB background=\"img\\/button03.gif\"><font color=#000080>(.*)KB</td>").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(filesize)) * 1024);
-                }
+            br.getPage(downloadLink.getDownloadURL());
+            if (!br.containsHTML("Invalid download link")) {
+                downloadLink.setName(Encoding.htmlDecode(br.getRegex("<font color=#000000>(.*?)</font>").getMatch(0)));
+                downloadLink.setDownloadSize(Regex.getSize(br.getRegex("File Size:</td><td bgcolor=\\#EEF4FB background=\"img\\/button03.gif\"><font color=#000080>(.*?)</td>").getMatch(0)));
                 return true;
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -84,30 +66,14 @@ public class Przeslijnet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        url = downloadLink.getDownloadURL();
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         /* Zwangswarten, 15seks */
         sleep(15000, downloadLink);
 
-        /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(requestInfo.getHtmlCode(), "onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0));
         /* Datei herunterladen */
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(linkurl), requestInfo.getCookie(), url.toString(), false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.startDownload();
+        br.openDownload(downloadLink, Encoding.htmlDecode(br.getRegex("onClick=\"window\\.location=\\\\\'(.*?)\\\\\'").getMatch(0))).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
