@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class YourFilesBiz extends PluginForHost {
@@ -63,17 +64,9 @@ public class YourFilesBiz extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-
-       br.openDownload(downloadLink, "http://" + new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("value='http://(.*?)'>", Pattern.CASE_INSENSITIVE))).startDownload();;
-
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String url = br.getRegex(Pattern.compile("value='http://(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        br.openDownload(downloadLink, "http://" + url).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
