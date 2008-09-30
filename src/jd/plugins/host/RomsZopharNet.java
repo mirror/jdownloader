@@ -17,18 +17,11 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class RomsZopharNet extends PluginForHost {
-
-    // http://roms.zophar.net
-    // /
-    // download-file/131583
 
     public RomsZopharNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,11 +39,7 @@ public class RomsZopharNet extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            return true;
-        } catch (Exception e) {
-        }
-        return false;
+        return true;
     }
 
     @Override
@@ -61,13 +50,9 @@ public class RomsZopharNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setFollowRedirects(true);
-        HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-        logger.info(Plugin.getFileNameFormHeader(urlConnection));
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(false);
-        dl.setChunkNum(1);
-        dl.startDownload();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

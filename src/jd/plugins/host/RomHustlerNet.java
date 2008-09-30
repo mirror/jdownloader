@@ -21,13 +21,10 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class RomHustlerNet extends PluginForHost {
 
@@ -50,8 +47,7 @@ public class RomHustlerNet extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
+            this.setBrowserExclusive();
             br.getPage(downloadLink.getDownloadURL());
             downloadUrl = decodeurl(br.getRegex(Pattern.compile("link_enc=new Array\\((.*?)\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
             if (downloadUrl == null) return false;
@@ -76,12 +72,7 @@ public class RomHustlerNet extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        HTTPConnection urlConnection = br.openGetConnection(downloadUrl);
-        logger.info(Plugin.getFileNameFormHeader(urlConnection));
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(true);
-        dl.setChunkNum(1);
-        dl.startDownload();
+        br.openDownload(downloadLink, downloadUrl, true, 1).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
