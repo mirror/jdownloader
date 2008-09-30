@@ -63,10 +63,10 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         super(wrapper);
     }
 
-    private class Info extends Thread {
+    private class TrayInfo extends Thread {
         private Point p;
 
-        public Info(Point p) {
+        public TrayInfo(Point p) {
             this.p = p;
         }
 
@@ -77,30 +77,18 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
                 interrupt();
             }
 
-            if (popupMenu.isVisible()) { return; }
+            if (popupMenu.isVisible() || !getPluginConfig().getBooleanProperty("Tooltipp", true)) return;
 
-            String displaytext = "";
-            int speed = 0;
-            int downloads = 0;
-
-            showTooltip(p);
+            toolLabel.setText(createHTMLInfoString());
+            toolParent.pack();
+            calcLocation(toolParent, p);
+            toolParent.setVisible(true);
+            toolParent.toFront();
 
             while (counter > 0) {
-                displaytext = "<html><center><b>jDownloader</b></center><br><br>";
-                downloads = JDUtilities.getController().getRunningDownloadNum();
 
-                if (downloads == 0) {
-                    displaytext += JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>";
-                } else {
-                    displaytext += "<i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i> " + downloads + "<br>";
-                }
-
-                speed = JDUtilities.getController().getSpeedMeter() / 1000;
-
-                displaytext += "<br><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i> " + speed + "kb/s";
-
-                displaytext += "</html>";
-                toollabel.setText(displaytext);
+                toolLabel.setText(createHTMLInfoString());
+                toolParent.pack();
 
                 counter--;
                 try {
@@ -123,7 +111,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     private int counter = 0;
     private JMenuItem dnd;
     private JMenuItem exit;
-    private Info i;
+    private TrayInfo trayInfo;
     private JPopupMenu popupMenu;
     private JCheckBoxMenuItem reconnect;
     private JMenuItem speed1;
@@ -134,8 +122,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     private JMenu speeds;
     private JMenuItem startstop;
     private JMenuItem stopafter;
-    private JLabel toollabel;
-    private JWindow toolparent;
+    private JLabel toolLabel;
+    private JWindow toolParent;
     private TrayIcon trayIcon;
     private JWindow trayParent;
 
@@ -145,15 +133,12 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
         if (e.getSource() == exit) {
             JDUtilities.getController().exit();
-
         } else if (e.getSource() == startstop) {
             JDUtilities.getController().toggleStartStop();
-
         } else if (e.getSource() == clipboard) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CLIPBOARD, null));
         } else if (e.getSource() == dnd) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.ITEMS_DND, null));
-
         } else if (e.getSource() == stopafter) {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_PAUSE_DOWNLOADS, null));
         } else if (e.getSource() == update) {
@@ -162,7 +147,6 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
         } else if (e.getSource() == reconnect) {
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-
             JDUtilities.saveConfig();
         } else if (e.getSource() == speed1) {
             int speed = getPluginConfig().getIntegerProperty("SPEED1", 100);
@@ -235,7 +219,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     }
 
     private void hideTooltip() {
-        toolparent.setVisible(false);
+        toolParent.setVisible(false);
         counter = 0;
     }
 
@@ -267,7 +251,6 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
             return;
         }
         super.controlEvent(event);
-
     }
 
     private void initGUI() {
@@ -344,19 +327,16 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         trayParent.setAlwaysOnTop(true);
         trayParent.setVisible(false);
 
-        toolparent = new JWindow();
-        toolparent.setSize(200, 100);
-        toolparent.setAlwaysOnTop(true);
-        toolparent.setVisible(false);
+        toolLabel = new JLabel("jDownloader");
+        toolLabel.setVisible(true);
+        toolLabel.setOpaque(true);
+        toolLabel.setBackground(new Color(0xb9cee9));
 
-        toollabel = new JLabel("jDownloader");
-        toollabel.setBounds(0, 0, toolparent.getWidth(), toolparent.getHeight());
-        toollabel.setVisible(true);
-        toollabel.setOpaque(true);
-        toollabel.setBackground(new Color(0xb9cee9));
-
-        toolparent.setLayout(null);
-        toolparent.add(toollabel);
+        toolParent = new JWindow();
+        toolParent.setAlwaysOnTop(true);
+        toolParent.add(toolLabel);
+        toolParent.pack();
+        toolParent.setVisible(false);
 
         setTrayPopUp(popupMenu);
 
@@ -398,16 +378,15 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
                 SimpleGUI simplegui = SimpleGUI.CURRENTGUI;
                 if (SwingUtilities.isLeftMouseButton(e)) {
 
-                    if (toolparent.isVisible()) {
+                    if (toolParent.isVisible()) {
                         hideTooltip();
                     }
 
-                    if (e.getClickCount() >= 1) {
+                    if (e.getClickCount() > 1) {
                         simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
                         if (simplegui.getFrame().isVisible()) simplegui.getFrame().setState(Frame.NORMAL);
                     }
-                }
-                if (SwingUtilities.isRightMouseButton(e)) {
+                } else if (SwingUtilities.isRightMouseButton(e)) {
                     showPopup(e.getPoint());
                 }
             }
@@ -418,7 +397,7 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
             }
 
             public void mouseMoved(MouseEvent e) {
-                if (popupMenu.isVisible()) { return; }
+                if (popupMenu.isVisible()) return;
                 if (counter > 0) {
                     counter = 2;
                     return;
@@ -426,8 +405,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
 
                 counter = 2;
 
-                i = new Info(e.getPoint());
-                i.start();
+                trayInfo = new TrayInfo(e.getPoint());
+                trayInfo.start();
             }
         });
     }
@@ -454,35 +433,50 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         });
     }
 
-    private void showTooltip(final Point p) {
-        if (getPluginConfig().getBooleanProperty("Tooltipp", true)) {
-            toolparent.setVisible(true);
-            toolparent.toFront();
-
-            SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-
-                    Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-                    int limitX = (int) screenSize.getWidth() / 2;
-                    int limitY = (int) screenSize.getHeight() / 2;
-
-                    if (p.x <= limitX && p.y <= limitY) {
-                        // top left
-                        toolparent.setLocation(p.x, p.y);
-                    } else if (p.x <= limitX && p.y >= limitY) {
-                        // bottom left
-                        toolparent.setLocation(p.x, p.y - toolparent.getHeight());
-                    } else if (p.x >= limitX && p.y <= limitY) {
-                        // top right
-                        toolparent.setLocation(p.x - toolparent.getWidth(), p.y);
-                    } else if (p.x >= limitX && p.y >= limitY) {
-                        // bottom right
-                        toolparent.setLocation(p.x - toolparent.getWidth(), p.y - toolparent.getHeight());
-                    }
-
-                };
-            });
+    private String createHTMLInfoString() {
+        StringBuilder creater = new StringBuilder();
+        creater.append("<html><center><b>jDownloader</b></center><hr>");
+        int downloads = JDUtilities.getController().getRunningDownloadNum();
+        if (downloads == 0) {
+            creater.append(JDLocale.L("plugins.optional.trayIcon.nodownload", "No Download in progress") + "<br>");
+        } else {
+            creater.append("<table>");
+            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + "</i></td><td>" + downloads + "</td></tr>");
+            creater.append("<tr><td><i>" + JDLocale.L("plugins.optional.trayIcon.speed", "Speed:") + "</i></td><td>" + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s </td></tr>");
+            creater.append("</table>");
         }
+        creater.append("</html>");
+        return creater.toString();
+    }
+
+    private void calcLocation(final JWindow window, final Point p) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                int limitX = (int) screenSize.getWidth() / 2;
+                int limitY = (int) screenSize.getHeight() / 2;
+
+                if (p.x <= limitX) {
+                    if (p.y <= limitY) {
+                        // top left
+                        window.setLocation(p.x, p.y);
+                    } else {
+                        // bottom left
+                        window.setLocation(p.x, p.y - window.getHeight());
+                    }
+                } else {
+                    if (p.y <= limitY) {
+                        // top right
+                        window.setLocation(p.x - window.getWidth(), p.y);
+                    } else {
+                        // bottom right
+                        window.setLocation(p.x - window.getWidth(), p.y - window.getHeight());
+                    }
+                }
+
+            }
+        });
     }
 
     public void windowStateChanged(WindowEvent arg0) {
