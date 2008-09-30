@@ -21,7 +21,8 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.GetRequest;
+import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -110,15 +111,10 @@ public class SharedZillacom extends PluginForHost {
         }
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(requestInfo.getLocation()), requestInfo.getCookie(), downloadLink.getDownloadURL(), false);
-        /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+        
+        GetRequest request = new GetRequest(requestInfo.getLocation());
+        request.getCookies().addAll(Request.parseCookies(requestInfo.getCookie(), "sharedzilla.com"));
+        dl = new RAFDownload(this, downloadLink, request);
         dl.setChunkNum(1);/*
                            * bei dem speed lohnen mehrere chunks nicht, da es
                            * nicht schneller wird

@@ -25,8 +25,8 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class RbaDe extends PluginForHost {
 
@@ -92,7 +92,7 @@ public class RbaDe extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink link) {
+    public boolean getFileInformation(DownloadLink link) throws PluginException, IOException {
         Browser br = new Browser();
         br.clearCookies(getHost());
         LinkStatus linkstatus = link.getLinkStatus();
@@ -130,42 +130,24 @@ public class RbaDe extends PluginForHost {
                 }
             }
             return true;
-        } catch (IOException e) {
-            linkstatus.setStatus(LinkStatus.ERROR_NO_CONNECTION);
-            logger.severe(e.toString());
-            return false;
-        } catch (NumberFormatException e) {
-            linkstatus.setStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            linkstatus.setErrorMessage(ERR_IDS_NOT_FOUND);
-            logger.severe(e.toString());
-            return false;
+      
+        } catch (NumberFormatException e) {       
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, ERR_IDS_NOT_FOUND);
+
         }
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        Browser br = new Browser();
-        br.clearCookies(getHost());
-        /*
-         * String header;
-         * logger.finer("Überprüfe Headerfled - \"Conten-Type\"! URL: --> "+
-         * link.getDownloadURL()); if
-         * ((header=br.openGetConnection(link.getDownloadURL
-         * ()).getHeaderField("Content-Type"
-         * ))!=null&&header.equals("application/octetstream")) { new
-         * RAFDownload(
-         * this,link,br.openGetConnection(link.getDownloadURL())).startDownload
-         * (); }else{
-         * link.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-         * link.getLinkStatus().setErrorMessage(ERR_FILE_NOT_FOUND); }
-         */
+        this.setBrowserExclusive();
+
         String path = new Regex(link.getDownloadURL(), getSupportedLinks()).getColumn(2)[0];
         if (path.equals("5")) {
-            new RAFDownload(this, link, br.openGetConnection(link.getDownloadURL())).startDownload();
+            br.openDownload(link, link.getDownloadURL()).startDownload();
         } else {
             logger.finer("Path = " + path + "nicht supported? Möglicherweise zu unrecht?!?");
-            link.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            link.getLinkStatus().setErrorMessage(ERR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, ERR_FILE_NOT_FOUND);
+
         }
     }
 

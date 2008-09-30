@@ -153,17 +153,9 @@ public class ShareOnlineBiz extends PluginForHost {
         /* 15 seks warten */
         sleep(15000, downloadLink);
 
-        /* Datei herunterladen */
-        HTTPConnection urlConnection = br.openGetConnection(url);
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        dl.startDownload();
+        /* Datei herunterladen */      
+        br.openDownload(downloadLink, url).startDownload();
+     
     }
 
     public int getMaxSimultanFreeDownloadNum() {

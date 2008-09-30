@@ -97,8 +97,9 @@ public class ShareBaseTo extends PluginForHost {
             long waitTime = (Integer.parseInt(wait[0]) * 60 + Integer.parseInt(wait[1])) * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
-        HTTPConnection urlConnection = br.openGetConnection(br.getRedirectLocation());
-        RAFDownload.download(downloadLink, urlConnection, false, 1);
+   
+        br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
+       
     }
 
     public int getMaxSimultanFreeDownloadNum() {

@@ -9,6 +9,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.http.PostRequest;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -89,19 +90,25 @@ public class SpeedySharecom extends PluginForHost {
         sleep(30000, downloadLink);
 
         /* Datei herunterladen */
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), null, url, postdata, false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
+        // requestInfo = HTTP.postRequestWithoutHtmlCode(new URL(url), null,
+        // url, postdata, false);
+        PostRequest request = new PostRequest(url);
+
+        request.setPostDataString(postdata);
+        dl = RAFDownload.download(downloadLink, request);
+
+        HTTPConnection urlConnection = dl.connect();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
-        if (requestInfo.getHeaders().get("Content-Type").get(0).contains("text")) {
+        if (request.getResponseHeader("Content-Type").contains("text")) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             downloadLink.getLinkStatus().setErrorMessage("Wrong Password");
             return;
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
+
         dl.startDownload();
     }
 

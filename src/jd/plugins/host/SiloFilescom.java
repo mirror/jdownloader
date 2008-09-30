@@ -21,7 +21,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
+import jd.http.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -98,16 +98,8 @@ public class SiloFilescom extends PluginForHost {
 
         /* Datei herunterladen */
         requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        dl.startDownload();
+        RAFDownload.download(downloadLink, new GetRequest(downloadurl)).startDownload();
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {

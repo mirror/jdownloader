@@ -90,12 +90,7 @@ public class Shareplacecom extends PluginForHost {
         sleep(20000, downloadLink);
 
         /* Datei herunterladen */
-        HTTPConnection urlConnection = br.openGetConnection(url);
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
+      
         /* nötig da der contentheader fehlerhaft ist */
         String filename = new Regex(url, "&name=(.+)").getMatch(0);
         if (filename != null) {
@@ -103,9 +98,9 @@ public class Shareplacecom extends PluginForHost {
         } else {
             logger.severe("Pls Update Filename Pattern");
         }
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-        dl.setResume(false);
-        dl.setChunkNum(1);
+        
+      
+        dl = br.openDownload(downloadLink, (String)null);     
         dl.startDownload();
     }
 

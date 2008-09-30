@@ -112,21 +112,15 @@ public class ShareNownet extends PluginForHost {
         }
         /* DownloadLink holen/Captcha check */
         HTTPConnection con = br.openFormConnection(form);
-        if (br.getRedirectLocation() != null) {
+        dl = br.openDownload(downloadLink, form);
+
+        if (dl.getRequest().getLocation() != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
             return;
         }
         /* Datei herunterladen */
 
-        if (con.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setChunkNum(1);
-        dl.setResume(false);
         dl.startDownload();
     }
 
