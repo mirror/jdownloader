@@ -20,14 +20,12 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class ShareBaseTo extends PluginForHost {
 
@@ -97,9 +95,9 @@ public class ShareBaseTo extends PluginForHost {
             long waitTime = (Integer.parseInt(wait[0]) * 60 + Integer.parseInt(wait[1])) * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
-   
+
         br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
-       
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {

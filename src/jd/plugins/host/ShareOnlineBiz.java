@@ -28,7 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
@@ -153,9 +152,9 @@ public class ShareOnlineBiz extends PluginForHost {
         /* 15 seks warten */
         sleep(15000, downloadLink);
 
-        /* Datei herunterladen */      
+        /* Datei herunterladen */
         br.openDownload(downloadLink, url).startDownload();
-     
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {

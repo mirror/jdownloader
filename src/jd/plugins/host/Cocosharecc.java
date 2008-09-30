@@ -16,29 +16,18 @@
 
 package jd.plugins.host;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 
 public class Cocosharecc extends PluginForHost {
+
     public Cocosharecc(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
-
-    private static final String CODER = "JD-Team";
-
-    private String downloadurl;
-    private RequestInfo requestInfo;
 
     @Override
     public String getAGBLink() {
@@ -47,26 +36,19 @@ public class Cocosharecc extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            downloadurl = downloadLink.getDownloadURL();
-            requestInfo = HTTP.getRequest(new URL(downloadurl));
-            if (requestInfo.containsHTML("Download startet automatisch")) {
-                String filename = requestInfo.getRegexp("<h1>(.*?)</h1>").getMatch(0);
-                String filesize;
-                if ((filesize = requestInfo.getRegexp("Dateigr&ouml;sse:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(.*?)Bytes<br").getMatch(0)) != null) {
-                    downloadLink.setDownloadSize(new Integer(filesize.trim().replaceAll("\\.", "")));
-                }
-                downloadLink.setName(filename);
+            br.getPage(downloadLink.getDownloadURL());
+            if (br.containsHTML("Download startet automatisch")) {
+                downloadLink.setName(br.getRegex("<h1>(.*?)</h1>").getMatch(0));
+                downloadLink.setDownloadSize(Regex.getSize(br.getRegex("Dateigr&ouml;sse:&nbsp;[&nbsp;]*(.*?)<br").getMatch(0).replaceAll("\\.", "")));
                 return true;
             }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -81,37 +63,27 @@ public class Cocosharecc extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        br.setFollowRedirects(false);
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         /* Warten */
-        String waittime = requestInfo.getRegexp("var num_timeout = (\\d+);").getMatch(0);
+        String waittime = br.getRegex("var num_timeout = (\\d+);").getMatch(0);
         if (waittime != null) {
-            sleep(new Integer(waittime.trim()) * 1000, downloadLink);
+            sleep(Integer.parseInt(waittime) * 1000, downloadLink);
         }
 
         /* DownloadLink holen */
-        downloadurl = "http://www.cocoshare.cc" + requestInfo.getRegexp("<meta http-equiv=\"refresh\" content=\"\\d+; URL=(.*?)\"").getMatch(0);
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-        downloadurl = requestInfo.getLocation();
-        if (downloadurl == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-        downloadurl = "http://www.cocoshare.cc" + downloadurl;
-        dl = br.openDownload(downloadLink, downloadurl);
-        dl.connect();
-        /* DownloadLimit? */
-        if (dl.getRequest().getLocation() != null) {
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            return;
-        }
+        br.getPage("http://www.cocoshare.cc" + br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+; URL=(.*?)\"").getMatch(0));
+        String downloadURL = br.getRedirectLocation();
+        if (downloadURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
+        dl = br.openDownload(downloadLink, downloadURL);
+        dl.connect();
+
+        /* DownloadLimit? */
+        if (dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         dl.startDownload();
     }
 
@@ -125,6 +97,5 @@ public class Cocosharecc extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-
     }
 }

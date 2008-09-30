@@ -23,20 +23,16 @@ import java.util.Date;
 import java.util.Locale;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class QshareCom extends PluginForHost {
@@ -140,9 +136,8 @@ public class QshareCom extends PluginForHost {
         if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
         }
-    
-       br.openDownload(downloadLink, link).startDownload();
-  
+
+        br.openDownload(downloadLink, link).startDownload();
 
     }
 
@@ -182,7 +177,7 @@ public class QshareCom extends PluginForHost {
 
         if (br.getRedirectLocation() != null) {
             logger.info("Direct Download is activ");
-            dl=br.openDownload(downloadLink, null,true,0);
+            dl = br.openDownload(downloadLink, null, true, 0);
         } else {
             logger.warning("InDirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
             br.loadConnection(null);
@@ -212,15 +207,11 @@ public class QshareCom extends PluginForHost {
             br.getPage((String) null);
             url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/" + account.getUser() + "/" + account.getPass() + "/.*?)\"").getMatch(0);
             br.setFollowRedirects(true);
-            dl=br.openDownload(downloadLink, url,true,0);
-      
+            dl = br.openDownload(downloadLink, url, true, 0);
 
         }
 
-        
-      dl.startDownload();
-    
-      
+        dl.startDownload();
 
     }
 

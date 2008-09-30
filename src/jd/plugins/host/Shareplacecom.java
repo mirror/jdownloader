@@ -21,12 +21,10 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class Shareplacecom extends PluginForHost {
 
@@ -90,7 +88,7 @@ public class Shareplacecom extends PluginForHost {
         sleep(20000, downloadLink);
 
         /* Datei herunterladen */
-      
+
         /* nötig da der contentheader fehlerhaft ist */
         String filename = new Regex(url, "&name=(.+)").getMatch(0);
         if (filename != null) {
@@ -98,9 +96,8 @@ public class Shareplacecom extends PluginForHost {
         } else {
             logger.severe("Pls Update Filename Pattern");
         }
-        
-      
-        dl = br.openDownload(downloadLink, (String)null);     
+
+        dl = br.openDownload(downloadLink, (String) null);
         dl.startDownload();
     }
 

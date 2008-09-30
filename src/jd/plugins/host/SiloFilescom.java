@@ -17,24 +17,15 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 import jd.PluginWrapper;
-import jd.http.GetRequest;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
 
 public class SiloFilescom extends PluginForHost {
-    private static final String CODER = "JD-Team";
-
-    private String downloadurl;
-    private RequestInfo requestInfo;
 
     public SiloFilescom(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,22 +38,15 @@ public class SiloFilescom extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws MalformedURLException, IOException {
-        downloadurl = downloadLink.getDownloadURL();
-
-        requestInfo = HTTP.getRequest(new URL(downloadurl));
-        if (requestInfo != null && requestInfo.getLocation() == null) {
-            String filename = requestInfo.getRegexp("Dateiname:<b>(.*?)</b>").getMatch(0).trim();
-            String filesize;
-            filesize = requestInfo.getRegexp("Dateigr.*?e:<b>(.*?)</b></tr>").getMatch(0);
-
-            downloadLink.setDownloadSize(Regex.getSize(filesize));
-
-            downloadLink.setName(filename);
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() == null) {
+            downloadLink.setName(br.getRegex("Dateiname:<b>(.*?)</b>").getMatch(0));
+            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("Dateigr.*?e:<b>(.*?)</b></tr>").getMatch(0)));
             return true;
         }
         return false;
@@ -76,30 +60,15 @@ public class SiloFilescom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
+        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         /* Downloadlimit */
-        if (requestInfo.containsHTML("<span>Maximale Parallele")) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            sleep(120000, downloadLink);
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            return;
-        }
-
-        /* DownloadLink holen */
-        downloadurl = requestInfo.getRegexp("document.location=\"(.*?)\"").getMatch(0);
+        if (br.containsHTML("<span>Maximale Parallele")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
 
         /* Datei herunterladen */
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-        RAFDownload.download(downloadLink, new GetRequest(downloadurl)).startDownload();
-
+        br.openDownload(downloadLink, br.getRegex("document.location=\"(.*?)\"").getMatch(0)).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

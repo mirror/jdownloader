@@ -29,7 +29,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class ShareNownet extends PluginForHost {
-    private static final String CODER = "JD-Team";
 
     private String captchaCode;
     private File captchaFile;
@@ -46,7 +45,7 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
@@ -87,14 +86,9 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setDebug(true);
+
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
+        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         Form form = br.getForm(1);
 
@@ -103,23 +97,19 @@ public class ShareNownet extends PluginForHost {
             /* Captcha File holen */
             captchaFile = getLocalCaptchaFile(this);
 
-            br.downloadFile(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download").getValue());
+            br.downloadFile(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download"));
 
             /* CaptchaCode holen */
             captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
             form.put("captcha", captchaCode);
         }
-        /* DownloadLink holen/Captcha check */
-        // HTTPConnection con = br.openFormConnection(form);
-        dl = br.openDownload(downloadLink, form);
-        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-        if (dl.getRequest().getLocation() != null) {
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
-        /* Datei herunterladen */
 
+        /* DownloadLink holen/Captcha check */
+        dl = br.openDownload(downloadLink, form);
+
+        if (dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
+        /* Datei herunterladen */
         dl.startDownload();
     }
 
@@ -133,7 +123,6 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-
     }
 
 }
