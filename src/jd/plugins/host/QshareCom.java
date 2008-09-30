@@ -140,15 +140,9 @@ public class QshareCom extends PluginForHost {
         if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
         }
-        HTTPConnection con = br.openGetConnection(link);
-        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) { throw new PluginException(LinkStatus.ERROR_RETRY);
-
-        }
-        dl = new RAFDownload(this, downloadLink, con);
-        dl.setResume(false);
-        dl.setChunkNum(1);
-
-        dl.startDownload();
+    
+       br.openDownload(downloadLink, link).startDownload();
+  
 
     }
 
@@ -188,7 +182,7 @@ public class QshareCom extends PluginForHost {
 
         if (br.getRedirectLocation() != null) {
             logger.info("Direct Download is activ");
-            br.openGetConnection(null);
+            dl=br.openDownload(downloadLink, null,true,0);
         } else {
             logger.warning("InDirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
             br.loadConnection(null);
@@ -218,16 +212,15 @@ public class QshareCom extends PluginForHost {
             br.getPage((String) null);
             url = br.getRegex("(http://\\w{1,5}.qshare.com/\\w{1,10}/\\w{1,50}/\\w{1,50}/\\w{1,50}/\\w{1,50}/" + account.getUser() + "/" + account.getPass() + "/.*?)\"").getMatch(0);
             br.setFollowRedirects(true);
-            br.openGetConnection(url);
+            dl=br.openDownload(downloadLink, url,true,0);
+      
 
         }
 
-        dl = new RAFDownload(this, downloadLink, br.getHttpConnection());
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-
-        dl.startDownload();
-        return;
+        
+      dl.startDownload();
+    
+      
 
     }
 
