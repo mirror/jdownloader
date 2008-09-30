@@ -44,15 +44,14 @@ public class zShare extends PluginForHost {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
             br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
-            String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getMatches()[0];
+            String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getRow(0);
             downloadLink.setName(fileInfo[0]);
             try {
                 double length = Double.parseDouble(fileInfo[1].replaceAll("\\,", "").trim());
                 int bytes;
-                String type = fileInfo[2].toLowerCase();
-                if (type.equalsIgnoreCase("kb")) {
+                if (fileInfo[2].equalsIgnoreCase("kb")) {
                     bytes = (int) (length * 1024);
-                } else if (type.equalsIgnoreCase("mb")) {
+                } else if (fileInfo[2].equalsIgnoreCase("mb")) {
                     bytes = (int) (length * 1024 * 1024);
                 } else {
                     bytes = (int) length;
@@ -96,11 +95,9 @@ public class zShare extends PluginForHost {
 
     @Override
     public void reset() {
-        // TODO Automatisch erstellter Methoden-Stub
     }
 
     @Override
     public void resetPluginGlobals() {
-        // TODO Automatisch erstellter Methoden-Stub
     }
 }

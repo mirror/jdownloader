@@ -28,7 +28,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class YourFileSendercom extends PluginForHost {
-    private static final String CODER = "JD-Team";
 
     public YourFileSendercom(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +40,7 @@ public class YourFileSendercom extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
@@ -50,12 +49,12 @@ public class YourFileSendercom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadurl);
         if (!br.containsHTML("alert('File Not Found")) {
-            String linkinfo[][] = new Regex(br, Pattern.compile("<P>You have requested the file <strong>(.*?)</strong> \\(([0-9\\.,]+) (.*?)\\)\\.<br", Pattern.CASE_INSENSITIVE)).getMatches();
+            String linkInfo[] = new Regex(br, Pattern.compile("<P>You have requested the file <strong>(.*?)</strong> \\(([0-9\\.,]+) (.*?)\\)\\.<br", Pattern.CASE_INSENSITIVE)).getRow(0);
 
-            if (linkinfo[0][2].matches("KBytes")) {
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
+            if (linkInfo[2].matches("KBytes")) {
+                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkInfo[1].replaceAll(",", "").replaceAll("\\.0+", "")) * 1024.0));
             }
-            downloadLink.setName(linkinfo[0][0]);
+            downloadLink.setName(linkInfo[0]);
             return true;
         } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -74,21 +73,17 @@ public class YourFileSendercom extends PluginForHost {
 
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
-        if (br.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) {        
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,60 * 60 * 1000L);
-           
+        if (br.containsHTML("<span>You have got max allowed download sessions from the same IP!</span>")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000L);
+
         }
 
         String link = Encoding.htmlDecode(new Regex(br, Pattern.compile("unescape\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (link == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        }
+        if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         /* 10 Seks warten */
         sleep(10000, downloadLink);
 
-     
         /* Datei herunterladen */
-        dl=br.openDownload(downloadLink,link);
+        dl = br.openDownload(downloadLink, link);
         dl.setFilesizeCheck(false);
         dl.startDownload();
     }

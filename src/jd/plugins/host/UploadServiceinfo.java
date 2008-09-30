@@ -31,10 +31,6 @@ import jd.plugins.PluginForHost;
 
 public class UploadServiceinfo extends PluginForHost {
 
-
-
-
-
     public UploadServiceinfo(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -74,26 +70,21 @@ public class UploadServiceinfo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_PAGE:
         /* Nochmals das File überprüfen */
-      getFileInformation(downloadLink);
+        getFileInformation(downloadLink);
         /* Link holen */
         String url = br.getForms()[0].action;
         HashMap<String, String> submitvalues = HTMLParser.getInputHiddenFields(br.toString());
         String postdata = "key=" + Encoding.urlEncode(submitvalues.get("key"));
         postdata = postdata + "&mysubmit=Download";
 
-        // case PluginStep.STEP_PENDING:
         /* Zwangswarten, 10seks, kann man auch weglassen */
         sleep(10000, downloadLink);
 
-        // case PluginStep.STEP_DOWNLOAD:
         /* Datei herunterladen */
-        dl=br.openDownload(downloadLink,url,postdata);
-    
+        dl = br.openDownload(downloadLink, url, postdata);
+
         dl.startDownload();
     }
 

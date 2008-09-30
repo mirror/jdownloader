@@ -29,8 +29,6 @@ import jd.plugins.download.RAFDownload;
 
 public class Zippysharecom extends PluginForHost {
 
-
-
     public Zippysharecom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -71,7 +69,7 @@ public class Zippysharecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-     
+
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

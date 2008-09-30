@@ -33,9 +33,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
 
 public class Youtube extends PluginForHost {
-    static private final String CODER = "JD-Team";
-
-    static private final String AGB = "http://youtube.com/t/terms";
 
     public Youtube(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,21 +41,18 @@ public class Youtube extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return AGB;
+        return "http://youtube.com/t/terms";
     }
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         br.setFollowRedirects(true);
-        if (br.openGetConnection(downloadLink.getDownloadURL()).getResponseCode() == 200) {
-            return true;
-        } else
-            return false;
+        return (br.openGetConnection(downloadLink.getDownloadURL()).getResponseCode() == 200);
     }
 
     @Override

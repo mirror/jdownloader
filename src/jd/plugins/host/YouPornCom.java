@@ -23,17 +23,12 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 
 public class YouPornCom extends PluginForHost {
+
     public YouPornCom(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
-
-    private static final String CODER = "JD-Team";
-
-    private RequestInfo requestInfo;
 
     @Override
     public String getAGBLink() {
@@ -73,7 +68,7 @@ public class YouPornCom extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
