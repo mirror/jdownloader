@@ -1231,7 +1231,7 @@ public class JDUtilities {
      * @return File Content als String
      */
     public static String getLocalFile(File file) {
-        if (!file.exists()) { return ""; }
+        if (!file.exists()) { return ""; } 
         BufferedReader f;
         try {
             f = new BufferedReader(new FileReader(file));

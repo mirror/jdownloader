@@ -1155,7 +1155,27 @@ public class JDController implements ControlListener, UIListener {
         }
         return ret;
     }
-
+    public int getRunningDownloadNumByHost(PluginForHost pluginForHost) {
+        int ret = 0;
+        synchronized (packages) {
+            Iterator<FilePackage> iterator = packages.iterator();
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                while (it2.hasNext()) {
+                    nextDownloadLink = it2.next();
+                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
+                        if (nextDownloadLink.getPlugin().getClass() == pluginForHost.getClass()){
+                        ret++;
+                       }
+                    }
+                }
+            }
+        }
+        return ret;
+    }
     /**
      * @return gibt das globale speedmeter zurück
      */

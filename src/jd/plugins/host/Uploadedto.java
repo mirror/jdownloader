@@ -19,6 +19,8 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -47,6 +49,9 @@ public class Uploadedto extends PluginForHost {
 
         this.enablePremium();
         setMaxConnections(20);
+      
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PREMIUMCHUNKS", JDLocale.L("plugins.hoster.uploadedto.chunks", "Premium connections # (>1 causes higher traffic)"), 1, 20).setDefaultValue(1).setStep(1));
+        
     }
 
     /**
@@ -202,7 +207,7 @@ public class Uploadedto extends PluginForHost {
         }
         Request request = br.createGetRequest(null);
         dl = new RAFDownload(this, downloadLink, request);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+        dl.setChunkNum(this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
         dl.setResume(true);
 
         HTTPConnection con = dl.connect();
@@ -336,7 +341,7 @@ public class Uploadedto extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-
+    
     public void reset() {
     }
 

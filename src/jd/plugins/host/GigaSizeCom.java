@@ -45,6 +45,7 @@ public class GigaSizeCom extends PluginForHost {
 
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
+        br.setDebug(true);
         if (br.containsHTML("versuchen gerade mehr")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l); }
         Form[] forms = br.getForms();
         if (getPluginConfig().getBooleanProperty("USE_FREE_ACCOUNT", false)) {
@@ -66,10 +67,8 @@ public class GigaSizeCom extends PluginForHost {
         br.submitForm(captchaForm);
         Form download = br.getFormbyID("formDownload");
         
-        dl=RAFDownload.download(downloadLink, br.createRequest(download));
-        
-        if (!dl.connect().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-
+        dl=br.openDownload(downloadLink, download);        
+        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();
     }
 

@@ -68,11 +68,10 @@ public class DataHu extends PluginForHost {
         getFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
-        // data.hu lässt max 3 verbindungen zu.. ob die durch chunkload oder
-        // sumultane verbindungen zu stande kommen ist egal...
-        int free = this.waitForFreeConnection(downloadLink);
 
-        RAFDownload.download(downloadLink, br.createGetRequest(link), true, free * -1);
+//        int free = this.waitForFreeConnection(downloadLink);
+
+        br.openDownload(downloadLink, link,true,1).startDownload();
 
     }
 
@@ -81,11 +80,11 @@ public class DataHu extends PluginForHost {
     }
 
     public int getMaxConnections() {
-        return 3;
+        return 1;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 1;
 
     }
 

@@ -136,7 +136,7 @@ public class FastLoadNet extends PluginForHost {
 
     public void handleFree0(final DownloadLink downloadLink) throws Exception {
         // LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setDebug(true);
+//        br.setDebug(true);
 
         getFileInformation(downloadLink);
 
@@ -183,7 +183,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return SIM;
+        return SIM==1?1:JDUtilities.getController().getRunningDownloadNumByHost(this)+1;
     }
 
     @Override
