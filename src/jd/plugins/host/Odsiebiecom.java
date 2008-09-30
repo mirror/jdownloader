@@ -124,13 +124,13 @@ public class Odsiebiecom extends PluginForHost {
                         break;
                     }
                     if (url.contains("style")) {
-                        if (!url.contains("display:none")) {
+                        if (!new Regex(url,"display:none[ ]*?\"").matches()) {
                             captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
                             break;
                         } else {
                             String[] captchacodes = capform.getRegex("<font(.*?style=\".*?\".*?.*?>.*?<)").getColumn(0);
                             for (String tmp : captchacodes) {
-                                if (!tmp.contains("display:none")) {
+                                if (!new Regex(url,"display:none[ ]*?\"").matches()) {
                                     captchaCode = new Regex(tmp, ">(.*?)<").getMatch(0).trim();
                                     break;
                                 }
