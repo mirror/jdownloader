@@ -50,8 +50,13 @@ public class Stealth extends PluginForDecrypt {
         String id = new Regex(parameter, Pattern.compile("\\?id\\=([a-zA-Z0-9]+)")).getMatch(0);
         if (id != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            Browser.download(container, br.openGetConnection("http://stealth.to/?go=dlc&id=" + id));
-            Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
+            Vector<DownloadLink> dl_links;
+            try {
+                Browser.download(container, br.openGetConnection("http://stealth.to/?go=dlc&id=" + id));
+                dl_links = (JDUtilities.getController().getContainerLinks(container));
+            } catch (Exception e) {
+                dl_links = new Vector<DownloadLink>();
+            }
             for (DownloadLink dl_link : dl_links) {
                 decryptedLinks.add(dl_link);
             }
