@@ -17,23 +17,17 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class XinkIt extends PluginForDecrypt {
 
@@ -46,58 +40,37 @@ public class XinkIt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-            File captchaFile = null;
-            String capTxt = "";
-            String session = "PHPSESSID=" + new Regex(reqinfo.getHtmlCode(), "\\?PHPSESSID=(.*?)\"").getMatch(0);
-            boolean do_continue = false;
-            for (int retry = 1; retry < 5; retry++) {
+        br.getPage(parameter);
 
-                if (reqinfo.getHtmlCode().indexOf("captcha_send") != -1) {
+        boolean do_continue = false;
+        for (int retry = 1; retry < 5; retry++) {
 
-                    logger.info("Captcha Protected");
+            if (br.containsHTML("captcha_send")) {
 
-                    if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
-                    }
+                String captchaAdress = "http://xink.it/captcha-" + br.getRegex("src=\"captcha-(.*?)\"").getMatch(0);
 
-                    String captchaAdress = "http://xink.it/captcha-" + new Regex(reqinfo.getHtmlCode(), "src=\"captcha-(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);
-                    captchaAdress += "?" + session;
+                File captchaFile = getLocalCaptchaFile(this);
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
+                String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
 
-                    captchaFile = getLocalCaptchaFile(this);
-                    Browser.download(captchaFile, captchaAdress);
+                Form captchaForm = br.getForm(0);
+                captchaForm.put("captcha", captchaCode);
+                br.submitForm(captchaForm);
 
-                    capTxt = Plugin.getCaptchaCode(captchaFile, this, param);
-
-                    String post = "captcha=" + capTxt.toUpperCase() + "&x=70&y=11&" + session;
-
-                    HashMap<String, String> requestHeaders = new HashMap<String, String>();
-                    requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-
-                    reqinfo = HTTP.postRequest(new URL(parameter), null, parameter, requestHeaders, post, true);
-
-                } else {
-                    if (captchaFile != null && capTxt != null) {
-                        JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
-                    }
-                    do_continue = true;
-                    break;
-                }
+            } else {
+                do_continue = true;
+                break;
             }
-            if (do_continue == true) {
-                String ids[][] = new Regex(reqinfo.getHtmlCode(), "startDownload\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE).getMatches();
-                progress.setRange(ids.length);
-                for (String[] element : ids) {
-                    reqinfo = HTTP.getRequest(new URL("http://xink.it/encd_" + element[0]));
-                    decryptedLinks.add(createDownloadlink(XinkItDecodeLink(reqinfo.getHtmlCode())));
-                    progress.increase(1);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+        if (do_continue) {
+            String ids[][] = br.getRegex("startDownload\\('(.*?)'\\);").getMatches();
+            progress.setRange(ids.length);
+            for (String[] element : ids) {
+                decryptedLinks.add(createDownloadlink(XinkItDecodeLink(br.getPage("http://xink.it/encd_" + element[0]))));
+                progress.increase(1);
+            }
+        }
+
         return decryptedLinks;
 
     }

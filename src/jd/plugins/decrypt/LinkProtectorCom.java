@@ -16,19 +16,14 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Encoding;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class LinkProtectorCom extends PluginForDecrypt {
 
@@ -53,39 +48,34 @@ public class LinkProtectorCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            URL url = new URL(parameter);
-            RequestInfo requestInfo = HTTP.getRequest(url);
-            boolean do_continue = false;
-            String passCode = null;
-            String referrer = null;
-            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                if (requestInfo.containsHTML("Bad Referrer!")) {
-                    referrer = new Regex(requestInfo.getHtmlCode(), Pattern.compile("Site below:<br><a href=(.*?)>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    requestInfo = HTTP.getRequest(url, null, referrer, false);
-                } else if (requestInfo.containsHTML("<h1>PASSWORD PROTECTED LINK</h1>") || requestInfo.containsHTML("Incorrect Password")) {
-                    passCode = getUserInput(null, param);
-                    requestInfo = HTTP.postRequest(url, null, referrer, null, "u_name=user&u_password=" + Encoding.urlEncode(passCode), false);
-                } else {
-                    do_continue = true;
-                    break;
-                }
+        br.getPage(parameter);
+        boolean do_continue = false;
+        for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+            if (br.containsHTML("<h1>PASSWORD PROTECTED LINK</h1>") || br.containsHTML("Incorrect Password")) {
+                String passCode = getUserInput(null, param);
+
+                Form pwForm = br.getForm(0);
+                pwForm.put("u_password", passCode);
+                br.submitForm(pwForm);
+            } else {
+                do_continue = true;
+                break;
             }
-            if (do_continue == true) {
-                String cryptedLink = new Regex(requestInfo.getHtmlCode(), Pattern.compile("write\\(stream\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                int charCode = Integer.parseInt(new Regex(requestInfo.getHtmlCode(), Pattern.compile("fromCharCode\\(yy\\[i\\]-(.*?)\\)\\;", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                String decryptedLink = decryptCode(cryptedLink, charCode);
-                String link = new Regex(decryptedLink, Pattern.compile("<iframe src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0).trim();
-                if (link != null) {
-                    decryptedLinks.add(createDownloadlink(link));
-                } else {
-                    return null;
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+
+        if (do_continue == true) {
+            String cryptedLink = br.getRegex("write\\(stream\\('(.*?)'\\)").getMatch(0);
+            int charCode = Integer.parseInt(br.getRegex("fromCharCode\\(yy\\[i\\]-(.*?)\\)\\;").getMatch(0));
+            String decryptedLink = decryptCode(cryptedLink, charCode);
+
+            String link = new Regex(decryptedLink, "<iframe src=\"(.*?)\"").getMatch(0);
+            if (link != null) {
+                decryptedLinks.add(createDownloadlink(link));
+            } else {
+                return null;
+            }
+        }
+
         return decryptedLinks;
     }
 
