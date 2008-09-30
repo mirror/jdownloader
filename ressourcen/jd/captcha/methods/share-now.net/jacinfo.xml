@@ -1,0 +1,5 @@
+<jDownloader>
+  <method name="JAntiCaptcha" author="JDTeam" />
+  <format type="jpg" letterNum="5"/>
+
+</jDownloader>
