@@ -1092,7 +1092,9 @@ public class Browser {
     }
 
     public void setDebug(boolean debug) {
-        this.debug = debug;
+        if (JDUtilities.getRunType() != JDUtilities.RUNTYPE_LOCAL_JARED) {
+            this.debug = debug;
+        }
     }
 
     public void setAuth(String domain, String user, String pass) {
@@ -1143,7 +1145,12 @@ public class Browser {
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
                 dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                try {
                 dl.connect(this);
+                } catch (PluginException e2) {
+                    e.printStackTrace();
+                    return dl;
+                }
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {

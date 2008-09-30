@@ -261,6 +261,7 @@ public class Netloadin extends PluginForHost {
         checkMirrorsInProgress(downloadLink);
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
+        br.setDebug(true);
         br.setAuth("netload.in", account.getUser(), account.getPass());
         br.openGetConnection(downloadLink.getDownloadURL());
         Request con;
@@ -300,7 +301,7 @@ public class Netloadin extends PluginForHost {
             dl.connect(br);
         }
 
-        if (!dl.getConnection().isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()&&dl.getConnection().getResponseCode()!=206) {
 
             // Serverfehler
             if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, "Server:Could not follow Link");

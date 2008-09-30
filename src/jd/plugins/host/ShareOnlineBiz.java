@@ -64,8 +64,12 @@ public class ShareOnlineBiz extends PluginForHost {
                                     */
                 String page = br.getPage(url);
                 if (page != null && br.getRedirectLocation() == null) {
-                    String filename = br.getRegex(Pattern.compile("<span class=\"locatedActive\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    String sizev = br.getRegex(Pattern.compile("<div><b>You have requested <font color=.*?</font>(.*?).</b></div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+//                    String filename = br.getRegex(Pattern.compile("<span class=\"locatedActive\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+//                    String sizev = br.getRegex(Pattern.compile("<div><b>You have requested <font color=.*?</font>(.*?).</b></div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    String filename = br.getRegex(Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    String sizev = br.getRegex(Pattern.compile("\\((.*?)\\) angefordert.", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    
+                   
                     if (filename == null || sizev == null) return false;
                     downloadLink.setDownloadSize(Regex.getSize(sizev));
                     downloadLink.setName(filename);

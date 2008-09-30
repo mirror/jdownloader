@@ -26,6 +26,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class ShareBaseTo extends PluginForHost {
 
@@ -67,7 +68,7 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-//        br.setDebug(true);
+        br.setDebug(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         /* für links welche noch mit .de in der liste stehen */
@@ -85,7 +86,8 @@ public class ShareBaseTo extends PluginForHost {
 
         if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {
             logger.severe("ShareBaseTo Error: Too many downloads");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur ein Download gleichzeitig!", 5000);
+//            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur ein Download gleichzeitig!", 5000);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60*1000l);
         } else if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wartungsarbeiten", 30 * 60 * 1000l);
@@ -96,7 +98,14 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
 
-        br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
+        dl=br.openDownload(downloadLink, br.getRedirectLocation());
+       
+        if(dl.getConnection()==null){
+            logger.severe("ServerError");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.sharebaseto.servererror","Service not available"), 10*60*1000l);
+        }
+      
+        dl.startDownload();
 
     }
 

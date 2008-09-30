@@ -48,7 +48,7 @@ public class MeinUpload extends PluginForHost {
         }
         br.setDebug(true);
         Form form = br.getFormbyValue("Free");
-   
+
         if (form != null) {
             // Old version 1.9.08
             br.submitForm(form);
@@ -59,9 +59,15 @@ public class MeinUpload extends PluginForHost {
             br.submitForm(captcha);
         }
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-      
 
-        dl = new RAFDownload(this, downloadLink, br.createRequest(url));      
+        dl = new RAFDownload(this, downloadLink, br.createRequest(url));
+        dl.connect(br);
+    
+        if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
+
+        }
         dl.startDownload();
     }
 
@@ -116,10 +122,16 @@ public class MeinUpload extends PluginForHost {
         }
 
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-      
+
         dl = new RAFDownload(this, downloadLink, br.createRequest(url));
         dl.setChunkNum(1);
         dl.setResume(true);
+        dl.connect();
+        if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
+
+        }
         dl.startDownload();
     }
 

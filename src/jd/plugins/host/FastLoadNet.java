@@ -107,7 +107,7 @@ public class FastLoadNet extends PluginForHost {
                     if (serverStatusID.equalsIgnoreCase("0")) {
                         logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
                         downloadLink.setLocalSpeedLimit(20 * 1024);
-                        JDUtilities.getGUI().displayMiniWarning(JDLocale.L("plugins.host.fastload.overload.short", "Fast-load.net Overload"), JDLocale.L("plugins.host.fastload.overload.long", "Fast-load.net Overload!. Fullspeed download only in browsers"), 20000);
+                        JDUtilities.getGUI().displayMiniWarning(JDLocale.L("plugins.host.fastload.overload.short", "Fast-load.net Overload"), JDLocale.L("plugins.host.fastload.overload.long", "Fast-load.net Overload!. Fullspeed download only in browsers"), 10*60*1000);
                         SIM=1;
                     } else {
                         downloadLink.setLocalSpeedLimit(-1);
@@ -161,7 +161,8 @@ public class FastLoadNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getContentLength() == 529) {
                 logger.severe("File not found: Unkown 404 Error");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!br.getHttpConnection().isOK()) {  
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
             } else {
                 logger.severe("Unknown error page");
                 throw new PluginException(LinkStatus.ERROR_FATAL);

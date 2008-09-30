@@ -236,6 +236,10 @@ public class HTTPConnection {
         if ((range = this.getHeaderField("Content-Range")) == null) return null;
         // bytes 174239-735270911/735270912
         String[] ranges = new Regex(range, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
+        if(ranges==null){
+           System.err.print(this+"");
+            return null;
+        }
         this.ranges = new long[] { Long.parseLong(ranges[0]), Long.parseLong(ranges[1]), Long.parseLong(ranges[2]) };
         return this.ranges;
     }
