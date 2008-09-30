@@ -124,20 +124,32 @@ public class Odsiebiecom extends PluginForHost {
                         break;
                     }
                     if (url.contains("style")) {
-                        if (!url.contains(".*?none\"")) {
+                        if (!url.contains("display:none")) {
                             captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
                             break;
+                        } else {
+                            String[] captchacodes = capform.getRegex("<font(.*?style=\".*?\".*?.*?>.*?<)").getColumn(0);
+                            for (String tmp : captchacodes) {
+                                if (!tmp.contains("display:none")) {
+                                    captchaCode = new Regex(tmp, ">(.*?)<").getMatch(0).trim();
+                                    break;
+                                }
+                            }
                         }
                     }
                 }
-                if (captchaurl == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                captchaFile = getLocalCaptchaFile(this);
-                Browser cap_br = br.cloneBrowser();
-                HTTPConnection captcha_con = cap_br.openGetConnection(captchaurl);
-                if (captcha_con.getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                Browser.download(captchaFile, captcha_con);
-                /* CaptchaCode holen */
-                captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+                
+                if (captchaurl == null && captchaCode == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (captchaCode == null) {
+                    captchaFile = getLocalCaptchaFile(this);
+                    Browser cap_br = br.cloneBrowser();
+                    HTTPConnection captcha_con = cap_br.openGetConnection(captchaurl);
+                    if (captcha_con.getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+                    Browser.download(captchaFile, captcha_con);
+                    /* CaptchaCode holen */
+                    captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+                }
+                
                 capform.setVariable(0, captchaCode);
                 /* Überprüfen(Captcha,Password) */
                 downloadurl = "http://odsiebie.com/pobierz/" + steplink + "?captcha=" + captchaCode;
