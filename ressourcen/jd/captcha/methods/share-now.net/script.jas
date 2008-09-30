@@ -35,4 +35,4 @@ param.cleftFaktor=0.6;
 
 
 captcha.prepare.toBlackAndWhite(1);
-captcha.prepare.align(-30,30);
+letter.prepare.align(-30,30);
