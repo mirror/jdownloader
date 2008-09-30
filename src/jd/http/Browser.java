@@ -38,6 +38,7 @@ import jd.parser.Regex;
 import jd.parser.XPath;
 import jd.parser.Form.InputField;
 import jd.plugins.DownloadLink;
+import jd.plugins.PluginException;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -1136,7 +1137,15 @@ public class Browser {
     public DownloadInterface openDownload(DownloadLink downloadLink, String link) throws Exception {
 
         DownloadInterface dl = RAFDownload.download(downloadLink, this.createGetRequest(link));
-        dl.connect(this);
+        try {
+            dl.connect(this);
+        } catch (PluginException e) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+
+                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                dl.connect(this);
+            }
+        }
         if (downloadLink.getPlugin().getBrowser() == this) {
             downloadLink.getPlugin().setDownloadInterface(dl);
         }
@@ -1146,7 +1155,15 @@ public class Browser {
     public DownloadInterface openDownload(DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
 
         DownloadInterface dl = RAFDownload.download(downloadLink, this.createGetRequest(link), b, c);
-        dl.connect(this);
+        try {
+            dl.connect(this);
+        } catch (PluginException e) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+
+                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                dl.connect(this);
+            }
+        }
         if (downloadLink.getPlugin().getBrowser() == this) {
             downloadLink.getPlugin().setDownloadInterface(dl);
         }
@@ -1155,7 +1172,15 @@ public class Browser {
 
     public DownloadInterface openDownload(DownloadLink downloadLink, Form form) throws Exception {
         DownloadInterface dl = RAFDownload.download(downloadLink, this.createFormRequest(form));
-        dl.connect(this);
+        try {
+            dl.connect(this);
+        } catch (PluginException e) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+
+                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                dl.connect(this);
+            }
+        }
         if (downloadLink.getPlugin().getBrowser() == this) {
             downloadLink.getPlugin().setDownloadInterface(dl);
         }
@@ -1164,17 +1189,25 @@ public class Browser {
 
     public String getXPathElement(String xPath) {
         return new XPath(this.toString(), xPath).getFirstMatch();
-      
+
     }
 
     public DownloadInterface openDownload(DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url,postdata));
-        dl.connect(this);
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url, postdata));
+        try {
+            dl.connect(this);
+        } catch (PluginException e) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+
+                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                dl.connect(this);
+            }
+        }
         if (downloadLink.getPlugin().getBrowser() == this) {
             downloadLink.getPlugin().setDownloadInterface(dl);
         }
         return dl;
-        
+
     }
 
 }

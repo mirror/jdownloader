@@ -67,7 +67,7 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setDebug(true);
+//        br.setDebug(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         /* für links welche noch mit .de in der liste stehen */

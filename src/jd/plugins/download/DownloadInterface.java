@@ -919,6 +919,8 @@ abstract public class DownloadInterface {
 
     }
 
+    public static final int ERROR_REDIRECTED = -1;
+
     public static Logger logger = JDUtilities.getLogger();
 
     // private int status = STATUS_INITIALIZED;
@@ -1129,7 +1131,7 @@ abstract public class DownloadInterface {
         }
 
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
-        if (request.getLocation() != null) { throw new Exception("Illegal Request: redirect to: " + request.getLocation()); }
+        if (request.getLocation() != null) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED,DownloadInterface.ERROR_REDIRECTED); }
 
         connection = request.getHttpConnection();
         if (connection.getRange() != null) {

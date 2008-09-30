@@ -74,7 +74,8 @@ public class Shareplacecom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
+        br.setDebug(true);
+        this.setBrowserExclusive();
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -87,17 +88,8 @@ public class Shareplacecom extends PluginForHost {
         /* Zwangswarten, 20seks */
         sleep(20000, downloadLink);
 
-        /* Datei herunterladen */
+        dl = br.openDownload(downloadLink, url);
 
-        /* nötig da der contentheader fehlerhaft ist */
-        String filename = new Regex(url, "&name=(.+)").getMatch(0);
-        if (filename != null) {
-            downloadLink.setStaticFileName(filename);
-        } else {
-            logger.severe("Pls Update Filename Pattern");
-        }
-
-        dl = br.openDownload(downloadLink, (String) null);
         dl.startDownload();
     }
 

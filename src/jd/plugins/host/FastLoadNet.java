@@ -16,6 +16,8 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -24,7 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 import jd.utils.JavaScript;
 
 public class FastLoadNet extends PluginForHost {
@@ -34,6 +37,8 @@ public class FastLoadNet extends PluginForHost {
     private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
 
     private static final String NOT_FOUND = "Datei existiert nicht";
+
+    private static int SIM=20;
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,8 +71,8 @@ public class FastLoadNet extends PluginForHost {
 
         String page = JavaScript.evalPage(br);
 
-        String filename = new XPath(page, "/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr/th[2]/span").getFirstMatch();
-        String size = new XPath(page, "/html/body/div/div/div[4]/div/div/div[5]/table/tbody/tr[2]/td[2]/span").getFirstMatch();
+        String filename = new XPath(page + "", "/html/body/div/div/div[4]/div/div[2]/div/table/tbody/tr/th[2]/span").getFirstMatch();
+        String size = new XPath(page + "", "/html/body/div/div/div[4]/div/div[2]/div/table/tbody/tr[2]/td[2]/span").getFirstMatch();
 
         // downloadinfos gefunden? -> download verfügbar
         if (filename != null && size != null) {
@@ -87,28 +92,64 @@ public class FastLoadNet extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-//        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("pid=") + 4 + 32);
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
+        final String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("pid=") + 4 + 32);
+// der observer prüft alle 10 min auf happy hour.
+        Thread observer = new Thread("Fast-load speed observer") {
+            public void run() {
+                while(true){
+                downloadLink.setLocalSpeedLimit(-1);
+                String serverStatusID;
+                SIM=20;
+                try {
+                    serverStatusID = br.getPage("http://www.fast-load.net/api/jdownloader/" + pid).trim();
 
-        String serverStatusID = br.getPage("http://www.fast-load.net/api/jdownloader/" + pid);
+                    if (serverStatusID.equalsIgnoreCase("0")) {
+                        logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
+                        downloadLink.setLocalSpeedLimit(20 * 1024);
+                        JDUtilities.getGUI().displayMiniWarning(JDLocale.L("plugins.host.fastload.overload.short", "Fast-load.net Overload"), JDLocale.L("plugins.host.fastload.overload.long", "Fast-load.net Overload!. Fullspeed download only in browsers"), 20000);
+                        SIM=1;
+                    } else {
+                        downloadLink.setLocalSpeedLimit(-1);
+                    }
+                } catch (IOException e1) {
+                    downloadLink.setLocalSpeedLimit(-1);
+                }
+
+                try {
+                    Thread.sleep(10 * 60 * 1000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+                }
+            }
+        };
+        observer.start();
+        try {
+            handleFree0(downloadLink);
+        } catch (Exception e) {
+            observer.interrupt();
+            throw e;
+        }
+        observer.interrupt();
+    }
+
+    public void handleFree0(final DownloadLink downloadLink) throws Exception {
+        // LinkStatus linkStatus = downloadLink.getLinkStatus();
+        br.setDebug(true);
+
         getFileInformation(downloadLink);
 
-        downloadLink.setLocalSpeedLimit(-1);
+      
+   
 
-        if (serverStatusID.equalsIgnoreCase("0")) {
-            logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
-            downloadLink.setLocalSpeedLimit(20 * 1024);
-        }
-        br.getRegex("<div id=\"traffic\">.*?Systemauslastung: (.*?) MBit").getMatch(0);
         Form captchaForm = getDownloadForm();
 
-        captchaForm.put("downloadbutton", "Download+starten");
+        captchaForm.setVariable(1, br.getRegex("clearInterval\\(oCountDown\\).*?document\\.forms\\[0\\]\\.elements\\['.*?'\\]\\.value = '(.*?)';").getMatch(0));
+        captchaForm.setVariable(1, "start+download");
 
-        dl = new RAFDownload(this, downloadLink, br.createFormRequest(captchaForm));
-        dl.setChunkNum(1);
-        dl.setResume(false);
-        dl.connect(br);
+        dl = br.openDownload(downloadLink, captchaForm);
+        // dl.connect(br);
         if (!br.getHttpConnection().isContentDisposition()) {
 
             if (br.getHttpConnection().getContentLength() == 184) {
@@ -127,6 +168,7 @@ public class FastLoadNet extends PluginForHost {
             }
         }
         dl.startDownload();
+
     }
 
     private Form getDownloadForm() {
@@ -141,7 +183,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return SIM;
     }
 
     @Override
