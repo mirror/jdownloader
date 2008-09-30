@@ -20,7 +20,6 @@ import java.io.File;
 import java.net.URI;
 
 import jd.PluginWrapper;
-import jd.config.Configuration;
 import jd.http.Cookie;
 import jd.http.Encoding;
 import jd.http.GetRequest;
@@ -108,9 +107,8 @@ public class RapidShareDe extends PluginForHost {
         code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
         form.put("captcha", code);
 
-        dl = new RAFDownload(this, downloadLink, br.openFormConnection(form));
-        //
-        dl.startDownload();
+        br.openDownload(downloadLink, form).startDownload();
+
         File l = new File(downloadLink.getFileOutput());
         if (l.length() < 10240) {
             String local = JDUtilities.getLocalFile(l);
@@ -171,7 +169,8 @@ public class RapidShareDe extends PluginForHost {
         HTTPConnection urlConnection;
         GetRequest req = new GetRequest(url);
         r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
-        req.connect();
+        dl = RAFDownload.download(downloadLink, req, true, 0);
+        dl.connect(br);
         urlConnection = req.getHttpConnection();
         if (urlConnection.getHeaderField("content-disposition") == null) {
 
@@ -180,11 +179,6 @@ public class RapidShareDe extends PluginForHost {
             linkStatus.setErrorMessage(page);
 
         }
-
-        dl = new RAFDownload(this, downloadLink, urlConnection);
-
-        dl.setResume(true);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.startDownload();
 
     }
