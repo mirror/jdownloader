@@ -19,8 +19,6 @@ package jd.utils;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,9 +32,7 @@ import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.Regex;
-import jd.plugins.HTTP;
-import jd.plugins.RequestInfo;
+import jd.http.Browser;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -196,30 +192,27 @@ public class CLRLoader {
         MANUES = new Vector<String>();
         IDS = new Vector<String>();
         Vector<String[]> res = new Vector<String[]>();
-        try {
-            RequestInfo ri = HTTP.getRequest(new URL("http://cryptload.info/clr/"));
 
-            logger.info("" + ri);
-            String[][] matches = new Regex(ri.getHtmlCode(), Pattern.compile("<option value=\"(.*?)\">(.*?)</option>", Pattern.CASE_INSENSITIVE)).getMatches();
+        try {
+            Browser br = new Browser();
+            br.getPage("http://cryptload.info/clr/");
+
+            String[][] matches = br.getRegex(Pattern.compile("<option value=\"(.*?)\">(.*?)</option>", Pattern.CASE_INSENSITIVE)).getMatches();
 
             for (int i = matches.length - 1; i >= 0; i--) {
                 String[] next = matches[i];
                 if (IDS.contains(next[0])) {
                     continue;
                 }
-                ri = HTTP.postRequest(new URL("http://cryptload.info/clrfile/"), "clrid=" + next[0] + "&submit=myRouter.clr+herunterladen");
+                br.postPage("http://cryptload.info/clrfile/", "clrid=" + next[0] + "&submit=myRouter.clr+herunterladen");
 
-                String[] ret = CLRLoader.createLiveHeader(ri.getHtmlCode(), next[0], next[1]);
+                String[] ret = CLRLoader.createLiveHeader(br.toString(), next[0], next[1]);
                 if (ret != null) {
                     res.add(ret);
                     IDS.add(next[0]);
                 }
             }
-        } catch (MalformedURLException e) {
-
-            e.printStackTrace();
         } catch (IOException e) {
-
             e.printStackTrace();
         }
 

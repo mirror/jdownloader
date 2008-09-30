@@ -106,18 +106,17 @@ import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.plugins.RequestInfo;
 
 import org.w3c.dom.Document;
 
@@ -1030,6 +1029,8 @@ public class JDUtilities {
      * @return ip oder /offline
      */
     public static String getIPAddress() {
+        Browser br = new Browser();
+
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             logger.finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
@@ -1040,9 +1041,8 @@ public class JDUtilities {
 
         try {
             logger.finer("IP Check via " + site);
-            RequestInfo requestInfo = HTTP.getRequest(new URL(site), null, null, true);
             Pattern pattern = Pattern.compile(patt);
-            Matcher matcher = pattern.matcher(requestInfo.getHtmlCode());
+            Matcher matcher = pattern.matcher(br.getPage(site));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
                     return matcher.group(1);
@@ -1051,7 +1051,7 @@ public class JDUtilities {
 
                 }
             }
-            logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + requestInfo.getHtmlCode());
+            logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
 
         }
 
@@ -1061,20 +1061,16 @@ public class JDUtilities {
         }
 
         try {
-            site = "http://service.jdownloader.org/tools/getip.php";
 
             logger.finer("http://service.jdownloader.org/tools/getip.php");
-            RequestInfo ri;
 
-            ri = HTTP.getRequest(new URL(site), null, null, true);
             Pattern pattern = Pattern.compile(patt);
-            Matcher matcher = pattern.matcher(ri.getHtmlCode());
+            Matcher matcher = pattern.matcher(br.getPage("http://service.jdownloader.org/tools/getip.php"));
             if (matcher.find()) {
                 if (matcher.groupCount() > 0) {
                     return matcher.group(1);
                 } else {
                     logger.severe("Primary bad Regex: " + patt);
-
                 }
             }
             return "offline";
