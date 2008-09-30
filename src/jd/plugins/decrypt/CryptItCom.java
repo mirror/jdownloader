@@ -23,15 +23,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.crypt.AESdecrypt;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -50,40 +47,6 @@ public class CryptItCom extends PluginForDecrypt {
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
 
     private static final String PATTERN_PW = "Passworteingabe";
-
-    public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, byte[] parameter, boolean redirect) throws IOException {
-        HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
-        httpConnection.setInstanceFollowRedirects(redirect);
-        if (referrer != null) {
-            httpConnection.setRequestProperty("Referer", referrer);
-        } else {
-            httpConnection.setRequestProperty("Referer", "http://" + url.getHost());
-        }
-        if (cookie != null) {
-            httpConnection.setRequestProperty("Cookie", cookie);
-        }
-        // TODO das gleiche wie bei getRequest
-        httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        if (requestProperties != null) {
-            Set<String> keys = requestProperties.keySet();
-            Iterator<String> iterator = keys.iterator();
-            String key;
-            while (iterator.hasNext()) {
-                key = iterator.next();
-                httpConnection.setRequestProperty(key, requestProperties.get(key));
-            }
-        }
-        if (parameter != null) {
-            httpConnection.setRequestProperty("Content-Length", parameter.length + "");
-        }
-        httpConnection.setDoOutput(true);
-        httpConnection.connect();
-        httpConnection.post(parameter);
-        RequestInfo requestInfo = HTTP.readFromURL(httpConnection);
-        requestInfo.setConnection(httpConnection);
-        return requestInfo;
-    }
 
     public CryptItCom(PluginWrapper wrapper) {
         super(wrapper);

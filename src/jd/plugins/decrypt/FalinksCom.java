@@ -17,17 +17,13 @@
 package jd.plugins.decrypt;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class FalinksCom extends PluginForDecrypt {
 
@@ -41,10 +37,9 @@ public class FalinksCom extends PluginForDecrypt {
         String parameter = param.toString();
 
         try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String pw = new Regex(reqinfo.getHtmlCode(), "</form>\npw: (.*?)\n.*?</td>", Pattern.CASE_INSENSITIVE).getMatch(0);
-            String[] links = new Regex(reqinfo.getHtmlCode(), "\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(0);
+            br.getPage(parameter);
+            String pw = br.getRegex("</form>\npw: (.*?)\n.*?</td>").getMatch(0);
+            String[] links = br.getRegex("\\<input type=\"hidden\" name=\"url\" value=\"(.*?)\" \\/\\>").getColumn(0);
             progress.setRange(links.length);
             for (String link : links) {
                 DownloadLink dlLink = createDownloadlink(link);

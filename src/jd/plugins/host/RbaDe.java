@@ -95,7 +95,7 @@ public class RbaDe extends PluginForHost {
     public boolean getFileInformation(DownloadLink link) throws PluginException, IOException {
         Browser br = new Browser();
         br.clearCookies(getHost());
-        LinkStatus linkstatus = link.getLinkStatus();
+
         try {
             int battleId = Integer.parseInt(new Regex(link.getDownloadURL(), getSupportedLinks()).getMatch(0));
             int rundenId = Integer.parseInt(new Regex(link.getDownloadURL(), getSupportedLinks()).getMatch(1));
@@ -130,8 +130,8 @@ public class RbaDe extends PluginForHost {
                 }
             }
             return true;
-      
-        } catch (NumberFormatException e) {       
+
+        } catch (NumberFormatException e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, ERR_IDS_NOT_FOUND);
 
         }

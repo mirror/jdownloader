@@ -569,8 +569,6 @@ public class JDInit {
         // );
         new DecryptPluginWrapper("ddl-music.org", "DDLMusicOrg", PluginPattern.decrypterPattern_DDLMusic_Main.pattern() + "|" + PluginPattern.decrypterPattern_DDLMusic_Crypt.pattern());
         new DecryptPluginWrapper("ddl-warez.org", "DDLWarez", "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+");
-        // new DecryptPluginWrapper("dxp.divxvid.org", "Divxvid",
-        // "http://dxp\\.divxvid\\.org/[a-zA-Z0-9]{32}\\.html");
         new DecryptPluginWrapper("doperoms.net", "DoperomsCom", "http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html");
         new DecryptPluginWrapper("downloads.pes-arena.com", "DownloadsPesArenacom", "http://downloads\\.pes-arena\\.com/\\?id=(\\d+)");
         new DecryptPluginWrapper("3dl.am", "DreiDlAm", PluginPattern.decrypterPattern_DreiDlAm_1.pattern() + "|" + PluginPattern.decrypterPattern_DreiDlAm_2.pattern() + "|" + PluginPattern.decrypterPattern_DreiDlAm_3.pattern());
@@ -625,7 +623,7 @@ public class JDInit {
         new DecryptPluginWrapper("rapidsafe.de", "RapidsafeDe", "http://.+rapidsafe\\.de");
         new DecryptPluginWrapper("rapidsafe.net", "Rapidsafenet", "http://[\\w\\.]*?rapidsafe\\.net/r.-?[a-zA-Z0-9]{11}/.*");
         new DecryptPluginWrapper("rapidshare.com", "RapidshareComFolder", "http://[\\w\\.]*?rapidshare.com/users/.+");
-        new DecryptPluginWrapper("Rapidshark.net", "rapidsharknet", "http://[\\w\\.]*?rapidshark\\.net/(?!safe\\.php\\?id=)[a-zA-Z0-9]+|http://[\\w\\.]*?rapidshark\\.net/safe\\.php\\?id=[a-zA-Z0-9]+");
+        new DecryptPluginWrapper("Rapidshark.net", "rapidsharknet", "http://[\\w\\.]*?rapidshark\\.net/(safe\\.php\\?id=)?.+");
         new DecryptPluginWrapper("rapidspread.com", "RapidSpreadCom", "http://[\\w\\.]*?rapidspread\\.com/file\\.jsp\\?id=\\w+");
         new DecryptPluginWrapper("r-b-a.de", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/(index\\.php\\?ID=4101&(amp;)?BATTLE=\\d+(&sid=\\w+)?)|http://[\\w\\.]*?r-b-a\\.de/index\\.php\\?ID=4100(&direction=last)?&MEMBER=\\d+(&sid=\\w+)?");
         new DecryptPluginWrapper("redirect.wayaround.org", "RedirectWayaroundorg", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)");

@@ -107,7 +107,7 @@ public class ShareNownet extends PluginForHost {
         /* DownloadLink holen/Captcha check */
         dl = br.openDownload(downloadLink, form);
 
-        if (dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        if (!dl.getConnection().isContentDisposition() || dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         /* Datei herunterladen */
         dl.startDownload();

@@ -19,7 +19,6 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -45,11 +44,9 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -653,7 +650,7 @@ public class Rapidshare extends PluginForHost {
         return postTarget;
     }
 
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
@@ -663,25 +660,17 @@ public class Rapidshare extends PluginForHost {
         }
         Rapidshare.correctURL(downloadLink);
         LAST_FILE_CHECK = System.currentTimeMillis();
-        RequestInfo requestInfo;
-        try {
-            // http://rapidshare.com/files/117366525/dlc.dlc
-            requestInfo = HTTP.getRequest(new URL("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" + downloadLink.getDownloadURL() + "&toolmode=1"));
 
-            String[] erg = requestInfo.getHtmlCode().trim().split(",");
-            /*
-             * 1: Normal online -1: date nicht gefunden 3: Drect download
-             */
-            if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) { return false; }
+        String[] erg = br.getPage("https://ssl.rapidshare.com/cgi-bin/checkfiles.cgi?urls=" + downloadLink.getDownloadURL() + "&toolmode=1").trim().split(",");
+        /*
+         * 1: Normal online -1: date nicht gefunden 3: Drect download
+         */
+        if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) return false;
 
-            downloadLink.setName(erg[5]);
-            downloadLink.setDownloadSize(Integer.parseInt(erg[4]));
+        downloadLink.setName(erg[5]);
+        downloadLink.setDownloadSize(Integer.parseInt(erg[4]));
 
-            return true;
-        } catch (MalformedURLException e) {
-        } catch (IOException e) {
-        }
-        return false;
+        return true;
     }
 
     public String getFileInformationString(DownloadLink parameter) {

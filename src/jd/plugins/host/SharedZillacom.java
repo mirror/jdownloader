@@ -16,27 +16,21 @@
 
 package jd.plugins.host;
 
-import java.net.URL;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.GetRequest;
-import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
-import jd.plugins.download.RAFDownload;
 
 public class SharedZillacom extends PluginForHost {
-    private static final String CODER = "JD-Team";
 
     private String passCode = "";
-    private RequestInfo requestInfo;
 
     public SharedZillacom(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,26 +43,17 @@ public class SharedZillacom extends PluginForHost {
 
     @Override
     public String getCoder() {
-        return CODER;
+        return "JD-Team";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            requestInfo = HTTP.getRequest(new URL(downloadLink.getDownloadURL()));
-            if (!requestInfo.containsHTML("Upload not found")) {
-                String filename = new Regex(requestInfo.getHtmlCode(), Pattern.compile("nowrap title=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                String filesize = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<span title=\"(.*?) Bytes\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                if (filesize != null) {
-                    downloadLink.setDownloadSize(new Integer(filesize));
-                }
-                downloadLink.setName(filename);
-                return true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        br.getPage(downloadLink.getDownloadURL());
+        if (!br.containsHTML("Upload not found")) {
+            downloadLink.setName(br.getRegex("nowrap title=\"(.*?)\">").getMatch(0));
+            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<span title=\"(.*?)\">").getMatch(0)));
+            return true;
         }
-        downloadLink.setAvailable(false);
         return false;
     }
 
@@ -80,17 +65,15 @@ public class SharedZillacom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
         /* ID holen */
         String id = new Regex(downloadLink.getDownloadURL(), Pattern.compile("get\\?id=(\\d+)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+
         /* Password checken */
-        if (requestInfo.containsHTML("Password protected")) {
+        if (br.containsHTML("Password protected")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
                 passCode = Plugin.getUserInput(null, downloadLink);
             } else {
@@ -99,28 +82,22 @@ public class SharedZillacom extends PluginForHost {
             }
         }
         /* Free Download starten */
-        requestInfo = HTTP.postRequestWithoutHtmlCode(new URL("http://sharedzilla.com/en/downloaddo"), requestInfo.getCookie(), downloadLink.getDownloadURL(), "id=" + id + "&upload_password=" + Encoding.urlEncode(passCode), false);
-        if (requestInfo.getLocation() == null) {
-            requestInfo = HTTP.postRequest(new URL("http://sharedzilla.com/en/downloaddo"), requestInfo.getCookie(), downloadLink.getDownloadURL(), null, "id=" + id + "&upload_password=" + Encoding.urlEncode(passCode), false);
-            if (requestInfo.containsHTML("<p>Password is wrong!</p>")) {
+        br.setFollowRedirects(false);
+        br.postPage("http://sharedzilla.com/en/downloaddo", "id=" + id + "&upload_password=" + Encoding.urlEncode(passCode));
+        if (br.getRedirectLocation() == null) {
+            // br.postPage("http://sharedzilla.com/en/downloaddo", "id=" + id +
+            // "&upload_password=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML("<p>Password is wrong!</p>")) {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
             }
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
+
         /* PassCode war richtig, also Speichern */
         downloadLink.setProperty("pass", passCode);
-        
-        GetRequest request = new GetRequest(requestInfo.getLocation());
-        request.getCookies().addAll(Request.parseCookies(requestInfo.getCookie(), "sharedzilla.com"));
-        dl = new RAFDownload(this, downloadLink, request);
-        dl.setChunkNum(1);/*
-                           * bei dem speed lohnen mehrere chunks nicht, da es
-                           * nicht schneller wird
-                           */
-        dl.setResume(true);
-        dl.startDownload();
+
+        br.openDownload(downloadLink, br.getRedirectLocation(), true, 1).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
