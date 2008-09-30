@@ -117,6 +117,62 @@ public abstract class Request {
         collectCookiesFromConnection();
     }
 
+public static ArrayList<Cookie> parseCookies(String cookieString, String host) {
+
+        ArrayList<Cookie> cookies = new ArrayList<Cookie>();
+
+        String header = cookieString;
+
+        String path = null;
+        String expires = null;
+        String domain = null;
+        HashMap<String, String> tmp = new HashMap<String, String>();
+
+        StringTokenizer st = new StringTokenizer(header, ";=");
+        while (true) {
+
+            String key = null;
+            String value = null;
+            if (st.hasMoreTokens()) key = st.nextToken().trim();
+            if (st.hasMoreTokens()) value = st.nextToken().trim();
+
+            if (key != null) {
+                if (key.equalsIgnoreCase("path")) {
+                    path = value;
+                    continue;
+                }
+                if (key.equalsIgnoreCase("expires")) {
+                    expires = value;
+                    continue;
+                }
+                if (key.equalsIgnoreCase("domain")) {
+                    domain = value;
+                    continue;
+                }
+
+                tmp.put(key, value);
+            } else {
+                break;
+            }
+
+        }
+
+        for (Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
+            Entry<String, String> next = it.next();
+            Cookie cookie = new Cookie();
+            cookies.add(cookie);
+            cookie.setHost(host);
+            cookie.setPath(path);
+            cookie.setDomain(domain);
+            cookie.setExpires(expires);
+            cookie.setValue(next.getValue());
+            cookie.setKey(next.getKey());
+        }
+
+        return cookies;
+
+    }
+
     private void collectCookiesFromConnection() {
         List<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
         if (cookieHeaders == null) { return; }
@@ -124,55 +180,15 @@ public abstract class Request {
             cookies = new ArrayList<Cookie>();
         }
         ;
-
+        
+        String host = httpConnection.getURL().getHost();
+        
         for (int i = cookieHeaders.size() - 1; i >= 0; i--) {
             String header = cookieHeaders.get(i);
-            String host = httpConnection.getURL().getHost();
-            String path = null;
-            String expires = null;
-            String domain = null;
-            HashMap<String, String> tmp = new HashMap<String, String>();
+           
+            cookies.addAll(parseCookies(header,host));
 
-            StringTokenizer st = new StringTokenizer(header, ";=");
-            while (true) {
-
-                String key = null;
-                String value = null;
-                if (st.hasMoreTokens()) key = st.nextToken().trim();
-                if (st.hasMoreTokens()) value = st.nextToken().trim();
-
-                if (key != null) {
-                    if (key.equalsIgnoreCase("path")) {
-                        path = value;
-                        continue;
-                    }
-                    if (key.equalsIgnoreCase("expires")) {
-                        expires = value;
-                        continue;
-                    }
-                    if (key.equalsIgnoreCase("domain")) {
-                        domain = value;
-                        continue;
-                    }
-
-                    tmp.put(key, value);
-                } else {
-                    break;
-                }
-
-            }
-
-            for (Iterator<Entry<String, String>> it = tmp.entrySet().iterator(); it.hasNext();) {
-                Entry<String, String> next = it.next();
-                Cookie cookie = new Cookie();
-                cookies.add(cookie);
-                cookie.setHost(host);
-                cookie.setPath(path);
-                cookie.setDomain(domain);
-                cookie.setExpires(expires);
-                cookie.setValue(next.getValue());
-                cookie.setKey(next.getKey());
-            }
+             
 
         }
 

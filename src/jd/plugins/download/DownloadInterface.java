@@ -1778,4 +1778,9 @@ abstract public class DownloadInterface {
         return this.connection;
     }
 
+    public Request getRequest() {
+        // TODO Auto-generated method stub
+        return this.request;
+    }
+
 }
