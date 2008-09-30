@@ -17,8 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,13 +28,10 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.DistributeData;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -59,100 +54,86 @@ public class Gwarezcc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            URL url = new URL(parameter);
-            RequestInfo requestInfo;
-            boolean dlc_found = false;
+        URL url = new URL(parameter);
+        logger.info(url.getFile());
+        boolean dlc_found = false;
 
-            if (parameter.matches(patternLink_Details_Mirror_Check.pattern())) {
-                /* Link aus der Mirror Check Seite */
-                String downloadid = url.getFile().replaceAll("check", "parts");
-                /* weiterleiten zur Mirror Parts Seite */
-                decryptedLinks.add(createDownloadlink("http://gwarez.cc" + downloadid));
-            } else if (parameter.matches(patternLink_Details_Download.pattern())) {
-                /* Link auf die Download Info Seite */
-                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String downloadid = new Regex(url.getFile(), "\\/([\\d].*)").getMatch(0);
+        if (parameter.matches(patternLink_Details_Mirror_Check.pattern())) {
+            /* Link aus der Mirror Check Seite */
+            String downloadid = url.getFile().replaceAll("check", "parts");
+            /* weiterleiten zur Mirror Parts Seite */
+            decryptedLinks.add(createDownloadlink("http://gwarez.cc" + downloadid));
+        } else if (parameter.matches(patternLink_Details_Download.pattern())) {
+            /* Link auf die Download Info Seite */
+            br.getPage(parameter);
+            String downloadid = new Regex(url.getFile(), "\\/([\\d].*)").getMatch(0);
 
-                if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
-                    /* DLC Suchen */
-                    String dlc[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
-                    if (dlc.length == 1) {
-                        decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
-                        dlc_found = true;
-                    } else {
-                        logger.severe("Please Update Gwarez Plugin(DLC Pattern)");
-                    }
-                }
-
-                if (dlc_found == false) {
-                    /* Mirrors suchen (Verschlüsselt) */
-                    String mirror_pages[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
-                    for (int i = 0; i < mirror_pages.length; i++) {
-                        /* Mirror Page zur weiteren Verarbeitung adden */
-                        decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));
-                    }
-                }
-
-            } else if (parameter.matches(patternLink_Details_Mirror_Parts.pattern())) {
-                /* Link zu den Parts des Mirrors (Verschlüsselt) */
-                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
-                /* Parts suchen */
-                String parts[] = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getColumn(-1);
-                /* Passwort suchen */
-                url = new URL("http://gwarez.cc/" + downloadid + "#details");
-                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-                if (password == null) {
-                    logger.severe("Please Update Gwarez Plugin(PW Pattern)");
+            if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
+                /* DLC Suchen */
+                String dlc[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"download/dlc/" + downloadid + "/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+                if (dlc.length == 1) {
+                    decryptedLinks.add(createDownloadlink("http://www.gwarez.cc/download/dlc/" + downloadid + "/"));
+                    dlc_found = true;
                 } else {
-                    password = password.trim();
+                    logger.severe("Please Update Gwarez Plugin(DLC Pattern)");
                 }
-
-                for (int ii = 0; ii < parts.length; ii++) {
-                    /* Parts decrypten und adden */
-                    String linkString=gwarezdecrypt(parts[ii]);
-                    Vector<DownloadLink> links=new DistributeData(linkString).findLinks(false);
-                    if(links.size()==0)continue;
-                    DownloadLink link = links.lastElement();
-                    link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
-                    link.addSourcePluginPassword(password);
-                    decryptedLinks.add(link);
-                }
-            } else if (parameter.matches(patternLink_Download_DLC.pattern())) {
-                /* DLC laden */
-                String downloadid = new Regex(url.getFile(), "\\/download/dlc/([\\d].*)/").getMatch(0);
-                /* Passwort suchen */
-                url = new URL("http://gwarez.cc/" + downloadid + "#details");
-                requestInfo = HTTP.getRequest(url, null, url.toString(), false);
-                String password = new Regex(requestInfo.getHtmlCode(), Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-                if (password == null) {
-                    logger.severe("Please Update Gwarez Plugin(PW Pattern)");
-                } else {
-                    password = password.trim();
-                }
-                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                url = new URL("http://gwarez.cc/download/dlc/" + downloadid + "/");
-                HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
-                dlc_con.setRequestProperty("Referer", parameter);
-                Browser.download(container, dlc_con);
-                Vector<DownloadLink> dl_links = (JDUtilities.getController().getContainerLinks(container));
-                for (DownloadLink dl_link : dl_links) {
-                    dl_link.addSourcePluginPassword(password);
-                    decryptedLinks.add(dl_link);
-                }
-                container.delete();
-
             }
 
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            if (dlc_found == false) {
+                /* Mirrors suchen (Verschlüsselt) */
+                String mirror_pages[] = br.getRegex(Pattern.compile("<img src=\"gfx/icons/dl\\.png\" style=\"vertical-align\\:bottom\\;\"> <a href=\"mirror/" + downloadid + "/check/(.*)/\" onmouseover", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                for (int i = 0; i < mirror_pages.length; i++) {
+                    /* Mirror Page zur weiteren Verarbeitung adden */
+                    decryptedLinks.add(createDownloadlink("http://gwarez.cc/mirror/" + downloadid + "/parts/" + mirror_pages[i] + "/"));
+                }
+            }
+
+        } else if (parameter.matches(patternLink_Details_Mirror_Parts.pattern())) {
+            /* Link zu den Parts des Mirrors (Verschlüsselt) */
+            br.getPage(parameter);
+            String downloadid = new Regex(url.getFile(), "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
+            /* Parts suchen */
+            String parts[] = br.getRegex(Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)(\" target|\n)", Pattern.CASE_INSENSITIVE)).getColumn(-1);
+            /* Passwort suchen */
+            br.getPage("http://gwarez.cc/" + downloadid + "#details");
+            String password = br.getRegex(Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            if (password == null) {
+                logger.severe("Please Update Gwarez Plugin(PW Pattern)");
+            } else {
+                password = password.trim();
+            }
+
+            for (int ii = 0; ii < parts.length; ii++) {
+                /* Parts decrypten und adden */
+                String linkString = gWarezDecrypt(parts[ii]);
+                Vector<DownloadLink> links = new DistributeData(linkString).findLinks(false);
+                if (links.size() == 0) continue;
+                DownloadLink link = links.lastElement();
+                link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
+                link.addSourcePluginPassword(password);
+                decryptedLinks.add(link);
+            }
+        } else if (parameter.matches(patternLink_Download_DLC.pattern())) {
+            /* DLC laden */
+            String downloadid = new Regex(url.getFile(), "\\/download/dlc/([\\d].*)/").getMatch(0);
+            /* Passwort suchen */
+            br.getPage("http://gwarez.cc/" + downloadid + "#details");
+            String password = br.getRegex(Pattern.compile("<img src=\"gfx/icons/passwort\\.png\"> <b>Passwort:</b>.*?class=\"up\">(.*?)<\\/td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            if (password == null) {
+                logger.severe("Please Update Gwarez Plugin(PW Pattern)");
+            } else {
+                password = password.trim();
+            }
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            Browser.download(container, br.cloneBrowser().openGetConnection("http://gwarez.cc/download/dlc/" + downloadid + "/"));
+            for (DownloadLink dLink : JDUtilities.getController().getContainerLinks(container)) {
+                dLink.addSourcePluginPassword(password);
+                decryptedLinks.add(dLink);
+            }
+            container.delete();
+
         }
+
         return decryptedLinks;
     }
 
@@ -165,7 +146,7 @@ public class Gwarezcc extends PluginForDecrypt {
         return ret == null ? "0.0" : ret;
     }
 
-    private String gwarezdecrypt(String link) {
+    private String gWarezDecrypt(String link) {
         HashMap<String, String> replace = new HashMap<String, String>();
         replace.put("JAC\\|", "1");
         replace.put("IBD\\|", "2");

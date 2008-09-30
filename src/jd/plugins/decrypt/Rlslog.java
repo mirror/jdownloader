@@ -16,8 +16,6 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -26,9 +24,7 @@ import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class Rlslog extends PluginForDecrypt {
 
@@ -38,46 +34,41 @@ public class Rlslog extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        String followcomments = "";
 
+        String followcomments = "";
         if (parameter.contains("/comment-page")) {
             followcomments = parameter.substring(0, parameter.indexOf("/comment-page"));
         }
         if (!parameter.contains("#comments")) {
             parameter += "#comments";
-            followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
-        } else {
-            followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
         }
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        try {
-            URL url = new URL(parameter);
-            RequestInfo reqinfo = HTTP.getRequest(url);
-            String[] Links = HTMLParser.getHttpLinks(reqinfo.getHtmlCode(), null);
-            Vector<String> passs = HTMLParser.findPasswords(reqinfo.getHtmlCode());
-            for (String element : Links) {
-                if (element.contains(followcomments) == true) {
-                    /* weitere comment pages abrufen */
-                    URL url2 = new URL(element);
-                    RequestInfo reqinfo2 = HTTP.getRequest(url2);
-                    String[] Links2 = HTMLParser.getHttpLinks(reqinfo2.getHtmlCode(), null);
-                    Vector<String> passs2 = HTMLParser.findPasswords(reqinfo2.getHtmlCode());
-                    for (String element2 : Links2) {
-                        DownloadLink l = createDownloadlink(element2);
-                        decryptedLinks.add(l);
-                        l.addSourcePluginPasswords(passs2);
-                    }
-                } else {
-                    DownloadLink l = createDownloadlink(element);
-                    decryptedLinks.add(l);
-                    l.addSourcePluginPasswords(passs);
+        followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
+
+        String page = br.getPage(parameter);
+        String[] links = HTMLParser.getHttpLinks(page, null);
+        Vector<String> pass = HTMLParser.findPasswords(page);
+        String[] links2;
+        Vector<String> pass2;
+        for (String element : links) {
+            if (element.contains(followcomments)) {
+                /* weitere comment pages abrufen */
+                page = br.getPage(element);
+                links2 = HTMLParser.getHttpLinks(page, null);
+                pass2 = HTMLParser.findPasswords(page);
+                for (String element2 : links2) {
+                    DownloadLink dLink = createDownloadlink(element2);
+                    dLink.addSourcePluginPasswords(pass2);
+                    decryptedLinks.add(dLink);
                 }
+            } else {
+                DownloadLink dLink = createDownloadlink(element);
+                dLink.addSourcePluginPasswords(pass);
+                decryptedLinks.add(dLink);
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+
         return decryptedLinks;
     }
 

@@ -18,7 +18,6 @@ package jd.plugins.decrypt;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,10 +29,8 @@ import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 public class UCMS extends PluginForDecrypt {
@@ -52,24 +49,22 @@ public class UCMS extends PluginForDecrypt {
         String parameter = param.toString();
 
         try {
-            URL url = new URL(parameter);
-
-            RequestInfo reqinfo = HTTP.getRequest(url);
+            br.getPage(parameter);
             File captchaFile = null;
             String capTxt = "";
-            String host = url.getHost();
+            String host = br.getHost();
 
             if (!host.startsWith("http")) {
                 host = "http://" + host;
             }
 
-            String pass = new Regex(reqinfo.getHtmlCode(), Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String pass = br.getRegex(Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (pass != null) {
                 if (pass.equals("keins ben&ouml;tigt") || pass.equals("kein pw") || pass.equals("N/A") || pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-") || pass.equals("-No Pass-") || pass.equals("ohne PW")) {
                     pass = null;
                 }
             }
-            String forms[][] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
+            String forms[][] = br.getRegex(Pattern.compile("<FORM ACTION=\"([^\"]*)\" ENCTYPE=\"multipart/form-data\" METHOD=\"POST\" NAME=\"(mirror|download)[^\"]*\"(.*?)</FORM>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
             for (String[] element : forms) {
                 for (int retry = 0; retry < 5; retry++) {
                     Matcher matcher = PAT_CAPTCHA.matcher(element[2]);
@@ -86,9 +81,9 @@ public class UCMS extends PluginForDecrypt {
                         capTxt = Plugin.getCaptchaCode(this, "hardcoremetal.biz", captchaFile, false, param);
                         String posthelp = HTMLParser.getFormInputHidden(element[2]);
                         if (element[0].startsWith("http")) {
-                            reqinfo = HTTP.postRequest(new URL(element[0]), posthelp + "&code=" + capTxt);
+                            br.postPage(element[0], posthelp + "&code=" + capTxt);
                         } else {
-                            reqinfo = HTTP.postRequest(new URL(host + element[0]), posthelp + "&code=" + capTxt);
+                            br.postPage(host + element[0], posthelp + "&code=" + capTxt);
                         }
                     } else {
                         if (captchaFile != null && capTxt != null) {
@@ -100,34 +95,34 @@ public class UCMS extends PluginForDecrypt {
                             logger.finest("Not Captcha protected");
                             String posthelp = HTMLParser.getFormInputHidden(element[2]);
                             if (element[0].startsWith("http")) {
-                                reqinfo = HTTP.postRequest(new URL(element[0]), posthelp);
+                                br.postPage(element[0], posthelp);
                             } else {
-                                reqinfo = HTTP.postRequest(new URL(host + element[0]), posthelp);
+                                br.postPage(host + element[0], posthelp);
                             }
                             break;
                         }
                     }
-                    if (reqinfo.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
+                    if (br.containsHTML("Der Sichheitscode wurde falsch eingeben")) {
                         logger.warning("Captcha Detection failed");
-                        reqinfo = HTTP.getRequest(url);
+                        br.getPage(parameter);
                     } else {
                         break;
                     }
-                    if (reqinfo.getConnection().getURL().toString().equals(host + element[0])) {
+                    if (br.getHttpConnection().getURL().toString().equals(host + element[0])) {
                         break;
                     }
                 }
                 String links[][] = null;
-                if (reqinfo.containsHTML("unescape(unescape(unescape")) {
-                    String temp[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                if (br.containsHTML("unescape\\(unescape\\(unescape")) {
+                    String temp[] = br.getRegex(Pattern.compile("unescape\\(unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
                     String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(temp[0])));
                     links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
-                } else if (reqinfo.containsHTML("unescape(unescape")) {
-                    String temp[] = new Regex(reqinfo.getHtmlCode(), Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                } else if (br.containsHTML("unescape\\(unescape")) {
+                    String temp[] = br.getRegex(Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
                     String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(temp[0]));
                     links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 } else {
-                    links = new Regex(reqinfo.getHtmlCode(), Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                    links = br.getRegex(Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
                 }
                 for (String[] element2 : links) {
                     DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2[0]));
