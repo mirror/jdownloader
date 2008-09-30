@@ -49,9 +49,6 @@ import jd.parser.Regex;
 import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
 
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ContentDisposition;
-import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
-
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
  * müssen von dieser Klasse abgeleitet werden.
@@ -369,48 +366,47 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     static public String getFileNameFromDispositionHeader(String header) {
         // http://greenbytes.de/tech/tc2231/
+        String orgheader = header;
         String contentdisposition = header;
         String filename = null;
         for (int i = 0; i < 2; i++) {
-            try {
-                if (contentdisposition.contains("filename*")) {
-                    /* Codierung */
-                    contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
-                    String format = new Regex(contentdisposition, ".*?=[ \"]*(.*?)''").getMatch(0);
-                    if (format == null) {
-                        logger.severe("Content-Disposition: invalid format: " + header);
-                    }
-                    contentdisposition = contentdisposition.replaceAll(format + "''", "");
-                    filename = new ContentDisposition(contentdisposition).getParameter("filename");
-                    if (filename == null) {
-                        logger.severe("Content-Disposition: no filename found: " + header);
-                    }
+            if (contentdisposition.contains("filename*")) {
+                /* Codierung */
+                contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
+                String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
+                if (format == null) {
+                    logger.severe("Content-Disposition: invalid format: " + header);
+                    filename = null;
+                    return filename;
+                }
+                contentdisposition = contentdisposition.replaceAll(format + "''", "");                
+                filename = new Regex(contentdisposition, "filename.*?=[ \"']+(.+?)[;\"']+.*?;?").getMatch(0);
+                if (filename == null) {
+                    header = header.replaceAll("=", "=\"") + "\"";
+                    contentdisposition = header;
+                } else {
                     try {
                         filename = URLDecoder.decode(filename, format);
                     } catch (UnsupportedEncodingException e) {
                         logger.severe("Content-Disposition: could not decode filename: " + header);
                         filename = null;
-                    }
-                } else {
-                    /* ohne Codierung */
-                    filename = new ContentDisposition(contentdisposition).getParameter("filename");
-                    if (filename == null) {
-                        logger.severe("Content-Disposition: no filename found: " + header);
+                        return filename;
                     }
                 }
-            } catch (ParseException e) {
-                logger.severe("Content-Disposition: could not parse header: " + header);
-                filename = null;
+            } else {
+                /* ohne Codierung */
+                filename = new Regex(contentdisposition, "filename.*?=[ \"']+(.+?)[;\"']+.*?;?").getMatch(0);
+                if (filename == null) {
+                    header = header.replaceAll("=", "=\"") + "\"";
+                    contentdisposition = header;
+                }
             }
             if (filename != null) {
                 break;
-            } else {
-                logger.severe("Content-Disposition: try to fix header for parsing");
-                header = header.replaceAll("=", "=\"") + "\"";
-                contentdisposition = header;
             }
         }
         if (filename != null) filename = filename.trim();
+        if (filename == null) logger.severe("Content-Disposition: could not parse header: " + orgheader);
         return filename;
     }
 
