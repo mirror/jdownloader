@@ -40,8 +40,6 @@ public class Cocosharecc extends PluginForHost {
     private String downloadurl;
     private RequestInfo requestInfo;
 
-    
-
     @Override
     public String getAGBLink() {
         return "http://www.cocoshare.cc/imprint";
@@ -106,22 +104,14 @@ public class Cocosharecc extends PluginForHost {
             return;
         }
         downloadurl = "http://www.cocoshare.cc" + downloadurl;
-        requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(downloadurl), null, downloadLink.getDownloadURL(), false);
-
+        dl = br.openDownload(downloadLink, downloadurl);
+        dl.connect();
         /* DownloadLimit? */
-        if (requestInfo.getLocation() != null) {
+        if (dl.getRequest().getLocation() != null) {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             return;
         }
 
-        /* Datei herunterladen */
-        HTTPConnection urlConnection = requestInfo.getConnection();
-        if (urlConnection.getContentLength() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
-            return;
-        }
-     
         dl.startDownload();
     }
 
