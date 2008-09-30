@@ -17,22 +17,15 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class ScumIn extends PluginForDecrypt {
 
@@ -45,43 +38,23 @@ public class ScumIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-            String cookie = reqinfo.getCookie();
-            String id = parameter.split("=")[1];
+        br.getPage(parameter);
 
-            String urlString = URLDecoder.decode("http://scum.in/share/includes/captcha.php?t=", "UTF-8");
-            URL url = new URL(urlString);
-            HTTPConnection con = new HTTPConnection(url.openConnection());
-            con.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
-            con.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
-            con.setInstanceFollowRedirects(false);
-            con.setRequestProperty("Referer", parameter);
-            con.setRequestProperty("Cookie", cookie);
-            con.setRequestProperty("Accept", "image/png,*/*;q=0.5");
-            con.setRequestProperty("Accept-Encoding", "gzip,deflate");
-            con.setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-            con.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-            con.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        File captchaFile = this.getLocalCaptchaFile(this);
+        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://scum.in/share/includes/captcha.php?t="));
+        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
 
-            File captchaFile = this.getLocalCaptchaFile(this);
-            Browser.download(captchaFile, con);
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+        br.postPage("http://scum.in/plugins/home/links.callback.php", "id=" + parameter.substring(parameter.lastIndexOf("=") + 1) + "&captcha=" + captchaCode);
 
-            reqinfo = HTTP.postRequest(new URL("http://scum.in/plugins/home/links.callback.php"), cookie, parameter, null, "id=" + id + "&captcha=" + captchaCode, false);
-
-            String links[][] = new Regex(reqinfo.getHtmlCode(), "href=\"(.*?)\"", Pattern.CASE_INSENSITIVE).getMatches();
-            progress.setRange(links.length);
-            for (String[] element : links) {
-                progress.increase(1);
-                DownloadLink dl_link = createDownloadlink(element[0]);
-                dl_link.addSourcePluginPassword("scum.in");
-                decryptedLinks.add(dl_link);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        String links[] = br.getRegex("href=\"(.*?)\"").getColumn(0);
+        progress.setRange(links.length);
+        for (String element : links) {
+            DownloadLink dLink = createDownloadlink(element);
+            dLink.addSourcePluginPassword("scum.in");
+            decryptedLinks.add(dLink);
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
