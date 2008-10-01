@@ -114,7 +114,7 @@ gui.config.captcha.ces.btn_messages = Mesajlarımı göster
 gui.config.captcha.ces.btn_register = Üye Ol
 gui.config.captcha.ces.btn_sendmessages = Mesaj yolla
 gui.config.captcha.ces.btn_stats = İstatistiklerim
-gui.config.captcha.ces.help = http://jdownloader.ath.cx/page.php?id=106
+gui.config.captcha.ces.help = http://jdownloader.org/page.php?id=106
 gui.config.captcha.ces.pass = C.E.S. Parola
 gui.config.captcha.CES.tab = Captcha Takas Servisi
 gui.config.captcha.ces.user = C.E.S. Kullanıcı Adı
@@ -345,7 +345,7 @@ gui.config.plugin.optional.column_plugin = Takma birim
 gui.config.plugin.optional.column_status = Durum
 gui.config.plugin.optional.column_version = Sürüm
 gui.config.plugin.optional.dialogname = %s ayarlar
-gui.config.plugin.optional.link_help = http://jdownloader.ath.cx/page.php?id=122
+gui.config.plugin.optional.link_help = http://jdownloader.org/page.php?id=122
 gui.config.plugin.optional.linktext_help = Yardım
 gui.config.plugin.optional.name = Opsiyonel Takmabirimler
 gui.config.plugin.optional.statusActive = Açık
@@ -365,7 +365,7 @@ gui.config.routeripfinder = Router IP arama
 gui.config.routeripfinder.close = Çıkış
 gui.config.routeripfinder.featchIP = Router IP aranıyor...
 gui.config.showContainerOnLoadInfo = Yüklerken detaylı Konteyner bilgisi göster
-gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
+gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.org/page.php?id=102
 gui.config.tabLables.addons = Eklenti Yönetimi
 gui.config.tabLables.containerPlugin = Link Konteynerlar
 gui.config.tabLables.decryptPlugin = Deşifreleme
@@ -409,7 +409,7 @@ gui.config.unrar.passwordlist.btn_save.name = Save
 gui.config.unrar.thread = Çıkartmadan sonra indirmeye devam et
 gui.config.unrar.usehjmerge = Auto-merge HJSplit-splitted files
 gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = JDownloader Hakkında
 gui.dialogs.agb_tos.agbAccepted = Kuralları kabul ediyorum
 gui.dialogs.agb_tos.description = %s TOCsi okunmadı ve kabul edilmedi.

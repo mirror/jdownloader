@@ -76,7 +76,7 @@ gui.config.captcha.ces.btn_messages = Ukázat mé zprávy
 gui.config.captcha.ces.btn_register = Registrovat
 gui.config.captcha.ces.btn_sendmessages = Odeslat zprávu
 gui.config.captcha.ces.btn_stats = Moje statistika
-gui.config.captcha.ces.help = http://jdownloader.ath.cx/page.php?id=106
+gui.config.captcha.ces.help = http://jdownloader.org/page.php?id=106
 gui.config.captcha.ces.pass = C.E.S. Heslo
 gui.config.captcha.CES.tab = Captcha Exchange Service
 gui.config.captcha.ces.user = C.E.S. Uživatelské jméno
@@ -290,7 +290,7 @@ gui.config.plugin.optional.column_needs = Potřebuje
 gui.config.plugin.optional.column_plugin = Plugin
 gui.config.plugin.optional.column_status = Stav
 gui.config.plugin.optional.column_version = Verze
-gui.config.plugin.optional.link_help = http://www.jdownloader.ath.cx/wiki/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://www.jdownloader.org/wiki/index.php?title=Uninstalling_Add-ons
 gui.config.plugin.optional.linktext_help = Pomoc
 gui.config.plugin.optional.name = Volitelný Plugin
 gui.config.plugin.optional.statusActive = On
@@ -306,7 +306,7 @@ gui.config.popup.title = Configurace
 gui.config.reconnect.name = Reconnect
 gui.config.reloadContainer = Naplnit Download uložiště
 gui.config.showContainerOnLoadInfo = Zobrazit detailní informace o zaplnění uložiště
-gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
+gui.config.showContainerOnLoadInfo.helpurl = http://jdownloader.org/page.php?id=102
 gui.config.tabLables.containerPlugin = Odkazy Uložiště
 gui.config.tabLables.decryptPlugin = Dekódování
 gui.config.tabLables.download = Stahování/Síť
@@ -347,8 +347,8 @@ gui.config.unrar.passwordlist.btn_save.name = Ulož
 gui.config.unrar.thread = Pokračovat ve stahování po extrahování
 gui.config.unrar.usehjmerge = Sloučit pomocí HJSplitfiles
 gui.config.webupdate.name = Aktualizace z Webu
-gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.ath.cx/wiki/index.php?title=Konfig_en:
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/wiki/index.php?title=Konfig_en:
+gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = O JDownloader
 gui.dialogs.agb_tos.agbAccepted = Souhlasím s podmínkami služby
 gui.dialogs.agb_tos.title = Podmínky služby neakceptuji
@@ -384,7 +384,7 @@ gui.droptarget.label = Zde zadejte link
 gui.droptarget.title = Sběratel linků
 gui.helpLocale.title = Support helps alot!
 gui.images.jd_logo = gui.images.jd_logo
-gui.javacheck.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Špatná verze Java
 gui.linkgrabber.bar.title = Informace o souboru
 gui.linkgrabber.btn.accept = Akceptovat balíček
@@ -609,7 +609,7 @@ gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Rychlost
 gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://jdownloader.ath.cx/wiki/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.wikiurl = http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal_English
 gui.tab.download.column_host = Host
 gui.tab.download.column_index = Nº
 gui.tab.download.column_link = Soubor
@@ -824,7 +824,7 @@ plugins.hoster.rapidshare.com.concernsPremiumUser = (*1) Prémiový uživatel mu
 plugins.hoster.rapidshare.com.extendedTab = Pokročilé nastavení
 plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached = volné stažení není k dipozici
 plugins.hoster.rapidshare.com.happyHours = Kontrola Happy Hour
-plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Active until %s<br>Last check from %s<br>Last happy hour from %s to %s</p></div></body>
+plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Active until %s<br>Last check from %s<br>Last happy hour from %s to %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Důležité 
 plugins.hoster.rapidshare.com.increaseTicketTime = Zvětšte čekací čas (0%-500%)
 plugins.hoster.rapidshare.com.info.title = Informace o účtu pro %s

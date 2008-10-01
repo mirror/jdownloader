@@ -140,7 +140,7 @@ gui.config.btn_fengshui = Vereinfachte Ansicht
 gui.config.btn_restart = Speichern und neu starten
 gui.config.captcha.jac_disable = Automatische Bilderkennung abschalten
 gui.config.captcha.train.level = Anzeigeschwelle
-gui.config.captcha.train.level.instanthelp = http://jdownloader.ath.cx/page.php?id=3
+gui.config.captcha.train.level.instanthelp = http://jdownloader.org/page.php?id=3
 gui.config.captcha.train.show_timeout = Anzeigedauer des Eingabefensters
 gui.config.download.autochunks = Chunks an Dateigröße anpassen.
 gui.config.download.autoresume = Reconnect darf weiterführbare Downloads unterbrechen
@@ -322,7 +322,7 @@ gui.config.routeripfinder = Router IP Suche
 gui.config.routeripfinder.close = Fenster schließen
 gui.config.routeripfinder.featchip = Suche nach Router IP...
 gui.config.showcontaineronloadinfo = Detailierte Containerinformationen beim Öffnen anzeigen
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
 gui.config.tablables.addons = Addon-Manager
 gui.config.tablables.containerplugin = Link-Container
 gui.config.tablables.decryptplugin = Decrypter Plugins
@@ -352,7 +352,7 @@ gui.config.unrar.thread = Download erst nach dem Entpacken fortsetzen
 gui.config.unrar.usehjmerge = HJSplit-Archive automatisch zusammenfügen
 gui.config.webupdate.name = Webupdate
 gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/wiki/index.php?title=Konfig:
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_de.html
 gui.dialog.about.title = About JDownloader
 gui.dialogs.agb_tos.agbaccepted = Ich bin mit den Allgemeinen Geschäftsbedingungen einverstanden
 gui.dialogs.agb_tos.description = Die Allgemeinen Geschäftsbedingungen (AGB) von %s wurden nicht gelesen und akzeptiert.
@@ -780,7 +780,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">Achtung Ihr Betriebssyst
 interaction.simpleexecute.cmd = Befehl
 interaction.simpleexecute.executein = Ausführen in (Ordner)
 interaction.simpleexecute.extended = Erweiterte Einstellungen
-interaction.simpleexecute.helplink = http://jdownloader.ath.cx/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
 interaction.simpleexecute.name = Programm/Script ausführen
 interaction.simpleexecute.parameter = Parameter (1 Parameter pro Zeile)
 interaction.simpleexecute.test = Jetzt ausführen
@@ -852,7 +852,7 @@ main.start.logwarning.title = Logwarnung
 main.status.active = an
 main.status.inactive = aus
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://jdownloader.ath.cx/faq.php?lng=deutsch
+main.urls.faq = http://jdownloader.org/faq.php?lng=deutsch
 modules.packagemanager.downloadednewpackage.title2 = <p>Updates geladen.Ein Neustart ist nötig<br/> JDownloader jetzt neu starten?<hr>%s</p>
 modules.packagemanager.loadednewpackage.more = Weitere Informationen & Installationshinweise
 modules.packagemanager.loadednewpackage.title = Paket Update installiert
@@ -862,7 +862,7 @@ modules.reconnect.testreconnect = Reconnect testen
 modules.reconnect.types.batch = Batch
 modules.reconnect.types.extern = Extern
 modules.reconnect.types.liveheader = LiveHeader/Curl
-modules.unrar.enabled.instanthelp = http://jdownloader.ath.cx/page.php?id=17
+modules.unrar.enabled.instanthelp = http://jdownloader.org/page.php?id=17
 modules.unrar.name = Entpacker
 plugin.optional.jdchat.teamviewer.yourtvdata = Deine Teamviewer Daten:
 plugin.rapidshare.tickettime = %s auf Ticket warten

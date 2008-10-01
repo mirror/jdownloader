@@ -359,7 +359,7 @@ gui.config.unrar.thread = Продолжить загрузку после из�
 gui.config.unrar.usehjmerge = Объединить HJSplitfiles
 gui.config.webupdate.name = Автообновление
 gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = О программе
 gui.dialogs.agb_tos.agbAccepted = Я согласен с правилами
 gui.dialogs.agb_tos.title = Я не согласен

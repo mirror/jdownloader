@@ -376,7 +376,7 @@ gui.config.unrar.thread = Continuer avec le téléchargement après extraction
 gui.config.unrar.usehjmerge = Relier les fichiers séparés HJ
 gui.config.webupdate.name = Mise à jour
 gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = À propos de JDownloader
 gui.dialogs.agb_tos.agbAccepted = J'accepte les termes du service
 gui.dialogs.agb_tos.title = Termes du service non acceptés

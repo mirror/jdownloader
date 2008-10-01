@@ -336,7 +336,7 @@ gui.config.unrar.thread = Go on with the download after extraction
 gui.config.unrar.usehjmerge = Merge HJSplitfiles
 gui.config.webupdate.name = Webupdate
 gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = About JDownloader
 gui.dialogs.agb_tos.agbaccepted = I accept the terms of service
 gui.dialogs.agb_tos.description = The TOCs of %s have not been read and accepted.

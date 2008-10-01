@@ -164,7 +164,7 @@ gui.config.captcha.ces.btn_messages = Toon mijn berichten
 gui.config.captcha.ces.btn_register = Registreren
 gui.config.captcha.ces.btn_sendmessages = Bericht verzenden
 gui.config.captcha.ces.btn_stats = Mijn Statistieken
-gui.config.captcha.ces.help = http://jdownloader.ath.cx/page.php?id=106
+gui.config.captcha.ces.help = http://jdownloader.org/page.php?id=106
 gui.config.captcha.ces.pass = C.E.S. Paswoord
 gui.config.captcha.ces.register = Gewenste Gebruikersnaam
 gui.config.captcha.ces.register.error = Er is een Fout opgetreden
@@ -177,13 +177,13 @@ gui.config.captcha.ces.sendMessage.success = Bericht aan %s verstuurd
 gui.config.captcha.CES.tab = Captcha Exchange Service
 gui.config.captcha.ces.user = C.E.S. Gebruikersnaam
 gui.config.captcha.extendedCaptcha = Captchabewerking aantonen
-gui.config.captcha.extendedCaptcha.instanthelp = http://jdownloader.ath.cx/faq.php
+gui.config.captcha.extendedCaptcha.instanthelp = http://jdownloader.org/faq.php
 gui.config.captcha.JAC.tab = jAntiCaptcha
 gui.config.captcha.jac_disable = Automatische Beeldherkenning uitschakelen
 gui.config.captcha.jac_methods = Automatische Beeldherkennig gebruiken voor:
 gui.config.captcha.show_input_dialog = Toont het ingaveveld 
 gui.config.captcha.train.level = Aanwijzingslimiet
-gui.config.captcha.train.level.instanthelp = http://jdownloader.ath.cx/page.php?id=3
+gui.config.captcha.train.level.instanthelp = http://jdownloader.org/page.php?id=3
 gui.config.captcha.train.show_timeout = Duuraanwijzing Ingavevensters
 gui.config.captcha.use_Ces = CaptchaExchangeServer gebruiken(Nieuwstart nodig)
 gui.config.captcha.use_collector = Niet erkende Captchas Online verzamelen
@@ -438,7 +438,7 @@ gui.config.routeripfinder = Router IP Zoeken
 gui.config.routeripfinder.close = Venster Sluiten
 gui.config.routeripfinder.featchip = Zoeken naar Router IP...
 gui.config.showcontaineronloadinfo = Gedetaileerde Containerinformatie aangeven bij het openen
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
 gui.config.subpanel.btn_cancel = Afbreken
 gui.config.subpanel.btn_ok = OK
 gui.config.tablables.addons = Addon manager
@@ -486,7 +486,7 @@ gui.config.unrar.thread = Download eerst na het uitpakken voortzetten
 gui.config.unrar.usehjmerge = HJSplit-Archieven automatisch samenvoegen
 gui.config.webupdate.name = Webupdate
 gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/wiki/index.php?title=Config:
-gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
+gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = Over JDownloader
 gui.dialogs.agb_tos.agbaccepted = Ik accepteer de voorwaarde
 gui.dialogs.agb_tos.description = De Algemene voorwaarde (AGB) van %s werden niet gelezen en geaccepteerd.
@@ -1055,7 +1055,7 @@ interaction.shutdown.name = Afsluiten
 interaction.simpleexecute.cmd = Uitvoeren
 interaction.simpleexecute.executein = Uitvoeren in 
 interaction.simpleexecute.extended = Uitgebreide Instelingen
-interaction.simpleexecute.helplink = http://jdownloader.ath.cx/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
 interaction.simpleexecute.name = Programma/Script Uitvoeren
 interaction.simpleexecute.parameter = Parameter (1 Parameter per lijn)
 interaction.simpleexecute.test = Nu uitvoeren
@@ -1157,7 +1157,7 @@ main.start.logwarning.title = Log waarschuwing
 main.status.active = aan
 main.status.inactive = uit
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://jdownloader.ath.cx/faq.php?lng=deutsch
+main.urls.faq = http://jdownloader.org/faq.php?lng=deutsch
 modules.container.dlc.containerinfo = <div style="width:450px;font-family:Geneva, Arial, Helvetica, sans-serif; font-size: 9px;"><font color="#0066FF"><strong>DLContainer succesvol geladen.</strong></font><br/><hr/><table style="width:450px"><tr><td>Gemaakt van </td><td>%s</td></tr><tr><td>Gemaakt met </td><td>%s</td></tr><tr><td>Pakketten </td><td>%s</td></tr><tr><td>Categorie </td><td>%s</td></tr><tr ><td colspan="2">%s</td></tr></table></div>
 modules.container.dlc.loadedmessage = DownloadLinkContainer geladen
 modules.packagemanager.downloadednewpackage.title2 = <p>Updates geladen.Een nieuwstart is nodig.<br/> JDownloader nu herstarten?<hr>%s</p>
@@ -1169,7 +1169,7 @@ modules.reconnect.testreconnect = Test Herconnectie
 modules.reconnect.types.batch = Batch
 modules.reconnect.types.extern = Extern
 modules.reconnect.types.liveheader = LiveHeader/Curl
-modules.unrar.enabled.instanthelp = http://jdownloader.ath.cx/page.php?id=17
+modules.unrar.enabled.instanthelp = http://jdownloader.org/page.php?id=17
 modules.unrar.name = RAR extractor
 plugin.optional.jdchat.teamviewer.yourtvdata = Uw Teamviewer Data:
 plugin.rapidshare.tickettime = Wacht %s min. voor tikker
@@ -1275,8 +1275,8 @@ plugins.hoster.rapidshare.com.concernspremiumUser = (*1) Premium gebruikers moet
 plugins.hoster.rapidshare.com.extendedtab = Uitgebreide instellingen
 plugins.hoster.rapidshare.com.freeDownloadIfLimitNotReached = Premium: Free Download wanneer het limiet nog niet bereikt is
 plugins.hoster.rapidshare.com.happyHours = Happy Hour Check
-plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Tot nu toe actief %s<br>Laatst gecontroleerd sinds %s<br>Laatste Happy Hour van %s tot %s</p></div></body>
-plugins.hoster.rapidshare.com.hhinactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/nhh.jpg' /><br>Laatste Happy Hour Phase beëindigd om %s<br>Laatst gecontroleerd voor %s<br>Laatste Happy Hour van %s tot %s</p></div></body>
+plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Tot nu toe actief %s<br>Laatst gecontroleerd sinds %s<br>Laatste Happy Hour van %s tot %s</p></div></body>
+plugins.hoster.rapidshare.com.hhinactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/nhh.jpg' /><br>Laatste Happy Hour Phase beëindigd om %s<br>Laatst gecontroleerd voor %s<br>Laatste Happy Hour van %s tot %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Belangrijk!
 plugins.hoster.rapidshare.com.increasetickettime = Verhoog Ticketwachttijd (0%-500%)
 plugins.hoster.rapidshare.com.info.error = <div style='text-align:center; width:100%; height:100%; color:red;'><b>Account kon niet worden gevonden!</b></div>
@@ -1553,7 +1553,7 @@ sys.confirm.dorestart = Deze instellingen benodigen een nieuwstart. Nieuwstart n
 sys.dlc.error_version = DLC encryptie mislukt. Wees zeker dat je de laatste versie van jDownloader gebruikt.
 sys.dlc.success = DLC encryptie succesvol. Uitpakken testen?
 sys.header.jdownloader = jDownloader
-sys.message.welcome = Bezoek ons op http://jdownloader.ath.cx
+sys.message.welcome = Bezoek ons op http://jdownloader.org
 sys.warning.dlcerror = Defecte DLC Container
 sys.warning.dlcerror.server = <b>Heb je de laatste versie van JD geïnstalleerd?</b> <br>Server melden:
 sys.warning.dlcerror_invalid = Ongeldige DLC
