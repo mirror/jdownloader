@@ -94,7 +94,9 @@ public class HTTPConnection {
     }
 
     public String getContentType() {
-        return connection.getContentType();
+        String type = connection.getContentType();
+        if (type == null) return "unkown";
+        return type;
     }
 
     public String getHeaderField(String string) {
@@ -236,8 +238,8 @@ public class HTTPConnection {
         if ((range = this.getHeaderField("Content-Range")) == null) return null;
         // bytes 174239-735270911/735270912
         String[] ranges = new Regex(range, ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getRow(0);
-        if(ranges==null){
-           System.err.print(this+"");
+        if (ranges == null) {
+            System.err.print(this + "");
             return null;
         }
         this.ranges = new long[] { Long.parseLong(ranges[0]), Long.parseLong(ranges[1]), Long.parseLong(ranges[2]) };
@@ -250,7 +252,7 @@ public class HTTPConnection {
     }
 
     public boolean disconnect() {
-        if (isConnected()){
+        if (isConnected()) {
             this.connection.disconnect();
             return true;
         }

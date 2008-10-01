@@ -23,13 +23,11 @@ import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class MySpaceCom extends PluginForHost {
-    // private static final Pattern PATTERN_SUPPORTET = Pattern.compile(
-    // "http://cache\\d+-music\\d+.myspacecdn\\.com/\\d+/std_.+\\.mp3"
-    // ,Pattern.CASE_INSENSITIVE);
     private static final String CODER = "ToKaM";
 
     private static final String AGB_LINK = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
@@ -55,8 +53,12 @@ public class MySpaceCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         HTTPConnection urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
-        if (!urlConnection.isOK()) return false;
+        if (!urlConnection.isOK()) {
+            urlConnection.disconnect();
+            return false;
+        }
         downloadLink.setDownloadSize(urlConnection.getContentLength());
+        urlConnection.disconnect();
         return true;
     }
 
@@ -76,17 +78,11 @@ public class MySpaceCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        downloadLink.setUrlDownload(getDownloadUrl(downloadLink));
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
         /* Nochmals das File Überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }   
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
-        dl = RAFDownload.download(downloadLink, br.createRequest(getDownloadUrl(downloadLink)),true,0);
- 
+        dl = RAFDownload.download(downloadLink, br.createRequest(getDownloadUrl(downloadLink)), true, 0);
+
         dl.startDownload();
     }
 }
