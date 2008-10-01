@@ -152,6 +152,7 @@ public class RAFDownload extends DownloadInterface {
                 }
 
             }
+            downloadLink.getLinkStatus().setStatusText(null);
             if (!handleErrors()) {
 
                 writer.interrupt();
@@ -198,11 +199,11 @@ public class RAFDownload extends DownloadInterface {
 
             }
             DownloadLink sfv;
-            String md5 = JDUtilities.getLocalHash(new File(downloadLink.getFileOutput()));
+    
             if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
                 if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                    sfv.getLinkStatus().setStatusText(JDLocale.L("system.download.doCRC", "CRC-Check running"));
-                    sfv.requestGuiUpdate();
+                    downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2", "CRC-Check running(%s)","CRC32"));
+                    downloadLink.requestGuiUpdate();
 
                     long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
 
@@ -211,7 +212,7 @@ public class RAFDownload extends DownloadInterface {
                         String[] l = Regex.getLines(sfvText);
                         boolean c = false;
                         for (String line : l) {
-                            logger.info(line + " - " + Long.toHexString(crc).toUpperCase());
+//                            logger.info(line + " - " + Long.toHexString(crc).toUpperCase());
                             if (line.trim().endsWith(Long.toHexString(crc).toUpperCase()) || line.trim().endsWith(Long.toHexString(crc).toLowerCase())) {
                                 c = true;
                                 logger.info("CRC CHECK SUCCESS");
@@ -219,12 +220,12 @@ public class RAFDownload extends DownloadInterface {
                             }
                         }
                         if (c) {
-                            sfv.getLinkStatus().setStatusText(JDLocale.L("system.download.doCRC.success", "CRC-Check OK"));
-                            sfv.requestGuiUpdate();
+                            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.success", "CRC-Check OK(%s)","CRC32"));
+                            downloadLink.requestGuiUpdate();
                         } else {
-                            sfv.getLinkStatus().setStatusText(JDLocale.L("system.download.doCRC.failed", "CRC-Check FAILED"));
-                            sfv.requestGuiUpdate();
-                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("system.download.errors.crcfailed", "CRC Check failed"));
+                            downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)","CRC32"));
+                            downloadLink.requestGuiUpdate();
+                            error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)","CRC32"));
 
                         }
 
@@ -232,6 +233,21 @@ public class RAFDownload extends DownloadInterface {
                 }
 
             }else if(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)){
+               
+              
+                if(downloadLink.getMD5Hash()!=null){
+                    downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2", "CRC-Check running(%s)","MD5"));
+                    downloadLink.requestGuiUpdate();
+                    String md5 = JDUtilities.getLocalHash(new File(downloadLink.getFileOutput()));
+                    if( downloadLink.getMD5Hash().equalsIgnoreCase(md5)){
+                        downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.success", "CRC-Check OK(%s)","MD5"));
+                        downloadLink.requestGuiUpdate();
+                    }else{
+                        downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)","MD5"));
+                        downloadLink.requestGuiUpdate(); 
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)","MD5"));
+                    }
+                }
                 
                 
                 

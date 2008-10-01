@@ -227,7 +227,7 @@ public class LinkStatus implements Serializable {
         String ret = "";
         if (hasStatus(LinkStatus.FINISHED)) {
 
-        return JDLocale.L("gui.downloadlink.finished", "[finished]"); }
+        return JDLocale.L("gui.downloadlink.finished", "[finished]")+(this.getStatusText()!=null?"> "+this.getStatusText():""); }
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
             if (downloadLink.isAborted()) {

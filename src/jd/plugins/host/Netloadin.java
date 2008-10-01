@@ -256,7 +256,7 @@ public class Netloadin extends PluginForHost {
 
             return;
         }
-
+        getFileInformation(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         checkMirrorsInProgress(downloadLink);
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
@@ -270,6 +270,7 @@ public class Netloadin extends PluginForHost {
             logger.severe("Account Infos invalid");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
+     
         if (br.getRedirectLocation() == null) {
             br.followConnection();
             checkPassword(downloadLink, linkStatus);
@@ -279,8 +280,11 @@ public class Netloadin extends PluginForHost {
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Download link not found");
 
             con = br.createRequest(url);
+     
             dl = RAFDownload.download(downloadLink, con, true, 0);
-            HTTPConnection connection = dl.connect(br);
+            dl.headFake(null);
+            dl.setFirstChunkRangeless(true);
+            HTTPConnection connection = dl.getConnection();
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
                     con = br.createRequest(url);
@@ -378,8 +382,9 @@ public class Netloadin extends PluginForHost {
             fileStatusText = entries[2];
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2]));
 
+          
+            downloadLink.setMD5Hash(entries[4].trim());
             if (entries[3].equalsIgnoreCase("online")) { return true; }
-            downloadLink.setMD5Hash(entries[5].trim());
             return false;
         } catch (Exception e) {
             e.printStackTrace();
