@@ -38,7 +38,7 @@ public class Hideurlbiz extends PluginForDecrypt {
 
         br.setFollowRedirects(false);
         br.getPage(parameter);
-        String links[] = br.getRegex(Pattern.compile("value=\"[Free ]?Download\" onclick=\"openlink\\('(.*?)','.*?'\\);\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String links[] = br.getRegex(Pattern.compile("value=\".*?Download.*?\" onclick=\"openlink\\('(.*?)','.*?'\\);\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
 
         progress.setRange(links.length);
         for (String element : links) {
