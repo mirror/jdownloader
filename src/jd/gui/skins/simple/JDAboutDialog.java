@@ -85,7 +85,7 @@ public class JDAboutDialog {
                 { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" },
                 { " Greeny", " greeny@jdownloader.org", " Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" },
                 { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" },
-                { " ToKaM", "tokam@frogged.de", "Hoster / Decrypter" }
+                { " ToKaM", " tokam@frogged.de", " Hoster / Decrypter" }
                 
             // {" uncomment and add your nick"," xxx@yyy.com"," describe
             // yourself..."},
