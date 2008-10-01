@@ -208,6 +208,7 @@ public class FileFactory extends PluginForHost {
             return;
         }
         br.setCookiesExclusive(true);
+//        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
@@ -220,10 +221,12 @@ public class FileFactory extends PluginForHost {
         if (error != null) {
 
         throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-        dl=RAFDownload.download(downloadLink, br.createGetRequest(downloadLink.getDownloadURL()),true,0);
-        HTTPConnection con = dl.connect(br);
+        br.setFollowRedirects(false);
+        br.openGetConnection(downloadLink.getDownloadURL());
+        dl=br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);      
+
         
-        if (con.getHeaderField("Content-Disposition") == null) {
+        if (dl.getConnection().getHeaderField("Content-Disposition") == null) {
             br.followConnection();
 
             if (br.containsHTML(NOT_AVAILABLE)) {
@@ -235,9 +238,13 @@ public class FileFactory extends PluginForHost {
                 return;
             } else {
                 String red = br.getRegex("Description: .*?p style=.*?><a href=\"(.*?)\".*?>.*?Click here to begin your download").getMatch(0);
-                con = br.openGetConnection(red);
+               logger.finer("Indirect download");
+                dl=br.openDownload(downloadLink, red, true, 0);      
+
 
             }
+        }else{
+            logger.finer("DIRECT download");
         }
         dl.startDownload();
         return;

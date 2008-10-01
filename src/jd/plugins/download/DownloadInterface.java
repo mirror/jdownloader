@@ -183,7 +183,7 @@ abstract public class DownloadInterface {
             } catch (InterruptedException e1) {
                 return null;
             }
-            long start = startByte + getPreBytes(this);
+            long start = startByte;
             String end = (endByte > 0 ? endByte + 1 : "") + "";
 
             if (start == 0) {
@@ -664,58 +664,61 @@ abstract public class DownloadInterface {
             return isInterrupted();
         }
 
-        /**
-         * Einige Anbieter erlauben das resumen von files, aber nicht
-         * multistreamloading. Dazu verbieten sie die range 0-xxx. Um das zu
-         * umgehen werden die ersten bytes via preloading geladen und der erste
-         * chunk fängt bei 1-xxx an
-         * 
-         * @param preBytes
-         */
-        public long loadPreBytes() {
-
-            try {
-
-                InputStream inputStream = connection.getInputStream();
-
-                if (inputStream.available() > preBytes) {
-                    preBytes = inputStream.available();
-                }
-                ReadableByteChannel channel = Channels.newChannel(inputStream);
-                /* max 2 gb buffer */
-                buffer = ByteBuffer.allocateDirect((int) preBytes);
-
-                while (buffer.hasRemaining()) {
-
-                    channel.read(buffer);
-
-                }
-                if (speedDebug) {
-                    logger.finer("loaded Prebytes " + preBytes);
-                }
-                if (speedDebug) {
-                    logger.finer("Preloading produced " + inputStream.available() + " bytes overhead");
-                }
-                inputStream.close();
-                channel.close();
-                connection.getHTTPURLConnection().disconnect();
-
-                buffer.flip();
-
-                addPartBytes(buffer.limit());
-                addToTotalLinkBytesLoaded(buffer.limit());
-                addChunkBytesLoaded(buffer.limit());
-                writeBytes(this);
-                return preBytes;
-
-            } catch (Exception e) {
-                error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDUtilities.convertExceptionReadable(e));
-                addException(e);
-                e.printStackTrace();
-            }
-            return -1;
-
-        }
+        // /**
+        // * Einige Anbieter erlauben das resumen von files, aber nicht
+        // * multistreamloading. Dazu verbieten sie die range 0-xxx. Um das zu
+        // * umgehen werden die ersten bytes via preloading geladen und der
+        // erste
+        // * chunk fängt bei 1-xxx an
+        // *
+        // * @param preBytes
+        // */
+        // public long loadPreBytes() {
+        //
+        // try {
+        //
+        // InputStream inputStream = connection.getInputStream();
+        //
+        // if (inputStream.available() > preBytes) {
+        // preBytes = inputStream.available();
+        // }
+        // ReadableByteChannel channel = Channels.newChannel(inputStream);
+        // /* max 2 gb buffer */
+        // buffer = ByteBuffer.allocateDirect((int) preBytes);
+        //
+        // while (buffer.hasRemaining()) {
+        //
+        // channel.read(buffer);
+        //
+        // }
+        // if (speedDebug) {
+        // logger.finer("loaded Prebytes " + preBytes);
+        // }
+        // if (speedDebug) {
+        // logger.finer("Preloading produced " + inputStream.available() +
+        // " bytes overhead");
+        // }
+        // inputStream.close();
+        // channel.close();
+        // connection.getHTTPURLConnection().disconnect();
+        //
+        // buffer.flip();
+        //
+        // addPartBytes(buffer.limit());
+        // addToTotalLinkBytesLoaded(buffer.limit());
+        // addChunkBytesLoaded(buffer.limit());
+        // writeBytes(this);
+        // return preBytes;
+        //
+        // } catch (Exception e) {
+        // error(LinkStatus.ERROR_DOWNLOAD_FAILED,
+        // JDUtilities.convertExceptionReadable(e));
+        // addException(e);
+        // e.printStackTrace();
+        // }
+        // return -1;
+        //
+        // }
 
         /**
          * Thread runner
@@ -725,26 +728,24 @@ abstract public class DownloadInterface {
             run0();
             plugin.setCurrentConnections(plugin.getCurrentConnections() - 1);
             addToChunksInProgress(-1);
-          
-                boolean allConnected = true;
-                synchronized (DownloadInterface.this.chunks) {
-                    for (Chunk chunk : DownloadInterface.this.chunks) {
-                        if (chunk.connection == null || !chunk.connection.isConnected()) {
-                            allConnected = false;
-                            break;
-                        }
-                    }
-                }
-                if (allConnected) {
-                    try {
-                        this.connection.disconnect();
-                    } catch (Exception e) {
-                    }
-                
 
+            boolean allConnected = true;
+            synchronized (DownloadInterface.this.chunks) {
+                for (Chunk chunk : DownloadInterface.this.chunks) {
+                    if (chunk.connection == null || !chunk.connection.isConnected()) {
+                        allConnected = false;
+                        break;
+                    }
                 }
-             
-            
+            }
+            if (allConnected) {
+                try {
+                    this.connection.disconnect();
+                } catch (Exception e) {
+                }
+
+            }
+
             if (this.isExternalyAborted()) {
                 try {
                     this.connection.disconnect();
@@ -767,12 +768,13 @@ abstract public class DownloadInterface {
             }
 
             if (chunkNum > 1) {
-                if (getPreBytes(this) > 0) {
-                    loadPreBytes();
-                    if (speedDebug) {
-                        logger.finer("After prebytes: " + startByte + " - " + endByte);
-                    }
-                }
+                // if (getPreBytes(this) > 0) {
+                // loadPreBytes();
+                // if (speedDebug) {
+                // logger.finer("After prebytes: " + startByte + " - " +
+                // endByte);
+                // }
+                // }
                 connection = copyConnection(connection);
 
                 if (connection == null) {
@@ -794,7 +796,7 @@ abstract public class DownloadInterface {
                     return;
                 }
 
-                if (startByte + getPreBytes(this) > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
+                if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaders", "Server does not support chunkload"));
 
                     logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
@@ -805,7 +807,7 @@ abstract public class DownloadInterface {
             }
 
             // Content-Range=[133333332-199999999/200000000]}
-            if (startByte + getPreBytes(this) > 0) {
+            if (startByte > 0) {
                 String[][] range = new Regex(connection.getHeaderField("Content-Range"), ".*?(\\d+).*?-.*?(\\d+).*?/.*?(\\d+)").getMatches();
                 if (speedDebug) {
                     logger.finer("Range Header " + connection.getHeaderField("Content-Range"));
@@ -825,8 +827,8 @@ abstract public class DownloadInterface {
                 } else if (range != null) {
                     long gotSB = JDUtilities.filterLong(range[0][0]);
                     long gotEB = JDUtilities.filterLong(range[0][1]);
-                    if (gotSB != startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)) {
-                        logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + (startByte + (getPreBytes(this) > 0 ? getPreBytes(this) : 0)));
+                    if (gotSB != startByte) {
+                        logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + 0);
                     }
 
                     if (endByte <= 0) {
@@ -949,10 +951,6 @@ abstract public class DownloadInterface {
 
     protected PluginForHost plugin;
 
-    // private boolean abortByError = false;
-
-    private long preBytes = 0;
-
     private int readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
 
     private int requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
@@ -978,6 +976,8 @@ abstract public class DownloadInterface {
     private boolean fileSizeVerified = false;
 
     private boolean connected;
+
+    private boolean firstChunkRangeless;
 
     // public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink,
     // HTTPConnection urlConnection) {
@@ -1013,6 +1013,13 @@ abstract public class DownloadInterface {
 
     }
 
+    /**
+     * Es wird ein headrequest gemacht um die genaue dateigröße zu ermitteln
+     * 
+     * @return
+     * @throws IOException
+     * @throws PluginException
+     */
     public long head() throws IOException, PluginException {
         Request head = request.toHeadRequest();
 
@@ -1023,15 +1030,62 @@ abstract public class DownloadInterface {
 
             logger.finer("Got filesze from Headrequest: " + head.getContentLength() + " bytes");
             downloadLink.setDownloadSize(fileSize = head.getContentLength());
+            String name = Plugin.getFileNameFromDispositionHeader(head.getHttpConnection().getHeaderField("content-disposition"));
+            if(name!=null) this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
             this.setFileSizeVerified(true);
         }
         return fileSize;
     }
 
+    /**
+     * Diese Funktion macht einen Request mit absichtlich falschen Range
+     * Headern. Es soll ein 416 Fehler Provoziert werden, der die Dateigröße
+     * zurückgibt, aber nicht die daten selbst DieFunktion dient zur ermittlung
+     * der genauen dateigröße
+     * 
+     * @return
+     * @throws IOException
+     * @throws PluginException
+     */
+    public long headFake(String value) throws IOException, PluginException {
+        request.getHeaders().put("Range", value == null ? "bytes=" : value);
+
+        request.connect();
+
+        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+
+        if (request.getHttpConnection().getResponseCode() != 416) {
+
+            logger.severe("Fake head request failed!!!");
+            request.getHttpConnection().disconnect();
+        }
+
+        String name = Plugin.getFileNameFromDispositionHeader(request.getHttpConnection().getHeaderField("content-disposition"));
+        if(name!=null) this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+        String range = request.getHttpConnection().getHeaderField("Content-Range");
+        String length = new Regex(range, ".*?\\/(\\d+)").getMatch(0);
+        long size = Long.parseLong(length);
+        downloadLink.setDownloadSize(fileSize = size);
+        this.setFileSizeVerified(true);
+        return fileSize;
+    }
+
+    /**
+     * Gibt zurück ob die Dateigröße 100% richtig ermittelt werden konnte
+     * 
+     * @return
+     */
     public boolean isFileSizeVerified() {
         return fileSizeVerified;
     }
 
+    /**
+     * darf NUR dann auf true gesetzt werden, wenn die dateigröße 100% richtig
+     * ist!
+     * 
+     * @param fileSizeVerified
+     * @throws PluginException
+     */
     public void setFileSizeVerified(boolean fileSizeVerified) throws PluginException {
         this.fileSizeVerified = fileSizeVerified;
         if (fileSize == 0 && fileSizeVerified) {
@@ -1066,7 +1120,6 @@ abstract public class DownloadInterface {
         if (chunks > 0) {
 
             setChunkNum(chunks);
-            logger.info("Resumeable with " + chunks + " chunks");
 
             return true;
         }
@@ -1084,54 +1137,27 @@ abstract public class DownloadInterface {
 
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
         this.connected = true;
-        long[] chunkProgress = downloadLink.getChunksProgress();
+
         if (this.isResume() && this.checkResumabled()) {
-            // TODO: endrange prüfen
-            if (this.isFileSizeVerified()) {
-                request.getHeaders().put("Range", "bytes=" + (chunkProgress[0] + 1) + "-" + ((fileSize / chunkProgress.length)));
 
-            } else {
-                request.getHeaders().put("Range", chunkProgress.length > 1 ? "bytes=" + (chunkProgress[0] + 1) + "-" + (chunkProgress[1] + 1) : "bytes=" + (chunkProgress[0] + 1) + "-");
-
-            }
-            request.connect();
+            connectResumable();
         } else {
-
-            if (downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1) {
-                // Korrigiere chunk num
-                int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
-                setChunkNum(Math.min(tmp, plugin.getFreeConnections()));
-                if (tmp != getChunkNum()) {
-                    logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
-                    setChunkNum(tmp);
-                }
-
-                long part = downloadLink.getDownloadSize() / this.getChunkNum();
-                request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
-                request.connect();
-                if (request.getHttpConnection().getRange() == null) {
-                    logger.warning("No Chunkload Support");
-                    setChunkNum(1);
-                } else {
-                    if (request.getHttpConnection().getRange()[0] != 0) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
-                    if (request.getHttpConnection().getRange()[1] < (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-
-                    }
-                    if (request.getHttpConnection().getRange()[1] == request.getHttpConnection().getRange()[2] - 1 && getChunkNum() > 1) {
-                        logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-
-                    } else if (request.getHttpConnection().getRange()[1] > (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
-
-                    }
-
-                }
+            int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
+            tmp = Math.min(tmp, plugin.getFreeConnections());
+            if (tmp != getChunkNum()) {
+                logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
+                setChunkNum(tmp);
+            }
+            if (downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1 && !this.isFirstChunkRangeless()) {
+                connectFirstRange();
             } else {
+                request.getHeaders().remove("Range");
                 request.connect();
             }
-        }
 
+        }
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
-        if (request.getLocation() != null) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED,DownloadInterface.ERROR_REDIRECTED); }
+        if (request.getLocation() != null) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED); }
 
         connection = request.getHttpConnection();
         if (connection.getRange() != null) {
@@ -1147,10 +1173,65 @@ abstract public class DownloadInterface {
             }
 
         }
-        this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+        
+        String name = Plugin.getFileNameFromDispositionHeader(connection.getHeaderField("content-disposition"));
+        if(name!=null) this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
         fileSize = downloadLink.getDownloadSize();
 
         return connection;
+    }
+
+   
+
+    private void connectFirstRange() throws IOException {
+        long part = downloadLink.getDownloadSize() / this.getChunkNum();
+        request.getHeaders().put("Range", "bytes=" + (0) + "-" + (part - 1));
+        request.connect();
+        if (request.getHttpConnection().getResponseCode() == 416) {
+            logger.warning("HTTP/1.1 416 Requested Range Not Satisfiable");
+            if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+            throw new IllegalStateException("HTTP/1.1 416 Requested Range Not Satisfiable");
+
+        } else if (request.getHttpConnection().getRange() == null) {
+            logger.warning("No Chunkload");
+            setChunkNum(1);
+        } else {
+            if (request.getHttpConnection().getRange()[0] != 0) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
+            if (request.getHttpConnection().getRange()[1] < (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
+            if (request.getHttpConnection().getRange()[1] == request.getHttpConnection().getRange()[2] - 1 && getChunkNum() > 1) {
+                logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+
+            } else if (request.getHttpConnection().getRange()[1] > (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
+
+            }
+
+        }
+
+    }
+
+    private void connectResumable() throws IOException {
+        // TODO: endrange prüfen
+
+        long[] chunkProgress = downloadLink.getChunksProgress();
+        String start, end;
+        start = end = "";
+
+        if (this.isFileSizeVerified()) {
+            start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
+            end = (fileSize / chunkProgress.length) + "";
+
+        } else {
+            start = chunkProgress[0] == 0 ? "0" : (chunkProgress[0] + 1) + "";
+            end = chunkProgress.length > 1 ? (chunkProgress[1] + 1) + "" : "";
+
+        }
+        if (this.isFirstChunkRangeless() && start.equals("0")) {
+            request.getHeaders().remove("Range");
+        } else {
+            request.getHeaders().put("Range", "bytes=" + start + "-" + end);
+        }
+        request.connect();
+
     }
 
     /**
@@ -1344,11 +1425,6 @@ abstract public class DownloadInterface {
         return -1;
     }
 
-    private long getPreBytes(Chunk chunk) {
-        if (chunk.getID() != 0 || chunk.startByte > 0) { return 0; }
-        return preBytes;
-    }
-
     /**
      * Gibt den aktuellen readtimeout zurück
      * 
@@ -1514,19 +1590,6 @@ abstract public class DownloadInterface {
     // }
     // return overhead;
     // }
-
-    /**
-     * Machne Hoster wollen das resumen erlauben, aber chunkload verbieten.
-     * Deshalb akzeptieren sie keine range:0-** Um Trotzdem Chunkload nutzen zu
-     * können werden die ersten bytes normal geladen. Und der rest normal über
-     * chunks.
-     * 
-     * @param i
-     */
-    public void setLoadPreBytes(long i) {
-        preBytes = i;
-
-    }
 
     /**
      * Setzt den aktuellen readtimeout(nur vor dem dl start)
@@ -1783,6 +1846,21 @@ abstract public class DownloadInterface {
     public Request getRequest() {
         // TODO Auto-generated method stub
         return this.request;
+    }
+
+    /**
+     * Setzt man diesen Wert auf true, so wird der erste Chunk nicht per ranges
+     * geladen. d.h. es gibt keinen 0-...range
+     * 
+     * @param b
+     */
+    public void setFirstChunkRangeless(boolean b) {
+        firstChunkRangeless = b;
+
+    }
+
+    public boolean isFirstChunkRangeless() {
+        return firstChunkRangeless;
     }
 
 }

@@ -198,6 +198,7 @@ public class RAFDownload extends DownloadInterface {
 
             }
             DownloadLink sfv;
+            String md5 = JDUtilities.getLocalHash(new File(downloadLink.getFileOutput()));
             if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false) && (sfv = downloadLink.getFilePackage().getSFV()) != null) {
                 if (sfv.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     sfv.getLinkStatus().setStatusText(JDLocale.L("system.download.doCRC", "CRC-Check running"));
@@ -230,6 +231,10 @@ public class RAFDownload extends DownloadInterface {
                     }
                 }
 
+            }else if(JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_DO_CRC, false)){
+                
+                
+                
             }
         } catch (Exception e) {
             e.printStackTrace();

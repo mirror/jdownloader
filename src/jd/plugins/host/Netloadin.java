@@ -297,11 +297,14 @@ public class Netloadin extends PluginForHost {
 
         } else {
             con = br.createGetRequest(null);
+          
             dl = RAFDownload.download(downloadLink, con, true, 0);
+            dl.headFake(null);
+            dl.setFirstChunkRangeless(true);
             dl.connect(br);
         }
 
-        if (!dl.getConnection().isContentDisposition()&&dl.getConnection().getResponseCode()!=206) {
+        if (!dl.getConnection().isContentDisposition()&&dl.getConnection().getResponseCode()!=206&&dl.getConnection().getResponseCode()!=416) {
 
             // Serverfehler
             if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, "Server:Could not follow Link");
