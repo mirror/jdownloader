@@ -1,14 +1,14 @@
 package jd.router.upnp;
 
 /******************************************************************
-*
-*	CyberUPnP for Java
-*
-*	Copyright (C) Satoshi Konno 2002
-*
-*	File : ServicePane.java
-*
-******************************************************************/
+ *
+ *	CyberUPnP for Java
+ *
+ *	Copyright (C) Satoshi Konno 2002
+ *
+ *	File : ServicePane.java
+ *
+ ******************************************************************/
 
 import java.awt.BorderLayout;
 import java.awt.Frame;
@@ -20,87 +20,81 @@ import javax.swing.JPanel;
 
 import org.cybergarage.upnp.Service;
 
-public class ServicePane extends JPanel  implements ActionListener
-{
-	private CtrlPoint ctrlPoint;
-	private Service service;
-	private ServiceTable serviceTable;
-	private JButton subscribeButton;
-	private JButton unsubscribeButton;
+public class ServicePane extends JPanel implements ActionListener {
+    private static final long serialVersionUID = 1L;
+    private CtrlPoint ctrlPoint;
+    private Service service;
+    private ServiceTable serviceTable;
+    private JButton subscribeButton;
+    private JButton unsubscribeButton;
 
-	////////////////////////////////////////////////
-	//	Constructor
-	////////////////////////////////////////////////
-	
-	public ServicePane(CtrlPoint ctrlPoint, Service service)
-	{
-		setLayout(new BorderLayout());
+    // //////////////////////////////////////////////
+    // Constructor
+    // //////////////////////////////////////////////
 
-		this.ctrlPoint = ctrlPoint;
-		this.service = service;
-				
-		JPanel tablePane = new JPanel();
-		tablePane.setLayout(new BorderLayout());
-		serviceTable = new ServiceTable(service);
-		tablePane.add(new TableComp(serviceTable), BorderLayout.CENTER);
-		add(tablePane, BorderLayout.CENTER);
-		
-		JPanel buttonPane = new JPanel();
-		subscribeButton = new JButton("Subscribe");
-		buttonPane.add(subscribeButton);
-		subscribeButton.addActionListener(this);
-		unsubscribeButton = new JButton("Unsubscribe");
-		buttonPane.add(unsubscribeButton);
-		unsubscribeButton.addActionListener(this);
-		add(buttonPane, BorderLayout.SOUTH);
-	}
+    public ServicePane(CtrlPoint ctrlPoint, Service service) {
+        setLayout(new BorderLayout());
 
-	////////////////////////////////////////////////
-	//	Frame
-	////////////////////////////////////////////////
+        this.ctrlPoint = ctrlPoint;
+        this.service = service;
 
-	private Frame getFrame()
-	{
-		return (Frame)getRootPane().getParent();
-	}
+        JPanel tablePane = new JPanel();
+        tablePane.setLayout(new BorderLayout());
+        serviceTable = new ServiceTable(service);
+        tablePane.add(new TableComp(serviceTable), BorderLayout.CENTER);
+        add(tablePane, BorderLayout.CENTER);
 
-	////////////////////////////////////////////////
-	//	Member
-	////////////////////////////////////////////////
+        JPanel buttonPane = new JPanel();
+        subscribeButton = new JButton("Subscribe");
+        buttonPane.add(subscribeButton);
+        subscribeButton.addActionListener(this);
+        unsubscribeButton = new JButton("Unsubscribe");
+        buttonPane.add(unsubscribeButton);
+        unsubscribeButton.addActionListener(this);
+        add(buttonPane, BorderLayout.SOUTH);
+    }
 
-	public Service getService() {
-		return service;
-	}
+    // //////////////////////////////////////////////
+    // Frame
+    // //////////////////////////////////////////////
 
-	public ServiceTable getTable() {
-		return serviceTable;
-	}
+    private Frame getFrame() {
+        return (Frame) getRootPane().getParent();
+    }
 
-	public JButton getButton() {
-		return subscribeButton;
-	}
+    // //////////////////////////////////////////////
+    // Member
+    // //////////////////////////////////////////////
 
-	////////////////////////////////////////////////
-	//	servicePerformed
-	////////////////////////////////////////////////
+    public Service getService() {
+        return service;
+    }
 
-	public void actionPerformed(ActionEvent e)
-	{
-		if (e.getSource() == subscribeButton) {
-			boolean subRes;
-			if (service.hasSID() == true) {
-				String sid = service.getSID();
-				subRes = ctrlPoint.subscribe(service, sid);
-			}
-			else
-				subRes = ctrlPoint.subscribe(service);
-			ctrlPoint.printConsole("subscribe : " + subRes +" (" + service.getSID() + ")");
-		}
-		else if (e.getSource() == unsubscribeButton) {
-			boolean subRes = ctrlPoint.unsubscribe(service);
-			ctrlPoint.printConsole("unsubscribe : " + subRes);
-		}
-	}
+    public ServiceTable getTable() {
+        return serviceTable;
+    }
+
+    public JButton getButton() {
+        return subscribeButton;
+    }
+
+    // //////////////////////////////////////////////
+    // servicePerformed
+    // //////////////////////////////////////////////
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == subscribeButton) {
+            boolean subRes;
+            if (service.hasSID() == true) {
+                String sid = service.getSID();
+                subRes = ctrlPoint.subscribe(service, sid);
+            } else
+                subRes = ctrlPoint.subscribe(service);
+            ctrlPoint.printConsole("subscribe : " + subRes + " (" + service.getSID() + ")");
+        } else if (e.getSource() == unsubscribeButton) {
+            boolean subRes = ctrlPoint.unsubscribe(service);
+            ctrlPoint.printConsole("unsubscribe : " + subRes);
+        }
+    }
 
 }
-

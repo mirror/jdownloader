@@ -1,68 +1,62 @@
 package jd.router.upnp;
 
 /******************************************************************
-*
-*	CyberUPnP for Java
-*
-*	Copyright (C) Satoshi Konno 2002
-*
-*	File : TableModel.java
-*
-******************************************************************/
+ *
+ *	CyberUPnP for Java
+ *
+ *	Copyright (C) Satoshi Konno 2002
+ *
+ *	File : TableModel.java
+ *
+ ******************************************************************/
 
 import javax.swing.table.DefaultTableModel;
 
 import org.cybergarage.xml.Node;
 
-public class TableModel extends DefaultTableModel
-{
-	public TableModel()
-	{
-	}
+public class TableModel extends DefaultTableModel {
+    private static final long serialVersionUID = 1L;
 
-	public TableModel(Node node)
-	{
-		addColumn("element");
-		addColumn("value");
-		set(node);
-	}
+    public TableModel() {
+    }
 
-	////////////////////////////////////////////////
-	//	set
-	////////////////////////////////////////////////
+    public TableModel(Node node) {
+        addColumn("element");
+        addColumn("value");
+        set(node);
+    }
 
-	void set(Node node)
-	{
-		int nElem = node.getNNodes();
-		for (int n=0; n<nElem; n++) {
-			Node elem = node.getNode(n);
-			if (elem.hasNodes() == true)
-				continue;
-			addRow(elem.getName(), elem.getValue());
-		}
-	}
+    // //////////////////////////////////////////////
+    // set
+    // //////////////////////////////////////////////
 
-	////////////////////////////////////////////////
-	//	addRows
-	////////////////////////////////////////////////
+    void set(Node node) {
+        int nElem = node.getNNodes();
+        for (int n = 0; n < nElem; n++) {
+            Node elem = node.getNode(n);
+            if (elem.hasNodes() == true) continue;
+            addRow(elem.getName(), elem.getValue());
+        }
+    }
 
-	private String rowStrs[] = new String[2];
+    // //////////////////////////////////////////////
+    // addRows
+    // //////////////////////////////////////////////
 
-	public void addRow(String str1, String str2) 
-	{
-		rowStrs[0] = str1;
-		rowStrs[1] = str2;
-		addRow(rowStrs);
-	}
+    private String rowStrs[] = new String[2];
 
-	////////////////////////////////////////////////
-	//	isCellEditable
-	////////////////////////////////////////////////
-	
-	public boolean isCellEditable(int row, int col)
-	{
-		return false;
-	}
+    public void addRow(String str1, String str2) {
+        rowStrs[0] = str1;
+        rowStrs[1] = str2;
+        addRow(rowStrs);
+    }
+
+    // //////////////////////////////////////////////
+    // isCellEditable
+    // //////////////////////////////////////////////
+
+    public boolean isCellEditable(int row, int col) {
+        return false;
+    }
 
 }
-

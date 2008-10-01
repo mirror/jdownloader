@@ -16,19 +16,13 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class YourFilesBizFolder extends PluginForDecrypt {
 
@@ -41,32 +35,20 @@ public class YourFilesBizFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(parameter));
-            if (reqinfo.getHtmlCode().contains("Ordner Passwort")) {
-                String url = parameter.substring(0, parameter.lastIndexOf("/") + 1) + new Regex(reqinfo.getHtmlCode(), "action\\=(folders\\.php\\?fid\\=.*)method\\=post>").getMatch(0).trim();
-                String cookie = reqinfo.getCookie();
-                String password = getUserInput(null, param);
-                String post = "act=login&password=" + password + "&login=Einloggen";
-                HashMap<String, String> reqinfoHeaders = new HashMap<String, String>();
-                reqinfoHeaders.put("Content-Type", "application/x-www-form-urlencoded");
-
-                reqinfo = HTTP.postRequest(new URL(url), cookie, parameter, reqinfoHeaders, post, false);
-
-                url = reqinfo.getConnection().getHeaderField("Location");
-                reqinfo = HTTP.getRequest(new URL(url), reqinfo.getCookie(), parameter, false);
-            }
-
-            String ids[][] = new Regex(reqinfo.getHtmlCode(), "href='http://yourfiles\\.biz/\\?d=(.*?)'", Pattern.CASE_INSENSITIVE).getMatches();
-            progress.setRange(ids.length);
-            for (String[] id : ids) {
-                decryptedLinks.add(createDownloadlink("http://yourfiles.biz/?d=" + id[0]));
-                progress.increase(1);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        if (br.containsHTML("Ordner Passwort")) {
+            String password = getUserInput(null, param);
+            br.postPage(parameter, "act=login&password=" + password + "&login=Einloggen");
         }
+
+        String links[] = br.getRegex("href='(http://yourfiles\\.biz/\\?d=.*?)'").getColumn(0);
+        progress.setRange(links.length);
+        for (String link : links) {
+            decryptedLinks.add(createDownloadlink(link));
+            progress.increase(1);
+        }
+
         return decryptedLinks;
     }
 
