@@ -17,22 +17,17 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class Secured extends PluginForDecrypt {
     class Cypher {
@@ -256,10 +251,6 @@ public class Secured extends PluginForDecrypt {
 
     static private final String AJAX_URL = "http://secured.in/ajax-handler.php";
 
-    static private String DOWNLOAD_CMD = "downloaditfgh4w5z4e5";
-
-    static private final String HOST = "secured.in";
-
     static private final String JS_URL = "http://secured.in/scripts/main_final.js";
 
     static private final Pattern PAT_CAPTCHA = Pattern.compile("<img src=\"(captcha-[^\"]*)");
@@ -268,29 +259,8 @@ public class Secured extends PluginForDecrypt {
 
     static private final Pattern PAT_FILE_ID = Pattern.compile("accessDownload\\([^']*'([^']*)");
 
-    private String cryptedLink;
-
     public Secured(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public String decryptId(String id) throws IOException {
-
-        HashMap<String, String> request = new HashMap<String, String>();
-        request.put("Accept", "text/javascript, text/html, application/xml, text/xml, */*");
-        request.put("Accept-Language", "de-de,de;q=0.8,en-us;q=0.5,en;q=0.3");
-        request.put("Accept-Encoding", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        request.put("Keep-Alive", "300");
-        request.put("Connection", "keep-alive");
-        request.put("X-Requested-With", "XMLHttpRequest");
-        request.put("X-Prototype-Version", "1.5.0");
-        request.put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-        request.put("Cache-Control", "no-cache");
-        request.put("Pragma", "no-cache");
-
-        RequestInfo info = HTTP.postRequest(new URL(AJAX_URL), null, cryptedLink, request, "cmd=" + DOWNLOAD_CMD + "&download_id=" + id, true);
-
-        return new Cypher().cypher(info.getHtmlCode());
     }
 
     @Override
@@ -299,44 +269,28 @@ public class Secured extends PluginForDecrypt {
         String parameter = param.toString();
 
         try {
-            RequestInfo requestInfo = HTTP.getRequest(new URL(JS_URL));
-            DOWNLOAD_CMD = new Regex(requestInfo.getHtmlCode(), PAT_DOWNLOAD_CMD).getMatch(5, 0);
+            br.getPage(JS_URL);
+            String dlCmd = br.getRegex(PAT_DOWNLOAD_CMD).getMatch(5, 0);
 
-            progress.setRange(1);
-            URL url = new URL(parameter);
-            requestInfo = HTTP.getRequest(url);
+            br.getPage(parameter);
+            while (br.getRegex(PAT_CAPTCHA).matches()) {
 
-            String html = requestInfo.getHtmlCode();
-            File captchaFile = null;
-            String capTxt = null;
-            while (new Regex(html, PAT_CAPTCHA).matches()) {
-                if (captchaFile != null && capTxt != null) {
-                    JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
-                }
+                String captchaAdress = "http://secured.in/" + br.getRegex(PAT_CAPTCHA).getMatch(0);
+                File captchaFile = getLocalCaptchaFile(this);
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaAdress));
+                String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
 
-                logger.finest("Captcha Protected");
-                String captcha = new Regex(html, PAT_CAPTCHA).getMatch(0);
-                String capHash = captcha.substring(8);
-                capHash = capHash.substring(0, capHash.length() - 4);
-                String captchaAdress = "http://" + HOST + "/" + captcha;
-                captchaFile = getLocalCaptchaFile(this);
-                Browser.download(captchaFile, captchaAdress);
+                Form captchaForm = br.getForm(0);
+                captchaForm.put("captcha_key", captchaCode.toUpperCase());
+                br.submitForm(captchaForm);
 
-                capTxt = Plugin.getCaptchaCode(captchaFile, this, param);
-                String postData = "captcha_key=" + ((capTxt != null) ? capTxt.toUpperCase() : capTxt) + "&captcha_hash=" + capHash;
-
-                requestInfo = HTTP.postRequest(url, postData);
-                html = requestInfo.getHtmlCode();
-            }
-            if (captchaFile != null && capTxt != null) {
-                JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, true);
             }
 
             // Alle File ID aus dem HTML-Code ziehen
-            String[] ids = new Regex(html, PAT_FILE_ID).getColumn(0);
+            String[] ids = br.getRegex(PAT_FILE_ID).getColumn(0);
             progress.setRange(ids.length);
             for (String id : ids) {
-                String fileUrl = decryptId(id);
+                String fileUrl = new Cypher().cypher(br.postPage(AJAX_URL, "cmd=" + dlCmd + "&download_id=" + id));
                 if (fileUrl != null) {
                     fileUrl = fileUrl.trim();
                 } else {
@@ -349,6 +303,7 @@ public class Secured extends PluginForDecrypt {
             logger.warning("Exception: " + e);
             return null;
         }
+
         return decryptedLinks;
     }
 

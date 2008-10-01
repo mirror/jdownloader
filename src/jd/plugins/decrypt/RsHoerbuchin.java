@@ -43,7 +43,7 @@ public class RsHoerbuchin extends PluginForDecrypt {
         if (form.getVars().get("uri") != null) {
             dLink = "http://rapidshare." + new Regex(parameter, "in/(\\w{2,3})-").getMatch(0) + Encoding.htmlDecode(form.getVars().get("uri").getValue());
         } else {
-            dLink = br.getForm(0).getAction(null);
+            dLink = form.getAction(null);
         }
         logger.info(dLink);
         decryptedLinks.add(createDownloadlink(dLink));
