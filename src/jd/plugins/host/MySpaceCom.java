@@ -28,7 +28,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class MySpaceCom extends PluginForHost {
-    private static final String CODER = "ToKaM";
+    private static final String CODER = "JD-Team";
 
     private static final String AGB_LINK = "http://www.myspace.com/index.cfm?fuseaction=misc.terms";
 

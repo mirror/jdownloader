@@ -34,7 +34,7 @@ public class ClipfishDe extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    private static final String CODER = "ToKaM";
+    private static final String CODER = "JD-Team";
 
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
 

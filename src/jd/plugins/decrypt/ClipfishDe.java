@@ -35,7 +35,7 @@ public class ClipfishDe extends PluginForDecrypt {
     private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?");
     private static final Pattern PATTERN_FLV_FILE = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_TITEL = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
-    private static final String CODER = "ToKaM";
+    private static final String CODER = "JD-Team";
 
     public ClipfishDe(PluginWrapper wrapper) {
         super(wrapper);

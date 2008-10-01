@@ -28,11 +28,10 @@ import jd.plugins.PluginForDecrypt;
 
 public class Sexuriacom extends PluginForDecrypt {
 
-    private static final Pattern patternSupported_Main = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternSupported_Crypt = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternSupportetRedirect = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
-
-    private Browser br;
+    private static final Pattern PATTEREN_SUPPORTED_MAIN = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_CRYPT = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_REDIRECT = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
+    private static final String CODER = "JD-Team";
 
     public Sexuriacom(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,18 +44,17 @@ public class Sexuriacom extends PluginForDecrypt {
 
         String downloadId;
         String password = null;
-        br = new Browser();
         br.setFollowRedirects(false);
 
-        if (new Regex(parameter, patternSupported_Main).matches()) {
+        if (new Regex(parameter, PATTEREN_SUPPORTED_MAIN).matches()) {
             String page = br.getPage(parameter);
             String Links[] = new Regex(page, "href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE).getColumn(0);
             for (String link : Links) {
                 decryptedLinks.add(createDownloadlink("http://sexuria.com/dl_links_" + link));
             }
             return decryptedLinks;
-        } else if (new Regex(parameter, patternSupported_Crypt).matches()) {
-            downloadId = new Regex(parameter, patternSupported_Crypt).getMatch(0);
+        } else if (new Regex(parameter, PATTERN_SUPPORTED_CRYPT).matches()) {
+            downloadId = new Regex(parameter, PATTERN_SUPPORTED_CRYPT).getMatch(0);
             String page = br.getPage("http://sexuria.com/Pornos_Kostenlos_info_" + downloadId + ".html");
             password = new Regex(page, "<strong>Passwort: </strong></div></td>.*?bgcolor=\"#EFEFEF\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL).getMatch(0);
             page = br.getPage(parameter);
@@ -69,8 +67,8 @@ public class Sexuriacom extends PluginForDecrypt {
                 logger.info(br.getRedirectLocation());
             }
             return decryptedLinks;
-        } else if (new Regex(parameter, patternSupportetRedirect).matches()) {
-            String id = new Regex(parameter, patternSupportetRedirect).getMatch(0);
+        } else if (new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).matches()) {
+            String id = new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).getMatch(0);
             decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
             System.out.println(decryptedLinks.get(0));
             return decryptedLinks;
@@ -80,7 +78,7 @@ public class Sexuriacom extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "ToKaM";
+        return CODER;
     }
 
     @Override

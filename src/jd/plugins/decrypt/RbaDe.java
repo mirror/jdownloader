@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class RbaDe extends PluginForDecrypt {
 
-    private static final String CODER = "ToKaM";
+    private static final String CODER = "JD-Team";
 
     private static final Pattern BATTLE_REL_PATH = Pattern.compile("(index\\.php\\?ID=4101&(amp;)?BATTLE=\\d+(&sid=\\w+)?)", Pattern.CASE_INSENSITIVE);
 

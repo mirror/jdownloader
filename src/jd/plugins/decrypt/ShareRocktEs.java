@@ -27,9 +27,9 @@ import jd.plugins.PluginForDecrypt;
 
 public class ShareRocktEs extends PluginForDecrypt {
 
-    private static final Pattern patternSupported_go = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternSupported_v = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+", Pattern.CASE_INSENSITIVE);
-
+    private static final Pattern PATTERN_SUPPORTED_GO = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTEREN_SUPPORTED_V = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+", Pattern.CASE_INSENSITIVE);
+    private static final String CODER = "JD-Team";
     public ShareRocktEs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -41,10 +41,10 @@ public class ShareRocktEs extends PluginForDecrypt {
         String page = br.getPage(parameter);
         br.setFollowRedirects(false);
         String[] matches;
-        if (new Regex(parameter, patternSupported_v).matches()) {
+        if (new Regex(parameter, PATTEREN_SUPPORTED_V).matches()) {
             matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getColumn(0);
         } else {
-            String match = new Regex(parameter, patternSupported_go).getMatch(0);
+            String match = new Regex(parameter, PATTERN_SUPPORTED_GO).getMatch(0);
             if (match == null) { return null; }
             matches = new String[] { match };
         }
@@ -76,7 +76,7 @@ public class ShareRocktEs extends PluginForDecrypt {
 
     @Override
     public String getCoder() {
-        return "ToKaM";
+        return CODER;
     }
 
     @Override

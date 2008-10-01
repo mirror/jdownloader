@@ -30,7 +30,7 @@ import jd.plugins.PluginForHost;
 
 public class RbaDe extends PluginForHost {
 
-    private static final String CODER = "ToKaM";
+    private static final String CODER = "JD-Team";
 
     private static final String AGB_LINK = "http://www.r-b-a.de/index.php?ID=3003";
 
