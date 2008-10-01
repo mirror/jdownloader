@@ -16,27 +16,17 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.HTMLParser;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class RsHoerbuchin extends PluginForDecrypt {
-
-    private static final Pattern patternLink_DE = Pattern.compile("http://rs\\.hoerbuch\\.in/de-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_RS = Pattern.compile("http://rs\\.hoerbuch\\.in/com-[\\w]{11}/.*", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_UP = Pattern.compile("http://rs\\.hoerbuch\\.in/u[\\w]{6}.html", Pattern.CASE_INSENSITIVE);
 
     public RsHoerbuchin(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,27 +37,17 @@ public class RsHoerbuchin extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            URL url = new URL(parameter);
-            RequestInfo requestInfo = HTTP.getRequest(url);
-            if (parameter.matches(patternLink_RS.pattern())) {
-                HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                String newURL = "http://rapidshare.com" + Encoding.htmlDecode(fields.get("uri"));
-                decryptedLinks.add(createDownloadlink(newURL));
-            } else if (parameter.matches(patternLink_DE.pattern())) {
-                HashMap<String, String> fields = HTMLParser.getInputHiddenFields(requestInfo.getHtmlCode(), "postit", "starten");
-                String newURL = "http://rapidshare.de" + Encoding.htmlDecode(fields.get("uri"));
-                decryptedLinks.add(createDownloadlink(newURL));
-            } else if (parameter.matches(patternLink_UP.pattern())) {
-                String links[][] = new Regex(requestInfo, Pattern.compile("<form action=\"(.*?)\" method=\"post\" id=\"postit\"", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (String[] element : links) {
-                    decryptedLinks.add(createDownloadlink(element[0]));
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+        br.getPage(parameter);
+        Form form = br.getForm(0);
+        String dLink;
+        if (form.getVars().get("uri") != null) {
+            dLink = "http://rapidshare." + new Regex(parameter, "in/(\\w{2,3})-").getMatch(0) + Encoding.htmlDecode(form.getVars().get("uri").getValue());
+        } else {
+            dLink = br.getForm(0).getAction(null);
         }
+        logger.info(dLink);
+        decryptedLinks.add(createDownloadlink(dLink));
+
         return decryptedLinks;
     }
 

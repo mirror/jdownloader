@@ -30,6 +30,7 @@ import jd.parser.Regex;
  * 
  * @author astaldo
  */
+@Deprecated
 public class RequestInfo {
     private HTTPConnection connection;
     /**

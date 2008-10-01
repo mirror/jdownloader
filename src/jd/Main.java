@@ -51,7 +51,6 @@ import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
-import jd.plugins.decrypt.Serienjunkies;
 import jd.utils.CheckJava;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
@@ -421,7 +420,7 @@ public class Main {
         init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
 
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
-     
+
         init.initPlugins();
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
 

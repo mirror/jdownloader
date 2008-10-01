@@ -874,8 +874,8 @@ public class Browser {
         return new Regex(this, compile);
     }
 
-    public boolean containsHTML(String fileNotFound) {
-        return new Regex(this, fileNotFound).matches();
+    public boolean containsHTML(String regex) {
+        return new Regex(this, regex).matches();
     }
 
     public String loadConnection(HTTPConnection con) throws IOException {
@@ -1146,7 +1146,7 @@ public class Browser {
 
                 dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
                 try {
-                dl.connect(this);
+                    dl.connect(this);
                 } catch (PluginException e2) {
                     e.printStackTrace();
                     return dl;

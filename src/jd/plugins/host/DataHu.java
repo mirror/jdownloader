@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class DataHu extends PluginForHost {
 
@@ -68,10 +67,9 @@ public class DataHu extends PluginForHost {
         getFileInformation(downloadLink);
         String link = br.getRegex(Pattern.compile("window.location.href='(.*?)'", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
+        // int free = this.waitForFreeConnection(downloadLink);
 
-//        int free = this.waitForFreeConnection(downloadLink);
-
-        br.openDownload(downloadLink, link,true,1).startDownload();
+        br.openDownload(downloadLink, link, true, 1).startDownload();
 
     }
 

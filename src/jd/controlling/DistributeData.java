@@ -16,7 +16,6 @@
 
 package jd.controlling;
 
-import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,12 +26,11 @@ import java.util.logging.Logger;
 import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
+import jd.http.Browser;
 import jd.parser.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDUtilities;
 
 /**
@@ -115,7 +113,7 @@ public class DistributeData extends ControlBroadcaster {
     }
 
     static public boolean hasPluginfor(String tmp) {
-        String data=tmp;
+        String data = tmp;
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return false;
         Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
         while (iteratorDecrypt.hasNext()) {
@@ -392,15 +390,12 @@ public class DistributeData extends ControlBroadcaster {
                 data = "";
             }
 
+            Browser br = new Browser();
             for (String url : urls) {
 
                 try {
-
-                    RequestInfo requestInfo = HTTP.getRequest(new URL(url));
-                    data += requestInfo.getHtmlCode() + " ";
-
+                    data += br.getPage(url) + " ";
                 } catch (Exception e) {
-
                 }
 
             }

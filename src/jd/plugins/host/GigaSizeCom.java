@@ -27,7 +27,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class GigaSizeCom extends PluginForHost {
@@ -58,7 +57,7 @@ public class GigaSizeCom extends PluginForHost {
                 logger.severe("User account " + getPluginConfig().getStringProperty("FREE_USER") + "not valid.");
                 getPluginConfig().setProperty("USE_FREE_ACCOUNT", false);
                 getPluginConfig().save();
-            } 
+            }
         }
         if (forms.length < 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         Form captchaForm = forms[1];
@@ -66,8 +65,8 @@ public class GigaSizeCom extends PluginForHost {
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
         Form download = br.getFormbyID("formDownload");
-        
-        dl=br.openDownload(downloadLink, download);        
+
+        dl = br.openDownload(downloadLink, download);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();
     }

@@ -46,7 +46,6 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.decrypt.Serienjunkies;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;
@@ -648,8 +647,7 @@ public class JDInit {
         new DecryptPluginWrapper("scum.in", "ScumIn", "http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+");
         new DecryptPluginWrapper("secured.in", "Secured", "http://[\\w\\.]*?secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html");
         new DecryptPluginWrapper("se-cur.net", "SeCurNet", "http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+");
-      
-     
+
         new DecryptPluginWrapper("Serienjunkies.org", "Serienjunkies", new String(), PluginWrapper.LOAD_ON_INIT);
         new DecryptPluginWrapper("sexuria.com", "Sexuriacom", "http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html|http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+");
         new DecryptPluginWrapper("sharebank.ws", "SharebankWs", "http://[\\w\\.]*?sharebank\\.ws/\\?v\\=[a-zA-Z0-9]+");
