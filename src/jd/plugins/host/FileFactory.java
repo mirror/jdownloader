@@ -26,7 +26,6 @@ import jd.captcha.LetterComperator;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -89,9 +88,9 @@ public class FileFactory extends PluginForHost {
         while (i-- > 0) {
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
-     
+
             captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
-         
+
             if (this.getLastCaptcha() == null) continue;
             double worst = 0.0;
             for (LetterComperator l : this.getLastCaptcha().getLetterComperators()) {
@@ -113,11 +112,11 @@ public class FileFactory extends PluginForHost {
 
         // Match die verbindung auf, Alle header werden ausgetauscht, aber keine
         // Daten geladen
-       dl=RAFDownload.download(parameter, br.createPostRequest(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), ""));
-       dl.connect(br);
-       // Prüft ob content disposition header da sind
+        dl = RAFDownload.download(parameter, br.createPostRequest(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), ""));
+        dl.connect(br);
+        // Prüft ob content disposition header da sind
         if (br.getHttpConnection().isContentDisposition()) {
-          
+
             dl.startDownload();
         } else {
             // Falls nicht wird die html seite geladen
@@ -132,9 +131,11 @@ public class FileFactory extends PluginForHost {
         }
 
     }
+
     public int getMaxRetries() {
         return 20;
     }
+
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
@@ -208,7 +209,7 @@ public class FileFactory extends PluginForHost {
             return;
         }
         br.setCookiesExclusive(true);
-//        br.setDebug(true);
+        // br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage("http://filefactory.com");
 
@@ -223,9 +224,8 @@ public class FileFactory extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.setFollowRedirects(false);
         br.openGetConnection(downloadLink.getDownloadURL());
-        dl=br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);      
+        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
 
-        
         if (dl.getConnection().getHeaderField("Content-Disposition") == null) {
             br.followConnection();
 
@@ -238,12 +238,11 @@ public class FileFactory extends PluginForHost {
                 return;
             } else {
                 String red = br.getRegex("Description: .*?p style=.*?><a href=\"(.*?)\".*?>.*?Click here to begin your download").getMatch(0);
-               logger.finer("Indirect download");
-                dl=br.openDownload(downloadLink, red, true, 0);      
-
+                logger.finer("Indirect download");
+                dl = br.openDownload(downloadLink, red, true, 0);
 
             }
-        }else{
+        } else {
             logger.finer("DIRECT download");
         }
         dl.startDownload();

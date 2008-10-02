@@ -16,12 +16,10 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -29,70 +27,71 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 public class RappersIn extends PluginForDecrypt {
-    private static final String HOST  = "rappers.in";
     private static final String CODER = "JD-Team";
 
-    private static final Pattern PATTERN_SUPPORTED 	= Pattern.compile("(http://[\\w\\.]*?rappers\\.in/.+)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_USIDERID  	= Pattern.compile("artist\\.php\\?action=add2favs&amp;id=(\\d+)");
-    private static final Pattern PATTERN_NICKNAME 	= Pattern.compile("<title>rappers.in Artistpage von (.+?)</title>");
-    private static final Pattern PATTERN_PAGE_INFOS = Pattern.compile(PATTERN_USIDERID.pattern()+"|"+PATTERN_NICKNAME);
-    private static final Pattern PATTERN_DURL    	= Pattern.compile("<filename>(.+?)</filename>");
-    private static final Pattern PATTERN_TITEL		= Pattern.compile("<title>(.+?)</title>");
-    public RappersIn(PluginWrapper wrapper){
+    private static final Pattern PATTERN_USIDERID = Pattern.compile("artist\\.php\\?action=add2favs&amp;id=(\\d+)");
+    private static final Pattern PATTERN_NICKNAME = Pattern.compile("<title>rappers.in Artistpage von (.+?)</title>");
+    private static final Pattern PATTERN_PAGE_INFOS = Pattern.compile(PATTERN_USIDERID.pattern() + "|" + PATTERN_NICKNAME);
+    private static final Pattern PATTERN_DURL = Pattern.compile("<filename>(.+?)</filename>");
+    private static final Pattern PATTERN_TITEL = Pattern.compile("<title>(.+?)</title>");
+
+    public RappersIn(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        System.out.println("url: "+ param.getCryptedUrl());
+
         String page = br.getPage(param.getCryptedUrl());
-        // Komplexes Parsingkonstrukt, da in einem durchlauf geparst werden soll!
+        // Komplexes Parsingkonstrukt, da in einem durchlauf geparst werden
+        // soll!
         Regex pageInfos = new Regex(page, PATTERN_PAGE_INFOS);
-        String nick   = null;
+        String nick = null;
         String userId = null;
-        for(String s:pageInfos.getRow(0)){
-            if (s!=null) {
+        for (String s : pageInfos.getRow(0)) {
+            if (s != null) {
                 nick = s;
                 break;
             }
         }
-        for(String s:pageInfos.getRow(1)){
-            if (s!=null) {
+        for (String s : pageInfos.getRow(1)) {
+            if (s != null) {
                 userId = s;
                 break;
             }
         }
-        //Next step, laden & parsen der playlist.xml
-        if (userId!=null) {
+        // Next step, laden & parsen der playlist.xml
+        if (userId != null) {
             StringBuilder sb = new StringBuilder("http://www.rappers.in/artistplaylist_main-");
             sb.append(userId);
             sb.append("-1808.xml?281");
             page = br.getPage(sb.toString());
-            String[] dUrls = new Regex(page,PATTERN_DURL).getColumn(0);
-            String[] titel = new Regex(page,PATTERN_TITEL).getColumn(0);
-            assert titel.length==dUrls.length:"ungültiges xml";
+            String[] dUrls = new Regex(page, PATTERN_DURL).getColumn(0);
+            String[] titel = new Regex(page, PATTERN_TITEL).getColumn(0);
+            assert titel.length == dUrls.length : "ungültiges xml";
             parseTitelNames(titel, nick);
             FilePackage fp = new FilePackage();
-            fp.setName("rappers.in - "+ nick);
-            for(int i=0;i<dUrls.length;i++){
-                DownloadLink dlLink = createDownloadlink(dUrls[i].replaceAll("http://", "httpRappersIn://").replaceAll("rappers.in","viaRappersIn"));
-                dlLink.setStaticFileName(titel[i]+".mp3");
+            fp.setName("rappers.in - " + nick);
+            for (int i = 0; i < dUrls.length; i++) {
+                DownloadLink dlLink = createDownloadlink(dUrls[i].replaceAll("http://", "httpRappersIn://").replaceAll("rappers.in", "viaRappersIn"));
+                dlLink.setStaticFileName(titel[i] + ".mp3");
                 dlLink.setFilePackage(fp);
                 System.out.println(dlLink.getDownloadURL());
                 decryptedLinks.add(dlLink);
-
 
             }
         }
         return decryptedLinks;
     }
-    private void parseTitelNames(String[] titel, String nick){
+
+    private void parseTitelNames(String[] titel, String nick) {
         for (int i = 0; i < titel.length; i++) {
             titel[i] = titel[i].replaceAll("\\+", " ");
             titel[i] = titel[i].replaceAll("%28", "(");
             titel[i] = titel[i].replaceAll("%29", ")");
             titel[i] = titel[i].replaceAll("%\\d+C", "");
-            if (nick!=null&&!titel[i].contains("-")) {
+            if (nick != null && !titel[i].contains("-")) {
                 titel[i] = nick + " - " + titel[i];
             }
         }
@@ -101,16 +100,6 @@ public class RappersIn extends PluginForDecrypt {
     @Override
     public String getCoder() {
         return CODER;
-    }
-
-    @Override
-    public String getHost() {
-        return HOST;
-    }
-
-    @Override
-    public Pattern getSupportedLinks() {
-        return PATTERN_SUPPORTED;
     }
 
     @Override

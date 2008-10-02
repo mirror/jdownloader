@@ -500,11 +500,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
 
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
         ConfigContainer pws = new ConfigContainer(this, JDLocale.L(LOCALE_PREFIX + "config.passwordtab", "List of passwords"));
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CONTAINER, pws));
-        pws.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig("PASSWORDLIST"), "LIST", JDLocale.L(LOCALE_PREFIX + "config.passwordlist", "List of all passwords. Each line one password")));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, pws));
+        pws.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.L(LOCALE_PREFIX + "config.passwordlist", "List of all passwords. Each line one password")));
 
     }
 
