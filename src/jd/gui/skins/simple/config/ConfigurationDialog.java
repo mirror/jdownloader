@@ -146,9 +146,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         addConfigPanel(ConfigPanelAddons.class, JDTheme.V("gui.images.config.packagemanager"), JDLocale.L("gui.config.tabLables.addons", "Addon manager"));
         addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.V("gui.images.config.container"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
         addConfigPanel(ConfigPanelEventmanager.class, JDTheme.V("gui.images.config.eventmanager", "eventmanager"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
-        // addConfigPanel(ConfigPanelUpdater.class,
-        // JDTheme.V("gui.images.config.updater"),
-        // JDLocale.L("gui.config.tabLables.updater", "Update"));
 
         try {
             tabbedPane.setFont(new Font("Courier", Font.PLAIN, 12));
