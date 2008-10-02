@@ -94,11 +94,6 @@ public class JDShutdown extends PluginOptional {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdshutdown.name", "JDShutdown");
     }
@@ -125,9 +120,10 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public void onExit() {
-//        Wollen wir, dass der Status auch beim "normalen" Beenden resettet wird?
-//        subConfig.setProperty(PROPERTY_ENABLED, false);
-//        subConfig.save();
+        // Wollen wir, dass der Status auch beim "normalen" Beenden resettet
+        // wird?
+        // subConfig.setProperty(PROPERTY_ENABLED, false);
+        // subConfig.save();
     }
 
     public void shutDown() {

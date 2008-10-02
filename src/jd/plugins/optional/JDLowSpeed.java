@@ -153,11 +153,6 @@ public class JDLowSpeed extends PluginOptional {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.jdlowspeed.name", "LowSpeed Detection");
     }

@@ -344,10 +344,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         return menu;
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public String getHost() {
         return JDLocale.L("plugins.optional.httpliveheaderscripter.name", "HTTPLiveHeaderScripter");
     }

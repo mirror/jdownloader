@@ -48,7 +48,6 @@ import jd.utils.JDUtilities;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
-    public static final String CODER = "JD-Team";
     private static final String LOCALE_PREFIX = "plugins.optional.jdunrar.";
 
     public static int getAddonInterfaceVersion() {
@@ -465,11 +464,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             wrapper.start();
         }
 
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

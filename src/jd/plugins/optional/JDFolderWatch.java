@@ -138,11 +138,6 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.folderwatch.name", "JDFolderWatch");
     }

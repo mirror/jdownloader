@@ -201,10 +201,6 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         return null;
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public String getHost() {
         return JDLocale.L("plugins.optional.trayIcon.name", "TrayIcon");
     }

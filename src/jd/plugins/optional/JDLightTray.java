@@ -110,11 +110,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public String getHost() {
         return JDLocale.L("plugins.optional.JDLightTray.name", "JDLightTrayIcon");
     }

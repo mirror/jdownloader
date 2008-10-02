@@ -194,8 +194,15 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForDecrypt.get(table.getSelectedRow()).hasConfig()) {
-            editEntry();
+        if (e.getClickCount() > 1) {
+            int row = table.getSelectedRow();
+            DecryptPluginWrapper dpw = pluginsForDecrypt.get(row);
+            if (!dpw.isLoaded()) {
+                dpw.getPlugin();
+                tableModel.fireTableRowsUpdated(row, row);
+            } else if (dpw.hasConfig()) {
+                editEntry();
+            }
         }
     }
 

@@ -294,8 +294,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsForHost.get(table.getSelectedRow()).hasConfig()) {
-            editEntry();
+        if (e.getClickCount() > 1) {
+            int row = table.getSelectedRow();
+            HostPluginWrapper dpw = pluginsForHost.get(row);
+            if (!dpw.isLoaded()) {
+                dpw.getPlugin();
+                tableModel.fireTableRowsUpdated(row, row);
+            } else if (dpw.hasConfig()) {
+                editEntry();
+            }
         }
     }
 

@@ -732,10 +732,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         return menu;
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public String getHost() {
         return JDLocale.L("plugins.optional.RemoteControl.name", "RemoteControl");
     }

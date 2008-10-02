@@ -22,7 +22,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -46,11 +45,10 @@ import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
-import jd.plugins.HTTP;
 import jd.plugins.PluginOptional;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -59,7 +57,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     public Newsfeeds(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     private class AddAboDialog extends JDialog implements ActionListener {
@@ -255,7 +252,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     private JTextField filterText;
     private JFrame frame;
     private JList list;
-    private String serienjunkiesCookie = "";
     private JLabel statusLabelGetSubscribed;
     private JLabel statusLabelManageFeeds;
 
@@ -403,10 +399,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     private Vector<String[]> getEntries(final String url, final String filter) {
 
         Vector<String[]> vector = new Vector<String[]>();
@@ -415,19 +407,20 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             logger.info("loading " + url);
 
-            RequestInfo requestInfo = HTTP.getRequest(new URL(url));
+            Browser br = new Browser();
+            br.getPage(url);
 
             String patEntry = "";
             String patTitle = "";
             String patLink = "";
 
-            if (requestInfo.containsHTML("<feed")) {
+            if (br.containsHTML("<feed")) {
 
                 patEntry = "<entry>(.*?)</entry>";
                 patTitle = "<title.*?>(.*?)</title>";
                 patLink = "<link.*?href='|\"(.*?)'|\".*?/>";
 
-            } else if (requestInfo.containsHTML("<rss")) {
+            } else if (br.containsHTML("<rss")) {
 
                 patEntry = "<item>(.*?)</item>";
                 patTitle = "<title>(.*?)</title>";
@@ -435,7 +428,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             }
 
-            String[] matches = requestInfo.getRegexp(patEntry).getColumn(0);
+            String[] matches = br.getRegex(patEntry).getColumn(0);
 
             for (String match : matches) {
 
@@ -553,40 +546,18 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     private void saveAbos() {
 
-        // String content = "";
-        //		
-        // for ( String[] abo : abos ) {
-        //    		
-        // content += abo[0] + ";" + abo[1] + ";" + abo[2] + "\n";
-        //    		
-        // }
         subConfig.setProperty(PROPERTY_ABOS, abos);
         subConfig.save();
-        // JDUtilities.writeLocalFile(JDUtilities.getResourceFile("abos.conf"),
-        // content);
 
     }
 
     /*
      * Load/Save
      */
-    /**
-     * load und save funktionen wurden über die subConfigs gelöst. Eine zentrale
-     * Klasse zum ablegen von lokalen daten ist besser
-     */
     private void saveFeeds() {
 
-        // String content = "";
-        //		
-        // for ( String[] feed : feeds ) {
-        //    		
-        // content += feed[0] + ";" + feed[1] + "\n";
-        //    		
-        // }
         subConfig.setProperty(PROPERTY_FEEDS, feeds);
         subConfig.save();
-        // JDUtilities.writeLocalFile(JDUtilities.getResourceFile("feeds.conf"),
-        // content);
 
     }
 
@@ -889,20 +860,17 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             try {
 
-                RequestInfo requestInfo = HTTP.getRequest(new URL(parameter[1]), serienjunkiesCookie, null, true);
+                Browser br = new Browser();
+                br.getPage(parameter[1]);
 
-                if (requestInfo.containsHTML("Wenn Sie nicht weitergeleitet werden")) {
-
+                if (br.containsHTML("Wenn Sie nicht weitergeleitet werden")) {
                     System.out.println("Serienjunkies forewarding..");
 
-                    requestInfo = HTTP.getRequest(new URL("http://serienjunkies.org/enter"), serienjunkiesCookie, parameter[1], true);
-                    serienjunkiesCookie = requestInfo.getCookie();
-                    requestInfo = HTTP.getRequest(new URL(parameter[1]), serienjunkiesCookie, "http://serienjunkies.org/enter", true);
-
+                    br.getPage("http://serienjunkies.org/enter");
+                    br.getPage(parameter[1]);
                 }
 
-                Regex regex = requestInfo.getRegexp("Pages \\(([0-9]+)\\):");
-                String pagesString = regex.getMatch(0);
+                String pagesString = br.getRegex("Pages \\(([0-9]+)\\):").getMatch(0);
                 int pages = 1;
                 if (pagesString != null) {
                     pages = Integer.parseInt(pagesString);
@@ -916,11 +884,10 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                         break;
                     }
                     if (pages > 1) {
-                        requestInfo = HTTP.getRequest(new URL(parameter[1] + "&paged=" + i));
+                        br.getPage(parameter[1] + "&paged=" + i);
                     }
 
-                    regex = requestInfo.getRegexp("<p><strong>(.*?)</strong>(.*?)</p>");
-                    String[][] matches2 = regex.getMatches();
+                    String[][] matches2 = br.getRegex("<p><strong>(.*?)</strong>(.*?)</p>").getMatches();
 
                     for (String[] match2 : matches2) {
 
@@ -931,9 +898,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
                             found = true;
 
-                            regex = new Regex(Pattern.compile("href=\"(http://download\\.serienjunkies\\.org/.*?\\.html)\"").matcher(match2[1]));
-
-                            for (String link : regex.getColumn(-1)) {
+                            for (String link : new Regex(match2[1], Pattern.compile("href=\"(http://download\\.serienjunkies\\.org/.*?\\.html)\"")).getColumn(-1)) {
                                 links.add(link);
                             }
 

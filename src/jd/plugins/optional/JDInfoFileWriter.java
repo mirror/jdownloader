@@ -37,8 +37,6 @@ import jd.utils.Replacer;
 
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
-    public static final String CODER = "JD-Team";
-
     private static final String FILENAME_DEFAULT = "%LAST_FINISHED_PACKAGE.DOWNLOAD_DIRECTORY%/%LAST_FINISHED_PACKAGE.PACKAGENAME%.info";
 
     private static final String INFO_STRING_DEFAULT = "Passwort: %LAST_FINISHED_PACKAGE.PASSWORD%\r\n%LAST_FINISHED_PACKAGE.FILELIST%\r\nFertig gestellt am %SYSTEM.DATE% um %SYSTEM.TIME% Uhr";
@@ -81,11 +79,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         return null;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
