@@ -120,10 +120,7 @@ public class CineTo extends PluginForDecrypt {
         return "0";
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
+    @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;

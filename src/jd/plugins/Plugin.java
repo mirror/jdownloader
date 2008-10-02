@@ -330,7 +330,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * 
      * @return Der Author des Plugins
      */
-    public abstract String getCoder();
+    public String getCoder() {
+        return "JD-Team";
+    }
 
     /**
      * Gibt das Konfigurationsobjekt der INstanz zurück. Die Gui kann daraus
