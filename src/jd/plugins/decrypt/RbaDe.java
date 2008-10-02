@@ -28,8 +28,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class RbaDe extends PluginForDecrypt {
 
-    private static final String CODER = "JD-Team";
-
     private static final Pattern BATTLE_REL_PATH = Pattern.compile("(index\\.php\\?ID=4101&(amp;)?BATTLE=\\d+(&sid=\\w+)?)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_SUPPORTED_BATTLE = Pattern.compile("http://[\\w\\.]*?r-b-a\\.de/" + BATTLE_REL_PATH, Pattern.CASE_INSENSITIVE);
@@ -65,11 +63,6 @@ public class RbaDe extends PluginForDecrypt {
         }
 
         return null;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

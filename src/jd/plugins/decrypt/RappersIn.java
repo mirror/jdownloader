@@ -27,7 +27,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 public class RappersIn extends PluginForDecrypt {
-    private static final String CODER = "JD-Team";
 
     private static final Pattern PATTERN_USIDERID = Pattern.compile("artist\\.php\\?action=add2favs&amp;id=(\\d+)");
     private static final Pattern PATTERN_NICKNAME = Pattern.compile("<title>rappers.in Artistpage von (.+?)</title>");
@@ -95,11 +94,6 @@ public class RappersIn extends PluginForDecrypt {
                 titel[i] = nick + " - " + titel[i];
             }
         }
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
