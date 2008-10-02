@@ -65,6 +65,7 @@ public class Youtube extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setFollowRedirects(true);
+        br.setDebug(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         if (!getFileInformation(downloadLink)) {
@@ -73,9 +74,10 @@ public class Youtube extends PluginForHost {
             return;
         }
         br.getHttpConnection().disconnect();
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        br.openDownload(downloadLink, downloadLink.getDownloadURL());
+//        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
+//        dl.setChunkNum(1);
+//        dl.setResume(false);
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());

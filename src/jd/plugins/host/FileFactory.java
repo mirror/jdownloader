@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
@@ -35,7 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class FileFactory extends PluginForHost {
@@ -65,6 +65,19 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink parameter) throws Exception {
+        try {
+            handleFree0(parameter);
+        } catch (IOException e) {
+            if (e.getMessage().contains("502")) {
+                logger.severe("Filefactory returned BAd gateway.");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 2 * 60 * 1000l);
+            } else {
+                throw e;
+            }
+        }
+    }
+
+    public void handleFree0(DownloadLink parameter) throws Exception {
         if (parameter.getDownloadURL().matches("sjdp://.*")) {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(parameter);
             return;
@@ -85,22 +98,45 @@ public class FileFactory extends PluginForHost {
         int vp = JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
         JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 100);
         int i = 30;
+        ArrayList<String> codes = new ArrayList<String>();
+        File captchaFile = null;
         while (i-- > 0) {
-            File captchaFile = this.getLocalCaptchaFile(this);
-            Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
-
+            captchaFile = this.getLocalCaptchaFile(this);
+            int ii = 5;
+            while (ii-- >= 0)
+                try {
+                    Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
+                    break;
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
 
             if (this.getLastCaptcha() == null) continue;
             double worst = 0.0;
+
             for (LetterComperator l : this.getLastCaptcha().getLetterComperators()) {
                 if (l.getValityPercent() > worst) worst = l.getValityPercent();
 
             }
+
             logger.info("CAPTCHA: " + captchaCode + "(" + worst + "/" + this.getLastCaptcha().getValityPercent() + ")");
+
+            if (codes.contains(captchaCode)) {
+                logger.info("2 mal selber captcha. break");
+            }
+            codes.add(captchaCode);
+
             if (captchaCode != null && worst < 30) {
                 captchaCode = captchaCode.trim().replace("-", "");
-                if (captchaCode.length() == 4) break;
+                if (captchaCode.length() == 4) {
+                    captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_" + "_SKIP.png"));
+                    break;
+                }
+                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_" + "_USE.png"));
+
+            } else {
+                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_" + "_SKIP.png"));
             }
         }
         JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
@@ -108,12 +144,20 @@ public class FileFactory extends PluginForHost {
         captchaForm.put("captcha", captchaCode);
         br.submitForm(captchaForm);
 
-        if (br.containsHTML(CAPTCHA_WRONG)) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (br.containsHTML(CAPTCHA_WRONG)) {
+            captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_BAD.png"));
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+
+        captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_OK.png"));
 
         // Match die verbindung auf, Alle header werden ausgetauscht, aber keine
         // Daten geladen
-        dl = RAFDownload.download(parameter, br.createPostRequest(Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), ""));
-        dl.connect(br);
+        br.openDownload(parameter, Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), "");
+        // dl = RAFDownload.download(parameter,
+        // br.createPostRequest(Encoding.htmlDecode
+        // (br.getRegex(patternForDownloadlink).getMatch(0)), ""));
+        // dl.connect(br);
         // Prüft ob content disposition header da sind
         if (br.getHttpConnection().isContentDisposition()) {
 

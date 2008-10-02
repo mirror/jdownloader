@@ -1144,13 +1144,17 @@ public class Browser {
         } catch (PluginException e) {
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
-                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
-                try {
-                    dl.connect(this);
-                } catch (PluginException e2) {
-                    e.printStackTrace();
-                    return dl;
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                    try {
+                        dl.connect(this);
+                        break;
+                    } catch (PluginException e2) {
+                        continue;
+                    }
                 }
+                
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
