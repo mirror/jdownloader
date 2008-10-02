@@ -20,8 +20,6 @@ import java.awt.Color;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,15 +40,13 @@ import jd.event.UIListener;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.plugins.RequestInfo;
 import jd.plugins.event.PluginEvent;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
@@ -440,37 +436,20 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-    private String callService(URL service, String key) throws Exception {
+    private String callService(String service, String key) throws Exception {
         logger.finer("Call " + service);
-        // int tc=Plugin.getConnectTimeoutFromConfiguration();
-        // int tr=Plugin.getReadTimeoutFromConfiguration();
 
-        // RequestInfo ri = HTTP.getRequestWithoutHtmlCode(service, null, null,
-        // false, 2000, 2000);
-        //
-        // if (!ri.isOK() || ri.getLocation() == null) {
-        //
-        // return null; }
-        //
-        // logger.finer("Call Redirect: " + ri.getLocation());
+        Browser br = new Browser();
+        br.postPage(service, "jd=1&srcType=plain&data=" + key);
 
-        RequestInfo ri = HTTP.postRequest(service, null, null, null, "jd=1&srcType=plain&data=" + key, true, 12000, 12000);
-
-        logger.info("Call re: " + ri.getHtmlCode());
-        if (!ri.isOK() || !ri.containsHTML("<rc>")) {
-
+        logger.info("Call re: " + br.toString());
+        if (!br.getHttpConnection().isOK() || !br.containsHTML("<rc>")) {
             return null;
         } else {
-            String dlcKey = ri.getHtmlCode();
-
-            dlcKey = new Regex(dlcKey, "<rc>(.*?)</rc>").getMatch(0);
-            if (dlcKey.trim().length() < 80) {
-
-            return null; }
-
+            String dlcKey = br.getRegex("<rc>(.*?)</rc>").getMatch(0);
+            if (dlcKey.trim().length() < 80) return null;
             return dlcKey;
         }
-
     }
 
     private Vector<DownloadLink> checkLinks(Vector<DownloadLink> linksQueue) {
@@ -683,37 +662,33 @@ public class JDController implements ControlListener, UIListener {
         String key = encrypt[1];
         xml = encrypt[0];
 
-        Vector<URL> services;
-        try {
-            services = new Vector<URL>();
-            // services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
-            // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
-            // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
-            // services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
-            // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
-            // Collections.sort(services, new Comparator<Object>() {
-            // public int compare(Object a, Object b) {
-            // return (int) (Math.random() * 4.0 - 2.0);
-            // }
-            // });
-            services.add(0, new URL("http://service.jdownloader.org/dlcrypt/service.php"));
-            Iterator<URL> it = services.iterator();
-            // int url = 0;
-            while (it.hasNext()) {
-                URL service = it.next();
-                try {
-                    String dlcKey = callService(service, key);
-                    if (dlcKey == null) {
-                        continue;
-                    }
-                    return xml + dlcKey;
-                } catch (Exception e) {
-                    e.printStackTrace();
+        Vector<String> services = new Vector<String>();
+
+        // services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
+        // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
+        // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
+        // services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
+        // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
+        // Collections.sort(services, new Comparator<Object>() {
+        // public int compare(Object a, Object b) {
+        // return (int) (Math.random() * 4.0 - 2.0);
+        // }
+        // });
+        services.add(0, "http://service.jdownloader.org/dlcrypt/service.php");
+        Iterator<String> it = services.iterator();
+        // int url = 0;
+        while (it.hasNext()) {
+            try {
+                String dlcKey = callService(it.next(), key);
+                if (dlcKey == null) {
+                    continue;
                 }
+                return xml + dlcKey;
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-        } catch (MalformedURLException e1) {
-            e1.printStackTrace();
         }
+
         return null;
 
     }
@@ -1155,6 +1130,7 @@ public class JDController implements ControlListener, UIListener {
         }
         return ret;
     }
+
     public int getRunningDownloadNumByHost(PluginForHost pluginForHost) {
         int ret = 0;
         synchronized (packages) {
@@ -1167,15 +1143,16 @@ public class JDController implements ControlListener, UIListener {
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
                     if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
-                        if (nextDownloadLink.getPlugin().getClass() == pluginForHost.getClass()){
-                        ret++;
-                       }
+                        if (nextDownloadLink.getPlugin().getClass() == pluginForHost.getClass()) {
+                            ret++;
+                        }
                     }
                 }
             }
         }
         return ret;
     }
+
     /**
      * @return gibt das globale speedmeter zurück
      */
