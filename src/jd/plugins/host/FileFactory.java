@@ -42,7 +42,7 @@ public class FileFactory extends PluginForHost {
 
     private static Pattern baseLink = Pattern.compile("<a href=\"(.*?)\" id=\"basicLink\"", Pattern.CASE_INSENSITIVE);
     private static final String CAPTCHA_WRONG = "verification code you entered was incorrect";
-    private static final String DOWNLOAD_LIMIT = "exceeded the download limit";
+    private static final String DOWNLOAD_LIMIT = "Thank you for waiting";
 
     private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
     private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
@@ -56,7 +56,7 @@ public class FileFactory extends PluginForHost {
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
-    private static final String WAIT_TIME = "wait ([0-9]+ [minutes|seconds])";
+//    private static final String WAIT_TIME = "wait ([0-9]+ [minutes|seconds])";
 
     public FileFactory(PluginWrapper wrapper) {
         super(wrapper);
@@ -84,6 +84,7 @@ public class FileFactory extends PluginForHost {
         }
 
         br.setFollowRedirects(true);
+        br.setDebug(true);
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("there are currently no free download slots")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 3 * 60 * 1000l); }
         if (br.containsHTML(NOT_AVAILABLE)) {
@@ -101,10 +102,11 @@ public class FileFactory extends PluginForHost {
         ArrayList<String> codes = new ArrayList<String>();
         File captchaFile = null;
         while (i-- > 0) {
-            captchaFile = this.getLocalCaptchaFile(this);
+            
             int ii = 5;
             while (ii-- >= 0)
                 try {
+                    captchaFile = this.getLocalCaptchaFile(this);
                     Browser.download(captchaFile, Encoding.htmlDecode("http://www.filefactory.com" + br.getRegex(patternForCaptcha).getMatch(0)));
                     break;
                 } catch (IOException e) {
@@ -127,16 +129,16 @@ public class FileFactory extends PluginForHost {
             }
             codes.add(captchaCode);
 
-            if (captchaCode != null && worst < 30) {
+            if (captchaCode != null && worst < 60) {
                 captchaCode = captchaCode.trim().replace("-", "");
                 if (captchaCode.length() == 4) {
-                    captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_" + "_SKIP.png"));
+                    captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "(" + worst + ")" + "_" + "_USE.png"));
                     break;
                 }
-                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_" + "_USE.png"));
+                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "(" + worst + ")" + "_" + "_SKIP.png"));
 
             } else {
-                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "_" + "_SKIP.png"));
+                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "(" + worst + ")" + "_" + "_SKIP.png"));
             }
         }
         JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
@@ -153,7 +155,7 @@ public class FileFactory extends PluginForHost {
 
         // Match die verbindung auf, Alle header werden ausgetauscht, aber keine
         // Daten geladen
-        br.openDownload(parameter, Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)), "");
+        br.openDownload(parameter, Encoding.htmlDecode(br.getRegex(patternForDownloadlink).getMatch(0)));
         // dl = RAFDownload.download(parameter,
         // br.createPostRequest(Encoding.htmlDecode
         // (br.getRegex(patternForDownloadlink).getMatch(0)), ""));
@@ -167,7 +169,7 @@ public class FileFactory extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(DOWNLOAD_LIMIT)) {
                 logger.info("Traffic Limit for Free User reached");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(br.getRegex(WAIT_TIME).getMatch(0)));
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10*60*1000l);
             } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
                 logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
