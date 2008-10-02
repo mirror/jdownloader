@@ -35,11 +35,15 @@ param.autoLetterNum=true;
 ############################
 
 ############Parameter die die Freistellung beeinflussen
+
+
 param.useSpecialGetLetters=Filefactory.getLetters;
 param.useLetterFilter=Filefactory.letterFilter;
 ############Parameter die die Bildbearbeitung beeinflussen
 param.backgroundsamplecleancontrast=0.11;
 param.alignAngleSteps=2;
+
+
 
 
 
