@@ -63,13 +63,11 @@ public class Sexuriacom extends PluginForDecrypt {
                 DownloadLink dl_link = createDownloadlink(br.getRedirectLocation());
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
-                logger.info(br.getRedirectLocation());
             }
             return decryptedLinks;
         } else if (new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).matches()) {
             String id = new Regex(parameter, PATTERN_SUPPORTED_REDIRECT).getMatch(0);
             decryptedLinks.add(createDownloadlink("http://sexuria.com/Pornos_Kostenlos_liebe_" + id + ".html"));
-            System.out.println(decryptedLinks.get(0));
             return decryptedLinks;
         }
         return null;
