@@ -28,7 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
 
@@ -59,8 +58,6 @@ public class Youtube extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setFollowRedirects(true);
-        br.setDebug(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         if (!getFileInformation(downloadLink)) {
@@ -69,11 +66,7 @@ public class Youtube extends PluginForHost {
             return;
         }
         br.getHttpConnection().disconnect();
-        br.openDownload(downloadLink, downloadLink.getDownloadURL());
-        // dl = new RAFDownload(this, downloadLink,
-        // br.createGetRequest(downloadLink.getDownloadURL()));
-        // dl.setChunkNum(1);
-        // dl.setResume(false);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
@@ -92,7 +85,6 @@ public class Youtube extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         login(account);
@@ -104,11 +96,7 @@ public class Youtube extends PluginForHost {
             return;
         }
         br.getHttpConnection().disconnect();
-        br.openDownload(downloadLink, downloadLink.getDownloadURL());
-        // dl = new RAFDownload(this, downloadLink,
-        // br.createGetRequest(downloadLink.getDownloadURL()));
-        // dl.setChunkNum(1);
-        // dl.setResume(false);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
