@@ -46,7 +46,7 @@ public class JACTrain {
         String methodsPath = UTILITIES.getFullPath(new String[] { JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(), "jd", "captcha", "methods" });
 
         // String hoster="rscat.com";
-        String hoster = "share-now.net";
+        String hoster = "filefactory.com";
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
         // jac.runTestMode(new File("1186941165349_captcha.jpg"));
         jac.displayLibrary();

@@ -57,11 +57,11 @@ public abstract class PluginsC extends Plugin {
 
     private static final int STATUS_ERROR_EXTRACTING = 1;
 
-    protected Vector<DownloadLink> containedLinks = new Vector<DownloadLink>();
+    protected Vector<DownloadLink> cls = new Vector<DownloadLink>();
 
     private ContainerStatus containerStatus;
 
-    protected Vector<String> downloadLinksURL;
+    protected Vector<String> dlU;
 
     protected String md5;
     protected byte[] k;
@@ -99,15 +99,15 @@ public abstract class PluginsC extends Plugin {
         int i = 0;
         int c = 0;
 
-        progress.addToMax(downloadLinksURL.size());
-        for (String string : downloadLinksURL) {
+        progress.addToMax(dlU.size());
+        for (String string : dlU) {
             progress.increase(1);
             progress.setStatusText(String.format(JDLocale.L("plugins.container.decrypt", "Decrypt link %s"), "" + i));
 
             DistributeData distributeData = new DistributeData(string);
             Vector<DownloadLink> links = distributeData.findLinks();
 
-            DownloadLink srcLink = containedLinks.get(i);
+            DownloadLink srcLink = cls.get(i);
             Iterator<DownloadLink> it = links.iterator();
             progress.addToMax(links.size());
 
@@ -146,8 +146,8 @@ public abstract class PluginsC extends Plugin {
             }
             i++;
         }
-        containedLinks = tmpDlink;
-        downloadLinksURL = tmpURL;
+        cls = tmpDlink;
+        dlU = tmpURL;
         // logger.info("downloadLinksURL: "+downloadLinksURL);
     }
 
@@ -197,12 +197,12 @@ public abstract class PluginsC extends Plugin {
      */
     public synchronized String extractDownloadURL(DownloadLink downloadLink) {
         // logger.info("EXTRACT " + downloadLink);
-        if (downloadLinksURL == null) {
+        if (dlU == null) {
             initContainer(downloadLink.getContainerFile(), (byte[]) downloadLink.getProperty("k", new byte[] {}));
         }
-        if (downloadLinksURL == null || downloadLinksURL.size() <= downloadLink.getContainerIndex()) { return null; }
+        if (dlU == null || dlU.size() <= downloadLink.getContainerIndex()) { return null; }
         downloadLink.setProperty("k", k);
-        return downloadLinksURL.get(downloadLink.getContainerIndex());
+        return dlU.get(downloadLink.getContainerIndex());
     }
 
     /**
@@ -231,7 +231,7 @@ public abstract class PluginsC extends Plugin {
      * @return Ein Vector mit DownloadLinks
      */
     public Vector<DownloadLink> getContainedDownloadlinks() {
-        return containedLinks == null ? new Vector<DownloadLink>() : containedLinks;
+        return cls == null ? new Vector<DownloadLink>() : cls;
     }
 
     @Override
@@ -264,19 +264,19 @@ public abstract class PluginsC extends Plugin {
         if (filename == null) { return; }
         if (CONTAINER.containsKey(filename) && CONTAINER.get(filename) != null && CONTAINER.get(filename).size() > 0) {
             logger.info("Cached " + filename);
-            containedLinks = CONTAINER.get(filename);
-            if (containedLinks != null) {
-                Iterator<DownloadLink> it = containedLinks.iterator();
+            cls = CONTAINER.get(filename);
+            if (cls != null) {
+                Iterator<DownloadLink> it = cls.iterator();
                 while (it.hasNext()) {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                 }
             }
 
-            downloadLinksURL = CONTAINERLINKS.get(filename);
+            dlU = CONTAINERLINKS.get(filename);
             return;
         }
 
-        if (containedLinks == null || containedLinks.size() == 0) {
+        if (cls == null || cls.size() == 0) {
             logger.info("Init Container");
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, this);
             if (progress != null) {
@@ -288,25 +288,25 @@ public abstract class PluginsC extends Plugin {
             doDecryption(filename);
             progress.increase(1);
 
-            progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + containedLinks.size()));
+            progress.setStatusText(String.format(JDLocale.L("plugins.container.found", "Prozess %s links"), "" + cls.size()));
             logger.info(filename + " Parse");
-            if (containedLinks != null && downloadLinksURL != null) {
+            if (cls != null && dlU != null) {
                 decryptLinkProtectorLinks();
-                progress.setStatusText(String.format(JDLocale.L("plugins.container.exit", "Finished. Found %s links"), "" + containedLinks.size()));
-                Iterator<DownloadLink> it = containedLinks.iterator();
+                progress.setStatusText(String.format(JDLocale.L("plugins.container.exit", "Finished. Found %s links"), "" + cls.size()));
+                Iterator<DownloadLink> it = cls.iterator();
                 while (it.hasNext()) {
                     it.next().setLinkType(DownloadLink.LINKTYPE_CONTAINER);
                 }
                 progress.increase(1);
             }
-            if (containedLinks == null || containedLinks.size() == 0) {
+            if (cls == null || cls.size() == 0) {
                 CONTAINER.put(filename, null);
                 CONTAINERLINKS.put(filename, null);
 
             } else {
 
-                CONTAINER.put(filename, containedLinks);
-                CONTAINERLINKS.put(filename, downloadLinksURL);
+                CONTAINER.put(filename, cls);
+                CONTAINERLINKS.put(filename, dlU);
             }
             if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
                 progress.setColor(Color.RED);

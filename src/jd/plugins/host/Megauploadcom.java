@@ -137,8 +137,9 @@ public class Megauploadcom extends PluginForHost {
         
         downloadLink.getLinkStatus().setStatusText("Premium");
 
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);     
 
+        dl.headFake("bytes=656546546546546-");
         dl.startDownload();
 
     }

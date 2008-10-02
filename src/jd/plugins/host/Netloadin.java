@@ -282,8 +282,8 @@ public class Netloadin extends PluginForHost {
             con = br.createRequest(url);
      
             dl = RAFDownload.download(downloadLink, con, true, 0);
-            dl.headFake(null);
-            dl.setFirstChunkRangeless(true);
+//            dl.headFake(null);
+//            dl.setFirstChunkRangeless(true);
             HTTPConnection connection = dl.getConnection();
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
@@ -303,8 +303,8 @@ public class Netloadin extends PluginForHost {
             con = br.createGetRequest(null);
           
             dl = RAFDownload.download(downloadLink, con, true, 0);
-            dl.headFake(null);
-            dl.setFirstChunkRangeless(true);
+//            dl.headFake(null);
+//            dl.setFirstChunkRangeless(true);
             dl.connect(br);
         }
 
@@ -355,7 +355,7 @@ public class Netloadin extends PluginForHost {
             br.setConnectTimeout(15000);
 
             String id = Netloadin.getID(downloadLink.getDownloadURL());
-            String page = br.getPage("http://netload.in/share/fileinfos2.php?file_id=" + id);
+            String page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
             for (int i = 0; i < 3 && page == null; i++) {
                 try {
                     Thread.sleep(150);
@@ -363,7 +363,7 @@ public class Netloadin extends PluginForHost {
 
                     e.printStackTrace();
                 }
-                page = br.getPage("http://netload.in/share/fileinfos2.php?file_id=" + id);
+                page = br.getPage("http://netload.in/share/fileinfos2.php?bz=1&file_id=" + id);
 
             }
 
@@ -380,7 +380,7 @@ public class Netloadin extends PluginForHost {
 
             downloadLink.setName(entries[1]);
             fileStatusText = entries[2];
-            downloadLink.setDownloadSize((int) Regex.getSize(entries[2]));
+            downloadLink.setDownloadSize((int) Regex.getSize(entries[2]+" bytes"));
 
           
             downloadLink.setMD5Hash(entries[4].trim());

@@ -1054,12 +1054,12 @@ abstract public class DownloadInterface {
 
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
 
-        if (request.getHttpConnection().getResponseCode() != 416) {
-
-            logger.severe("Fake head request failed!!!");
-            request.getHttpConnection().disconnect();
-        }
-
+//        if (request.getHttpConnection().getResponseCode() != 416) {
+//
+//            logger.severe("Fake head request failed!!!");
+//            
+//        }
+        request.getHttpConnection().disconnect();
         String name = Plugin.getFileNameFromDispositionHeader(request.getHttpConnection().getHeaderField("content-disposition"));
         if(name!=null) this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
         String range = request.getHttpConnection().getHeaderField("Content-Range");
@@ -1197,7 +1197,7 @@ abstract public class DownloadInterface {
             setChunkNum(1);
         } else {
             if (request.getHttpConnection().getRange()[0] != 0) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + ". Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
-            if (request.getHttpConnection().getRange()[1] < (part - 1)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
+            if (request.getHttpConnection().getRange()[1] < (part - 2)) { throw new IllegalStateException("Range Error. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range")); }
             if (request.getHttpConnection().getRange()[1] == request.getHttpConnection().getRange()[2] - 1 && getChunkNum() > 1) {
                 logger.warning(" Chunkload Protection.. Requested " + request.getHeaders().get("Range") + " Got range: " + request.getHttpConnection().getHeaderField("Content-Range"));
 

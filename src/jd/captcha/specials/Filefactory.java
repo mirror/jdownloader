@@ -56,7 +56,7 @@ public class Filefactory {
                 for (Iterator<PixelObject> it = ret.iterator(); it.hasNext();) {
                     PixelObject o = it.next();
 
-                    if (o.isTouching(x, y, true, 6, 6) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 20) {
+                    if (o.isTouching(x, y, true, 6, 6) && UTILITIES.getColorDifference(grid.getGrid()[x][y], o.getAverage()) < 25) {
 
                         merge.add(o);
                         // n.add(o);
@@ -79,8 +79,6 @@ public class Filefactory {
 
                 }
 
-                // BasicWindow.showImage(grid.getImage(3), x+"-"+y);
-                // ret = ret;
             }
             // BasicWindow.showImage(grid.getImage(6), x+"-");
         }
@@ -104,23 +102,23 @@ public class Filefactory {
 
             }
 
-            if (akt.getArea() > 20) BasicWindow.showImage(akt.toLetter().getImage(4), akt + "");
+          
             if (akt.getArea() > 1800) {
                 // it.remove();
-            } else if (akt.getArea() < 180) {
+            } else if (akt.getArea() < 80) {
                 it.remove();
                 continue;
             } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
                 it.remove();
                 continue;
-            } else if (akt.getArea() / akt.getSize() > 10) {
+            } else if (akt.getArea() / akt.getSize() > 15) {
                 it.remove();
                 continue;
             } else if (akt.getHeight() < 15 || akt.getWidth() < 5) {
                 it.remove();
                 continue;
             }
-
+//            BasicWindow.showImage(akt.toLetter().getImage(4), akt + "");
             // if (true && (|| akt.getArea() < 130 || (akt.getArea() > 600 &&
             // (double) akt.getArea() / (double) akt.getSize() < 1.2) ||
             // akt.getArea() / akt.getSize() > 10 || akt.getHeight() < 10 ||
@@ -144,32 +142,35 @@ public class Filefactory {
 
             let.blurIt(2);
             let.toBlackAndWhite(1.16);
-            let.removeSmallObjects(0.8, 0.8, 30);
+            let.removeSmallObjects(0.8, 0.8, 10);
             let.clean();
             let = let.align(-40, 40);
             i++;
+            
             if (let == null) {
                 continue;
             }
             PixelObject akt = let.toPixelObject(OBJECTDETECTIONCONTRAST);
+          
             if (pixelObject.getArea() == 1224) {
 
             }
+            
             if (akt.getSize() > 1000) {
 
-            } else if (akt.getArea() < 230) {
+            } else if (akt.getArea() < 40) {
 
             } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
 
-            } else if (akt.getArea() / akt.getSize() > 10) {
+            } else if (akt.getArea() / akt.getSize() > 15) {
 
-            } else if (akt.getHeight() < 15 || akt.getWidth() < 5) {
+            } else if (akt.getHeight() < 10 || akt.getWidth() < 2) {
 
             } else {
                 ret.add(let);
 
             }
-
+         
             // }
         }
 
@@ -217,13 +218,13 @@ public class Filefactory {
                 int area = (xMax - xMin) * (yMax - yMin);
                 if (area > 10) {
                     if (a.getArea() < area * 1.4 || b.getArea() < area * 1.4) {
-                        if (UTILITIES.getColorDifference(a.getAverage(), b.getAverage()) < 50) {
+                        if (UTILITIES.getColorDifference(a.getAverage(), b.getAverage()) < 60) {
 
-                            ScrollPaneWindow w = new ScrollPaneWindow(null);
-                            w.setImage(0, 1, a.toLetter().getImage(3));
-                            w.setImage(0, 2, b.toLetter().getImage(3));
+//                            ScrollPaneWindow w = new ScrollPaneWindow(null);
+//                            w.setImage(0, 1, a.toLetter().getImage(3));
+//                            w.setImage(0, 2, b.toLetter().getImage(3));
                             a.add(b);
-                            w.setImage(0, 3, a.toLetter().getImage(3));
+//                            w.setImage(0, 3, a.toLetter().getImage(3));
                             os.remove(b);
                             mergeObjects(os);
                             return;
@@ -242,10 +243,69 @@ public class Filefactory {
         cleanHorizontalLines(captcha, copy);
 
         cleanXLinesY(captcha, copy);
+        cleanYLinesX(captcha, copy);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask.png"))), 5);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_2.png"))), 5);
+        captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_3.png"))), 5);
 
     }
+    
+/**
+ * Entfernt striche von links unten nach rechts oben
+ * @param captcha
+ * @param copy
+ */
+  
+    private static void cleanYLinesX(Captcha captcha, int[][] copy) {
+    
+        for (int y = 0; y < captcha.getHeight(); y++) {
+            double dist01 = y -1 >=0 ? UTILITIES.getColorDifference(copy[0][y], copy[1][y - 1]) : 0;
+            double dist02 = y - 2  >=0 ? UTILITIES.getColorDifference(copy[0][y], copy[2][y - 2]) : 0;
+            double dist03 = y - 3  >=0 ? UTILITIES.getColorDifference(copy[0][y], copy[3][y - 3]) : 0;
+            if (dist01 < 10 && dist02 < 10 && dist03 < 10) {
+                int c = 0;
+                while (c < captcha.getWidth() && (y - c) >=0) {
 
+                    if (UTILITIES.getColorDifference(copy[0][y], captcha.grid[c][y - c]) < 5) {
+                        captcha.grid[c][y - c] = captcha.getMaxPixelValue();
+                    }
+                    c++;
+                }
+
+            }
+        }
+    
+        
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            if(UTILITIES.getColorDifference(copy[x][captcha.getHeight()-1],PixelGrid.getMaxPixelValue(captcha.owner))<5)continue;
+            double dist01 = x + 1 < captcha.getWidth() ? UTILITIES.getColorDifference(copy[x][captcha.getHeight()-1], copy[x+1][captcha.getHeight()-1-1]) : 0;
+            double dist02 = x + 2 < captcha.getWidth() ? UTILITIES.getColorDifference(copy[x][captcha.getHeight()-1], copy[x+2][captcha.getHeight()-1-2]) : 0;
+            double dist03 = x + 3 < captcha.getWidth() ? UTILITIES.getColorDifference(copy[x][captcha.getHeight()-1], copy[x+3][captcha.getHeight()-1-3]) : 0;
+            if (dist01 < 10 && dist02 < 10 && dist03 < 10) {
+                int c = 0;
+                while (c < captcha.getHeight() && (x + c) < captcha.getWidth()) {
+
+                    if (UTILITIES.getColorDifference(copy[x][captcha.getHeight()-1], captcha.grid[x+c][captcha.getHeight()-1-c]) < 5) {
+                        captcha.grid[x+c][captcha.getHeight()-1-c] = PixelGrid.getMaxPixelValue(captcha.owner);
+                        
+                    }
+                    c++;
+                }
+
+            }else{
+//                captcha.grid[x][0] = 0xff0000;
+            }
+        }
+        
+
+    }
+    /**
+     * Entfernt striche von links oben nach rechts unten
+     * @param captcha
+     * @param copy
+     */
     private static void cleanXLinesY(Captcha captcha, int[][] copy) {
+     
         for (int y = 0; y < captcha.getHeight(); y++) {
             double dist01 = y + 1 < captcha.getHeight() ? UTILITIES.getColorDifference(copy[0][y], copy[1][y + 1]) : 0;
             double dist02 = y + 2 < captcha.getHeight() ? UTILITIES.getColorDifference(copy[0][y], copy[2][y + 2]) : 0;
@@ -262,6 +322,30 @@ public class Filefactory {
 
             }
         }
+    
+        
+        for (int x = 0; x < captcha.getWidth(); x++) {
+            if(UTILITIES.getColorDifference(copy[x][0],PixelGrid.getMaxPixelValue(captcha.owner))<5)continue;
+            double dist01 = x + 1 < captcha.getWidth() ? UTILITIES.getColorDifference(copy[x][0], copy[x+1][1]) : 0;
+            double dist02 = x + 2 < captcha.getWidth() ? UTILITIES.getColorDifference(copy[x][0], copy[x+2][2]) : 0;
+            double dist03 = x + 3 < captcha.getWidth() ? UTILITIES.getColorDifference(copy[x][0], copy[x+3][3]) : 0;
+            if (dist01 < 10 && dist02 < 10 && dist03 < 10) {
+                int c = 0;
+                while (c < captcha.getHeight() && (x + c) < captcha.getWidth()) {
+
+                    if (UTILITIES.getColorDifference(copy[x][0], captcha.grid[x+c][c]) < 5) {
+                        captcha.grid[x+c][c] = PixelGrid.getMaxPixelValue(captcha.owner);
+                        
+                    }
+                    c++;
+                }
+
+            }else{
+//                captcha.grid[x][0] = 0xff0000;
+            }
+        }
+
+       
 
     }
 
