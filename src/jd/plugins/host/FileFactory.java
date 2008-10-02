@@ -56,11 +56,17 @@ public class FileFactory extends PluginForHost {
     private static Pattern patternForDownloadlink = Pattern.compile("<a target=\"_top\" href=\"([^\"]*)\"><img src");
 
     private static final String SERVER_DOWN = "server hosting the file you are requesting is currently down";
-//    private static final String WAIT_TIME = "wait ([0-9]+ [minutes|seconds])";
+
+    // private static final String WAIT_TIME =
+    // "wait ([0-9]+ [minutes|seconds])";
 
     public FileFactory(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
+    }
+
+    public int getTimegapBetweenConnections() {
+        return 200;
     }
 
     @Override
@@ -102,7 +108,7 @@ public class FileFactory extends PluginForHost {
         ArrayList<String> codes = new ArrayList<String>();
         File captchaFile = null;
         while (i-- > 0) {
-            
+
             int ii = 5;
             while (ii-- >= 0)
                 try {
@@ -169,7 +175,7 @@ public class FileFactory extends PluginForHost {
             br.followConnection();
             if (br.containsHTML(DOWNLOAD_LIMIT)) {
                 logger.info("Traffic Limit for Free User reached");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10*60*1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
             } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
                 logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
@@ -301,12 +307,23 @@ public class FileFactory extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
+        for (int i = 0; i < 4; i++) {
+            try {
+                Thread.sleep(200);
+            } catch (Exception e) {
+            }
+            try {
+                br.getPage(downloadLink.getDownloadURL());
+                break;
+            } catch (Exception e) {
+                if (i == 3) throw e;
+            }
+        }
         if (br.containsHTML(NOT_AVAILABLE) && !br.containsHTML("there are currently no free download slots")) {
             br.setFollowRedirects(false);
             return false;
