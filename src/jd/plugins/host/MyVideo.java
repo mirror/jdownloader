@@ -28,8 +28,6 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class MyVideo extends PluginForHost {
-    static private final String CODER = "JD-Team";
-
     static private final String AGB = "http://www.myvideo.de/news.php?rubrik=jjghf&p=hm8";
 
     public MyVideo(PluginWrapper wrapper) {
@@ -39,11 +37,6 @@ public class MyVideo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return AGB;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

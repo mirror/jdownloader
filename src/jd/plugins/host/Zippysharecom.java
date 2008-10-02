@@ -39,11 +39,6 @@ public class Zippysharecom extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();

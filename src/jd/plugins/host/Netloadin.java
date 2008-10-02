@@ -42,7 +42,6 @@ public class Netloadin extends PluginForHost {
 
     static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
 
-    static private final String CODER = "JD-Team";
     static private final String DOWNLOAD_CAPTCHA = "download_captcha.tpl";
     static private final String DOWNLOAD_LIMIT = "download_limit.tpl";
     static private final String DOWNLOAD_START = "download_load.tpl";
@@ -270,7 +269,7 @@ public class Netloadin extends PluginForHost {
             logger.severe("Account Infos invalid");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
-     
+
         if (br.getRedirectLocation() == null) {
             br.followConnection();
             checkPassword(downloadLink, linkStatus);
@@ -280,10 +279,10 @@ public class Netloadin extends PluginForHost {
             if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT, "Download link not found");
 
             con = br.createRequest(url);
-     
+
             dl = RAFDownload.download(downloadLink, con, true, 0);
-//            dl.headFake(null);
-//            dl.setFirstChunkRangeless(true);
+            // dl.headFake(null);
+            // dl.setFirstChunkRangeless(true);
             HTTPConnection connection = dl.getConnection();
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
@@ -301,14 +300,14 @@ public class Netloadin extends PluginForHost {
 
         } else {
             con = br.createGetRequest(null);
-          
+
             dl = RAFDownload.download(downloadLink, con, true, 0);
-//            dl.headFake(null);
-//            dl.setFirstChunkRangeless(true);
+            // dl.headFake(null);
+            // dl.setFirstChunkRangeless(true);
             dl.connect(br);
         }
 
-        if (!dl.getConnection().isContentDisposition()&&dl.getConnection().getResponseCode()!=206&&dl.getConnection().getResponseCode()!=416) {
+        if (!dl.getConnection().isContentDisposition() && dl.getConnection().getResponseCode() != 206 && dl.getConnection().getResponseCode() != 416) {
 
             // Serverfehler
             if (br.followConnection() == null) throw new PluginException(LinkStatus.ERROR_RETRY, "Server:Could not follow Link");
@@ -336,11 +335,6 @@ public class Netloadin extends PluginForHost {
     @Override
     public String getAGBLink() {
         return AGB_LINK;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
@@ -380,9 +374,8 @@ public class Netloadin extends PluginForHost {
 
             downloadLink.setName(entries[1]);
             fileStatusText = entries[2];
-            downloadLink.setDownloadSize((int) Regex.getSize(entries[2]+" bytes"));
+            downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 
-          
             downloadLink.setMD5Hash(entries[4].trim());
             if (entries[3].equalsIgnoreCase("online")) { return true; }
             return false;

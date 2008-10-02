@@ -189,11 +189,6 @@ public class RapidShareDe extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         try {

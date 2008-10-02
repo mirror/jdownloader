@@ -40,11 +40,6 @@ public class RomHustlerNet extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
             this.setBrowserExclusive();

@@ -41,11 +41,6 @@ public class MediafireCom extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
 
         try {
@@ -103,8 +98,8 @@ public class MediafireCom extends PluginForHost {
             url = url.replaceAll("\\+ ?" + var + " ?\\+", value);
 
         }
-    
-        dl =RAFDownload.download(downloadLink, br.createRequest(url));
+
+        dl = RAFDownload.download(downloadLink, br.createRequest(url));
         dl.startDownload();
     }
 

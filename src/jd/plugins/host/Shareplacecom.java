@@ -40,11 +40,6 @@ public class Shareplacecom extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         String url = downloadLink.getDownloadURL();

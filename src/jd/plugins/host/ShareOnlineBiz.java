@@ -33,8 +33,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
 public class ShareOnlineBiz extends PluginForHost {
-    private static final String CODER = "JD-Team";
-
     private String captchaCode;
     private File captchaFile;
     private String passCode;
@@ -50,11 +48,6 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return CODER;
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         url = downloadLink.getDownloadURL();
         for (int i = 1; i < 3; i++) {
@@ -64,12 +57,15 @@ public class ShareOnlineBiz extends PluginForHost {
                                     */
                 String page = br.getPage(url);
                 if (page != null && br.getRedirectLocation() == null) {
-//                    String filename = br.getRegex(Pattern.compile("<span class=\"locatedActive\">(.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-//                    String sizev = br.getRegex(Pattern.compile("<div><b>You have requested <font color=.*?</font>(.*?).</b></div>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    // String filename = br.getRegex(Pattern.compile(
+                    // "<span class=\"locatedActive\">(.*?)</span>",
+                    // Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    // String sizev = br.getRegex(Pattern.compile(
+                    // "<div><b>You have requested <font color=.*?</font>(.*?).</b></div>"
+                    // , Pattern.CASE_INSENSITIVE)).getMatch(0);
                     String filename = br.getRegex(Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
                     String sizev = br.getRegex(Pattern.compile("\\((.*?)\\) angefordert.", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    
-                   
+
                     if (filename == null || sizev == null) return false;
                     downloadLink.setDownloadSize(Regex.getSize(sizev));
                     downloadLink.setName(filename);

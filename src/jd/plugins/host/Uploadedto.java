@@ -42,16 +42,14 @@ public class Uploadedto extends PluginForHost {
 
     static private final String AGB_LINK = "http://uploaded.to/agb";
 
-    static private final String CODER = "JD-Team";
-
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
 
         this.enablePremium();
         setMaxConnections(20);
-      
+
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PREMIUMCHUNKS", JDLocale.L("plugins.hoster.uploadedto.chunks", "Premium connections # (>1 causes higher traffic)"), 1, 20).setDefaultValue(1).setStep(1));
-        
+
     }
 
     /**
@@ -225,10 +223,6 @@ public class Uploadedto extends PluginForHost {
         return AGB_LINK;
     }
 
-    public String getCoder() {
-        return CODER;
-    }
-
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -333,7 +327,6 @@ public class Uploadedto extends PluginForHost {
 
         }
 
-
         dl.startDownload();
 
     }
@@ -341,7 +334,7 @@ public class Uploadedto extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
-    
+
     public void reset() {
     }
 

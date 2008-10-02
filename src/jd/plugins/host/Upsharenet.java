@@ -29,8 +29,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 public class Upsharenet extends PluginForHost {
-    private static final String CODER = "JD-Team";
-
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
@@ -43,11 +41,6 @@ public class Upsharenet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.upshare.net/faq.php?setlang=en";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
@@ -148,7 +141,7 @@ public class Upsharenet extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-       br.openDownload(downloadLink, link).startDownload();
+        br.openDownload(downloadLink, link).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

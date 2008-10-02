@@ -42,11 +42,6 @@ public class ShareBaseTo extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         /* damit neue links mit .de als .to in die liste kommen */
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));

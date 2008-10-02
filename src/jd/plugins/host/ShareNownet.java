@@ -44,11 +44,6 @@ public class ShareNownet extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());

@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 public class XupInRaidrush extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.xup.in/terms/";
-    private static final String CODER = "JD-Team";
 
     public XupInRaidrush(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,11 +37,6 @@ public class XupInRaidrush extends PluginForHost {
     @Override
     public String getAGBLink() {
         return AGB_LINK;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
@@ -68,7 +62,7 @@ public class XupInRaidrush extends PluginForHost {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         Form download = br.getForms()[0];
         br.openDownload(downloadLink, download).startDownload();
-     
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {

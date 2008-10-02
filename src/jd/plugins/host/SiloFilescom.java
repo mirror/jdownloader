@@ -37,11 +37,6 @@ public class SiloFilescom extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() == null) {

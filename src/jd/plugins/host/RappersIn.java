@@ -29,8 +29,6 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class RappersIn extends PluginForHost {
-    private static final String CODER = "JD-Team";
-
     private static final String AGB_LINK = "http://www0.rappers.in/agb.php";
 
     public RappersIn(PluginWrapper wrapper) {
@@ -38,17 +36,12 @@ public class RappersIn extends PluginForHost {
     }
 
     private String getDownloadUrl(DownloadLink link) {
-        return link.getDownloadURL().replaceAll("httpRappersIn://","http://").replaceAll("viaRappersIn", "rappers.in");
+        return link.getDownloadURL().replaceAll("httpRappersIn://", "http://").replaceAll("viaRappersIn", "rappers.in");
     }
 
     @Override
     public String getAGBLink() {
         return AGB_LINK;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
@@ -90,7 +83,7 @@ public class RappersIn extends PluginForHost {
             return;
         }
 
-        dl = new RAFDownload(this, downloadLink,  br.createGetRequest(downloadLink.getDownloadURL()));
+        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
         dl.startDownload();

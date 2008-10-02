@@ -250,10 +250,6 @@ public class Serienjunkies extends PluginForHost {
         return "http://serienjunkies.org/?page_id=35";
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public ArrayList<DownloadLink> getDLinks(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 

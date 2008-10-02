@@ -39,10 +39,6 @@ import jd.utils.JDLocale;
 public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
 
-    static private final String CODER = "JD-Team";
-
-    // http://d01.megashares.com/?d01=ec0acc7
-
     private static String PLUGIN_PASS = null;
 
     public MegasharesCom(PluginWrapper wrapper) {
@@ -178,17 +174,10 @@ public class MegasharesCom extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return CODER;
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         String link = downloadLink.getDownloadURL();
         br.getPage(link);
-      
-       
-      
+
         if (br.containsHTML("continue using Free service")) {
             br.getPage(link);
         }

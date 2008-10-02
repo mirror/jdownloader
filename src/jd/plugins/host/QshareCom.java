@@ -36,12 +36,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
 
 public class QshareCom extends PluginForHost {
-    // static private final String new Regex("$Revision$","\\$Revision:
-    // ([\\d]*?)\\$").getMatch(0).*= "0.1";
-    // static private final String PLUGIN_ID =PLUGIN_NAME + "-" + new
-    // Regex("$Revision$","\\$Revision: ([\\d]*?)\\$").getMatch(0);
-    static private final String CODER = "JD-Team";
-
     public QshareCom(PluginWrapper wrapper) {
         super(wrapper);
 
@@ -218,11 +212,6 @@ public class QshareCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=terms";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

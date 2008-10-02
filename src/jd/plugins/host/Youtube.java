@@ -45,11 +45,6 @@ public class Youtube extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         br.setFollowRedirects(true);
         return (br.openGetConnection(downloadLink.getDownloadURL()).getResponseCode() == 200);
@@ -75,9 +70,10 @@ public class Youtube extends PluginForHost {
         }
         br.getHttpConnection().disconnect();
         br.openDownload(downloadLink, downloadLink.getDownloadURL());
-//        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
-//        dl.setChunkNum(1);
-//        dl.setResume(false);
+        // dl = new RAFDownload(this, downloadLink,
+        // br.createGetRequest(downloadLink.getDownloadURL()));
+        // dl.setChunkNum(1);
+        // dl.setResume(false);
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertto = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());

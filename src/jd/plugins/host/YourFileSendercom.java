@@ -39,11 +39,6 @@ public class YourFileSendercom extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         String downloadurl = downloadLink.getDownloadURL();
         this.setBrowserExclusive();

@@ -33,11 +33,6 @@ public class RomsZopharNet extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         return true;
     }

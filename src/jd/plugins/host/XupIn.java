@@ -31,7 +31,6 @@ import jd.utils.JDLocale;
 public class XupIn extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.xup.in/terms/";
-    private static final String CODER = "JD-Team";
 
     public XupIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,11 +39,6 @@ public class XupIn extends PluginForHost {
     @Override
     public String getAGBLink() {
         return AGB_LINK;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

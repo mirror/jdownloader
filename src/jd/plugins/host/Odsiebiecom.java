@@ -32,8 +32,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class Odsiebiecom extends PluginForHost {
-    private static final String CODER = "JD-Team";
-
     private String captchaCode;
     private File captchaFile;
     private String downloadurl;
@@ -45,11 +43,6 @@ public class Odsiebiecom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
@@ -124,13 +117,13 @@ public class Odsiebiecom extends PluginForHost {
                         break;
                     }
                     if (url.contains("style")) {
-                        if (!new Regex(url,"display:none[ ]*?\"").matches()) {
+                        if (!new Regex(url, "display:none[ ]*?\"").matches()) {
                             captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
                             break;
                         } else {
                             String[] captchacodes = capform.getRegex("<font(.*?style=\".*?\".*?.*?>.*?<)").getColumn(0);
                             for (String tmp : captchacodes) {
-                                if (!new Regex(url,"display:none[ ]*?\"").matches()) {
+                                if (!new Regex(url, "display:none[ ]*?\"").matches()) {
                                     captchaCode = new Regex(tmp, ">(.*?)<").getMatch(0).trim();
                                     break;
                                 }
@@ -138,7 +131,7 @@ public class Odsiebiecom extends PluginForHost {
                         }
                     }
                 }
-                
+
                 if (captchaurl == null && captchaCode == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 if (captchaCode == null) {
                     captchaFile = getLocalCaptchaFile(this);
@@ -149,7 +142,7 @@ public class Odsiebiecom extends PluginForHost {
                     /* CaptchaCode holen */
                     captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
                 }
-                
+
                 capform.setVariable(0, captchaCode);
                 /* Überprüfen(Captcha,Password) */
                 downloadurl = "http://odsiebie.com/pobierz/" + steplink + "?captcha=" + captchaCode;

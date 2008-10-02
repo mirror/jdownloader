@@ -24,8 +24,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class Moosharede extends PluginForHost {
-    private static final String CODER = "JD-Team";
-
     public Moosharede(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -33,11 +31,6 @@ public class Moosharede extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.mooshare.de/infos.php";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
@@ -83,8 +76,7 @@ public class Moosharede extends PluginForHost {
 
         /* Datei herunterladen */
 
-  
-        dl=RAFDownload.download(downloadLink, br.createGetRequest(null),true,0);      
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);
         dl.startDownload();
     }
 

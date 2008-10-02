@@ -62,7 +62,7 @@ public class MeinUpload extends PluginForHost {
 
         dl = new RAFDownload(this, downloadLink, br.createRequest(url));
         dl.connect(br);
-    
+
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
@@ -138,11 +138,6 @@ public class MeinUpload extends PluginForHost {
     @Override
     public String getAGBLink() {
         return AGB_LINK;
-    }
-
-    @Override
-    public String getCoder() {
-        return "JD-Team";
     }
 
     @Override

@@ -570,10 +570,6 @@ public class Rapidshare extends PluginForHost {
         return "http://rapidshare.com/faq.html";
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     /**
      * Sucht im ticketcode nach der entgültigen DownloadURL Diese Downlaodurl
      * beinhaltet in ihrer Subdomain den zielserver. Durch Anpassung dieses
