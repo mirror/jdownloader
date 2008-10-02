@@ -778,12 +778,14 @@ public class Rapidshare extends PluginForHost {
         String trafficLeft = br.getRegex("<td>(Traffic left:|Traffic &uuml;brig:)</td><td align=right><b><script>document\\.write\\(setzeTT\\(\"\"\\+Math\\.ceil\\(([\\d]*?)\\/1000\\)\\)\\)\\;<\\/script> MB<\\/b><\\/td>").getMatch(1);
         String files = br.getRegex("<td>(Files:|Dateien:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         String rapidPoints = br.getRegex("<td>RapidPoints:</td><td.*?><b>(.*?)</b></td>").getMatch(0).trim();
+        String newRapidPoints = br.getRegex(">RapidPoints PU</a>:</td><td.*?><b>(.*?)</b></td>").getMatch(0).trim();
         String usedSpace = br.getRegex("<td>(Used storage:|Belegter Speicher:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         String trafficShareLeft = br.getRegex("<td>(TrafficShare left:|TrafficShare &uuml;brig:)</td><td.*?><b>(.*?)</b></td>").getMatch(1).trim();
         ai.setTrafficLeft(Regex.getSize(trafficLeft + " Mb") / 1000);
         ai.setTrafficMax(50 * 1024 * 1024 * 1024l);
         ai.setFilesNum(Integer.parseInt(files));
         ai.setPremiumPoints(Integer.parseInt(rapidPoints));
+        ai.setNewPremiumPoints(Integer.parseInt(newRapidPoints));
         ai.setUsedSpace(Regex.getSize(usedSpace));
         ai.setTrafficShareLeft(Regex.getSize(trafficShareLeft));
         SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd. MMM yyyy", Locale.UK);

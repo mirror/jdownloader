@@ -88,21 +88,17 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      * @param file
      * @param plugin
      * @return captchacode
+     * @throws PluginException
      */
-    public static String getCaptchaCode(File file, Plugin plugin) {
-        String captchaText = JDUtilities.getCaptcha(plugin, null, file, false);
-        return captchaText;
-    }
-
     public static String getCaptchaCode(File file, Plugin plugin, DownloadLink link) throws PluginException {
         String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
-        if (captchaText == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (captchaText == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return captchaText;
     }
 
     public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws PluginException {
         String captchaText = JDUtilities.getCaptcha(plugin, method, file, forceJAC, link);
-        if (captchaText == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (captchaText == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return captchaText;
     }
 
@@ -126,13 +122,13 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     public static String getUserInput(String message, DownloadLink link) throws PluginException {
         String password = JDUtilities.getUserInput(message, link);
-        if (password == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (password == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return password;
     }
 
     public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws PluginException {
         String password = JDUtilities.getUserInput(message, defaultmessage, link);
-        if (password == null) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (password == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return password;
     }
 
@@ -242,9 +238,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     private Captcha lastCaptcha;
 
-    @Deprecated
-    protected RequestInfo requestInfo;
-
     private String statusText;
 
     protected PluginWrapper wrapper;
@@ -288,11 +281,9 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     public void clean() {
         lastCaptcha = null;
-        requestInfo = null;
         br = new Browser();
         System.gc();
         System.runFinalization();
-
     }
 
     public boolean collectCaptchas() {
@@ -366,7 +357,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
 
     static public String getFileNameFromDispositionHeader(String header) {
         // http://greenbytes.de/tech/tc2231/
-        if(header==null)return null;
+        if (header == null) return null;
         String orgheader = header;
         String contentdisposition = header;
         String filename = null;
@@ -380,7 +371,7 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
                     filename = null;
                     return filename;
                 }
-                contentdisposition = contentdisposition.replaceAll(format + "''", "");                
+                contentdisposition = contentdisposition.replaceAll(format + "''", "");
                 filename = new Regex(contentdisposition, "filename.*?=[ \"']+(.+?)[;\"']+.*?;?").getMatch(0);
                 if (filename == null) {
                     header = header.replaceAll("=", "=\"") + "\"";

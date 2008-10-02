@@ -32,6 +32,7 @@ public class AccountInfo extends Property {
     private long trafficMax = -1;
     private int filesNum = -1;
     private int premiumPoints = -1;
+    private int newPremiumPoints = -1;
     private int accountBalance = -1;
     private long usedSpace = -1;
     private long trafficShareLeft = -1;
@@ -65,6 +66,10 @@ public class AccountInfo extends Property {
         return filesNum;
     }
 
+    public int getNewPremiumPoints() {
+        return newPremiumPoints;
+    }
+
     public PluginForHost getPlugin() {
         return plugin;
     }
@@ -89,6 +94,10 @@ public class AccountInfo extends Property {
      */
     public long getTrafficLeft() {
         return trafficLeft;
+    }
+
+    public long getTrafficMax() {
+        return trafficMax;
     }
 
     /**
@@ -148,6 +157,10 @@ public class AccountInfo extends Property {
         this.accountBalance = parseInt;
     }
 
+    public void setAccountBalance(String string) {
+        this.setAccountBalance((int) (Double.parseDouble(string) * 100));
+    }
+
     public void setExpired(boolean b) {
         this.expired = b;
         if (b) this.setTrafficLeft(0);
@@ -155,6 +168,10 @@ public class AccountInfo extends Property {
 
     public void setFilesNum(int parseInt) {
         this.filesNum = parseInt;
+    }
+
+    public void setNewPremiumPoints(int newPremiumPoints) {
+        this.newPremiumPoints = newPremiumPoints;
     }
 
     public void setPlugin(PluginForHost plugin) {
@@ -165,12 +182,24 @@ public class AccountInfo extends Property {
         this.premiumPoints = parseInt;
     }
 
+    public void setPremiumPoints(String string) {
+        this.setPremiumPoints(Integer.parseInt(string.trim()));
+    }
+
     public void setStatus(String string) {
         this.status = string;
     }
 
     public void setTrafficLeft(long size) {
         this.trafficLeft = size;
+    }
+
+    public void setTrafficLeft(String freeTraffic) {
+        this.setTrafficLeft(Regex.getSize(freeTraffic));
+    }
+
+    public void setTrafficMax(long trafficMax) {
+        this.trafficMax = trafficMax;
     }
 
     public void setTrafficShareLeft(long size) {
@@ -181,41 +210,22 @@ public class AccountInfo extends Property {
         this.usedSpace = usedSpace;
     }
 
+    public void setUsedSpace(String string) {
+        this.setUsedSpace(Regex.getSize(string));
+    }
+
     public void setValid(boolean b) {
         this.valid = b;
     }
 
     /**
      * -1 für Niemals ablaufen
+     * 
      * @param validUntil
      */
     public void setValidUntil(long validUntil) {
         this.validUntil = validUntil;
         if (validUntil != -1 && validUntil < new Date().getTime()) this.setExpired(true);
-    }
-
-    public long getTrafficMax() {
-        return trafficMax;
-    }
-
-    public void setTrafficMax(long trafficMax) {
-        this.trafficMax = trafficMax;
-    }
-
-    public void setTrafficLeft(String freeTraffic) {
-        this.setTrafficLeft(Regex.getSize(freeTraffic));
-    }
-
-    public void setPremiumPoints(String string) {
-        this.setPremiumPoints(Integer.parseInt(string.trim()));
-    }
-
-    public void setUsedSpace(String string) {
-        this.setUsedSpace(Regex.getSize(string));
-    }
-
-    public void setAccountBalance(String string) {
-        this.setAccountBalance((int) (Double.parseDouble(string) * 100));
     }
 
 }
