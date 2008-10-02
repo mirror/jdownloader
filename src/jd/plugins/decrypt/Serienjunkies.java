@@ -404,10 +404,6 @@ public class Serienjunkies extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public CryptedLink[] getDecryptableLinks(String data) {
         String[] links = new Regex(data, "http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es)[^\"]*", Pattern.CASE_INSENSITIVE).getColumn(-1);
         ArrayList<CryptedLink> ret = new ArrayList<CryptedLink>();

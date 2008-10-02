@@ -30,7 +30,6 @@ public class Sexuriacom extends PluginForDecrypt {
     private static final Pattern PATTEREN_SUPPORTED_MAIN = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_CRYPT = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_REDIRECT = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
-    private static final String CODER = "JD-Team";
 
     public Sexuriacom(PluginWrapper wrapper) {
         super(wrapper);
@@ -71,11 +70,6 @@ public class Sexuriacom extends PluginForDecrypt {
             return decryptedLinks;
         }
         return null;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

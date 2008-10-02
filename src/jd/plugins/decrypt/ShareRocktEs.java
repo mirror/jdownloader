@@ -29,7 +29,7 @@ public class ShareRocktEs extends PluginForDecrypt {
 
     private static final Pattern PATTERN_SUPPORTED_GO = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTEREN_SUPPORTED_V = Pattern.compile("http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+", Pattern.CASE_INSENSITIVE);
-    private static final String CODER = "JD-Team";
+
     public ShareRocktEs(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -72,11 +72,6 @@ public class ShareRocktEs extends PluginForDecrypt {
             }
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
