@@ -31,18 +31,11 @@ public class Dataupde extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    private static final String CODER = "JD-Team";
-
     private String downloadurl;
 
     @Override
     public String getAGBLink() {
         return "http://www.dataup.de/agb";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

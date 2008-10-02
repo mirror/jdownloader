@@ -28,8 +28,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class FileUploadnet extends PluginForHost {
-    private static final String CODER = "JD-Team";
-
     static private final Pattern PAT_Download = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html", Pattern.CASE_INSENSITIVE);
 
     static private final Pattern PAT_VIEW = Pattern.compile("http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html)", Pattern.CASE_INSENSITIVE);
@@ -45,11 +43,6 @@ public class FileUploadnet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.file-upload.net/to-agb.html";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

@@ -35,8 +35,6 @@ import jd.utils.JDUtilities;
 
 public class Filer extends PluginForHost {
 
-    static private final String CODER = "JD-Team";
-
     private static final Pattern PATTERN_MATCHER_ERROR = Pattern.compile("errors", Pattern.CASE_INSENSITIVE);
 
     public Filer(PluginWrapper wrapper) {
@@ -113,11 +111,11 @@ public class Filer extends PluginForHost {
         String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getMatch(0);
         br.getPage("http://www.filer.net/dl/" + id);
 
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(null),true,0);
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);
         if (!dl.connect(br).isOK()) {
             linkStatus.addStatus(LinkStatus.ERROR_RETRY);
             return;
-        }  
+        }
         dl.startDownload();
 
     }
@@ -126,11 +124,6 @@ public class Filer extends PluginForHost {
     public String getAGBLink() {
 
         return "http://www.filer.net/faq";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

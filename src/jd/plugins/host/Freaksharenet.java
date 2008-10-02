@@ -46,11 +46,6 @@ public class Freaksharenet extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
 
         br.setCookiesExclusive(true);

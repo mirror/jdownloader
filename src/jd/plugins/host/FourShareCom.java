@@ -28,7 +28,6 @@ import jd.plugins.download.RAFDownload;
 
 public class FourShareCom extends PluginForHost {
 
-    private static final String CODER = "JD-Team";
     private static int COUNTER = 0;
 
     public FourShareCom(PluginWrapper wrapper) {
@@ -38,11 +37,6 @@ public class FourShareCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://www.4shared.com/terms.jsp";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

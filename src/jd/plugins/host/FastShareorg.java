@@ -31,17 +31,12 @@ public class FastShareorg extends PluginForHost {
     private String url;
 
     public FastShareorg(PluginWrapper wrapper) {
-         super(wrapper);
+        super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.fastshare.org/discl.php";
-    }
-
-    @Override
-    public String getCoder() {
-        return "JD-Team";
     }
 
     @Override
@@ -97,15 +92,14 @@ public class FastShareorg extends PluginForHost {
         /* Zwangswarten, 10seks */
         sleep(10000, downloadLink);
 
-   
-        dl=RAFDownload.download(downloadLink, br.createGetRequest(url), false, 1);
+        dl = RAFDownload.download(downloadLink, br.createGetRequest(url), false, 1);
         HTTPConnection urlConnection = dl.connect(br);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
-       
+
         dl.startDownload();
 
     }

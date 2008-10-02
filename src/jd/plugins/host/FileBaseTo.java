@@ -39,11 +39,6 @@ public class FileBaseTo extends PluginForHost {
     }
 
     @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
-    @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -87,11 +82,10 @@ public class FileBaseTo extends PluginForHost {
         }
         Form dl_form = br.getFormbyName("waitform");
         String value = br.getRegex(Pattern.compile("document\\.waitform\\.wait\\.value = \"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0);
-  
+
         dl_form.put("wait", value);
 
-     
-        dl=RAFDownload.download(downloadLink, br.createFormRequest(dl_form));
+        dl = RAFDownload.download(downloadLink, br.createFormRequest(dl_form));
         dl.startDownload();
     }
 

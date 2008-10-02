@@ -37,8 +37,6 @@ public class BluehostTo extends PluginForHost {
         super(wrapper);
     }
 
-    static private final String CODER = "JD-Team";
-
     private void correctUrl(DownloadLink downloadLink) {
         String url = downloadLink.getDownloadURL();
         url = url.replaceFirst("\\?dl=", "dl=");
@@ -90,11 +88,6 @@ public class BluehostTo extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://bluehost.to/agb.php";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

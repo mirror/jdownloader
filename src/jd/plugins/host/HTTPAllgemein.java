@@ -43,11 +43,6 @@ public class HTTPAllgemein extends PluginForHost {
         return "";
     }
 
-    @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public String getFileInformationString(DownloadLink parameter) {
         return "(" + contentType + ")" + parameter.getName();
     }

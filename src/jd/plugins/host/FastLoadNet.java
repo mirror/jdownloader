@@ -38,7 +38,7 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String NOT_FOUND = "Datei existiert nicht";
 
-    private static int SIM=20;
+    private static int SIM = 20;
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -94,33 +94,33 @@ public class FastLoadNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         final String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("pid=") + 4 + 32);
-// der observer prüft alle 10 min auf happy hour.
+        // der observer prüft alle 10 min auf happy hour.
         Thread observer = new Thread("Fast-load speed observer") {
             public void run() {
-                while(true){
-                downloadLink.setLocalSpeedLimit(-1);
-                String serverStatusID;
-                SIM=20;
-                try {
-                    serverStatusID = br.getPage("http://www.fast-load.net/api/jdownloader/" + pid).trim();
+                while (true) {
+                    downloadLink.setLocalSpeedLimit(-1);
+                    String serverStatusID;
+                    SIM = 20;
+                    try {
+                        serverStatusID = br.getPage("http://www.fast-load.net/api/jdownloader/" + pid).trim();
 
-                    if (serverStatusID.equalsIgnoreCase("0")) {
-                        logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
-                        downloadLink.setLocalSpeedLimit(20 * 1024);
-                        JDUtilities.getGUI().displayMiniWarning(JDLocale.L("plugins.host.fastload.overload.short", "Fast-load.net Overload"), JDLocale.L("plugins.host.fastload.overload.long", "Fast-load.net Overload!. Fullspeed download only in browsers"), 10*60*1000);
-                        SIM=1;
-                    } else {
+                        if (serverStatusID.equalsIgnoreCase("0")) {
+                            logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
+                            downloadLink.setLocalSpeedLimit(20 * 1024);
+                            JDUtilities.getGUI().displayMiniWarning(JDLocale.L("plugins.host.fastload.overload.short", "Fast-load.net Overload"), JDLocale.L("plugins.host.fastload.overload.long", "Fast-load.net Overload!. Fullspeed download only in browsers"), 10 * 60 * 1000);
+                            SIM = 1;
+                        } else {
+                            downloadLink.setLocalSpeedLimit(-1);
+                        }
+                    } catch (IOException e1) {
                         downloadLink.setLocalSpeedLimit(-1);
                     }
-                } catch (IOException e1) {
-                    downloadLink.setLocalSpeedLimit(-1);
-                }
 
-                try {
-                    Thread.sleep(10 * 60 * 1000);
-                } catch (InterruptedException e) {
-                    return;
-                }
+                    try {
+                        Thread.sleep(10 * 60 * 1000);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
                 }
             }
         };
@@ -136,12 +136,9 @@ public class FastLoadNet extends PluginForHost {
 
     public void handleFree0(final DownloadLink downloadLink) throws Exception {
         // LinkStatus linkStatus = downloadLink.getLinkStatus();
-//        br.setDebug(true);
+        // br.setDebug(true);
 
         getFileInformation(downloadLink);
-
-      
-   
 
         Form captchaForm = getDownloadForm();
 
@@ -161,7 +158,7 @@ public class FastLoadNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.getHttpConnection().getContentLength() == 529) {
                 logger.severe("File not found: Unkown 404 Error");
-            } else if (!br.getHttpConnection().isOK()) {  
+            } else if (!br.getHttpConnection().isOK()) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
             } else {
                 logger.severe("Unknown error page");
@@ -184,7 +181,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return SIM==1?1:JDUtilities.getController().getRunningDownloadNumByHost(this)+1;
+        return SIM == 1 ? 1 : JDUtilities.getController().getRunningDownloadNumByHost(this) + 1;
     }
 
     @Override

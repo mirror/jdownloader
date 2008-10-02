@@ -34,20 +34,11 @@ public class ClipfishDe extends PluginForHost {
         // TODO Auto-generated constructor stub
     }
 
-    private static final String CODER = "JD-Team";
-
     private static final String AGB_LINK = "http://www.clipfish.de/agb/";
-
-  
 
     @Override
     public String getAGBLink() {
         return AGB_LINK;
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
@@ -91,13 +82,12 @@ public class ClipfishDe extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);
-        urlConnection=dl.connect();
+        urlConnection = dl.connect();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
 
-      
         if (dl.startDownload()) {
             if (downloadLink.getProperty("convertto") != null) {
                 ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());

@@ -28,12 +28,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
-
-public class ArchivTo extends PluginForHost {    
-
-    
-
-
+public class ArchivTo extends PluginForHost {
 
     public ArchivTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -42,13 +37,8 @@ public class ArchivTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-  
-        return "http://archiv.to/?Module=Policy";
-    }
 
-    @Override
-    public String getCoder() {
-        return "JD-Team";
+        return "http://archiv.to/?Module=Policy";
     }
 
     @Override
@@ -87,7 +77,7 @@ public class ArchivTo extends PluginForHost {
         }
 
         Request request = br.createGetRequest("http://archiv.to/" + Encoding.htmlDecode(new Regex(br.getPage(downloadLink.getDownloadURL()), Pattern.compile("<a href=\"\\./(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-      
+
         dl = new RAFDownload(this, downloadLink, request);
         dl.startDownload();
     }

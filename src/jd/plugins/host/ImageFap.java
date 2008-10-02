@@ -31,8 +31,6 @@ import jd.plugins.download.RAFDownload;
 
 public class ImageFap extends PluginForHost {
 
-    static private final String CODER = "JD-Team";
-
     public ImageFap(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -72,11 +70,6 @@ public class ImageFap extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://imagefap.com/faq.php";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override

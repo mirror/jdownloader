@@ -41,8 +41,6 @@ import jd.utils.JDUtilities;
 
 public class DepositFiles extends PluginForHost {
 
-    static private final String CODER = "JD-Team";
-
     private static final String DOWNLOAD_NOTALLOWED = "Entschuldigung aber im Moment koennen Sie nur diesen Downloadmodus anwenden";
 
     static private final String FILE_NOT_FOUND = "Dieser File existiert nicht";
@@ -270,11 +268,6 @@ public class DepositFiles extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "http://depositfiles.com/en/agreem.html";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     @Override
