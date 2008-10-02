@@ -134,10 +134,6 @@ public class Gwarezcc extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;

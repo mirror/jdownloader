@@ -57,32 +57,27 @@ public class GappingOrg extends PluginForDecrypt {
         } else if (new Regex(parameter, patternSupported_folder2).matches()) {
             String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a target=\"_blank\" onclick=\"image\\d+\\.src.*? href=\"(.*?)\".*?>.*?</a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
             progress.setRange(links.length);
-            
+
             Pattern patternFollow = Pattern.compile("url=(.*)");
             for (String element : links) {
-            	if(new Regex(element, patternFollow).matches()) {
-            		String[] newLink = new Regex(element, patternFollow).getColumn(-1);
-            		decryptedLinks.add(createDownloadlink(newLink[0].trim()));
-	                progress.increase(1);
-            	} else {
-	                decryptedLinks.add(createDownloadlink(element.trim()));
-	                progress.increase(1);
-            	}
+                if (new Regex(element, patternFollow).matches()) {
+                    String[] newLink = new Regex(element, patternFollow).getColumn(-1);
+                    decryptedLinks.add(createDownloadlink(newLink[0].trim()));
+                    progress.increase(1);
+                } else {
+                    decryptedLinks.add(createDownloadlink(element.trim()));
+                    progress.increase(1);
+                }
             }
         } else if (new Regex(parameter, patternSupported_file2).matches()) {
-        	Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-        	if(new Regex(br.getPage(parameter), patternIframe).matches()) {
-        		String newLink = new Regex(br, patternIframe).getMatch(0);
-        		decryptedLinks.add(createDownloadlink(newLink.trim()));
+            Pattern patternIframe = Pattern.compile("<iframe.*src=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            if (new Regex(br.getPage(parameter), patternIframe).matches()) {
+                String newLink = new Regex(br, patternIframe).getMatch(0);
+                decryptedLinks.add(createDownloadlink(newLink.trim()));
                 progress.increase(1);
-        	}
+            }
         }
         return decryptedLinks;
-    }
-
-    @Override
-    public String getCoder() {
-        return "JD-Team";
     }
 
     @Override

@@ -54,11 +54,6 @@ public class RapidshareComFolder extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    @Override
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     private void getLinks(String para, String password, String source) throws IOException {
         String[] folders = new Regex(source, "font\\-size:12pt\\;\" href=\"javascript:folderoeffnen\\('(\\d+?)'\\);").getColumn(0);
         String[] links = new Regex(source, "<a style=\"font-size:12pt;\" target=\"_blank\" href=\"http://rapidshare.com/files/(.*?)\">").getColumn(0);
