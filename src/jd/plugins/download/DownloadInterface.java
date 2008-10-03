@@ -1030,8 +1030,7 @@ abstract public class DownloadInterface {
 
             logger.finer("Got filesze from Headrequest: " + head.getContentLength() + " bytes");
             downloadLink.setDownloadSize(fileSize = head.getContentLength());
-            String name = Plugin.getFileNameFromDispositionHeader(head.getHttpConnection().getHeaderField("content-disposition"));
-            if(name!=null) this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+            this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
             this.setFileSizeVerified(true);
         }
         return fileSize;
@@ -1054,14 +1053,13 @@ abstract public class DownloadInterface {
 
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
 
-//        if (request.getHttpConnection().getResponseCode() != 416) {
-//
-//            logger.severe("Fake head request failed!!!");
-//            
-//        }
+        // if (request.getHttpConnection().getResponseCode() != 416) {
+        //
+        // logger.severe("Fake head request failed!!!");
+        //            
+        // }
         request.getHttpConnection().disconnect();
-        String name = Plugin.getFileNameFromDispositionHeader(request.getHttpConnection().getHeaderField("content-disposition"));
-        if(name!=null) this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+        this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
         String range = request.getHttpConnection().getHeaderField("Content-Range");
         String length = new Regex(range, ".*?\\/(\\d+)").getMatch(0);
         long size = Long.parseLong(length);
@@ -1173,15 +1171,12 @@ abstract public class DownloadInterface {
             }
 
         }
-        
-        String name = Plugin.getFileNameFromDispositionHeader(connection.getHeaderField("content-disposition"));
-        if(name!=null) this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+
+        this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
         fileSize = downloadLink.getDownloadSize();
 
         return connection;
     }
-
-   
 
     private void connectFirstRange() throws IOException {
         long part = downloadLink.getDownloadSize() / this.getChunkNum();
