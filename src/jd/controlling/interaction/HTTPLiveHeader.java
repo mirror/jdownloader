@@ -445,7 +445,7 @@ public class HTTPLiveHeader extends Interaction {
 
                         logger.finer("Variables set: " + variables);
                     }
-                 
+
                     if (toDo.getNodeName().equalsIgnoreCase("REQUEST")) {
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
@@ -701,6 +701,9 @@ public class HTTPLiveHeader extends Interaction {
                     post = post.trim();
                     logger.finer("POST " + "http://" + host + path + " " + post);
                     br.postPageRaw("http://" + host + path, post);
+                } else if (requestType.equalsIgnoreCase("AUTH")) {
+                    logger.finer("Convert AUTH->GET");
+                    br.getPage("http://" + host + path);
                 } else {
                     logger.severe("Unknown requesttyp: " + requestType);
                     return null;
@@ -776,11 +779,11 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     private void getVariables(String patStr, String[] keys, Browser br) {
-logger.info("GetVariables");
+        logger.info("GetVariables");
         if (br == null) return;
         // patStr="<title>(.*?)</title>";
         logger.finer(patStr);
-        Pattern pattern = Pattern.compile(patStr,Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
+        Pattern pattern = Pattern.compile(patStr, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
 
         // logger.info(requestInfo.getHtmlCode());
         Matcher matcher = pattern.matcher(br + "");
