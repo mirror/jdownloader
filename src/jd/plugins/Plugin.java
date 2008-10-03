@@ -374,9 +374,11 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
                     return filename;
                 }
                 contentdisposition = contentdisposition.replaceAll(format + "''", "");
-                filename = new Regex(contentdisposition, "filename.*?=[ \"']+(.+?)[;\"']+.*?;?").getMatch(0);
+                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
+                if (filename == null) filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
                 if (filename == null) {
                     header = header.replaceAll("=", "=\"") + "\"";
+                    header = header.replaceAll(";\"", "\"");
                     contentdisposition = header;
                 } else {
                     try {
@@ -389,9 +391,11 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
                 }
             } else {
                 /* ohne Codierung */
-                filename = new Regex(contentdisposition, "filename.*?=[ \"']+(.+?)[;\"']+.*?;?").getMatch(0);
+                filename = new Regex(contentdisposition, "filename.*?=[ ]*\"(.+)\"").getMatch(0);
+                if (filename == null) filename = new Regex(contentdisposition, "filename.*?=[ ]*'(.+)'").getMatch(0);
                 if (filename == null) {
                     header = header.replaceAll("=", "=\"") + "\"";
+                    header = header.replaceAll(";\"", "\"");
                     contentdisposition = header;
                 }
             }
