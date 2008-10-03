@@ -117,6 +117,11 @@ public class FileFactory extends PluginForHost {
                     break;
                 } catch (IOException e) {
                     e.printStackTrace();
+                    try {
+                        Thread.sleep(200);
+                    } catch (Exception e2) {
+                        return;
+                    }
                 }
             captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
 
@@ -316,6 +321,7 @@ public class FileFactory extends PluginForHost {
             try {
                 Thread.sleep(200);
             } catch (Exception e) {
+                return false;
             }
             try {
                 br.getPage(downloadLink.getDownloadURL());

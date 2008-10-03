@@ -1242,7 +1242,7 @@ public class JDUtilities {
             while ((line = f.readLine()) != null) {
                 ret.append(line + sep);
             }
-            f.close();
+            f.close(); 
             return ret.toString();
         } catch (IOException e) {
 
