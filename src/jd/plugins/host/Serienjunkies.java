@@ -38,12 +38,10 @@ import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.HTTP;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -69,7 +67,7 @@ public class Serienjunkies extends PluginForHost {
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) throws PluginException {
         Vector<String> links = new Vector<String>();
-
+        Browser br = new Browser();
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
         }
@@ -77,34 +75,34 @@ public class Serienjunkies extends PluginForHost {
             url = "http://" + url;
         }
         try {
-            RequestInfo reqinfo = HTTP.getRequest(new URL(url));
+            String htmlcode = br.getPage(url);
 
-            String cookie = reqinfo.getCookie();
             File captchaFile = null;
             String capTxt = null;
             while (true) {
-                reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
-                Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
+                htmlcode = htmlcode.replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", "");
+                Matcher matcher = patternCaptcha.matcher(htmlcode);
                 if (matcher.find()) {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
                     }
-                    String[][] gifs = new Regex(reqinfo.getHtmlCode(), patternCaptcha).getMatches();
+                    String[][] gifs = new Regex(htmlcode, patternCaptcha).getMatches();
 
                     String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
-
-                    HTTPConnection con = HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection();
+                    Browser capbr = br.cloneBrowser();
+                    capbr.setFollowRedirects(true);
+                    HTTPConnection con = capbr.openGetConnection(captchaAdress);
 
                     if (con.getResponseCode() < 0) {
                         captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
-                        con = HTTP.getRequestWithoutHtmlCode(new URL(captchaAdress), cookie, null, true).getConnection();
+                        capbr.setFollowRedirects(true);
+                        con = capbr.openGetConnection(captchaAdress);
 
                     }
                     if (con.getContentLength() < 1000) {
                         if (!Reconnecter.waitForNewIP(5 * 60l)) { return null; }
 
-                        reqinfo = HTTP.getRequest(new URL(url));
-                        cookie = reqinfo.getCookie();
+                        htmlcode = br.getPage(url);
 
                         continue;
                     }
@@ -119,8 +117,7 @@ public class Serienjunkies extends PluginForHost {
                             Thread.sleep(1000);
                         } catch (InterruptedException e1) {
                         }
-                        reqinfo = HTTP.getRequest(new URL(url));
-                        cookie = reqinfo.getCookie();
+                        htmlcode = br.getPage(url);
 
                         continue;
                     }
@@ -128,23 +125,23 @@ public class Serienjunkies extends PluginForHost {
                     logger.info("captchafile: " + captchaFile);
                     capTxt = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
 
-                    reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
+                    htmlcode = br.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
 
                 } else {
                     captchaMethod(captchaFile, capTxt);
                     break;
                 }
             }
-            if (reqinfo.getLocation() != null) {
-                links.add(reqinfo.getLocation());
+            if (br.getRedirectLocation() != null) {
+                links.add(br.getRedirectLocation());
             }
-            Form[] forms = reqinfo.getForms();
+            Form[] forms = br.getForms();
             for (int i = 0; i < forms.length; i++) {
                 if (!forms[i].action.contains("firstload")) {
                     try {
-                        reqinfo = HTTP.getRequest(new URL(forms[i].action));
-                        reqinfo = HTTP.getRequest(new URL(new Regex(reqinfo.getHtmlCode(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)), null, null, false);
-                        String loc = reqinfo.getLocation();
+                        br.getPage(forms[i].action);
+                        br.getPage(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+                        String loc = br.getRedirectLocation();
                         if (loc != null) {
                             links.add(loc);
                         }
@@ -163,7 +160,7 @@ public class Serienjunkies extends PluginForHost {
     // Für Links die gleich auf den Hoster relocaten
     private String EinzelLinks(String url) throws PluginException {
         String links = "";
-
+        Browser br = new Browser();
         if (!url.startsWith("http://")) {
             url = "http://" + url;
         }
@@ -172,12 +169,12 @@ public class Serienjunkies extends PluginForHost {
                 url = url.replaceAll("safe/", "safe/f");
                 url = url.replaceAll("save/", "save/f");
             }
-            RequestInfo reqinfo = HTTP.getRequest(new URL(url));
+            String htmlcode = br.getPage(url);
             File captchaFile = null;
             String capTxt = null;
             while (true) {
-                reqinfo.setHtmlCode(reqinfo.getHtmlCode().replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", ""));
-                Matcher matcher = patternCaptcha.matcher(reqinfo.getHtmlCode());
+                htmlcode = htmlcode.replaceAll("(?s)<!--.*?-->", "").replaceAll("(?i)(?s)<div style=\"display: none;\">.*?</div>", "");
+                Matcher matcher = patternCaptcha.matcher(htmlcode);
                 if (matcher.find()) {
                     if (captchaFile != null && capTxt != null) {
                         JDUtilities.appendInfoToFilename(this, captchaFile, capTxt, false);
@@ -194,19 +191,19 @@ public class Serienjunkies extends PluginForHost {
                             Thread.sleep(1000);
                         } catch (InterruptedException e1) {
                         }
-                        reqinfo = HTTP.getRequest(new URL(url));
+                        htmlcode = br.getPage(url);
 
                         continue;
                     }
                     capTxt = Plugin.getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
-                    reqinfo = HTTP.postRequest(new URL(url), "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
+                    htmlcode = br.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     captchaMethod(captchaFile, capTxt);
                     break;
                 }
             }
 
-            links = reqinfo.getLocation();
+            links = br.getRedirectLocation();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -252,7 +249,7 @@ public class Serienjunkies extends PluginForHost {
 
     public ArrayList<DownloadLink> getDLinks(String parameter) {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-
+        Browser br = new Browser();
         try {
             URL url = new URL(parameter);
             subdomain = new Regex(parameter, "http://(.*?)serienjunkies.org.*").getMatch(0);
@@ -263,18 +260,22 @@ public class Serienjunkies extends PluginForHost {
 
             patternCaptcha = Pattern.compile(dynamicCaptcha);
             logger.fine("using patternCaptcha:" + patternCaptcha);
-            RequestInfo reqinfo = HTTP.getRequest(url, null, null, true);
-            if (reqinfo.getLocation() != null) {
-                reqinfo = HTTP.getRequest(url, null, null, true);
+            br.setFollowRedirects(true);
+            br.getPage(url);
+            if (br.getRedirectLocation() != null) {
+                br.setFollowRedirects(true);
+                br.getPage(url);
             }
-            if (reqinfo.containsHTML("Du hast zu oft das Captcha falsch")) {
+            if (br.containsHTML("Du hast zu oft das Captcha falsch")) {
                 downloadLink.getLinkStatus().setStatusText("Reconnect required");
                 downloadLink.requestGuiUpdate();
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
                     logger.info("Reconnect successfull. try again");
-                    reqinfo = HTTP.getRequest(url, null, null, true);
-                    if (reqinfo.getLocation() != null) {
-                        reqinfo = HTTP.getRequest(url, null, null, true);
+                    br.setFollowRedirects(true);
+                    br.getPage(url);
+                    if (br.getRedirectLocation() != null) {
+                        br.setFollowRedirects(true);
+                        br.getPage(url);
                     }
                     downloadLink.getLinkStatus().setStatusText("Decrypt");
                     downloadLink.requestGuiUpdate();
@@ -284,15 +285,17 @@ public class Serienjunkies extends PluginForHost {
                 }
 
             }
-            if (reqinfo.containsHTML("Download-Limit")) {
+            if (br.containsHTML("Download-Limit")) {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
                 downloadLink.getLinkStatus().setStatusText("Reconnect required");
                 downloadLink.requestGuiUpdate();
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
                     logger.info("Reconnect successfull. try again");
-                    reqinfo = HTTP.getRequest(url, null, null, true);
-                    if (reqinfo.getLocation() != null) {
-                        reqinfo = HTTP.getRequest(url, null, null, true);
+                    br.setFollowRedirects(true);
+                    br.getPage(url);
+                    if (br.getRedirectLocation() != null) {
+                        br.setFollowRedirects(true);
+                        br.getPage(url);
                     }
                     downloadLink.getLinkStatus().setStatusText("Decrypt");
                     downloadLink.requestGuiUpdate();
@@ -301,16 +304,17 @@ public class Serienjunkies extends PluginForHost {
                     return decryptedLinks;
                 }
             }
-            String furl = new Regex(reqinfo.getHtmlCode(), Pattern.compile("<FRAME SRC=\"(.*?)" + modifiedURL.replaceAll("[^0-1a-zA-Z]", ".") + "\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String furl = br.getRegex(Pattern.compile("<FRAME SRC=\"(.*?)" + modifiedURL.replaceAll("[^0-1a-zA-Z]", ".") + "\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (furl != null) {
                 url = new URL(furl + modifiedURL);
                 logger.info("Frame found. frame url: " + furl + modifiedURL);
-                reqinfo = HTTP.getRequest(url, null, null, true);
+                br.setFollowRedirects(true);
+                br.getPage(url);
                 parameter = furl + modifiedURL;
 
             }
 
-            String[][] links = new Regex(reqinfo.getHtmlCode(), Pattern.compile(" <a href=\"http://(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            String[][] links = br.getRegex(Pattern.compile(" <a href=\"http://(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
             Vector<String> helpvector = new Vector<String>();
             String helpstring = "";
 
