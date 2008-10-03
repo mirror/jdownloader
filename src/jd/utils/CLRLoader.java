@@ -79,8 +79,7 @@ public class CLRLoader {
                     String action = node.getAttributes().getNamedItem("action").getNodeValue().trim();
                     String basicauth = null;
                     if (method.equalsIgnoreCase("post")) {
-                        hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");
-                        hlh.append("            Host: %%%routerip%%%" + "\r\n");
+                        hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");                        
                     } else if (method.equalsIgnoreCase("get")) {
                     } else if (method.equalsIgnoreCase("auth")) {
                         basicauth = action;
@@ -108,11 +107,17 @@ public class CLRLoader {
                     }
 
                     if (method.equalsIgnoreCase("post")) {
-                        CLRLoader.inputAuth(hlh, basicauth);
+                        hlh.append("            Host: %%%routerip%%%" + "\r\n");
+                        CLRLoader.inputAuth(hlh, basicauth);                        
                         hlh.append("\r\n");
-                        hlh.append(post);
+                        hlh.append(post.trim());
+                        hlh.append("\r\n");
                     } else {
-                        hlh.append("            " + method.toUpperCase() + " /" + action + "?" + post + " HTTP/1.1" + "\r\n");
+                        if (post.equals("")) {
+                            hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");
+                        } else {
+                            hlh.append("            " + method.toUpperCase() + " /" + action + "?" + post.trim() + " HTTP/1.1" + "\r\n");
+                        }
                         hlh.append("            Host: %%%routerip%%%" + "\r\n");
                         CLRLoader.inputAuth(hlh, basicauth);
                     }

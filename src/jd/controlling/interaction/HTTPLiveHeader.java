@@ -335,7 +335,11 @@ public class HTTPLiveHeader extends Interaction {
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl")).equals(JDLocale.L("modules.reconnect.types.clr", "CLR Script"))) {
             /* konvertiert CLR zu Liveheader */
             String[] ret = CLRLoader.createLiveHeader(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
-            script = ret[1];
+            if (ret != null) {
+                script = ret[1];
+            } else {
+                script = null;
+            }
         } else {
             script = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS);
         }
@@ -693,7 +697,7 @@ public class HTTPLiveHeader extends Interaction {
             }
             try {
                 Browser br = new Browser();
-
+                br.setDebug(true);
                 br.setConnectTimeout(5000);
                 br.setReadTimeout(5000);
                 if (requestProperties != null) {
