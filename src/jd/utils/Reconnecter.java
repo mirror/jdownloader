@@ -112,6 +112,8 @@ public class Reconnecter {
                 ipChangeSuccess = new ExternReconnect().interact(null);
             } else if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
                 ipChangeSuccess = new BatchReconnect().interact(null);
+            } else if (type.equals(JDLocale.L("modules.reconnect.types.clr", "CLR Script"))) {
+                ipChangeSuccess = new HTTPLiveHeader().interact(null);
             } else {
                 ipChangeSuccess = new HTTPLiveHeader().interact(null);
             }

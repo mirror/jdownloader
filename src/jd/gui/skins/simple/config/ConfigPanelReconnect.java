@@ -54,6 +54,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     private ConfigEntriesPanel er;
 
     private SubPanelLiveHeaderReconnect lh;
+    private SubPanelCLRReconnect lhclr;
 
     private MiniLogDialog mld;
 
@@ -127,7 +128,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     @Override
     public void initPanel() {
-        box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch") });
+        box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch"), JDLocale.L("modules.reconnect.types.clr", "CLR Script") });
         box.setSelectedItem(configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl")));
         box.addActionListener(this);
 
@@ -160,14 +161,20 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
             er.save();
             er.saveConfigEntries();
         }
+        if (lhclr != null) {
+            lhclr.save();
+            lhclr.saveConfigEntries();
+        }
     }
 
     private void setReconnectType() {
 
         if (lh != null) panel.remove(lh);
         if (er != null) panel.remove(er);
+        if (lhclr != null) panel.remove(lhclr);
         lh = null;
         er = null;
+        lhclr = null;
 
         switch (box.getSelectedIndex()) {
         case 0:
@@ -181,6 +188,10 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
         case 2:
             er = new ConfigEntriesPanel(new BatchReconnect().getConfig());
             JDUtilities.addToGridBag(panel, er, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
+            break;
+        case 3:
+            lhclr = new SubPanelCLRReconnect(uiinterface, new HTTPLiveHeader());
+            JDUtilities.addToGridBag(panel, lhclr, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         }
 

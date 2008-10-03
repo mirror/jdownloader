@@ -39,6 +39,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.utils.CLRLoader;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -329,9 +330,15 @@ public class HTTPLiveHeader extends Interaction {
         // Hole die Config parameter. Über die Parameterkeys wird in der
         // initConfig auch der ConfigContainer für die Gui vorbereitet
         Configuration configuration = JDUtilities.getConfiguration();
+        String script;
 
-        String script = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS);
-
+        if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl")).equals(JDLocale.L("modules.reconnect.types.clr", "CLR Script"))) {
+            /* konvertiert CLR zu Liveheader */
+            String[] ret = CLRLoader.createLiveHeader(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
+            script = ret[1];
+        } else {
+            script = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS);
+        }
         String user = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_USER);
         String pass = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_PASS);
         String ip = configuration.getStringProperty(Configuration.PARAM_HTTPSEND_IP);
@@ -343,9 +350,9 @@ public class HTTPLiveHeader extends Interaction {
             Authenticator.setDefault(new InternalAuthenticator(user, pass));
         }
 
-        if (script == null) {
+        if (script == null || script.length() == 0) {
             progress.finalize();
-            return parseError("Kein RequestText gesetzt");
+            return parseError("No LiveHeader Script found");
         }
         String preIp = JDUtilities.getIPAddress();
 

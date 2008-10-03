@@ -102,6 +102,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HTTPSEND_ROUTERNAME = "PARAM_HTTPSEND_ROUTERNAME";
 
     public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
+    
+    public static final String PARAM_HTTPSEND_REQUESTS_CLR = "HTTPSEND_REQUESTS_CLR";
 
     public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
 

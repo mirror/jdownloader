@@ -27,8 +27,6 @@ import java.util.Vector;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.xml.parsers.DocumentBuilderFactory;
 
 import jd.gui.skins.simple.SimpleGUI;
@@ -44,13 +42,9 @@ public class CLRLoader {
     private static Vector<String> IDS;
 
     static Logger logger = JDUtilities.getLogger();
-    private static Vector<String> MANUES;
 
-    private static String[] createLiveHeader(String htmlCode, String string, String string2) {
-        logger.info(htmlCode);
-
+    public static String[] createLiveHeader(String CLR) {
         try {
-
             DocumentBuilderFactory factory;
 
             InputSource inSource;
@@ -60,9 +54,7 @@ public class CLRLoader {
             factory.setIgnoringComments(true);
 
             factory.setValidating(false);
-            // logger.info("encrypted: "+dlcString);
-
-            inSource = new InputSource(new StringReader(htmlCode));
+            inSource = new InputSource(new StringReader(CLR));
 
             doc = factory.newDocumentBuilder().parse(inSource);
 
@@ -77,26 +69,22 @@ public class CLRLoader {
                 if (type != 1) {
                     continue;
                 }
-                logger.info(node.getNodeName() + "");
+                // logger.info(node.getNodeName() + "");
                 if (node.getNodeName().equalsIgnoreCase("router")) {
                     routerName = node.getAttributes().getNamedItem("name").getNodeValue().trim();
                 } else if (node.getNodeName().equalsIgnoreCase("command")) {
                     hlh.append("    [[[STEP]]]" + "\r\n");
                     hlh.append("        [[[REQUEST]]]" + "\r\n");
-
                     String method = node.getAttributes().getNamedItem("method").getNodeValue().trim();
                     String action = node.getAttributes().getNamedItem("action").getNodeValue().trim();
                     String basicauth = null;
                     if (method.equalsIgnoreCase("post")) {
-
                         hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");
                         hlh.append("            Host: %%%routerip%%%" + "\r\n");
                     } else if (method.equalsIgnoreCase("get")) {
-
                     } else if (method.equalsIgnoreCase("auth")) {
                         basicauth = action;
                     } else {
-
                         logger.severe("UNKNOWN METHOD: " + method);
                     }
                     NodeList params = node.getChildNodes();
@@ -127,46 +115,17 @@ public class CLRLoader {
                         hlh.append("            " + method.toUpperCase() + " /" + action + "?" + post + " HTTP/1.1" + "\r\n");
                         hlh.append("            Host: %%%routerip%%%" + "\r\n");
                         CLRLoader.inputAuth(hlh, basicauth);
-
                     }
-
                     hlh.append("        [[[/REQUEST]]]" + "\r\n");
                     hlh.append("    [[[/STEP]]]" + "\r\n");
-
                 } else {
                     logger.info("UNKNOWN  command: " + node.getNodeName());
                 }
-
             }
             hlh.append("[[[/HSRC]]]");
-            logger.info(hlh.toString());
-            String man = null;
-            String router = null;
-
-            for (String next : MANUES) {
-                if (routerName.trim().toLowerCase().startsWith(next.toLowerCase())) {
-                    man = next;
-                    router = routerName.substring(man.length()).trim();
-
-                }
-            }
-            if (man == null) {
-                man = JOptionPane.showInputDialog(new JFrame(), routerName + " Hersteller", routerName.split("[ |-]")[0]);
-                if (routerName.trim().toLowerCase().startsWith(man.toLowerCase())) {
-                    router = routerName.substring(man.length()).trim();
-                } else {
-                    router = JOptionPane.showInputDialog(new JFrame(), routerName + " RouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouterRouter", routerName);
-                }
-
-                MANUES.add(man);
-            }
-            if (router.trim().length() == 0) {
-                router = routerName;
-            }
-            return new String[] { man, router, hlh.toString(), "(?s).*(" + man + ").*", "", "" };
-
+            // logger.info(hlh.toString());
+            return new String[] { routerName, hlh.toString() };
         } catch (Exception e) {
-
             e.printStackTrace();
             return null;
         }
@@ -189,7 +148,6 @@ public class CLRLoader {
     }
 
     public static void main(String args[]) {
-        MANUES = new Vector<String>();
         IDS = new Vector<String>();
         Vector<String[]> res = new Vector<String[]>();
 
@@ -206,7 +164,7 @@ public class CLRLoader {
                 }
                 br.postPage("http://cryptload.info/clrfile/", "clrid=" + next[0] + "&submit=myRouter.clr+herunterladen");
 
-                String[] ret = CLRLoader.createLiveHeader(br.toString(), next[0], next[1]);
+                String[] ret = CLRLoader.createLiveHeader(br.toString());
                 if (ret != null) {
                     res.add(ret);
                     IDS.add(next[0]);
