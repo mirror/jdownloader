@@ -1231,7 +1231,7 @@ public class JDUtilities {
      * @return File Content als String
      */
     public static String getLocalFile(File file) {
-        if (!file.exists()) { return ""; } 
+        if (!file.exists()) { return ""; }
         BufferedReader f;
         try {
             f = new BufferedReader(new FileReader(file));
@@ -1242,7 +1242,7 @@ public class JDUtilities {
             while ((line = f.readLine()) != null) {
                 ret.append(line + sep);
             }
-            f.close(); 
+            f.close();
             return ret.toString();
         } catch (IOException e) {
 
@@ -2044,7 +2044,15 @@ public class JDUtilities {
 
     public static String removeEndingPoints(String name) {
         if (name == null) { return null; }
-        return name.replaceAll("\\.*$", "");
+        String ret = name;
+        while (true) {
+            if (ret.endsWith(".")) {
+                ret = ret.substring(0, ret.length() - 1);
+            } else {
+                break;
+            }
+        }
+        return ret;
     }
 
     public static void waitOnObject(File file) {

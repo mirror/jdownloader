@@ -1594,24 +1594,20 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private String removeExtension(String a) {
-        // logger.finer("file " + a);
         if (a == null) { return a; }
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
+
         int i = a.lastIndexOf(".");
-        // logger.info("FOund . " + i);
         String ret;
         if (i <= 1 || a.length() - i > 5) {
             ret = a.toLowerCase().trim();
         } else {
-            // logger.info("Remove ext");
             ret = a.substring(0, i).toLowerCase().trim();
         }
 
-        if (a.equals(ret)) { return ret; }
-        return ret;
-
+        return JDUtilities.removeEndingPoints(ret);
     }
 
     private void removeOfflineLinks(PackageTab tab) {
