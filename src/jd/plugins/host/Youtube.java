@@ -35,7 +35,7 @@ public class Youtube extends PluginForHost {
 
     public Youtube(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium(1);
+        enablePremium(1,"http://www.youtube.com/login?next=/index");
     }
 
     @Override

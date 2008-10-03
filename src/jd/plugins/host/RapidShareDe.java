@@ -43,7 +43,7 @@ public class RapidShareDe extends PluginForHost {
     public RapidShareDe(PluginWrapper wrapper) {
         super(wrapper);
 
-        this.enablePremium();
+        this.enablePremium("http://rapidshare.de/en/premium.html");
     }
 
     @Override

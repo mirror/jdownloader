@@ -70,6 +70,8 @@ public abstract class PluginForHost extends Plugin {
 
     private boolean enablePremium = false;
 
+    private String premiumurl = null;
+
     public boolean[] checkLinks(DownloadLink[] urls) {
         return null;
     }
@@ -201,12 +203,17 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract String getAGBLink();
 
-    protected void enablePremium() {
-        this.enablePremium(5);
+    protected void enablePremium(String url) {
+        this.enablePremium(5, url);
     }
 
-    protected void enablePremium(int size) {
+    protected void enablePremium() {
+        this.enablePremium(5, null);
+    }
+
+    protected void enablePremium(int size, String url) {
         if (size <= 0) return;
+        this.premiumurl = url;
         if (size > 5) size = 5;
         enablePremium = true;
         ConfigEntry cfg;
@@ -599,7 +606,7 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getBuyPremiumUrl() {
-        return null;
+        return this.premiumurl;
     }
 
 }

@@ -157,7 +157,7 @@ public class Rapidshare extends PluginForHost {
         serverList3 = new String[] { "dt", "l3", "tg", "tl", };
 
         setConfigElements();
-        enablePremium();
+        enablePremium("http://rapidshare.com/premium.html");
         this.setMaxConnections(30);
 
     }
@@ -824,6 +824,5 @@ public class Rapidshare extends PluginForHost {
             Thread.sleep(1000);
             pendingTime -= 1000;
         }
-
     }
 }

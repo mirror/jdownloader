@@ -37,7 +37,7 @@ public class Freaksharenet extends PluginForHost {
 
     public Freaksharenet(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium();
+        this.enablePremium("http://freakshare.net/?x=premium");
     }
 
     @Override

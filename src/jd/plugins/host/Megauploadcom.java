@@ -72,7 +72,7 @@ public class Megauploadcom extends PluginForHost {
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
-        this.enablePremium();
+        this.enablePremium("http://www.megaupload.com/premium/en/");
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {

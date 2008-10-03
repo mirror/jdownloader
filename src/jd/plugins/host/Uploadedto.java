@@ -45,7 +45,7 @@ public class Uploadedto extends PluginForHost {
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
 
-        this.enablePremium();
+        this.enablePremium("http://uploaded.to/?id=u8mp9x&sidebarimage");
         setMaxConnections(20);
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PREMIUMCHUNKS", JDLocale.L("plugins.hoster.uploadedto.chunks", "Premium connections # (>1 causes higher traffic)"), 1, 20).setDefaultValue(1).setStep(1));
@@ -339,10 +339,6 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void resetPluginGlobals() {
-    }
-    
-    public String getBuyPremiumUrl(){
-        return "http://uploaded.to/?id=u8mp9x&sidebarimage";
     }
 
 }

@@ -36,7 +36,7 @@ public class MeinUpload extends PluginForHost {
 
     public MeinUpload(PluginWrapper wrapper) {
         super(wrapper);
-        enablePremium();
+        enablePremium("http://meinupload.com/register.php?g=2");
     }
 
     @Override

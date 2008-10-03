@@ -62,7 +62,7 @@ public class FileFactory extends PluginForHost {
 
     public FileFactory(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium();
+        this.enablePremium("http://www.filefactory.com/info/premium.php");
     }
 
     public int getTimegapBetweenConnections() {

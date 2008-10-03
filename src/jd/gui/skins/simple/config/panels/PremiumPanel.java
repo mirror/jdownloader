@@ -171,7 +171,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         ArrayList<Account> list = new ArrayList<Account>();
         String premiumurl = ((PluginForHost) configEntry.getActionListener()).getBuyPremiumUrl();
         try {
-            if (premiumurl != null) buybutton = new JLinkButton("Buy Premium Account", new URL(premiumurl));
+            if (premiumurl != null) buybutton = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL(premiumurl));
         } catch (MalformedURLException e1) {
             premiumurl = null;
         }

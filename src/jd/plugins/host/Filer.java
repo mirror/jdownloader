@@ -39,7 +39,7 @@ public class Filer extends PluginForHost {
 
     public Filer(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium();
+        this.enablePremium("https://filer.net/premium");
     }
 
     @Override
