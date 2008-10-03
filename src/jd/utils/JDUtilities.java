@@ -768,7 +768,7 @@ public class JDUtilities {
             String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
             releaseUserIO_Semaphore();
             return code;
-        }
+        } 
     }
 
     /**
