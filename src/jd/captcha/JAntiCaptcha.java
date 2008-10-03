@@ -18,6 +18,7 @@ package jd.captcha;
 
 import java.awt.Color;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -30,6 +31,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -39,11 +41,13 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-import javax.swing.AbstractAction;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -137,7 +141,8 @@ public class JAntiCaptcha {
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName());
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // ));
                 if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDUtilities.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
 
                     return true;
@@ -169,7 +174,8 @@ public class JAntiCaptcha {
     public static boolean isLoggerActive() {
         return JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL;
         // return
-        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_JAC_LOG,
+        // JDUtilities.getConfiguration().getBooleanProperty(Configuration.
+        // PARAM_JAC_LOG,
         // false);
 
     }
@@ -196,7 +202,8 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName());
+                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
                     return true;
@@ -456,11 +463,11 @@ public class JAntiCaptcha {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.info(getLetterNum() + "");
             }
-            
+
             if (!jas.getBoolean("autoLetterNum")) {
-            for (int i = newLettersVector.size() - 1; i >= getLetterNum(); i--) {
-                newLettersVector.remove(i);
-            }
+                for (int i = newLettersVector.size() - 1; i >= getLetterNum(); i--) {
+                    newLettersVector.remove(i);
+                }
             }
             // Wieder in die richtige reihenfolge sortieren
             Collections.sort(newLettersVector, new Comparator<LetterComperator>() {
@@ -751,43 +758,73 @@ public class JAntiCaptcha {
         if (letterDB == null || letterDB.size() == 0) { return; }
         // final BasicWindow w = BasicWindow.getWindow("Library: " +
         // letterDB.size() + " Datensätze", 400, 300);
-        final ScrollPaneWindow w = new ScrollPaneWindow(this);
-        w.setTitle("Library: " + letterDB.size() + " Datensätze");
-        w.resizeWindow(100);
+        final JFrame w = new JFrame();
+        // w.setLayout(new GridBagLayout());
         sortLetterDB();
-        w.setLocationByScreenPercent(5, 5);
-        final JAntiCaptcha jac = this;
+        JPanel p = new JPanel(new GridLayout(letterDB.size() + 1, 3));
+
+        w.add(new JScrollPane(p));
+
         final Letter[] list = new Letter[letterDB.size()];
-        int x = 0;
+
         int y = 0;
         int i = 0;
         ListIterator<Letter> iter = letterDB.listIterator(letterDB.size());
+        final ArrayList<Integer> rem = new ArrayList<Integer>();
         while (iter.hasPrevious()) {
             tmp = (Letter) iter.previous();
             list[i] = tmp;
+            JLabel lbl = new JLabel(tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
+            ImageComponent img = new ImageComponent(tmp.getImage());
 
-            w.setText(x, y, tmp.getId() + ": " + tmp.getDecodedValue() + "(" + tmp.getGoodDetections() + "/" + tmp.getBadDetections() + ") Size: " + tmp.toPixelObject(0.85).getSize());
-            w.setImage(x + 1, y, tmp.getImage((int) Math.ceil(jas.getDouble("simplifyFaktor"))));
-            w.setComponent(x + 3, y, new JButton(new AbstractAction("remove " + i++) {
-                private static final long serialVersionUID = 1L;
+            final JCheckBox bt = new JCheckBox("DELETE");
+            final int ii = i;
+            bt.addActionListener(new ActionListener() {
+                public Integer id = new Integer(ii);
 
-                public void actionPerformed(ActionEvent evt) {
-                    jac.removeLetterFromLibrary(list[Integer.parseInt(((JButton) evt.getSource()).getText().substring(7))]);
+                public void actionPerformed(ActionEvent arg) {
+                    // TODO Auto-generated method stub
 
-                    w.destroy();
+                    // TODO Auto-generated method stub
+                    JCheckBox src = ((JCheckBox) arg.getSource());
+                    if (src.getText().equals("DELETE")) {
 
-                    jac.saveMTHFile();
-                    jac.displayLibrary();
+                        rem.add(id);
+                    } else {
+                        rem.remove(id);
+
+                    }
+
                 }
-            }));
 
+            });
+            p.add(lbl);
+            p.add(img);
+            p.add(bt);
+            i++;
             y++;
             // if (y > 20) {
             // y = 0;
             // x += 6;
             // }
         }
-        w.refreshUI();
+        JButton b = new JButton("Invoke");
+        p.add(b);
+        b.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                // TODO Auto-generated method stub
+                System.out.println(rem + "");
+
+                for (Integer i : rem) {
+                    removeLetterFromLibrary(letterDB.get(letterDB.size() - 1 - i));
+                }
+                saveMTHFile();
+                displayLibrary();
+            }
+        });
+        w.pack();
+        w.setVisible(true);
     }
 
     /**
@@ -1887,7 +1924,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
@@ -2046,18 +2083,18 @@ public class JAntiCaptcha {
             }
             return -1;
         }
-        //for (Letter element : letters) {
-            // if (letters[i] == null || letters[i].getWidth() < 2 ||
-            // letters[i].getHeight() < 2) {
-            // File file = getResourceFile("detectionErrors5/" +
-            // (UTILITIES.getTimer()) + "_" + captchafile.getName());
-            // file.getParentFile().mkdirs();
-            // captchafile.renameTo(file);
-            // if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter
-            // detection error");
-            // return -1;
-            // }
-        //}
+        // for (Letter element : letters) {
+        // if (letters[i] == null || letters[i].getWidth() < 2 ||
+        // letters[i].getHeight() < 2) {
+        // File file = getResourceFile("detectionErrors5/" +
+        // (UTILITIES.getTimer()) + "_" + captchafile.getName());
+        // file.getParentFile().mkdirs();
+        // captchafile.renameTo(file);
+        // if (JAntiCaptcha.isLoggerActive()) logger.severe("Letter
+        // detection error");
+        // return -1;
+        // }
+        // }
 
         // Zeige das After-prepare Bild an
 
@@ -2202,15 +2239,15 @@ public class JAntiCaptcha {
                     if (lcs[i] != null) {
                         lcs[i].getB().markGood();
                     }
-if(lcs[i].getValityPercent()>30){
-    letters[i].setOwner(this);
-    // letters[i].setTextGrid(letters[i].getPixelString());
-    letters[i].setSourcehash(captchaHash);
-    letters[i].setDecodedValue(code.substring(i, i + 1));
-    
-    BasicWindow.showImage( letters[i].getImage(2),""+letters[i].getDecodedValue());
-    letterDB.add(letters[i]);
-}
+                    if (lcs[i].getValityPercent() > 50) {
+                        letters[i].setOwner(this);
+                        // letters[i].setTextGrid(letters[i].getPixelString());
+                        letters[i].setSourcehash(captchaHash);
+                        letters[i].setDecodedValue(code.substring(i, i + 1));
+
+                        BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
+                        letterDB.add(letters[i]);
+                    }
                     if (!jas.getBoolean("TrainOnlyUnknown")) {
                         letters[i].setOwner(this);
                         // letters[i].setTextGrid(letters[i].getPixelString());
@@ -2236,7 +2273,7 @@ if(lcs[i].getValityPercent()>30){
                     letters[i].setDecodedValue(code.substring(i, i + 1));
 
                     letterDB.add(letters[i]);
-                    BasicWindow.showImage( letters[i].getImage(2),""+letters[i].getDecodedValue());
+                    BasicWindow.showImage(letters[i].getImage(2), "" + letters[i].getDecodedValue());
                     f.add(new JLabel("NO +"), UTILITIES.getGBC(i + 1, 13, 1, 1));
                     f.pack();
                 }

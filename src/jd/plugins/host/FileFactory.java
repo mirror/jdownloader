@@ -18,12 +18,10 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.captcha.LetterComperator;
 import jd.config.Configuration;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -37,12 +35,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+import jd.utils.Reconnecter;
 
 public class FileFactory extends PluginForHost {
 
     private static Pattern baseLink = Pattern.compile("<a href=\"(.*?)\" id=\"basicLink\"", Pattern.CASE_INSENSITIVE);
     private static final String CAPTCHA_WRONG = "verification code you entered was incorrect";
-    private static final String DOWNLOAD_LIMIT = "Thank you for waiting";
+    private static final String DOWNLOAD_LIMIT = "(Thank you for waiting|exceeded the download limit)";
 
     private static final String FILENAME = "<h1 style=\"width:370px;\">(.*)</h1>";
     private static final String FILESIZE = "Size: (.*?)(B|KB|MB)<br />";
@@ -74,9 +73,15 @@ public class FileFactory extends PluginForHost {
         try {
             handleFree0(parameter);
         } catch (IOException e) {
-            if (e.getMessage().contains("502")) {
+            e.printStackTrace();
+            if (e.getMessage() != null && e.getMessage().contains("502")) {
                 logger.severe("Filefactory returned BAd gateway.");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 2 * 60 * 1000l);
+                Thread.sleep(1000);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            } else if (e.getMessage() != null && e.getMessage().contains("503")) {
+                logger.severe("Filefactory returned BAd gateway.");
+                Thread.sleep(1000);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
             } else {
                 throw e;
             }
@@ -103,10 +108,12 @@ public class FileFactory extends PluginForHost {
         br.getPage(Encoding.htmlDecode("http://www.filefactory.com/" + br.getRegex(frameForCaptcha).getMatch(0)));
         String captchaCode = null;
         int vp = JDUtilities.getSubConfig("JAC").getIntegerProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 18);
-        JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, 100);
+        // JDUtilities.getSubConfig("JAC").setProperty(Configuration.
+        // AUTOTRAIN_ERROR_LEVEL, 20);
         int i = 30;
-        ArrayList<String> codes = new ArrayList<String>();
+        // ArrayList<String> codes = new ArrayList<String>();
         File captchaFile = null;
+
         while (i-- > 0) {
 
             int ii = 5;
@@ -123,35 +130,24 @@ public class FileFactory extends PluginForHost {
                         return;
                     }
                 }
-            captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
-
-            if (this.getLastCaptcha() == null) continue;
-            double worst = 0.0;
-
-            for (LetterComperator l : this.getLastCaptcha().getLetterComperators()) {
-                if (l.getValityPercent() > worst) worst = l.getValityPercent();
-
+            try {
+                parameter.getLinkStatus().setStatusText("JAC running");
+                parameter.requestGuiUpdate();
+                captchaCode = Plugin.getCaptchaCode(captchaFile, this, parameter);
+            } catch (Exception e) {
+                continue;
             }
+            captchaCode = captchaCode.replaceAll("\\-", "");
+            if (captchaCode.length() < 4) continue;
+            parameter.getLinkStatus().setStatusText("JAntiCaptcha: " + captchaCode);
+            parameter.requestGuiUpdate();
 
-            logger.info("CAPTCHA: " + captchaCode + "(" + worst + "/" + this.getLastCaptcha().getValityPercent() + ")");
+            if (captchaCode != null && captchaCode.length() == 4) break;
 
-            if (codes.contains(captchaCode)) {
-                logger.info("2 mal selber captcha. break");
-            }
-            codes.add(captchaCode);
-
-            if (captchaCode != null && worst < 60) {
-                captchaCode = captchaCode.trim().replace("-", "");
-                if (captchaCode.length() == 4) {
-                    captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "(" + worst + ")" + "_" + "_USE.png"));
-                    break;
-                }
-                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "(" + worst + ")" + "_" + "_SKIP.png"));
-
-            } else {
-                captchaFile.renameTo(new File(captchaFile.getParentFile(), captchaFile.getName() + "_" + captchaCode + "(" + worst + ")" + "_" + "_SKIP.png"));
-            }
         }
+        Thread.sleep(2000);
+        parameter.getLinkStatus().setStatusText("JAC send: " + captchaCode);
+        parameter.requestGuiUpdate();
         JDUtilities.getSubConfig("JAC").setProperty(Configuration.AUTOTRAIN_ERROR_LEVEL, vp);
         Form captchaForm = br.getForm(0);
         captchaForm.put("captcha", captchaCode);
@@ -173,14 +169,18 @@ public class FileFactory extends PluginForHost {
         // dl.connect(br);
         // Prüft ob content disposition header da sind
         if (br.getHttpConnection().isContentDisposition()) {
-
+long cu = parameter.getDownloadCurrent();
             dl.startDownload();
+            long loaded = parameter.getDownloadCurrent()-cu;
+            if (loaded > 30 * 1024 * 1024l) {
+                Reconnecter.requestReconnect();
+            }
         } else {
             // Falls nicht wird die html seite geladen
             br.followConnection();
             if (br.containsHTML(DOWNLOAD_LIMIT)) {
                 logger.info("Traffic Limit for Free User reached");
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 60 * 1000l);
             } else if (br.containsHTML(PATTERN_DOWNLOADING_TOO_MANY_FILES)) {
                 logger.info("You are downloading too many files at the same time. Wait 10 seconds(or reconnect) and retry afterwards");
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);

@@ -49,7 +49,7 @@ public class JACTrain {
         String hoster = "filefactory.com";
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);
         // jac.runTestMode(new File("1186941165349_captcha.jpg"));
-        jac.displayLibrary();
+//        jac.displayLibrary();
 
         // jac.setShowDebugGui(true);
         // jac.showPreparedCaptcha(new

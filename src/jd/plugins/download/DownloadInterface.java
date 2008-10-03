@@ -1030,7 +1030,10 @@ abstract public class DownloadInterface {
 
             logger.finer("Got filesze from Headrequest: " + head.getContentLength() + " bytes");
             downloadLink.setDownloadSize(fileSize = head.getContentLength());
-            this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+
+            String name = Plugin.getFileNameFromDispositionHeader(head.getHttpConnection().getHeaderField("content-disposition"));
+            if (name != null) this.downloadLink.setName(name);
+
             this.setFileSizeVerified(true);
         }
         return fileSize;
@@ -1059,7 +1062,10 @@ abstract public class DownloadInterface {
         //            
         // }
         request.getHttpConnection().disconnect();
-        this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+
+        String name = Plugin.getFileNameFromDispositionHeader(request.getHttpConnection().getHeaderField("content-disposition"));
+        if (name != null) this.downloadLink.setName(name);
+
         String range = request.getHttpConnection().getHeaderField("Content-Range");
         String length = new Regex(range, ".*?\\/(\\d+)").getMatch(0);
         long size = Long.parseLong(length);
@@ -1140,11 +1146,14 @@ abstract public class DownloadInterface {
 
             connectResumable();
         } else {
-            int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
-            tmp = Math.min(tmp, plugin.getFreeConnections());
-            if (tmp != getChunkNum()) {
-                logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
-                setChunkNum(tmp);
+            if (this.isFileSizeVerified()) {
+                int tmp = Math.min(Math.max(1, (int) (downloadLink.getDownloadSize() / Chunk.MIN_CHUNKSIZE)), getChunkNum());
+                tmp = Math.min(tmp, plugin.getFreeConnections());
+
+                if (tmp != getChunkNum()) {
+                    logger.finer("Corrected Chunknum: " + getChunkNum() + " -->" + tmp);
+                    setChunkNum(tmp);
+                }
             }
             if (downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1 && !this.isFirstChunkRangeless()) {
                 connectFirstRange();
@@ -1172,7 +1181,10 @@ abstract public class DownloadInterface {
 
         }
 
-        this.downloadLink.setName(Plugin.getFileNameFormHeader(connection));
+
+        String name = Plugin.getFileNameFromDispositionHeader(connection.getHeaderField("content-disposition"));
+        if (name != null) this.downloadLink.setName(name);
+
         fileSize = downloadLink.getDownloadSize();
 
         return connection;
@@ -1640,7 +1652,7 @@ abstract public class DownloadInterface {
     public boolean startDownload() throws Exception {
         if (!connected) connect();
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
-
+        downloadLink.getLinkStatus().setStatusText(null);
         if (connection.getHeaderField("Location") != null) {
 
             error(LinkStatus.ERROR_PLUGIN_DEFEKT, "Sent a redirect to Downloadinterface");

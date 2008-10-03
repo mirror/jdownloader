@@ -25,10 +25,10 @@ param.coverageFaktorAWeight=3;
 param.coverageFaktorBWeight=1.3;
 param.cleftFaktor=0.6;
 ############Parameter die einen Scan frühzeitig abbrechen können, bzw mögliche TReffer frühzeitig ausfiltern
-param.LetterSearchLimitPerfectPercent=5;
+param.LetterSearchLimitPerfectPercent=10;
 param.quickScanReliabilityLimit=3.0;
 param.quickScanValityLimit=5.0;
-param.preScanFilter=50;
+param.preScanFilter=90;
 param.preScanFaktor=3;
 param.autoLetterNum=true;
 
@@ -41,7 +41,7 @@ param.useSpecialGetLetters=Filefactory.getLetters;
 param.useLetterFilter=Filefactory.letterFilter;
 ############Parameter die die Bildbearbeitung beeinflussen
 param.backgroundsamplecleancontrast=0.11;
-param.alignAngleSteps=2;
+param.alignAngleSteps=5;
 
 
 
