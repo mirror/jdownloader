@@ -57,6 +57,10 @@ public class UUCannaTo extends PluginForDecrypt {
             } else {
                 valid = true;
                 decryptedLinks.add(createDownloadlink(br.getRegex("URL=(.*?)\"").getMatch(0)));
+                String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
+                for (String link : links) {
+                    decryptedLinks.add(createDownloadlink(link));
+                }
                 break;
             }
         }
