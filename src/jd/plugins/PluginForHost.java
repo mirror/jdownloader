@@ -90,11 +90,13 @@ public abstract class PluginForHost extends Plugin {
         return free;
 
     }
+
     protected void setBrowserExclusive() {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        
+
     }
+
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
@@ -388,8 +390,11 @@ public abstract class PluginForHost extends Plugin {
             }
             try {
                 handleFree(downloadLink);
-                if(dl!=null&& dl.getConnection()!=null){
-                    try {dl.getConnection().disconnect();}catch(Exception e){}
+                if (dl != null && dl.getConnection() != null) {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (Exception e) {
+                    }
                 }
             } catch (PluginException e) {
                 e.printStackTrace();
@@ -420,8 +425,11 @@ public abstract class PluginForHost extends Plugin {
         if (account != null) {
             try {
                 handlePremium(downloadLink, account);
-                if(dl!=null&& dl.getConnection()!=null){
-                    try {dl.getConnection().disconnect();}catch(Exception e){}
+                if (dl != null && dl.getConnection() != null) {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (Exception e) {
+                    }
                 }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
@@ -461,8 +469,11 @@ public abstract class PluginForHost extends Plugin {
             }
             try {
                 handleFree(downloadLink);
-                if(dl!=null&& dl.getConnection()!=null){
-                    try {dl.getConnection().disconnect();}catch(Exception e){}
+                if (dl != null && dl.getConnection() != null) {
+                    try {
+                        dl.getConnection().disconnect();
+                    } catch (Exception e) {
+                    }
                 }
             } catch (PluginException e) {
                 e.fillLinkStatus(downloadLink.getLinkStatus());
@@ -580,6 +591,15 @@ public abstract class PluginForHost extends Plugin {
     public void setDownloadInterface(DownloadInterface dl2) {
         this.dl = dl2;
 
+    }
+
+    /**
+     * Gibt die Url zurück, unter welcher ein PremiumAccount gekauft werden kann
+     * 
+     * @return
+     */
+    public String getBuyPremiumUrl() {
+        return null;
     }
 
 }

@@ -340,5 +340,9 @@ public class Uploadedto extends PluginForHost {
 
     public void resetPluginGlobals() {
     }
+    
+    public String getBuyPremiumUrl(){
+        return "http://uploaded.to/?id=u8mp9x&sidebarimage";
+    }
 
 }

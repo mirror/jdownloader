@@ -23,6 +23,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 
 import javax.swing.JButton;
@@ -38,6 +40,7 @@ import javax.swing.event.ChangeListener;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -90,6 +93,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private ConfigEntry configEntry;
     private JButton[] checkBtns;
     private JButton[] delete;
+    private JLinkButton buybutton;
 
     private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
     private ChartRefresh loader;
@@ -165,6 +169,12 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         checkBtns = new JButton[accountNum];
         delete = new JButton[accountNum];
         ArrayList<Account> list = new ArrayList<Account>();
+        String premiumurl = ((PluginForHost) configEntry.getActionListener()).getBuyPremiumUrl();
+        try {
+            if (premiumurl != null) buybutton = new JLinkButton("Buy Premium Account", new URL(premiumurl));
+        } catch (MalformedURLException e1) {
+            premiumurl = null;
+        }
 
         for (int i = 0; i < accountNum; i++) {
             list.add(new Account("", ""));
@@ -207,6 +217,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             }
 
         }
+        if (premiumurl != null) add(buybutton, "span, alignright");
         add(freeTrafficChart, "spanx, spany");
     }
 
