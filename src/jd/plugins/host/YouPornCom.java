@@ -38,28 +38,22 @@ public class YouPornCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink parameter) throws IOException {
         this.setBrowserExclusive();
-
         br.setFollowRedirects(true);
         br.openGetConnection(parameter.getDownloadURL());
         parameter.setName(Plugin.getFileNameFormHeader(br.getHttpConnection()));
         parameter.setDownloadSize(br.getHttpConnection().getContentLength());
         br.getHttpConnection().disconnect();
         return true;
-
     }
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-
         getFileInformation(link);
-
         br.openDownload(link, link.getDownloadURL()).startDownload();
-
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert prüfen */
-        return 1;
+        return 20;
     }
 
     @Override
