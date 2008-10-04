@@ -49,7 +49,7 @@ public class Filer extends PluginForHost {
         String code;
         String page = null;
 
-        Browser br = new Browser();
+        br.setCookiesExclusive(true);
         br.clearCookies("filer.net");
         br.getPage(downloadLink.getDownloadURL());
         int tries = 0;
@@ -80,6 +80,7 @@ public class Filer extends PluginForHost {
         String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
         if (wait != null) {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
+            linkStatus.setValue(new Long(wait) * 1000 * 60l);
             return;
 
         }
@@ -104,7 +105,8 @@ public class Filer extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         String page = null;
-        Browser br = new Browser();
+        br.setCookiesExclusive(true);
+        br.clearCookies("filer.net");
         br.postPage("http://www.filer.net/login", "username=" + Encoding.urlEncode(user) + "&password=" + Encoding.urlEncode(pass) + "&commit=Einloggen");
         page = br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(false);
@@ -143,13 +145,21 @@ public class Filer extends PluginForHost {
                 code = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
                 page = br.postPage(downloadLink.getDownloadURL(), "captcha=" + code);
                 if (Regex.matches(page, PATTERN_MATCHER_ERROR)) { return false; }
-                bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getMatch(0));
-                downloadLink.setDownloadSize(bytes);
+                if (downloadLink.getDownloadSize() == 0) {
+                    bytes = (int) Regex.getSize(new Regex(page, "<tr class=\"even\">.*?<th>DateigrÃ¶ÃŸe</th>.*?<td>(.*?)</td>").getMatch(0));
+                    downloadLink.setDownloadSize(bytes);
+                }
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();
                 if (forms.length < 2) { return true; }
-                br.submitForm(forms[1]);
-                downloadLink.setName(Plugin.getFileNameFormURL(new URL(br.getRedirectLocation())));
+                if (downloadLink.getStaticFileName() != null) {
+                    String filename = downloadLink.getStaticFileName();
+                    downloadLink.setStaticFileName(null);
+                    downloadLink.setName(filename);
+                } else {
+                    br.submitForm(forms[1]);
+                    downloadLink.setName(Plugin.getFileNameFormURL(new URL(br.getRedirectLocation())));
+                }
                 return true;
             } catch (Exception e) {
                 e.printStackTrace();
