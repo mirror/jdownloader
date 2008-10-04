@@ -42,7 +42,7 @@ public class Filer extends PluginForDecrypt {
 
         for (String element[] : links) {
             DownloadLink link = createDownloadlink("http://www.filer.net/get/" + element[0] + ".html");
-            link.setStaticFileName(element[1]);
+            link.setFinalFileName(element[1]);
             link.setDownloadSize(Regex.getSize(element[2]));
             decryptedLinks.add(link);
             progress.increase(1);

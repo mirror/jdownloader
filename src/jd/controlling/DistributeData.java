@@ -251,7 +251,7 @@ public class DistributeData extends ControlBroadcaster {
                             dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
                             dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
                             dLinks.get(c).setName(decrypted.getName());
-                            dLinks.get(c).setStaticFileName(decrypted.getStaticFileName());
+                            dLinks.get(c).setFinalFileName(decrypted.getFinalFileName());
                             dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
                             dLinks.get(c).setProperties(decrypted.getProperties());
                             dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());

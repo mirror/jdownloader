@@ -149,7 +149,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * Wird dieser Wert gesetzt, so wird der Download unter diesem Namen (nicht
      * Pfad) abgespeichert.
      */
-    private String staticFileName;
+    private String finalFileName;
 
     private transient String tempUrlDownload;
 
@@ -466,20 +466,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Liefert den Datei Namen dieses Downloads zurück. Wurde der Name mit
-     * setStaticFileName(String) festgelegt wird dieser Name zurückgegeben
+     * setfinalFileName(String) festgelegt wird dieser Name zurückgegeben
      * 
      * @return Name des Downloads
      */
     public String getName() {
         String urlName;
-        if (getStaticFileName() == null) {
+        if (getFinalFileName() == null) {
             try {
                 return name == null ? ((urlName = new File(new URL(this.getDownloadURL()).toURI()).getName()) != null ? urlName : UNKNOWN_FILE_NAME) : name;
             } catch (Exception e) {
                 return UNKNOWN_FILE_NAME;
             }
         }
-        return getStaticFileName();
+        return getFinalFileName();
 
     }
 
@@ -537,13 +537,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt den Statischen Downloadnamen zurück. Wird null zurückgegeben, so
-     * wird der dateiname von den jeweiligen plugins automatisch ermittelt.
+     * Gibt den Finalen Downloadnamen zurück. Wird null zurückgegeben, so wird
+     * der dateiname von den jeweiligen plugins automatisch ermittelt.
      * 
      * @return Statischer Dateiname
      */
-    public String getStaticFileName() {
-        return staticFileName;
+    public String getFinalFileName() {
+        return finalFileName;
     }
 
     /**
@@ -876,12 +876,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * um den Speichernamen anzugeben.
      * 
      */
-    public void setStaticFileName(String newStaticFileName) {
-        if (newStaticFileName != null && newStaticFileName.length() > 3) {
-            staticFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(newStaticFileName));
+    public void setFinalFileName(String newfinalFileName) {
+        if (newfinalFileName != null && newfinalFileName.length() > 3) {
+            finalFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(newfinalFileName));
             updatePartID();
         } else {
-            staticFileName = null;
+            finalFileName = null;
         }
     }
 

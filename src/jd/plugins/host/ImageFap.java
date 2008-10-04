@@ -116,7 +116,7 @@ public class ImageFap extends PluginForHost {
         String imagelink = DecryptLink(new Regex(br, Pattern.compile("return lD\\('(\\S+?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
 
         String filename = Plugin.extractFileNameFromURL(imagelink);
-        downloadLink.setStaticFileName(filename);
+        downloadLink.setFinalFileName(filename);
         downloadLink.addSubdirectory(gallery_name);
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(imagelink));
         dl.setResume(false);

@@ -45,7 +45,7 @@ public class YouPornCom extends PluginForDecrypt {
         if (matches == null) { return null; }
         matches = matches.replaceAll("&xml=1", "");
         DownloadLink dlink = createDownloadlink(matches);
-        if (filename != null) dlink.setStaticFileName(filename.trim().replaceAll(" ", "-") + ".flv");
+        if (filename != null) dlink.setFinalFileName(filename.trim().replaceAll(" ", "-") + ".flv");
         dlink.setBrowserUrl(parameter);
         decryptedLinks.add(dlink);
 

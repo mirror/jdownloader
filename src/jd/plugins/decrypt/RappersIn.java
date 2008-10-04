@@ -74,7 +74,7 @@ public class RappersIn extends PluginForDecrypt {
             fp.setName("rappers.in - " + nick);
             for (int i = 0; i < dUrls.length; i++) {
                 DownloadLink dlLink = createDownloadlink(dUrls[i].replaceAll("http://", "httpRappersIn://").replaceAll("rappers.in", "viaRappersIn"));
-                dlLink.setStaticFileName(titel[i] + ".mp3");
+                dlLink.setFinalFileName(titel[i] + ".mp3");
                 dlLink.setFilePackage(fp);
                 System.out.println(dlLink.getDownloadURL());
                 decryptedLinks.add(dlLink);

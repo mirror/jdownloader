@@ -72,7 +72,7 @@ public class ClipfishDe extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
         ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
         if (ConvertTo != null) {
-            downloadLink.setStaticFileName(name + ".tmp");
+            downloadLink.setFinalFileName(name + ".tmp");
             downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
             downloadLink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
             downloadLink.setProperty("convertto", ConvertTo.name());

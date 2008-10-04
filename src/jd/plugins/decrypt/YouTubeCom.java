@@ -97,7 +97,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
                 DownloadLink thislink = createDownloadlink(info[1]);
                 thislink.setBrowserUrl(info[2]);
-                thislink.setStaticFileName(info[0]);
+                thislink.setFinalFileName(info[0]);
                 thislink.setSourcePluginComment("Convert to " + (ConversionMode.valueOf(info[3])).GetText());
                 thislink.setProperty("convertto", info[3]);
 
@@ -151,7 +151,7 @@ public class YouTubeCom extends PluginForDecrypt {
                 }
                 DownloadLink thislink = createDownloadlink(link);
                 thislink.setBrowserUrl(parameter);
-                thislink.setStaticFileName(name + ".tmp");
+                thislink.setFinalFileName(name + ".tmp");
                 thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
                 thislink.setProperty("convertto", ConvertTo.name());
                 decryptedLinks.add(thislink);

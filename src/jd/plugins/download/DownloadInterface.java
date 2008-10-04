@@ -1004,7 +1004,7 @@ abstract public class DownloadInterface {
         this.downloadLink = downloadLink;
         linkStatus = downloadLink.getLinkStatus();
         linkStatus.setStatusText(JDLocale.L("download.connection.normal", "Download"));
-        
+
         downloadLink.setDownloadInstance(this);
         this.plugin = plugin;
     }
@@ -1183,10 +1183,10 @@ abstract public class DownloadInterface {
 
         }
 
-
-        String name = Plugin.getFileNameFromDispositionHeader(connection.getHeaderField("content-disposition"));
-        if (name != null) this.downloadLink.setName(name);
-
+        if (this.downloadLink.getFinalFileName() == null) {
+            String name = Plugin.getFileNameFormHeader(connection);
+            this.downloadLink.setFinalFileName(name);
+        }
         fileSize = downloadLink.getDownloadSize();
 
         return connection;

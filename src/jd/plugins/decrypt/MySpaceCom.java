@@ -205,10 +205,10 @@ public class MySpaceCom extends PluginForDecrypt {
                 dl_link.addSubdirectory(nick);
             }
             if (getPluginConfig().getBooleanProperty(ENABLE_DL_NAME_MODIFICATION)) {
-                dl_link.setStaticFileName(nick + " - " + einTitel + ".mp3");
+                dl_link.setFinalFileName(nick + " - " + einTitel + ".mp3");
                 dl_link.setName(nick + " - " + einTitel + ".mp3");
             } else {
-                dl_link.setStaticFileName(einTitel + ".mp3");
+                dl_link.setFinalFileName(einTitel + ".mp3");
                 dl_link.setName(einTitel + ".mp3");
             }
             dl_link.setName(einTitel);

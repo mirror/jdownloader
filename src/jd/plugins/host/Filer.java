@@ -152,9 +152,9 @@ public class Filer extends PluginForHost {
                 br.setFollowRedirects(false);
                 Form[] forms = br.getForms();
                 if (forms.length < 2) { return true; }
-                if (downloadLink.getStaticFileName() != null) {
-                    String filename = downloadLink.getStaticFileName();
-                    downloadLink.setStaticFileName(null);
+                if (downloadLink.getFinalFileName() != null) {
+                    String filename = downloadLink.getFinalFileName();
+                    downloadLink.setFinalFileName(null);
                     downloadLink.setName(filename);
                 } else {
                     br.submitForm(forms[1]);

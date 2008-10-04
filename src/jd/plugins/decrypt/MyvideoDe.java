@@ -60,7 +60,7 @@ public class MyvideoDe extends PluginForDecrypt {
 
         DownloadLink thislink = createDownloadlink(link);
         thislink.setBrowserUrl(parameter);
-        thislink.setStaticFileName(name + ".tmp");
+        thislink.setFinalFileName(name + ".tmp");
         thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
         thislink.setProperty("convertto", ConvertTo.name());
         decryptedLinks.add(thislink);
