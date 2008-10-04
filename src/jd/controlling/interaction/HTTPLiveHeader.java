@@ -378,7 +378,7 @@ public class HTTPLiveHeader extends Interaction {
         variables.put("routerip", ip);
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
-        Browser br = null;
+        Browser br = new Browser();
         try {
             xmlScript = HTTPLiveHeader.parseXmlString(script, false);
             Node root = xmlScript.getChildNodes().item(0);
@@ -462,9 +462,18 @@ public class HTTPLiveHeader extends Interaction {
                             progress.finalize();
                             return parseError("A REQUEST Tag is not allowed to have childTags.");
                         }
-                        br = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim());
-
-                        if (br == null || !br.getHttpConnection().isOK()) {
+                        Browser retbr = null;
+                        try {
+                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br);
+                        } catch (Exception e2) {
+                            retbr = null;
+                        }
+                        try {
+                            /*ne kleine pause, damit der router nicht ddos denkt*/
+                            Thread.sleep(150);
+                        } catch (Exception e) {
+                        }
+                        if (retbr == null || !retbr.getHttpConnection().isOK()) {
                             okCounter--;
                             logger.severe("Request error!");
                             // if(okCounter<0){
@@ -473,6 +482,7 @@ public class HTTPLiveHeader extends Interaction {
                             // return false;
                             // }
                         } else {
+                            br = retbr;
                             okCounter++;
                         }
 
@@ -602,7 +612,7 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
-    private Browser doRequest(String request) {
+    private Browser doRequest(String request, Browser br) {
         try {
             String requestType;
             String path;
@@ -695,9 +705,7 @@ public class HTTPLiveHeader extends Interaction {
                 logger.severe("Host nicht gefunden: " + request);
                 return null;
             }
-            try {
-                Browser br = new Browser();
-                br.setDebug(true);
+            try {                
                 br.setConnectTimeout(5000);
                 br.setReadTimeout(5000);
                 if (requestProperties != null) {
