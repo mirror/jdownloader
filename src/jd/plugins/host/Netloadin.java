@@ -283,7 +283,7 @@ public class Netloadin extends PluginForHost {
             dl = RAFDownload.download(downloadLink, con, true, 0);
             // dl.headFake(null);
             // dl.setFirstChunkRangeless(true);
-            HTTPConnection connection = dl.getConnection();
+            HTTPConnection connection = dl.connect(br);
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
                     con = br.createRequest(url);
