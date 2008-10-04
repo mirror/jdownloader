@@ -256,7 +256,7 @@ public class Megauploadcom extends PluginForHost {
         String url = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
 
         dl = RAFDownload.download(downloadLink, br.createRequest(url));
-
+        dl.setResume(true);
         if (!dl.connect(br).isOK()) {
             logger.warning("Download Limit!");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
