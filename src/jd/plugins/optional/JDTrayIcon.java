@@ -19,7 +19,6 @@ package jd.plugins.optional;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
@@ -29,10 +28,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
-import java.awt.event.WindowStateListener;
+import java.awt.event.WindowListener;
 import java.util.ArrayList;
 
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -58,7 +58,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDTrayIcon extends PluginOptional implements WindowStateListener {
+public class JDTrayIcon extends PluginOptional implements WindowListener {
     public JDTrayIcon(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -128,6 +128,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     private JWindow trayParent;
 
     private JMenuItem update;
+
+    private JFrame guiFrame;
 
     public void actionPerformed(ActionEvent e) {
         SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
@@ -224,7 +226,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
             try {
                 JDUtilities.getController().addControlListener(this);
                 if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI.getFrame() != null) {
-                    SimpleGUI.CURRENTGUI.getFrame().addWindowStateListener(this);
+                    guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+                    guiFrame.addWindowListener(this);
                 }
                 logger.info("Systemtray OK");
                 initGUI();
@@ -243,7 +246,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
     public void controlEvent(ControlEvent event) {
         if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
             logger.info("JDTrayIcon Init complete");
-            SimpleGUI.CURRENTGUI.getFrame().addWindowStateListener(this);
+            guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+            guiFrame.addWindowListener(this);
             return;
         }
         super.controlEvent(event);
@@ -348,7 +352,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         if (trayIcon != null) {
             SystemTray.getSystemTray().remove(trayIcon);
         }
-
+        JDUtilities.getController().removeControlListener(this);
+        if (guiFrame != null) guiFrame.removeWindowListener(this);
     }
 
     private void setTrayPopUp(JPopupMenu trayMenu) {
@@ -371,7 +376,6 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         trayIcon.addMouseListener(new MouseAdapter() {
 
             public void mouseClicked(MouseEvent e) {
-                SimpleGUI simplegui = SimpleGUI.CURRENTGUI;
                 if (SwingUtilities.isLeftMouseButton(e)) {
 
                     if (toolParent.isVisible()) {
@@ -379,8 +383,8 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
                     }
 
                     if (e.getClickCount() > 1) {
-                        simplegui.getFrame().setVisible(!simplegui.getFrame().isVisible());
-                        if (simplegui.getFrame().isVisible()) simplegui.getFrame().setState(Frame.NORMAL);
+                        guiFrame.setVisible(!guiFrame.isVisible());
+                        if (guiFrame.isVisible()) guiFrame.setState(JFrame.NORMAL);
                     }
                 } else if (SwingUtilities.isRightMouseButton(e)) {
                     showPopup(e.getPoint());
@@ -475,12 +479,28 @@ public class JDTrayIcon extends PluginOptional implements WindowStateListener {
         });
     }
 
-    public void windowStateChanged(WindowEvent arg0) {
-        if ((arg0.getOldState() & Frame.ICONIFIED) == 0) {
-            if ((arg0.getNewState() & Frame.ICONIFIED) != 0) {
-                SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
-                simplegui.getFrame().setVisible(false);
-            }
-        }
+    public void windowActivated(WindowEvent arg0) {
+        guiFrame.setVisible(true);
+    }
+
+    public void windowClosed(WindowEvent arg0) {
+    }
+
+    public void windowClosing(WindowEvent arg0) {
+    }
+
+    public void windowDeactivated(WindowEvent arg0) {
+    }
+
+    public void windowDeiconified(WindowEvent arg0) {
+        guiFrame.setVisible(true);
+    }
+
+    public void windowIconified(WindowEvent arg0) {
+        guiFrame.setVisible(false);
+    }
+
+    public void windowOpened(WindowEvent arg0) {
+        guiFrame.setVisible(true);
     }
 }
