@@ -67,7 +67,7 @@ public class Netloadin extends PluginForHost {
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
 
-        this.enablePremium("http://netload.in/index.php?id=5");
+        this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
     @Override

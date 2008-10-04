@@ -31,7 +31,7 @@ public class FileSignatures {
     public static void main(String args[]) throws IOException {
         Signature sig = getFileSignature(new File("C:\\Users\\coalado\\.jd_home\\plugins\\jdunrar\\template.xml"));
         sig = sig;
-        // scan(null);
+        scan(null);
 
     }
 /**
@@ -112,7 +112,11 @@ public class FileSignatures {
         int i = 0;
         for (String e : m) {
             String[] entry = e.split(":::");
-            SIGNATURES[i++] = new Signature(entry[0], entry[1], entry[2], entry[3]);
+            if(entry.length>=4){
+                SIGNATURES[i++] = new Signature(entry[0], entry[1], entry[2], entry[3]);
+            }else{
+                System.err.println("Signature "+e+" invalid!");
+            }
         }
         return SIGNATURES;
     }

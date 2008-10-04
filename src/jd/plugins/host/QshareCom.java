@@ -171,7 +171,7 @@ public class QshareCom extends PluginForHost {
 
         if (br.getRedirectLocation() != null) {
             logger.info("Direct Download is activ");
-            dl = br.openDownload(downloadLink, null, true, 0);
+            dl = br.openDownload(downloadLink, (String)null, true, 0);
         } else {
             logger.warning("InDirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
             br.loadConnection(null);

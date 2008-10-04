@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
@@ -150,8 +151,17 @@ public class Executer extends Thread {
         params.add(command);
         params.addAll(parameter);
 
-        System.out.println(params + "");
+        
+        String out="";
+        for(String p:params){
+            out+=p+" ";
+        }
+        System.out.println(out + "");
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
+//        List<String> g = pb.command();
+//        pb.command(out);
+//        g = pb.command();
+       
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
                 pb.directory(new File(runIn));
@@ -167,6 +177,7 @@ public class Executer extends Thread {
         }
 
         try {
+          
             process = pb.start();
 
             if (waitTimeout == 0) { return; }

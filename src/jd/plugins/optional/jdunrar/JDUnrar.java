@@ -16,12 +16,14 @@
 
 package jd.plugins.optional.jdunrar;
 
+import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
 import jd.JDInit;
@@ -37,6 +39,8 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.config.ConfigEntriesPanel;
+import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -291,6 +295,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L(LOCALE_PREFIX + "menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
+        
         menu.add(m = new MenuItem(MenuItem.SEPARATOR));
 
         m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.extract.singlefils", "Extract archive(s)"), 21);
@@ -317,6 +322,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         }
         menu.add(queue);
+        
+        menu.add(m = new MenuItem(MenuItem.SEPARATOR));
+        
+        menu.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.config", "Settings"), 4).setActionListener(this));
+      
+   
         return menu;
     }
 
@@ -392,6 +403,18 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         case 30:
             this.startExtraction();
+            break;
+            
+            
+        case 4:
+            ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config);
+
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(new JPanel(), BorderLayout.NORTH);
+            panel.add(cpanel, BorderLayout.CENTER);
+            ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel);
+            pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
+            pop.setVisible(true);
             break;
         case 31:
             this.queue.clear();
@@ -511,15 +534,25 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
             progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Extraction failed");
             progress.get(wrapper).setColor(Color.RED);
-
+            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract failed");
+            wrapper.getDownloadLink().requestGuiUpdate();
             this.onFinished(wrapper);
 
             break;
         case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
             progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Extraction failed (wrong password)");
             progress.get(wrapper).setColor(Color.RED);
+            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract failed(password)");
+            wrapper.getDownloadLink().requestGuiUpdate();
             this.onFinished(wrapper);
 
+            break;
+            
+        case JDUnrarConstants.WRAPPER_CRACK_PASSWORD:
+            
+            progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Cracking password");
+            wrapper.getDownloadLink().getLinkStatus().setStatusText("Crack password");
+            wrapper.getDownloadLink().requestGuiUpdate();
             break;
         case JDUnrarConstants.WRAPPER_NEW_STATUS:
             progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "New status " + wrapper.getStatus());
@@ -532,11 +565,15 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
         case JDUnrarConstants.WRAPPER_PASSWORD_FOUND:
             progress.get(wrapper).setColor(Color.GREEN);
+            wrapper.getDownloadLink().getLinkStatus().setStatusText("Password found");
+            wrapper.getDownloadLink().requestGuiUpdate();
             progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Password found " + wrapper.getPassword());
             break;
         case JDUnrarConstants.WRAPPER_ON_PROGRESS:
             progress.get(wrapper).setRange(wrapper.getTotalSize());
             progress.get(wrapper).setStatus(wrapper.getExtractedSize());
+            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract: "+JDUtilities.getPercent(wrapper.getExtractedSize(), wrapper.getTotalSize()));
+            wrapper.getDownloadLink().requestGuiUpdate();
             progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "Progress: " + JDUtilities.getPercent(wrapper.getExtractedSize(), wrapper.getTotalSize()));
             break;
         case JDUnrarConstants.WRAPPER_START_EXTRACTION:
@@ -548,6 +585,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC:
             progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "CRC Failure");
             progress.get(wrapper).setColor(Color.RED);
+            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract: failed(CRC)");
+            wrapper.getDownloadLink().reset();
+            wrapper.getDownloadLink().requestGuiUpdate();
             this.onFinished(wrapper);
 
             break;
@@ -565,6 +605,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL:
             progress.get(wrapper).setStatusText(wrapper.getFile().getName() + ": " + "SUCCESSFULL");
             progress.get(wrapper).setColor(Color.GREEN);
+            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract: OK");
+        
+            wrapper.getDownloadLink().requestGuiUpdate();
             this.onFinished(wrapper);
 
             break;

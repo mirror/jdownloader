@@ -42,6 +42,7 @@ import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.GUIConfigEntry;
+import jd.http.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
@@ -169,7 +170,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         checkBtns = new JButton[accountNum];
         delete = new JButton[accountNum];
         ArrayList<Account> list = new ArrayList<Account>();
-        String premiumurl = ((PluginForHost) configEntry.getActionListener()).getBuyPremiumUrl();
+        String premiumurl = "http://jdownloader.org/r.php?u="+Encoding.urlEncode(((PluginForHost) configEntry.getActionListener()).getBuyPremiumUrl());
         try {
             if (premiumurl != null) buybutton = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL(premiumurl));
         } catch (MalformedURLException e1) {

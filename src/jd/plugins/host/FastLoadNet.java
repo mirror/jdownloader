@@ -107,8 +107,9 @@ public class FastLoadNet extends PluginForHost {
                         if (serverStatusID.equalsIgnoreCase("0")) {
                             logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
                             downloadLink.setLocalSpeedLimit(20 * 1024);
+                            downloadLink.setLocalSpeedLimit(-1);
                             JDUtilities.getGUI().displayMiniWarning(JDLocale.L("plugins.host.fastload.overload.short", "Fast-load.net Overload"), JDLocale.L("plugins.host.fastload.overload.long", "Fast-load.net Overload!. Fullspeed download only in browsers"), 10 * 60 * 1000);
-                            SIM = 1;
+                            //SIM = 1;
                         } else {
                             downloadLink.setLocalSpeedLimit(-1);
                         }

@@ -1180,7 +1180,22 @@ public class Browser {
         }
         return dl;
     }
+    public DownloadInterface openDownload(DownloadLink downloadLink, Form form,boolean resume, int chunks) throws Exception {
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createFormRequest(form),resume,chunks);
+        try {
+            dl.connect(this);
+        } catch (PluginException e) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
+                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                dl.connect(this);
+            }
+        }
+        if (downloadLink.getPlugin().getBrowser() == this) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
+    }
     public DownloadInterface openDownload(DownloadLink downloadLink, Form form) throws Exception {
         DownloadInterface dl = RAFDownload.download(downloadLink, this.createFormRequest(form));
         try {

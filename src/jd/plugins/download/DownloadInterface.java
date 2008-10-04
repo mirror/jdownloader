@@ -165,7 +165,7 @@ abstract public class DownloadInterface {
                 downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.connection.idle", "Idle"));
                 downloadLink.requestGuiUpdate();
             } else {
-                downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.connection.normal", "Download"));
+                downloadLink.getLinkStatus().setStatusText(null);
             }
 
         }
@@ -1003,6 +1003,8 @@ abstract public class DownloadInterface {
     private DownloadInterface(PluginForHost plugin, DownloadLink downloadLink) {
         this.downloadLink = downloadLink;
         linkStatus = downloadLink.getLinkStatus();
+        linkStatus.setStatusText(JDLocale.L("download.connection.normal", "Download"));
+        
         downloadLink.setDownloadInstance(this);
         this.plugin = plugin;
     }
