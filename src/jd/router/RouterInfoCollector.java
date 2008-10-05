@@ -1,47 +1,51 @@
 package jd.router;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import jd.JDInit;
+
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.http.Browser;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class RouterInfoCollector implements Serializable {
+public class RouterInfoCollector  {
 
-    private static final long serialVersionUID = 1L;
-    private String reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
-    protected boolean isLiveHeaderReconnect = true, haveSip = false;
-    protected String routerIp = null;
-    protected String routerSite = null;
-    protected String routerErrorPage = null;
-    protected String routerMAC = null;
-    protected String[] routerMethodeNames = null;
-
+    protected RouterCollectorData rcd = new RouterCollectorData();
     public RouterInfoCollector() {
         String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).equals(lh) || reconnectMethode == null) {
-            isLiveHeaderReconnect = false;
+        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).equals(lh) || rcd.getReconnectMethode() == null) {
+            rcd.setLiveHeaderReconnect(false);
             return;
         }
-        routerIp = getRouterIP();
+        rcd.setRouterIp(getRouterIP());
+        UPnPInfo up = new UPnPInfo(rcd.getRouterIp());
+        if(up.met!=null)
+        {
+            if(up.met.equalsIgnoreCase(""))
+                rcd.setHaveFritzUpnp(true);
+            else
+                rcd.setUPnPReconnectMeth(up.met);
+        }
+        if(!rcd.isHaveFritzUpnp())
+        {
+            rcd.setUPnPSCPDs(up.SCPDs);
+        }
         Browser br = new Browser();
         try {
-            routerSite = br.getPage("http://" + routerIp);
+            rcd.setRouterSite(br.getPage("http://" + rcd.getRouterIp())) ;
         } catch (IOException e) {
         }
         try {
-            routerErrorPage = br.getPage("http://" + routerIp + "/error404");
+            rcd.setRouterErrorPage(br.getPage("http://" + rcd.getRouterIp() + "/error404"));
         } catch (IOException e) {
         }
         try {
-            routerMAC = new GetMacAdress().getMacAddress(routerIp);
+            rcd.setRouterMAC(new GetMacAdress().getMacAddress(rcd.getRouterIp())) ;
         } catch (SocketException e) {
         } catch (UnknownHostException e) {
         } catch (IOException e) {
@@ -49,30 +53,21 @@ public class RouterInfoCollector implements Serializable {
         }
         String rn = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, null);
         if (rn != null) {
-            routerMethodeNames = new String[] { rn };
+            rcd.setRouterMethodeNames(new String[] { rn });
         } else {
             ArrayList<String> rmn = new ArrayList<String>();
             for (String[] script : new HTTPLiveHeader().getLHScripts()) {
-                if (script[2].trim().equals(reconnectMethode) && !rmn.contains(script[1])) rmn.add(script[1]);
+                if (script[2].trim().equals(rcd.getReconnectMethode()) && !rmn.contains(script[1])) rmn.add(script[1]);
             }
-            routerMethodeNames = rmn.toArray(new String[rmn.size()]);
+            rcd.setRouterMethodeNames(rmn.toArray(new String[rmn.size()]));
         }
-        haveSip = GetRouterInfo.checkport(routerIp, 5060);
+        rcd.setHaveSip(GetRouterInfo.checkport(rcd.getRouterIp(), 5060));
+
     }
 
     @Override
     public String toString() {
-        String sep = System.getProperty("line.separator");
-        String ret = "";
-        if (routerMethodeNames.length == 1) {
-            ret = "RouterMethodeName:" + routerMethodeNames[0] + sep;
-        } else {
-            for (int i = 0; i < routerMethodeNames.length; i++) {
-                ret += "RouterMethodeName[" + i + "]:" + routerMethodeNames[i] + sep;
-            }
-        }
-        ret += "ReconnectMethode:" + reconnectMethode + sep + "HaveSip:" + haveSip + sep + "isLiveHeaderReconnect:" + isLiveHeaderReconnect + sep + "RouterIp:" + routerIp + sep + "RouterMAC:" + routerMAC + sep + "RouterSite:" + routerSite + sep + "RouterErrorPage:" + routerErrorPage;
-        return ret;
+        return toXMLString();
     }
 
     public static String getRouterIP() {
@@ -80,7 +75,16 @@ public class RouterInfoCollector implements Serializable {
         if (routerIp == null || routerIp.matches("\\s*")) routerIp = new GetRouterInfo(null).getAdress();
         return routerIp;
     }
+    public String toXMLString() {
+        try {
+            return JDUtilities.objectToXml(this.rcd);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
 
+    }
     /**
      * Gibt einen Prozentwert zurück zu welcher Wahrscheinlichkeit es sich um
      * diesen router handelt
@@ -89,19 +93,18 @@ public class RouterInfoCollector implements Serializable {
      * @return
      */
     public int compare(RouterInfoCollector routerInfo) {
-        int ret = 0;
-        if (routerMAC.substring(0, 8).equalsIgnoreCase(routerInfo.routerMAC.substring(0, 8))) ret += 40;
-        if (routerSite.equalsIgnoreCase(routerInfo.routerSite)) ret += 25;
-        if (routerErrorPage.equalsIgnoreCase(routerInfo.routerErrorPage)) ret += 25;
-        if (haveSip == routerInfo.haveSip) ret += 10;
-        return ret;
+        return rcd.compare(routerInfo.rcd);
     }
-
+    public static String getXMLString()
+    {
+        RouterInfoCollector ric = new RouterInfoCollector();
+        ric.rcd.setRouterMAC(ric.rcd.getRouterMAC().substring(0, 8));
+        return ric.toXMLString();
+    }
     public static void main(String[] args) {
         new JDInit().loadConfiguration();
-        RouterInfoCollector rc = new RouterInfoCollector();
-        System.out.println(rc.routerMAC.substring(0, 8));
+        System.out.println(RouterInfoCollector.getXMLString());
         // System.out.println(rc.compare(rc));
-
+System.exit(0);
     }
 }

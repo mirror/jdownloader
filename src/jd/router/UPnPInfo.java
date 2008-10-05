@@ -1,7 +1,6 @@
 package jd.router;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.HashMap;
 
@@ -19,18 +18,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import jd.utils.JDUtilities;
-
 import jd.parser.Regex;
 
 import jd.http.Browser;
 
-public class UPnPInfo implements Serializable {
-    
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 7935738707512222390L;
+public class UPnPInfo {
+
     private String host=null;
     private SSDPPacket ssdpP =null;
     public String met = null;
@@ -141,53 +134,5 @@ public class UPnPInfo implements Serializable {
             ioe.printStackTrace();
         }
 
-    }
-
-    private static void printObjIfVisible(String sValName, Object obj) {
-        if (null == obj) return;
-        String s = obj.toString();
-        if (null != s && 0 < s.trim().length() && !s.trim().equals("\n")) System.out.println(sValName + s);
-    }
-
-    public static void printNodeInfos(String sNodeName, Node node) {
-        System.out.println("\n---------------------- " + sNodeName);
-        if (null != node) {
-            printObjIfVisible("getNodeType()        = ", "" + node.getNodeType());
-            printObjIfVisible("getNodeName()        = ", node.getNodeName());
-            printObjIfVisible("getLocalName()       = ", node.getLocalName());
-            printObjIfVisible("getNodeValue()       = ", node.getNodeValue());
-            if (node.hasAttributes()) printObjIfVisible("getAttributes()      = ", node.getAttributes());
-            if (node.hasChildNodes()) {
-                printObjIfVisible("getChildNodes()      = ", node.getChildNodes());
-                printObjIfVisible("getFirstChild()      = ", node.getFirstChild());
-            }
-            printObjIfVisible("getPreviousSibling() = ", node.getPreviousSibling());
-            printObjIfVisible("getNextSibling()     = ", node.getNextSibling());
-        }
-        System.out.println("----------------------\n");
-    }
-
-    public static void printNodesFromList(NodeList ndList) {
-        for (int i = 0; i < ndList.getLength(); i++)
-            printNodeInfos("ndList.item(" + i + ")", ndList.item(i));
-    }
-
-    public static String getUpnpInfo(String host) {
-        return null;
-    }
-
-    public static void main(String[] args) {
-        UPnPInfo up = new UPnPInfo(RouterInfoCollector.getRouterIP());
-      
-    
-        try {
-            System.out.println(JDUtilities.objectToXml(up));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-        System.exit(0);
-        // System.out.println(getUpnpInfo("10.11.12.253"));
     }
 }
