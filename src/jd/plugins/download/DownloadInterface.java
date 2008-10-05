@@ -1065,14 +1065,17 @@ abstract public class DownloadInterface {
         // }
         request.getHttpConnection().disconnect();
 
-        String name = Plugin.getFileNameFromDispositionHeader(request.getHttpConnection().getHeaderField("content-disposition"));
-        if (name != null) this.downloadLink.setName(name);
-
+        if (this.downloadLink.getFinalFileName() == null) {
+            String name = Plugin.getFileNameFromDispositionHeader(connection.getHeaderField("content-disposition"));
+            this.downloadLink.setFinalFileName(name);
+        }
         String range = request.getHttpConnection().getHeaderField("Content-Range");
         String length = new Regex(range, ".*?\\/(\\d+)").getMatch(0);
-        long size = Long.parseLong(length);
-        downloadLink.setDownloadSize(fileSize = size);
-        this.setFileSizeVerified(true);
+        if (length != null) {
+            long size = Long.parseLong(length);
+            downloadLink.setDownloadSize(fileSize = size);
+            this.setFileSizeVerified(true);
+        }
         return fileSize;
     }
 
@@ -1167,7 +1170,6 @@ abstract public class DownloadInterface {
         }
         if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
         if (request.getLocation() != null) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED); }
-
         connection = request.getHttpConnection();
         if (connection.getRange() != null) {
             // Dateigröße wird aus dem Range-Response gelesen
