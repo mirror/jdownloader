@@ -64,6 +64,8 @@ public class Netloadin extends PluginForHost {
 
     private String fileStatusText;
 
+    private int gap=0;
+
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
 
@@ -247,7 +249,9 @@ public class Netloadin extends PluginForHost {
 
         return ai;
     }
-
+    public int getTimegapBetweenConnections() {
+        return gap;
+    }
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
@@ -260,7 +264,7 @@ public class Netloadin extends PluginForHost {
         checkMirrorsInProgress(downloadLink);
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
-        br.setDebug(true);
+//        br.setDebug(true);
         br.setAuth("netload.in", account.getUser(), account.getPass());
         br.openGetConnection(downloadLink.getDownloadURL());
         Request con;
@@ -269,8 +273,10 @@ public class Netloadin extends PluginForHost {
             logger.severe("Account Infos invalid");
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
-
+        gap=0;
         if (br.getRedirectLocation() == null) {
+            gap=100;
+            Thread.sleep(1000);
             br.followConnection();
             checkPassword(downloadLink, linkStatus);
             checkErrors(linkStatus);
