@@ -110,7 +110,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.PROXY_HOST, JDLocale.L("gui.config.download.proxy.host", "Host/IP")));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDLocale.L("gui.config.download.proxy.port", "Port"), 1, 65000));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.PROXY_PORT, JDLocale.L("gui.config.download.proxy.port", "Port"), 1, 65535));
         ce.setDefaultValue(8080);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
@@ -128,7 +128,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, config, Configuration.SOCKS_HOST, JDLocale.L("gui.config.download.socks.host", "Host/IP")));
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDLocale.L("gui.config.download.socks.port", "Port"), 1, 65000));
+        network.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, Configuration.SOCKS_PORT, JDLocale.L("gui.config.download.socks.port", "Port"), 1, 65535));
         ce.setDefaultValue(1080);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
