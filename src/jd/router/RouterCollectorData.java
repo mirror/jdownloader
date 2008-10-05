@@ -3,16 +3,12 @@ package jd.router;
 import java.io.Serializable;
 import java.util.HashMap;
 
-import jd.config.Configuration;
-import jd.utils.JDUtilities;
-
 public class RouterCollectorData implements Serializable {
     /**
      * 
      */
     private static final long serialVersionUID = 5026622395222229574L;
 
-    private String reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
 
     public String getReconnectMethode() {
         return reconnectMethode;
@@ -31,12 +27,6 @@ public class RouterCollectorData implements Serializable {
     }
     public void setHaveSip(boolean haveSip) {
         this.haveSip = haveSip;
-    }
-    public String getRouterIp() {
-        return routerIp;
-    }
-    public void setRouterIp(String routerIp) {
-        this.routerIp = routerIp;
     }
     public String getRouterSite() {
         return routerSite;
@@ -81,7 +71,6 @@ public class RouterCollectorData implements Serializable {
         uPnPSCPDs = pnPSCPDs;
     }
     private boolean isLiveHeaderReconnect = true, haveSip = false;
-    private String routerIp = null;
     private String routerSite = null;
     private String routerErrorPage = null;
     private String routerMAC = null;
@@ -89,6 +78,8 @@ public class RouterCollectorData implements Serializable {
     private boolean haveFritzUpnp = false;
     private String uPnPReconnectMeth = null;
     private HashMap<String, String> uPnPSCPDs = null;
+    private String reconnectMethode = null;
+
     /**
      * Gibt einen Prozentwert zurück zu welcher Wahrscheinlichkeit es sich um
      * diesen router handelt
