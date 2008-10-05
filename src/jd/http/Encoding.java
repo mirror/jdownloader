@@ -223,5 +223,24 @@ public class Encoding {
         }
         return new String(ret).trim();
     }
+    
+    /**
+     * Wenden htmlDecode an, bis es keine Änderungen mehr gibt. Aber max 50 mal!
+     * @param string
+     * @return
+     */
+    public static String deepHtmlDecode(String string) {
+        String decoded,tmp;
+        tmp=Encoding.htmlDecode(string);
+        int i=50;
+        while(!tmp.equals(decoded=Encoding.htmlDecode(tmp))){                
+            tmp=decoded;
+            if(i--<=0){
+                System.err.println("Max Decodeingloop 50 reached!!!");
+                return tmp;
+            }
+        }
+        return tmp;
+    }
 
 }

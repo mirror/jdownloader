@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -138,7 +139,8 @@ public class MySpaceCom extends PluginForDecrypt {
             nick = i == 0 ? matches[i][1] : nick;
             playerUrl = i == 1 ? matches[i][0] : playerUrl;
         }
-        String[] titel = null;
+        nick=Encoding.deepHtmlDecode(nick);
+        String[] titles = null;
         String[] dUrls = null;
         // HandlePlayers
         if (playerUrl == null) {
@@ -154,7 +156,7 @@ public class MySpaceCom extends PluginForDecrypt {
             plid = infos.getMatch(0);
             profid = infos.getMatch(3);
             String[][] data = parseXmlMyspaceStadardPlayer(profid, plid);
-            titel = data[0];
+            titles = data[0];
             dUrls = data[1];
         } else if (new Regex(playerUrl, FLASH_PLAYER_MUSIC, Pattern.CASE_INSENSITIVE).matches()) {
             Regex infos = new Regex(playerUrl, FLASH_PLAYER_2_PLID_UID);
@@ -163,18 +165,18 @@ public class MySpaceCom extends PluginForDecrypt {
             artid = infos.getMatch(2);
             profid = infos.getMatch(3);
             String[][] data = parseXmlMySpaceMusicPlayer(plid, artid, profid);
-            titel = data[0];
+            titles = data[0];
             dUrls = data[1];
         } else if (new Regex(playerUrl, FLASH_PLAYER_MUSICPLAYLIST_US, Pattern.CASE_INSENSITIVE).matches()) {
             String[][] data = parseXmlMusicPlayListUs(playerUrl);
-            titel = data[0];
+            titles = data[0];
             dUrls = data[1];
         } else if (new Regex(playerUrl, FLASH_PLAYER_MP3_ASSET_COM, Pattern.CASE_INSENSITIVE).matches()) {
             Regex reg = new Regex(playerUrl, FLASH_PLAYER_MP3_ASSET_COM_UID, Pattern.CASE_INSENSITIVE);
             String userId = reg.getColumn(0).length > 0 ? reg.getColumn(0)[0] : "";
             String path = reg.getColumn(1).length > 0 ? reg.getColumn(1)[0] : "";
             String[][] data = parseXmlMusicPlayerMp3Asset(path, userId);
-            titel = data[0];
+            titles = data[0];
             dUrls = data[1];
         } else {
             // TODO err msg player nicht erkannt!
@@ -182,7 +184,7 @@ public class MySpaceCom extends PluginForDecrypt {
             return null;
         }
 
-        if (titel.length != dUrls.length) logger.warning("Fehler Anzahl-Titel und Anzahl-Downloads stimmen nicht überein!");
+        if (titles.length != dUrls.length) logger.warning("Fehler Anzahl-Titel und Anzahl-Downloads stimmen nicht überein!");
         // Erstelle DownloadLinks
         FilePackage filePackage = new FilePackage();
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {
@@ -191,8 +193,9 @@ public class MySpaceCom extends PluginForDecrypt {
             filePackage.setName("myspace.com");
         }
 
-        for (int i = 0; i < titel.length; i++) {
-            String einTitel = titel[i];
+        for (int i = 0; i < titles.length; i++) {
+            String title = Encoding.deepHtmlDecode(titles[i]);
+          
             String link = dUrls[i];
             DownloadLink dl_link = createDownloadlink("myspace://" + link);
 
@@ -205,13 +208,13 @@ public class MySpaceCom extends PluginForDecrypt {
                 dl_link.addSubdirectory(nick);
             }
             if (getPluginConfig().getBooleanProperty(ENABLE_DL_NAME_MODIFICATION)) {
-                dl_link.setFinalFileName(nick + " - " + einTitel + ".mp3");
-                dl_link.setName(nick + " - " + einTitel + ".mp3");
+                dl_link.setFinalFileName(nick + " - " + title + ".mp3");
+                dl_link.setName(nick + " - " + title + ".mp3");
             } else {
-                dl_link.setFinalFileName(einTitel + ".mp3");
-                dl_link.setName(einTitel + ".mp3");
+                dl_link.setFinalFileName(title + ".mp3");
+                dl_link.setName(title + ".mp3");
             }
-            dl_link.setName(einTitel);
+            dl_link.setName(title);
             dl_link.setFilePackage(filePackage);
             dl_link.setBrowserUrl(cryptedLink.toString());
             decryptedLinks.add(dl_link);

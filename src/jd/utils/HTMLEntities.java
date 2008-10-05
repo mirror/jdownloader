@@ -272,6 +272,7 @@ public class HTMLEntities {
                         iso = new Integer(entity.substring(2, entity.length() - 1));
                     }
                 } else {
+           
                     iso = (Integer) unhtmlentities_map.get(entity);
                 }
                 if (iso == null) {
