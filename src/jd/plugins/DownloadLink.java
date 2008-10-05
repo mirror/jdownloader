@@ -16,7 +16,6 @@
 
 package jd.plugins;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
@@ -653,6 +652,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 logger.severe(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
             }
         }
+        finalFileName = null;
+        localSpeedLimit = -1;
     }
 
     /**
@@ -980,8 +981,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setPluginProgress(PluginProgress progress) {
-        this.pluginProgress=progress;
-        
+        this.pluginProgress = progress;
+
     }
 
     public PluginProgress getPluginProgress() {

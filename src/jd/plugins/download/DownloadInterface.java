@@ -1066,7 +1066,7 @@ abstract public class DownloadInterface {
         request.getHttpConnection().disconnect();
 
         if (this.downloadLink.getFinalFileName() == null) {
-            String name = Plugin.getFileNameFromDispositionHeader(connection.getHeaderField("content-disposition"));
+            String name = Plugin.getFileNameFromDispositionHeader(request.getHttpConnection().getHeaderField("content-disposition"));
             this.downloadLink.setFinalFileName(name);
         }
         String range = request.getHttpConnection().getHeaderField("Content-Range");
