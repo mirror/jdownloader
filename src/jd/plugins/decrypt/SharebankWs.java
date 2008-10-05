@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -35,18 +36,34 @@ public class SharebankWs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
-        String[] links = new Regex(br.getPage(parameter), Pattern.compile("go=(.*?)'")).getColumn(0);
+        br.getPage(parameter);
+        String[] links = br.getRegex(Pattern.compile("go=(.*?)'")).getColumn(0);
 
         progress.setRange(links.length);
         for (String element : links) {
             /* Get the security id and save them */
-            String securityId = new Regex(br.getPage("http://sharebank.ws/?go=" + element), Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
+            br.getPage("http://sharebank.ws/?go=" + element);
+            String securityId = br.getRegex(Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
 
             /* Follow the link with the securityId and filter out the finalLink */
-            String finalLink = new Regex(br.getPage("http://sharebank.ws/?" + securityId), Pattern.compile("<iframe src='(.*)' marginheight=")).getMatch(0);
-
-            decryptedLinks.add(createDownloadlink(finalLink));
+            br.getPage("http://sharebank.ws/?" + securityId);
+            String finalLink = br.getRegex(Pattern.compile("<iframe src='(.*)' marginheight=")).getMatch(0);
+            if (finalLink == null) {
+                /*
+                 * Follow the link with the securityId and filter out the
+                 * finalLink
+                 */
+                securityId = br.getRegex(Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
+                br.getPage("http://sharebank.ws/?" + securityId);
+                finalLink = br.getRegex(Pattern.compile("<iframe src='(.*)' marginheight=")).getMatch(0);
+            }
+            /* find base64 coded url */
+            String finalLink2 = br.getRegex(Pattern.compile("base64_decode\\('(.*?)'\\)")).getMatch(0);
+            if (finalLink2 != null) {
+                decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(finalLink2)));
+            } else {
+                decryptedLinks.add(createDownloadlink(finalLink));
+            }
             progress.increase(1);
         }
 
