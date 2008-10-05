@@ -488,6 +488,12 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 this.fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED);
             }
 
+            if ((match = new Regex(latestLine, "Bad archive (.*)").getMatch(0)) != null) {
+                this.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                System.err.println("Bad archive. Prop. CRC error in "+match);
+                exec.interrupt();
+            }
+            
             if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
                 this.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                 exec.interrupt();
@@ -495,6 +501,10 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
         }
 
+    }
+
+    public int getCurrentVolume() {
+        return currentVolume;
     }
 
     public String getLatestStatus() {

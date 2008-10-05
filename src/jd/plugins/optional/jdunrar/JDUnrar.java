@@ -134,11 +134,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 link = (DownloadLink) event.getSource();
 
                 items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "linkmenu.extract", "Extract"), 1000).setActionListener(this));
-                m.setEnabled(link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getName().matches(".*rar$"));
+                m.setEnabled(false);
+                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getName().matches(".*rar$")) m.setEnabled(true);
+                if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
+
                 m.setProperty("LINK", link);
-                
+
                 items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "linkmenu.openextract", "Open directory"), 1002).setActionListener(this));
-                m.setEnabled(link.getStringProperty("EXTRACTEDPATH")!=null);
+                m.setEnabled(link.getStringProperty("EXTRACTEDPATH") != null);
                 m.setProperty("LINK", link);
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
@@ -294,7 +297,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         UnrarWrapper wrapper = new UnrarWrapper(link);
         File dl = this.getExtractToPath(link);
-        link.setProperty("EXTRACTEDPATH",dl.getAbsolutePath());
+        link.setProperty("EXTRACTEDPATH", dl.getAbsolutePath());
         wrapper.addUnrarListener(this);
         wrapper.setExtractTo(dl);
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
@@ -323,7 +326,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             File ret;
             path = path.replaceAll("[/]+", "\\");
             path = path.replaceAll("[\\\\]+", "\\\\");
-    
+
             if (!(ret = new File(JDUtilities.validatePath(path))).isAbsolute()) return JDUtilities.getResourceFile(JDUtilities.validatePath(path));
             return ret;
         } catch (Exception e) {
@@ -508,18 +511,18 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             }
             break;
-            
+
         case 1002:
 
             link = this.findStartLink((DownloadLink) source.getProperty("LINK"));
             if (link == null) { return; }
-            String path=link.getStringProperty("EXTRACTEDPATH");
-            
+            String path = link.getStringProperty("EXTRACTEDPATH");
+
             try {
                 new GetExplorer().openExplorer(new File(path));
             } catch (Exception ec) {
             }
-            
+
             break;
         }
         if (source.getActionID() >= 3000) {
@@ -593,17 +596,17 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
             if (wrapper.getException() != null) {
 
-                wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract failed: " + wrapper.getException().getMessage());
+                wrapper.getDownloadLink().getLinkStatus().setErrorMessage("Extract failed: " + wrapper.getException().getMessage());
                 wrapper.getDownloadLink().requestGuiUpdate();
             } else {
-                wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract failed");
+                wrapper.getDownloadLink().getLinkStatus().setErrorMessage("Extract failed");
                 wrapper.getDownloadLink().requestGuiUpdate();
             }
             this.onFinished(wrapper);
 
             break;
         case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract failed(password)");
+            wrapper.getDownloadLink().getLinkStatus().setErrorMessage("Extract failed(password)");
             wrapper.getDownloadLink().requestGuiUpdate();
             this.onFinished(wrapper);
 
@@ -667,9 +670,24 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
             // ": " + "CRC Failure");
             // progress.get(wrapper).setColor(Color.RED);
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract: failed(CRC)");
-            wrapper.getDownloadLink().reset();
+            ArrayList<DownloadLink> list = this.getArchiveList(wrapper.getDownloadLink());
+            DownloadLink crc = list.size() >= wrapper.getCurrentVolume() ? list.get(wrapper.getCurrentVolume()) : null;
+            wrapper.getDownloadLink().getLinkStatus().setErrorMessage("Extract: failed(CRC)");
+            // wrapper.getDownloadLink().reset();
             wrapper.getDownloadLink().requestGuiUpdate();
+            if (crc != null) {
+                // crc.reset();
+                crc.getLinkStatus().removeStatus(LinkStatus.FINISHED);
+                crc.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                crc.getLinkStatus().setErrorMessage("Extract: failed(CRC)");
+                crc.requestGuiUpdate();
+            } else {
+                for (DownloadLink link : list) {
+                    if (link == null) continue;
+                    link.getLinkStatus().setErrorMessage("Extract: failed(CRC)");
+                    link.requestGuiUpdate();
+                }
+            }
             this.onFinished(wrapper);
 
             break;
@@ -686,9 +704,15 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
             // ": " + "SUCCESSFULL");
             // progress.get(wrapper).setColor(Color.GREEN);
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extract: OK");
 
-            wrapper.getDownloadLink().requestGuiUpdate();
+            list = this.getArchiveList(wrapper.getDownloadLink());
+
+            for (DownloadLink link : list) {
+                if (link == null) continue;
+                link.getLinkStatus().setStatusText("Extract: OK");
+                link.requestGuiUpdate();
+            }
+
             this.onFinished(wrapper);
 
             break;
@@ -697,6 +721,30 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             System.out.println("id ");
 
         }
+    }
+
+    private ArrayList<DownloadLink> getArchiveList(DownloadLink downloadLink) {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ret.add(downloadLink);
+        File file;
+        switch (this.getArchivePartType(downloadLink)) {
+        case JDUnrarConstants.MULTIPART_START_PART:
+            String name = this.getArchiveName(downloadLink);
+            int i = 2;
+
+            while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + i + ".rar")).exists()) {
+                ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file));
+                i++;
+            }
+            break;
+
+        case JDUnrarConstants.SINGLE_PART_ARCHIVE:
+
+            break;
+
+        }
+        return ret;
+
     }
 
     private void onFinished(UnrarWrapper wrapper) {

@@ -360,11 +360,11 @@ public class RAFDownload extends DownloadInterface {
         for (int i = 0; i < getChunkNum(); i++) {
             if (i == getChunkNum() - 1) {
 
-                chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, -1, connection);
+                chunk = new Chunk(downloadLink.getChunksProgress()[i]==0?0:downloadLink.getChunksProgress()[i] + 1, -1, connection);
                 chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
             } else {
 
-                chunk = new Chunk(downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
+                chunk = new Chunk(downloadLink.getChunksProgress()[i]==0?0:downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
                 chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
             }
 

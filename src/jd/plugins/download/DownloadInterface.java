@@ -898,6 +898,7 @@ abstract public class DownloadInterface {
          * @param loaded
          */
         public void setLoaded(long loaded) {
+            loaded=Math.max(0, loaded);
             totalPartBytes = loaded;
             addToTotalLinkBytesLoaded(loaded);
         }
@@ -1160,7 +1161,7 @@ abstract public class DownloadInterface {
                     setChunkNum(tmp);
                 }
             }
-            if (downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1 && !this.isFirstChunkRangeless()) {
+            if (this.isFileSizeVerified()&&downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1 && !this.isFirstChunkRangeless()) {
                 connectFirstRange();
             } else {
                 request.getHeaders().remove("Range");
@@ -1657,6 +1658,9 @@ abstract public class DownloadInterface {
         if (!connected) connect();
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
         downloadLink.getLinkStatus().setStatusText(null);
+        if(connection==null||!connection.isOK()){
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,10*60*1000l);
+        }
         if (connection.getHeaderField("Location") != null) {
 
             error(LinkStatus.ERROR_PLUGIN_DEFEKT, "Sent a redirect to Downloadinterface");

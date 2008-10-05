@@ -476,6 +476,7 @@ public class Rapidshare extends PluginForHost {
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         // Redirects sollen automatisch geladen werden
         br.setFollowRedirects(false);
+        br.setDebug(true);
         // Setzt die Auths infos fürdiese browserinstanz. domain=null heißt,
         // dass die logins für alle Verbindungen verwendet werden sollen
         br.setAuth(null, account.getUser().trim(), account.getPass().trim());

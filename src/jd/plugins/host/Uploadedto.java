@@ -296,6 +296,7 @@ public class Uploadedto extends PluginForHost {
         Form form = br.getFormbyValue("Download");
 
         Request request = br.createFormRequest(form);
+        sleep(10000l,downloadLink);
         dl = new RAFDownload(this, downloadLink, request);
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);

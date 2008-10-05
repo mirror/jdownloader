@@ -1033,7 +1033,8 @@ public class JDUtilities {
      */
     public static String getIPAddress() {
         Browser br = new Browser();
-
+br.setConnectTimeout(5000);
+br.setReadTimeout(5000);
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             logger.finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
@@ -1920,7 +1921,7 @@ public class JDUtilities {
         }
     }
 
-    public static String objectToXml(Serializable obj) throws IOException {
+    public static String objectToXml(Object obj) throws IOException {
         ByteArrayOutputStream ba;
         DataOutputStream out = new DataOutputStream(ba = new ByteArrayOutputStream());
         XMLEncoder xmlEncoder = new XMLEncoder(out);
