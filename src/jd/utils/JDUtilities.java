@@ -1920,7 +1920,7 @@ public class JDUtilities {
         }
     }
 
-    public String objectToXml(Serializable obj) throws IOException {
+    public static String objectToXml(Serializable obj) throws IOException {
         ByteArrayOutputStream ba;
         DataOutputStream out = new DataOutputStream(ba = new ByteArrayOutputStream());
         XMLEncoder xmlEncoder = new XMLEncoder(out);
