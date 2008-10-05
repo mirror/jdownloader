@@ -282,7 +282,7 @@ public class Netloadin extends PluginForHost {
 
             dl = RAFDownload.download(downloadLink, con, true, 0);
             dl.headFake(null);
-            // dl.setFirstChunkRangeless(true);
+            dl.setFirstChunkRangeless(true);
             HTTPConnection connection = dl.connect(br);
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
@@ -303,7 +303,7 @@ public class Netloadin extends PluginForHost {
 
             dl = RAFDownload.download(downloadLink, con, true, 0);
             dl.headFake(null);
-            // dl.setFirstChunkRangeless(true);
+            dl.setFirstChunkRangeless(true);
             dl.connect(br);
         }
 
@@ -345,7 +345,7 @@ public class Netloadin extends PluginForHost {
 
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
-
+br.setDebug(true);
             br.setConnectTimeout(15000);
 
             String id = Netloadin.getID(downloadLink.getDownloadURL());
@@ -369,6 +369,15 @@ public class Netloadin extends PluginForHost {
             }
 
             String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);
+
+            if(entries==null){
+            entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
+            if (entries == null || entries.length < 3) { return false; }
+            downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
+            downloadLink.setName(entries[0]);
+            fileStatusText="Might be offline";
+            return true;
+            }
 
             if (entries == null || entries.length < 3) { return false; }
 

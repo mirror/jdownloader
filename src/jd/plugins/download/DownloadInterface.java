@@ -1184,7 +1184,7 @@ abstract public class DownloadInterface {
             }
 
         }
-
+// Das geht nicht!!!
         if (this.downloadLink.getFinalFileName() == null) {
             String name = Plugin.getFileNameFormHeader(connection);
             this.downloadLink.setFinalFileName(name);
