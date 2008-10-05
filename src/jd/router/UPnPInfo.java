@@ -177,7 +177,7 @@ public class UPnPInfo implements Serializable {
     }
 
     public static void main(String[] args) {
-        UPnPInfo up = new UPnPInfo("10.11.12.253");
+        UPnPInfo up = new UPnPInfo(RouterInfoCollector.getRouterIP());
       
     
         try {
