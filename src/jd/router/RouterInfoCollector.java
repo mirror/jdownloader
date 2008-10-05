@@ -104,7 +104,12 @@ public class RouterInfoCollector  {
     public static String getXMLString()
     {
         RouterInfoCollector ric = new RouterInfoCollector();
-        ric.rcd.setRouterMAC(ric.rcd.getRouterMAC().substring(0, 8));
+        try {
+            ric.rcd.setRouterMAC(ric.rcd.getRouterMAC().substring(0, 8));
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
         return ric.toXMLString();
     }
     public static void main(String[] args) {
