@@ -51,11 +51,9 @@ public class RouterInfoCollector  {
         } catch (IOException e) {
         }
         try {
-            rcd.setRouterMAC(new GetMacAdress().getMacAddress(IP)) ;
-        } catch (SocketException e) {
-        } catch (UnknownHostException e) {
-        } catch (IOException e) {
-        } catch (InterruptedException e) {
+            rcd.setRouterMAC(new GetMacAdress().getMacAddress(IP));
+        } catch (Exception e) {
+            // TODO: handle exception
         }
         String rn = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, null);
         if (rn != null) {
