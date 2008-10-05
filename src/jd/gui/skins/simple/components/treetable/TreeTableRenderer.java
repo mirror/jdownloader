@@ -183,6 +183,16 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     ui.setSelectionBackground(DONE_COLOR_FONT_B);
                 }
                 progress.setString("Plugin loading failed");
+            } else if (dLink.getPluginProgress()!=null){
+                progress.setForeground(dLink.getPluginProgress().getColor());
+                if (ui != null) {
+                    ui.setSelectionForeground(DONE_COLOR_FONT_A);
+                    ui.setSelectionBackground(DONE_COLOR_FONT_B);
+                }
+                progress.setString(dLink.getPluginProgress().getPercent()+" %");
+                progress.setMaximum((int)dLink.getPluginProgress().getTotal());
+                progress.setValue((int)dLink.getPluginProgress().getCurrent());
+                return progress;
             } else if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {

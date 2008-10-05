@@ -23,5 +23,6 @@ public class JDUnrarConstants {
     public static final int WRAPPER_FINISHED_SUCCESSFULL = 15;
     public static final int WRAPPER_EXTRACTION_FAILED_CRC = 16;
     public static final int WRAPPER_CRACK_PASSWORD = 17;
+    public static final String CONFIG_KEY_UNRARPATH = "UNRARPATH";
 
 }

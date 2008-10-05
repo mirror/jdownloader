@@ -16,6 +16,7 @@
 
 package jd.plugins;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.Serializable;
 import java.net.URL;
@@ -165,6 +166,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private String decrypterPassword;
 
     private String MD5Hash;
+
+    private transient PluginProgress pluginProgress;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -974,6 +977,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public String getMD5Hash() {
         return MD5Hash;
+    }
+
+    public void setPluginProgress(PluginProgress progress) {
+        this.pluginProgress=progress;
+        
+    }
+
+    public PluginProgress getPluginProgress() {
+        return pluginProgress;
     }
 
 }
