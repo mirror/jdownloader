@@ -57,14 +57,8 @@ public class ShareOnlineBiz extends PluginForHost {
                                     */
                 String page = br.getPage(url);
                 if (page != null && br.getRedirectLocation() == null) {
-                    // String filename = br.getRegex(Pattern.compile(
-                    // "<span class=\"locatedActive\">(.*?)</span>",
-                    // Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    // String sizev = br.getRegex(Pattern.compile(
-                    // "<div><b>You have requested <font color=.*?</font>(.*?).</b></div>"
-                    // , Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    String filename = br.getRegex(Pattern.compile("<span class=\"locatedActive\">Download (.*?)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                    String sizev = br.getRegex(Pattern.compile("\\((.*?)\\) angefordert.", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    String filename = br.getRegex(Pattern.compile("<b>File name:</b></td>.*?<td align=left width=150px><div style=.*?><b>(.*?)</b></div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+                    String sizev = br.getRegex(Pattern.compile("<br>You have requested <font color=.*?>.*?</font> \\((.*?)\\) .</b>", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
                     if (filename == null || sizev == null) return false;
                     downloadLink.setDownloadSize(Regex.getSize(sizev));
@@ -121,7 +115,7 @@ public class ShareOnlineBiz extends PluginForHost {
         /* Überprüfen(Captcha,Password) */
         form.put("captchacode", captchaCode);
         br.submitForm(form);
-        if (br.containsHTML("<span>Captcha number error or expired!</span>") || br.containsHTML("Unfortunately the password you entered is not correct")) {
+        if (br.containsHTML("Captcha number error or expired") || br.containsHTML("Unfortunately the password you entered is not correct")) {
             if (br.containsHTML("Unfortunately the password you entered is not correct")) {
                 /* PassCode war falsch, also Löschen */
                 downloadLink.setProperty("pass", null);
