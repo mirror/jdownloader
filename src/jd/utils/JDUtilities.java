@@ -32,10 +32,12 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream; 
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -768,7 +771,7 @@ public class JDUtilities {
             String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
             releaseUserIO_Semaphore();
             return code;
-        } 
+        }
     }
 
     /**
@@ -1915,6 +1918,16 @@ public class JDUtilities {
         } else {
             logger.severe("Schreibfehler: Fileoutput: null");
         }
+    }
+
+    public String objectToXml(Serializable obj) throws IOException {
+        ByteArrayOutputStream ba;
+        DataOutputStream out = new DataOutputStream(ba = new ByteArrayOutputStream());
+        XMLEncoder xmlEncoder = new XMLEncoder(out);
+        xmlEncoder.writeObject(obj);
+        xmlEncoder.close();
+        out.close();
+        return new String(ba.toByteArray());
     }
 
     /**
