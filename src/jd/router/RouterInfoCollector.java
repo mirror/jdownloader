@@ -1,8 +1,6 @@
 package jd.router;
 
 import java.io.IOException;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import jd.JDInit;
