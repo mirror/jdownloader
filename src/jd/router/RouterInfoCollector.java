@@ -152,8 +152,10 @@ public class RouterInfoCollector {
         post.put("key", md5);
         Browser br = new Browser();
         try {
-            br.postPage("http://jdownloader.org/router/import.php", post);
+            String out = br.postPage("http://jdownloader.org/router/import.php", post);
             // System.out.println(br);
+            if(out==null || !out.equals("No htmlCode read"))
+            JDUtilities.getLogger().severe(out);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
