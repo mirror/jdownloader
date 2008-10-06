@@ -430,7 +430,7 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         if (account != null) {
-            try {
+            try {                
                 handlePremium(downloadLink, account);
                 if (dl != null && dl.getConnection() != null) {
                     try {

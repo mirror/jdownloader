@@ -321,7 +321,7 @@ public class SingleDownloadController extends Thread {
 
         } else {
 
-            // downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
+            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
 
         }
 
@@ -484,6 +484,7 @@ public class SingleDownloadController extends Thread {
         PluginForHost plugin;
         linkStatus.setStatusText(null);
         linkStatus.setErrorMessage(null);
+        linkStatus.resetWaitTime();
         logger.info("working on " + downloadLink.getName());
         currentPlugin = plugin = (PluginForHost) downloadLink.getPlugin();
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));

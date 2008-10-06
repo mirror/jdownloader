@@ -227,7 +227,7 @@ public class LinkStatus implements Serializable {
         String ret = "";
         if (hasStatus(LinkStatus.FINISHED)) {
 
-        return JDLocale.L("gui.downloadlink.finished", "[finished]")+(this.getStatusText()!=null?"> "+this.getStatusText():""); }
+        return JDLocale.L("gui.downloadlink.finished", "[finished]") + (this.getStatusText() != null ? "> " + this.getStatusText() : ""); }
 
         if (!downloadLink.isEnabled() && !hasStatus(LinkStatus.FINISHED)) {
             if (downloadLink.isAborted()) {
@@ -335,7 +335,6 @@ public class LinkStatus implements Serializable {
 
         statusText = null;
         retryCount = 0;
-        totalWaitTime = 0;
         value = 0;
         resetWaitTime();
     }
@@ -365,6 +364,9 @@ public class LinkStatus implements Serializable {
      * @param status
      */
     public void setStatus(int status) {
+        if (status == FINISHED) {
+            resetWaitTime();
+        }
         this.status = status;
         lastestStatus = status;
     }

@@ -183,17 +183,27 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     ui.setSelectionBackground(DONE_COLOR_FONT_B);
                 }
                 progress.setString("Plugin loading failed");
-            } else if (dLink.getPluginProgress()!=null){
+            } else if (dLink.getPluginProgress() != null) {
                 progress.setForeground(dLink.getPluginProgress().getColor());
                 if (ui != null) {
                     ui.setSelectionForeground(DONE_COLOR_FONT_A);
                     ui.setSelectionBackground(DONE_COLOR_FONT_B);
                 }
-                progress.setString(dLink.getPluginProgress().getPercent()+" %");
-                progress.setMaximum((int)dLink.getPluginProgress().getTotal());
-                progress.setValue((int)dLink.getPluginProgress().getCurrent());
+                progress.setString(dLink.getPluginProgress().getPercent() + " %");
+                progress.setMaximum((int) dLink.getPluginProgress().getTotal());
+                progress.setValue((int) dLink.getPluginProgress().getCurrent());
                 return progress;
-            } else if (dLink.getLinkStatus().getRemainingWaittime() == 0 && dLink.getPlugin().getRemainingHosterWaittime() <= 0 && (int) dLink.getDownloadCurrent() > 0) {
+            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
+                progress.setMaximum((int) dLink.getLinkStatus().getTotalWaitTime());
+                progress.setForeground(ERROR_PROGRESS_COLOR);
+                if (ui != null) {
+                    ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
+                }
+                progress.setValue((int) dLink.getLinkStatus().getRemainingWaittime());
+                progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
+                return progress;
+            } else if ((int) dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         progress.setForeground(DONE_COLOR);
@@ -225,41 +235,31 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 progress.setMaximum(10000);
                 progress.setValue(dLink.getPercent());
                 return progress;
-            } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
-                progress.setMaximum((int) dLink.getLinkStatus().getTotalWaitTime());
-                progress.setForeground(ERROR_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
-                }
-                progress.setValue((int) dLink.getLinkStatus().getRemainingWaittime());
-                progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
-                return progress;
-            } else if (dLink.getLinkStatus().hasStatus(LinkStatus.WAITING_USERIO)) {
-                progress.setForeground(ACTIVE_PROGRESS_COLOR);
-                if (ui != null) {
-                    ui.setSelectionForeground(ACTIVE_PROGRESS_COLOR_FONT_A);
-                    ui.setSelectionBackground(ACTIVE_PROGRESS_COLOR_FONT_B);
-                }
-                progress.setString(SimpleGUI.WAITING_USER_IO);
-                return progress;
             }
             label.setText("");
             return label;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof FilePackage) {
             fp = (FilePackage) value;
-            progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
-            progress.setForeground(PACKAGE_PROGRESS_COLOR);
-            if (ui != null) {
-                ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
-                ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
-            }
-            if (fp.getPercent() == 0.0) {
-                progress.setValue(0);
-                progress.setString("- 0% -");
+
+            if (fp.isFinished()) {
+                progress.setForeground(DONE_COLOR);
+                progress.setMaximum(100);
+                progress.setValue(100);
+                progress.setString("- 100% -");
             } else {
-                progress.setValue(fp.getTotalKBLoaded());
-                progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
+                progress.setMaximum(Math.max(1, fp.getTotalEstimatedPackageSize()));
+                progress.setForeground(PACKAGE_PROGRESS_COLOR);
+                if (ui != null) {
+                    ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
+                }
+                if (fp.getPercent() == 0.0) {
+                    progress.setValue(0);
+                    progress.setString("- 0% -");
+                } else {
+                    progress.setValue(fp.getTotalKBLoaded());
+                    progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
+                }
             }
             return progress;
         }

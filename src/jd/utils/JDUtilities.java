@@ -47,7 +47,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -1033,8 +1032,8 @@ public class JDUtilities {
      */
     public static String getIPAddress() {
         Browser br = new Browser();
-br.setConnectTimeout(5000);
-br.setReadTimeout(5000);
+        br.setConnectTimeout(5000);
+        br.setReadTimeout(5000);
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.PARAM_GLOBAL_IP_DISABLE, false)) {
             logger.finer("IP Check is disabled. return current Milliseconds");
             return System.currentTimeMillis() + "";
