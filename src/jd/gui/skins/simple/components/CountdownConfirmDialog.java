@@ -17,18 +17,22 @@
 package jd.gui.skins.simple.components;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
@@ -48,18 +52,11 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     private static final long serialVersionUID = 1L;
     public final static int STYLE_OK = 1 << 1;
     public final static int STYLE_CANCEL = 1 << 2;
-    public final static int STYLE_STOP_COUNTDOWN = 1 << 3;
-    public final static int STYLE_MSGLABLE = 1 << 4;
-    
-
-    
-
-
-
-    public static void main(String[] args) {
-        CountdownConfirmDialog.showCountdownConfirmDialog(new JFrame(), "<h2>test</h2>", 10);
-
-    }
+    public final static int STYLE_YES = 1 << 3;
+    public final static int STYLE_NO = 1 << 4;
+    public final static int STYLE_STOP_COUNTDOWN = 1 << 5;
+    public final static int STYLE_MSGLABLE = 1 << 6;
+    public final static int STYLE_DETAILLABLE = 1 << 7;
 
     public static boolean showCountdownConfirmDialog(Frame owner, String msg, int countdown) {
         CountdownConfirmDialog d = new CountdownConfirmDialog(owner, msg, countdown);
@@ -78,7 +75,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     private Component htmlArea;
     public boolean result = false;
     private JScrollPane scrollPane;
-
+    public boolean window_Closed = false;
     private String titleText;
 
     public CountdownConfirmDialog(Frame owner, String msg, int countdown) {
@@ -88,9 +85,47 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         this(owner,null,msg,countdown,defaultResult,style);
     }
     public CountdownConfirmDialog(final Frame owner,final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
+        this(owner,title,countdown,defaultResult,style,msg);
+    }
+    public CountdownConfirmDialog(final Frame owner,final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
         super(owner);
         setModal(true);
+        addWindowListener(new WindowListener() {
 
+            public void windowActivated(WindowEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void windowClosed(WindowEvent e) {
+                window_Closed=true;
+                dispose();
+            }
+
+            public void windowClosing(WindowEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void windowDeactivated(WindowEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void windowDeiconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void windowIconified(WindowEvent e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            public void windowOpened(WindowEvent e) {
+                // TODO Auto-generated method stub
+                
+            }});
         setLayout(new GridBagLayout());
 
         countdownThread = new Thread() {
@@ -140,33 +175,66 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             this.setTitle(title);
         }
         if ((style & STYLE_MSGLABLE) != 0) {
-            htmlArea = new JLabel(msg);
+            htmlArea = new JLabel(msg[0]);
         } else {
             htmlArea = new JTextPane();
             ((JTextPane) htmlArea).setEditable(false);
             ((JTextPane) htmlArea).setContentType("text/html");
-            ((JTextPane) htmlArea).setText(msg);
+            ((JTextPane) htmlArea).setText(msg[0]);
             ((JTextPane) htmlArea).requestFocusInWindow();
             ((JTextPane) htmlArea).addHyperlinkListener(this);
 
         }
+
         scrollPane = new JScrollPane(htmlArea);
         JDUtilities.addToGridBag(this, scrollPane, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+
+        if((style & STYLE_DETAILLABLE) != 0)
+        {
+            final JButton btnDetails = new JButton(JDLocale.L("gui.btn_details", "details"));
+            final JPanel pan = new JPanel();
+            btnDetails.addActionListener(new ActionListener(){
+
+                public void actionPerformed(ActionEvent e) {
+                    JTextArea detailLable = new JTextArea();
+                    detailLable.setText(msg[1]);
+                    detailLable.setEditable(false);
+                
+                    JScrollPane sp = new JScrollPane(detailLable,
+                            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+                                            JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+                    sp.setPreferredSize(new Dimension(getWidth()-20, 200));
+//                    detailLable.setLineWrap(true);
+                    setSize(new Dimension(getWidth(),getHeight()+200-btnDetails.getHeight() ));
+                    pan.remove(btnDetails);
+                    pan.invalidate();
+                    pan.repaint();
+                    pan.add(sp);
+                    sp.repaint();
+                    sp.validate();
+                    pan.validate();
+                    countdownThread = null;
+                }});
+            pan.add(btnDetails);
+            JDUtilities.addToGridBag(this, pan, 0, 1, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+
+//            scrollPane = new JScrollPane(htmlArea);
+        }
         int d = 0;
         if ((style & STYLE_STOP_COUNTDOWN) != 0) {
             btnCnTh = new JButton(JDLocale.L("gui.btn_cancelCountdown", "Stop Countdown"));
             btnCnTh.addActionListener(this);
             JDUtilities.addToGridBag(this, btnCnTh, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         }
-        if ((style & STYLE_OK) != 0) {
-            btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
+        if ((style & STYLE_OK) != 0 ||(style & STYLE_YES) != 0 ) {
+            btnOK = new JButton((style & STYLE_YES) != 0 ? JDLocale.L("gui.btn_yes", "Ja"):JDLocale.L("gui.btn_ok", "OK"));
             btnOK.addActionListener(this);
             getRootPane().setDefaultButton(btnOK);
 
             JDUtilities.addToGridBag(this, btnOK, d++, 2, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
-        if ((style & STYLE_CANCEL) != 0) {
-            btnBAD = new JButton(JDLocale.L("gui.btn_cancel", "CANCEL"));
+        if ((style & STYLE_CANCEL) != 0||(style & STYLE_NO) != 0 ) {
+            btnBAD = new JButton((style & STYLE_NO) != 0 ? JDLocale.L("gui.btn_no", "Nein"):JDLocale.L("gui.btn_cancel", "CANCEL"));
             btnBAD.addActionListener(this);
             JDUtilities.addToGridBag(this, btnBAD, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
@@ -186,11 +254,11 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         } else if (e.getSource() == btnOK) {
             result = true;
-            setVisible(false);
             dispose();
+           
         } else if (e.getSource() == btnBAD) {
-            setVisible(false);
             dispose();
+       
         }
 
         if (countdownThread != null && countdownThread.isAlive()) {
