@@ -46,14 +46,15 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
      * 
      */
     private static final long serialVersionUID = 1L;
-
-    public final static int STYLE_CANCEL = 1 << 2;
-
-    public final static int STYLE_MSGLABLE = 1 << 4;
-
     public final static int STYLE_OK = 1 << 1;
-
+    public final static int STYLE_CANCEL = 1 << 2;
     public final static int STYLE_STOP_COUNTDOWN = 1 << 3;
+    public final static int STYLE_MSGLABLE = 1 << 4;
+    
+
+    
+
+
 
     public static void main(String[] args) {
         CountdownConfirmDialog.showCountdownConfirmDialog(new JFrame(), "<h2>test</h2>", 10);
