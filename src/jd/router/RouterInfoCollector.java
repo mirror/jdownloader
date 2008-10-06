@@ -25,24 +25,24 @@ import jd.utils.JDUtilities;
 
 public class RouterInfoCollector {
     public final static String PROPERTY_SHOW_ROUTERINFO_DIALOG = "PROPERTY_SHOW_ROUTERINFO_DIALOG";
-    protected boolean isLiveHeaderReconnect = true, haveSip = false;
+    protected boolean haveSip = false;
+    public final static String RECONNECTTYPE_LIVE_HEADER = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
+    public final static String RECONNECTTYPE_CLR = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
+    protected String reconnectType = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
     protected String routerSite = null;
     protected String routerErrorPage = null;
     protected String routerMAC = null;
     protected String[] routerMethodeNames = null;
     protected HashMap<String, String> uPnPSCPDs = null;
     protected String reconnectMethode = null;
-
+    protected String reconnectMethodeClr = null;
     protected String IP = null;
     protected String routerHost = null;
     protected String pageHeader = null;
 
     public RouterInfoCollector() {
         reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
-        String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
-        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).equals(lh) || reconnectMethode == null) {
-            isLiveHeaderReconnect = false;
-        }
+        reconnectMethodeClr = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null);
         IP = null;
         try {
             IP = getRouterIP();
@@ -93,11 +93,11 @@ public class RouterInfoCollector {
             routerMAC = new GetMacAdress().getMacAddress(IP);
         } catch (Exception e) {
         }
-        if (isLiveHeaderReconnect) {
+        if (isLiveheader()) {
             String rn = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, null);
             if (rn != null) {
                 routerMethodeNames = new String[] { rn };
-            } else if (reconnectMethode != null && !reconnectMethode.matches("\\s")) {
+            } else if (!reconnectMethode.matches("\\s")) {
                 ArrayList<String> rmn = new ArrayList<String>();
                 for (String[] script : new HTTPLiveHeader().getLHScripts()) {
                     if (script[2].trim().equals(reconnectMethode) && !rmn.contains(script[1])) rmn.add(script[1]);
@@ -109,50 +109,51 @@ public class RouterInfoCollector {
 
     }
 
+    public boolean isLiveheader() {
+        return (reconnectType.equals(RECONNECTTYPE_LIVE_HEADER) && reconnectMethode != null);
+    }
+
+    public boolean isClr() {
+        return (reconnectType.equals(RECONNECTTYPE_CLR) && reconnectMethodeClr != null);
+    }
+
+    public boolean isValidReconnect() {
+        return (isLiveheader() || isClr());
+    }
+
     @SuppressWarnings("deprecation")
-    public HashMap<String, String> getHashMap(boolean urlencode)
-    {
+    public HashMap<String, String> getHashMap(boolean urlencode) {
         HashMap<String, String> ret = new HashMap<String, String>();
-            if(IP!=null)
-        ret.put("RouterIP",IP);
-            if(routerHost!=null)
-        ret.put("RouterHost",routerHost);
-        if(routerMethodeNames!=null)
-        {
-        try {
-            ret.put("Routernames", JDUtilities.objectToXml(routerMethodeNames));
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (IP != null) ret.put("RouterIP", IP);
+        if (routerHost != null) ret.put("RouterHost", routerHost);
+        if (routerMethodeNames != null) {
+            try {
+                ret.put("Routernames", JDUtilities.objectToXml(routerMethodeNames));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
+        if (routerMAC != null) ret.put("RouterMAC", routerMAC.substring(0, 8));
+        if (uPnPSCPDs != null) {
+            try {
+                ret.put("UPnPSCPDs", JDUtilities.objectToXml(uPnPSCPDs));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
-        if(routerMAC!=null)
-        ret.put("RouterMAC", routerMAC.substring(0, 8));
-        if(uPnPSCPDs!=null)
-        {
-        try {
-            ret.put("UPnPSCPDs", JDUtilities.objectToXml(uPnPSCPDs));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        }
-        if(pageHeader!=null)
-        ret.put("PageHeader", pageHeader);
-        if(routerSite!=null)
-        ret.put("RouterPage", routerSite);
-        if(routerErrorPage!=null)
-        ret.put("RouterErrorPage", routerErrorPage);
-        if(reconnectMethode!=null)
-        ret.put("ReconnectMethode", reconnectMethode);
-        if(haveSip)
-        ret.put("HaveSip", "true");
-        if(urlencode)
-            {
+        if (pageHeader != null) ret.put("PageHeader", pageHeader);
+        if (routerSite != null) ret.put("RouterPage", routerSite);
+        if (routerErrorPage != null) ret.put("RouterErrorPage", routerErrorPage);
+        if (isLiveheader()) ret.put("ReconnectMethode", reconnectMethode);
+        if (isClr()) ret.put("ReconnectMethodeClr", reconnectMethodeClr);
+        if (haveSip) ret.put("HaveSip", "true");
+        if (urlencode) {
             for (Entry<String, String> ent : ret.entrySet()) {
                 ent.setValue(URLEncoder.encode(ent.getValue()));
             }
-            }
+        }
         return ret;
-        
+
     }
 
     @Override
@@ -198,20 +199,19 @@ public class RouterInfoCollector {
      * public static String getXMLString() { RouterInfoCollector ric = new
      * RouterInfoCollector(); if (!ric.rcd.isLiveHeaderReconnect()) return null;
      * try { ric.rcd.setRouterMAC(ric.rcd.getRouterMAC().substring(0, 8)); }
-     * catch (Exception e) { //  handle exception }
+     * catch (Exception e) { // handle exception }
      * 
      * return ric.toXMLString(); }
      */
     public static void showDialog() {
-//        if (true) {
-             if (JDUtilities.getConfiguration().getBooleanProperty(
-             PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) {
+        // if (true) {
+        if (JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) {
             new Thread(new Runnable() {
 
                 public void run() {
                     RouterInfoCollector ric = new RouterInfoCollector();
                     String xml = ric.toString();
-                    if (xml != null && ric.isLiveHeaderReconnect) {
+                    if (xml != null && ric.isValidReconnect()) {
                         CountdownConfirmDialog ccd = new CountdownConfirmDialog(JDUtilities.getParentFrame(SimpleGUI.CURRENTGUI.getFrame()), JDLocale.L("routerinfocollector.dialog.title", "Helfen sie die Routererkennung zu verbessern"), 30, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO | CountdownConfirmDialog.STYLE_DETAILLABLE, JDLocale.L("routerinfocollector.dialog.msg", "<b>Um die automatische Routererkennung zu verbessern sammeln wir Routerinformationen!</b><br>Wenn sie damit einverstanden sind die Informationen aus den Details an unseren Server zu übermitteln bestätigen sie mit ja!"), xml);
 
                         if (!ccd.window_Closed) JDUtilities.getConfiguration().setProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
@@ -224,7 +224,7 @@ public class RouterInfoCollector {
     }
 
     public void sendToServer() {
-        if (!isLiveHeaderReconnect) return;
+        if (!isValidReconnect()) return;
         // String md5 = JDUtilities.getMD5("jdsecred" +
         // JDUtilities.getMD5(xmlString));
         // HashMap<String, String> post = new HashMap<String, String>();
@@ -233,7 +233,7 @@ public class RouterInfoCollector {
 
         Browser br = new Browser();
         try {
-            br.setAuth("http://jdownloader.org/router/import.php","jd","jdroutercollector");
+            br.setAuth("http://jdownloader.org/router/import.php", "jd", "jdroutercollector");
             String out = br.postPage("http://jdownloader.org/router/import.php", getHashMap(true));
             // System.out.println(br);
             if (out == null || !out.equals("No htmlCode read")) JDUtilities.getLogger().severe(out);
