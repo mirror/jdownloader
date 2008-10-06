@@ -208,7 +208,7 @@ public class Reconnecter {
             }
 
         }
-        if(ret) RouterInfoCollector.showDialog();
+//    TODO    if(ret) RouterInfoCollector.showDialog();
             
         return ret;
     }
