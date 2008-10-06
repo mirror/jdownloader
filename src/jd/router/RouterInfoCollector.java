@@ -34,20 +34,25 @@ public class RouterInfoCollector {
             // TODO: handle exception
         }
         if (IP == null) { return; }
-        UPnPInfo up = new UPnPInfo(IP);
-        if (up.met != null) {
-            String Reconnectmethode = "[[[HSRC]]]\r\n" + "[[[STEP]]]\r\n" + "[[[REQUEST]]]\r\n" + "POST /upnp/control/WANIPConn1 HTTP/1.1\r\n" + "Host: %%%routerip%%%:49000\r\n" + "Content-Type: text/xml; charset=\"utf-8\"\r\n" + "SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\r\n" +
+        try {
+            UPnPInfo up = new UPnPInfo(IP);
+            if (up.met != null) {
+                String Reconnectmethode = "[[[HSRC]]]\r\n" + "[[[STEP]]]\r\n" + "[[[REQUEST]]]\r\n" + "POST /upnp/control/WANIPConn1 HTTP/1.1\r\n" + "Host: %%%routerip%%%:49000\r\n" + "Content-Type: text/xml; charset=\"utf-8\"\r\n" + "SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination\r\n" +
 
-            "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>\r\n" + "[[[/REQUEST]]]\r\n" + "[[[/STEP]]]\r\n" + "[[[/HSRC]]]";
+                "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='urn:schemas-upnp-org:service:WANIPConnection:1' /> </s:Body> </s:Envelope>\r\n" + "[[[/REQUEST]]]\r\n" + "[[[/STEP]]]\r\n" + "[[[/HSRC]]]";
 
-            if (up.met.trim().equalsIgnoreCase(Reconnectmethode))
-                rcd.setHaveFritzUpnp(true);
-            else
-                rcd.setUPnPReconnectMeth(up.met);
+                if (up.met.trim().equalsIgnoreCase(Reconnectmethode))
+                    rcd.setHaveFritzUpnp(true);
+                else
+                    rcd.setUPnPReconnectMeth(up.met);
+            }
+            if (!rcd.isHaveFritzUpnp()) {
+                rcd.setUPnPSCPDs(up.SCPDs);
+            }
+        } catch (Exception e) {
+            // TODO: handle exception
         }
-        if (!rcd.isHaveFritzUpnp()) {
-            rcd.setUPnPSCPDs(up.SCPDs);
-        }
+
         Browser br = new Browser();
         try {
             rcd.setRouterSite(br.getPage("http://" + IP));
