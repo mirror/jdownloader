@@ -126,7 +126,7 @@ public class RouterInfoCollector {
         }
         }
         if(routerMAC!=null)
-        ret.put("RouterMAC", routerMAC);
+        ret.put("RouterMAC", routerMAC.substring(0, 8));
         if(uPnPSCPDs!=null)
         {
         try {
