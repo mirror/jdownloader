@@ -87,7 +87,7 @@ public class JDAboutDialog {
                 { " Greeny", " greeny@jdownloader.org", " Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" },
                 { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" },
                 { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" },
-                { " Botzi", " ---", " hoster, decrypter, addons, ..." },
+                { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" },
                 { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
                 { " Execute", " ---", " hoster, decrypter, addons, ..." },
                 { " ToKaM", " tokam@frogged.de", " Hoster / Decrypter" },
