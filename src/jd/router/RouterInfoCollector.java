@@ -162,7 +162,7 @@ public class RouterInfoCollector {
 
     public static void main(String[] args) {
         new JDInit().loadConfiguration();
-        showDialog();
+        System.out.println(getXMLString());
 
         // System.out.println(rc.compare(rc));
         System.exit(0);
