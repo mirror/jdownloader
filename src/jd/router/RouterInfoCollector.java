@@ -129,8 +129,8 @@ public class RouterInfoCollector {
     }
 
     public static void showDialog() {
-        // if (true) {
-        if (JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) {
+         if (true) {
+//        if (JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) {
             new Thread(new Runnable() {
 
                 public void run() {
