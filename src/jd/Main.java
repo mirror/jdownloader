@@ -38,8 +38,6 @@ import java.util.logging.Logger;
 
 import javax.swing.JFrame;
 
-import jd.router.RouterInfoCollector;
-
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
@@ -440,7 +438,7 @@ public class Main {
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
         
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
-        RouterInfoCollector.showDialog();
+       
         // init.createQueueBackup();
 
         Properties pr = System.getProperties();
