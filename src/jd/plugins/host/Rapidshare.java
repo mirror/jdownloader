@@ -395,10 +395,14 @@ public class Rapidshare extends PluginForHost {
         String code = Context.toString(result);
         if (tt != null) ticketCode = code;
         Context.exit();
-if(ticketCode.contains("download-limit for free-users")) {
-    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED,60*60*1000l);
-    
-}
+        if (ticketCode.contains("download-limit for free-users")) {
+            String waitfor = new Regex(ticketCode, "Or try again in about(.*?)minutes").getMatch(0);
+            try {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(waitfor) * 60 * 1000l);
+            } catch (Exception e) {
+            }
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        }
         long pendingTime = 0;
         if (ticketTime != null) {
             pendingTime = Long.parseLong(ticketTime);
