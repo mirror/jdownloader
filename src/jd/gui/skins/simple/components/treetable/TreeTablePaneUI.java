@@ -79,15 +79,19 @@ public class TreeTablePaneUI extends BasicTableUI {
 
     public static Color SELECTED_ROW_BORDER_COLOR;
 
-    // ------------------------------------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    // ----------------------------------------
     // Custom installation methods
-    // ------------------------------------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    // ----------------------------------------
 
     public static Color SELECTED_ROW_COLOR;
 
-    // ------------------------------------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    // ----------------------------------------
     // Custom painting methods
-    // ------------------------------------------------------------------------------------------------------------------
+    //--------------------------------------------------------------------------
+    // ----------------------------------------
 
     @Override
     protected void installDefaults() {
@@ -190,9 +194,12 @@ public class TreeTablePaneUI extends BasicTableUI {
 
             } else {
                 if (path != null && path.getLastPathComponent() instanceof FilePackage) {
-
-                    color = PACKAGE_ROW_COLOR;
-                    // c.setBorder(BorderFactory.createLineBorder(Color.darkGray,
+                    if (((FilePackage) path.getLastPathComponent()).isFinished()) {
+                        color = COLOR_DONE;
+                    } else {
+                        color = PACKAGE_ROW_COLOR;
+                    }
+                    //c.setBorder(BorderFactory.createLineBorder(Color.darkGray,
                     // 1));
                     g.setColor(Color.BLACK);
                     g.drawLine(x, y, w, y);
@@ -201,16 +208,14 @@ public class TreeTablePaneUI extends BasicTableUI {
 
                     if (!dLink.isEnabled()) {
                         color = COLOR_DISABLED;
-                   
+
                     } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         color = COLOR_DONE;
                     } else if (dLink.getLinkStatus().isFailed()) {
                         color = COLOR_ERROR;
-                    }else if (dLink.getLinkStatus().getRemainingWaittime() > 0||dLink.getPlugin()==null||dLink.getPlugin().getRemainingHosterWaittime()>0) {
+                    } else if (dLink.getLinkStatus().getRemainingWaittime() > 0 || dLink.getPlugin() == null || dLink.getPlugin().getRemainingHosterWaittime() > 0) {
                         color = COLOR_WAIT;
                     }
-
-                  
 
                 }
             }

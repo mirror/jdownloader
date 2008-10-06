@@ -171,6 +171,9 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             if (fp.getTotalDownloadSpeed() > 0) {
                 label = "[" + fp.getLinksInProgress() + "/" + fp.size() + "] ETA " + JDUtilities.formatSeconds(fp.getETA()) + " @ " + JDUtilities.formatKbReadable(fp.getTotalDownloadSpeed() / 1024) + "/s";
             }
+            if (fp.isFinished()) {
+                label = JDLocale.L("gui.downloadlink.finished", "[finished]");
+            }
             miniBar.setText(label);
             miniBar.setPercent(fp.getPercent() / 100.0);
             return miniBar;

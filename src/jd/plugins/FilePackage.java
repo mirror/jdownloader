@@ -74,6 +74,8 @@ public class FilePackage extends Property implements Serializable {
 
     private long updateTime;
 
+    private boolean isFinished;
+
     public FilePackage() {
         downloadDirectory = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
         counter++;
@@ -221,12 +223,20 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public boolean isFinished() {
-        synchronized (downloadLinks) {
-            for (DownloadLink lk : downloadLinks) {
-                if (!lk.getLinkStatus().hasStatus(LinkStatus.FINISHED) && lk.isEnabled()) { return false; }
+        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
+            updateTime = System.currentTimeMillis();
+            boolean value = true;
+            synchronized (downloadLinks) {
+                for (DownloadLink lk : downloadLinks) {
+                    if (!lk.getLinkStatus().hasStatus(LinkStatus.FINISHED) && lk.isEnabled()) {
+                        value = false;
+                        break;
+                    }
+                }
             }
+            isFinished = value;
         }
-        return true;
+        return isFinished;
     }
 
     public String getName() {
