@@ -99,12 +99,11 @@ public class UPnPInfo {
                     meth.put(cln.getNodeName(), cln.getTextContent().trim());
                 }
             }
+            getSCPDURLs(ssdpP.getLocation());
             if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) {
-                getSCPDURLs(ssdpP.getLocation());
                 return;
             }
             if (!new Browser().getPage(ssdpP.getLocation().replaceFirst("(http://.*?)/.*", "$1/" + meth.get("SCPDURL").replaceFirst("^\\/", ""))).contains("ForceTermination")) {
-                getSCPDURLs(ssdpP.getLocation());
                 return;
             }
             met = "[[[HSRC]]]\r\n[[[STEP]]]\r\n[[[REQUEST]]]\r\n";
