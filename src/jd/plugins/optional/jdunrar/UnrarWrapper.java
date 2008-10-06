@@ -104,6 +104,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
             }
         } catch (Exception e) {
             this.exception = e;
+            e.printStackTrace();
             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
         }
 

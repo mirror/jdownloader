@@ -283,12 +283,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private synchronized void startExtraction() {
 
-        if (wrappersActive > 2) return;
+        if (this.getWrappersActive() > 2) return;
         DownloadLink link;
         if (queue.size() == 0) {
 
         return; }
-        wrappersActive++;
+        this.setWrappersActive(this.getWrappersActive()+1);
         synchronized (queue) {
             link = queue.remove(0);
             this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
@@ -305,6 +305,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         wrapper.start();
 
+    }
+
+    public synchronized int getWrappersActive() {
+        return wrappersActive;
+    }
+
+    public synchronized void setWrappersActive(int wrappersActive) {
+        this.wrappersActive = wrappersActive;
     }
 
     private File getExtractToPath(DownloadLink link) {
@@ -529,7 +537,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             int id = source.getActionID() - 3000;
 
             if (queue.size() <= id) return;
-            wrappersActive++;
+            this.setWrappersActive(this.getWrappersActive()+1);
             DownloadLink link;
             synchronized (queue) {
                 link = queue.remove(id);
@@ -749,7 +757,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     private void onFinished(UnrarWrapper wrapper) {
         // progress.get(wrapper).finalize(3000l);
-        this.wrappersActive--;
+        this.setWrappersActive(this.getWrappersActive()-1);
         wrapper.getDownloadLink().setPluginProgress(null);
         this.startExtraction();
 
