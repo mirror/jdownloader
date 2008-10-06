@@ -69,6 +69,8 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
     private static Color ACTIVE_PROGRESS_COLOR_FONT_B;
 
     private static Color DONE_COLOR;
+    
+    private static Color DONE_COLOR_Package;
 
     private static Color DONE_COLOR_FONT_A;
 
@@ -124,6 +126,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         PACKAGE_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.package_progress", "94baff");
         ERROR_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.progress_error", "FF0000");
         DONE_COLOR = JDTheme.C("gui.color.downloadlist.progress_done", "94baff");
+        DONE_COLOR_Package = JDTheme.C("gui.color.downloadlist.row_package_done", "339933");
         INACTIVE_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.progress_inactive", "AAAAAA");
         ACTIVE_PROGRESS_COLOR = JDTheme.C("gui.color.downloadlist.progress_active", "94baff");
 
@@ -137,7 +140,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         ERROR_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_error_font_b", "555555");
         DONE_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_done_font_b", "555555");
         INACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_inactive_font_b", "555555");
-        ACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_active_font_b", "555555");
+        ACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_active_font_b", "555555");       
 
         table = downloadTreeTable;
         label = new JLabel();
@@ -245,7 +248,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             fp = (FilePackage) value;
 
             if (fp.isFinished()) {
-                progress.setForeground(DONE_COLOR);
+                progress.setForeground(DONE_COLOR_Package);
                 progress.setMaximum(100);
                 progress.setValue(100);
                 progress.setString("- 100% -");

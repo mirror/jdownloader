@@ -40,7 +40,7 @@ public class FilePackage extends Property implements Serializable {
 
     private static final long serialVersionUID = -8859842964299890820L;
 
-    private static final long UPDATE_INTERVAL = 1000;
+    private static final long UPDATE_INTERVAL = 2000;
 
     private String comment;
 
@@ -73,6 +73,8 @@ public class FilePackage extends Property implements Serializable {
     private int totalEstimatedPackageSize;
 
     private long updateTime;
+
+    private long updateTime1;
 
     private boolean isFinished;
 
@@ -223,16 +225,20 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public boolean isFinished() {
-        if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
-            updateTime = System.currentTimeMillis();
+        if (System.currentTimeMillis() - updateTime1 > UPDATE_INTERVAL) {
+            updateTime1 = System.currentTimeMillis();
             boolean value = true;
-            synchronized (downloadLinks) {
-                for (DownloadLink lk : downloadLinks) {
-                    if (!lk.getLinkStatus().hasStatus(LinkStatus.FINISHED) && lk.isEnabled()) {
-                        value = false;
-                        break;
+            if (linksFinished > 0) {
+                synchronized (downloadLinks) {
+                    for (DownloadLink lk : downloadLinks) {
+                        if (!lk.getLinkStatus().hasStatus(LinkStatus.FINISHED) && lk.isEnabled()) {
+                            value = false;
+                            break;
+                        }
                     }
                 }
+            } else {
+                value = false;
             }
             isFinished = value;
         }
@@ -438,19 +444,18 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void updateCollectives() {
-        updateTime = System.currentTimeMillis();
-
-        totalEstimatedPackageSize = 0;
-        totalDownloadSpeed = 0;
-        linksFinished = 0;
-        linksInProgress = 0;
-        linksFailed = 0;
-        totalBytesLoaded = 0;
-        long avg = 0;
-        DownloadLink next;
-        int i = 0;
-
         synchronized (downloadLinks) {
+
+            totalEstimatedPackageSize = 0;
+            totalDownloadSpeed = 0;
+            linksFinished = 0;
+            linksInProgress = 0;
+            linksFailed = 0;
+            totalBytesLoaded = 0;
+            long avg = 0;
+            DownloadLink next;
+            int i = 0;
+
             for (Iterator<DownloadLink> it = downloadLinks.iterator(); it.hasNext();) {
                 next = it.next();
 
@@ -495,7 +500,7 @@ public class FilePackage extends Property implements Serializable {
             }
 
         }
-
+        updateTime = System.currentTimeMillis();
     }
 
 }
