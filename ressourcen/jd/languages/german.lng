@@ -756,8 +756,8 @@ interaction.externreconnect.progress.3_ipcheck = ExternReconnect New IP: %s / %s
 interaction.externreconnect.retries = Max. Wiederholungen (-1 = unendlich)
 interaction.externreconnect.tostring = Externes Reconnectprogramm aufrufen
 interaction.externreconnect.waitforip = Auf neue IP warten [sek]
-interaction.externreconnect.waitfortermination = Warten x Sekunden bis Befehl beendet ist[sek]
-interaction.externreconnect.waittimetofirstipcheck = Wartezeit bis zum ersten IP-Check[sek]
+interaction.externreconnect.waitfortermination = Warten x Sekunden bis Befehl beendet ist [sek]
+interaction.externreconnect.waittimetofirstipcheck = Wartezeit bis zum ersten IP-Check [sek]
 interaction.jdchat.deslanguage = in:
 interaction.jdchat.native = in:
 interaction.jdexit.name = Beenden

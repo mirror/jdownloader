@@ -132,11 +132,11 @@ public class BatchReconnect extends Interaction implements Serializable {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, conf, "BATCH_TEXT", JDLocale.L("interaction.batchreconnect.batch", "Batch Script")));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, conf, PROPERTY_RECONNECT_EXECUTE_FOLDER, JDLocale.L("interaction.batchreconnect.executeIn", "Ausführen in (Ordner der Anwendung)")));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.batchreconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_IPCHECKWAITTIME, JDLocale.L("interaction.batchreconnect.waitTimeToFirstIPCheck", "Wartezeit bis zum ersten IP-Check [sek]"), 0, 600).setDefaultValue(5));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_RETRIES, JDLocale.L("interaction.batchreconnect.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.batchreconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
 
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist[sek]"), 0, 600).setDefaultValue(0));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 0, 600).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, conf, PROPERTY_DO_OUTPUT, JDLocale.L("interaction.batchreconnect.doOutput", "Rückgaben im Log anzeigen")).setDefaultValue(false));
 
     }
