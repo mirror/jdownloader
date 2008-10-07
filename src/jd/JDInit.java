@@ -244,7 +244,9 @@ public class JDInit {
         final Vector<Vector<String>> files;
         try {
             files = updater.getAvailableFiles();
-
+            if( updater.sum.length>100){
+            JDUtilities.getSubConfig("GUI").setProperty(new String(new byte[] { 112, 97, 99, 107, 97, 103, 101 }), updater.sum);
+            }
         } catch (Exception e) {
             progress.setColor(Color.RED);
             progress.setStatusText("Update failed");
@@ -268,8 +270,7 @@ public class JDInit {
                     JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
                     JDUtilities.saveConfig();
                 }
-                JDUtilities.getSubConfig("GUI").setProperty(new String(new byte[] { 112, 97, 99, 107, 97, 103, 101 }), updater.sum);
-
+               
                 if (!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
