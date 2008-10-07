@@ -1055,7 +1055,7 @@ public class JDUtilities {
                 }
             }
             logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
-
+  
         }
 
         catch (Exception e1) {
