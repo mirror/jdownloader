@@ -66,7 +66,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?download the following file:.*?<p>(.*?)<", Pattern.DOTALL);
 
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p>(.*?)<", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?>(.*?)<", Pattern.DOTALL);
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
 
@@ -341,6 +341,22 @@ public class Rapidshare extends PluginForHost {
 
         if ((error = findError(br + "")) != null) {
             // step.setStatus(PluginStep.STATUS_ERROR);
+            // für java 1.5
+            if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
+
+                String waitfor = new Regex(br, "es in ca\\.(.*?)Minuten wieder").getMatch(0);
+                if(waitfor==null){
+                    waitfor = new Regex(br, "Or try again in about(.*?)minutes").getMatch(0);
+                    
+                }
+                long waitTime = 60 * 60 * 1000l;
+                try {
+                    waitTime = new Long(waitfor.trim()) * 60 * 1000l;
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+            }
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(error);
             return;
@@ -395,7 +411,7 @@ public class Rapidshare extends PluginForHost {
         String code = Context.toString(result);
         if (tt != null) ticketCode = code;
         Context.exit();
-        if (new Regex(ticketCode,".*download.*limit.*free.*users.*").matches()) {
+        if (new Regex(ticketCode, ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches()) {
             String waitfor = new Regex(ticketCode, "Or try again in about(.*?)minutes").getMatch(0);
             long waitTime = 60 * 60 * 1000l;
             try {
