@@ -728,7 +728,7 @@ public class JDInit {
         new HostPluginWrapper("Qshare.Com", "QshareCom", "http://[\\w\\.]*?qshare\\.com\\/get\\/[0-9]{1,20}\\/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("RapidShare.com", "Rapidshare", "sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("RapidShare.De", "RapidShareDe", "sjdp://rapidshare\\.de.*|http://[\\w\\.]*?rapidshare\\.de/files/[\\d]{3,9}/.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("rappers.in","RappersIn","(httpRappersIn://[\\w\\.]*?.+)");
+        new HostPluginWrapper("rappers.in", "RappersIn", "(httpRappersIn://[\\w\\.]*?.+)");
         new HostPluginWrapper("R-b-a.De", "RbaDe", "http://[\\w\\.]*?r-b-a\\.de/download\\.php\\?FILE=(\\d+)-(\\d)\\.mp3&PATH=(\\d)");
         new HostPluginWrapper("Roms.Zophar.Net", "RomsZopharNet", "http://[\\w.]*?roms\\.zophar\\.net/download-file/[0-9]{1,}");
         new HostPluginWrapper("RomHustler.Net", "RomHustlerNet", "http://[\\w.]*?romhustler\\.net/download/.*?/\\d+");
@@ -761,6 +761,7 @@ public class JDInit {
 
         new OptionalPluginWrapper("JDTrayIcon", 1.6);
         new OptionalPluginWrapper("JDLightTray", 1.6);
+        new OptionalPluginWrapper("jdreconnectrecorder.JDRR", 1.5);
         new OptionalPluginWrapper("webinterface.JDWebinterface", 1.5);
         new OptionalPluginWrapper("schedule.Schedule", 1.5);
         new OptionalPluginWrapper("JDFolderWatch", 1.5);
