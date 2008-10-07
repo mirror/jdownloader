@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Vector;
@@ -32,19 +31,14 @@ public class JDRRproxy extends Thread {
         Socket outgoing = null;
         try {
             outgoing = new Socket(serverip, 80);
-        } catch (UnknownHostException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
+            ProxyThread thread1 = new ProxyThread(incoming, outgoing, 1, steps);
+            thread1.start();
+
+            ProxyThread thread2 = new ProxyThread(outgoing, incoming, 0, steps);
+            thread2.start();
+        } catch (Exception e) {
             e.printStackTrace();
         }
-
-        ProxyThread thread1 = new ProxyThread(incoming, outgoing, 1, steps);
-        thread1.start();
-
-        ProxyThread thread2 = new ProxyThread(outgoing, incoming, 0, steps);
-        thread2.start();
     }
 }
 
@@ -137,7 +131,7 @@ class ProxyThread extends Thread {
                 hlh.append("        Host: %%%routerip%%%" + "\r\n");
                 if (headers.containsKey("authorization")) {
                     String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
-                    if (auth != null) JDRR.auth = Encoding.Base64Decode(auth.trim());                    
+                    if (auth != null) JDRR.auth = Encoding.Base64Decode(auth.trim());
                     hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
                 }
                 if (headers.get(null).contains("POST") && postdata != null) {
