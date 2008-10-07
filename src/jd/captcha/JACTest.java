@@ -16,8 +16,6 @@
 
 package jd.captcha;
 
-import java.io.File;
-
 import jd.captcha.utils.UTILITIES;
 import jd.utils.JDUtilities;
 

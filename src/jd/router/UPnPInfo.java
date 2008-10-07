@@ -8,6 +8,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.http.Browser;
+import jd.parser.Regex;
+
 import org.cybergarage.upnp.ControlPoint;
 import org.cybergarage.upnp.device.SearchResponseListener;
 import org.cybergarage.upnp.ssdp.SSDPPacket;
@@ -18,14 +21,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
-import jd.parser.Regex;
-
-import jd.http.Browser;
-
 public class UPnPInfo {
 
-    private String host=null;
-    private SSDPPacket ssdpP =null;
+    private String host = null;
+    private SSDPPacket ssdpP = null;
     public String met = null;
     public HashMap<String, String> SCPDs = null;
 
@@ -100,12 +99,8 @@ public class UPnPInfo {
                 }
             }
             getSCPDURLs(ssdpP.getLocation());
-            if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) {
-                return;
-            }
-            if (!new Browser().getPage(ssdpP.getLocation().replaceFirst("(http://.*?)/.*", "$1/" + meth.get("SCPDURL").replaceFirst("^\\/", ""))).contains("ForceTermination")) {
-                return;
-            }
+            if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) { return; }
+            if (!new Browser().getPage(ssdpP.getLocation().replaceFirst("(http://.*?)/.*", "$1/" + meth.get("SCPDURL").replaceFirst("^\\/", ""))).contains("ForceTermination")) { return; }
             met = "[[[HSRC]]]\r\n[[[STEP]]]\r\n[[[REQUEST]]]\r\n";
             met += "POST " + meth.get("controlURL") + " HTTP/1.1\r\n";
             String hostport = "";

@@ -11,14 +11,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.gui.skins.simple.SimpleGUI;
-
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
-
 import jd.JDInit;
-
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
