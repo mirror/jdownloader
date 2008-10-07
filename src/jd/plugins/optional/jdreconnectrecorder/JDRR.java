@@ -8,11 +8,15 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
+import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class JDRR extends PluginOptional {
 
@@ -20,6 +24,8 @@ public class JDRR extends PluginOptional {
     static boolean gui = false;
     static boolean running = false;
     static ServerSocket Server_Socket;
+    static final String PROPERTY_PORT = "PARAM_PORT";
+    static String auth;
 
     public JDRR(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,14 +44,20 @@ public class JDRR extends PluginOptional {
     @Override
     public boolean initAddon() {
         running = false;
+        SubConfiguration subConfig = JDUtilities.getSubConfig("JDRR");
+        ConfigEntry cfg;
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.jdrr.port", "Port"), 1024, 65000));
+        cfg.setStep(1);
+        cfg.setDefaultValue(8972);
         return true;
     }
 
     static public void startServer(String serverip) {
         steps = new Vector<String>();
+        auth = null;
         steps.add("[[[HSRC]]]");
         try {
-            Server_Socket = new ServerSocket(12345);
+            Server_Socket = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
             running = true;
             new JDRRServer(Server_Socket, serverip).start();
         } catch (IOException e) {

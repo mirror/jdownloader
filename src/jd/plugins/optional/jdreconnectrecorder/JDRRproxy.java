@@ -10,6 +10,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Vector;
 
+import jd.http.Encoding;
+import jd.parser.Regex;
+
 public class JDRRproxy extends Thread {
 
     private Socket Current_Socket;
@@ -133,6 +136,8 @@ class ProxyThread extends Thread {
                 hlh.append("        " + headers.get(null) + "\r\n");
                 hlh.append("        Host: %%%routerip%%%" + "\r\n");
                 if (headers.containsKey("authorization")) {
+                    String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
+                    if (auth != null) JDRR.auth = Encoding.Base64Decode(auth.trim());                    
                     hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
                 }
                 if (headers.get(null).contains("POST") && postdata != null) {

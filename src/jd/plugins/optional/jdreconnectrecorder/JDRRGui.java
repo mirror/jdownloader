@@ -18,6 +18,7 @@ import javax.swing.border.EmptyBorder;
 
 import jd.config.Configuration;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -97,8 +98,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             if (ip_after.equalsIgnoreCase(ip_before)) {
                 ipbefore.setText("Reconnect failed");
                 ipafter.setText("Reconnect failed");
-                return;
-            }
+            }            
             return;
         } else if (e.getSource() == btnStartStop && btnStartStop.getText().contains("Start")) {
             ip_before = JDUtilities.getIPAddress();
@@ -108,7 +108,7 @@ public class JDRRGui extends JDialog implements ActionListener {
             JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
             btnStartStop.setText("Stop");
             try {
-                JLinkButton.openURL("http://localhost:12345");
+                JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
             } catch (MalformedURLException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
@@ -121,10 +121,17 @@ public class JDRRGui extends JDialog implements ActionListener {
             for (String element : JDRR.steps) {
                 temp = temp + (element + System.getProperty("line.separator"));
             }
+            if (JDRR.auth != null) {
+                configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, new Regex(JDRR.auth, "(.+?):").getMatch(0));
+                configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, new Regex(JDRR.auth, ".+?:(.+)").getMatch(0));
+            }
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, temp);
+            configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
 
         }
         JDRR.gui = false;
+        JDRR.running = false;
+        JDRR.stopServer();
         dispose();
     }
 
