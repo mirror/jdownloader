@@ -58,7 +58,7 @@ public class DepositFiles extends PluginForHost {
 
     public DepositFiles(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://depositfiles.com/en/gold/payment.php");
+        this.enablePremium("http://depositfiles.com/signup.php?ref=down1");
     }
 
     @Override
