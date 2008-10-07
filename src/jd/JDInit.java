@@ -256,7 +256,7 @@ public class JDInit {
             public void run() {
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
-                checkMessage();
+              
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
 
                 if (files != null) {
@@ -352,7 +352,7 @@ public class JDInit {
         }.start();
     }
 
-    private void checkMessage() {
+    public void checkMessage() {
         File res = JDUtilities.getResourceFile("message.html");
         String hash = JDUtilities.getLocalHash(res);
       

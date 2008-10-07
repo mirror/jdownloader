@@ -415,6 +415,9 @@ public class Main {
                 e.printStackTrace();
             }
         }
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
+
+        init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
 
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
 
@@ -431,15 +434,7 @@ public class Main {
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 
         init.checkUpdate();
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
-        new Thread(){
-            public void run(){
-                
-
-                init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
-            }
-        }.start();
-        
+        init.checkMessage();
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
         
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
