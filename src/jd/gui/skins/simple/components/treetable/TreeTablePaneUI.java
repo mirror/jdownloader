@@ -120,7 +120,7 @@ public class TreeTablePaneUI extends BasicTableUI {
 
         COLOR_DONE_PACKAGE = JDTheme.C("gui.color.downloadlist.row_package_done", "339933");
 
-        COLOR_PROGRESS = JDTheme.C("gui.color.downloadlist.progress", "006699");
+        COLOR_PROGRESS = JDTheme.C("gui.color.downloadlist.progress", "CCCCFF");
 
         COLOR_ERROR = JDTheme.C("gui.color.downloadlist.row_link_error", "ff0000");
 
