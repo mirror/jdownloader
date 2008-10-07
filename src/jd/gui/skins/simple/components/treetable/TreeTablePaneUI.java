@@ -65,9 +65,9 @@ public class TreeTablePaneUI extends BasicTableUI {
 
     private static Color COLOR_DONE;
 
-    private static Color COLOR_DONE_Package;
-
-    private static Color COLOR_Progress;
+    private static Color COLOR_DONE_PACKAGE;
+    private static Color COLOR_ERROR_POST;
+    private static Color COLOR_PROGRESS;
 
     private static Color COLOR_ERROR;
 
@@ -102,6 +102,8 @@ public class TreeTablePaneUI extends BasicTableUI {
 
         /* Ist für Nimbus LAF auskommentiert */
         // super.installDefaults();
+        COLOR_ERROR_POST = JDTheme.C("gui.color.downloadlist.error_post", "ff9936");
+
         EVEN_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_a", "EDF3FE");
 
         ODD_ROW_COLOR = JDTheme.C("gui.color.downloadlist.row_b", "FFFFFF");
@@ -116,9 +118,9 @@ public class TreeTablePaneUI extends BasicTableUI {
 
         COLOR_DONE = JDTheme.C("gui.color.downloadlist.row_link_done", "c4ffd2");
 
-        COLOR_DONE_Package = JDTheme.C("gui.color.downloadlist.row_package_done", "339933");
+        COLOR_DONE_PACKAGE = JDTheme.C("gui.color.downloadlist.row_package_done", "339933");
 
-        COLOR_Progress = JDTheme.C("gui.color.downloadlist.progress", "006699");
+        COLOR_PROGRESS = JDTheme.C("gui.color.downloadlist.progress", "006699");
 
         COLOR_ERROR = JDTheme.C("gui.color.downloadlist.row_link_error", "ff0000");
 
@@ -203,9 +205,9 @@ public class TreeTablePaneUI extends BasicTableUI {
             } else {
                 if (path != null && path.getLastPathComponent() instanceof FilePackage) {
                     if (((FilePackage) path.getLastPathComponent()).isFinished()) {
-                        color = COLOR_DONE_Package;
+                        color = COLOR_DONE_PACKAGE;
                     } else if ((((FilePackage) path.getLastPathComponent()).getLinksInProgress() > 0)) {
-                        color = COLOR_Progress;
+                        color = COLOR_PROGRESS;
                     } else {
                         color = PACKAGE_ROW_COLOR;
                     }
@@ -219,7 +221,10 @@ public class TreeTablePaneUI extends BasicTableUI {
                     if (!dLink.isEnabled()) {
                         color = COLOR_DISABLED;
                     } else if (dLink.getLinkStatus().hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
-                        color = COLOR_Progress;
+                        color = COLOR_PROGRESS;
+
+                    } else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
+                        color = COLOR_ERROR_POST;
                     } else if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         color = COLOR_DONE;
                     } else if (dLink.getLinkStatus().isFailed()) {

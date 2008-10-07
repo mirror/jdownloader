@@ -1896,6 +1896,18 @@ public class JDController implements ControlListener, UIListener {
 
             watchdog.abort();
             setDownloadStatus(DOWNLOAD_NOT_RUNNING);
+            
+
+            synchronized (packages) {              
+                for (FilePackage fp:packages) {            
+                    for (DownloadLink link:fp.getDownloadLinks()) {
+                        if(link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)){
+                            link.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                            link.setEnabled(true);                            
+                        }
+                    }
+                }
+            }
             logger.info("termination broadcast");
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));

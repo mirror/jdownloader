@@ -99,7 +99,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
             } else {
                 this.fireEvent(this.status);
-                fireEvent(JDUnrarConstants.WRAPPER_FAILED_PASSWORD);
+                fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                 return;
             }
         } catch (Exception e) {

@@ -395,7 +395,7 @@ public class Rapidshare extends PluginForHost {
         String code = Context.toString(result);
         if (tt != null) ticketCode = code;
         Context.exit();
-        if (ticketCode.contains("download-limit for free-users")) {
+        if (new Regex(ticketCode,".*download.*limit.*free.*users.*").matches()) {
             String waitfor = new Regex(ticketCode, "Or try again in about(.*?)minutes").getMatch(0);
             long waitTime = 60 * 60 * 1000l;
             try {
