@@ -74,4 +74,12 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
     }
 
+    public void collapseAll() {
+        internalTreeTable.collapseAll();
+    }
+
+    public void expandAll() {
+        internalTreeTable.expandAll();
+    }
+
 }

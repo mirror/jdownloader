@@ -61,6 +61,8 @@ public class JDAction extends AbstractAction {
     public static final int ITEMS_DISABLE = 5;
     public static final int ITEMS_DND = 9;
     public static final int ITEMS_ENABLE = 6;
+    public static final int EXPAND_ALL = 13;
+    public static final int COLLAPSE_ALL = 14;
     public static final int ITEMS_MOVE_BOTTOM = 4;
     public static final int ITEMS_MOVE_DOWN = 2;
     public static final int ITEMS_MOVE_TOP = 3;
@@ -75,7 +77,7 @@ public class JDAction extends AbstractAction {
 
     public static final int WIKI = 33;
 
-    public static final int CHANGES = 35;    
+    public static final int CHANGES = 35;
 
     /**
      * serialVersionUID

@@ -577,7 +577,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionHelp;
 
-    private JDAction actioninstallJDU;
+    private JDAction actionInstallJDU;
+
+    private JDAction actionExpandAll;
+
+    private JDAction actionCollapseAll;
 
     private JDAction actionItemsAdd;
 
@@ -616,6 +620,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionUpdate;
 
     private JDAction actionWiki;
+
+    private JDAction actionChanges;
 
     private JButton btnClipBoard;
 
@@ -684,7 +690,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JLabel warning;
 
     private Thread warningWorker;
-    private JDAction actionChanges;
 
     /**
      * Das Hauptfenster wird erstellt
@@ -785,6 +790,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.ITEMS_MOVE_TOP:
         case JDAction.ITEMS_MOVE_BOTTOM:
             linkListPane.moveSelectedItems(e.getID());
+            break;
+        case JDAction.COLLAPSE_ALL:
+            linkListPane.collapseAll();
+            break;
+        case JDAction.EXPAND_ALL:
+            linkListPane.expandAll();
             break;
         case JDAction.APP_ALLOW_RECONNECT:
             logger.finer("Allow Reconnect");
@@ -1051,6 +1062,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionItemsAdd));
         toolBar.add(createMenuButton(actionLoadDLC));
         toolBar.add(createMenuButton(actionItemsDelete));
+        toolBar.addSeparator();
+        toolBar.add(createMenuButton(actionCollapseAll));
+        toolBar.add(createMenuButton(actionExpandAll));
         toolBar.addSeparator();
         toolBar.add(createMenuButton(actionItemsBottom));
         toolBar.add(createMenuButton(actionItemsDown));
@@ -1365,7 +1379,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
-        actioninstallJDU = new JDAction(this, JDTheme.V("gui.load"), "action.install", JDAction.APP_INSTALL_JDU);
+        actionInstallJDU = new JDAction(this, JDTheme.V("gui.load"), "action.install", JDAction.APP_INSTALL_JDU);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
@@ -1382,6 +1396,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsUp = new JDAction(this, JDTheme.V("gui.images.top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
         actionItemsDown = new JDAction(this, JDTheme.V("gui.images.down"), "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
+        actionCollapseAll = new JDAction(this, JDTheme.V("gui.images.package_closed"), "action.collapse", JDAction.COLLAPSE_ALL);
+        actionExpandAll = new JDAction(this, JDTheme.V("gui.images.package_opened"), "action.expand", JDAction.EXPAND_ALL);
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
         actionWiki = new JDAction(this, JDTheme.V("gui.images.help"), "action.wiki", JDAction.WIKI);
@@ -1514,7 +1530,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void createOptionalPluginsMenuEntries() {
-        Component temp = (menAddons.getComponentCount() != 0) ? menAddons.getComponent(0) : SimpleGUI.createMenuItem(actioninstallJDU);
+        Component temp = (menAddons.getComponentCount() != 0) ? menAddons.getComponent(0) : SimpleGUI.createMenuItem(actionInstallJDU);
         menAddons.removeAll();
         menAddons.add(temp);
         menAddons.addSeparator();
