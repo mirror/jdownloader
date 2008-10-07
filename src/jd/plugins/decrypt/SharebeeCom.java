@@ -39,7 +39,6 @@ public class SharebeeCom extends PluginForDecrypt {
         String[] links = new Regex(br.getPage(parameter), Pattern.compile("><a href=\"(.*?)\" target=\"_blank\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
-            logger.info(element);
             decryptedLinks.add(createDownloadlink(element));
             progress.increase(1);
         }
