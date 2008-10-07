@@ -94,13 +94,10 @@ public class Serienjunkies extends PluginForDecrypt {
         boolean rsde = (Boolean) getPluginConfig().getProperty("USE_RAPIDSHAREDE_V2", true);
         boolean net = (Boolean) getPluginConfig().getProperty("USE_NETLOAD_V2", true);
         boolean uploaded = (Boolean) getPluginConfig().getProperty("USE_UPLOADED_V2", true);
-        // boolean simpleupload = (Boolean) getPluginConfig().getProperty(
-        // "USE_SIMLEUPLOAD_V2", true);
-        boolean simpleupload = false;
         boolean filefactory = (Boolean) getPluginConfig().getProperty("USE_FILEFACTORY_V2", true);
         next = false;
         String hosterStr = "";
-        if (rscom || rsde || net || uploaded) {
+        if (rscom || rsde || net || uploaded || filefactory || cat) {
             hosterStr += "(";
             if (rscom) {
                 hosterStr += isNext() + "rc[\\_\\-]";
@@ -113,9 +110,6 @@ public class Serienjunkies extends PluginForDecrypt {
             }
             if (uploaded) {
                 hosterStr += isNext() + "ut[\\_\\-]";
-            }
-            if (simpleupload) {
-                hosterStr += isNext() + "su[\\_\\-]";
             }
             if (filefactory) {
                 hosterStr += isNext() + "ff[\\_\\-]";
@@ -255,7 +249,6 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                     }
                 }
-                return decryptedLinks;
             } else if (catst == sCatGrabb) {
                 String htmlcode = "";
                 if (isP) {
@@ -385,11 +378,8 @@ public class Serienjunkies extends PluginForDecrypt {
                         }
                     }
                 }
-
-                return decryptedLinks;
-            } else {
-                return decryptedLinks;
             }
+            return decryptedLinks;
         }
 
         String[] info = getLinkName(parameter);
@@ -425,8 +415,6 @@ public class Serienjunkies extends PluginForDecrypt {
             return "netload.in";
         } else if (link.matches(".*ut[\\_\\-].*")) {
             return "uploaded.to";
-        } else if (link.matches(".*su[\\_\\-].*")) {
-            return "simpleupload.net";
         } else if (link.matches(".*ff[\\_\\-].*")) {
             return "filefactory.com";
         } else {
@@ -626,9 +614,6 @@ public class Serienjunkies extends PluginForDecrypt {
         cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_UPLOADED_V2", "Uploaded.to"));
         cfg.setDefaultValue(true);
-        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // getPluginConfig(), "USE_SIMLEUPLOAD_V2", "SimpleUpload.net"));
-        // cfg.setDefaultValue(true);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_FILEFACTORY_V2", "FileFactory.com"));
         cfg.setDefaultValue(true);
     }
