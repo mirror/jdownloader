@@ -603,7 +603,7 @@ public class HTTPLiveHeader extends Interaction {
             logger.info("Rec succ: " + afterIP);
             return true;
         }
-        if (retries <= maxretries) {
+        if (maxretries==-1 || retries <= maxretries) {
             progress.finalize();
             return doInteraction(arg);
         }

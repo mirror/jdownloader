@@ -104,7 +104,7 @@ public class BatchReconnect extends Interaction implements Serializable {
             return true;
         }
 
-        if (retries <= maxretries) {
+        if (maxretries == -1 || retries <= maxretries) {
             progress.finalize();
             return doInteraction(arg);
         }
