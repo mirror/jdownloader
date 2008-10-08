@@ -3,7 +3,6 @@ package jd.plugins.optional.jdreconnectrecorder;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -15,6 +14,7 @@ import java.net.MalformedURLException;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -31,7 +31,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDRRGui extends JDialog implements ActionListener {
+public class JDRRGui extends JFrame implements ActionListener {
 
     private static final long serialVersionUID = 1L;
 
@@ -54,10 +54,11 @@ public class JDRRGui extends JDialog implements ActionListener {
 
     private JDRRInfoPopup infopopup;
 
-    public JDRRGui(Frame owner) {
-        this.setModal(false);
+    public JDRRGui() {
+        super();
         int n = 10;
-
+        this.setTitle("Reconnect Recorder");
+        
         btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
         btnFindIP.addActionListener(this);
 

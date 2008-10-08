@@ -11,7 +11,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -110,7 +109,7 @@ public class JDRR extends PluginOptional {
         if (e.getActionCommand().equals("Create ReconnectScript")) {
             if (!gui) {
                 gui = true;
-                new JDRRGui(SimpleGUI.CURRENTGUI.getFrame()).setVisible(true);
+                new JDRRGui().setVisible(true);
             }
         }
     }
