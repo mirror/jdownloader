@@ -9,8 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Vector;
 
-import jd.http.Encoding;
-import jd.parser.Regex;
+import jd.utils.JDHexUtils;
 
 public class JDRRproxy extends Thread {
 
@@ -34,7 +33,7 @@ public class JDRRproxy extends Thread {
             ProxyThread thread1 = new ProxyThread(incoming, outgoing, 1, steps);
             thread1.start();
 
-            ProxyThread thread2 = new ProxyThread(outgoing, incoming, 0, steps);
+            ProxyThread thread2 = new ProxyThread(outgoing, incoming, 2, steps);
             thread2.start();
         } catch (Exception e) {
             e.printStackTrace();
@@ -47,50 +46,60 @@ class ProxyThread extends Thread {
     Socket incoming, outgoing;
     public Vector<String> steps = null;
     int dowhat = 0;
+    boolean renewbuffer = false;
+    String buffer;
+    ProxyThread instance;
 
+    /*
+     * 0=normal weiterleiten, 1 = http header vom browser mitschneiden, 2 =
+     * antworten manipulieren
+     */
     public ProxyThread(Socket in, Socket out, int dowhat, Vector<String> steps) {
         incoming = in;
         outgoing = out;
         this.dowhat = dowhat;
         this.steps = steps;
+        instance = this;
     }
 
-    // Overwritten run() method of thread,
-    // does the data transfers
     public void run() {
-        byte[] buffer = new byte[60];
-        ByteBuffer head = ByteBuffer.allocateDirect(32767);
+        byte[] minibuffer = new byte[1024];
+        ByteBuffer bigbuffer = ByteBuffer.allocateDirect(512 * 1024);
         int numberRead = 0;
-        OutputStream toClient;
+        OutputStream toClient = null;
         InputStream fromClient;
-        StringBuffer hlh = new StringBuffer();
         try {
             toClient = outgoing.getOutputStream();
             fromClient = incoming.getInputStream();
-
+            BufferedInputStream reader = new BufferedInputStream(fromClient);
             while (true) {
 
-                numberRead = fromClient.read(buffer, 0, 50);
+                numberRead = reader.read(minibuffer, 0, 1000);
 
                 if (numberRead == -1) {
+                    reader.close();
                     incoming.close();
-                    outgoing.close();
+                    if (dowhat != 2) {
+                        outgoing.close();
+                    }
+                    break;
                 } else {
-                    head.put(buffer, 0, numberRead);
+                    bigbuffer.put(minibuffer, 0, numberRead);
                 }
-                toClient.write(buffer, 0, numberRead);
+                if (dowhat != 2) toClient.write(minibuffer, 0, numberRead);
             }
         } catch (Exception e) {
         }
-        try {
-            if (dowhat == 1) {
-                head.flip();
-                InputStream k = newInputStream(head);
+        if (dowhat == 1) {
+            /* Header aufzeichnen */
+            try {
+                bigbuffer.flip();
+                InputStream k = JDRRUtils.newInputStream(bigbuffer);
                 BufferedInputStream reader = new BufferedInputStream(k);
                 String line = null;
                 HashMap<String, String> headers = new HashMap<String, String>();
 
-                while ((line = readline(reader)) != null && line.trim().length() > 0) {
+                while ((line = JDRRUtils.readline(reader)) != null && line.trim().length() > 0) {
                     String key = null;
                     String value = null;
                     if (line.indexOf(": ") > 0) {
@@ -125,80 +134,39 @@ class ProxyThread extends Thread {
 
                     }
                 }
-                hlh.append("    [[[STEP]]]" + "\r\n");
-                hlh.append("        [[[REQUEST]]]" + "\r\n");
-                hlh.append("        " + headers.get(null) + "\r\n");
-                hlh.append("        Host: %%%routerip%%%" + "\r\n");
-                if (headers.containsKey("authorization")) {
-                    String auth = new Regex(headers.get("authorization"), "Basic (.+)").getMatch(0);
-                    if (auth != null) JDRR.auth = Encoding.Base64Decode(auth.trim());
-                    hlh.append("        Authorization: Basic %%%basicauth%%%" + "\r\n");
-                }
-                if (headers.get(null).contains("POST") && postdata != null) {
-                    hlh.append("\r\n");
-                    hlh.append(postdata.trim());
-                    hlh.append("\r\n");
-                }
-                hlh.append("        [[[/REQUEST]]]" + "\r\n");
-                hlh.append("    [[[/STEP]]]" + "\r\n");
-                steps.add(hlh.toString());
+                JDRRUtils.createStep(headers, postdata, steps);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-    }
-
-    public String readline(BufferedInputStream reader) {
-        /* ne eigene readline für BufferedInputStream */
-        /*
-         * BufferedReader hat nur böse Probleme mit dem Verarbeiten von
-         * FileUploads gehabt
-         */
-        int max_buf = 1024;
-        byte[] buffer = new byte[max_buf];
-        int index = 0;
-        int byteread = 0;
-        try {
-
-            while ((byteread = reader.read()) != -1) {
-                if (byteread == 10 || byteread == 13) {
-                    reader.mark(0);
-                    if ((byteread = reader.read()) != -1) {
-                        if (byteread == 13 || byteread == 10) {
-                            break;
-                        } else {
-                            reader.reset();
-                            break;
-                        }
+        } else if (dowhat == 2) {
+            /* Responses verändern */
+            try {
+                bigbuffer.flip();
+                renewbuffer = false;
+                byte[] b = new byte[bigbuffer.limit()];
+                bigbuffer.get(b);
+                buffer = JDHexUtils.getHexString(b);
+                JDRRUtils.rewriteLocationHeader(instance);
+                if (renewbuffer == true) {
+                    bigbuffer = ByteBuffer.wrap(JDHexUtils.getByteArray(buffer));
+                } else {
+                    bigbuffer.flip();
+                }
+                fromClient = JDRRUtils.newInputStream(bigbuffer);
+                while (true) {
+                    numberRead = fromClient.read(minibuffer, 0, 1000);
+                    if (numberRead == -1) {
+                        outgoing.close();
+                        break;
                     }
+                    toClient.write(minibuffer, 0, numberRead);
                 }
-                if (index > max_buf) { return null; }
-                buffer[index] = (byte) byteread;
-                index++;
+            } catch (Exception e2) {
+                e2.printStackTrace();
             }
-        } catch (IOException e) {
-
-            e.printStackTrace();
         }
-        return new String(buffer).substring(0, index);
-    }
 
-    public static InputStream newInputStream(final ByteBuffer buf) {
-        return new InputStream() {
-            public synchronized int read() throws IOException {
-                if (!buf.hasRemaining()) { return -1; }
-                return buf.get();
-            }
-
-            public synchronized int read(byte[] bytes, int off, int len) throws IOException {
-                // Read only what's left
-                len = Math.min(len, buf.remaining());
-                buf.get(bytes, off, len);
-                return len;
-            }
-        };
     }
 
 }

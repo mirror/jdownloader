@@ -23,6 +23,12 @@ public class JDHexUtils {
     static final byte[] HEX_CHAR_TABLE = { (byte) '0', (byte) '1', (byte) '2', (byte) '3', (byte) '4', (byte) '5', (byte) '6', (byte) '7', (byte) '8', (byte) '9', (byte) 'a', (byte) 'b', (byte) 'c', (byte) 'd', (byte) 'e', (byte) 'f' };
     public static final String REGEX_FIND_ALL_HEX = "[[a-fA-F0-9]{2}]*?";
     public static final String REGEX_MATCH_ALL_HEX = "([[a-fA-F0-9]{2}]*?)";
+    public static final String REGEX_HTTP_NEWLINE = JDHexUtils.getHexString("\r") + "{0,1}" + JDHexUtils.getHexString("\n") + "{0,1}";
+
+    public static String toString(String hexString){
+        if (hexString==null) return null;
+        return new String(JDHexUtils.getByteArray(hexString));
+    }
 
     public static byte[] getByteArray(String hexString) {
         if (hexString == null) { return null; }

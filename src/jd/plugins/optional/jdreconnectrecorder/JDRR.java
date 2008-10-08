@@ -29,7 +29,6 @@ public class JDRR extends PluginOptional {
 
     public JDRR(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
 
     public static int getAddonInterfaceVersion() {
