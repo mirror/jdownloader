@@ -1,7 +1,6 @@
 package jd.plugins.optional.jdreconnectrecorder;
 
 import java.io.BufferedInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -29,14 +28,23 @@ public class JDRRproxy extends Thread {
 
         Socket outgoing = null;
         try {
+            incoming.setSoTimeout(10000);
             outgoing = new Socket(serverip, 80);
+            outgoing.setSoTimeout(10000);
             ProxyThread thread1 = new ProxyThread(incoming, outgoing, 1, steps);
             thread1.start();
 
             ProxyThread thread2 = new ProxyThread(outgoing, incoming, 2, steps);
             thread2.start();
+            thread2.join();
+            try {
+                outgoing.shutdownInput();
+                incoming.shutdownInput();
+                outgoing.shutdownOutput();
+                incoming.shutdownOutput();
+            } catch (Exception e) {
+            }
         } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 }
@@ -63,28 +71,29 @@ class ProxyThread extends Thread {
     }
 
     public void run() {
-        byte[] minibuffer = new byte[1024];
-        ByteBuffer bigbuffer = ByteBuffer.allocateDirect(512 * 1024);
+        byte[] minibuffer = new byte[2048];
+        ByteBuffer bigbuffer = ByteBuffer.allocateDirect(4096);
         int numberRead = 0;
         OutputStream toClient = null;
         InputStream fromClient;
         try {
             toClient = outgoing.getOutputStream();
             fromClient = incoming.getInputStream();
-            BufferedInputStream reader = new BufferedInputStream(fromClient);
             while (true) {
-
-                numberRead = reader.read(minibuffer, 0, 1000);
+                numberRead = fromClient.read(minibuffer, 0, 2000);
 
                 if (numberRead == -1) {
-                    reader.close();
-                    incoming.close();
-                    if (dowhat != 2) {
-                        outgoing.close();
-                    }
                     break;
                 } else {
-                    bigbuffer.put(minibuffer, 0, numberRead);
+                    if (dowhat > 0) {
+                        if (bigbuffer.remaining() < numberRead) {
+                            ByteBuffer newbuffer = ByteBuffer.allocateDirect((bigbuffer.capacity() * 2));
+                            bigbuffer.flip();
+                            newbuffer.put(bigbuffer);
+                            bigbuffer = newbuffer;
+                        }
+                        bigbuffer.put(minibuffer, 0, numberRead);
+                    }
                 }
                 if (dowhat != 2) toClient.write(minibuffer, 0, numberRead);
             }
@@ -135,9 +144,7 @@ class ProxyThread extends Thread {
                     }
                 }
                 JDRRUtils.createStep(headers, postdata, steps);
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (Exception e) {
             }
         } else if (dowhat == 2) {
             /* Responses verändern */
@@ -155,18 +162,15 @@ class ProxyThread extends Thread {
                 }
                 fromClient = JDRRUtils.newInputStream(bigbuffer);
                 while (true) {
-                    numberRead = fromClient.read(minibuffer, 0, 1000);
+                    numberRead = fromClient.read(minibuffer, 0, 2000);
                     if (numberRead == -1) {
-                        outgoing.close();
                         break;
                     }
                     toClient.write(minibuffer, 0, numberRead);
                 }
             } catch (Exception e2) {
-                e2.printStackTrace();
             }
         }
-
     }
 
 }

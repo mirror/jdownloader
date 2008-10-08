@@ -46,39 +46,28 @@ public class JDSimpleWebserver extends Thread {
             Current_Socket = Client_Socket;
         }
 
-        public String readline(BufferedInputStream reader) {
-            /* ne eigene readline für BufferedInputStream */
-            /*
-             * BufferedReader hat nur böse Probleme mit dem Verarbeiten von
-             * FileUploads gehabt
-             */
-            int max_buf = 1024;
-            byte[] buffer = new byte[max_buf];
-            int index = 0;
-            int byteread = 0;
+        public String readline(BufferedInputStream in) {
+            StringBuffer data = new StringBuffer("");
+            int c;
             try {
-
-                while ((byteread = reader.read()) != -1) {
-                    if (byteread == 10 || byteread == 13) {
-                        reader.mark(0);
-                        if ((byteread = reader.read()) != -1) {
-                            if (byteread == 13 || byteread == 10) {
-                                break;
-                            } else {
-                                reader.reset();
-                                break;
-                            }
-                        }
-                    }
-                    if (index > max_buf) { return null; }
-                    buffer[index] = (byte) byteread;
-                    index++;
+                in.mark(1);
+                if (in.read() == -1)
+                    return null;
+                else
+                    in.reset();
+                while ((c = in.read()) >= 0) {
+                    if ((c == 0) || (c == 10) || (c == 13))
+                        break;
+                    else
+                        data.append((char) c);
                 }
-            } catch (IOException e) {
-
-                e.printStackTrace();
+                if (c == 13) {
+                    in.mark(1);
+                    if (in.read() != 10) in.reset();
+                }
+            } catch (Exception e) {
             }
-            return new String(buffer).substring(0, index);
+            return data.toString();
         }
 
         public void run() {

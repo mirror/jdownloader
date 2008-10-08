@@ -277,7 +277,7 @@ public class JDRRGui extends JDialog implements ActionListener {
                 public void run() {
                     try {
                         Thread.sleep(3000);
-                    } catch (InterruptedException e) {
+                    } catch (Exception e) {
                     }
                     if (infopopup != null) infopopup.dispose();
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {

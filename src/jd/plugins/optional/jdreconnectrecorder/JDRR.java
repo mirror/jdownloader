@@ -1,7 +1,6 @@
 package jd.plugins.optional.jdreconnectrecorder;
 
 import java.awt.event.ActionEvent;
-import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -59,9 +58,7 @@ public class JDRR extends PluginOptional {
             Server_Socket = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
             running = true;
             new JDRRServer(Server_Socket, serverip).start();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (Exception e) {
         }
     }
 
@@ -70,9 +67,7 @@ public class JDRR extends PluginOptional {
         steps.add("[[[/HSRC]]]");
         try {
             Server_Socket.close();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        } catch (Exception e) {
         }
     }
 
@@ -87,10 +82,6 @@ public class JDRR extends PluginOptional {
 
         public void run() {
             while (running) {
-                try {
-                    Thread.sleep(500);
-                } catch (Exception e) {
-                }
                 Socket Client_Socket = null;
                 try {
                     Client_Socket = Server_Socket.accept();
