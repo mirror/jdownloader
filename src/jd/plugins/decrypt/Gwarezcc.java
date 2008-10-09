@@ -63,7 +63,7 @@ public class Gwarezcc extends PluginForDecrypt {
         if (parameter.matches(patternLink_Details_Download.pattern())) {
             /* Link auf die Download Info Seite */
             br.getPage(parameter);
-            String downloadid = new Regex(parameter, "\\/([\\d].*)").getMatch(0);
+            String downloadid = new Regex(parameter, "\\/(\\d+)").getMatch(0);
 
             if (getPluginConfig().getBooleanProperty(PREFER_DLC, false) == true) {
                 /* DLC Suchen */
