@@ -8,13 +8,14 @@ import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
 public class JDRRUtils {
-    
+
     public static String readline(BufferedInputStream in) {
         StringBuffer data = new StringBuffer("");
         int c;
@@ -57,7 +58,7 @@ public class JDRRUtils {
     }
 
     public static void createStep(HashMap<String, String> headers, String postdata, Vector<String> steps) {
-        if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp).*?").matches()) {
+        if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico).*?").matches()) {
             StringBuffer hlh = new StringBuffer();
             hlh.append("    [[[STEP]]]" + "\r\n");
             hlh.append("        [[[REQUEST]]]" + "\r\n");
@@ -85,19 +86,45 @@ public class JDRRUtils {
             if (new Regex(location, "http://(.*?)/?").getMatch(0) != null) {
                 String oldlocation = location;
                 JDUtilities.getLogger().info("Rewriting Location Header");
-                // JDUtilities.getLogger().info("Old Location: " +
-                // oldlocation);
-                location = new Regex(location, "http://.*?/(.+)").getMatch(0);
+                location = new Regex(location, "http://.*?/(.+)",Pattern.DOTALL).getMatch(0);
                 if (location != null) {
                     location = "http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/" + location;
                 } else {
                     location = "http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/";
                 }
-                // JDUtilities.getLogger().info("New Location: " +
-                // location);
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Location: " + oldlocation), JDHexUtils.getHexString("Location: " + location));
                 instance.renewbuffer = true;
             }
         }
     }
+
+    public static void rewriteHostHeader(ProxyThread instance) {
+        String host = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Host: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        if (host != null) {
+            if (new Regex(host, "(.*?):?").getMatch(0) != null) {
+                String oldhost = host;
+                JDUtilities.getLogger().info("Rewriting Host Header");
+                host = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
+                instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Host: " + oldhost), JDHexUtils.getHexString("Host: " + host));
+                instance.renewbuffer = true;
+            }
+        }
+    }
+
+    public static void rewriteRefererHeader(ProxyThread instance) {
+        String ref = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        if (ref != null) {
+            if (new Regex(ref, "http://(.*?)/?").getMatch(0) != null) {
+                String oldref = ref;
+                String ref2=new Regex(ref, "http://.*?/(.+)",Pattern.DOTALL).getMatch(0);                
+                if (ref2!=null){
+                    ref = "http://"+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null)+"/"+ref2.trim();    
+                }else{
+                    ref = "http://"+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
+                }                               
+                instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Referer: " + oldref), JDHexUtils.getHexString("Referer: " + ref));
+                instance.renewbuffer = true;
+            }
+        }
+    }    
 }

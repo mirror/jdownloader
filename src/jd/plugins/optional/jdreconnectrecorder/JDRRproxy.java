@@ -12,6 +12,11 @@ import jd.utils.JDHexUtils;
 
 public class JDRRproxy extends Thread {
 
+    public final static int FORWARD = 1 << 1;
+    public final static int RECORD_HEADER = 1 << 2;
+    public final static int CHANGE_HEADER = 1 << 3;
+    public final static int BLOCKED_READ = 1 << 10;
+
     private Socket Current_Socket;
     public Vector<String> steps = null;
     String serverip;
@@ -28,13 +33,11 @@ public class JDRRproxy extends Thread {
 
         Socket outgoing = null;
         try {
-            incoming.setSoTimeout(10000);
             outgoing = new Socket(serverip, 80);
-            outgoing.setSoTimeout(10000);
-            ProxyThread thread1 = new ProxyThread(incoming, outgoing, 1, steps);
+            ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps);
             thread1.start();
 
-            ProxyThread thread2 = new ProxyThread(outgoing, incoming, 2, steps);
+            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER | BLOCKED_READ, steps);
             thread2.start();
             thread2.join();
             try {
@@ -67,7 +70,11 @@ class ProxyThread extends Thread {
         outgoing = out;
         this.dowhat = dowhat;
         this.steps = steps;
-        instance = this;
+        this.instance = this;
+    }
+
+    public boolean dothis(int dothis) {
+        return (this.dowhat & dothis) > 0;
     }
 
     public void run() {
@@ -79,27 +86,41 @@ class ProxyThread extends Thread {
         try {
             toClient = outgoing.getOutputStream();
             fromClient = incoming.getInputStream();
+            BufferedInputStream reader = new BufferedInputStream(fromClient);
+            int hack = 0;
             while (true) {
-                numberRead = fromClient.read(minibuffer, 0, 2000);
-
-                if (numberRead == -1) {
+                if (dothis(JDRRproxy.BLOCKED_READ)) {
+                    numberRead = fromClient.read(minibuffer, 0, 2000);
+                } else {
+                    if (reader.available() > 0) {
+                        numberRead = reader.read(minibuffer, 0, 2000);
+                    } else {
+                        numberRead = 0;
+                    }
+                    if (numberRead == 0) hack++;
+                }
+                if (numberRead == -1 || hack > 10000) {                    
                     break;
                 } else {
-                    if (dowhat > 0) {
-                        if (bigbuffer.remaining() < numberRead) {
-                            ByteBuffer newbuffer = ByteBuffer.allocateDirect((bigbuffer.capacity() * 2));
-                            bigbuffer.flip();
-                            newbuffer.put(bigbuffer);
-                            bigbuffer = newbuffer;
+                    if (numberRead > 0) {
+                        if (!dothis(JDRRproxy.FORWARD)) {
+                            if (bigbuffer.remaining() < numberRead) {
+                                ByteBuffer newbuffer = ByteBuffer.allocateDirect((bigbuffer.capacity() * 2));
+                                bigbuffer.flip();
+                                newbuffer.put(bigbuffer);
+                                bigbuffer = newbuffer;
+                            }
+                            bigbuffer.put(minibuffer, 0, numberRead);
+                        } else {
+                            toClient.write(minibuffer, 0, numberRead);
                         }
-                        bigbuffer.put(minibuffer, 0, numberRead);
                     }
                 }
-                if (dowhat != 2) toClient.write(minibuffer, 0, numberRead);
             }
         } catch (Exception e) {
+            e.printStackTrace();
         }
-        if (dowhat == 1) {
+        if (dothis(JDRRproxy.RECORD_HEADER)) {
             /* Header aufzeichnen */
             try {
                 bigbuffer.flip();
@@ -145,20 +166,26 @@ class ProxyThread extends Thread {
                 }
                 JDRRUtils.createStep(headers, postdata, steps);
             } catch (Exception e) {
+                e.printStackTrace();
             }
-        } else if (dowhat == 2) {
+        }
+        if (dothis(JDRRproxy.CHANGE_HEADER) || !dothis(JDRRproxy.FORWARD)) {
             /* Responses verändern */
             try {
                 bigbuffer.flip();
-                renewbuffer = false;
-                byte[] b = new byte[bigbuffer.limit()];
-                bigbuffer.get(b);
-                buffer = JDHexUtils.getHexString(b);
-                JDRRUtils.rewriteLocationHeader(instance);
-                if (renewbuffer == true) {
-                    bigbuffer = ByteBuffer.wrap(JDHexUtils.getByteArray(buffer));
-                } else {
-                    bigbuffer.flip();
+                if (dothis(JDRRproxy.CHANGE_HEADER)) {
+                    renewbuffer = false;
+                    byte[] b = new byte[bigbuffer.limit()];
+                    bigbuffer.get(b);
+                    buffer = JDHexUtils.getHexString(b);
+                    JDRRUtils.rewriteLocationHeader(instance);
+                    JDRRUtils.rewriteHostHeader(instance);
+                    JDRRUtils.rewriteRefererHeader(instance);
+                    if (renewbuffer == true) {
+                        bigbuffer = ByteBuffer.wrap(JDHexUtils.getByteArray(buffer));
+                    } else {
+                        bigbuffer = ByteBuffer.wrap(b);
+                    }
                 }
                 fromClient = JDRRUtils.newInputStream(bigbuffer);
                 while (true) {
@@ -169,6 +196,7 @@ class ProxyThread extends Thread {
                     toClient.write(minibuffer, 0, numberRead);
                 }
             } catch (Exception e2) {
+                e2.printStackTrace();
             }
         }
     }

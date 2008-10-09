@@ -137,6 +137,12 @@
 				<include name="jd/plugins/optional/JDShutdown*" />
 			</fileset>
 		</jar>
+		
+		<jar jarfile="${dist}/pluginressourcen/124__JDRouterRecorder/plugins/JDRouterRecorder.jar" manifest="Manifest.MF">
+				<fileset dir="${cls}">
+					<include name="jd/plugins/optional/jdreconnectrecorder/**" />
+				</fileset>
+			</jar>
 	</target>
 
 	<target name="sign">
