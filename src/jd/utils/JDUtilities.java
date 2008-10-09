@@ -1077,7 +1077,7 @@ public class JDUtilities {
                 }
             }
             return "offline";
-        }
+        } 
 
         catch (Exception e1) {
             logger.severe("url not found. " + e1.toString());
