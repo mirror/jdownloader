@@ -18,8 +18,10 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.DistributeData;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -35,40 +37,46 @@ public class Rlslog extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        Vector<String> passwords;
         String parameter = param.toString();
+        br.getPage(parameter);
+        String directComment = new Regex(param.toString(), "http://[\\w\\.]*?rlslog\\.net/.+/.+/#comments|/.+/#comments|/.+/.*?#(comment-\\d+)").getMatch(0);
 
-        String followcomments = "";
-        if (parameter.contains("/comment-page")) {
-            followcomments = parameter.substring(0, parameter.indexOf("/comment-page"));
-        }
-        if (!parameter.contains("#comments")) {
-            parameter += "#comments";
-        }
-        followcomments = parameter.substring(0, parameter.indexOf("/#comments"));
-
-        String page = br.getPage(parameter);
-        String[] links = HTMLParser.getHttpLinks(page, null);
-        Vector<String> pass = HTMLParser.findPasswords(page);
-        String[] links2;
-        Vector<String> pass2;
-        for (String element : links) {
-            if (element.contains(followcomments)) {
-                /* weitere comment pages abrufen */
-                page = br.getPage(element);
-                links2 = HTMLParser.getHttpLinks(page, null);
-                pass2 = HTMLParser.findPasswords(page);
-                for (String element2 : links2) {
-                    DownloadLink dLink = createDownloadlink(element2);
-                    dLink.addSourcePluginPasswords(pass2);
+        if (directComment != null) {
+            String comment = br.getRegex(Pattern.compile("<li class=.*? id=\"" + directComment + "\" value=.*?>(.*?)</li>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            passwords = HTMLParser.findPasswords(comment);
+            String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
+            for (String link : links) {
+                if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginfor(link)) {
+                    DownloadLink dLink = createDownloadlink(link);
+                    dLink.addSourcePluginPasswords(passwords);
                     decryptedLinks.add(dLink);
                 }
-            } else {
-                DownloadLink dLink = createDownloadlink(element);
-                dLink.addSourcePluginPasswords(pass);
-                decryptedLinks.add(dLink);
+            }
+        } else {
+            String comment_pages_tag = br.getRegex(Pattern.compile("<!-- Comment page numbers -->(.*?)<!-- End comment page numbers -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            String comment_pages[] = new Regex(comment_pages_tag, "<a class=\"next-comment-page\" href=\"(.*?)\"").getColumn(0);
+            Vector<String> pages = new Vector<String>();
+            pages.add(param.toString());
+            for (String page : comment_pages) {
+                pages.add(page);
+            }
+            for (String page : pages) {
+                br.getPage(page);
+                String comments[] = br.getRegex(Pattern.compile("<li class=.*? id=.*? value=.*?>(.*?)</li>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
+                for (String comment : comments) {
+                    passwords = HTMLParser.findPasswords(comment);
+                    String[] links = new Regex(comment, "rel=\"nofollow\">(.*?)</a>", Pattern.CASE_INSENSITIVE).getColumn(0);
+                    for (String link : links) {
+                        if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginfor(link)) {
+                            DownloadLink dLink = createDownloadlink(link);
+                            dLink.addSourcePluginPasswords(passwords);
+                            decryptedLinks.add(dLink);
+                        }
+                    }
+                }
             }
         }
-
         return decryptedLinks;
     }
 
