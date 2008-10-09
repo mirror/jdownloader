@@ -125,7 +125,7 @@ public class ShareOnlineBiz extends PluginForHost {
         }
 
         /* Downloadlimit erreicht */
-        if (br.containsHTML("max allowed download sessions")) {
+        if (br.containsHTML("max allowed download sessions") | br.containsHTML("this download is too big")) {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             linkStatus.setValue(3600000l);
             return;
