@@ -579,9 +579,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionInstallJDU;
 
-    private JDAction actionExpandAll;
+//    private JDAction actionExpandAll;
 
-    private JDAction actionCollapseAll;
+//    private JDAction actionCollapseAll;
 
     private JDAction actionItemsAdd;
 
@@ -1063,9 +1063,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionLoadDLC));
         toolBar.add(createMenuButton(actionItemsDelete));
         toolBar.addSeparator();
-        toolBar.add(createMenuButton(actionCollapseAll));
-        toolBar.add(createMenuButton(actionExpandAll));
-        toolBar.addSeparator();
+//        toolBar.add(createMenuButton(actionCollapseAll));
+//        toolBar.add(createMenuButton(actionExpandAll));
+//        toolBar.addSeparator();
         toolBar.add(createMenuButton(actionItemsBottom));
         toolBar.add(createMenuButton(actionItemsDown));
         toolBar.add(createMenuButton(actionItemsUp));
@@ -1396,8 +1396,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionItemsUp = new JDAction(this, JDTheme.V("gui.images.top"), "action.edit.items_up", JDAction.ITEMS_MOVE_UP);
         actionItemsDown = new JDAction(this, JDTheme.V("gui.images.down"), "action.edit.items_down", JDAction.ITEMS_MOVE_DOWN);
         actionItemsBottom = new JDAction(this, JDTheme.V("gui.images.go_bottom"), "action.edit.items_bottom", JDAction.ITEMS_MOVE_BOTTOM);
-        actionCollapseAll = new JDAction(this, JDTheme.V("gui.images.package_closed"), "action.collapse", JDAction.COLLAPSE_ALL);
-        actionExpandAll = new JDAction(this, JDTheme.V("gui.images.package_opened"), "action.expand", JDAction.EXPAND_ALL);
+//        actionCollapseAll = new JDAction(this, JDTheme.V("gui.images.package_closed"), "action.collapse", JDAction.COLLAPSE_ALL);
+//        actionExpandAll = new JDAction(this, JDTheme.V("gui.images.package_opened"), "action.expand", JDAction.EXPAND_ALL);
         doReconnect = new JDAction(this, getDoReconnectImage(), "action.doReconnect", JDAction.APP_ALLOW_RECONNECT);
         actionHelp = new JDAction(this, JDTheme.V("gui.images.help"), "action.help", JDAction.HELP);
         actionWiki = new JDAction(this, JDTheme.V("gui.images.help"), "action.wiki", JDAction.WIKI);

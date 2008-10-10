@@ -34,10 +34,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -78,6 +80,8 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public boolean window_Closed = false;
     private String titleText;
 
+    private Frame owner;
+
     public CountdownConfirmDialog(Frame owner, String msg, int countdown) {
         this(owner, msg, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_STOP_COUNTDOWN);
     }
@@ -89,6 +93,8 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     }
     public CountdownConfirmDialog(final Frame owner,final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
         super(owner);
+        
+        this.owner=owner;
         setModal(true);
         addWindowListener(new WindowListener() {
 
@@ -257,7 +263,11 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             dispose();
            
         } else if (e.getSource() == btnBAD) {
-            dispose();
+
+                    dispose();
+
+        
+            
        
         }
 
@@ -274,5 +284,14 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         }
 
+    }
+    
+    
+    public static void main(String args[]) {
+        
+        CountdownConfirmDialog ccd = new CountdownConfirmDialog(null, "Test1", 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
+        
+        System.out.println(ccd.result);
+        
     }
 }

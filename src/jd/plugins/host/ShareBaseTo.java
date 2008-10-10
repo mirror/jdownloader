@@ -20,13 +20,17 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class ShareBaseTo extends PluginForHost {
 
@@ -34,6 +38,7 @@ public class ShareBaseTo extends PluginForHost {
 
     public ShareBaseTo(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://sharebase.to/premium/");
     }
 
     @Override
@@ -54,10 +59,54 @@ public class ShareBaseTo extends PluginForHost {
 
     }
 
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        br.setDebug(true);
+        br.setCookie("http://" + getHost(), "memm", account.getUser());
+        br.setCookie("http://" + getHost(), "memp", JDUtilities.getMD5(account.getPass()));
+
+        br.getPage("http://sharebase.to/members/");
+
+        String points = br.getMatch("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"(\\d+?) Punkte\"></td>");
+        String traffic = br.getMatch("Traffic left: </span><span class=.*?>(.*?)</span> ");
+        String expire = br.getMatch("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>");
+        // 12.10.08 / 10:28
+
+        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yy / hh:mm", null));
+
+        ai.setTrafficLeft(Regex.getSize(traffic));
+        ai.setPremiumPoints(Integer.parseInt(points));
+
+        return ai;
+    }
+
     @Override
     public String getVersion() {
         String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? "0.0" : ret;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        this.setBrowserExclusive();
+        br.setDebug(true);
+        br.setCookie("http://" + getHost(), "memm", account.getUser());
+        br.setCookie("http://" + getHost(), "memp", JDUtilities.getMD5(account.getPass()));
+
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
+            logger.severe("ShareBaseTo Error: Maintenance");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wartungsarbeiten", 30 * 60 * 1000l);
+        }
+
+        Form[] form = br.getForms();
+        form[1].setVariable(0, "Download+Now+%21");
+        dl = br.openDownload(downloadLink, form[1], true, 0);
+        if (dl.getConnection() == null) {
+            logger.severe("ServerError");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.sharebaseto.servererror", "Service not available"), 10 * 60 * 1000l);
+        }
+        dl.startDownload();
     }
 
     @Override
