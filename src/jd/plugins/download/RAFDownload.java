@@ -144,6 +144,7 @@ public class RAFDownload extends DownloadInterface {
 
     @Override
     protected void onChunksReady() {
+        logger.finer("onCHunksReady");
         if (writer != null) {
             synchronized (writer) {
                 if (writer.waitFlag) {
@@ -264,9 +265,11 @@ public class RAFDownload extends DownloadInterface {
         try {
 
             if (checkResumabled() && isResume()) {
+                logger.finer("Setup resume");
                 this.setupResume();
 
             } else {
+                logger.finer("Setup virgin download");
                 this.setupVirginStart();
             }
 
@@ -320,6 +323,7 @@ public class RAFDownload extends DownloadInterface {
 
             chunk = new Chunk(0, rangePosition = connection.getRange()[1], connection);
             rangePosition++;
+            logger.finer("Setup chunk "+"0"+": "+chunk);
             addChunk(chunk);
             start++;
         }
@@ -332,7 +336,7 @@ public class RAFDownload extends DownloadInterface {
                 chunk = new Chunk(rangePosition, rangePosition + partSize - 1, connection);
                 rangePosition = rangePosition + partSize;
             }
-
+            logger.finer("Setup chunk "+i+": "+chunk);
             addChunk(chunk);
         }
         // logger.info("Total splitted size: "+total);
@@ -367,7 +371,7 @@ public class RAFDownload extends DownloadInterface {
                 chunk = new Chunk(downloadLink.getChunksProgress()[i]==0?0:downloadLink.getChunksProgress()[i] + 1, (i + 1) * parts - 1, connection);
                 chunk.setLoaded((downloadLink.getChunksProgress()[i] - i * parts + 1));
             }
-
+            logger.finer("Setup chunk "+i+": "+chunk);
             addChunk(chunk);
         }
 

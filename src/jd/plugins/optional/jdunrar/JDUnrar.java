@@ -76,12 +76,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         super(wrapper);
         this.queue = (ArrayList<DownloadLink>) this.getPluginConfig().getProperty(JDUnrarConstants.CONFIG_KEY_LIST, new ArrayList<DownloadLink>());
 
-        try {
-            System.err.println("Classloader: "+JDUtilities.getJDClassLoader().findJar(getWrapper().getClassName()));
-        } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
 
  
 

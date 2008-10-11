@@ -739,18 +739,16 @@ abstract public class DownloadInterface {
                 }
             }
             if (allConnected) {
-                try {
+               
                     this.connection.disconnect();
-                } catch (Exception e) {
-                }
+                
 
             }
 
             if (this.isExternalyAborted()) {
-                try {
+             
                     this.connection.disconnect();
-                } catch (Exception e) {
-                }
+               
             }
             onChunkFinished();
         }
@@ -1138,13 +1136,14 @@ abstract public class DownloadInterface {
     }
 
     public HTTPConnection connect(Browser br) throws Exception {
-        HTTPConnection ret = connect();
         br.setRequest(request);
+        HTTPConnection ret = connect();
+        
         return ret;
     }
 
     public HTTPConnection connect() throws Exception {
-
+        logger.finer("Connect...");
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
         this.connected = true;
 
@@ -1473,6 +1472,7 @@ abstract public class DownloadInterface {
 
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
+            logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
 
             if (totaleLinkBytesLoaded > fileSize) {
@@ -1655,6 +1655,7 @@ abstract public class DownloadInterface {
      * @throws Exception
      */
     public boolean startDownload() throws Exception {
+        logger.finer("Start Download");
         if (!connected) connect();
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
         downloadLink.getLinkStatus().setStatusText(null);
@@ -1792,6 +1793,7 @@ abstract public class DownloadInterface {
 
     private void waitForChunks() {
         int i = 0;
+        logger.finer("Wait for chunks");
         int interval = 150;
         while (chunksInProgress > 0) {
             synchronized (this) {
@@ -1800,7 +1802,8 @@ abstract public class DownloadInterface {
                     try {
                         this.wait(interval);
                     } catch (Exception e) {
-                        // e.printStackTrace();
+                         e.printStackTrace();
+                         
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {
                             it.next().interrupt();

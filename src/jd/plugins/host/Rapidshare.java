@@ -519,17 +519,18 @@ public class Rapidshare extends PluginForHost {
         HTTPConnection urlConnection;
         try {
 
-            urlConnection = dl.connect();
+            urlConnection = dl.connect(br);
         } catch (Exception e) {
-            br.setRequest(request);
+            
             request = br.createGetRequest(null);
+            logger.info("Load from "+request.getUrl().toString().substring(0,35));
             // Download
             dl = new RAFDownload(this, downloadLink, request);
             // Premiumdownloads sind resumefähig
             dl.setResume(true);
             // Premiumdownloads erlauben chunkload
             dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-            urlConnection = dl.connect();
+            urlConnection = dl.connect(br);
         }
         // Download starten
         // prüft ob ein content disposition header geschickt wurde. Falls nicht,
