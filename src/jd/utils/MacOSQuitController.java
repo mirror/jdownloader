@@ -16,7 +16,6 @@ public class MacOSQuitController extends Application {
 	class QuitHandler extends ApplicationAdapter {
 		public void handleQuit(ApplicationEvent e) {
 			JDController controller = new JDController();
-			System.out.println("BLAAA");
 			controller.exit();			
 		}	
 	}
