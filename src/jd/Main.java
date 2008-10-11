@@ -56,6 +56,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.MacOSQuitController;
 
 /**
  * @author astaldo/JD-Team
@@ -258,7 +259,7 @@ public class Main {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             System.setProperty("apple.laf.useScreenMenuBar", "true");
-
+            new MacOSQuitController();
         }
 
         JDTheme.setTheme("default");
