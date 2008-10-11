@@ -14,9 +14,10 @@ public class MacOSQuitController extends Application {
 	}
 	
 	class QuitHandler extends ApplicationAdapter {
+		
 		public void handleQuit(ApplicationEvent e) {
-			JDController controller = new JDController();
-			controller.exit();			
-		}	
+			JDUtilities.getController().exit();		
+		}
+		
 	}
 }
