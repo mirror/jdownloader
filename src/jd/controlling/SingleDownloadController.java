@@ -171,7 +171,9 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setErrorMessage(null);
             }
             switch (linkStatus.getLatestStatus()) {
-
+            case LinkStatus.ERROR_LOCAL_IO:
+                onErrorLocalIO(downloadLink, currentPlugin);
+                break;
             case LinkStatus.ERROR_IP_BLOCKED:
                 onErrorWaittime(downloadLink, currentPlugin);
                 break;
@@ -412,7 +414,21 @@ public class SingleDownloadController extends Thread {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         linkStatus.reset();
     }
+    private void onErrorLocalIO(DownloadLink downloadLink, PluginForHost plugin) {
+   
+        LinkStatus status = downloadLink.getLinkStatus();       
+        /*
+         * Value<=0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
+         * value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms.
+         * Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
+         */
+      
+            status.setWaitTime(30*60*1000l);
+     
 
+        downloadLink.setEnabled(false);
+        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
+    }
     /**
      * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird
      * deaktiviert und kann zu einem späteren zeitpunkt wieder aktiviert werden

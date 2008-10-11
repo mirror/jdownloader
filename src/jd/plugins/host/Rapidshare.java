@@ -521,7 +521,7 @@ public class Rapidshare extends PluginForHost {
 
             urlConnection = dl.connect(br);
         } catch (Exception e) {
-            
+            br.setRequest(request);
             request = br.createGetRequest(null);
             logger.info("Load from "+request.getUrl().toString().substring(0,35));
             // Download
@@ -563,7 +563,7 @@ public class Rapidshare extends PluginForHost {
             }
 
         }
-
+        
         dl.startDownload();
 
     }

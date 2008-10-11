@@ -739,16 +739,15 @@ abstract public class DownloadInterface {
                 }
             }
             if (allConnected) {
-               
-                    this.connection.disconnect();
-                
+
+                this.connection.disconnect();
 
             }
 
             if (this.isExternalyAborted()) {
-             
-                    this.connection.disconnect();
-               
+
+                this.connection.disconnect();
+
             }
             onChunkFinished();
         }
@@ -896,7 +895,7 @@ abstract public class DownloadInterface {
          * @param loaded
          */
         public void setLoaded(long loaded) {
-            loaded=Math.max(0, loaded);
+            loaded = Math.max(0, loaded);
             totalPartBytes = loaded;
             addToTotalLinkBytesLoaded(loaded);
         }
@@ -1138,7 +1137,7 @@ abstract public class DownloadInterface {
     public HTTPConnection connect(Browser br) throws Exception {
         br.setRequest(request);
         HTTPConnection ret = connect();
-        
+
         return ret;
     }
 
@@ -1160,7 +1159,7 @@ abstract public class DownloadInterface {
                     setChunkNum(tmp);
                 }
             }
-            if (this.isFileSizeVerified()&&downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1 && !this.isFirstChunkRangeless()) {
+            if (this.isFileSizeVerified() && downloadLink.getDownloadSize() > 0 && this.getChunkNum() > 1 && !this.isFirstChunkRangeless()) {
                 connectFirstRange();
             } else {
                 request.getHeaders().remove("Range");
@@ -1347,6 +1346,7 @@ abstract public class DownloadInterface {
     protected void error(int id, String string) {
 
         logger.severe("Error occured: " + LinkStatus.toString(id));
+      
         if (errors.indexOf(id) < 0) {
             errors.add(id);
         }
@@ -1473,6 +1473,8 @@ abstract public class DownloadInterface {
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
+         
+
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
 
             if (totaleLinkBytesLoaded > fileSize) {
@@ -1659,9 +1661,7 @@ abstract public class DownloadInterface {
         if (!connected) connect();
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
         downloadLink.getLinkStatus().setStatusText(null);
-        if(connection==null||!connection.isOK()){
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,10*60*1000l);
-        }
+        if (connection == null || !connection.isOK()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
         if (connection.getHeaderField("Location") != null) {
 
             error(LinkStatus.ERROR_PLUGIN_DEFEKT, "Sent a redirect to Downloadinterface");
@@ -1736,6 +1736,11 @@ abstract public class DownloadInterface {
         }
 
         catch (Exception e) {
+            if (e instanceof FileNotFoundException) {
+                this.error(LinkStatus.ERROR_LOCAL_IO, JDLocale.LF("download.error.message.localio", "Could not write to file: %s", e.getMessage()));
+            } else {
+                e.printStackTrace();
+            }
             handleErrors();
             // if (plugin.getCurrentStep().getStatus() !=
             // PluginStep.STATUS_ERROR) {
@@ -1802,8 +1807,8 @@ abstract public class DownloadInterface {
                     try {
                         this.wait(interval);
                     } catch (Exception e) {
-                         e.printStackTrace();
-                         
+                        e.printStackTrace();
+
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {
                             it.next().interrupt();

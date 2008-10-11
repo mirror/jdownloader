@@ -259,7 +259,7 @@ public class Main {
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             System.setProperty("apple.laf.useScreenMenuBar", "true");
-            new MacOSQuitController();
+//            new MacOSQuitController();
         }
 
         JDTheme.setTheme("default");
