@@ -98,10 +98,19 @@ public class ShareBaseTo extends PluginForHost {
             logger.severe("ShareBaseTo Error: Maintenance");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wartungsarbeiten", 30 * 60 * 1000l);
         }
+        if (br.containsHTML("Der Download existiert nicht")) {
+            logger.severe("ShareBaseTo Error: File not found");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
 
+        if (!br.containsHTML("favorite")) {
+            logger.severe("ShareBaseTo Error: Premium account expired");
+            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+        
         Form[] form = br.getForms();
         form[1].setVariable(0, "Download+Now+%21");
-        dl = br.openDownload(downloadLink, form[1], true, 0);
+        dl = br.openDownload(downloadLink, form[1]);
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.sharebaseto.servererror", "Service not available"), 10 * 60 * 1000l);
