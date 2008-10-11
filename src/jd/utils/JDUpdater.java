@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.utils;
 
 import java.awt.HeadlessException;
@@ -21,7 +37,7 @@ import jd.update.WebUpdater;
 /**
  * Wie benutze ich diese Klasse.
  * 
- * Diese klasse sollte in einem woring directory ausgeführt werden das leer ist.
+ * Diese klasse sollte in einem working directory ausgeführt werden das leer ist.
  * z.B. d:/jd_update Nach dem Start wird die aktuelle JD version vom bluehost
  * server geladen. anschließend fragt der Updater nach einem ordner in dem sich
  * die neuen files befinden. Die neuen files werden hochgeladen und auf crc
