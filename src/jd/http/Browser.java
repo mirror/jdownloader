@@ -1154,7 +1154,7 @@ public class Browser {
                         continue;
                     }
                 }
-                
+
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
@@ -1165,14 +1165,23 @@ public class Browser {
 
     public DownloadInterface openDownload(DownloadLink downloadLink, String link, boolean b, int c) throws Exception {
 
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createGetRequest(link), b, c);
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest(link), b, c);
         try {
             dl.connect(this);
         } catch (PluginException e) {
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
-                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
-                dl.connect(this);
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = RAFDownload.download(downloadLink, this.createRequest(dl.getRequest().getLocation()), b, c);
+                    try {
+                        dl.connect(this);
+                        break;
+                    } catch (PluginException e2) {
+                        continue;
+                    }
+                }
+
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
@@ -1180,15 +1189,26 @@ public class Browser {
         }
         return dl;
     }
-    public DownloadInterface openDownload(DownloadLink downloadLink, Form form,boolean resume, int chunks) throws Exception {
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createFormRequest(form),resume,chunks);
+
+    public DownloadInterface openDownload(DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
+
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest( form), resume, chunks);
         try {
             dl.connect(this);
         } catch (PluginException e) {
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
-                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
-                dl.connect(this);
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = RAFDownload.download(downloadLink, this.createRequest(dl.getRequest().getLocation()), resume, chunks);
+                    try {
+                        dl.connect(this);
+                        break;
+                    } catch (PluginException e2) {
+                        continue;
+                    }
+                }
+
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
@@ -1196,15 +1216,26 @@ public class Browser {
         }
         return dl;
     }
+
     public DownloadInterface openDownload(DownloadLink downloadLink, Form form) throws Exception {
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createFormRequest(form));
+       
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest( form));
         try {
             dl.connect(this);
         } catch (PluginException e) {
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
-                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
-                dl.connect(this);
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = RAFDownload.download(downloadLink, this.createRequest(dl.getRequest().getLocation()));
+                    try {
+                        dl.connect(this);
+                        break;
+                    } catch (PluginException e2) {
+                        continue;
+                    }
+                }
+
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
@@ -1219,21 +1250,29 @@ public class Browser {
     }
 
     public DownloadInterface openDownload(DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url, postdata));
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest( url,postdata));
         try {
             dl.connect(this);
         } catch (PluginException e) {
             if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
 
-                dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
-                dl.connect(this);
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = RAFDownload.download(downloadLink, this.createPostRequest(dl.getRequest().getLocation(),postdata));
+                    try {
+                        dl.connect(this);
+                        break;
+                    } catch (PluginException e2) {
+                        continue;
+                    }
+                }
+
             }
         }
         if (downloadLink.getPlugin().getBrowser() == this) {
             downloadLink.getPlugin().setDownloadInterface(dl);
         }
         return dl;
-
     }
 
 }

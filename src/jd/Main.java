@@ -154,7 +154,6 @@ public class Main {
         if (!new CheckJava().check()) {
             System.exit(0);
         }
-
         Boolean newInstance = false;
         boolean showSplash = true;
         boolean stop = false;

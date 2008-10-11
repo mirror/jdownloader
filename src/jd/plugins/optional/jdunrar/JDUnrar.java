@@ -20,6 +20,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 
 import javax.swing.JPanel;
@@ -74,6 +75,15 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
         this.queue = (ArrayList<DownloadLink>) this.getPluginConfig().getProperty(JDUnrarConstants.CONFIG_KEY_LIST, new ArrayList<DownloadLink>());
+
+        try {
+            System.err.println("Classloader: "+JDUtilities.getJDClassLoader().findJar(getWrapper().getClassName()));
+        } catch (ClassNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+ 
 
         // this.waitQueue = (ArrayList<DownloadLink>)
         // this.getPluginConfig().getProperty

@@ -260,7 +260,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 if (entry != null) {
                     try {
                         byte data[] = loadClassData(element, entry);
-
+System.out.println("Loaded class "+name+" from "+element.getName());
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
                         if (c == null) { throw new ClassNotFoundException(name); }
                     } catch (ClassFormatError e) {
@@ -276,7 +276,16 @@ public class JDClassLoader extends java.lang.ClassLoader {
         }
         return c;
     }
-
+    public String findJar(String name) throws ClassNotFoundException { 
+            JarEntry entry = null;
+            for (JarFile element : jars) {
+                entry = element.getJarEntry(name.replace('.', '/') + ".class");
+                if (entry != null) {
+                    return element.getName();
+                }            
+        }
+       return null;
+    }
     /**
      * Diese Methode lädt eine Klasse aus einer JAR nach
      * 
