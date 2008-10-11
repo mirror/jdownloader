@@ -1,4 +1,4 @@
-﻿addons.jdlowspeed.statusmessage.disabled = Low Speederkennung ausschalten
+addons.jdlowspeed.statusmessage.disabled = Low Speederkennung ausschalten
 addons.jdlowspeed.statusmessage.enabled = Low Speederkennung einschalten
 addons.jdshutdown.menu.disable = Herunterfahren deaktivieren
 addons.jdshutdown.menu.enable = Herunterfahren aktivieren
@@ -1174,4 +1174,3 @@ train.choose.folder = Wählen sie einen Ordner aus
 train.chooser.title = jDownloader - Train All
 train.method = Wählen Sie eine Methode aus:
 wrapper.webupdate.updatefile = Plugin %s aktualisieren
-
