@@ -34,12 +34,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
-import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -94,6 +92,8 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public CountdownConfirmDialog(final Frame owner,final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
         super(owner);
         
+        setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        
         this.owner=owner;
         setModal(true);
         addWindowListener(new WindowListener() {
@@ -105,7 +105,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
             public void windowClosed(WindowEvent e) {
                 window_Closed=true;
-                dispose();
+                setVisible(false);
             }
 
             public void windowClosing(WindowEvent e) {
@@ -170,7 +170,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
                 }
                 result = defaultResult;
-                dispose();
+                setVisible(false);
 
             }
 
@@ -244,7 +244,6 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             btnBAD.addActionListener(this);
             JDUtilities.addToGridBag(this, btnBAD, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
-        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 
         pack();
         setLocation(JDUtilities.getCenterOfComponent(null, this));
@@ -255,20 +254,12 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnCnTh) {
-
             countdownThread = null;
-
         } else if (e.getSource() == btnOK) {
             result = true;
-            dispose();
-           
+            setVisible(false);
         } else if (e.getSource() == btnBAD) {
-
-                    dispose();
-
-        
-            
-       
+                    setVisible(false);
         }
 
         if (countdownThread != null && countdownThread.isAlive()) {
