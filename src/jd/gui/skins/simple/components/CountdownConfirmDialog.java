@@ -34,7 +34,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextPane;
-import javax.swing.WindowConstants;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
@@ -78,72 +77,60 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public boolean window_Closed = false;
     private String titleText;
 
-    private Frame owner;
-
     public CountdownConfirmDialog(Frame owner, String msg, int countdown) {
         this(owner, msg, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_STOP_COUNTDOWN);
     }
+
     public CountdownConfirmDialog(final Frame owner, final String msg, final int countdown, final boolean defaultResult, final int style) {
-        this(owner,null,msg,countdown,defaultResult,style);
+        this(owner, null, msg, countdown, defaultResult, style);
     }
-    public CountdownConfirmDialog(final Frame owner,final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
-        this(owner,title,countdown,defaultResult,style,msg);
+
+    public CountdownConfirmDialog(final Frame owner, final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
+        this(owner, title, countdown, defaultResult, style, msg);
     }
-    public CountdownConfirmDialog(final Frame owner,final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
+
+    public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
         super(owner);
-        
+
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        
-        this.owner=owner;
+
         setModal(true);
         addWindowListener(new WindowListener() {
 
             public void windowActivated(WindowEvent e) {
-                // TODO Auto-generated method stub
-                
             }
 
             public void windowClosed(WindowEvent e) {
-                window_Closed=true;
+                window_Closed = true;
                 setVisible(false);
             }
 
             public void windowClosing(WindowEvent e) {
-                // TODO Auto-generated method stub
-                
             }
 
             public void windowDeactivated(WindowEvent e) {
-                // TODO Auto-generated method stub
-                
             }
 
             public void windowDeiconified(WindowEvent e) {
-                // TODO Auto-generated method stub
-                
             }
 
             public void windowIconified(WindowEvent e) {
-                // TODO Auto-generated method stub
-                
             }
 
             public void windowOpened(WindowEvent e) {
-                // TODO Auto-generated method stub
-                
-            }});
+            }
+        });
         setLayout(new GridBagLayout());
 
         countdownThread = new Thread() {
 
             @Override
             public void run() {
-                
-                while(!isVisible()&&isDisplayable()){
+
+                while (!isVisible() && isDisplayable()) {
                     try {
                         Thread.sleep(50);
                     } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                     }
                 }
@@ -151,22 +138,19 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
                 while (--c >= 0) {
                     if (countdownThread == null) { return; }
-                    if(titleText!=null){
-                         
-                        setTitle(JDUtilities.formatSeconds(c) + " mm:ss  >> "+titleText);
-                    }else{
+                    if (titleText != null) {
+                        setTitle(JDUtilities.formatSeconds(c) + " mm:ss  >> " + titleText);
+                    } else {
                         setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
                     }
 
                     try {
                         Thread.sleep(1000);
-
                     } catch (InterruptedException e) {
                     }
                     if (!isVisible()) {
-                        
-                        return; 
-                        }
+
+                    return; }
 
                 }
                 result = defaultResult;
@@ -175,9 +159,9 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             }
 
         };
-        this.titleText=title;
-      
-        if(title!=null){
+        this.titleText = title;
+
+        if (title != null) {
             this.setTitle(title);
         }
         if ((style & STYLE_MSGLABLE) != 0) {
@@ -195,23 +179,20 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         scrollPane = new JScrollPane(htmlArea);
         JDUtilities.addToGridBag(this, scrollPane, 0, 0, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
 
-        if((style & STYLE_DETAILLABLE) != 0)
-        {
+        if ((style & STYLE_DETAILLABLE) != 0) {
             final JButton btnDetails = new JButton(JDLocale.L("gui.btn_details", "details"));
             final JPanel pan = new JPanel();
-            btnDetails.addActionListener(new ActionListener(){
+            btnDetails.addActionListener(new ActionListener() {
 
                 public void actionPerformed(ActionEvent e) {
                     JTextArea detailLable = new JTextArea();
                     detailLable.setText(msg[1]);
                     detailLable.setEditable(false);
-                
-                    JScrollPane sp = new JScrollPane(detailLable,
-                            JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-                                            JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-                    sp.setPreferredSize(new Dimension(getWidth()-20, 200));
-//                    detailLable.setLineWrap(true);
-                    setSize(new Dimension(getWidth(),getHeight()+200-btnDetails.getHeight() ));
+
+                    JScrollPane sp = new JScrollPane(detailLable, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
+                    sp.setPreferredSize(new Dimension(getWidth() - 20, 200));
+                    // detailLable.setLineWrap(true);
+                    setSize(new Dimension(getWidth(), getHeight() + 200 - btnDetails.getHeight()));
                     pan.remove(btnDetails);
                     pan.invalidate();
                     pan.repaint();
@@ -220,11 +201,10 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                     sp.validate();
                     pan.validate();
                     countdownThread = null;
-                }});
+                }
+            });
             pan.add(btnDetails);
             JDUtilities.addToGridBag(this, pan, 0, 1, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
-
-//            scrollPane = new JScrollPane(htmlArea);
         }
         int d = 0;
         if ((style & STYLE_STOP_COUNTDOWN) != 0) {
@@ -232,15 +212,15 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             btnCnTh.addActionListener(this);
             JDUtilities.addToGridBag(this, btnCnTh, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.WEST);
         }
-        if ((style & STYLE_OK) != 0 ||(style & STYLE_YES) != 0 ) {
-            btnOK = new JButton((style & STYLE_YES) != 0 ? JDLocale.L("gui.btn_yes", "Ja"):JDLocale.L("gui.btn_ok", "OK"));
+        if ((style & STYLE_OK) != 0 || (style & STYLE_YES) != 0) {
+            btnOK = new JButton((style & STYLE_YES) != 0 ? JDLocale.L("gui.btn_yes", "Ja") : JDLocale.L("gui.btn_ok", "OK"));
             btnOK.addActionListener(this);
             getRootPane().setDefaultButton(btnOK);
 
             JDUtilities.addToGridBag(this, btnOK, d++, 2, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
-        if ((style & STYLE_CANCEL) != 0||(style & STYLE_NO) != 0 ) {
-            btnBAD = new JButton((style & STYLE_NO) != 0 ? JDLocale.L("gui.btn_no", "Nein"):JDLocale.L("gui.btn_cancel", "CANCEL"));
+        if ((style & STYLE_CANCEL) != 0 || (style & STYLE_NO) != 0) {
+            btnBAD = new JButton((style & STYLE_NO) != 0 ? JDLocale.L("gui.btn_no", "Nein") : JDLocale.L("gui.btn_cancel", "CANCEL"));
             btnBAD.addActionListener(this);
             JDUtilities.addToGridBag(this, btnBAD, d++, 2, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
         }
@@ -249,7 +229,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         setLocation(JDUtilities.getCenterOfComponent(null, this));
         countdownThread.start();
         setVisible(true);
-     
+
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -259,7 +239,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
             result = true;
             setVisible(false);
         } else if (e.getSource() == btnBAD) {
-                    setVisible(false);
+            setVisible(false);
         }
 
         if (countdownThread != null && countdownThread.isAlive()) {
@@ -270,19 +250,8 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
-
             JLinkButton.openURL(e.getURL());
-
         }
+    }
 
-    }
-    
-    
-    public static void main(String args[]) {
-        
-        CountdownConfirmDialog ccd = new CountdownConfirmDialog(null, "Test1", 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
-        
-        System.out.println(ccd.result);
-        
-    }
 }
