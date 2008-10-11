@@ -1,7 +1,5 @@
 package jd.utils;
 
-import jd.controlling.JDController;
-
 import com.apple.eawt.Application;
 import com.apple.eawt.ApplicationAdapter;
 import com.apple.eawt.ApplicationEvent;
