@@ -62,7 +62,7 @@ public class JDAboutDialog {
         }
     }
 
-    static JFrame getDialog() {
+    public static JFrame getDialog() {
         JFrame dialog = new JFrame();
         dialog.setResizable(false);
         dialog.setAlwaysOnTop(true);
