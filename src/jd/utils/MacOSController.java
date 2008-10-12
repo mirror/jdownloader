@@ -16,29 +16,25 @@ public class MacOSController extends Application {
 
 	
 	public MacOSController() {
-		addApplicationListener(new QuitHandler());
-		addApplicationListener(new AboutHandler());
-		addApplicationListener(new PrefHandler());
+	    setEnabledPreferencesMenu(true);
+	    setEnabledAboutMenu(true);
+		addApplicationListener(new Handler());
 	}
 	
-	class QuitHandler extends ApplicationAdapter {
+	class Handler extends ApplicationAdapter {
 		
 		public void handleQuit(ApplicationEvent e) {
-			JDUtilities.getController().exit();		
+			JDUtilities.getController().exit();
 		}
-	}
-	
-	class AboutHandler extends ApplicationAdapter {
-	    
-	    public void handleAbout(ApplicationEvent e) {
-	        JDAboutDialog.getDialog().setVisible(true);
+		
+		public void handleAbout(ApplicationEvent e) {
+		    e.setHandled(true); 
+            JDAboutDialog.getDialog().setVisible(true);
+        }
+		
+		public void handlePreferences(ApplicationEvent e) {
+		    SimpleGUI.CURRENTGUI.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
 	    }
 	}
-	
-	class PrefHandler extends ApplicationAdapter {
-	    
-	    public void handlePreferences(ApplicationEvent e) {
-	        SimpleGUI.CURRENTGUI.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
-	    }
-	}
+
 }

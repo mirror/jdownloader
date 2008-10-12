@@ -143,7 +143,20 @@ public class Main {
     }
 
     public static void main(String args[]) {
-
+        
+        
+        // Mac specific //
+        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
+            logger.info("apple.laf.useScreenMenuBar=true");
+            logger.info("com.apple.mrj.application.growbox.intrudes=false");
+            logger.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
+            System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            new MacOSController();
+        }
+        
+        
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
                 debug = true;
@@ -250,17 +263,6 @@ public class Main {
             // TODO: handle exception
         }
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
-        // Mac specific //
-        if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
-
-            logger.info("apple.laf.useScreenMenuBar=true");
-            logger.info("com.apple.mrj.application.growbox.intrudes=false");
-            logger.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
-            System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
-            System.setProperty("apple.laf.useScreenMenuBar", "true");
-//            new MacOSController();
-        }
 
         JDTheme.setTheme("default");
         JDSounds.setSoundTheme("default");
