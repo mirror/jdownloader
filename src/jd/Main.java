@@ -56,7 +56,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.MacOSQuitController;
+import jd.utils.MacOSController;
 
 /**
  * @author astaldo/JD-Team
@@ -256,10 +256,10 @@ public class Main {
             logger.info("apple.laf.useScreenMenuBar=true");
             logger.info("com.apple.mrj.application.growbox.intrudes=false");
             logger.info("com.apple.mrj.application.apple.menu.about.name=jDownloader");
-            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "jDownloader111");
             System.setProperty("com.apple.mrj.application.growbox.intrudes", "false");
             System.setProperty("apple.laf.useScreenMenuBar", "true");
-//            new MacOSQuitController();
+//            new MacOSController();
         }
 
         JDTheme.setTheme("default");
