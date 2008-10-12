@@ -16,16 +16,22 @@
 
 package jd.plugins.decrypt;
 
+import java.awt.Point;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class LinkCryptWs extends PluginForDecrypt {
@@ -40,9 +46,43 @@ public class LinkCryptWs extends PluginForDecrypt {
         String parameter = param.toString();
 
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
+
+        br.getPage("http://linkcrypt.ws/download.php?id=" + containerId + "&art=dlc");
+
+        logger.finest("Captcha Protected");
+
+        boolean valid = true;
+        for (int i = 0; i < 5; ++i) {
+            if (br.containsHTML("<b>Bitte klicke auf den offenen Kreis!</b>")) {
+                valid = false;
+                File file = this.getLocalCaptchaFile(this);
+                Form form = br.getForm(0);
+                Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php"));
+                JDUtilities.acquireUserIO_Semaphore();
+                ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
+                if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
+                JDUtilities.releaseUserIO_Semaphore();
+                Point p = d.result;
+                form.put("x", p.x + "");
+                form.put("y", p.y + "");
+                br.submitForm(form);
+            } else {
+                valid = true;
+                break;
+            }
+        }
+
+        if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-        Browser.download(container, "http://linkcrypt.ws/download.php?id=" + containerId + "&art=dlc");
+        
+        /* TODO: Das kann man sicher besser lösen.. bitte mal wer reinschauen */
+        FileOutputStream out = new FileOutputStream(container);
+        for (int i = 0; i < br.toString().length(); i++) {
+            out.write((byte) br.toString().charAt(i));
+        }
+        out.close();
+
         decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
         container.delete();
 
