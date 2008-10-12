@@ -204,12 +204,16 @@ public class Executer extends Thread {
                 logger.severe("Timeout " + waitTimeout + " kill observerthread(error)");
                 sbeObserver.interrupt();
             }
-            exitValue = process.exitValue();
-
+           logger.finer("Destroy Subprocesses if still running.");
             try {
                 process.destroy();
+                
             } catch (Exception e) {
+                e.printStackTrace();
             }
+            exitValue = process.exitValue();
+
+           
         } catch (IOException e1) {
 
             e1.printStackTrace();
