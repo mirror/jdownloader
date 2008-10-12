@@ -91,8 +91,7 @@ public class JDAboutDialog {
                 { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
                 { " Execute", " ---", " hoster, decrypter, addons, ..." },
                 { " ToKaM", " tokam@frogged.de", " Hoster / Decrypter" },
-        // {" uncomment and add your nick"," xxx@yyy.com"," describe
-        // yourself..."},
+                {" gocsp"," ---"," Mac Integration"},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
