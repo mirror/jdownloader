@@ -42,9 +42,11 @@ public class JDPremiumCollector extends PluginOptional {
     private static final String PROPERTY_API_URL = "PROPERTY_API_URL";
     private static final String PROPERTY_LOGIN_USER = "PROPERTY_LOGIN_USER";
     private static final String PROPERTY_LOGIN_PASS = "PROPERTY_LOGIN_PASS";
+    private static final String PROPERTY_ACCOUNTS = "PROPERTY_ACCOUNTS";
 
     public JDPremiumCollector(PluginWrapper wrapper) {
         super(wrapper);
+        initConfigEntries();
     }
 
     @Override
@@ -71,11 +73,15 @@ public class JDPremiumCollector extends PluginOptional {
                     for (String[] acc : accs) {
                         if (acc[3].equalsIgnoreCase(plg.getHost())) {
                             Account account = new Account(acc[1], acc[2]);
-                            try {
-                                AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
-                                if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) accounts.add(account);
-                            } catch (Exception e1) {
-                                e1.printStackTrace();
+                            if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
+                                try {
+                                    AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
+                                    if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) accounts.add(account);
+                                } catch (Exception e1) {
+                                    e1.printStackTrace();
+                                }
+                            } else {
+                                accounts.add(account);
                             }
                         }
                     }
@@ -100,14 +106,14 @@ public class JDPremiumCollector extends PluginOptional {
 
     @Override
     public boolean initAddon() {
-        initConfigEntries();
         return true;
     }
 
     private void initConfigEntries() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_API_URL, "API-URL").setDefaultValue("http://www.yourservicehere.org/api.php"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_LOGIN_USER, "Username").setDefaultValue("YOUR_USER"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_LOGIN_PASS, "Password").setDefaultValue("YOUR_PASS"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_LOGIN_PASS, "Password").setDefaultValue("YOUR_PASS"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS, "Accept only valid and non-expired accounts").setDefaultValue(true));
     }
 
     @Override
