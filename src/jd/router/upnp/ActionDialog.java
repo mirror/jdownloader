@@ -38,6 +38,7 @@ public class ActionDialog extends JDialog implements ActionListener {
     private ArgumentList inArgList;
     private Vector<JTextField> inArgFieldList;
 
+    @SuppressWarnings("unchecked")
     public ActionDialog(Frame frame, Action action) {
         super(frame, true);
         getContentPane().setLayout(new BorderLayout());

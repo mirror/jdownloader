@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 
 import jd.http.HTTPConnection;
+import jd.http.Request;
+import jd.parser.Form;
 import jd.parser.Regex;
 
 /**
@@ -43,11 +45,23 @@ public class RequestInfo {
      * Der Quelltext der Seite
      */
     private String htmlCode = null;
+    /**
+     * Die (Soll)Adresse der Seite
+     */
+    private String location = null;
+    private Request request;
+    /**
+     * Der zurückgelieferte Code
+     */
+    private int responseCode;
 
     public RequestInfo(String htmlCode, String location, String cookie, Map<String, List<String>> headers, int responseCode) {
         this.htmlCode = htmlCode;
+        this.location = location;
         this.cookie = cookie;
         this.headers = headers;
+        this.responseCode = responseCode;
+
     }
 
     public boolean containsHTML(String pattern) {
@@ -65,6 +79,32 @@ public class RequestInfo {
         return cookie;
     }
 
+    /**
+     * gibt den ersten Match aus
+     */
+    public String getFirstMatch(String pattern) {
+        return getRegexp(pattern).getMatch(0);
+    }
+
+    /**
+     * gibt die erste Form der requestInfo aus
+     * 
+     * @return
+     */
+    public Form getForm() {
+        return getForms()[0];
+    }
+
+    /**
+     * gibt die Forms der requestInfo aus
+     * 
+     * @param pattern
+     * @return
+     */
+    public Form[] getForms() {
+        return Form.getForms(this);
+    }
+
     public Map<String, List<String>> getHeaders() {
         return headers;
     }
@@ -73,18 +113,63 @@ public class RequestInfo {
         return htmlCode;
     }
 
+    public String getLocation() {
+        return location;
+    }
+
     /**
      * Macht einen Regexp auf die requestInfo
      * 
      * @param pattern
      * @return
      */
-    public Regex getRegex(String pattern) {
+    public Regex getRegexp(String pattern) {
         return new Regex(this, pattern);
+    }
+
+    public Request getRequest() {
+        return request;
+    }
+
+    public int getResponseCode() {
+        return responseCode;
+    }
+
+    /**
+     * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder
+     * nicht. HTTP Codes zwischen -2 und 499 gelten als erfolgreich Negative
+     * Codes beudeuten dass der Server ( wie es z.B. machne Router HTTP Server
+     * machen) keinen responseCode zurückgegeben hat). In diesem Fall wird
+     * trotzdem true zurückgegeben
+     * 
+     * 
+     * @return Wahr, wenn der HTTP Code zwischen -2 und 499 lag
+     */
+    public boolean isOK() {
+        if (responseCode > -2 && responseCode < 500) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public void setConnection(HTTPConnection connection) {
         this.connection = connection;
+    }
+
+    /**
+     * Setzt den htmlCode kann z.B. bei der Form zum Einsatz kommen wenn ein
+     * JavaScript die Form verändert
+     * 
+     * @param htmlCode
+     */
+    public void setHtmlCode(String htmlCode) {
+        this.htmlCode = htmlCode;
+    }
+
+    public void setRequest(Request request) {
+        this.request = request;
+
     }
 
     @Override

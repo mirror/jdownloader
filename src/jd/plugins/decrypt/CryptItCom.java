@@ -17,9 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,6 +26,7 @@ import jd.PluginWrapper;
 import jd.crypt.AESdecrypt;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -52,7 +50,7 @@ public class CryptItCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private ArrayList<DownloadLink> containerStep(CryptedLink param) throws DecrypterException {
+    private ArrayList<DownloadLink> containerStep(CryptedLink param) throws Exception {
         String parameter = param.toString();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
@@ -60,49 +58,35 @@ public class CryptItCom extends PluginForDecrypt {
         parameter = parameter.replace("/e/", "/d/");
         parameter = parameter.replace("ccf://", "http://");
 
-        try {
+        HTTPConnection con = br.openGetConnection(parameter);
 
-            RequestInfo requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), null, null, null, true);
-
-            if (requestInfo.getConnection().getContentType().indexOf("text/html") >= 0) {
-                requestInfo = HTTP.readFromURL(requestInfo.getConnection());
-                String cookie = requestInfo.getCookie();
-                if (requestInfo.containsHTML(PATTERN_PW)) {
-
-                    String pass = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
-                    String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
-                    requestInfo = HTTP.postRequest(new URL(parameter), requestInfo.getCookie(), parameter, null, postData, false);
-                    if (requestInfo.containsHTML(PATTERN_PW)) {
-                        logger.warning("Password wrong");
-                        return decryptedLinks;
-                    }
+        if (con.getContentType().indexOf("text/html") >= 0) {
+            logger.info(br.loadConnection(con));
+            if (br.containsHTML(PATTERN_PW)) {
+                String pass = getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), param.getDecrypterPassword(), param);
+                String postData = "a=pw&pw=" + Encoding.urlEncode(pass);
+                br.postPage(parameter, postData);
+                if (br.containsHTML(PATTERN_PW)) {
+                    logger.warning("Password wrong");
+                    return decryptedLinks;
                 }
-                parameter = parameter.replace("/c/", "/d/");
-                requestInfo = HTTP.getRequestWithoutHtmlCode(new URL(parameter), cookie, null, null, true);
             }
+            parameter = parameter.replace("/c/", "/d/");
+            con = br.openGetConnection(parameter);
+        }
 
-            String name = Plugin.getFileNameFormHeader(requestInfo.getConnection());
+        String name = Plugin.getFileNameFormHeader(con);
 
-            if (name.equals("redir.ccf") || !name.contains(".ccf")) {
-                logger.severe("Container not found");
-                return null;
-            }
-
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-            Browser.download(container, requestInfo.getConnection());
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-            container.delete();
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (name.equals("redir.ccf") || !name.contains(".ccf")) {
+            logger.severe("Container not found");
             return null;
         }
+
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+        Browser.download(container, con);
+        decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+        container.delete();
+
         return decryptedLinks;
     }
 

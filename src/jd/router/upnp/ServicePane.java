@@ -11,7 +11,6 @@ package jd.router.upnp;
  ******************************************************************/
 
 import java.awt.BorderLayout;
-import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -52,14 +51,6 @@ public class ServicePane extends JPanel implements ActionListener {
         buttonPane.add(unsubscribeButton);
         unsubscribeButton.addActionListener(this);
         add(buttonPane, BorderLayout.SOUTH);
-    }
-
-    // //////////////////////////////////////////////
-    // Frame
-    // //////////////////////////////////////////////
-
-    private Frame getFrame() {
-        return (Frame) getRootPane().getParent();
     }
 
     // //////////////////////////////////////////////
