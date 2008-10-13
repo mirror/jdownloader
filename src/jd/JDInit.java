@@ -786,8 +786,8 @@ public class JDInit {
         if (remove != null) {
             for (String file : remove) {
                 if (file.length() == 0) continue;
-                File delete = new File(homedir, file);
                 if (!file.matches(".*?" + File.separator + "?\\.+" + File.separator + ".*?")) {
+                    File delete = new File(homedir, file);
                     if (JDUtilities.removeDirectoryOrFile(delete)) logger.warning("Removed " + file);
                 }
             }

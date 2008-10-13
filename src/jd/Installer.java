@@ -41,22 +41,15 @@ public class Installer {
 
     private static final long serialVersionUID = 8764525546298642601L;
 
-    // private Logger logger = JDUtilities.getLogger();
-
     private boolean aborted = false;
 
     public Installer() {
-
-        super();
-        ConfigEntry ce;
         ConfigContainer configContainer;
 
         configContainer = new ConfigContainer(this, "Language");
-        ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault());
-        configContainer.addEntry(ce);
+        configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
         showPanel(configContainer);
-        String lang = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE);
-        if (lang == null) {
+        if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE) == null) {
             JDUtilities.getLogger().severe("language not set");
             this.aborted = true;
             return;
@@ -64,17 +57,14 @@ public class Installer {
         JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, "english"));
 
         configContainer = new ConfigContainer(this, "Download");
-
-        ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
-        configContainer.addEntry(ce);
-
+        configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath()));
         showPanel(configContainer);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
-            this.aborted = true;
-
             JDUtilities.getLogger().severe("downloaddir not set");
+            this.aborted = true;
             return;
         }
+
         JDUtilities.saveConfig();
     }
 
@@ -82,15 +72,14 @@ public class Installer {
         ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer);
 
         JPanel panel = new JPanel(new BorderLayout());
-        JPanel topPanel = new JPanel();
-        panel.add(topPanel, BorderLayout.NORTH);
+        panel.add(new JPanel(), BorderLayout.NORTH);
         panel.add(cpanel, BorderLayout.CENTER);
+
         ConfigurationPopup pop = new ConfigurationPopup(null, cpanel, panel);
         pop.setModal(true);
         pop.setAlwaysOnTop(true);
         pop.setLocation(JDUtilities.getCenterOfComponent(null, pop));
         pop.setVisible(true);
-
     }
 
     public boolean isAborted() {
