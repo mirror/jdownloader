@@ -151,7 +151,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsOptional.get(table.getSelectedRow()).getPlugin());
+        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig());
     }
 
     @Override

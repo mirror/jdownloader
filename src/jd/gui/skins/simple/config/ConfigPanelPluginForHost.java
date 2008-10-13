@@ -198,7 +198,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForHost.get(table.getSelectedRow()).getPlugin());
+        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig());
     }
 
     private void loadEntry() {

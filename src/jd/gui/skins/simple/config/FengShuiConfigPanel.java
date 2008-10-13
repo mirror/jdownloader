@@ -95,7 +95,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     private static final String PUSHGAP = " :70";
     private static FengShuiConfigPanel instance;
 
-    private JButton more, apply, cancel, premium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
+    private JButton btnMore, btnApply, btnCancel, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
     private JComboBox languages;
     private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
     private Configuration config = JDUtilities.getConfiguration();
@@ -134,18 +134,18 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == cancel)
+        if (e.getSource() == btnCancel)
             dispose();
-        else if (e.getSource() == more) {
+        else if (e.getSource() == btnMore) {
             save();
             dispose();
 
             SimpleGUI.CURRENTGUI.getGuiConfig().setProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, false);
             SimpleGUI.CURRENTGUI.showConfig();
-        } else if (e.getSource() == apply) {
+        } else if (e.getSource() == btnApply) {
             save();
             dispose();
-        } else if (e.getSource() == premium) {
+        } else if (e.getSource() == btnPremium) {
             JPopupMenu popup = new JPopupMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
             for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
                 HostPluginWrapper wrapper = it.next();
@@ -230,8 +230,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             }.start();
         } else if (e.getSource() == btnAutoConfig) {
             GetRouterInfo.autoConfig(password, username, ip, this);
-        }
-        if (e.getSource() == btnSelectRouter) {
+        } else if (e.getSource() == btnSelectRouter) {
             Vector<String[]> scripts = new HTTPLiveHeader().getLHScripts();
 
             Collections.sort(scripts, new Comparator<String[]>() {
@@ -521,11 +520,11 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
         // premium = new JButton(JDLocale.L("gui.menu.plugins.phost",
         // "Premium Hoster"));
-        premium = new JButton("Einstellungen");
-        premium.addActionListener(this);
+        btnPremium = new JButton("Einstellungen");
+        btnPremium.addActionListener(this);
 
         addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.next"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
-        addComponents(panel, JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), premium, GAPLEFT + GAPRIGHT + ", w pref!, wrap" + PUSHGAP);
+        addComponents(panel, JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"), btnPremium, GAPLEFT + GAPRIGHT + ", w pref!, wrap" + PUSHGAP);
 
         JLinkButton label;
         try {
@@ -586,12 +585,12 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
         JPanel bpanel = new JPanel(new MigLayout(DEBUG));
         bpanel.add(new JSeparator(), "spanx, pushx, growx");
-        bpanel.add(more = new JButton(JDLocale.L("gui.config.fengshui.expertview", "expert view")), "tag help2");
-        more.addActionListener(this);
-        bpanel.add(apply = new JButton(JDLocale.L("gui.btn_save", "save")), "w pref!, tag apply");
-        apply.addActionListener(this);
-        bpanel.add(cancel = new JButton(JDLocale.L("gui.btn_cancel", "cancel")), "w pref!, tag cancel, wrap");
-        cancel.addActionListener(this);
+        bpanel.add(btnMore = new JButton(JDLocale.L("gui.config.fengshui.expertview", "expert view")), "tag help2");
+        btnMore.addActionListener(this);
+        bpanel.add(btnApply = new JButton(JDLocale.L("gui.btn_save", "save")), "w pref!, tag apply");
+        btnApply.addActionListener(this);
+        bpanel.add(btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "cancel")), "w pref!, tag cancel, wrap");
+        btnCancel.addActionListener(this);
         panel.add(bpanel, "dock south, spanx, pushx, growx");
 
         return panel;

@@ -16,15 +16,12 @@
 
 package jd.plugins;
 
-import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
-
-import javax.swing.JPanel;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -33,8 +30,6 @@ import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
-import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.download.DownloadInterface;
@@ -102,30 +97,21 @@ public abstract class PluginForHost extends Plugin {
     @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
-            ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config);
-
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.add(new JPanel(), BorderLayout.NORTH);
-            panel.add(cpanel, BorderLayout.CENTER);
-            ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel);
-            pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
-            pop.setVisible(true);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), config);
+            return;
         }
+
         ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
         if (e.getID() >= 200) {
             int accountID = e.getID() - 200;
             Account account = accounts.get(accountID);
             JDUtilities.getGUI().showAccountInformation(this, account);
-            return;
-        }
-
-        if (e.getID() >= 100) {
+        } else if (e.getID() >= 100) {
             int accountID = e.getID() - 100;
             Account account = accounts.get(accountID);
 
             account.setEnabled(!account.isEnabled());
             getPluginConfig().save();
-            return;
         }
 
     }
@@ -430,7 +416,7 @@ public abstract class PluginForHost extends Plugin {
             }
         }
         if (account != null) {
-            try {                
+            try {
                 handlePremium(downloadLink, account);
                 if (dl != null && dl.getConnection() != null) {
                     try {

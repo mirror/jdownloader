@@ -118,7 +118,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     private void editEntry() {
-        SimpleGUI.showPluginConfigDialog(JDUtilities.getParentFrame(this), pluginsForDecrypt.get(table.getSelectedRow()).getPlugin());
+        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig());
     }
 
     private void loadEntry() {

@@ -16,17 +16,12 @@
 
 package jd;
 
-import java.awt.BorderLayout;
 import java.util.Locale;
-
-import javax.swing.JPanel;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
-import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -48,7 +43,7 @@ public class Installer {
 
         configContainer = new ConfigContainer(this, "Language");
         configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
-        showPanel(configContainer);
+        SimpleGUI.showConfigDialog(null, configContainer);
         if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE) == null) {
             JDUtilities.getLogger().severe("language not set");
             this.aborted = true;
@@ -58,7 +53,7 @@ public class Installer {
 
         configContainer = new ConfigContainer(this, "Download");
         configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath()));
-        showPanel(configContainer);
+        SimpleGUI.showConfigDialog(null, configContainer);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
             JDUtilities.getLogger().severe("downloaddir not set");
             this.aborted = true;
@@ -66,20 +61,6 @@ public class Installer {
         }
 
         JDUtilities.saveConfig();
-    }
-
-    private void showPanel(ConfigContainer configContainer) {
-        ConfigEntriesPanel cpanel = new ConfigEntriesPanel(configContainer);
-
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(new JPanel(), BorderLayout.NORTH);
-        panel.add(cpanel, BorderLayout.CENTER);
-
-        ConfigurationPopup pop = new ConfigurationPopup(null, cpanel, panel);
-        pop.setModal(true);
-        pop.setAlwaysOnTop(true);
-        pop.setLocation(JDUtilities.getCenterOfComponent(null, pop));
-        pop.setVisible(true);
     }
 
     public boolean isAborted() {

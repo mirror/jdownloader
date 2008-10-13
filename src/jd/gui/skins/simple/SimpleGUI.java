@@ -80,6 +80,7 @@ import javax.swing.event.MenuListener;
 import jd.HostPluginWrapper;
 import jd.JDFileFilter;
 import jd.OptionalPluginWrapper;
+import jd.config.ConfigContainer;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.Property;
@@ -1703,15 +1704,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return TwoTextFieldDialog.showDialog(getFrame(), title, questionOne, questionTwo, defaultOne, defaultTwo);
     }
 
-    public static void showPluginConfigDialog(Frame parent, Plugin plugin) {
-        // logger.info("PluginConfigDialog");
-        ConfigPanel config = new ConfigEntriesPanel(plugin.getConfig());
+    public static void showConfigDialog(Frame parent, ConfigContainer container) {
+        // logger.info("ConfigDialog");
+        ConfigPanel config = new ConfigEntriesPanel(container);
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JPanel(), BorderLayout.NORTH);
         panel.add(config, BorderLayout.CENTER);
 
         ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
+        pop.setModal(true);
+        pop.setAlwaysOnTop(true);
         pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
         pop.setVisible(true);
     }
