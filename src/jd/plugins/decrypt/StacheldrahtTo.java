@@ -16,19 +16,15 @@
 
 package jd.plugins.decrypt;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 
 public class StacheldrahtTo extends PluginForDecrypt {
 
@@ -41,45 +37,23 @@ public class StacheldrahtTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            RequestInfo ri = HTTP.getRequest(new URL(parameter));
-            String cookie = ri.getCookie().split(";")[0];
-            String links[][] = new Regex(ri.getHtmlCode(), "var InputVars = \"(.*?)\"", Pattern.CASE_INSENSITIVE).getMatches();
+        br.getPage(parameter);
+        String links[] = br.getRegex("var InputVars = \"(.*?)\"").getColumn(0);
 
-            progress.setRange(links.length / 2);
-            for (int i = 0; i < links.length; i = i + 2) {
-                HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links[i][0]).openConnection());
-                httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
-                httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
-                httpConnection.setRequestMethod("GET");
-                httpConnection.setInstanceFollowRedirects(true);
-                httpConnection.setRequestProperty("Host", "stacheldraht.to");
-                httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-                httpConnection.setRequestProperty("Accept", "text/javascript, text/html, application/xml, text/xml, */*");
-                httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-                httpConnection.setRequestProperty("Accept-Encoding", "gzip,deflate");
-                httpConnection.setRequestProperty("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-                httpConnection.setRequestProperty("Keep-Alive", "300");
-                httpConnection.setRequestProperty("X-Requested-With", "XMLHttpRequest");
-                httpConnection.setRequestProperty("X-Prototype-Version", "1.6.0.2");
-                httpConnection.setRequestProperty("Referer", parameter);
-                httpConnection.setRequestProperty("Cookie", cookie);
-                RequestInfo reqinfo = HTTP.readFromURL(httpConnection);
-                reqinfo.setConnection(httpConnection);
+        progress.setRange(links.length / 2);
+        for (int i = 0; i < links.length; i = i + 2) {
+            HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links[i]).openConnection());
+            httpConnection.setRequestMethod("GET");
+            httpConnection.setInstanceFollowRedirects(true);
+            httpConnection.setRequestProperty("Host", "stacheldraht.to");
+            httpConnection.setRequestProperty("X-Requested-With", "XMLHttpRequest");
+            httpConnection.setRequestProperty("X-Prototype-Version", "1.6.0.2");
 
-                progress.increase(1);
-                decryptedLinks.add(createDownloadlink(reqinfo.getHtmlCode().trim()));
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
+            decryptedLinks.add(createDownloadlink(br.loadConnection(httpConnection).trim()));
+            progress.increase(1);
         }
-        return decryptedLinks;
-    }
 
-    @Override
-    public String getCoder() {
-        return "JD-Team";
+        return decryptedLinks;
     }
 
     @Override
