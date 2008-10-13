@@ -37,6 +37,7 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
+@Deprecated
 public class HTTP {
 
     public static int getConnectTimeoutFromConfiguration() {
