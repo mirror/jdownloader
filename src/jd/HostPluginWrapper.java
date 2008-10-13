@@ -70,4 +70,8 @@ public class HostPluginWrapper extends PluginWrapper {
         super.getPluginConfig().save();
     }
 
+    public boolean isPremiumEnabled() {
+        return this.isLoaded() && this.getPlugin().isPremiumEnabled();
+    }
+
 }

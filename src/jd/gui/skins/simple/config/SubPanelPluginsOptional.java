@@ -132,14 +132,15 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             editEntry();
         } else if (e.getSource() == enableDisable) {
             int rowIndex = table.getSelectedRow();
-            boolean b = configuration.getBooleanProperty(pluginsOptional.get(rowIndex).getConfigParamKey(), false);
-            configuration.setProperty(pluginsOptional.get(rowIndex).getConfigParamKey(), !b);
+            OptionalPluginWrapper plgWrapper = pluginsOptional.get(rowIndex);
+            boolean b = configuration.getBooleanProperty(plgWrapper.getConfigParamKey(), false);
+            configuration.setProperty(plgWrapper.getConfigParamKey(), !b);
             tableModel.fireTableRowsUpdated(rowIndex, rowIndex);
             table.getSelectionModel().setSelectionInterval(rowIndex, rowIndex);
             if (!b) {
-                pluginsOptional.get(rowIndex).getPlugin().initAddon();
+                plgWrapper.getPlugin().initAddon();
             } else {
-                pluginsOptional.get(rowIndex).getPlugin().onExit();
+                plgWrapper.getPlugin().onExit();
             }
             ((SimpleGUI) JDUtilities.getGUI()).createOptionalPluginsMenuEntries();
         } else if (e.getSource() == openPluginDir) {
@@ -169,7 +170,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).hasConfig());
+                btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
         // table.setDefaultRenderer(Object.class, new
@@ -216,7 +217,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     }
 
     public void mouseClicked(MouseEvent e) {
-        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).hasConfig()) {
+        if (e.getClickCount() > 1 && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0) {
             editEntry();
         }
     }

@@ -595,4 +595,8 @@ public abstract class PluginForHost extends Plugin {
         return this.premiumurl;
     }
 
+    public boolean isPremiumEnabled() {
+        return enablePremium;
+    }
+
 }

@@ -24,7 +24,7 @@ public class Account extends Property {
     private String user;
     private String pass;
 
-    private boolean enabled = false;
+    private boolean enabled = true;
     private String status = null;
     private transient boolean tempDisabled = false;
 

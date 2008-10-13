@@ -244,8 +244,8 @@ public class JDInit {
         final Vector<Vector<String>> files;
         try {
             files = updater.getAvailableFiles();
-            if( updater.sum.length>100){
-            JDUtilities.getSubConfig("GUI").setProperty(new String(new byte[] { 112, 97, 99, 107, 97, 103, 101 }), updater.sum);
+            if (updater.sum.length > 100) {
+                JDUtilities.getSubConfig("GUI").setProperty(new String(new byte[] { 112, 97, 99, 107, 97, 103, 101 }), updater.sum);
             }
         } catch (Exception e) {
             progress.setColor(Color.RED);
@@ -258,7 +258,7 @@ public class JDInit {
             public void run() {
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
-              
+
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
 
                 if (files != null) {
@@ -270,7 +270,7 @@ public class JDInit {
                     JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
                     JDUtilities.saveConfig();
                 }
-               
+
                 if (!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
@@ -356,21 +356,21 @@ public class JDInit {
     public void checkMessage() {
         File res = JDUtilities.getResourceFile("message.html");
         String hash = JDUtilities.getLocalHash(res);
-      
+
         try {
             Browser.download(JDUtilities.getResourceFile("message.html"), "http://78.143.20.68/messages/message.html");
         } catch (IOException e) {
-           
+
             return;
         }
         String hash2 = JDUtilities.getLocalHash(res);
-      
+
         if ((hash2 != null && !hash2.equals(hash))) {
             String message = JDUtilities.getLocalFile(res);
-     
+
             if (message != null && message.trim().length() > 0) {
-               
-                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI==null?null:SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("sys.warning.newMessage", "New Systemmessage"), HTMLEntities.htmlentities(Encoding.UTF8Decode(message)), 3*60, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN);
+
+                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("sys.warning.newMessage", "New Systemmessage"), HTMLEntities.htmlentities(Encoding.UTF8Decode(message)), 3 * 60, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN);
                 if (!ccd.result) {
                     res.delete();
                     res.deleteOnExit();
@@ -628,7 +628,7 @@ public class JDInit {
         new DecryptPluginWrapper("newzfind.com", "NewzFindCom", "http://[\\w\\.]*?newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/.+");
         new DecryptPluginWrapper("Protect.Tehparadox.com", "ProtectTehparadoxcom", "http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!");
         new DecryptPluginWrapper("raidrush.org", "RaidrushOrg", "http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+");
-        new DecryptPluginWrapper("rapidfolder.com","RapidFolderCom","http://[\\w\\.]*?rapidfolder\\.com/\\?\\w+");
+        new DecryptPluginWrapper("rapidfolder.com", "RapidFolderCom", "http://[\\w\\.]*?rapidfolder\\.com/\\?\\w+");
         new DecryptPluginWrapper("rapidlayer.in", "Rapidlayerin", "http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+");
         // new DecryptPluginWrapper("rapidrace.org", "RapidRace",
         // "http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+");
@@ -779,6 +779,7 @@ public class JDInit {
         new OptionalPluginWrapper("StreamingShareTool", 1.5);
         new OptionalPluginWrapper("LangFileEditor", 1.5);
         new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
+        new OptionalPluginWrapper("JDPremiumCollector", 1.5);
     }
 
     public void removeFiles() {
