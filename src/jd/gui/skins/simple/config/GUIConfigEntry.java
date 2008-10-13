@@ -504,12 +504,7 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             ((JComboBox) input[0]).setSelectedItem(text);
             break;
         case ConfigContainer.TYPE_COMBOBOX_INDEX:
-            // TODO: Kann bald weg ?
-            if (text instanceof Integer) {
-                ((JComboBox) input[0]).setSelectedIndex((Integer) text);
-            } else {
-                ((JComboBox) input[0]).setSelectedItem(text);
-            }
+            ((JComboBox) input[0]).setSelectedIndex((Integer) text);
             break;
         case ConfigContainer.TYPE_LABEL:
             break;
