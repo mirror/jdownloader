@@ -1705,6 +1705,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static void showConfigDialog(Frame parent, ConfigContainer container) {
+        showConfigDialog(parent, container, false);
+    }
+
+    public static void showConfigDialog(Frame parent, ConfigContainer container, boolean alwaysOnTop) {
         // logger.info("ConfigDialog");
         ConfigPanel config = new ConfigEntriesPanel(container);
 
@@ -1714,7 +1718,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
         pop.setModal(true);
-        pop.setAlwaysOnTop(true);
+        pop.setAlwaysOnTop(alwaysOnTop);
         pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
         pop.setVisible(true);
     }
