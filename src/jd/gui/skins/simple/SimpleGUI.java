@@ -281,17 +281,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         public void setText(String text) {
-            /*
-             * if((text == JDLocale.L("sys.message.welcome",
-             * "Welcome to JDownloader"))||(text == null)) { //TODO: Schrift bei
-             * Twitter-Meldung fett setzen & wieder zurückCode unten sollte
-             * funktionieren, tut es aber nicht :-/ lblMessage.setFont(new
-             * Font(lblMessage.getFont().getFontName(),Font.PLAIN,
-             * lblMessage.getFont().getSize())); } else { lblMessage.setFont(new
-             * Font(lblMessage.getFont().getFontName(), Font.BOLD,
-             * lblMessage.getFont().getSize())); }
-             */
-
             lblMessage.setText((text == null) ? JDLocale.L("sys.message.welcome", "Welcome to JDownloader") : text);
         }
 
@@ -762,7 +751,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     EventQueue.invokeLater(new Runnable() {
                         public void run() {
                             // System.out.println("trigger");
-                            SimpleGUI.CURRENTGUI.statusBar.setText(twitterText);
+                            setStatusBarText(twitterText);
                         }
                     });
                     try {
@@ -1119,9 +1108,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Aktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction start. ");
-                        statusBar.setText("Interaction: " + ((Interaction) event.getSource()).getInteractionName());
-                        frame.setTitle(JDUtilities.JD_TITLE + " |Aktion: " + ((Interaction) event.getSource()).getInteractionName());
-
+                        setStatusBarText("Interaction: " + ((Interaction) event.getSource()).getInteractionName());
+                        frame.setTitle(JDUtilities.JD_TITLE + " | Aktion: " + ((Interaction) event.getSource()).getInteractionName());
                     }
                     break;
                 case ControlEvent.CONTROL_SYSTEM_EXIT:
@@ -1136,7 +1124,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                             public void run() {
                                 EventQueue.invokeLater(new Runnable() {
                                     public void run() {
-                                        statusBar.setText(JDTwitter.RefreshTwitterMessage());
+                                        setStatusBarText(JDTwitter.RefreshTwitterMessage());
                                     }
                                 });
                             }
@@ -1882,6 +1870,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public SubConfiguration getGuiConfig() {
         return guiConfig;
+    }
+
+    public void setStatusBarText(String text) {
+        statusBar.setText(text);
     }
 
 }
