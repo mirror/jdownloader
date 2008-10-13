@@ -56,22 +56,22 @@ public class RapidsafeDe extends PluginForDecrypt {
 
             String cookie = ri.getCookie();
 
-            String[] dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?)=(.*?)&t=(.*?)','(.*?)'\\);").getRow(0);
-            ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "=" + dat[1] + "&t=" + dat[2], false);
+            String dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?=.*?&t=.*?)','.*?'\\);").getMatch(0);
+            ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat, false);
 
-            dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?)&adminlogin='").getRow(0);
-            ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1", false);
+            dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?)&adminlogin='").getMatch(0);
+            ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat + "&f=1", false);
 
-            ArrayList<String[]> flash = new ArrayList<String[]>();
-            String[][] flashsites = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getMatches();
+            ArrayList<String> flash = new ArrayList<String>();
+            String[] flashsites = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
             for (int i = 0; i < flashsites.length; i++) {
                 flash.add(flashsites[i]);
             }
 
             String[][] helpsites = new Regex(ri.getHtmlCode(), "onclick=\"RapidSafePSC\\('(.*?)&start=(.*?)','").getMatches();
             for (int i = 0; i < helpsites.length; i++) {
-                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1&start=" + helpsites[i][1], false);
-                String[][] helpflash = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getMatches();
+                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat + "&f=1&start=" + helpsites[i][1], false);
+                String[] helpflash = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
 
                 for (int j = 0; j < helpflash.length; j++) {
                     flash.add(helpflash[j]);
@@ -86,7 +86,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                 String[] search2 = new String[0];
                 while (repeat) {
                     try {
-                        HTTPConnection con = new HTTPConnection(new URL(parameter + flash.get(flashcounter)[0]).openConnection());
+                        HTTPConnection con = new HTTPConnection(new URL(parameter + flash.get(flashcounter)).openConnection());
                         con.setRequestProperty("Cookie", cookie);
                         con.setRequestProperty("Referer", parameter);
 
