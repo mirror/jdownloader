@@ -18,7 +18,6 @@ package jd.plugins.decrypt;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,10 +27,7 @@ import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
-import jd.plugins.HTTP;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
-import jd.utils.JDUtilities;
 
 public class RapidsafeDe extends PluginForDecrypt {
 
@@ -48,30 +44,25 @@ public class RapidsafeDe extends PluginForDecrypt {
             parameter += "/";
         }
         try {
-            HTTP.setReadTimeout(120000);
-            HTTP.setConnectTimeout(120000);
-            JDUtilities.getSubConfig("DOWNLOAD").save();
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
 
-            RequestInfo ri = HTTP.getRequest(new URL(parameter));
+            String dat = br.getRegex("RapidSafePSC\\('(.*?=.*?&t=.*?)','.*?'\\);").getMatch(0);
+            br.postPage(parameter, dat);
 
-            String cookie = ri.getCookie();
-
-            String dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?=.*?&t=.*?)','.*?'\\);").getMatch(0);
-            ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat, false);
-
-            dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?)&adminlogin='").getMatch(0);
-            ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat + "&f=1", false);
+            dat = br.getRegex("RapidSafePSC\\('(.*?)&adminlogin='").getMatch(0);
+            br.postPage(parameter, dat + "&f=1");
 
             ArrayList<String> flash = new ArrayList<String>();
-            String[] flashsites = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
+            String[] flashsites = br.getRegex("<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
             for (int i = 0; i < flashsites.length; i++) {
                 flash.add(flashsites[i]);
             }
 
-            String[][] helpsites = new Regex(ri.getHtmlCode(), "onclick=\"RapidSafePSC\\('(.*?)&start=(.*?)','").getMatches();
+            String[][] helpsites = br.getRegex("onclick=\"RapidSafePSC\\('(.*?)&start=(.*?)','").getMatches();
             for (int i = 0; i < helpsites.length; i++) {
-                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat + "&f=1&start=" + helpsites[i][1], false);
-                String[] helpflash = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
+                br.postPage(parameter, dat + "&f=1&start=" + helpsites[i][1]);
+                String[] helpflash = br.getRegex("<param name=\"movie\" value=\"/(.*?)\" />").getColumn(0);
 
                 for (int j = 0; j < helpflash.length; j++) {
                     flash.add(helpflash[j]);
@@ -86,9 +77,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                 String[] search2 = new String[0];
                 while (repeat) {
                     try {
-                        HTTPConnection con = new HTTPConnection(new URL(parameter + flash.get(flashcounter)).openConnection());
-                        con.setRequestProperty("Cookie", cookie);
-                        con.setRequestProperty("Referer", parameter);
+                        HTTPConnection con = br.openGetConnection(parameter + flash.get(flashcounter));
 
                         BufferedInputStream input = new BufferedInputStream(con.getInputStream());
                         StringBuffer sb = new StringBuffer();
@@ -118,7 +107,6 @@ public class RapidsafeDe extends PluginForDecrypt {
                     } catch (NumberFormatException e) {
                         logger.info("Error while parsing. Loading flash again!");
                     }
-
                 }
 
                 long ax5 = zaehler[0];
@@ -143,8 +131,8 @@ public class RapidsafeDe extends PluginForDecrypt {
 
                 postdata = new Regex(postdata, "RapidSafePSC\\('(.*?)'", 0).getMatch(0);
 
-                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, postdata, false);
-                Map<String, List<String>> headers = ri.getHeaders();
+                br.postPage(parameter, postdata);
+                Map<String, List<String>> headers = br.getHttpConnection().getHeaderFields();
                 String content = "";
 
                 int counter = 0;

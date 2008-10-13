@@ -19,7 +19,6 @@ package jd.plugins;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,6 +42,10 @@ public class HTTP {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
     }
 
+    public static int getReadTimeoutFromConfiguration() {
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
+    }
+
     /**
      * @author JD-Team Gibt den kompletten Cookiestring zurück, auch wenn die
      *         Cookies über mehrere Header verteilt sind
@@ -63,10 +66,6 @@ public class HTTP {
             // TODO: handle exception
         }
         return cookie;
-    }
-
-    public static int getReadTimeoutFromConfiguration() {
-        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
 
     /**
@@ -137,59 +136,6 @@ public class HTTP {
      * @return requestinfos mit headerfields. HTML text wird nicht!! geladen
      * @throws IOException
      */
-    public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect) throws IOException {
-        return HTTP.getRequestWithoutHtmlCode(link, cookie, referrer, redirect, HTTP.getReadTimeoutFromConfiguration(), HTTP.getConnectTimeoutFromConfiguration());
-
-    }
-
-    public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
-        // logger.finer("get: "+link);
-        // long timer = System.currentTimeMillis();
-        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
-        httpConnection.setReadTimeout(readTimeout);
-        httpConnection.setConnectTimeout(requestTimeout);
-        httpConnection.setInstanceFollowRedirects(redirect);
-        // wenn referrer nicht gesetzt wurde nimmt er den host als referer
-        if (referrer != null) {
-            httpConnection.setRequestProperty("Referer", referrer);
-        } else {
-            httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        }
-        if (cookie != null) {
-            httpConnection.setRequestProperty("Cookie", cookie);
-        }
-        // TODO User-Agent als Option ins menu
-        // hier koennte man mit einer kleinen Datenbank den User-Agent rotieren
-        // lassen
-        // so ist das Programm nicht so auffallig
-        httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
-        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        String location = httpConnection.getHeaderField("Location");
-        String setcookie = HTTP.getCookieString(httpConnection);
-        int responseCode = 0;
-        try {
-            responseCode = httpConnection.getResponseCode();
-        } catch (IOException e) {
-        }
-
-        RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
-        ri.setConnection(httpConnection);
-        // logger.finer("getReuqest wo " + link + ": " +
-        // (System.currentTimeMillis() - timer) + " ms");
-        return ri;
-    }
-
-    /**
-     * Führt einen getrequest durch. Gibt die headerinfos zurück, lädt aber die
-     * datei noch komplett
-     * 
-     * @param link
-     * @param cookie
-     * @param referrer
-     * @param redirect
-     * @return requestinfos mit headerfields. HTML text wird nicht!! geladen
-     * @throws IOException
-     */
     public static RequestInfo getRequestWithoutHtmlCode(URL link, String cookie, String referrer, HashMap<String, String> requestProperties, boolean redirect) throws IOException {
         // logger.finer("get: "+link);
         // long timer = System.currentTimeMillis();
@@ -237,33 +183,6 @@ public class HTTP {
         return ri;
     }
 
-    public static RequestInfo headRequest(URL link, String cookie, String referrer, boolean redirect) throws IOException {
-        // logger.finer("get: "+link+"(cookie: "+cookie+")");
-        // long timer = System.currentTimeMillis();
-        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
-        httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
-        httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
-        httpConnection.setRequestMethod("HEAD");
-        httpConnection.setInstanceFollowRedirects(redirect);
-        // wenn referrer nicht gesetzt wurde nimmt er den host als referer
-        if (referrer != null) {
-            httpConnection.setRequestProperty("Referer", referrer);
-        }
-
-        // httpConnection.setRequestProperty("Referer", "http://" +
-        // link.getHost());
-        if (cookie != null) {
-            httpConnection.setRequestProperty("Cookie", cookie);
-        }
-        httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
-        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        RequestInfo requestInfo = HTTP.readFromURL(httpConnection);
-        requestInfo.setConnection(httpConnection);
-        // logger.finer("headRequest " + link + ": " +
-        // (System.currentTimeMillis() - timer) + " ms");
-        return requestInfo;
-    }
-
     /**
      * Schickt ein PostRequest an eine Adresse
      * 
@@ -297,18 +216,13 @@ public class HTTP {
      * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
      * @throws IOException
      */
-    public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
-        return HTTP.postRequest(string, cookie, referrer, requestProperties, parameter, redirect, HTTP.getReadTimeoutFromConfiguration(), HTTP.getConnectTimeoutFromConfiguration());
-
-    }
-
-    public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
+    public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
         // logger.finer("post: "+link+"(cookie:"+cookie+" parameter:
         // "+parameter+")");
         // long timer = System.currentTimeMillis();
         HTTPConnection httpConnection = new HTTPConnection(url.openConnection());
-        httpConnection.setReadTimeout(readTimeout);
-        httpConnection.setConnectTimeout(requestTimeout);
+        httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
+        httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
         httpConnection.setInstanceFollowRedirects(redirect);
         if (referrer != null) {
             httpConnection.setRequestProperty("Referer", referrer);
@@ -348,69 +262,6 @@ public class HTTP {
     }
 
     /**
-     * Gibt header- und cookieinformationen aus ohne den HTMLCode
-     * herunterzuladen
-     * 
-     * @param link
-     *            Der Link, an den die POST Anfrage geschickt werden soll
-     * @param cookie
-     *            Cookie
-     * @param referrer
-     *            Referrer
-     * @param parameter
-     *            Die Parameter, die übergeben werden sollen
-     * @param redirect
-     *            Soll einer Weiterleitung gefolgt werden?
-     * @return Ein Objekt, daß alle Informationen der Zieladresse beinhält
-     * @throws IOException
-     */
-    public static RequestInfo postRequestWithoutHtmlCode(URL link, String cookie, String referrer, String parameter, boolean redirect) throws IOException {
-        // logger.finer("post: "+link);
-        // long timer = System.currentTimeMillis();
-        HTTPConnection httpConnection = new HTTPConnection(link.openConnection());
-        httpConnection.setReadTimeout(HTTP.getReadTimeoutFromConfiguration());
-        httpConnection.setConnectTimeout(HTTP.getConnectTimeoutFromConfiguration());
-        httpConnection.setInstanceFollowRedirects(redirect);
-        if (referrer != null) {
-            httpConnection.setRequestProperty("Referer", referrer);
-        } else {
-            httpConnection.setRequestProperty("Referer", "http://" + link.getHost());
-        }
-        if (cookie != null) {
-            httpConnection.setRequestProperty("Cookie", cookie);
-        }
-        // TODO das gleiche wie bei getRequest
-        httpConnection.setRequestProperty("Accept-Language", Plugin.ACCEPT_LANGUAGE);
-        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
-        httpConnection.setDoOutput(true);
-        if (parameter != null) {
-            if (parameter == null) {
-                parameter = "";
-            }
-            parameter = parameter.trim();
-            httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
-
-            httpConnection.connect();
-            OutputStreamWriter wr = new OutputStreamWriter(httpConnection.getOutputStream());
-            wr.write(parameter);
-            wr.flush();
-            wr.close();
-        }
-        String location = httpConnection.getHeaderField("Location");
-        String setcookie = HTTP.getCookieString(httpConnection);
-        int responseCode = 0;
-        try {
-            responseCode = httpConnection.getResponseCode();
-        } catch (IOException e) {
-        }
-        RequestInfo ri = new RequestInfo("", location, setcookie, httpConnection.getHeaderFields(), responseCode);
-        ri.setConnection(httpConnection);
-        // logger.finer("postRequest wo" + link + ": " +
-        // (System.currentTimeMillis() - timer) + " ms");
-        return ri;
-    }
-
-    /**
      * Liest Daten von einer URL. LIst den encoding type und kann plaintext und
      * gzip unterscheiden
      * 
@@ -439,14 +290,6 @@ public class HTTP {
         RequestInfo requestInfo = new RequestInfo(htmlCode.toString(), location, cookie, urlInput.getHeaderFields(), responseCode);
         rd.close();
         return requestInfo;
-    }
-
-    public static void setConnectTimeout(int value) {
-        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, value);
-    }
-
-    public static void setReadTimeout(int value) {
-        JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, value);
     }
 
 }
