@@ -20,82 +20,102 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
 import jd.HostPluginWrapper;
+import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
+import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDPremiumCollector extends PluginOptional {
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("JDPREMIUMCOLLECTOR");
+
     private static final String PROPERTY_API_URL = "PROPERTY_API_URL";
     private static final String PROPERTY_LOGIN_USER = "PROPERTY_LOGIN_USER";
     private static final String PROPERTY_LOGIN_PASS = "PROPERTY_LOGIN_PASS";
+
+    private static final String PROPERTY_FETCHONSTARTUP = "PROPERTY_FETCHONSTARTUP";
     private static final String PROPERTY_ACCOUNTS = "PROPERTY_ACCOUNTS";
+    private static final String PROPERTY_OVERWRITE = "PROPERTY_OVERWRITE";
+
+    private JFrame guiFrame;
 
     public JDPremiumCollector(PluginWrapper wrapper) {
         super(wrapper);
         initConfigEntries();
     }
 
+    private void fetchAccounts() {
+        try {
+            String post = "type=list";
+            post += "&apiuser=" + subConfig.getStringProperty(PROPERTY_LOGIN_USER);
+            post += "&apipassword=" + subConfig.getStringProperty(PROPERTY_LOGIN_PASS);
+            br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
+        } catch (IOException e1) {
+            e1.printStackTrace();
+            JOptionPane.showMessageDialog(guiFrame, JDLocale.L("plugins.optional.premiumcollector.error.url", "Probably wrong URL! See log for more infos!"), JDLocale.L("plugins.optional.premiumcollector.error", "Error!"), JOptionPane.ERROR_MESSAGE);
+        }
+
+        if (br.containsHTML("Login faild")) {
+            JOptionPane.showMessageDialog(guiFrame, JDLocale.L("plugins.optional.premiumcollector.error.userpass", "Wrong username/password!"), JDLocale.L("plugins.optional.premiumcollector.error", "Error!"), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        ArrayList<HostPluginWrapper> pluginsForHost = JDUtilities.getPluginsForHost();
+        String[][] accs = br.getRegex("<premacc id=\"(.*?)\">.*?<login>(.*?)</login>.*?<password>(.*?)</password>.*?<hoster>(.*?)</hoster>.*?</premacc>").getMatches();
+
+        int accountsFound = 0;
+        for (HostPluginWrapper plg : pluginsForHost) {
+            if (!plg.isPremiumEnabled()) continue;
+
+            ArrayList<Account> accounts = new ArrayList<Account>();
+            for (String[] acc : accs) {
+                if (acc[3].equalsIgnoreCase(plg.getHost())) {
+                    Account account = new Account(acc[1], acc[2]);
+                    if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
+                        try {
+                            AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
+                            if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) accounts.add(account);
+                        } catch (Exception e1) {
+                            e1.printStackTrace();
+                        }
+                    } else {
+                        accounts.add(account);
+                    }
+                }
+            }
+
+            if (accounts.size() == 0) continue;
+            if (!subConfig.getBooleanProperty(PROPERTY_OVERWRITE, true)) {
+                if (JOptionPane.showConfirmDialog(guiFrame, JDLocale.LF("plugins.optional.premiumcollector.accountsFound.message", "Found %s accounts for %s plugin! Replace old saved accounts with new accounts?", accounts.size(), plg.getHost()), JDLocale.L("plugins.optional.premiumcollector.accountsFound", "Accounts found!"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) continue;
+            }
+
+            plg.getPluginConfig().setProperty(PluginForHost.PROPERTY_PREMIUM, accounts);
+            plg.getPluginConfig().save();
+            accountsFound += accounts.size();
+        }
+
+        logger.info(String.format("Successfully inserted %s accounts!", accountsFound));
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
-            try {
-                String post = "type=list";
-                post += "&apiuser=" + subConfig.getStringProperty(PROPERTY_LOGIN_USER);
-                post += "&apipassword=" + subConfig.getStringProperty(PROPERTY_LOGIN_PASS);
-                br.postPage(subConfig.getStringProperty(PROPERTY_API_URL), post);
-
-                if (br.containsHTML("Login faild")) {
-                    JOptionPane.showMessageDialog(SimpleGUI.CURRENTGUI.getFrame(), "Wrong username/password!", "Error!", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                ArrayList<HostPluginWrapper> pluginsForHost = JDUtilities.getPluginsForHost();
-                String[][] accs = br.getRegex("<premacc id=\"(.*?)\">.*?<login>(.*?)</login>.*?<password>(.*?)</password>.*?<hoster>(.*?)</hoster>.*?</premacc>").getMatches();
-
-                for (HostPluginWrapper plg : pluginsForHost) {
-                    if (!plg.isPremiumEnabled()) continue;
-
-                    ArrayList<Account> accounts = new ArrayList<Account>();
-                    for (String[] acc : accs) {
-                        if (acc[3].equalsIgnoreCase(plg.getHost())) {
-                            Account account = new Account(acc[1], acc[2]);
-                            if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
-                                try {
-                                    AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
-                                    if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) accounts.add(account);
-                                } catch (Exception e1) {
-                                    e1.printStackTrace();
-                                }
-                            } else {
-                                accounts.add(account);
-                            }
-                        }
-                    }
-
-                    if (accounts.size() == 0) continue;
-                    if (JOptionPane.showConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), String.format("Found %s accounts for %s plugin! Replace old saved accounts with new accounts?", accounts.size(), plg.getHost()), "Accounts found!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) continue;
-
-                    plg.getPluginConfig().setProperty(PluginForHost.PROPERTY_PREMIUM, accounts);
-                    plg.getPluginConfig().save();
-                }
-            } catch (IOException e1) {
-                e1.printStackTrace();
-                JOptionPane.showMessageDialog(SimpleGUI.CURRENTGUI.getFrame(), "Probably wrong URL! See log for more infos!", "Error!", JOptionPane.ERROR_MESSAGE);
-            }
+            fetchAccounts();
         }
     }
 
@@ -106,32 +126,48 @@ public class JDPremiumCollector extends PluginOptional {
 
     @Override
     public boolean initAddon() {
+        JDUtilities.getController().addControlListener(this);
         return true;
     }
 
+    public void controlEvent(ControlEvent event) {
+        if (event.getID() == ControlEvent.CONTROL_INIT_COMPLETE && event.getSource() instanceof Main) {
+            guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+            if (subConfig.getBooleanProperty(PROPERTY_FETCHONSTARTUP, false)) {
+                fetchAccounts();
+            }
+            return;
+        }
+        super.controlEvent(event);
+    }
+
     private void initConfigEntries() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_API_URL, "API-URL").setDefaultValue("http://www.yourservicehere.org/api.php"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_LOGIN_USER, "Username").setDefaultValue("YOUR_USER"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_LOGIN_PASS, "Password").setDefaultValue("YOUR_PASS"));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS, "Accept only valid and non-expired accounts").setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_API_URL, JDLocale.L("plugins.optional.premiumcollector.apiurl", "API-URL")).setDefaultValue("http://www.yourservicehere.org/api.php"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_LOGIN_USER, JDLocale.L("plugins.optional.premiumcollector.username", "Username")).setDefaultValue("YOUR_USER"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_LOGIN_PASS, JDLocale.L("plugins.optional.premiumcollector.password", "Password")).setDefaultValue("YOUR_PASS"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_FETCHONSTARTUP, JDLocale.L("plugins.optional.premiumcollector.autoFetch", "Automatically fetch accounts on start-up")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS, JDLocale.L("plugins.optional.premiumcollector.onlyValid", "Accept only valid and non-expired accounts")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_OVERWRITE, JDLocale.L("plugins.optional.premiumcollector.overwrite", "Automatically overwrite accounts")).setDefaultValue(true));
     }
 
     @Override
     public void onExit() {
+        JDUtilities.getController().removeControlListener(this);
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
-        menu.add(new MenuItem(MenuItem.NORMAL, "Fetch Accounts", 0).setActionListener(this));
+        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.premiumcollector.fetchAccounts", "Fetch Accounts"), 0).setActionListener(this));
 
         return menu;
     }
 
     @Override
     public String getHost() {
-        return "JD PremiumCollector";
+        return JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector");
     }
 
     @Override
