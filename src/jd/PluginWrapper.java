@@ -61,7 +61,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         this.className = className;
         this.pluginName = name.toLowerCase();
         if ((flags & PluginWrapper.LOAD_ON_INIT) != 0) this.getPlugin();
-        if((flags & ACCEPTONLYSURLSFALSE)!=0)this.acceptOnlyURIs=false;
+        if ((flags & ACCEPTONLYSURLSFALSE) != 0) this.acceptOnlyURIs = false;
         WRAPPER.put(className, this);
 
     }
@@ -96,7 +96,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
         try {
 
-            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL(),JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
 
                 ArrayList<Vector<String>> filelist = new ArrayList<Vector<String>>();
@@ -188,7 +188,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public Plugin getNewPluginInstance() {
         Plugin plg = getPlugin();
         try {
-            return plg.getClass().getConstructor(new Class[]{PluginWrapper.class}).newInstance(new Object[]{this});
+            return plg.getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         } catch (SecurityException e) {
@@ -210,12 +210,11 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         return isLoaded() && getPlugin().getConfig().getEntries().size() != 0;
     }
 
-    public int compareTo(PluginWrapper o) {
-        return getHost().toLowerCase().compareTo(((PluginWrapper) o).getHost().toLowerCase());
+    public int compareTo(PluginWrapper plg) {
+        return getHost().toLowerCase().compareTo(plg.getHost().toLowerCase());
     }
 
     public String getConfigName() {
-
         return getHost();
     }
 

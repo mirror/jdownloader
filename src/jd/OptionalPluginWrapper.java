@@ -93,4 +93,8 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return "OPTIONAL_PLUGIN_" + loadedPlugin.getHost();
     }
 
+    @Override
+    public int compareTo(PluginWrapper plg) {
+        return getPlugin().getHost().toLowerCase().compareTo(plg.getPlugin().getHost().toLowerCase());
+    }
 }
