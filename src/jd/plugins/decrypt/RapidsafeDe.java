@@ -26,7 +26,6 @@ import java.util.Map;
 import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
-import jd.parser.SimpleMatches;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.HTTP;
@@ -57,21 +56,25 @@ public class RapidsafeDe extends PluginForDecrypt {
 
             String cookie = ri.getCookie();
 
-            String[] dat = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°=°&t=°','°');");
+            String[] dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?)=(.*?)&t=(.*?)','(.*?)'\\);").getRow(0);
             ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "=" + dat[1] + "&t=" + dat[2], false);
 
-            dat = SimpleMatches.getSimpleMatches(ri.getHtmlCode(), "RapidSafePSC('°&adminlogin='");
+            dat = new Regex(ri.getHtmlCode(), "RapidSafePSC\\('(.*?)&adminlogin='").getRow(0);
             ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1", false);
 
-            ArrayList<ArrayList<String>> flash = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />");
+            ArrayList<String[]> flash = new ArrayList<String[]>();
+            String[][] flashsites = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getMatches();
+            for (int i = 0; i < flashsites.length; i++) {
+                flash.add(flashsites[i]);
+            }
 
-            ArrayList<ArrayList<String>> helpsites = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "onclick=\"RapidSafePSC('°&start=°','");
-            for (int i = 0; i < helpsites.size(); i++) {
-                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1&start=" + helpsites.get(i).get(1), false);
-                ArrayList<ArrayList<String>> helpflash = SimpleMatches.getAllSimpleMatches(ri.getHtmlCode(), "<param name=\"movie\" value=\"/°\" />");
+            String[][] helpsites = new Regex(ri.getHtmlCode(), "onclick=\"RapidSafePSC\\('(.*?)&start=(.*?)','").getMatches();
+            for (int i = 0; i < helpsites.length; i++) {
+                ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, dat[0] + "&f=1&start=" + helpsites[i][1], false);
+                String[][] helpflash = new Regex(ri.getHtmlCode(), "<param name=\"movie\" value=\"/(.*?)\" />").getMatches();
 
-                for (int j = 0; j < helpflash.size(); j++) {
-                    flash.add(helpflash.get(j));
+                for (int j = 0; j < helpflash.length; j++) {
+                    flash.add(helpflash[j]);
                 }
             }
 
@@ -80,10 +83,10 @@ public class RapidsafeDe extends PluginForDecrypt {
             for (int flashcounter = 0; flashcounter < flash.size(); flashcounter++) {
                 boolean repeat = true;
                 long[] zaehler = new long[7];
-                ArrayList<ArrayList<String>> search2 = new ArrayList<ArrayList<String>>();
+                String[] search2 = new String[0];
                 while (repeat) {
                     try {
-                        HTTPConnection con = new HTTPConnection(new URL(parameter + flash.get(flashcounter).get(0)).openConnection());
+                        HTTPConnection con = new HTTPConnection(new URL(parameter + flash.get(flashcounter)[0]).openConnection());
                         con.setRequestProperty("Cookie", cookie);
                         con.setRequestProperty("Referer", parameter);
 
@@ -105,11 +108,11 @@ public class RapidsafeDe extends PluginForDecrypt {
                         int index2 = c.indexOf("67657455524c", index1 + 8);
                         c = c.substring(c.indexOf("67657455524c"), index2);
                         // Suchen der zahlen
-                        ArrayList<ArrayList<String>> search1 = SimpleMatches.getAllSimpleMatches(c, "96070008°07°3c");
-                        search2 = SimpleMatches.getAllSimpleMatches(c, "070007°08021c960200");
+                        String[][] search1 = new Regex(c, "96070008(.*?)07(.*?)3c").getMatches();
+                        search2 = new Regex(c, "070007(.*?)08021c960200").getColumn(0);
                         // Umwandlen der Hexwerte
                         for (int i = 0; i < 7; i++) {
-                            zaehler[i] = (int) Long.parseLong(spin(search1.get(i).get(1).toUpperCase()), 16);
+                            zaehler[i] = (int) Long.parseLong(spin(search1[i][1].toUpperCase()), 16);
                         }
                         repeat = false;
                     } catch (NumberFormatException e) {
@@ -127,10 +130,10 @@ public class RapidsafeDe extends PluginForDecrypt {
                 long ax2 = zaehler[6];
 
                 // Umwandlen der Hexwerte
-                long[] modifier = new long[search2.size()];
+                long[] modifier = new long[search2.length];
                 int count = 0;
-                for (ArrayList<String> arrayList : search2) {
-                    modifier[count++] = Long.parseLong(spin(arrayList.get(0)), 16);
+                for (String arrayList : search2) {
+                    modifier[count++] = Long.parseLong(spin(arrayList), 16);
                 }
 
                 String postdata = "";
@@ -138,7 +141,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                     postdata += String.valueOf((char) (zahl ^ ax3 ^ ax2 + 2 + 9 ^ ccax4 + 12 ^ 2 ^ 41 - 12 ^ 112 ^ ax1 ^ ax5 ^ 41 ^ ax6 ^ ax7));
                 }
 
-                postdata = SimpleMatches.getSimpleMatch(postdata, "RapidSafePSC('°'", 0);
+                postdata = new Regex(postdata, "RapidSafePSC\\('(.*?)'", 0).getMatch(0);
 
                 ri = HTTP.postRequest(new URL(parameter), cookie, parameter, null, postdata, false);
                 Map<String, List<String>> headers = ri.getHeaders();
@@ -168,7 +171,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                     content += String.valueOf((char) (Integer.parseInt(element[0]) ^ Integer.parseInt(element[1]) ^ Integer.parseInt(element[2])));
                 }
                 progress.increase(1);
-                decryptedLinks.add(createDownloadlink(SimpleMatches.getSimpleMatch(content, "action=\"°\" id", 0)));
+                decryptedLinks.add(createDownloadlink(new Regex(content, "action=\"(.*?)\" id").getMatch(0)));
             }
 
         } catch (IOException e) {

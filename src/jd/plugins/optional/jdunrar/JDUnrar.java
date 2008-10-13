@@ -52,7 +52,6 @@ import jd.utils.JDUtilities;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
-    private static final String LOCALE_PREFIX = "plugins.optional.jdunrar.";
     private static final String DEFAULT_EXTRACT_PATH = "%DEFAULTDOWNLOADDIR%\\extracted\\%SUBFOLDER%\\%ARCHIVENAME%\\";
 
     public static int getAddonInterfaceVersion() {
@@ -133,19 +132,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (event.getSource() instanceof DownloadLink) {
                 link = (DownloadLink) event.getSource();
 
-                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "linkmenu.extract", "Extract"), 1000).setActionListener(this));
+                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.linkmenu.extract", "Extract"), 1000).setActionListener(this));
                 m.setEnabled(false);
                 if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getName().matches(".*rar$")) m.setEnabled(true);
                 if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
 
                 m.setProperty("LINK", link);
 
-                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "linkmenu.openextract", "Open directory"), 1002).setActionListener(this));
+                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.linkmenu.openextract", "Open directory"), 1002).setActionListener(this));
                 m.setEnabled(link.getStringProperty("EXTRACTEDPATH") != null);
                 m.setProperty("LINK", link);
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
-                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "linkmenu.package.extract", "Extract package"), 1001).setActionListener(this));
+                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.linkmenu.package.extract", "Extract package"), 1001).setActionListener(this));
                 m.setProperty("PACKAGE", fp);
 
             }
@@ -364,29 +363,29 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
 
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L(LOCALE_PREFIX + "menu.toggle", "Activate"), 1).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.jdunrar.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
         menu.add(m = new MenuItem(MenuItem.SEPARATOR));
 
-        m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.extract.singlefils", "Extract archive(s)"), 21);
+        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21);
         m.setActionListener(this);
         menu.add(m);
 
         MenuItem queue;
-        queue = new MenuItem(MenuItem.CONTAINER, JDLocale.L(LOCALE_PREFIX + "menu.queue", "Current Queue"), 3);
-        m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.queue.start", "Start queue"), 30);
+        queue = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.optional.jdunrar.menu.queue", "Current Queue"), 3);
+        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.start", "Start queue"), 30);
 
         m.setActionListener(this);
         queue.addMenuItem(m);
-        m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.queue.clear", "Clear queue"), 31);
+        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.clear", "Clear queue"), 31);
 
         m.setActionListener(this);
         queue.addMenuItem(m);
         queue.addMenuItem(m = new MenuItem(MenuItem.SEPARATOR));
         int i = 0;
         for (DownloadLink link : this.queue) {
-            m = new MenuItem(MenuItem.NORMAL, JDLocale.LF(LOCALE_PREFIX + "menu.queue.extract", "Extract %s", link.getName()), 3000 + i);
+            m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.menu.queue.extract", "Extract %s", link.getName()), 3000 + i);
             m.setActionListener(this);
             queue.addMenuItem(m);
             i++;
@@ -396,7 +395,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         menu.add(m = new MenuItem(MenuItem.SEPARATOR));
 
-        menu.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L(LOCALE_PREFIX + "menu.config", "Settings"), 4).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.config", "Settings"), 4).setActionListener(this));
 
         return menu;
     }
@@ -604,9 +603,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDLocale.L("gui.config.unrar.path", "Extract to")));
         ce.setDefaultValue(DEFAULT_EXTRACT_PATH);
 
-        ConfigContainer pws = new ConfigContainer(this, JDLocale.L(LOCALE_PREFIX + "config.passwordtab", "List of passwords"));
+        ConfigContainer pws = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, pws));
-        pws.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.L(LOCALE_PREFIX + "config.passwordlist", "List of all passwords. Each line one password")));
+        pws.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.L("plugins.optional.jdunrar.config.passwordlist", "List of all passwords. Each line one password")));
 
     }
 
