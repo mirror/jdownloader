@@ -31,6 +31,7 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -39,14 +40,14 @@ import jd.plugins.PluginForDecrypt;
 
 public class Sexuriacom extends PluginForDecrypt {
 
-    private static final Pattern PATTEREN_SUPPORTED_MAIN    = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_SUPPORTED_CRYPT    = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTEREN_SUPPORTED_MAIN = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/Pornos_Kostenlos_.+?_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_SUPPORTED_CRYPT = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/dl_links_\\d+_(\\d+)\\.html", Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_SUPPORTED_REDIRECT = Pattern.compile("http://[\\w\\.]*?sexuria\\.com/out.php\\?id=([0-9]+)\\&part=[0-9]+\\&link=[0-9]+", Pattern.CASE_INSENSITIVE);
-    
-    private static final Pattern PATTERN_PASSWORD           = Pattern.compile("<strong>Passwort: </strong></div></td>.*?bgcolor=\"#EFEFEF\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    private static final Pattern PATTERN_DL_LINK_PAGE       = Pattern.compile("href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_REDIRECT_LINKS     = Pattern.compile("value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE);
-    
+
+    private static final Pattern PATTERN_PASSWORD = Pattern.compile("<strong>Passwort: </strong></div></td>.*?bgcolor=\"#EFEFEF\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern PATTERN_DL_LINK_PAGE = Pattern.compile("href=\"dl_links_(.*?)\" target=\"_blank\">", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_REDIRECT_LINKS = Pattern.compile("value=\"(http://sexuria\\.com/out\\.php\\?id=\\d+\\&part=\\d+\\&link=\\d+)\" readonly", Pattern.CASE_INSENSITIVE);
+
     public Sexuriacom(PluginWrapper wrapper) {
         super(wrapper);
     }

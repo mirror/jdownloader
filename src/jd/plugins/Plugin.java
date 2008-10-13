@@ -55,7 +55,7 @@ import jd.utils.JDUtilities;
  * 
  * Alle Plugins verfügen über einen Event Mechanismus
  */
-public abstract class Plugin implements ActionListener, Comparable<Plugin> {
+public abstract class Plugin implements ActionListener {
 
     public static final String ACCEPT_LANGUAGE = "de, en-gb;q=0.9, en;q=0.8";
 
@@ -546,14 +546,6 @@ public abstract class Plugin implements ActionListener, Comparable<Plugin> {
      */
     public boolean useUserinputIfCaptchaUnknown() {
         return true;
-    }
-
-    /**
-     * Vergleicht das aktuelle Plugin mit einem anderen Plugin. Wird zum
-     * Sortieren für die Konfiguration benötigt.
-     */
-    public int compareTo(Plugin plg) {
-        return getHost().toLowerCase().compareToIgnoreCase(plg.getHost().toLowerCase());
     }
 
     /**

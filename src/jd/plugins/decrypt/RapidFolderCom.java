@@ -15,8 +15,10 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
+
 import java.util.ArrayList;
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -24,32 +26,38 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class RapidFolderCom extends PluginForDecrypt {
-    private static final Pattern PATTERN_SUPPORTED      = Pattern.compile("http://[\\w\\.]*?rapidfolder\\.com/\\?(\\w+)",Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_REDIRECT_URL   = Pattern.compile("action=\"(http://.+?)\">");
-    //private static final Pattern PATTERN_DOWNLOADLINK = Pattern.compile("<input type=\"button\" value=\"Download\" onClick=\"window.open\\('./download.php?id=\\w+&subid=\\d+',");
-    private static final String DOWNLOAD_PHP            = "http://rapidfolder.com/download.php?id={id}&subid={subid}";
-    
+    private static final Pattern PATTERN_SUPPORTED = Pattern.compile("http://[\\w\\.]*?rapidfolder\\.com/\\?(\\w+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_REDIRECT_URL = Pattern.compile("action=\"(http://.+?)\">");
+    // private static final Pattern PATTERN_DOWNLOADLINK = Pattern.compile(
+    // "<input type=\"button\" value=\"Download\" onClick=\"window.open\\('./download.php?id=\\w+&subid=\\d+',"
+    // );
+    private static final String DOWNLOAD_PHP = "http://rapidfolder.com/download.php?id={id}&subid={subid}";
+
     public RapidFolderCom(PluginWrapper wrapper) {
         super(wrapper);
-    }    
+    }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
         br.setFollowRedirects(false);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String id = new Regex(cryptedLink.getCryptedUrl(),PATTERN_SUPPORTED).getMatch(0);
-        //Um kein neues String Objekt zu erzeugen wird hier einfach ein schon vorhandenes referenziert.
-        //Es könnte genauso gut = ""; im Source stehen!
+        String id = new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORTED).getMatch(0);
+        // Um kein neues String Objekt zu erzeugen wird hier einfach ein schon
+        // vorhandenes referenziert.
+        // Es könnte genauso gut = ""; im Source stehen!
         String redirectUrl = DOWNLOAD_PHP;
         String downloadUrl;
         int count = 0;
         boolean running = true;
-        while(running){
-            downloadUrl = DOWNLOAD_PHP.replaceAll("\\{id\\}", id).replaceAll("\\{subid\\}",String.valueOf(count));
+        while (running) {
+            downloadUrl = DOWNLOAD_PHP.replaceAll("\\{id\\}", id).replaceAll("\\{subid\\}", String.valueOf(count));
             String page = br.getPage(downloadUrl);
-            //Bei manchen Downloads ist page == ""; Dann gibt es eine redirectUrl, bei anderen Downloads steht die RedirectUrl im html source.
-            if(page.equals("")){
-                redirectUrl=br.getRedirectLocation();
-            }else{
+            // Bei manchen Downloads ist page == ""; Dann gibt es eine
+            // redirectUrl, bei anderen Downloads steht die RedirectUrl im html
+            // source.
+            if (page.equals("")) {
+                redirectUrl = br.getRedirectLocation();
+            } else {
                 redirectUrl = new Regex(page, PATTERN_REDIRECT_URL).getMatch(0);
             }
             running = !(redirectUrl == null || redirectUrl.equals("http://"));
@@ -57,9 +65,9 @@ public class RapidFolderCom extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(redirectUrl));
                 count++;
             }
-            
+
         }
-       
+
         return decryptedLinks;
     }
 

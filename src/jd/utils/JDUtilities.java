@@ -115,7 +115,6 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.LogFormatter;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -1055,7 +1054,7 @@ public class JDUtilities {
                 }
             }
             logger.info("Primary IP Check failed. Ip not found via regex: " + patt + " on " + site + " htmlcode: " + br.toString());
-  
+
         }
 
         catch (Exception e1) {
@@ -1077,7 +1076,7 @@ public class JDUtilities {
                 }
             }
             return "offline";
-        } 
+        }
 
         catch (Exception e1) {
             logger.severe("url not found. " + e1.toString());

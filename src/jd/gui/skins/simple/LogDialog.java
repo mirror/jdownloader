@@ -47,10 +47,10 @@ import javax.swing.border.EmptyBorder;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Encoding;
-import jd.plugins.LogFormatter;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.LogFormatter;
 import jd.utils.Upload;
 
 /**
