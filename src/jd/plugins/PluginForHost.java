@@ -399,7 +399,7 @@ public abstract class PluginForHost extends Plugin {
         ArrayList<Account> disabled = new ArrayList<Account>();
 
         ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
-
+     
         synchronized (accounts) {
             for (int i = 0; i < accounts.size(); i++) {
                 Account next = accounts.get(i);

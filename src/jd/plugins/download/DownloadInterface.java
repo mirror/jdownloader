@@ -1807,7 +1807,7 @@ abstract public class DownloadInterface {
                     try {
                         this.wait(interval);
                     } catch (Exception e) {
-                        e.printStackTrace();
+//                        e.printStackTrace();
 
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {

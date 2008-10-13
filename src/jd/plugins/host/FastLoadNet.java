@@ -16,31 +16,32 @@
 
 package jd.plugins.host;
 
-import java.io.IOException;
+import java.awt.event.ActionEvent;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.parser.Form;
+import jd.config.MenuItem;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.parser.Regex;
-import jd.parser.XPath;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.JavaScript;
 
 public class FastLoadNet extends PluginForHost {
 
-    private static final String CODER = "eXecuTe";
+    private static final String CODER = "JD-Team";
 
-    private static final String HARDWARE_DEFECT = "Hardware-Defekt!";
-
-    private static final String NOT_FOUND = "Datei existiert nicht";
+    private String link;
 
     private static int SIM = 20;
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
+
     }
 
     @Override
@@ -55,28 +56,25 @@ public class FastLoadNet extends PluginForHost {
 
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
 
-        String downloadurl = downloadLink.getDownloadURL() + "&lg=de";
+        String downloadurl = downloadLink.getDownloadURL();
         br.setFollowRedirects(true);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.getPage(downloadurl);
-        downloadLink.setName(downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4));
-
-        if (br.containsHTML(NOT_FOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
-        if (br.containsHTML(HARDWARE_DEFECT)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
+        String pid = downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4).trim();
+        br.getPage("http://www.fast-load.net/api/jdownloader/" + pid);
+        
+        if(br.getRegex("Server Down").matches()){
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,10*60*1000l);
         }
+        String[] lines = Regex.getLines(br + "");
 
-        String page = JavaScript.evalPage(br);
+        String filename = lines[0].substring(10).trim();
+        long fileSize = Long.parseLong(lines[1].substring(10).trim());
+        this.link = lines[2].substring(6).toString();
 
-        String filename = new XPath(page + "", "/html/body/div/div/div[4]/div/div[2]/div/table/tbody/tr/th[2]/span").getFirstMatch();
-        String size = new XPath(page + "", "/html/body/div/div/div[4]/div/div[2]/div/table/tbody/tr[2]/td[2]/span").getFirstMatch();
-
-        // downloadinfos gefunden? -> download verfügbar
-        if (filename != null && size != null) {
+        if (filename != null) {
             downloadLink.setName(filename.trim());
-            downloadLink.setDownloadSize(Regex.getSize(size));
+            downloadLink.setDownloadSize(fileSize);
             return true;
         }
 
@@ -90,98 +88,47 @@ public class FastLoadNet extends PluginForHost {
         return ret == null ? "0.0" : ret;
     }
 
-    @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        final String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4, downloadLink.getDownloadURL().indexOf("pid=") + 4 + 32);
-        // der observer prüft alle 10 min auf happy hour.
-        Thread observer = new Thread("Fast-load speed observer") {
-            public void run() {
-                while (true) {
-                    downloadLink.setLocalSpeedLimit(-1);
-                    String serverStatusID;
-                    SIM = 20;
-                    try {
-                        serverStatusID = br.getPage("http://www.fast-load.net/api/jdownloader/" + pid).trim();
-
-                        if (serverStatusID.equalsIgnoreCase("0")) {
-                            //logger.warning("fastload Auslastung EXTREM hoch.. verringere Speed auf 20 kb/s");
-                            //downloadLink.setLocalSpeedLimit(20 * 1024);
-                            downloadLink.setLocalSpeedLimit(-1);
-                            //JDUtilities.getGUI().displayMiniWarning(JDLocale.L("plugins.host.fastload.overload.short", "Fast-load.net Overload"), JDLocale.L("plugins.host.fastload.overload.long", "Fast-load.net Overload!. Fullspeed download only in browsers"), 10 * 60 * 1000);
-                            //SIM = 1;
-                        } else {
-                            downloadLink.setLocalSpeedLimit(-1);
-                        }
-                    } catch (IOException e1) {
-                        downloadLink.setLocalSpeedLimit(-1);
-                    }
-
-                    try {
-                        Thread.sleep(10 * 60 * 1000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-                }
+    public void actionPerformed(ActionEvent e) {
+        if (e.getID() == 1) {
+            try {
+                JLinkButton.openURL("http://www.fast-load.net/getticket.php");
+            } catch (MalformedURLException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
             }
-        };
-        observer.start();
-        try {
-            handleFree0(downloadLink);
-        } catch (Exception e) {
-            observer.interrupt();
-            throw e;
+
         }
-        observer.interrupt();
     }
 
-    public void handleFree0(final DownloadLink downloadLink) throws Exception {
-        // LinkStatus linkStatus = downloadLink.getLinkStatus();
-        // br.setDebug(true);
+    public ArrayList<MenuItem> createMenuitems() {
 
+        ArrayList<MenuItem> menuList = super.createMenuitems();
+        if (menuList == null) menuList = new ArrayList<MenuItem>();
+
+        MenuItem m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.menu.fastload", "Get Freeticket"), 1);
+        m.setActionListener(this);
+        menuList.add(m);
+        return menuList;
+
+    }
+
+    public void handleFree(final DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-
-        Form captchaForm = getDownloadForm();
-
-        captchaForm.setVariable(1, br.getRegex("clearInterval\\(oCountDown\\).*?document\\.forms\\[0\\]\\.elements\\['.*?'\\]\\.value = '(.*?)';").getMatch(0));
-        captchaForm.setVariable(1, "start+download");
-
-        dl = br.openDownload(downloadLink, captchaForm);
-        // dl.connect(br);
-        if (!br.getHttpConnection().isContentDisposition()) {
-
-            if (br.getHttpConnection().getContentLength() == 184) {
-                logger.info("System overload: Retry in 20 seconds");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
-            } else if (br.getHttpConnection().getContentLength() == 169) {
-                logger.severe("File not found: File is deleted from Server");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getHttpConnection().getContentLength() == 529) {
-                logger.severe("File not found: Unkown 404 Error");
-            } else if (!br.getHttpConnection().isOK()) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-            } else {
-                logger.severe("Unknown error page");
-                throw new PluginException(LinkStatus.ERROR_FATAL);
-            }
+        br.setDebug(true);
+        String msg = JDLocale.L("plugins.host.fastload.getticketmsg", "Get Fastload-Ticket!");
+        JDUtilities.getGUI().displayMiniWarning(msg, msg, 30);
+        dl = br.openDownload(downloadLink, this.link);
+        if (!dl.getConnection().isContentDisposition()) {
+            SIM = 1;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,10*1000l);
         }
+        SIM = 20;
         dl.startDownload();
 
     }
 
-    private Form getDownloadForm() {
-        /* richtige form suchen, da fakeforms verwendet werden */
-        Form[] forms = br.getForms();
-        if (forms != null) {
-            for (int i = 0; i < forms.length; i++) {
-                if (forms[i].getVars().size() >= 2) { return forms[i]; }
-            }
-        }
-        return null;
-    }
-
     public int getMaxSimultanFreeDownloadNum() {
-        return SIM == 1 ? 1 : JDUtilities.getController().getRunningDownloadNumByHost(this) + 1;
+        return SIM;
     }
 
     @Override
