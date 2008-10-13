@@ -628,6 +628,7 @@ public class JDInit {
         new DecryptPluginWrapper("newzfind.com", "NewzFindCom", "http://[\\w\\.]*?newzfind\\.com/(video|music|games|software|mac|graphics|unix|magazines|e-books|xxx|other)/.+");
         new DecryptPluginWrapper("Protect.Tehparadox.com", "ProtectTehparadoxcom", "http://[\\w\\.]*?protect\\.tehparadox\\.com\\/[a-zA-Z0-9]+\\!");
         new DecryptPluginWrapper("raidrush.org", "RaidrushOrg", "http://[\\w\\.]*?raidrush\\.org/ext/\\?fid\\=[a-zA-Z0-9]+");
+        new DecryptPluginWrapper("rapidfolder.com","RapidFolderCom","http://[\\w\\.]*?rapidfolder\\.com/\\?\\w+");
         new DecryptPluginWrapper("rapidlayer.in", "Rapidlayerin", "http://[\\w\\.]*?rapidlayer\\.in/go/[a-zA-Z0-9]+");
         // new DecryptPluginWrapper("rapidrace.org", "RapidRace",
         // "http://[\\w\\.]*?rapidrace\\.org/rel\\.php\\?ID=.+");
