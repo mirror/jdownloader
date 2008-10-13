@@ -1,4 +1,4 @@
-addons.jdshutdown.menu.enable = Aktywuj Zamykanie systemu
+﻿addons.jdshutdown.menu.enable = Aktywuj Zamykanie systemu
 addons.schedule.menu.add = Dodaj
 addons.schedule.menu.create = Stwórz
 addons.schedule.menu.edit = Edytuj
@@ -6,7 +6,7 @@ addons.schedule.menu.remove = Usuń
 addons.schedule.menu.settings = Ustawienia
 addons.schedule.name = Harmonogram
 captcha.ces.infostring = C.E.S
-config.container.defaultname = Główny
+config.container.defaultname = Ogólne
 container.message.comment = Komentarz
 container.message.created = Stworzony z
 container.message.password = Hasło
@@ -74,7 +74,7 @@ gui.config.captcha.ces.btn_messages = Pokaż moje wiadomości
 gui.config.captcha.ces.btn_register = Rejestracja
 gui.config.captcha.ces.btn_sendmessages = Wyślij wiadomość
 gui.config.captcha.ces.btn_stats = Moje statystyki
-gui.config.captcha.ces.help = http://service.jdownloader.org/page.php?id=106
+gui.config.captcha.ces.help = http://jdownloader.ath.cx/page.php?id=106
 gui.config.captcha.ces.pass = C.E.S. Haslo
 gui.config.captcha.ces.tab = Captcha Exchange Service
 gui.config.captcha.ces.user = C.E.S. Uzytkownik
@@ -294,7 +294,7 @@ gui.config.popup.title = Konfiguracja
 gui.config.reconnect.name = Rozłączanie
 gui.config.reloadcontainer = Odświeżaj listę plików
 gui.config.showcontaineronloadinfo = Pokazuj dodatkowe informacje przy wczytywaniu
-gui.config.showcontaineronloadinfo.helpurl = http://service.jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
 gui.config.tablables.containerplugin = Pakiety
 gui.config.tablables.decryptplugin = Szyfrowanie
 gui.config.tablables.download = Pobieranie/Internet
@@ -334,10 +334,10 @@ gui.config.unrar.passwordlist.btn_save.mnem = s
 gui.config.unrar.passwordlist.btn_save.name = Zapisz
 gui.config.unrar.thread = Przejdź do folderu po wypakowaniu
 gui.config.unrar.usehjmerge = Automatycznie scal pliki podzielone HJSplit
-gui.dialogs.agb_tos.agbaccepted = Akceptuję warunki użytkowania
-gui.dialogs.agb_tos.title = Warunki użytkowania nie zostały zaakceptowane
-gui.dialogs.agb_tos_warning_text = <p><font size="3"><strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Warunki Użytkowania (TOS)</font></strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/>  zapoznałem się i akceptuję.</font></font></p><p><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/> 	Producent: </font></p>
-gui.dialogs.agb_tos_warning_title = Warunki użytkowania (TOS) nie zostały zaakceptowane
+gui.dialogs.agb_tos.agbaccepted = Akceptuję Regulamin użytkowania
+gui.dialogs.agb_tos.title = Regulamin użytkowania nie został zaakceptowany
+gui.dialogs.agb_tos_warning_text = <p><font size="3"><strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif">Regulamin Użytkowania (TOS)</font></strong><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/>  zapoznałem się i akceptuję.</font></font></p><p><font size="2" face="Verdana, Arial, Helvetica, sans-serif"><br/> 	Producent: </font></p>
+gui.dialogs.agb_tos_warning_title = Regulamin użytkowania (TOS) nie został zaakceptowany
 gui.dialogs.helpdialog.btn.help = Pomoc
 gui.dialogs.helpdialog.btn.ok = OK
 gui.dialogs.progress.title = Ładowanie...proszę czekać
@@ -349,7 +349,7 @@ gui.downloadlink.offline = [offline]
 gui.downloadlist.tooltip.connections = Akt. połączenia:
 gui.downloadlist.tooltip.partnum = Części:
 gui.downloadlist.tooltip.partsactive = Aktywne:
-gui.downloadlist.tooltip.partsfailed = Niepoprawne:
+gui.downloadlist.tooltip.partsfailed = Nieukończone:
 gui.downloadlist.tooltip.partsfinished = Ukończone:
 gui.downloadlist.tooltip.simultan_downloads = Maks. il. równocześnie pobieranych plików:
 gui.downloadtab.popup.checkavailability = Sprawdź dostępność
@@ -366,7 +366,7 @@ gui.droptarget.label = Upuść linki w tym miejscu!
 gui.droptarget.title = Zbieracz linków
 gui.helplocale.title = Wsparcie bardzo pomaga!
 gui.images.jd_logo = gui.images.jd_logo
-gui.javacheck.html = <link href='http://service.jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Używasz niewłaściwej wersji Javy. Najlepiej używać najnowszej wersji Javy firmy Sun. Czy mimo to chcesz spróbować uruchomić jDownloader?<table width='100%%'><tr><th colspan='2'>Twoja wersja Javy:</th></tr><tr><th>Nazwa wykonawcza</th><td>%s</td></tr><tr><th>Wersja uruchomieniowa</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Używasz niewłaściwej wersji Javy. Najlepiej używać najnowszej wersji Javy firmy Sun. Czy mimo to chcesz spróbować uruchomić jDownloader?<table width='100%%'><tr><th colspan='2'>Twoja wersja Javy:</th></tr><tr><th>Nazwa wykonawcza</th><td>%s</td></tr><tr><th>Wersja uruchomieniowa</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Niewłaściwa wersja Javy
 gui.linkgrabber.bar.title = Zbieracz informacji
 gui.linkgrabber.btn.accept = Akceptuj link
@@ -382,7 +382,7 @@ gui.linkgrabber.lbl.newpackage = Nowy pakiet
 gui.linkgrabber.lbl.notonlinechecked = [Stan połączenia nie sprawdzony]
 gui.linkgrabber.markarchiv = (archiwum)
 gui.linkgrabber.menu.edit = Edycja
-gui.linkgrabber.menu.edit.merge = scal do jednego pakietu
+gui.linkgrabber.menu.edit.merge = Scal do jednego pakietu
 gui.linkgrabber.menu.edit.removeemptypackages = Usuń puste pakiety
 gui.linkgrabber.menu.edit.removeoffline = Usuń wadliwe linki
 gui.linkgrabber.menu.edit.removeofflineall = Usuń wadliwe linki (wszystkie)
@@ -841,15 +841,15 @@ plugins.hoster.datenklo.net.usepremium = Użyj konta premium
 plugins.hoster.filefactory.getfileheaderiffilenametoolong1 = Jeśli nazwa jest skrócona, plik może zostać pobrany
 plugins.hoster.filefactory.getfileheaderiffilenametoolong2 = (Wymagane rozpoznawanie kodów Captcha; może zająć chwilę)
 plugins.hoster.premiumtab = Ustawienia Premium
-plugins.hoster.rapidshare.com.concernsfreeuser = (*2) warunki ważne tylko przy darmowym użytkowaniu
+plugins.hoster.rapidshare.com.concernsfreeuser = (*2) Regulamin ważny tylko przy bezpłatnym użytkowaniu
 plugins.hoster.rapidshare.com.concernspremiumuser = (*1) Użytkownik konta Premium musi wybrać preferowany serwer na Ustaweniach On-Line serwisu Rapidshare.com, jeśli bezpośrednie linki do plików są wybrane!
 plugins.hoster.rapidshare.com.extendedtab = Zaawansowane
 plugins.hoster.rapidshare.com.freedownloadiflimitnotreached = Limit pobierania nie osiągnięty
 plugins.hoster.rapidshare.com.happyhours = Sprawdzanie Happy Hours
-plugins.hoster.rapidshare.com.hhactive.html = <link href='http://service.jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://service.jdownloader.org/img/hh.jpg' /><br>Aktywne do %s<br>Ostatnie sprawdzenie od %s<br>Ostatnia happy hour od %s do %s</p></div></body>
+plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.ath.cx/img/hh.jpg' /><br>Aktywne do %s<br>Ostatnie sprawdzenie od %s<br>Ostatnia happy hour od %s do %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Ważne!
-plugins.hoster.rapidshare.com.increasetickettime = Zwiększ czas biletu dostepu (0%-500%)
-plugins.hoster.rapidshare.com.info.html = <link href='http://service.jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Informacje o koncie</h2><table width='100%%' ><tr><th>Ważne do</th><td>%s</td></tr><tr><th >Punkty Premium</th><td>%s</td></tr><tr><th>Bieżący ruch</th><td>%s</td></tr><tr><th>Zużyte miejsce</th><td>%s</td></tr><tr><th>Pliki</th><td>%s</td></tr></table></div>
+plugins.hoster.rapidshare.com.increasetickettime = Zwiększ czas biletu dostępu (0%-500%)
+plugins.hoster.rapidshare.com.info.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Informacje o koncie</h2><table width='100%%' ><tr><th>Ważne do</th><td>%s</td></tr><tr><th >Punkty Premium</th><td>%s</td></tr><tr><th>Bieżący ruch</th><td>%s</td></tr><tr><th>Zużyte miejsce</th><td>%s</td></tr><tr><th>Pliki</th><td>%s</td></tr></table></div>
 plugins.hoster.rapidshare.com.info.title = Informacje o koncie %s
 plugins.hoster.rapidshare.com.loadfirstbytes = Ładuj tylko * kilobajtów każdego pliku (-1 = wyłączone)
 plugins.hoster.rapidshare.com.loadinfo = Przenieś informacje o koncie:
@@ -993,7 +993,7 @@ plugins.config.premium.chartapi.caption.error = %s nie jest dostępny
 plugins.config.premium.password = Hasło
 plugins.config.premium.test = Sprawdź stan
 plugins.config.premium.user = Użytkownik Premium
-gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
+gui.dialog.about.sourceurl = http://jdservice.ath.cx/html/about_en.html
 gui.dialog.about.title = O Programie JDownloader
 gui.reconnect.confirm = Czy chcesz ponownie nawiązać połaczenie?
 gui.textcomponent.context.copy = Kopiuj
@@ -1172,7 +1172,7 @@ plugins.optional.httpliveheaderscripter.gui.openfile = Otwórz
 addons.jdshutdown.menu.disable = Deaktywuj zamykanie systemu
 addons.jdshutdown.statusmessage.enabled = JDownloader zamknie system po ukończeniu pobierania
 addons.jdshutdown.statusmessage.disabled = System NIE ZOSTANIE zamknięty przez JDownloader
-gui.linkgrabber.cmb.insertatposition = Wstaw nat:
+gui.linkgrabber.cmb.insertatposition = Wstaw na:
 gui.linkgrabber.menu.edit.splitbyhost = Podziel pakiety przez hosta
 gui.linkgrabber.menu.extras.startafteradding = Automatycznie uruchom pobieranie
 gui.linkgrabber.menu.hostselection = Wybór hosta
@@ -1186,3 +1186,27 @@ gui.linkgrabber.menu.selection.priority = Priorytet
 gui.linkgrabber.packagetab.chb.extractafterdownload = Wypakuj
 gui.linkgrabber.pos.bottom = Dół
 gui.linkgrabber.pos.top = Górę
+plugins.hoster.uploadedto.chunks = Liczba połączeń Premium (>1 powoduje większy ruch)
+gui.downloadlist.delete = Na pewno usunąć zaznaczone linki?
+gui.downloadlink.status.wait = Oczekiwanie: %s min.
+gui.downloadlist.reset = Zrestartować wybrane elementy?
+gui.captchawindow.askforinput = Proszę wprowadzić
+gui.dialogs.agb_tos.description = Regulamin użytkowania serwisu %s nie zostały przeczytane i zaakceptowane.
+gui.dialogs.agb_tos.readagb = Przeczytaj Regulamin użytkowania serwisu %s
+plugins.hoster.error.agb = Regulamin użytkowania nie zaakceptowany
+gui.linkinfo.available.ok = Jest
+modules.reconnect.types.clr = Skrypt CLR
+plugins.optional.langfileeditor.duplicatedentries = Zduplikowane wpisy
+plugins.optional.langfileeditor.firstkey = Pierwszy klucz
+plugins.optional.langfileeditor.secondkey = Drugi klucz
+plugins.optional.langfileeditor.string = Wyrażenie
+plugins.premium.premiumbutton = Zdobądź konto Premium
+download.chunks.label = Części
+gui.linkinfo.download.underway = jest przetwarzany
+gui.download.waittime_status = Oczekiwanie %s min
+gui.downloadlink.hosterwaittime = [oczekiwanie na nowe IP]
+gui.warning.reconnect.hasbeendisabled = Rozłączanie nieaktywne
+gui.warning.reconnect.hasbeendisabled.tooltip = Aktywuj tę opcję, by umożliwić automatyczne zmiany IP!
+plugins.optional.langfileeditor.downloadsource = Kod źródłowy można pobrać poprzez SVN.\nMagazyn SVN znajduje się w %s\nNaciśnij OK, aby przejść do magazynu.
+downloadlink.status.error.fatal = Błąd krytyczny
+plugins.optional.jdreconnectrecorder.name = Rejestracja pon. naw. poł.
