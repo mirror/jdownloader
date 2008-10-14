@@ -35,7 +35,7 @@ public class FileSignatures {
 
     }
 /**
- * DUrchsucht verzeichnisse aufd er hd nach neuen signaturen
+ * Durchsucht Verzeichnisse auf der hdd nach neuen signaturen
  * @param file
  */
     private static void scan(File file) {

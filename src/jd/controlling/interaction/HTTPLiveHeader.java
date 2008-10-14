@@ -360,7 +360,7 @@ public class HTTPLiveHeader extends Interaction {
         }
         String preIp = JDUtilities.getIPAddress();
 
-        logger.finer("IP befor: " + preIp);
+        logger.finer("IP before: " + preIp);
         progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.2_ip", "(IP)HTTPLiveHeader :") + preIp);
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");

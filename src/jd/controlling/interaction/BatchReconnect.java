@@ -70,7 +70,7 @@ public class BatchReconnect extends Interaction implements Serializable {
 
         progress.increase(1);
         progress.setStatusText(JDLocale.L("interaction.batchreconnect.progress.2_oldIP", "BatchReconnect Old IP:") + preIp);
-        logger.finer("IP befor: " + preIp);
+        logger.finer("IP before: " + preIp);
         runCommands();
         logger.finer("Wait " + waittime + " seconds ...");
         try {

@@ -1119,7 +1119,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 case ControlEvent.CONTROL_PLUGIN_INACTIVE:
                     logger.info("Plugin Deaktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
-                        logger.info("Interaction zu ende. rest status");
+                        logger.info("Interaction zu Ende. Rest status");
                         new Thread("twitterinit") {
                             public void run() {
                                 EventQueue.invokeLater(new Runnable() {

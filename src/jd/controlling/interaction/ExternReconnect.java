@@ -92,7 +92,7 @@ public class ExternReconnect extends Interaction implements Serializable {
 
         progress.increase(1);
         progress.setStatusText(JDLocale.L("interaction.externreconnect.progress.2_oldIP", "ExternReconnect Old IP:") + preIp);
-        logger.finer("IP befor: " + preIp);
+        logger.finer("IP before: " + preIp);
         runCommands();
         logger.finer("Wait " + waittime + " seconds ...");
         try {
