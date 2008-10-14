@@ -147,7 +147,7 @@ public class JDPremiumCollector extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_LOGIN_USER, JDLocale.L("plugins.optional.premiumcollector.username", "Username")).setDefaultValue("YOUR_USER"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_LOGIN_PASS, JDLocale.L("plugins.optional.premiumcollector.password", "Password")).setDefaultValue("YOUR_PASS"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_FETCHONSTARTUP, JDLocale.L("plugins.optional.premiumcollector.autoFetch", "Automatically fetch accounts on start-up")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_FETCHONSTARTUP, JDLocale.L("plugins.optional.premiumcollector.autoFetch", "Automatically fetch accounts on start-up")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS, JDLocale.L("plugins.optional.premiumcollector.onlyValid", "Accept only valid and non-expired accounts")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_OVERWRITE, JDLocale.L("plugins.optional.premiumcollector.overwrite", "Automatically overwrite accounts")).setDefaultValue(true));
     }
