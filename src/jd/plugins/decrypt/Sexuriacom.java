@@ -14,19 +14,6 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-/*
- * TODO bug fixen: 
- * Bei diesem Link geht das decryptete Passwort intern unter. 
- * Vermutlich da auf die Redirecturl kein Pattern passt und kein Plugin arbeitet.
- * Habe schon in der DistributeData nach ner Lösung geschaut, aber keine Gefunden,
- * es steht ja dort in Zeile 250 und 251:
- * dLinks.get(c).addSourcePluginPasswords(foundpassword);
- * dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
- * Hier der Link mit dem Bug:
- * http://sexuria.com/Pornos_Kostenlos_Crimson-Mansion-4-The-Catacombs_28460.html
- * Das Sexuria plugin scheint zu funktionieren, das habe ich mit Debug Ausgaben überprüft!
- */
-
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
@@ -78,6 +65,7 @@ public class Sexuriacom extends PluginForDecrypt {
                 br.getPage(link);
                 DownloadLink dlLink = createDownloadlink(br.getRedirectLocation());
                 dlLink.addSourcePluginPassword(password);
+                dlLink.setDecrypterPassword(password);
                 decryptedLinks.add(dlLink);
             }
             return decryptedLinks;
