@@ -91,7 +91,6 @@ public class SpiegelDe extends PluginForDecrypt {
                 fileName = new Regex(xmlEncodings,PATTERN_FILENAME_T6).getMatch(0);
                 downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/"+fileName);
                 downloadLink.setFinalFileName(name + ".3gp");
-                System.out.println(downloadLink.getDownloadURL());
             }else if(convertTo == ConversionMode.IPHONE){
                 //type 8
                 fileName = new Regex(xmlEncodings,PATTERN_FILENAME_T8).getMatch(0);
