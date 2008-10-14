@@ -77,9 +77,8 @@ public class Megauploadcom extends PluginForHost {
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        Browser br = new Browser();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+      this.setBrowserExclusive();
+      br.setDebug(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
@@ -254,10 +253,13 @@ public class Megauploadcom extends PluginForHost {
         String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
         tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
         String url = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
+br.setDebug(true);
 
-        dl = RAFDownload.download(downloadLink, br.createRequest(url));
-        dl.setResume(true);
-        if (!dl.connect(br).isOK()) {
+dl=br.openDownload(downloadLink, url,true,1);
+//        dl = RAFDownload.download(downloadLink, br.createRequest(url));
+//        dl.setResume(true);
+        if (!dl.getConnection().isOK()) {
+            
             logger.warning("Download Limit!");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             String wait = dl.getConnection().getHeaderField("Retry-After");
@@ -270,6 +272,10 @@ public class Megauploadcom extends PluginForHost {
             }
             return;
 
+        }
+        if(!dl.getConnection().isContentDisposition()){
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,30*60*1000l);
         }
 
         dl.startDownload();

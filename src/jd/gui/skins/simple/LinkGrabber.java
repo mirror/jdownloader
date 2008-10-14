@@ -699,13 +699,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         private void autoDownloadDir(String name) {
-            if (name.equals(lastName)||name.length()<3) return;
+            if (name==null||name.equals(lastName)||name.length()<3) return;
             this.lastName = name;
             ArrayList<String[]> list = getDownloadDirList();
             String[] best = null;
             int bestValue = Integer.MAX_VALUE;
             for (String[] entry : list) {
-                if(entry[0].equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory()))continue;
+                if(entry[0]==null||entry[0].equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory()))continue;
                 int value = JDUtilities.getLevenshteinDistance(entry[1], name);
                 if (name.startsWith(entry[1]) || name.endsWith(entry[1]) || entry[1].startsWith(name) || entry[1].endsWith(name)) value -= 3;
 
@@ -714,8 +714,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     bestValue = value;
                 }
             }
-            final String newdir = best[0];
+            
             if (bestValue < 4) {
+                final String newdir = best[0];
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
 

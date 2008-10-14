@@ -1118,7 +1118,7 @@ public class Browser {
     }
 
     public void setRequest(Request request) throws MalformedURLException {
-
+if(request==null)return;
         updateCookies(request);
         this.request = request;
 
@@ -1273,6 +1273,11 @@ public class Browser {
             downloadLink.getPlugin().setDownloadInterface(dl);
         }
         return dl;
+    }
+
+    public void forceDebug(boolean b) { 
+        this.debug = b;
+        
     }
 
 }

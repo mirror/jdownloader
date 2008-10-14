@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -66,19 +67,21 @@ public class DepositFiles extends PluginForHost {
         LinkStatus linkStatus = parameter.getLinkStatus();
 
         DownloadLink downloadLink = parameter;
-        Browser br = new Browser();
 
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        this.setBrowserExclusive();
 
         String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
 
         br.setCookie("http://depositfiles.com", "lang_current", "de");
 
-        String finalURL = link;
+        br.getPage(link);
+        if (br.getRedirectLocation() != null) {
+            link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
 
-        br.getPage(finalURL);
+            br.getPage(link);
 
+        }
+        br.forceDebug(true);
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) {
             logger.severe("Download not found");
@@ -111,7 +114,7 @@ public class DepositFiles extends PluginForHost {
         if (br.containsHTML(PASSWORD_PROTECTED)) {
             // MUss wohl noch angepasst werden
             String password = Plugin.getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), downloadLink);
-            br.postPage(finalURL, "go=1&gateway_result=1&file_password=" + password);
+            br.postPage(link, "go=1&gateway_result=1&file_password=" + password);
         }
 
         if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
@@ -121,8 +124,8 @@ public class DepositFiles extends PluginForHost {
         }
 
         form = br.getFormbyValue("Die Datei downloaden");
-
-        dl = RAFDownload.download(downloadLink, br.createFormRequest(form), false, 1);
+        Request r = br.createFormRequest(form);
+        dl = RAFDownload.download(downloadLink, r, false, 1);
         HTTPConnection con = dl.connect(br);
 
         if (con == null) {
@@ -206,6 +209,12 @@ public class DepositFiles extends PluginForHost {
 
         br.getPage(link);
 
+        if (br.getRedirectLocation() != null) {
+            link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
+
+            br.getPage(link);
+
+        }
         // Datei geloescht?
         if (br.containsHTML(FILE_NOT_FOUND)) {
             logger.severe("Download not found");
