@@ -52,10 +52,12 @@ public class JDRRproxy extends Thread {
             outgoing = new Socket(serverip, 80);
             ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps);
             thread1.start();
-
-            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER | BLOCKED_READ, steps);
+            thread1.join();
+            
+            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER |BLOCKED_READ, steps);
             thread2.start();
             thread2.join();
+            
             try {
                 outgoing.shutdownInput();
                 incoming.shutdownInput();

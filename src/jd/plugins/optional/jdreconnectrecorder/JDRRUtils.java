@@ -101,7 +101,7 @@ public class JDRRUtils {
         if (location != null) {
             if (new Regex(location, "http://(.*?)/?").getMatch(0) != null) {
                 String oldlocation = location;
-                JDUtilities.getLogger().info("Rewriting Location Header");
+                JDUtilities.getLogger().severe("Rewriting Location Header");
                 location = new Regex(location, "http://.*?/(.+)",Pattern.DOTALL).getMatch(0);
                 if (location != null) {
                     location = "http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/" + location;
@@ -119,7 +119,7 @@ public class JDRRUtils {
         if (host != null) {
             if (new Regex(host, "(.*?):?").getMatch(0) != null) {
                 String oldhost = host;
-                JDUtilities.getLogger().info("Rewriting Host Header");
+                JDUtilities.getLogger().severe("Rewriting Host Header");
                 host = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Host: " + oldhost), JDHexUtils.getHexString("Host: " + host));
                 instance.renewbuffer = true;
@@ -131,6 +131,7 @@ public class JDRRUtils {
         String ref = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (ref != null) {
             if (new Regex(ref, "http://(.*?)/?").getMatch(0) != null) {
+                JDUtilities.getLogger().severe("Rewriting Referer Header");
                 String oldref = ref;
                 String ref2=new Regex(ref, "http://.*?/(.+)",Pattern.DOTALL).getMatch(0);                
                 if (ref2!=null){
