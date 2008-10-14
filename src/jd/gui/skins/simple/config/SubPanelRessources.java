@@ -233,7 +233,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zur�cksetzen"));
+        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
         btnReset.addActionListener(this);
 
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
