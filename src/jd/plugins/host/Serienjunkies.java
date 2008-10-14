@@ -414,6 +414,13 @@ public class Serienjunkies extends PluginForHost {
             if(it2.length>0)
             {
                 boolean[] re = it2[0].getPlugin().checkLinks(it2);
+                if(re==null)
+                {
+                    re = new boolean[it2.length];
+                    for (int j = 0; j < re.length; j++) {
+                        re[j] = it2[j].isAvailable();
+                    }
+                }
                 for (int j = 0; j < re.length; j++) {
                     if (re[j]) {
                         fp.add(it2[j]);
@@ -444,6 +451,13 @@ public class Serienjunkies extends PluginForHost {
                             {
                                 boolean online = false;
                                 boolean[] re = it2[0].getPlugin().checkLinks(it2);
+                                if(re==null)
+                                {
+                                    re = new boolean[it2.length];
+                                    for (int j = 0; j < re.length; j++) {
+                                        re[j] = it2[j].isAvailable();
+                                    }
+                                }
                                 for (int i = 0; i < re.length; i++) {
                                     if (re[i]) {
                                         fp.add(it2[i]);
