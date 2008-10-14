@@ -252,8 +252,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         public static final int SIZE = 3;
 
-        protected PackageTab _this;
-
         private ComboBrowseFile brwSaveTo;
 
         private Vector<DownloadLink> linkList;
@@ -279,10 +277,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private JMenuItem mContextNewPackage;
 
         private JCheckBox chbExtract;
+        // Kennzeichnet ob das downloadDirectory schonmal manuell geändert
+        // wurde.
+        private boolean changedDir = false;
+
+        private String lastName;
 
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
-            _this = this;
+
             buildGui();
         }
 
@@ -400,6 +403,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
             brwSaveTo.setEditable(true);
+            // brwSaveTo.addActionListener(new ActionListener() {
+
+            // public void actionPerformed(ActionEvent arg0) {
+            // changedDir = true;
+            //
+            // }
+
+            // });
             brwSaveTo.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
             brwSaveTo.setText(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
 
@@ -416,17 +427,20 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             PlainDocument doc = (PlainDocument) txtName.getDocument();
             doc.addDocumentListener(new DocumentListener() {
                 public void changedUpdate(DocumentEvent e) {
-                    onPackageNameChanged(_this);
+                    onPackageNameChanged(PackageTab.this);
+                    autoDownloadDir(PackageTab.this.getPackageName());
                 }
 
                 public void insertUpdate(DocumentEvent e) {
 
-                    onPackageNameChanged(_this);
+                    onPackageNameChanged(PackageTab.this);
+                    autoDownloadDir(PackageTab.this.getPackageName());
                 }
 
                 public void removeUpdate(DocumentEvent e) {
 
-                    onPackageNameChanged(_this);
+                    onPackageNameChanged(PackageTab.this);
+                    autoDownloadDir(PackageTab.this.getPackageName());
                 }
             });
             table = new InternalTable();
@@ -666,6 +680,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         public void setDownloadDirectory(String dir) {
+
             brwSaveTo.setText(dir);
         }
 
@@ -677,6 +692,39 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         public void setPackageName(String name) {
             txtName.setText(JDUtilities.removeEndingPoints(name));
+
+            if (this.changedDir) return;
+            autoDownloadDir(name);
+
+        }
+
+        private void autoDownloadDir(String name) {
+            if (name.equals(lastName)||name.length()<3) return;
+            this.lastName = name;
+            ArrayList<String[]> list = getDownloadDirList();
+            String[] best = null;
+            int bestValue = Integer.MAX_VALUE;
+            for (String[] entry : list) {
+                if(entry[0].equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory()))continue;
+                int value = JDUtilities.getLevenshteinDistance(entry[1], name);
+                if (name.startsWith(entry[1]) || name.endsWith(entry[1]) || entry[1].startsWith(name) || entry[1].endsWith(name)) value -= 3;
+
+                if (value < bestValue || best == null) {
+                    best = entry;
+                    bestValue = value;
+                }
+            }
+            final String newdir = best[0];
+            if (bestValue < 4) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+
+                       setDownloadDirectory(newdir);
+                    }
+
+                });
+            }
+
         }
 
         public void setPassword(String pw) {
@@ -1299,6 +1347,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setExtractAfterDownload(tab.isExtract());
         UnrarPassword.addToPasswordlist(tab.getPassword());
         UnrarPassword.pushPasswordToTop(tab.getPassword());
+        addToDownloadDirs(tab.getDownloadDirectory(), tab.getPackageName());
+
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
             File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
             if (!file.exists()) {
@@ -1338,6 +1388,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
 
         parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + files);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addToDownloadDirs(String downloadDirectory, String packageName) {
+        if (packageName.length() < 5||downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
+        ((ArrayList<String[]>) guiConfig.getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>())).add(new String[] { downloadDirectory, packageName });
+        guiConfig.save();
+    }
+
+    @SuppressWarnings("unchecked")
+    private ArrayList<String[]> getDownloadDirList() {
+        return ((ArrayList<String[]>) guiConfig.getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>()));
     }
 
     private void confirmSimpleHost(int idx, String host) {
@@ -1582,6 +1644,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 return;
             }
         }
+
     }
 
     private void removeEmptyPackages() {
