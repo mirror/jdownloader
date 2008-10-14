@@ -56,6 +56,37 @@ public class JDRRUtils {
         return data.toString();
     }
 
+    public static ByteBuffer readheader(InputStream in) {
+        ByteBuffer bigbuffer = ByteBuffer.allocateDirect(4096);
+        byte[] minibuffer = new byte[1];
+        int position;
+        int c;
+        boolean complete = false;
+        try {
+            while ((c = in.read(minibuffer)) >= 0) {
+                if (bigbuffer.remaining() < 1) {
+                    ByteBuffer newbuffer = ByteBuffer.allocateDirect((bigbuffer.capacity() * 2));
+                    bigbuffer.flip();
+                    newbuffer.put(bigbuffer);
+                    bigbuffer = newbuffer;
+                }
+                if (c > 0) bigbuffer.put(minibuffer);
+                if (bigbuffer.position() >= 4) {
+                    position = bigbuffer.position();
+                    complete = bigbuffer.get(position - 4) == (byte) 13;
+                    complete &= bigbuffer.get(position - 3) == (byte) 10;
+                    complete &= bigbuffer.get(position - 2) == (byte) 13;
+                    complete &= bigbuffer.get(position - 1) == (byte) 10;
+                    if (complete) break;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        bigbuffer.flip();
+        return bigbuffer;
+    }
+
     public static InputStream newInputStream(final ByteBuffer buf) {
         return new InputStream() {
             public synchronized int read() throws IOException {

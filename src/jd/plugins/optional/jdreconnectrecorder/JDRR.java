@@ -93,6 +93,7 @@ public class JDRR extends PluginOptional {
         public JDRRServer(ServerSocket Server_Socket, String serverip) {
             this.Server_Socket = Server_Socket;
             this.serverip = serverip;
+            this.setName("JDRRServer");
         }
 
         public void run() {

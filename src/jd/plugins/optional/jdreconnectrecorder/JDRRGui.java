@@ -74,7 +74,7 @@ public class JDRRGui extends JFrame implements ActionListener {
         super();
         int n = 10;
         this.setTitle("Reconnect Recorder");
-        
+
         btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
         btnFindIP.addActionListener(this);
 
@@ -232,11 +232,13 @@ public class JDRRGui extends JFrame implements ActionListener {
                 imageProgress = JDUtilities.getImage(JDTheme.V("gui.images.reconnect"));
                 imageBad = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad"));
                 imageGood = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_ok"));
+                
 
                 setPreferredSize(new Dimension(imageGood.getWidth(null), imageGood.getHeight(null)));
 
                 new Thread() {
                     public void run() {
+                        this.setName("JDRRPopup");
                         while (JDRR.running) {
                             try {
                                 Thread.sleep(5000);

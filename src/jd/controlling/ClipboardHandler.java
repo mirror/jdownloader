@@ -66,6 +66,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         INSTANCE = this;
         // logger = JDUtilities.getLogger();
         JDUtilities.getController().addControlListener(this);
+        this.setName("ClipboardHandler");
     }
 
     /**
