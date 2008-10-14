@@ -170,7 +170,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         packageData = new PackageManager().getPackageData();
         Collections.sort(packageData, new Comparator<PackageData>() {
             public int compare(PackageData a, PackageData b) {
-                return (a.getStringProperty("category") + a.getStringProperty("name")).compareToIgnoreCase(b.getStringProperty("category") + b.getStringProperty("name"));
+                return (a.getStringProperty("category") + " " + a.getStringProperty("name")).compareToIgnoreCase(b.getStringProperty("category") + " " + b.getStringProperty("name"));
                 // return ((Integer) a.getSortID()).compareTo((Integer)
                 // b.getSortID());
             }
