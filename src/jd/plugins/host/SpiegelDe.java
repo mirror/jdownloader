@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
@@ -29,13 +30,14 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDMediaConvert;
 
 public class SpiegelDe extends PluginForHost {
+    
+    private static final String AGB_LINK = "http://www.spiegel.de/agb";
+    private static final Pattern PATTERN_SUPPORTED_FOTOSTRECKE = Pattern.compile("http://www.spiegel.de/img/.+?(\\.\\w+)");
+    private static final Pattern PATTERN_SUPPORTED_VIDEO       = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
     public SpiegelDe(PluginWrapper wrapper) {
         super(wrapper);
-        // TODO Auto-generated constructor stub
     }
-
-    private static final String AGB_LINK = "http://www.spiegel.de/agb";
-
+    
     @Override
     public String getAGBLink() {
         return AGB_LINK;
@@ -82,20 +84,23 @@ public class SpiegelDe extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
+        if(new Regex(downloadLink.getDownloadURL(),PATTERN_SUPPORTED_FOTOSTRECKE).matches()){
+            dl.startDownload();
+        }else if(new Regex(downloadLink.getDownloadURL(),PATTERN_SUPPORTED_VIDEO).matches()){
+            if (dl.startDownload()) {
+                if (downloadLink.getProperty("convertto") != null) {
+                    ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
+                    ConversionMode inType;
+                    if(convertTo==ConversionMode.IPHONE||convertTo==ConversionMode.PODCAST||convertTo==ConversionMode.VIDEOMP4||convertTo==ConversionMode.VIDEO3GP){
+                        inType = convertTo;
+                    }else{
+                        inType = ConversionMode.VIDEOFLV;
+                    }
+                    if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
+                        logger.severe("Video-Convert failed!");
+                    }
 
-        if (dl.startDownload()) {
-            if (downloadLink.getProperty("convertto") != null) {
-                ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
-                ConversionMode inType;
-                if(convertTo==ConversionMode.IPHONE||convertTo==ConversionMode.PODCAST||convertTo==ConversionMode.VIDEOMP4||convertTo==ConversionMode.VIDEO3GP){
-                    inType = convertTo;
-                }else{
-                    inType = ConversionMode.VIDEOFLV;
                 }
-                if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
-                    logger.severe("Video-Convert failed!");
-                }
-
             }
         }
     }

@@ -668,7 +668,7 @@ public class JDInit {
         new DecryptPluginWrapper("shareonall.com", "ShareOnAll", "http://[\\w\\.]*?shareonall\\.com/(.*?)\\.htm");
         new DecryptPluginWrapper("shareprotect.t-w.at", "ShareProtect", "http://shareprotect\\.t-w\\.at/\\?id\\=[a-zA-Z0-9\\-]{3,10}");
         new DecryptPluginWrapper("share.rockt.es", "ShareRocktEs", "http://[\\w\\.]*?share\\.rockt\\.es/\\?v=\\w+|http://[\\w\\.]*?share\\.rockt\\.es/\\?go=(\\w+)");
-        new DecryptPluginWrapper("spiegel.de","SpiegelDe","http://[\\w\\.]*?spiegel\\.de/video/video-\\d+.html");
+        new DecryptPluginWrapper("spiegel.de","SpiegelDe","(http://[\\w\\.]*?spiegel\\.de/video/video-\\d+.html|http://[\\w\\.]*?spiegel\\.de/fotostrecke/fotostrecke-\\d+(-\\d+)?.html)");
         new DecryptPluginWrapper("stacheldraht.to", "StacheldrahtTo", "http://[\\w\\.]*?stacheldraht\\.to/index\\.php\\?folder=.+");
         new DecryptPluginWrapper("Stealth.to", "Stealth", "http://[\\w\\.]*?stealth\\.to/(\\?id\\=[a-zA-Z0-9]+|index\\.php\\?id\\=[a-zA-Z0-9]+|\\?go\\=captcha&id=[a-zA-Z0-9]+)");
         new DecryptPluginWrapper("technorocker.info", "TechnorockerInfo", "http://[\\w\\.]*?technorocker\\.info/opentrack\\.php\\?id=[0-9]+");
@@ -745,7 +745,7 @@ public class JDInit {
         new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+/.*?");
         new HostPluginWrapper("SiloFiles.com", "SiloFilescom", "http://[\\w\\.]*?silofiles\\.com/file/\\d+/.*?");
         new HostPluginWrapper("Speedy-Share.com", "SpeedySharecom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)");
-        new HostPluginWrapper("Spiegel.de","SpiegelDe","http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
+        new HostPluginWrapper("Spiegel.de","SpiegelDe","http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)|http://www.spiegel.de/img/.+?(\\.\\w+)");
         new HostPluginWrapper("Uploaded.to", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]{6}", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("UploadService.info", "UploadServiceinfo", "http://[\\w\\.]*?uploadservice\\.info/file/[a-zA-Z0-9]+\\.html");
         new HostPluginWrapper("UploadStube.de", "UploadStube", "http://[\\w\\.]*?uploadstube\\.de/download\\.php\\?file=.*");
