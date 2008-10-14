@@ -53,11 +53,11 @@ public class JDRRproxy extends Thread {
             ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps);
             thread1.start();
             thread1.join();
-            
-            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER |BLOCKED_READ, steps);
+
+            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER | BLOCKED_READ, steps);
             thread2.start();
             thread2.join();
-            
+
             try {
                 outgoing.shutdownInput();
                 incoming.shutdownInput();
@@ -117,7 +117,7 @@ class ProxyThread extends Thread {
                     }
                     if (numberRead == 0) hack++;
                 }
-                if (numberRead == -1 || hack > 10000) {                    
+                if (numberRead == -1 || hack > 10000) {
                     break;
                 } else {
                     if (numberRead > 0) {
@@ -196,6 +196,7 @@ class ProxyThread extends Thread {
                     byte[] b = new byte[bigbuffer.limit()];
                     bigbuffer.get(b);
                     buffer = JDHexUtils.getHexString(b);
+                    JDRRUtils.rewriteConnectionHeader(instance);
                     JDRRUtils.rewriteLocationHeader(instance);
                     JDRRUtils.rewriteHostHeader(instance);
                     JDRRUtils.rewriteRefererHeader(instance);

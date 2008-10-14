@@ -102,7 +102,7 @@ public class JDRRUtils {
             if (new Regex(location, "http://(.*?)/?").getMatch(0) != null) {
                 String oldlocation = location;
                 JDUtilities.getLogger().severe("Rewriting Location Header");
-                location = new Regex(location, "http://.*?/(.+)",Pattern.DOTALL).getMatch(0);
+                location = new Regex(location, "http://.*?/(.+)", Pattern.DOTALL).getMatch(0);
                 if (location != null) {
                     location = "http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + "/" + location;
                 } else {
@@ -127,21 +127,35 @@ public class JDRRUtils {
         }
     }
 
+    public static void rewriteConnectionHeader(ProxyThread instance) {
+        String con = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Connection: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
+        if (con != null) {
+            String type = new Regex(con, "(.+)").getMatch(0);
+            if (type != null && !type.equalsIgnoreCase("close")) {
+                String oldcon = con;
+                JDUtilities.getLogger().severe("Rewriting Connection Header");
+                con = "close";
+                instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Connection: " + oldcon), JDHexUtils.getHexString("Connection: " + con));
+                instance.renewbuffer = true;
+            }
+        }
+    }
+
     public static void rewriteRefererHeader(ProxyThread instance) {
         String ref = JDHexUtils.toString(new Regex(instance.buffer, Pattern.compile(JDHexUtils.getHexString("Referer: ") + "(.*?)" + JDHexUtils.REGEX_HTTP_NEWLINE, Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0));
         if (ref != null) {
             if (new Regex(ref, "http://(.*?)/?").getMatch(0) != null) {
                 JDUtilities.getLogger().severe("Rewriting Referer Header");
                 String oldref = ref;
-                String ref2=new Regex(ref, "http://.*?/(.+)",Pattern.DOTALL).getMatch(0);                
-                if (ref2!=null){
-                    ref = "http://"+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null)+"/"+ref2.trim();    
-                }else{
-                    ref = "http://"+JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
-                }                               
+                String ref2 = new Regex(ref, "http://.*?/(.+)", Pattern.DOTALL).getMatch(0);
+                if (ref2 != null) {
+                    ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null) + "/" + ref2.trim();
+                } else {
+                    ref = "http://" + JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
+                }
                 instance.buffer = instance.buffer.replaceAll(JDHexUtils.getHexString("Referer: " + oldref), JDHexUtils.getHexString("Referer: " + ref));
                 instance.renewbuffer = true;
             }
         }
-    }    
+    }
 }
