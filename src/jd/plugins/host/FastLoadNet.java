@@ -33,25 +33,17 @@ import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
 
-    private static final String CODER = "JD-Team";
-
     private String link;
 
     private static int SIM = 20;
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
-
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.fast-load.net/infos.php";
-    }
-
-    @Override
-    public String getCoder() {
-        return CODER;
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
@@ -62,10 +54,8 @@ public class FastLoadNet extends PluginForHost {
         br.clearCookies(getHost());
         String pid = downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4).trim();
         br.getPage("http://www.fast-load.net/api/jdownloader/" + pid);
-        
-        if(br.getRegex("Server Down").matches()){
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,10*60*1000l);
-        }
+
+        if (br.getRegex("Server Down").matches()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
         String[] lines = Regex.getLines(br + "");
 
         String filename = lines[0].substring(10).trim();
@@ -93,10 +83,8 @@ public class FastLoadNet extends PluginForHost {
             try {
                 JLinkButton.openURL("http://www.fast-load.net/getticket.php");
             } catch (MalformedURLException e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
-
         }
     }
 
@@ -120,7 +108,7 @@ public class FastLoadNet extends PluginForHost {
         dl = br.openDownload(downloadLink, this.link);
         if (!dl.getConnection().isContentDisposition()) {
             SIM = 1;
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,10*1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         }
         SIM = 20;
         dl.startDownload();

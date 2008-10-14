@@ -765,12 +765,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         textField.requestFocus();
     }
 
-    public String getCoder() {
-        return "JD-Team";
-    }
-
     public String getNick() {
-
         return conn.getNick();
     }
 

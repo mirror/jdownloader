@@ -170,7 +170,9 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         packageData = new PackageManager().getPackageData();
         Collections.sort(packageData, new Comparator<PackageData>() {
             public int compare(PackageData a, PackageData b) {
-                return ((Integer) a.getSortID()).compareTo((Integer) b.getSortID());
+                return (a.getStringProperty("category") + a.getStringProperty("name")).compareToIgnoreCase(b.getStringProperty("category") + b.getStringProperty("name"));
+                // return ((Integer) a.getSortID()).compareTo((Integer)
+                // b.getSortID());
             }
         });
 
@@ -231,7 +233,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(400, 200));
 
-        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
+        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurï¿½cksetzen"));
         btnReset.addActionListener(this);
 
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
