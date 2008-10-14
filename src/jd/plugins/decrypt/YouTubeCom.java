@@ -142,18 +142,18 @@ public class YouTubeCom extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
-            if (ConvertTo != null) {
-                if (ConvertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
+            ConversionMode convertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
+            if (convertTo != null) {
+                if (convertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
                     link += "&fmt=18";
-                } else if (ConvertTo == ConvertDialog.ConversionMode.VIDEO3GP) {
+                } else if (convertTo == ConvertDialog.ConversionMode.VIDEO3GP) {
                     link += "&fmt=13";
                 }
                 DownloadLink thislink = createDownloadlink(link);
                 thislink.setBrowserUrl(parameter);
                 thislink.setFinalFileName(name + ".tmp");
-                thislink.setSourcePluginComment("Convert to " + ConvertTo.GetText());
-                thislink.setProperty("convertto", ConvertTo.name());
+                thislink.setSourcePluginComment("Convert to " + convertTo.GetText());
+                thislink.setProperty("convertto", convertTo.name());
                 decryptedLinks.add(thislink);
             }
         } catch (IOException e) {
