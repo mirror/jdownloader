@@ -182,6 +182,26 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+        ArrayList<DownloadLink> ar = decryptItMain(param);
+        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        SerienjunkiesThread[] threads = new SerienjunkiesThread[ar.size()];
+        for (int i = 0; i < threads.length; i++) {
+            DownloadLink downloadLink = ar.get(i);
+            threads[i] = new SerienjunkiesThread(((jd.plugins.host.Serienjunkies) JDUtilities.getNewPluginForHostInstanz("serienjunkies.org")), downloadLink);
+            threads[i].start();
+        }
+        for (int i = 0; i < threads.length; i++) {
+            if (ar.get(i) != null) {
+                while (threads[i].result == null) {
+                    Thread.sleep(20);
+                }
+                decryptedLinks.addAll(threads[i].result);
+            }
+        }
+        return decryptedLinks;
+    }
+
+    public ArrayList<DownloadLink> decryptItMain(CryptedLink param) throws Exception {
         String parameter = param.toString().trim();
         br.setCookiesExclusive(true);
         br.clearCookies("serienjunkies.org");
@@ -390,7 +410,6 @@ public class Serienjunkies extends PluginForDecrypt {
             info = getLinkName(parameter);
         }
         decryptedLinks.add(createdl(parameter, info));
-
         return decryptedLinks;
     }
 
@@ -621,5 +640,31 @@ public class Serienjunkies extends PluginForDecrypt {
     public boolean useUserinputIfCaptchaUnknown() {
 
         return false;
+    }
+
+    public class SerienjunkiesThread extends Thread {
+        private jd.plugins.host.Serienjunkies pl;
+        private DownloadLink downloadLink;
+        public ArrayList<DownloadLink> result = null;
+
+        public SerienjunkiesThread(jd.plugins.host.Serienjunkies pl, DownloadLink downloadLink) {
+            this.pl = pl;
+            this.downloadLink = downloadLink;
+        }
+
+        @Override
+        public void run() {
+            try {
+                result = pl.getAvailableDownloads(downloadLink, false);
+            } catch (Exception e) {
+               e.printStackTrace();
+            }
+            if (result == null) {
+                ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
+                ar.add(downloadLink);
+                result = ar;
+            }
+
+        }
     }
 }
