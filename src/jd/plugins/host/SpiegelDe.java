@@ -33,7 +33,8 @@ public class SpiegelDe extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.spiegel.de/agb";
     private static final Pattern PATTERN_SUPPORTED_FOTOSTRECKE = Pattern.compile("http://www.spiegel.de/img/.+?(\\.\\w+)");
-    private static final Pattern PATTERN_SUPPORTED_VIDEO       = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
+    private static final Pattern PATTERN_SUPPORTED_VIDEO = Pattern.compile("http://video\\.spiegel\\.de/flash/.+?\\.flv|http://video\\.promobil2spiegel\\.netbiscuits\\.com/.+?\\.(3gp|mp4)");
+
     public SpiegelDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -45,16 +46,21 @@ public class SpiegelDe extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
+        HTTPConnection urlConnection;
         try {
-            HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
-            if (!urlConnection.isOK()) return false;
-            downloadLink.setDownloadSize(urlConnection.getContentLength());
-            return true;
+            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
         } catch (IOException e) {
             logger.severe(e.getMessage());
             downloadLink.getLinkStatus().setStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return false;
         }
+        if (!urlConnection.isOK()) {
+            urlConnection.disconnect();
+            return false;
+        }
+        downloadLink.setDownloadSize(urlConnection.getContentLength());
+        urlConnection.disconnect();
+        return true;
     }
 
     @Override
@@ -66,6 +72,7 @@ public class SpiegelDe extends PluginForHost {
     @Override
     public void reset() {
     }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
@@ -74,26 +81,24 @@ public class SpiegelDe extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        br.openGetConnection(downloadLink.getDownloadURL());
-        HTTPConnection urlConnection;
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);
-        urlConnection = dl.connect();
+        HTTPConnection urlConnection = dl.connect();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-        if(new Regex(downloadLink.getDownloadURL(),PATTERN_SUPPORTED_FOTOSTRECKE).matches()){
+        if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_FOTOSTRECKE).matches()) {
             dl.startDownload();
-        }else if(new Regex(downloadLink.getDownloadURL(),PATTERN_SUPPORTED_VIDEO).matches()){
+        } else if (new Regex(downloadLink.getDownloadURL(), PATTERN_SUPPORTED_VIDEO).matches()) {
             if (dl.startDownload()) {
                 if (downloadLink.getProperty("convertto") != null) {
                     ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
                     ConversionMode inType;
-                    if(convertTo==ConversionMode.IPHONE||convertTo==ConversionMode.PODCAST||convertTo==ConversionMode.VIDEOMP4||convertTo==ConversionMode.VIDEO3GP){
+                    if (convertTo == ConversionMode.IPHONE || convertTo == ConversionMode.PODCAST || convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.VIDEO3GP) {
                         inType = convertTo;
-                    }else{
+                    } else {
                         inType = ConversionMode.VIDEOFLV;
                     }
                     if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {

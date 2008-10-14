@@ -766,6 +766,7 @@ public class JDUtilities {
 
         else {
             acquireUserIO_Semaphore();
+            plugin.setCaptchaDetectID(Plugin.CAPTCHA_USER_INPUT);
             String code = JDUtilities.getController().getCaptchaCodeFromUser(plugin, file, null);
             releaseUserIO_Semaphore();
             return code;

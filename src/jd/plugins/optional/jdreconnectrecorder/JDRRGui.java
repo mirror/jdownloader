@@ -148,6 +148,7 @@ public class JDRRGui extends JFrame implements ActionListener {
             btnStartStop.setText("Start");
             return;
         } else if (e.getSource() == btnStartStop && btnStartStop.getText().contains("Start")) {
+            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
             ip_before = JDUtilities.getIPAddress();
             script.setText("");
             JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
@@ -233,7 +234,6 @@ public class JDRRGui extends JFrame implements ActionListener {
                 imageBad = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad"));
                 imageGood = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_ok"));
                 
-
                 setPreferredSize(new Dimension(imageGood.getWidth(null), imageGood.getHeight(null)));
 
                 new Thread() {
@@ -253,6 +253,7 @@ public class JDRRGui extends JFrame implements ActionListener {
                         }
                     }
                 }.start();
+                setStatus(0);
             }
 
             public int getImageHeight() {
