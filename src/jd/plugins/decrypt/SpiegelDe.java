@@ -15,17 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -67,8 +63,8 @@ public class SpiegelDe extends PluginForDecrypt {
 
     private static final Pattern PATTERN_IMG_URL    = Pattern.compile("<a id=\"spFotostreckeControlImg\" href=\"(/fotostrecke/fotostrecke-\\d+-\\d+.html)\"><img src=\"(http://www.spiegel.de/img/.+?(\\.\\w+?))\"");
     private static final Pattern PATTERN_IMG_TITLE  = Pattern.compile("<meta name=\"description\" content=\"(.+?)\" />");
-    
-    
+
+
     public SpiegelDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -129,7 +125,7 @@ public class SpiegelDe extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(cryptedLink.getCryptedUrl().replaceAll(group3+"\\.html", ".html")));
                 return decryptedLinks;
             }
-            
+
             String url = cryptedLink.getCryptedUrl();
             String title = new Regex(br.getPage(url),PATTERN_IMG_TITLE).getMatch(0);
             int count = 1;
@@ -148,7 +144,7 @@ public class SpiegelDe extends PluginForDecrypt {
                     dlLink.setFinalFileName(title +"-"+count+ending);
                     dlLink.setName(dlLink.getFinalFileName());
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {
-                       dlLink.addSubdirectory("spiegel.de - fotostrecken");
+                        dlLink.addSubdirectory("spiegel.de - fotostrecken");
                     }
                     decryptedLinks.add(dlLink);
                     count++;
