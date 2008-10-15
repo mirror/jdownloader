@@ -38,7 +38,6 @@ import javax.swing.table.TableColumn;
 
 import jd.DecryptPluginWrapper;
 import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -57,16 +56,19 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         public int getColumnCount() {
             return 4;
         }
+
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 3;
         }
+
         @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 3) {
-                        pluginsForDecrypt.get(row).setUsePlugin((Boolean) value);
+                pluginsForDecrypt.get(row).setUsePlugin((Boolean) value);
             }
         }
+
         @Override
         public String getColumnName(int column) {
             switch (column) {
@@ -113,8 +115,8 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     private InternalTableModel tableModel;
 
-    public ConfigPanelPluginForDecrypt(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelPluginForDecrypt(Configuration configuration) {
+        super();
         pluginsForDecrypt = DecryptPluginWrapper.getDecryptWrapper();
         Collections.sort(pluginsForDecrypt);
         initPanel();
@@ -140,11 +142,6 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         dpw.getPlugin();
         tableModel.fireTableRowsUpdated(cur, cur);
         btnEdit.setEnabled(dpw.hasConfig());
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.plugin.decrypt.name", "Decrypt Plugins");
     }
 
     @Override

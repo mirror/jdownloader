@@ -47,7 +47,6 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
-import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -122,8 +121,8 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     private InternalTableModel tableModel;
 
     @SuppressWarnings("unchecked")
-    public ConfigPanelEventmanager(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelEventmanager(Configuration configuration) {
+        super();
         interactions = (Vector<Interaction>) subConfig.getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
         initPanel();
         load();
@@ -205,11 +204,6 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
         ConfigurationPopup pop = new ConfigurationPopup(JDUtilities.getParentFrame(this), config, panel);
         pop.setLocation(JDUtilities.getCenterOfComponent(this, pop));
         pop.setVisible(true);
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.eventmanager.name", "Eventmanager");
     }
 
     @Override

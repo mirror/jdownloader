@@ -24,7 +24,6 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.PackageManager;
-import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -46,14 +45,10 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private SubPanelRessources spr;
 
-    public ConfigPanelAddons(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelAddons(Configuration configuration) {
+        super();
         initPanel();
         load();
-    }
-
-    public String getName() {
-        return JDLocale.L("gui.config.addons.name", "Netzwerk/Download");
     }
 
     public void initPanel() {
@@ -61,8 +56,8 @@ public class ConfigPanelAddons extends ConfigPanel {
         setLayout(new BorderLayout());
 
         add(cep = new ConfigEntriesPanel(container), BorderLayout.CENTER);
-        cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
-        cep.getSubPanels().get(1).add(spr = new SubPanelRessources(JDUtilities.getConfiguration(), JDUtilities.getGUI()));
+        cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(JDUtilities.getConfiguration()));
+        cep.getSubPanels().get(1).add(spr = new SubPanelRessources(JDUtilities.getConfiguration()));
     }
 
     public void load() {

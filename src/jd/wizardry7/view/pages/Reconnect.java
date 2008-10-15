@@ -8,7 +8,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.config.ConfigPanelReconnect;
 import jd.utils.JDUtilities;
 import jd.wizardry7.view.DefaultWizardPage;
@@ -36,7 +35,7 @@ public class Reconnect extends DefaultWizardPage {
         int n = 10;
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
-        panel.add(new ConfigPanelReconnect(JDUtilities.getConfiguration(), SimpleGUI.CURRENTGUI));
+        panel.add(new ConfigPanelReconnect(JDUtilities.getConfiguration()));
         panel.add(checkbox, BorderLayout.SOUTH);
 
         return panel;

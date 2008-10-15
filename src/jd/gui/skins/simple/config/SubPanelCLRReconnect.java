@@ -12,10 +12,8 @@ import javax.swing.ScrollPaneConstants;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
@@ -37,12 +35,10 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener,
 
     private GUIConfigEntry user;
 
-    public SubPanelCLRReconnect(UIInterface uiinterface, Interaction interaction) {
-        super(uiinterface);
-        // this.configuration = configuration;
+    public SubPanelCLRReconnect() {
+        super();
         initPanel();
         load();
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -83,11 +79,6 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener,
             }
         }
 
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.clr.name", "Reconnect via CLR");
     }
 
     @Override

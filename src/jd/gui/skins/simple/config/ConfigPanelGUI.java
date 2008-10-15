@@ -25,7 +25,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
@@ -44,15 +43,10 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     private SubConfiguration config;
 
-    public ConfigPanelGUI(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelGUI(Configuration configuration) {
+        super();
         initPanel();
         load();
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.gui.gui", "Benutzeroberfläche");
     }
 
     @Override

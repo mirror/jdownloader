@@ -27,7 +27,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.Unrar;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.JDUnrarPasswordListDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.unrar.JUnrar;
@@ -50,8 +49,8 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
      */
     private Unrar unrar;
 
-    public ConfigPanelUnrar(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelUnrar(Configuration configuration) {
+        super();
         unrar = Unrar.getInstance();
         initPanel();
         this.configuration = configuration;
@@ -60,11 +59,6 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         new JDUnrarPasswordListDialog(JDUtilities.getParentFrame(this)).setVisible(true);
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("modules.unrar.name", "RAR extractor");
     }
 
     @Override

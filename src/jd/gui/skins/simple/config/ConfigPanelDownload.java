@@ -21,7 +21,6 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.SingleDownloadController;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -39,14 +38,10 @@ public class ConfigPanelDownload extends ConfigPanel {
 
     private SubConfiguration config;
 
-    public ConfigPanelDownload(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelDownload(Configuration configuration) {
+        super();
         initPanel();
         load();
-    }
-
-    public String getName() {
-        return JDLocale.L("gui.config.download.name", "Netzwerk/Download");
     }
 
     public void initPanel() {
@@ -150,7 +145,6 @@ public class ConfigPanelDownload extends ConfigPanel {
         conditionEntry.setDefaultValue(2);
         conditionEntry.setStep(1);
 
-  
         download.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, PluginForHost.PARAM_MAX_RETRIES, JDLocale.L("gui.config.download.retries", "Max. Neuversuche bei vorrübergehenden Hosterproblemen"), 0, 20));
         ce.setDefaultValue(3);
         ce.setStep(1);

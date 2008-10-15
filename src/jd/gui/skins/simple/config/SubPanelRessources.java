@@ -43,7 +43,6 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
@@ -135,8 +134,8 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
 
     private InternalTableModel tableModel;
 
-    public SubPanelRessources(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public SubPanelRessources(Configuration configuration) {
+        super();
         initPanel();
         load();
     }
@@ -156,11 +155,6 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         if (evt.getSource() == cep) {
             cep.save();
         }
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.packagemanager.name", "Paketmanager");
     }
 
     @Override

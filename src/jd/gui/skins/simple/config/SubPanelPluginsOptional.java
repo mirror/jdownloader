@@ -38,7 +38,6 @@ import javax.swing.table.TableColumn;
 
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.GetExplorer;
@@ -118,8 +117,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     private InternalTableModel tableModel;
 
-    public SubPanelPluginsOptional(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public SubPanelPluginsOptional(Configuration configuration) {
+        super();
         this.configuration = configuration;
         pluginsOptional = OptionalPluginWrapper.getOptionalWrapper();
         Collections.sort(pluginsOptional);
@@ -153,11 +152,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     private void editEntry() {
         SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig());
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.plugin.optional.name", "Optional Plugins");
     }
 
     @Override

@@ -18,8 +18,6 @@ package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.ComponentOrientation;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -28,10 +26,9 @@ import javax.swing.SwingConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
+public class ConfigEntriesPanel extends ConfigPanel {
 
     private static final long serialVersionUID = -7983057329558110899L;
 
@@ -43,27 +40,16 @@ public class ConfigEntriesPanel extends ConfigPanel implements ActionListener {
 
     private JTabbedPane tabbedPane = null;
 
-    // private String title;
-
     public ConfigEntriesPanel(ConfigContainer container) {
-        super(JDUtilities.getGUI());
+        super();
         this.container = container;
-        // this.title = title;
         initPanel();
         load();
-    }
-
-    public void actionPerformed(ActionEvent e) {
     }
 
     private void addTabbedPanel(String title, ConfigEntriesPanel configPanelPlugin) {
         subPanels.add(configPanelPlugin);
         tabbedPane.add(title, configPanelPlugin);
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("config.entriespanel.defaultname", "Configuration");
     }
 
     public Vector<ConfigEntriesPanel> getSubPanels() {

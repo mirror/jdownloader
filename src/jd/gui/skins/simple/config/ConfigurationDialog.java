@@ -43,7 +43,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -77,12 +76,11 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
      * Zeigt die Konfiguration an
      * 
      * @param frame
-     * @param uiinterface
      * @return
      */
-    public static boolean showConfig(final JFrame frame, final UIInterface uiinterface) {
+    public static boolean showConfig(final JFrame frame) {
         if (CURRENTDIALOG != null && CURRENTDIALOG.isVisible()) return false;
-        CURRENTDIALOG = new ConfigurationDialog(frame, uiinterface);
+        CURRENTDIALOG = new ConfigurationDialog(frame);
         return true;
     }
 
@@ -104,17 +102,14 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private JTabbedPane tabbedPane;
 
-    private UIInterface uiinterface;
-
     /**
      * @param parent
      * @param uiinterface
      */
-    private ConfigurationDialog(JFrame parent, UIInterface uiinterface) {
+    private ConfigurationDialog(JFrame parent) {
         // super(parent);
         DIALOG = this;
         PARENTFRAME = parent;
-        this.uiinterface = uiinterface;
         setTitle(JDLocale.L("gui.config.title", "Konfiguration"));
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.configuration")));
         setName("CONFIGDIALOG");
@@ -293,8 +288,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     public ConfigPanel initSubPanel(Class<?> class1) {
         try {
-            Constructor<?> con = class1.getConstructor(new Class[] { Configuration.class, UIInterface.class });
-            return (ConfigPanel) con.newInstance(new Object[] { configuration, uiinterface });
+            Constructor<?> con = class1.getConstructor(new Class[] { Configuration.class });
+            return (ConfigPanel) con.newInstance(new Object[] { configuration });
         } catch (Exception e) {
             e.printStackTrace();
         }

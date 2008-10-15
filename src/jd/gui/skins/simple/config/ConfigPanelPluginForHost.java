@@ -47,7 +47,6 @@ import javax.swing.table.TableColumn;
 
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
@@ -158,8 +157,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private InternalTableModel tableModel;
 
-    public ConfigPanelPluginForHost(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelPluginForHost(Configuration configuration) {
+        super();
         this.configuration = configuration;
         pluginsForHost = JDUtilities.getPluginsForHost();
         initPanel();
@@ -207,11 +206,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         dpw.getPlugin();
         tableModel.fireTableRowsUpdated(cur, cur);
         btnEdit.setEnabled(dpw.hasConfig());
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.plugin.host.name", "Host Plugins");
     }
 
     @Override

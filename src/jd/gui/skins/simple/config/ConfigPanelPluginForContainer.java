@@ -38,7 +38,6 @@ import javax.swing.table.TableColumn;
 
 import jd.CPluginWrapper;
 import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -96,8 +95,8 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     private JTable table;
 
-    public ConfigPanelPluginForContainer(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelPluginForContainer(Configuration configuration) {
+        super();
         pluginsForContainer = CPluginWrapper.getCWrapper();
         Collections.sort(pluginsForContainer);
         initPanel();
@@ -112,11 +111,6 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
 
     private void editEntry() {
         SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig());
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.plugin.container.name", "Container");
     }
 
     @Override

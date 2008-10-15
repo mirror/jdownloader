@@ -47,13 +47,11 @@ public abstract class ConfigPanel extends JPanel {
 
     protected UIInterface uiinterface;
 
-    ConfigPanel(UIInterface uiinterface) {
+    public ConfigPanel() {
         int n = 2;
         setLayout(new BorderLayout(n, n));
         setBorder(new EmptyBorder(n, n, n, n));
         panel = new JPanel(new GridBagLayout());
-        this.uiinterface = uiinterface;
-
     }
 
     public void addGUIConfigEntry(GUIConfigEntry entry) {
@@ -62,9 +60,6 @@ public abstract class ConfigPanel extends JPanel {
         entries.add(entry);
 
     }
-
-    @Override
-    public abstract String getName();
 
     public abstract void initPanel();
 

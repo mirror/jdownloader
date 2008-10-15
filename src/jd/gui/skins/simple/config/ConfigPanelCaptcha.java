@@ -32,7 +32,6 @@ import jd.captcha.JAntiCaptcha;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -96,17 +95,13 @@ public class ConfigPanelCaptcha extends ConfigPanel implements MouseListener {
 
     private InternalTableModel tableModel;
 
-    public ConfigPanelCaptcha(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelCaptcha(Configuration configuration) {
+        super();
         this.configuration = configuration;
         methods = JAntiCaptcha.getMethods("jd/captcha/methods/");
 
         initPanel();
         load();
-    }
-
-    public String getName() {
-        return JDLocale.L("gui.config.jac.name", "jAntiCaptcha");
     }
 
     public void initPanel() {

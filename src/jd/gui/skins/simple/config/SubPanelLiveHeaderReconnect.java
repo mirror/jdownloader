@@ -51,10 +51,8 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
-import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.gui.UIInterface;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
 import jd.router.GetRouterInfo;
@@ -65,8 +63,6 @@ import jd.utils.JDUtilities;
 class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener, ControlListener {
 
     private static final long serialVersionUID = 6710420298517566329L;
-
-    // private Configuration configuration;
 
     private JButton btnAutoConfig;
 
@@ -86,13 +82,11 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
 
     private GUIConfigEntry user;
 
-    public SubPanelLiveHeaderReconnect(UIInterface uiinterface, Interaction interaction) {
-        super(uiinterface);
-        // this.configuration = configuration;
+    public SubPanelLiveHeaderReconnect(HTTPLiveHeader interaction) {
+        super();
         initPanel();
-        lh = (HTTPLiveHeader) interaction;
+        lh = interaction;
         load();
-
     }
 
     public void actionPerformed(ActionEvent e) {
@@ -305,11 +299,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
             }
         }
 
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.liveHeader.name", "Reconnect via LiveHeader");
     }
 
     @Override

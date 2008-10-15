@@ -22,7 +22,6 @@ import java.util.logging.Level;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.gui.UIInterface;
 import jd.utils.JDLocale;
 
 public class ConfigPanelGeneral extends ConfigPanel {
@@ -31,16 +30,11 @@ public class ConfigPanelGeneral extends ConfigPanel {
 
     private Configuration configuration;
 
-    public ConfigPanelGeneral(Configuration configuration, UIInterface uiinterface) {
-        super(uiinterface);
+    public ConfigPanelGeneral(Configuration configuration) {
+        super();
         this.configuration = configuration;
         initPanel();
         load();
-    }
-
-    @Override
-    public String getName() {
-        return JDLocale.L("gui.config.general.name", "Allgemein");
     }
 
     @Override
