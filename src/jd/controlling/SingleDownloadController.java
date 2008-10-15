@@ -284,7 +284,13 @@ public class SingleDownloadController extends Thread {
 
         downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
 
-        new AgbDialog(downloadLink2, 30);
+        JDUtilities.acquireUserIO_Semaphore();
+        if (!plugin.isAGBChecked()) {
+            new AgbDialog(downloadLink2, 30);
+        } else {
+            downloadLink2.getLinkStatus().reset();
+        }
+        JDUtilities.releaseUserIO_Semaphore();
 
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
@@ -414,21 +420,22 @@ public class SingleDownloadController extends Thread {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         linkStatus.reset();
     }
+
     private void onErrorLocalIO(DownloadLink downloadLink, PluginForHost plugin) {
-   
-        LinkStatus status = downloadLink.getLinkStatus();       
+
+        LinkStatus status = downloadLink.getLinkStatus();
         /*
          * Value<=0 bedeutet das der link dauerhauft deaktiviert bleiben soll.
          * value>0 gibt die zeit an die der link deaktiviert bleiben muss in ms.
          * Der DownloadWatchdoggibt den Link wieder frei ewnn es zeit ist.
          */
-      
-            status.setWaitTime(30*60*1000l);
-     
+
+        status.setWaitTime(30 * 60 * 1000l);
 
         downloadLink.setEnabled(false);
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
     }
+
     /**
      * Wird aufgerufen wenn ein Link kurzzeitig nicht verfügbar ist. ER wird
      * deaktiviert und kann zu einem späteren zeitpunkt wieder aktiviert werden
