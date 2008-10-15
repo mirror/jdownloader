@@ -26,8 +26,11 @@ import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -611,7 +614,14 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             public void run() {
                 String lh = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
                 if (config.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, lh).equals(lh)) {
-                    if (routerIp == null || routerIp.matches("[\\s]*")) {
+                    boolean reachable = false;
+                    try {
+                        reachable = InetAddress.getByName(routerIp).isReachable(1500);
+                    } catch (UnknownHostException e) {
+                    } catch (IOException e) {
+                    }
+
+                    if (routerIp == null || routerIp.matches("[\\s]*") || !reachable) {
                         // System.out.println(routerIp);
                         ip.setText(new GetRouterInfo(prog).getAdress());
 
