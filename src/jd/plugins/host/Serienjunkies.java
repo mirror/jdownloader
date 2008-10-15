@@ -154,6 +154,10 @@ public class Serienjunkies extends PluginForHost {
                         if (loc != null) {
                             links.add(loc);
                         }
+                        else
+                        {
+                            logger.severe("action"+forms[i].action+"\r\nloc is null");
+                        }
                     } catch (Exception e) {
                     }
 
