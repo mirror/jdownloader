@@ -145,8 +145,8 @@ public class Serienjunkies extends PluginForHost {
                 if (!forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
                     try {
                         br.getPage(forms[i].action);
-                        br.getPage(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                        String loc = br.getRedirectLocation();
+                        
+                        String loc = br.openGetConnection(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)).getHeaderField("Location");
                         if (loc != null) {
                             links.add(loc);
                         }
