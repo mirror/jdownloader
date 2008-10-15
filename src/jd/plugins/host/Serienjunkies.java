@@ -144,6 +144,7 @@ public class Serienjunkies extends PluginForHost {
             for (int i = 0; i < forms.length; i++) {
                 if (!forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
                     try {
+                        logger.info(forms[i].action);
                         for (int j = 0; j < 4; j++) {
                             if(i>0)
                             {
@@ -176,6 +177,12 @@ public class Serienjunkies extends PluginForHost {
         if (!url.startsWith("http://")) {
             url = "http://" + url;
         }
+        new Thread(new Runnable() {
+
+            public void run() {
+                // TODO Auto-generated method stub
+                
+            }}).start();
         try {
             if (!url.matches(".*sa[fv]e/f.*")) {
                 url = url.replaceAll("safe/", "safe/f");
