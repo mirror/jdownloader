@@ -158,6 +158,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public void setUsePlugin(boolean bool)
     {
         getPluginConfig().setProperty("USE_PLUGIN", bool);
+        getPluginConfig().save();
     }
     public boolean canHandle(String data) {
         if (this.isLoaded()) { return getPlugin().canHandle(data); }
