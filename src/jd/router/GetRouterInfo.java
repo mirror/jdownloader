@@ -163,7 +163,9 @@ public class GetRouterInfo {
     }
 
     public String getAdress() {
-        if (adress != null && !adress.matches("\\s*")) { return adress; }
+        if (adress != null && !adress.matches("\\s*")) { 
+            setProgress(100);
+            return adress; }
         try {
             
 
@@ -180,6 +182,7 @@ public class GetRouterInfo {
            while ((line = bufferedreader.readLine()) != null) {
               Matcher m = pat.matcher(line);
               if(m.matches()){
+                  setProgress(100);
                  return  m.group(1);
               }
            }
@@ -198,6 +201,7 @@ public class GetRouterInfo {
                             if (InetAddress.getByName(hostname).isReachable(1500)) {
                                 if (checkport80(hostname)) {
                                     adress = hostname;
+                                    setProgress(100);
                                     return adress;
                                 }
                             }
