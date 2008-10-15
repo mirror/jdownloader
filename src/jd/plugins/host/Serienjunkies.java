@@ -67,7 +67,6 @@ public class Serienjunkies extends PluginForHost {
     private Vector<String> ContainerLinks(String url) throws PluginException {
         Vector<String> links = new Vector<String>();
         Browser br = new Browser();
-        System.out.println(System.currentTimeMillis());
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
         }
@@ -146,7 +145,6 @@ public class Serienjunkies extends PluginForHost {
                             links.add(loc);
                         }
                     } catch (Exception e) {
-                        // TODO: handle exception
                     }
 
                 }
@@ -354,7 +352,6 @@ public class Serienjunkies extends PluginForHost {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            // TODO: handle exception
         }
         return decryptedLinks;
     }
@@ -375,7 +372,7 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public ArrayList<DownloadLink> getAvailableDownloads(DownloadLink downloadLink, boolean waitfordecryption) throws Exception {
-        System.out.println("avd:"+downloadLink);
+
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         this.downloadLink = downloadLink;
         String link = (String) downloadLink.getProperty("link");
@@ -414,14 +411,14 @@ public class Serienjunkies extends PluginForHost {
             if(it2.length>0)
             {
                 boolean[] re = it2[0].getPlugin().checkLinks(it2);
-                if(re==null)
+                if(re==null || re.length!=it2.length)
                 {
                     re = new boolean[it2.length];
                     for (int j = 0; j < re.length; j++) {
                         re[j] = it2[j].isAvailable();
                     }
                 }
-                for (int j = 0; j < re.length; j++) {
+                for (int j = 0; j < it2.length; j++) {
                     if (re[j]) {
                         fp.add(it2[j]);
                         online = true;
@@ -451,14 +448,14 @@ public class Serienjunkies extends PluginForHost {
                             {
                                 boolean online = false;
                                 boolean[] re = it2[0].getPlugin().checkLinks(it2);
-                                if(re==null)
+                                if(re==null || re.length!=it2.length)
                                 {
                                     re = new boolean[it2.length];
                                     for (int j = 0; j < re.length; j++) {
                                         re[j] = it2[j].isAvailable();
                                     }
                                 }
-                                for (int i = 0; i < re.length; i++) {
+                                for (int i = 0; i < it2.length; i++) {
                                     if (re[i]) {
                                         fp.add(it2[i]);
                                         online = true;
