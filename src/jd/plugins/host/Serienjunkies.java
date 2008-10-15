@@ -154,7 +154,7 @@ public class Serienjunkies extends PluginForHost {
                             
                             String loc = br.openGetConnection(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)).getHeaderField("Location");
                             if (loc != null) {
-                                logger.info(loc);
+                                logger.info(loc );
                                 links.add(loc);
                                 break;
                             }
