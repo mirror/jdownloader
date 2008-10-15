@@ -116,23 +116,26 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     @Override
     public boolean initAddon() {
-        if (JDUtilities.getJavaVersion() >= 1.6) {
-            try {
-                JDUtilities.getController().addControlListener(this);
-                if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI.getFrame() != null) {
-                    guiFrame = SimpleGUI.CURRENTGUI.getFrame();
-                    guiFrame.addWindowListener(this);
-                }
-                logger.info("Systemtray OK");
-                initGUI();
-            } catch (Exception e) {
-                return false;
-            }
-            return true;
-        } else {
+        if (JDUtilities.getJavaVersion() < 1.6) {
             logger.severe("Error initializing SystemTray: Tray is supported since Java 1.6. your Version: " + JDUtilities.getJavaVersion());
             return false;
         }
+        if (!SystemTray.isSupported()) {
+            logger.severe("Error initializing SystemTray: Tray isn't supported jet");
+            return false;
+        }
+        try {
+            JDUtilities.getController().addControlListener(this);
+            if (SimpleGUI.CURRENTGUI != null && SimpleGUI.CURRENTGUI.getFrame() != null) {
+                guiFrame = SimpleGUI.CURRENTGUI.getFrame();
+                guiFrame.addWindowListener(this);
+            }
+            logger.info("Systemtray OK");
+            initGUI();
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
     }
 
     public void controlEvent(ControlEvent event) {
