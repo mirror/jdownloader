@@ -37,8 +37,7 @@ import jd.captcha.utils.UTILITIES;
  * @author JD-Team
  * 
  */
-@SuppressWarnings("unchecked")
-public class PixelObject implements Comparable {
+public class PixelObject implements Comparable<PixelObject> {
     /**
      * Farbdurschnitt des Onkekts
      */
@@ -262,9 +261,9 @@ public class PixelObject implements Comparable {
         return res;
     }
 
-    public int compareTo(Object arg) {
-        if (((PixelObject) arg).getLocation()[0] < getLocation()[0]) { return 1; }
-        if (((PixelObject) arg).getLocation()[0] > getLocation()[0]) { return -1; }
+    public int compareTo(PixelObject po) {
+        if (po.getLocation()[0] < getLocation()[0]) { return 1; }
+        if (po.getLocation()[0] > getLocation()[0]) { return -1; }
         return 0;
     }
 

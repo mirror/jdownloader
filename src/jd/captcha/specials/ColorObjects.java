@@ -81,7 +81,6 @@ public class ColorObjects {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     public static Letter[] getLetters(Captcha captcha) {
 
         ArrayList<PixelObject> os = getObjects(captcha, 10);

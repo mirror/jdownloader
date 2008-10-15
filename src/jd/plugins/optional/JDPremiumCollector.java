@@ -35,7 +35,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
-import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -104,8 +103,7 @@ public class JDPremiumCollector extends PluginOptional {
                 if (JOptionPane.showConfirmDialog(guiFrame, JDLocale.LF("plugins.optional.premiumcollector.accountsFound.message", "Found %s accounts for %s plugin! Replace old saved accounts with new accounts?", accounts.size(), plg.getHost()), JDLocale.L("plugins.optional.premiumcollector.accountsFound", "Accounts found!"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) continue;
             }
 
-            plg.getPluginConfig().setProperty(PluginForHost.PROPERTY_PREMIUM, accounts);
-            plg.getPluginConfig().save();
+            plg.getPlugin().setPremiumAccounts(accounts);
             accountsFound += accounts.size();
         }
 

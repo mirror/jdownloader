@@ -88,7 +88,10 @@ public class UTILITIES {
      * private static String PROPERTYFILE Pfad zur Gloabeln property file
      */
     public static String PROPERTYFILE = "globals.dat";
-    /** ************************************Properties************************************ */
+    /**
+     * ************************************Properties***************************
+     * *********
+     */
     /**
      * private static Properties PROPS Globale Property File
      */
@@ -792,7 +795,10 @@ public class UTILITIES {
         return v;
     }
 
-    /** **********************************GUI************************************** */
+    /**
+     * **********************************GUI************************************
+     * **
+     */
     /**
      * public static Image loadImage(File file) Lädt file als Bildatei und
      * wartet bis file geladen wurde. gibt file als Image zurück
@@ -865,18 +871,15 @@ public class UTILITIES {
 
         int[] av = UTILITIES.hexToRgb(a);
         int[] bv = UTILITIES.hexToRgb(b);
-        int R,G,B;
-    
-         R = (av[0] * ga + bv[0] * gb) / (ga + gb);
-         G = (av[1] * ga + bv[1] * gb) / (ga + gb);
-         B = (av[2] * ga + bv[2] * gb) / (ga + gb);
-       
+        int R, G, B;
+
+        R = (av[0] * ga + bv[0] * gb) / (ga + gb);
+        G = (av[1] * ga + bv[1] * gb) / (ga + gb);
+        B = (av[2] * ga + bv[2] * gb) / (ga + gb);
 
         return UTILITIES.rgbToHex(new int[] { R, (G), (B) });
 
     }
-
-
 
     public static int nextJump(int x, int from, int to, int step) {
         int start = UTILITIES.getJumperStart(from, to);
@@ -922,7 +925,10 @@ public class UTILITIES {
 
     }
 
-    /** ************************************XML**************************************** */
+    /**
+     * ************************************XML**********************************
+     * ******
+     */
     /**
      * public static Document parseXmlFile(String filename, boolean validating)
      * liest filename als XML ein und gibt ein XML Document zurück. Parameter
@@ -1026,7 +1032,10 @@ public class UTILITIES {
         return ImageIO.read(file);
     }
 
-    /** ***************************************COLOR************************************* */
+    /**
+     * ***************************************COLOR*****************************
+     * ********
+     */
     // RGB to HSB
     /**
      * public static float[] rgb2hsb(int r, int g, int b) Wandelt einen farbwert
@@ -1303,7 +1312,10 @@ public class UTILITIES {
 
     }
 
-    /** *************************************MATH**************************************** */
+    /**
+     * *************************************MATH********************************
+     * ********
+     */
     /**
      * DReht die Koordinaten x und y um den Mittelpunkt nullX und nullY umd en
      * Winkel winkel
@@ -1383,7 +1395,10 @@ public class UTILITIES {
 
     }
 
-    /** *************************************NET**************************************** */
+    /**
+     * *************************************NET*********************************
+     * *******
+     */
 
     /**
      * @param str

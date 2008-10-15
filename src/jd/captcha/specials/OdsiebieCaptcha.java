@@ -86,7 +86,6 @@ public class OdsiebieCaptcha {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     public static Letter[] getLetters(Captcha captcha) {
         captcha.cleanByRGBDistance(-1, 20);
         // long t = System.currentTimeMillis();
@@ -102,7 +101,8 @@ public class OdsiebieCaptcha {
 
             }
 
-//            if (akt.getArea() > 20) BasicWindow.showImage(akt.toLetter().getImage(4), akt + "");
+            // if (akt.getArea() > 20)
+            // BasicWindow.showImage(akt.toLetter().getImage(4), akt + "");
             if (akt.getArea() > 1800) {
                 // it.remove();
             } else if (akt.getArea() < 180) {
@@ -140,7 +140,7 @@ public class OdsiebieCaptcha {
         for (PixelObject pixelObject : os) {
             Letter let = pixelObject.toLetter();
 
-//            let.blurIt(2);
+            // let.blurIt(2);
             let.toBlackAndWhite(1.16);
             let.removeSmallObjects(0.8, 0.8, 30);
             let.clean();
@@ -217,11 +217,11 @@ public class OdsiebieCaptcha {
                     if (a.getArea() < area * 1.4 || b.getArea() < area * 1.4) {
                         if (UTILITIES.getColorDifference(a.getAverage(), b.getAverage()) < 85) {
 
-//                            ScrollPaneWindow w = new ScrollPaneWindow(null);
-//                           w.setImage(0, 1, a.toLetter().getImage(3));
-//                            w.setImage(0, 2, b.toLetter().getImage(3));
+                            // ScrollPaneWindow w = new ScrollPaneWindow(null);
+                            // w.setImage(0, 1, a.toLetter().getImage(3));
+                            // w.setImage(0, 2, b.toLetter().getImage(3));
                             a.add(b);
-//                            w.setImage(0, 3, a.toLetter().getImage(3));
+                            // w.setImage(0, 3, a.toLetter().getImage(3));
                             os.remove(b);
                             mergeObjects(os);
                             return;
@@ -234,20 +234,17 @@ public class OdsiebieCaptcha {
     }
 
     private static void clearCaptcha(Captcha captcha) {
-        
-        
+
         for (int x = 0; x < captcha.getWidth(); x++) {
-          
+
             for (int y = 0; y < captcha.getHeight(); y++) {
-              if(UTILITIES.getColorDifference(0x8080ff, captcha.getPixelValue(x, y))<3){
-                  captcha.setPixelValue(x, y, captcha.getMaxPixelValue());
-              }
+                if (UTILITIES.getColorDifference(0x8080ff, captcha.getPixelValue(x, y)) < 3) {
+                    captcha.setPixelValue(x, y, captcha.getMaxPixelValue());
+                }
             }
         }
-            
+
     }
-
-
 
     public static Letter[] letterFilter(Letter[] org, JAntiCaptcha jac) {
         int ths = Runtime.getRuntime().availableProcessors();

@@ -238,9 +238,8 @@ public class JDClassLoader extends java.lang.ClassLoader {
      * diese Klasse selbst zu laden.
      */
     @Override
-    @SuppressWarnings("unchecked")
-    protected Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        Class c = findLoadedClass(name);
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        Class<?> c = findLoadedClass(name);
         if (c == null) {
             try {
                 c = findSystemClass(name);
@@ -260,7 +259,7 @@ public class JDClassLoader extends java.lang.ClassLoader {
                 if (entry != null) {
                     try {
                         byte data[] = loadClassData(element, entry);
-System.out.println("Loaded class "+name+" from "+element.getName());
+                        System.out.println("Loaded class " + name + " from " + element.getName());
                         c = defineClass(name, data, 0, data.length, getClass().getProtectionDomain());
                         if (c == null) { throw new ClassNotFoundException(name); }
                     } catch (ClassFormatError e) {
@@ -276,16 +275,16 @@ System.out.println("Loaded class "+name+" from "+element.getName());
         }
         return c;
     }
-    public String findJar(String name) throws ClassNotFoundException { 
-            JarEntry entry = null;
-            for (JarFile element : jars) {
-                entry = element.getJarEntry(name.replace('.', '/') + ".class");
-                if (entry != null) {
-                    return element.getName();
-                }            
+
+    public String findJar(String name) throws ClassNotFoundException {
+        JarEntry entry = null;
+        for (JarFile element : jars) {
+            entry = element.getJarEntry(name.replace('.', '/') + ".class");
+            if (entry != null) { return element.getName(); }
         }
-       return null;
+        return null;
     }
+
     /**
      * Diese Methode lädt eine Klasse aus einer JAR nach
      * 

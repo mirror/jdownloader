@@ -59,12 +59,14 @@ public class JACTest {
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/"+hoster+"/captchas/"+"securedin1730080724541.jpg"),
         // 4);
 
-//      jac.showPreparedCaptcha(new File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster + "/captchas/" + "cap_380" + ".png"));
+        // jac.showPreparedCaptcha(new
+        // File("C:/Users/coalado/.jd_home/jd/captcha/methods/" + hoster +
+        // "/captchas/" + "cap_380" + ".png"));
 
         // UTILITIES.getLogger().info(JAntiCaptcha.getCaptchaCode(UTILITIES.loadImage(new
         // File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()+"/jd/captcha/methods"+"/rapidshare.com/captchas/rapidsharecom24190807214810.jpg")),
         // null, "rapidshare.com"));
-        // jac.removeBadLetters();  01801
+        // jac.removeBadLetters(); 01801
         // jac.addLetterMap();
         // jac.saveMTHFile();
 

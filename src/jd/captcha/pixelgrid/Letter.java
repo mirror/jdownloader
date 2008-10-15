@@ -460,9 +460,8 @@ public class Letter extends PixelGrid {
      * y + yy < // 0 || y + yy > this.getHeight() - 1) || if ((grid[x + xx][y +
      * yy] > 0) && angleMap[xx + 1][yy + 1] >= 0) { //
      * if(JAntiCaptcha.isLoggerActive())logger.info(xx+","+yy+" -
-     * "+angleMap[xx+1][yy+1]); angle = count * angle + angleMap[xx + 1][yy +
-     * 1]; count++; angle /= count; } } catch (Exception e) { } } } return
-     * angle; }
+     * "+angleMap[xx+1][yy+1]); angle = count angle + angleMap[xx + 1][yy + 1];
+     * count++; angle /= count; } } catch (Exception e) { } } } return angle; }
      */
 
     public int[][] getLocalMap(int[][] grid, int x, int y) {

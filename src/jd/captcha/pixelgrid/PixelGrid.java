@@ -1165,7 +1165,7 @@ public class PixelGrid extends Property {
                     } else {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
-                        //if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
+                        // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
                         // "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast);
                     }
@@ -1179,12 +1179,12 @@ public class PixelGrid extends Property {
                     if (tmp == object.getSize()) {
                         object = new PixelObject(this);
                         object.setContrast(contrast);
-                        //if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
+                        // if(JAntiCaptcha.isLoggerActive())logger.info("Kontrast:
                         // "+contrast+" : "+objectContrast);
                         object.setWhiteContrast(objectContrast);
                         getObject(x, y, tmpGrid, object);
                     }
-                    //if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize
+                    // if(JAntiCaptcha.isLoggerActive())logger.info(object.getSize
                     // ()+"
                     // avg "+object.getAverage()+" area: "+object.getArea());
                     if (object.getArea() > 20) {
@@ -1395,7 +1395,7 @@ public class PixelGrid extends Property {
                 akt -= min;
                 akt /= faktor;
                 akt *= multi;
-                //if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y
+                // if(JAntiCaptcha.isLoggerActive())logger.fine(getPixelValue(x,y
                 // )+"
                 // = "+akt);
                 akt = Math.min(akt, getMaxPixelValue());
@@ -1590,7 +1590,7 @@ public class PixelGrid extends Property {
         owner.getJas().set("minimumObjectArea", tmp);
 
         for (int i = 1; i < ret.size(); i++) {
-            //BasicWindow.showImage(ret.elementAt(i).toLetter().getImage(),"LL "
+            // BasicWindow.showImage(ret.elementAt(i).toLetter().getImage(),"LL "
             // +ret.elementAt(i).getSize());
             if (ret.elementAt(i).getSize() < maxSize) {
                 removeObjectFromGrid(ret.elementAt(i));

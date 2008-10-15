@@ -1205,7 +1205,7 @@ public class JDUtilities {
         char t_j;
         int cost;
         for (i = 0; i <= n; i++) {
-            p[i] = i; 
+            p[i] = i;
         }
         for (j = 1; j <= m; j++) {
             t_j = t.charAt(j - 1);
@@ -1464,14 +1464,13 @@ public class JDUtilities {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     public static ArrayList<Account> getAccountsForHost(String host) {
         PluginForHost plugin = JDUtilities.getPluginForHost(host);
         if (plugin != null) {
-            ArrayList<Account> accounts = (ArrayList<Account>) plugin.getPluginConfig().getProperty(PluginForHost.PROPERTY_PREMIUM, new ArrayList<Account>());
-            return accounts;
-        } else
+            return plugin.getPremiumAccounts();
+        } else {
             return null;
+        }
     }
 
     /**

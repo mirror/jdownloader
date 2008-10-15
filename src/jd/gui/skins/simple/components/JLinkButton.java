@@ -173,14 +173,13 @@ public class JLinkButton extends JButton {
         JLinkButton.openURL(new URL(url));
     }
 
-    @SuppressWarnings("unchecked")
     public static void openURL(URL url) {
 
         if (url != null) {
             String Browser = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_BROWSER, null);
             if (Browser == null) {
                 BrowserLauncher launcher;
-                List ar = null;
+                List<?> ar = null;
                 try {
                     launcher = new BrowserLauncher();
                     ar = launcher.getBrowserList();

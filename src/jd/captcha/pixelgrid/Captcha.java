@@ -249,9 +249,10 @@ public class Captcha extends PixelGrid {
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 test[x][y] = Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y));
-              
-                if (UTILITIES.getColorDifference(mask.getPixelValue(x, y),getPixelValue(x, y)) < dif) {
-                  //  if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x, y)) < dif) {
+
+                if (UTILITIES.getColorDifference(mask.getPixelValue(x, y), getPixelValue(x, y)) < dif) {
+                    // if (Math.abs(mask.getPixelValue(x, y) - getPixelValue(x,
+                    // y)) < dif) {
 
                     PixelGrid.setPixelValue(x, y, newgrid, getMaxPixelValue(), owner);
 
@@ -447,7 +448,6 @@ public class Captcha extends PixelGrid {
         return UTILITIES.rgbToHex(avg);
     }
 
-    @SuppressWarnings("unchecked")
     public Vector<PixelObject> getBiggestObjects(int letterNum, int minArea, double contrast, double objectContrast) {
         int splitter;
         int splitNum;
@@ -586,14 +586,15 @@ public class Captcha extends PixelGrid {
         // Kleine Objekte ausfiltern
         /*
          * String removeObjectsContainingImage = "dog.png"; if
-         * (removeObjectsContainingImage != null && objects.size() > letterNum) {
-         * Captcha remImage =
-         * owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile(removeObjectsContainingImage)));
-         * ArrayList<Integer[]> blackPoints = new ArrayList<Integer[]>(); int
-         * avg = getAverage(); for (int y = 0; y < remImage.getHeight(); y++) {
-         * for (int x = 0; x < remImage.getWidth(); x++) { if
-         * (isElement(remImage.getPixelValue(x, y), avg)) { blackPoints.add(new
-         * Integer[] { x, y }); } } } ListIterator<PixelObject> iter =
+         * (removeObjectsContainingImage != null && objects.size() > letterNum)
+         * { Captcha remImage =
+         * owner.createCaptcha(UTILITIES.loadImage(owner.getResourceFile
+         * (removeObjectsContainingImage))); ArrayList<Integer[]> blackPoints =
+         * new ArrayList<Integer[]>(); int avg = getAverage(); for (int y = 0; y
+         * < remImage.getHeight(); y++) { for (int x = 0; x <
+         * remImage.getWidth(); x++) { if (isElement(remImage.getPixelValue(x,
+         * y), avg)) { blackPoints.add(new Integer[] { x, y }); } } }
+         * ListIterator<PixelObject> iter =
          * objects.listIterator(objects.size()); while (iter.hasPrevious() &&
          * objects.size() > letterNum) { PixelObject pixelObject = (PixelObject)
          * iter.previous(); if (objectContainCaptcha(pixelObject, remImage,
@@ -601,11 +602,11 @@ public class Captcha extends PixelGrid {
          * 
          * iter.remove(); } } }
          */
-//        
-//        for(PixelObject oo:objects){
-//          int hh = objects.elementAt(i++).getArea();
-//          hh=hh;
-//        }
+        //        
+        // for(PixelObject oo:objects){
+        // int hh = objects.elementAt(i++).getArea();
+        // hh=hh;
+        // }
         while (i < objects.size() && objects.elementAt(i++).getArea() > minArea && found < letterNum) {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.info(objects.elementAt(i - 1).getWidth() + " Element: " + found + " : " + objects.elementAt(i - 1).getArea());
@@ -832,11 +833,10 @@ public class Captcha extends PixelGrid {
      *            Anzahl der vermuteten Buchstaben
      * @return Array mit den gefundenen Lettern
      */
-    @SuppressWarnings("unchecked")
     public Letter[] getLetters(int letterNum) {
         if (seperatedLetters != null) { return seperatedLetters; }
         Letter[] ret = getLetters0(letterNum);
-        if(ret==null)return null;
+        if (ret == null) return null;
         if (owner.getJas().getString("useLetterFilter") != null && owner.getJas().getString("useLetterFilter").length() > 0) {
             String[] ref = owner.getJas().getString("useLetterFilter").split("\\.");
             if (ref.length != 2) {
@@ -848,11 +848,11 @@ public class Captcha extends PixelGrid {
             String cl = ref[0];
             String methodname = ref[1];
 
-            Class newClass;
+            Class<?> newClass;
             try {
                 newClass = Class.forName("jd.captcha.specials." + cl);
 
-                Class[] parameterTypes = new Class[] { ret.getClass(), owner.getClass() };
+                Class<?>[] parameterTypes = new Class[] { ret.getClass(), owner.getClass() };
                 Method method = newClass.getMethod(methodname, parameterTypes);
                 Object[] arguments = new Object[] { ret, owner };
                 Object instance = null;
@@ -959,7 +959,6 @@ public class Captcha extends PixelGrid {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     public Letter[] getLetters0(int letterNum) {
 
         if (letterNum == 1) {
@@ -979,12 +978,12 @@ public class Captcha extends PixelGrid {
             String cl = ref[0];
             String methodname = ref[1];
 
-            Class newClass;
+            Class<?> newClass;
             try {
-                logger.severe("Special detection :"+"jd.captcha.specials." + cl);
+                logger.severe("Special detection :" + "jd.captcha.specials." + cl);
                 newClass = Class.forName("jd.captcha.specials." + cl);
-               
-                Class[] parameterTypes = new Class[] { this.getClass() };
+
+                Class<?>[] parameterTypes = new Class[] { this.getClass() };
                 Method method = newClass.getMethod(methodname, parameterTypes);
                 Object[] arguments = new Object[] { this };
                 Object instance = null;
@@ -1489,8 +1488,8 @@ public class Captcha extends PixelGrid {
     /**
      * Speichert den captcha als Bild mit Trennstrichen ab
      * 
-     * @param file .
-     *            ZielPfad
+     * @param file
+     *            . ZielPfad
      */
     public void saveImageasJpgWithGaps(File file) {
         BufferedImage bimg = null;
@@ -1660,14 +1659,16 @@ public class Captcha extends PixelGrid {
         valityPercent = d;
 
     }
-/**
- * Entfernt bildbereiche deren RGB distance größe bzw kleiner der tollerance ist
- * @param mode
- * @param tollerance
- */
+
+    /**
+     * Entfernt bildbereiche deren RGB distance größe bzw kleiner der tollerance
+     * ist
+     * 
+     * @param mode
+     * @param tollerance
+     */
     public void cleanByRGBDistance(int mode, int tollerance) {
         int[][] newgrid = new int[getWidth()][getHeight()];
-   
 
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {

@@ -90,7 +90,6 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         this.className = className;
     }
 
-    @SuppressWarnings("unchecked")
     public Plugin getPlugin() {
         if (loadedPlugin != null) return loadedPlugin;
 
@@ -126,14 +125,14 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 progress.finalize();
             }
             logger.finer("load plugin: " + getClassName());
-            Class plgClass = CL.loadClass(getClassName());
+            Class<?> plgClass = CL.loadClass(getClassName());
 
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class[] classes = new Class[] { PluginWrapper.class };
-            Constructor con = plgClass.getConstructor(classes);
+            Class<?>[] classes = new Class[] { PluginWrapper.class };
+            Constructor<?> con = plgClass.getConstructor(classes);
             classes = null;
             this.loadedPlugin = (Plugin) con.newInstance(new Object[] { this });
 
@@ -152,14 +151,16 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public Object getCoder() {
         return this.isLoaded() ? getPlugin().getCoder() : JDLocale.L("plugin.system.notloaded", "idle");
     }
+
     public boolean usePlugin() {
         return getPluginConfig().getBooleanProperty("USE_PLUGIN", true);
     }
-    public void setUsePlugin(boolean bool)
-    {
+
+    public void setUsePlugin(boolean bool) {
         getPluginConfig().setProperty("USE_PLUGIN", bool);
         getPluginConfig().save();
     }
+
     public boolean canHandle(String data) {
         if (this.isLoaded()) { return getPlugin().canHandle(data); }
         if (data == null) { return false; }

@@ -574,7 +574,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
                     removePackage(lastDownloadFinished.getFilePackage());
@@ -608,8 +608,8 @@ public class JDController implements ControlListener, UIListener {
             }
 
             if (event.getParameter() != null && event.getParameter() instanceof Vector && ((Vector) event.getParameter()).size() > 0) {
-                Vector links = (Vector) event.getParameter();
-                uiInterface.addLinksToGrabber((Vector<DownloadLink>) links);
+                Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
+                uiInterface.addLinksToGrabber(links);
 
             }
 
@@ -1896,14 +1896,13 @@ public class JDController implements ControlListener, UIListener {
 
             watchdog.abort();
             setDownloadStatus(DOWNLOAD_NOT_RUNNING);
-            
 
-            synchronized (packages) {              
-                for (FilePackage fp:packages) {            
-                    for (DownloadLink link:fp.getDownloadLinks()) {
-                        if(link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)){
+            synchronized (packages) {
+                for (FilePackage fp : packages) {
+                    for (DownloadLink link : fp.getDownloadLinks()) {
+                        if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
                             link.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                            link.setEnabled(true);                            
+                            link.setEnabled(true);
                         }
                     }
                 }

@@ -113,8 +113,7 @@ public class GifDecoder {
 
     protected int frameCount;
 
-    @SuppressWarnings("unchecked")
-    protected ArrayList frames; // frames read from current file
+    protected ArrayList<GifFrame> frames; // frames read from current file
 
     protected int[] gct; // global color table
 
@@ -312,7 +311,7 @@ public class GifDecoder {
         //
         delay = -1;
         if (n >= 0 && n < frameCount) {
-            delay = ((GifFrame) frames.get(n)).delay;
+            delay = frames.get(n).delay;
         }
         return delay;
     }
@@ -327,7 +326,7 @@ public class GifDecoder {
     public BufferedImage getFrame(int n) {
         BufferedImage im = null;
         if (n >= 0 && n < frameCount) {
-            im = ((GifFrame) frames.get(n)).image;
+            im = frames.get(n).image;
         }
         return im;
     }
@@ -372,11 +371,10 @@ public class GifDecoder {
     /**
      * Initializes or re-initializes reader
      */
-    @SuppressWarnings("unchecked")
     protected void init() {
         status = STATUS_OK;
         frameCount = 0;
-        frames = new ArrayList();
+        frames = new ArrayList<GifFrame>();
         gct = null;
         lct = null;
     }
@@ -630,7 +628,6 @@ public class GifDecoder {
     /**
      * Reads next frame image
      */
-    @SuppressWarnings("unchecked")
     protected void readImage() {
         ix = readShort(); // (sub)image position & size
         iy = readShort();
@@ -777,10 +774,10 @@ public class GifDecoder {
                     Color c = null;
                     if (transparency) {
                         c = new Color(0, 0, 0, 0); // assume background is
-                                                    // transparent
+                        // transparent
                     } else {
                         c = new Color(lastBgColor); // use given background
-                                                    // color
+                        // color
                     }
                     g.setColor(c);
                     g.setComposite(AlphaComposite.Src); // replace area

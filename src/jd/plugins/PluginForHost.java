@@ -94,14 +94,13 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    @SuppressWarnings("unchecked")
     public void actionPerformed(ActionEvent e) {
         if (e.getID() == 1) {
             SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), config);
             return;
         }
 
-        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        ArrayList<Account> accounts = getPremiumAccounts();
         if (e.getID() >= 200) {
             int accountID = e.getID() - 200;
             Account account = accounts.get(accountID);
@@ -145,7 +144,6 @@ public abstract class PluginForHost extends Plugin {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public ArrayList<MenuItem> createMenuitems() {
 
@@ -156,7 +154,7 @@ public abstract class PluginForHost extends Plugin {
         m.setActionListener(this);
         MenuItem premium = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.menu.accounts", "Accounts"), 0);
         menuList.add(m);
-        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        ArrayList<Account> accounts = getPremiumAccounts();
 
         int i = 1;
         int c = 0;
@@ -318,13 +316,12 @@ public abstract class PluginForHost extends Plugin {
         return 20;
     }
 
-    @SuppressWarnings("unchecked")
     public boolean ignoreHosterWaittime(DownloadLink link) {
         if (!this.enablePremium || !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true)) { return false; }
 
         Account currentAccount = null;
 
-        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        ArrayList<Account> accounts = getPremiumAccounts();
 
         synchronized (accounts) {
             for (int i = 0; i < accounts.size(); i++) {
@@ -359,7 +356,6 @@ public abstract class PluginForHost extends Plugin {
 
     public abstract void handleFree(DownloadLink link) throws Exception;
 
-    @SuppressWarnings("unchecked")
     public void handle(DownloadLink downloadLink) throws Exception {
         if (!isAGBChecked()) {
             logger.severe("AGB not signed : " + getPluginID());
@@ -398,8 +394,8 @@ public abstract class PluginForHost extends Plugin {
         Account account = null;
         ArrayList<Account> disabled = new ArrayList<Account>();
 
-        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
-     
+        ArrayList<Account> accounts = getPremiumAccounts();
+
         synchronized (accounts) {
             for (int i = 0; i < accounts.size(); i++) {
                 Account next = accounts.get(i);
@@ -507,10 +503,9 @@ public abstract class PluginForHost extends Plugin {
      * Führt alle restevorgänge aus und bereitet das Plugin dadurch auf einen
      * Neustart vor. Sollte nicht überschrieben werden
      */
-    @SuppressWarnings("unchecked")
     public final void resetPlugin() {
         reset();
-        ArrayList<Account> accounts = (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+        ArrayList<Account> accounts = getPremiumAccounts();
 
         for (Account account : accounts)
             account.setTempDisabled(false);
@@ -597,6 +592,16 @@ public abstract class PluginForHost extends Plugin {
 
     public boolean isPremiumEnabled() {
         return enablePremium;
+    }
+
+    @SuppressWarnings("unchecked")
+    public ArrayList<Account> getPremiumAccounts() {
+        return (ArrayList<Account>) getPluginConfig().getProperty(PROPERTY_PREMIUM, new ArrayList<Account>());
+    }
+
+    public void setPremiumAccounts(ArrayList<Account> accounts) {
+        getPluginConfig().setProperty(PROPERTY_PREMIUM, accounts);
+        getPluginConfig().save();
     }
 
 }

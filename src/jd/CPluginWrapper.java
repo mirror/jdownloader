@@ -42,20 +42,19 @@ public class CPluginWrapper extends PluginWrapper {
         return (PluginsC) loadedPlugin;
     }
 
-    @SuppressWarnings("unchecked")
     public PluginsC loadPlugin() {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
 
         logger.finer("Try to initialize " + this.getClassName());
         try {
 
-            Class plgClass = jdClassLoader.loadClass(this.getClassName());
+            Class<?> plgClass = jdClassLoader.loadClass(this.getClassName());
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class[] classes = new Class[] { PluginWrapper.class };
-            Constructor con = plgClass.getConstructor(classes);
+            Class<?>[] classes = new Class[] { PluginWrapper.class };
+            Constructor<?> con = plgClass.getConstructor(classes);
 
             this.loadedPlugin = (PluginsC) con.newInstance(new Object[] { this });
             logger.finer("Successfully loaded " + this.getClassName());

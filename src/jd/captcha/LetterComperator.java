@@ -81,8 +81,7 @@ public class LetterComperator {
     private double errorbWeight;
     private Object[] extensionCodeArguments = new Object[] { null, 0.0 };
     private Method extensionCodeMethod = null;
-    @SuppressWarnings("unchecked")
-    private Class[] extensionCodeParameterTypes = new Class[] { LetterComperator.class, Double.class };
+    private Class<?>[] extensionCodeParameterTypes = new Class[] { LetterComperator.class, Double.class };
     private double extensionError = 0.0;
     private double heightFaktor = 0;
     private int[] imgOffset;
@@ -1055,7 +1054,6 @@ public class LetterComperator {
      * 
      * @param owner
      */
-    @SuppressWarnings("unchecked")
     public void setOwner(JAntiCaptcha owner) {
         this.owner = owner;
         jas = owner.getJas();
@@ -1086,7 +1084,7 @@ public class LetterComperator {
             }
             String cl = ref[0];
             String methodname = ref[1];
-            Class newClass;
+            Class<?> newClass;
             try {
                 newClass = Class.forName("jd.captcha.specials." + cl);
 

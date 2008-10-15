@@ -141,7 +141,7 @@ public class JAntiCaptcha {
 
         File[] entries = dir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDUtilities.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
 
@@ -202,7 +202,7 @@ public class JAntiCaptcha {
         JAntiCaptcha jac = new JAntiCaptcha(methodsPath, methodName);
         File[] entries = captchaDir.listFiles(new FileFilter() {
             public boolean accept(File pathname) {
-                //if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
+                // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
                 if (pathname.getName().endsWith(".jpg") || pathname.getName().endsWith(".png") || pathname.getName().endsWith(".gif")) {
 
@@ -404,7 +404,6 @@ public class JAntiCaptcha {
      *            Captcha instanz
      * @return CaptchaCode
      */
-    @SuppressWarnings("unchecked")
     public String checkCaptcha(Captcha captcha) {
 
         workingCaptcha = captcha;
@@ -492,11 +491,11 @@ public class JAntiCaptcha {
             String cl = ref[0];
             String methodname = ref[1];
 
-            Class newClass;
+            Class<?> newClass;
             try {
                 newClass = Class.forName("jd.captcha.specials." + cl);
 
-                Class[] parameterTypes = new Class[] { newLettersVector.getClass(), this.getClass() };
+                Class<?>[] parameterTypes = new Class[] { newLettersVector.getClass(), this.getClass() };
                 Method method = newClass.getMethod(methodname, parameterTypes);
                 Object[] arguments = new Object[] { newLettersVector, this };
                 Object instance = null;
@@ -981,7 +980,6 @@ public class JAntiCaptcha {
      *            Vergleichsletter
      * @return int 0(super)-0xffffff (ganz übel)
      */
-    @SuppressWarnings("unchecked")
     public LetterComperator getLetter(Letter letter) {
         if (jas.getDouble("quickScanValityLimit") <= 0) {
             logger.info("quickscan disabled");
@@ -1023,7 +1021,7 @@ public class JAntiCaptcha {
             int tt = 0;
             logger.info("Do quickscan");
             Method preValueFilterMethod = null;
-            Class[] preValueFilterParameterTypes = null;
+            Class<?>[] preValueFilterParameterTypes = null;
             Object[] preValueFilterArguments = new Object[] { null, this };
             if (jas.getString("preValueFilter").length() > 0) {
                 String[] ref = jas.getString("preValueFilter").split("\\.");
@@ -1035,7 +1033,7 @@ public class JAntiCaptcha {
                 }
                 String cl = ref[0];
                 String methodname = ref[1];
-                Class newClass;
+                Class<?> newClass;
                 try {
                     newClass = Class.forName("jd.captcha.specials." + cl);
                     preValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
@@ -1046,7 +1044,7 @@ public class JAntiCaptcha {
                 }
             }
             Method postValueFilterMethod = null;
-            Class[] postValueFilterParameterTypes = null;
+            Class<?>[] postValueFilterParameterTypes = null;
             Object[] postValueFilterArguments = new Object[] { null, this };
             if (jas.getString("postValueFilter").length() > 0) {
                 String[] ref = jas.getString("postValueFilter").split("\\.");
@@ -1058,7 +1056,7 @@ public class JAntiCaptcha {
                 }
                 String cl = ref[0];
                 String methodname = ref[1];
-                Class newClass;
+                Class<?> newClass;
                 try {
                     newClass = Class.forName("jd.captcha.specials." + cl);
                     postValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
@@ -1167,7 +1165,6 @@ public class JAntiCaptcha {
      *            (refferenz)
      * @return Letter. Beste Übereinstimmung
      */
-    @SuppressWarnings("unchecked")
     private LetterComperator getLetterExtended(Letter letter) {
         // long startTime = UTILITIES.getTimer();
         LetterComperator res = null;
@@ -1212,7 +1209,7 @@ public class JAntiCaptcha {
             res = lc;
 
             Method preValueFilterMethod = null;
-            Class[] preValueFilterParameterTypes = null;
+            Class<?>[] preValueFilterParameterTypes = null;
             Object[] preValueFilterArguments = new Object[] { null, this };
             if (jas.getString("preValueFilter").length() > 0) {
                 String[] ref = jas.getString("preValueFilter").split("\\.");
@@ -1224,7 +1221,7 @@ public class JAntiCaptcha {
                 }
                 String cl = ref[0];
                 String methodname = ref[1];
-                Class newClass;
+                Class<?> newClass;
                 try {
                     newClass = Class.forName("jd.captcha.specials." + cl);
                     preValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
@@ -1235,7 +1232,7 @@ public class JAntiCaptcha {
                 }
             }
             Method postValueFilterMethod = null;
-            Class[] postValueFilterParameterTypes = null;
+            Class<?>[] postValueFilterParameterTypes = null;
             Object[] postValueFilterArguments = new Object[] { null, this };
             if (jas.getString("postValueFilter").length() > 0) {
                 String[] ref = jas.getString("postValueFilter").split("\\.");
@@ -1247,7 +1244,7 @@ public class JAntiCaptcha {
                 }
                 String cl = ref[0];
                 String methodname = ref[1];
-                Class newClass;
+                Class<?> newClass;
                 try {
                     newClass = Class.forName("jd.captcha.specials." + cl);
                     postValueFilterParameterTypes = new Class[] { LetterComperator.class, this.getClass() };
@@ -1924,7 +1921,7 @@ public class JAntiCaptcha {
             }
 
             // String methodsPath = UTILITIES.getFullPath(new String[] {
-            //JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
+            // JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath(),
             // "jd", "captcha", "methods" });
             // String hoster = "rscat.com";
             // JAntiCaptcha jac = new JAntiCaptcha(methodsPath, hoster);

@@ -172,7 +172,6 @@ public class Filefactory {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
     public static Letter[] getLetters(Captcha captcha) {
         captcha.cleanByRGBDistance(-1, 20);
         // long t = System.currentTimeMillis();
@@ -181,40 +180,40 @@ public class Filefactory {
         ArrayList<PixelObject> os = getObjects(captcha, 0);
         mergeObjects(os);
         Collections.sort(os);
-//        ScrollPaneWindow w = new ScrollPaneWindow(null);
-        //w.setTitle("First filter");
+        // ScrollPaneWindow w = new ScrollPaneWindow(null);
+        // w.setTitle("First filter");
         int y = 0;
         for (Iterator<PixelObject> it = os.iterator(); it.hasNext();) {
             PixelObject akt = it.next();
 
-            //w.setImage(0, y, akt.toLetter().getImage(3));
+            // w.setImage(0, y, akt.toLetter().getImage(3));
 
             if (akt.getArea() > 1800) {
                 it.remove();
-                //w.setText(1, y, "REM 1");
+                // w.setText(1, y, "REM 1");
                 y++;
             } else if (akt.getArea() < 80) {
                 it.remove();
-                //w.setText(1, y, "REM 2");
+                // w.setText(1, y, "REM 2");
                 y++;
                 continue;
             } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
-                //w.setText(1, y, "REM 3");
+                // w.setText(1, y, "REM 3");
                 y++;
                 it.remove();
                 continue;
             } else if (akt.getArea() / akt.getSize() > 15) {
-                //w.setText(1, y, "REM 4");
+                // w.setText(1, y, "REM 4");
                 y++;
                 it.remove();
                 continue;
             } else if (akt.getHeight() < 10 || akt.getWidth() < 5) {
-                //w.setText(1, y, "REM 5");
+                // w.setText(1, y, "REM 5");
                 y++;
                 it.remove();
                 continue;
             }
-            //w.setText(1, y, "OK");
+            // w.setText(1, y, "OK");
             y++;
 
             // BasicWindow.showImage(akt.toLetter().getImage(4), akt + "");
@@ -235,14 +234,14 @@ public class Filefactory {
         }
 
         ArrayList<Letter> ret = new ArrayList<Letter>();
-//        int i = 0;
-//        w = new ScrollPaneWindow(null);
-        //w.setTitle("second filter");
+        // int i = 0;
+        // w = new ScrollPaneWindow(null);
+        // w.setTitle("second filter");
         y = 0;
         for (PixelObject pixelObject : os) {
             Letter let = pixelObject.toLetter();
 
-            //w.setImage(0, y, let.getImage(3));
+            // w.setImage(0, y, let.getImage(3));
             // let.blurIt(2);
             // let.toBlackAndWhite(1.16);
 
@@ -257,32 +256,32 @@ public class Filefactory {
             let.clean();
             let = let.align(-40, 40);
             if (let == null) {
-                //w.setText(1, y, "Let=null");
+                // w.setText(1, y, "Let=null");
                 y++;
                 continue;
             }
-            //w.setImage(1, y, let.getImage(3));
+            // w.setImage(1, y, let.getImage(3));
 
             PixelObject akt = let.toPixelObject(OBJECTDETECTIONCONTRAST);
 
             if (akt.getSize() > 1000) {
-                //w.setText(2, y, "rem b 1");
+                // w.setText(2, y, "rem b 1");
                 y++;
             } else if (akt.getArea() < 40) {
-                //w.setText(2, y, "rem b 2");
+                // w.setText(2, y, "rem b 2");
                 y++;
             } else if ((double) akt.getArea() / (double) akt.getSize() < 1.2) {
-                //w.setText(2, y, "rem b 3");
+                // w.setText(2, y, "rem b 3");
                 y++;
             } else if (akt.getArea() / akt.getSize() > 15) {
-                //w.setText(2, y, "rem b 4");
+                // w.setText(2, y, "rem b 4");
                 y++;
             } else if (akt.getHeight() < 10 || akt.getWidth() < 2) {
-                //w.setText(2, y, "rem b 5");
+                // w.setText(2, y, "rem b 5");
                 y++;
             } else {
                 ret.add(let);
-                //w.setText(2, y, "OK");
+                // w.setText(2, y, "OK");
                 y++;
 
             }
@@ -353,29 +352,29 @@ public class Filefactory {
     }
 
     private static void clearCaptcha(Captcha captcha) {
-//        ScrollPaneWindow w = new ScrollPaneWindow(null);
-        //w.setTitle("Clearer");
+        // ScrollPaneWindow w = new ScrollPaneWindow(null);
+        // w.setTitle("Clearer");
         int y = 0;
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "ORG");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "ORG");
         y++;
         int[][] copy = captcha.getGridCopy();
         cleanVerticalLines(captcha, copy);
 
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "cleanVerticalLines");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "cleanVerticalLines");
         y++;
         cleanHorizontalLines(captcha, copy);
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "cleanHorizontalLines");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "cleanHorizontalLines");
         y++;
         cleanXLinesY(captcha, copy);
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "cleanXLinesY");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "cleanXLinesY");
         y++;
         cleanYLinesX(captcha, copy);
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "cleanYLinesX");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "cleanYLinesX");
         y++;
         captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask.png"))), 10);
         captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_2.png"))), 5);
@@ -383,8 +382,8 @@ public class Filefactory {
         captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_4.png"))), 5);
         captcha.cleanWithDetailMask(captcha.owner.createCaptcha(UTILITIES.loadImage(captcha.owner.getResourceFile("bg_mask_5.png"))), 5);
 
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "cleanWithDetailMask");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "cleanWithDetailMask");
         y++;
         // BasicWindow.showImage(captcha.getImage(3));
 
@@ -395,8 +394,8 @@ public class Filefactory {
         cleanColor(captcha, 0xDF7D7D);
         cleanColor(captcha, 0xDF7DCB);
 
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "cleanColor");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "cleanColor");
         y++;
 
         ArrayList<PixelObject> objs = getSmallObjects(captcha, 15);
@@ -405,8 +404,8 @@ public class Filefactory {
                 captcha.removeObjectFromGrid(po);
             }
         }
-        //w.setImage(0, y, captcha.getImage(3));
-        //w.setText(1, y, "removeSmallObjects");
+        // w.setImage(0, y, captcha.getImage(3));
+        // w.setText(1, y, "removeSmallObjects");
         y++;
         // cleanColor(captcha,0xDFB27D);
 

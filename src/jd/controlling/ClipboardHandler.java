@@ -79,7 +79,6 @@ public class ClipboardHandler extends Thread implements ControlListener {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void run() {
         enabled = true;
         while (enabled) {
@@ -88,7 +87,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
                 for (DataFlavor element : flavors) {
 
                     if (element.isFlavorJavaFileListType()) {
-                        List list = (List) clipboard.getData(element);
+                        List<?> list = (List<?>) clipboard.getData(element);
 
                         boolean ch = oldList == null || list.size() != oldList.size();
                         if (!ch) {

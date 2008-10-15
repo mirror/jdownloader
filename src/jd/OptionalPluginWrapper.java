@@ -44,7 +44,6 @@ public class OptionalPluginWrapper extends PluginWrapper {
         return (PluginOptional) loadedPlugin;
     }
 
-    @SuppressWarnings("unchecked")
     public PluginOptional loadPlugin() {
         JDClassLoader jdClassLoader = JDUtilities.getJDClassLoader();
         Double version = JDUtilities.getJavaVersion();
@@ -56,13 +55,13 @@ public class OptionalPluginWrapper extends PluginWrapper {
         logger.finer("Try to initialize " + this.getClassName());
         try {
 
-            Class plgClass = jdClassLoader.loadClass(this.getClassName());
+            Class<?> plgClass = jdClassLoader.loadClass(this.getClassName());
             if (plgClass == null) {
                 logger.info("PLUGIN NOT FOUND!");
                 return null;
             }
-            Class[] classes = new Class[] { PluginWrapper.class };
-            Constructor con = plgClass.getConstructor(classes);
+            Class<?>[] classes = new Class[] { PluginWrapper.class };
+            Constructor<?> con = plgClass.getConstructor(classes);
 
             try {
 
