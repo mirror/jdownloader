@@ -21,6 +21,7 @@ import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -64,6 +65,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     public static ConfigurationDialog DIALOG;
 
+    public static Frame PARENTFRAME = null;
+
     /**
      * serialVersionUID
      */
@@ -102,6 +105,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
     private ConfigurationDialog(JFrame parent) {
 
         DIALOG = this;
+        PARENTFRAME = parent;
 
         setTitle(JDLocale.L("gui.config.title", "Konfiguration"));
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.configuration")));
