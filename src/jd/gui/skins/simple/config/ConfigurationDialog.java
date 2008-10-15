@@ -34,7 +34,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
@@ -43,6 +42,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import jd.config.Configuration;
+import jd.config.SubConfiguration;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -98,6 +98,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private Configuration configuration;
 
+    private SubConfiguration subConfig;
+
     private Vector<JPanel> containerPanels = new Vector<JPanel>();
 
     private JTabbedPane tabbedPane;
@@ -112,6 +114,8 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         setName("CONFIGDIALOG");
 
         configuration = JDUtilities.getConfiguration();
+        subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+
         tabbedPane = new JTabbedPane();
         tabbedPane.setBorder(null);
         tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
@@ -150,6 +154,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
                 tabbedPane.setTitleAt(i, fill(tabbedPane.getTitleAt(i), maxLength + 1));
             }
         } catch (Exception e) {
+            e.printStackTrace();
         }
 
         btnSave = new JButton(JDLocale.L("gui.btn_save", "Speichern"));
@@ -164,30 +169,31 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         setLayout(new GridBagLayout());
 
         int n = 5;
-        JXPanel cp = new JXPanel(new BorderLayout(n, n));
-        int b = 12;
-        cp.setBorder(new EmptyBorder(b, b, b, b));
-        setContentPane(cp);
-        JPanel sp = new JPanel(new BorderLayout(n, n));
-        sp.setOpaque(false);
+
         JPanel btPanel = new JPanel(new FlowLayout(n, n, FlowLayout.RIGHT));
-        JPanel btPanelLeft = new JPanel(new FlowLayout(n, n, FlowLayout.RIGHT));
-        btPanel.setOpaque(false);
-        btPanelLeft.add(btnFengShuiConfig);
         btPanel.add(btnRestart);
         btPanel.add(btnSave);
         btPanel.add(btnCancel);
+
+        JPanel btPanelLeft = new JPanel(new FlowLayout(n, n, FlowLayout.RIGHT));
+        btPanelLeft.add(btnFengShuiConfig);
+
+        JPanel sp = new JPanel(new BorderLayout(n, n));
         sp.add(btPanel, BorderLayout.EAST);
         sp.add(btPanelLeft, BorderLayout.WEST);
 
+        JXPanel cp = new JXPanel(new BorderLayout(n, n));
+        cp.setBorder(new EmptyBorder(n, n, n, n));
         cp.add(tabbedPane, BorderLayout.CENTER);
         cp.add(sp, BorderLayout.SOUTH);
+        setContentPane(cp);
 
         tabbedPane.addChangeListener(this);
-        if (configClasses.size() <= JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0) || JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0) == 0) {
+        int lastTab = subConfig.getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0);
+        if (configClasses.size() <= lastTab || lastTab == 0) {
             paintPanel(0);
         } else {
-            tabbedPane.setSelectedIndex(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
+            tabbedPane.setSelectedIndex(lastTab);
         }
 
         addWindowListener(new LocationListener());
@@ -280,7 +286,7 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private void paintPanel(int i) {
 
-        if (i < configPanels.size() && configPanels.get(i) != null) { return; }
+        if (i < configPanels.size() && configPanels.get(i) != null) return;
         if (i > containerPanels.size() - 1) {
             i = containerPanels.size() - 1;
         }
@@ -288,20 +294,15 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         ConfigPanel panel = initSubPanel(configClasses.get(i));
         configPanels.remove(i);
         configPanels.add(i, panel);
-        JPanel container = containerPanels.get(i);
-
-        JScrollPane scrollPane = new JScrollPane(panel);
-        scrollPane.setBorder(null);
-        scrollPane.getViewport().setBorder(null);
-        container.add(panel, BorderLayout.CENTER);
+        containerPanels.get(i).add(panel, BorderLayout.CENTER);
     }
 
     public void stateChanged(ChangeEvent e) {
 
         int index = tabbedPane.getSelectedIndex();
-        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).setProperty(SimpleGUI.SELECTED_CONFIG_TAB, index);
+        subConfig.setProperty(SimpleGUI.SELECTED_CONFIG_TAB, index);
+        subConfig.save();
         paintPanel(index);
-        JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).save();
         validate();
 
     }
