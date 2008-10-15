@@ -118,7 +118,7 @@ public class DistributeData extends ControlBroadcaster {
         Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
         while (iteratorDecrypt.hasNext()) {
             DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
-            if (pDecrypt.canHandle(data)) { return true; }
+            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) { return true; }
         }
         Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
@@ -163,7 +163,7 @@ public class DistributeData extends ControlBroadcaster {
             Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
             while (iteratorDecrypt.hasNext()) {
                 DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
-                if (pDecrypt.canHandle(url)) {
+                if (pDecrypt.usePlugin() &&  pDecrypt.canHandle(url)) {
                     try {
                         PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
@@ -328,7 +328,7 @@ public class DistributeData extends ControlBroadcaster {
         Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
         while (iteratorDecrypt.hasNext()) {
             DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
-            if (pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
+            if (pDecrypt.usePlugin() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
                     PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();

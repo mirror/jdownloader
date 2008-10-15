@@ -51,13 +51,22 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-            return String.class;
+            return getValueAt(0, columnIndex).getClass();
         }
 
         public int getColumnCount() {
-            return 3;
+            return 4;
         }
-
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 3;
+        }
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col == 3) {
+                        pluginsForDecrypt.get(row).setUsePlugin((Boolean) value);
+            }
+        }
         @Override
         public String getColumnName(int column) {
             switch (column) {
@@ -67,6 +76,8 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
                 return JDLocale.L("gui.config.plugin.container.column_version", "Version");
             case 2:
                 return JDLocale.L("gui.config.plugin.container.column_author", "Ersteller");
+            case 3:
+                return JDLocale.L("gui.config.plugin.container.column_use", "Plugin benutzen");
             }
             return super.getColumnName(column);
         }
@@ -83,6 +94,8 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
                 return pluginsForDecrypt.get(rowIndex).getVersion();
             case 2:
                 return pluginsForDecrypt.get(rowIndex).getCoder();
+            case 3:
+                return pluginsForDecrypt.get(rowIndex).usePlugin();
             }
             return null;
         }
@@ -165,7 +178,12 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
                 column.setMinWidth(60);
                 break;
             case 2:
-                column.setPreferredWidth(290);
+                column.setPreferredWidth(100);
+                break;
+            case 3:
+                column.setPreferredWidth(90);
+                column.setMaxWidth(90);
+                column.setMinWidth(90);
                 break;
             }
         }

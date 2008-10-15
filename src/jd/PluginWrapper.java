@@ -152,7 +152,13 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public Object getCoder() {
         return this.isLoaded() ? getPlugin().getCoder() : JDLocale.L("plugin.system.notloaded", "idle");
     }
-
+    public boolean usePlugin() {
+        return getPluginConfig().getBooleanProperty("USE_PLUGIN", true);
+    }
+    public void setUsePlugin(boolean bool)
+    {
+        getPluginConfig().setProperty("USE_PLUGIN", bool);
+    }
     public boolean canHandle(String data) {
         if (this.isLoaded()) { return getPlugin().canHandle(data); }
         if (data == null) { return false; }
