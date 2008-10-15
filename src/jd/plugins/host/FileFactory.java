@@ -313,7 +313,7 @@ long cu = parameter.getDownloadCurrent();
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll(".com//", ".com/"));
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("http://filefactory", "http://www.filefactory"));
         br.setFollowRedirects(true);

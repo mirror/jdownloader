@@ -82,7 +82,13 @@ public class Serienjunkies extends PluginForDecrypt {
         passwords.add("serienjunkies.dl.am");
         passwords.add("serienjunkies.org");
     }
-
+    public boolean[] checkLinks(DownloadLink[] urls) {
+        boolean[] ret = new boolean[urls.length];
+        for (int i = 0; i < ret.length; i++) {
+            ret[i]=false;
+        }
+        return ret;
+    }
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
         if (data == null) return false;
@@ -165,7 +171,7 @@ public class Serienjunkies extends PluginForDecrypt {
             linkName = parameter.replaceFirst(".*/..[\\_\\-]", "").replaceFirst("\\.html?", "");
         }
         String hostname = getHostname(parameter);
-        DownloadLink dlink = new DownloadLink(null, name, getHost(), "sjdp://" + hostname + "/" + linkName, true);
+        DownloadLink dlink = new DownloadLink(null, name, getHost(), "sjdp://" + hostname + "/" + linkName, false);
         dlink.setName(linkName);
         dlink.setProperty("link", parameter);
         dlink.setProperty("mirrors", mirrors);
@@ -655,7 +661,7 @@ public class Serienjunkies extends PluginForDecrypt {
         @Override
         public void run() {
             try {
-                result = pl.getAvailableDownloads(downloadLink, false);
+                result = pl.getAvailableDownloads(downloadLink, 2);
             } catch (Exception e) {
                e.printStackTrace();
             }

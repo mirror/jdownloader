@@ -207,7 +207,7 @@ public class Rapidshare extends PluginForHost {
                 for (i = c; i < urls.length; i++) {
                     if (urls[i].getDownloadURL().matches("sjdp://rapidshare\\.com.*")) {
                         sjlinks.add(i);
-                        ret[i] = true;
+                        ret[i] = false;
                     } else {
                         isRSCom = true;
                         if (!canHandle(urls[i].getDownloadURL())) { return null; }
@@ -675,7 +675,7 @@ public class Rapidshare extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);

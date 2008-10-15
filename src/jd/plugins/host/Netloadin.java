@@ -345,7 +345,7 @@ public class Netloadin extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 

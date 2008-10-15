@@ -224,7 +224,7 @@ public class Uploadedto extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return true;
+        if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());

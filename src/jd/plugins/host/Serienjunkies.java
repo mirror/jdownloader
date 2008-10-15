@@ -52,7 +52,7 @@ public class Serienjunkies extends PluginForHost {
     private String subdomain = "download.";
     private DownloadLink downloadLink;
 
-    private static boolean active = false;
+    private static int active = 0;
 
     public Serienjunkies(PluginWrapper wrapper) {
         super(wrapper);
@@ -122,7 +122,13 @@ public class Serienjunkies extends PluginForHost {
                     }
 
                     logger.info("captchafile: " + captchaFile);
-                    capTxt = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+                    active++;
+                    try {
+                        capTxt = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+                    active--;
 
                     htmlcode = br.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&action=Download");
 
@@ -193,7 +199,14 @@ public class Serienjunkies extends PluginForHost {
 
                         continue;
                     }
-                    capTxt = Plugin.getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
+                    active++;
+                    try {
+                        capTxt = Plugin.getCaptchaCode(this, "einzellinks.serienjunkies.org", captchaFile, false, downloadLink);
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+                    active--;
+                    
                     htmlcode = br.postPage(url, "s=" + matcher.group(1) + "&c=" + capTxt + "&dl.start=Download");
                 } else {
                     captchaMethod(captchaFile, capTxt);
@@ -279,12 +292,13 @@ public class Serienjunkies extends PluginForHost {
                     downloadLink.requestGuiUpdate();
                 } else {
                     logger.severe("Reconnect failed. abort.");
+                    downloadLink.getLinkStatus().setErrorMessage("Error Reconnect failed");
                     return decryptedLinks;
                 }
 
             }
             if (br.containsHTML("Download-Limit")) {
-                logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 5 min)");
+                logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
                 downloadLink.getLinkStatus().setStatusText("Reconnect required");
                 downloadLink.requestGuiUpdate();
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
@@ -298,6 +312,7 @@ public class Serienjunkies extends PluginForHost {
                     downloadLink.getLinkStatus().setStatusText("Decrypt");
                     downloadLink.requestGuiUpdate();
                 } else {
+                    downloadLink.getLinkStatus().setErrorMessage("Error Reconnect failed");
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
                 }
@@ -357,7 +372,9 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) {
-        return true;
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        linkStatus.setStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        return false;
     }
 
     public String getVersion() {
@@ -371,30 +388,29 @@ public class Serienjunkies extends PluginForHost {
         return;
     }
 
-    public ArrayList<DownloadLink> getAvailableDownloads(DownloadLink downloadLink, boolean waitfordecryption) throws Exception {
+    public ArrayList<DownloadLink> getAvailableDownloads(DownloadLink downloadLink, int activeCaptchas) throws Exception {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         this.downloadLink = downloadLink;
         String link = (String) downloadLink.getProperty("link");
         String[] mirrors = (String[]) downloadLink.getProperty("mirrors");
         int c = 0;
-        while (waitfordecryption && active) {
+        while (active>activeCaptchas) {
             if (c++ == 120) break;
 
-            downloadLink.getLinkStatus().setStatusText("waiting for decryption");
-            Thread.sleep(1000);
+//            downloadLink.getLinkStatus().setStatusText("waiting for decryption");
+            Thread.sleep(100);
 
         }
-        active = true;
         downloadLink.getLinkStatus().setStatusText("decrypt");
         downloadLink.requestGuiUpdate();
         ArrayList<DownloadLink> dls = getDLinks(link);
 
-        if (dls.size() < 1) {
+        if (dls.size()<1) {
             linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            if(linkStatus.getErrorMessage()==null || linkStatus.getErrorMessage().endsWith(""))
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.pageerror", "SJ liefert keine Downloadlinks"));
             logger.warning("SJ returned no Downloadlinks");
-            active = false;
             return null;
         }
 
