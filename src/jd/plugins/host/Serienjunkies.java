@@ -148,13 +148,14 @@ public class Serienjunkies extends PluginForHost {
                         for (int j = 0; j < 4; j++) {
                             if(i>0)
                             {
-                                Thread.sleep(100);
+                                Thread.sleep(1000);
                             }
                             br.getPage(forms[i].action);
                             
                             String loc = br.openGetConnection(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)).getHeaderField("Location");
+                            logger.info("sjlink"+loc );
                             if (loc != null) {
-                                logger.info(loc );
+                                
                                 links.add(loc);
                                 break;
                             }
