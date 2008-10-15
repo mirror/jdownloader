@@ -144,6 +144,10 @@ public class Serienjunkies extends PluginForHost {
             for (int i = 0; i < forms.length; i++) {
                 if (!forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
                     try {
+                        if(i>0)
+                        {
+                            Thread.sleep(100);
+                        }
                         br.getPage(forms[i].action);
                         
                         String loc = br.openGetConnection(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)).getHeaderField("Location");
