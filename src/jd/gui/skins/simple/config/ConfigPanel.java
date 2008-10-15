@@ -28,7 +28,6 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import jd.config.SubConfiguration;
-import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
 
 public abstract class ConfigPanel extends JPanel {
@@ -44,8 +43,6 @@ public abstract class ConfigPanel extends JPanel {
     protected Logger logger = JDUtilities.getLogger();
 
     protected JPanel panel;
-
-    protected UIInterface uiinterface;
 
     public ConfigPanel() {
         int n = 2;

@@ -21,7 +21,6 @@ import java.awt.ComponentOrientation;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.Frame;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -65,8 +64,6 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     public static ConfigurationDialog DIALOG;
 
-    public static Frame PARENTFRAME = null;
-
     /**
      * serialVersionUID
      */
@@ -102,14 +99,10 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private JTabbedPane tabbedPane;
 
-    /**
-     * @param parent
-     * @param uiinterface
-     */
     private ConfigurationDialog(JFrame parent) {
-        // super(parent);
+
         DIALOG = this;
-        PARENTFRAME = parent;
+
         setTitle(JDLocale.L("gui.config.title", "Konfiguration"));
         setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.configuration")));
         setName("CONFIGDIALOG");
@@ -191,28 +184,13 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
             paintPanel(0);
         } else {
             tabbedPane.setSelectedIndex(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.SELECTED_CONFIG_TAB, 0));
-        } // paintPanel();
-
-        // there is already a pack below. Can't see how a second pack would
-        // improve things?
-        // pack();
+        }
 
         addWindowListener(new LocationListener());
-        // questionable if one needs this call to pack since restoreWindow does
-        // a similar job. Only way this may hurt is by increasing the time it
-        // takes to make the dialog visible.
-        // setPreferredSize(new Dimension(640,640));
-        // pack();
         setLocationRelativeTo(null);
-        // pack already calls validate implicitely.
-        // this.validate();
         SimpleGUI.restoreWindow(parent, this);
-
         setPreferredSize(new Dimension(Math.max(getWidth(), 800), Math.max(getHeight(), 640)));
         pack();
-        // setVisible should be called after restoreWindow. Otherwise we have a
-        // strange growing effect since the dialog is first made visible and
-        // then assigned a new (possibly different) size by restoreWindow.
         setVisible(true);
     }
 
