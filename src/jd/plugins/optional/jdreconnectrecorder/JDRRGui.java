@@ -134,7 +134,10 @@ public class JDRRGui extends JFrame implements ActionListener {
             ip_after = JDUtilities.getIPAddress();
             JDRR.running = false;
             JDRR.stopServer();
-            if (infopopup != null) infopopup.dispose();
+            if (infopopup != null) {
+                infopopup.dispose();
+                infopopup = null;
+            }
             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                 script.setText("");
                 for (String element : JDRR.steps) {
@@ -182,6 +185,10 @@ public class JDRRGui extends JFrame implements ActionListener {
         JDRR.gui = false;
         JDRR.running = false;
         JDRR.stopServer();
+        if (infopopup != null) {
+            infopopup.dispose();
+            infopopup = null;
+        }
         dispose();
     }
 
@@ -233,7 +240,7 @@ public class JDRRGui extends JFrame implements ActionListener {
                 imageProgress = JDUtilities.getImage(JDTheme.V("gui.images.reconnect"));
                 imageBad = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_bad"));
                 imageGood = JDUtilities.getImage(JDTheme.V("gui.images.reconnect_ok"));
-                
+
                 setPreferredSize(new Dimension(imageGood.getWidth(null), imageGood.getHeight(null)));
 
                 new Thread() {

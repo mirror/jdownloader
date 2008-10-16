@@ -68,7 +68,7 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -80,6 +80,7 @@ public class Odsiebiecom extends PluginForHost {
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
          * ist
          */
+        captchaCode = null;
         String steplink = br.getRegex("<a class=\".*?\" href=\"/pobierz/(.*?)\">Pobierz plik</a>").getMatch(0);
         if (steplink == null) {
             /* Kein Button, also muss der Link irgendwo auf der Page sein */

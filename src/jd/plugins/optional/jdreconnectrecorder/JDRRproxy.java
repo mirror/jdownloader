@@ -150,7 +150,7 @@ class ProxyThread extends Thread {
 
                         }
                     }
-                    JDUtilities.getLogger().info(headers + "");
+                    JDUtilities.getLogger().finer(headers + "");
                     JDRRUtils.createStep(headers, postdata, steps);
                 } catch (Exception e) {
                     e.printStackTrace();
