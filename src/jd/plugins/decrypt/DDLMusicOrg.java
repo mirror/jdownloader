@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 import jd.PluginPattern;
 import jd.PluginWrapper;
 import jd.parser.Form;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -38,7 +37,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (new Regex(parameter, PluginPattern.decrypterPattern_DDLMusic_Crypt).matches()) {
+        if (parameter.matches(PluginPattern.decrypterPattern_DDLMusic_Crypt.pattern())) {
             int add = 0;
             for (int i = 1; i < 5; i++) {
                 br.getPage(parameter);
@@ -61,7 +60,7 @@ public class DDLMusicOrg extends PluginForDecrypt {
                 }
                 add += 500;
             }
-        } else if (new Regex(parameter, PluginPattern.decrypterPattern_DDLMusic_Main).matches()) {
+        } else if (parameter.matches(PluginPattern.decrypterPattern_DDLMusic_Main.pattern())) {
             br.getPage(parameter);
 
             String password = br.getRegex(Pattern.compile("<td class=\"normalbold\"><div align=\"center\">Passwort</div></td>.*?<td class=\"normal\"><div align=\"center\">(.*?)</div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -85,7 +84,6 @@ public class DDLMusicOrg extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

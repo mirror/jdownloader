@@ -18,18 +18,15 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class CineTo extends PluginForDecrypt {
-    final static String host = "cine.to";
-    private static final Pattern patternLink_Protected = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-    private static final Pattern patternLink_Show = Pattern.compile("http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
+
+    private static final String patternLink_Protected = "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+";
 
     public CineTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,20 +36,17 @@ public class CineTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (parameter.matches(patternLink_Show.pattern())) {
-            String[] mirrors = new Regex(br.getPage(parameter), Pattern.compile("href=\"index\\.php\\?do=protect\\&id=([a-zA-Z0-9]+)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            for (String element : mirrors) {
-                decryptedLinks.add(createDownloadlink("http://cine.to/index.php?do=protect&id=" + element));
-            }
-        } else if (parameter.matches(patternLink_Protected.pattern())) {
-            String[][] captcha = new Regex(br.getPage(parameter), Pattern.compile("span class=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+        br.getPage(parameter);
+        if (parameter.matches(patternLink_Protected)) {
+            String[] captcha = br.getRegex("span class=\"(.*?)\"").getColumn(0);
             String capText = "";
             if (captcha.length == 80) {
                 for (int j = 1; j < 5; j++) {
                     capText = capText + extractCaptcha(captcha, j);
                 }
             }
-            String[] links = new Regex(br.postPage(parameter, "captcha=" + capText + "&submit=Senden"), Pattern.compile("window\\.open\\(\'(.*?)\'", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            br.postPage(parameter, "captcha=" + capText + "&submit=Senden");
+            String[] links = br.getRegex("window\\.open\\('(.*?)'").getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
                 DownloadLink link = createDownloadlink(element);
@@ -60,32 +54,37 @@ public class CineTo extends PluginForDecrypt {
                 decryptedLinks.add(link);
                 progress.increase(1);
             }
+        } else {
+            String[] mirrors = br.getRegex("href=\"(index\\.php\\?do=protect\\&id=[\\w]+)\"").getColumn(0);
+            for (String element : mirrors) {
+                decryptedLinks.add(createDownloadlink("http://cine.to/" + element));
+            }
         }
         return decryptedLinks;
     }
 
-    private String extractCaptcha(String[][] source, int captchanumber) {
+    private String extractCaptcha(String[] source, int captchanumber) {
         String[] erg = new String[15];
 
-        erg[0] = source[captchanumber * 4 - 4][0];
-        erg[1] = source[captchanumber * 4 - 3][0];
-        erg[2] = source[captchanumber * 4 - 2][0];
+        erg[0] = source[captchanumber * 4 - 4];
+        erg[1] = source[captchanumber * 4 - 3];
+        erg[2] = source[captchanumber * 4 - 2];
 
-        erg[3] = source[captchanumber * 4 + 12][0];
-        erg[4] = source[captchanumber * 4 + 13][0];
-        erg[5] = source[captchanumber * 4 + 14][0];
+        erg[3] = source[captchanumber * 4 + 12];
+        erg[4] = source[captchanumber * 4 + 13];
+        erg[5] = source[captchanumber * 4 + 14];
 
-        erg[6] = source[captchanumber * 4 + 28][0];
-        erg[7] = source[captchanumber * 4 + 29][0];
-        erg[8] = source[captchanumber * 4 + 30][0];
+        erg[6] = source[captchanumber * 4 + 28];
+        erg[7] = source[captchanumber * 4 + 29];
+        erg[8] = source[captchanumber * 4 + 30];
 
-        erg[9] = source[captchanumber * 4 + 44][0];
-        erg[10] = source[captchanumber * 4 + 45][0];
-        erg[11] = source[captchanumber * 4 + 46][0];
+        erg[9] = source[captchanumber * 4 + 44];
+        erg[10] = source[captchanumber * 4 + 45];
+        erg[11] = source[captchanumber * 4 + 46];
 
-        erg[12] = source[captchanumber * 4 + 60][0];
-        erg[13] = source[captchanumber * 4 + 61][0];
-        erg[14] = source[captchanumber * 4 + 62][0];
+        erg[12] = source[captchanumber * 4 + 60];
+        erg[13] = source[captchanumber * 4 + 61];
+        erg[14] = source[captchanumber * 4 + 62];
 
         String[] wert0 = { "s", "s", "s", "s", "w", "s", "s", "w", "s", "s", "s", "w", "s", "s", "s" };
         if (Arrays.equals(erg, wert0)) { return "0"; }
@@ -122,8 +121,7 @@ public class CineTo extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
 }
