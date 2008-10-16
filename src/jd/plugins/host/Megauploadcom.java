@@ -117,7 +117,7 @@ public class Megauploadcom extends PluginForHost {
         }
 
         downloadLink.getLinkStatus().setStatusText("Login");
-        Browser br = new Browser();
+        this.setBrowserExclusive();
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
         br.getHeaders().put("X-MUTB", link);
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");

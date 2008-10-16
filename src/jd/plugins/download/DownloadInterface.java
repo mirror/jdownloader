@@ -332,6 +332,7 @@ abstract public class DownloadInterface {
                                 logger.severe("Timeout detected");
                                 error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
                             }
+                            e.printStackTrace();
                             miniblock = -1;
                             break;
                         }
@@ -405,6 +406,7 @@ abstract public class DownloadInterface {
                         }
 
                     } catch (Exception e) {
+                        e.printStackTrace();
                         error(LinkStatus.ERROR_FATAL, JDLocale.L("download.error.message.outofmemory", "The downloadsystem is out of memory"));
 
                         return;
@@ -422,6 +424,7 @@ abstract public class DownloadInterface {
                             Thread.sleep(addWait);
                         }
                     } catch (Exception e) {
+                        e.printStackTrace();
                     }
                     deltaTime = System.currentTimeMillis() - timer;
 
@@ -440,7 +443,7 @@ abstract public class DownloadInterface {
                     source.close();
 
                     logger.warning(" incomplete download: bytes loaded: " + getCurrentBytesPosition() + "/" + endByte);
-                    error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
+                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
                 }
 
                 inputStream.close();
