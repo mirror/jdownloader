@@ -23,9 +23,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-public class Tinyurl extends PluginForDecrypt {
+public class Redirecter extends PluginForDecrypt {
 
-    public Tinyurl(PluginWrapper wrapper) {
+    public Redirecter(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -34,11 +34,11 @@ public class Tinyurl extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (parameter.contains("preview")) {
-            parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
-        }
-
+        // Workaround for preview.tinyurl.com Links
+        parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
+        
         br.getPage(parameter);
+        if (br.getRedirectLocation() == null) return null;
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
         return decryptedLinks;
