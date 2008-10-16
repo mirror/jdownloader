@@ -27,7 +27,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class ILoadTo extends PluginForDecrypt {
 
-    private Pattern patternSupported_Info = Pattern.compile("http://iload\\.to/view/.*?/", Pattern.CASE_INSENSITIVE);
+    private String patternSupported_Info = "http://iload\\.to/view/.*?/";
 
     public ILoadTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,10 +38,10 @@ public class ILoadTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (patternSupported_Info.matcher(parameter).matches()) {
-            String page = br.getPage(parameter);
-            String password = new Regex(page, Pattern.compile("class='Value Password'>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String links_page = new Regex(page, Pattern.compile("Head'>OneClick-Hoster<(.+)(class='Head'>Sample)?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (parameter.matches(patternSupported_Info)) {
+            br.getPage(parameter);
+            String password = br.getRegex("class='Value Password'>(.*?)<").getMatch(0);
+            String links_page = br.getRegex(Pattern.compile("Head'>OneClick-Hoster<(.+)(class='Head'>Sample)?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String links[] = new Regex(links_page, Pattern.compile("href='/go/(\\d+)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
             if (links == null) return null;
             for (String link : links) {
@@ -58,7 +58,6 @@ public class ILoadTo extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

@@ -17,10 +17,8 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,7 +34,8 @@ public class KnofflCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String[] links = new Regex(br.getPage(parameter), Pattern.compile("dl\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        br.getPage(parameter);
+        String[] links = br.getRegex("dl\\('(.*?)'\\)").getColumn(0);
         for (String element : links) {
             decryptedLinks.add(createDownloadlink(element));
         }
@@ -45,7 +44,6 @@ public class KnofflCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

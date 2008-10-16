@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,16 +35,19 @@ public class LeecherWs extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String outLinks[][] = null;
+        String outLinks[] = null;
         if (parameter.indexOf("out") != -1) {
-            outLinks = new String[1][1];
-            outLinks[0][0] = parameter.substring(parameter.lastIndexOf("leecher.ws/out/") + 15);
+            outLinks = new String[1];
+            outLinks[0] = parameter.substring(parameter.lastIndexOf("leecher.ws/out/") + 15);
         } else {
-            outLinks = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://www\\.leecher\\.ws/out/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            br.getPage(parameter);
+            outLinks = br.getRegex("href=\"http://www\\.leecher\\.ws/out/(.*?)\"").getColumn(0);
         }
+
         progress.setRange(outLinks.length);
-        for (String[] element : outLinks) {
-            String cryptedLink = new Regex(br.getPage("http://leecher.ws/out/" + element[0]), Pattern.compile("<iframe src=\"(.?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        for (String element : outLinks) {
+            br.getPage("http://leecher.ws/out/" + element);
+            String cryptedLink = br.getRegex("<iframe src=\"(.?)\"").getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(cryptedLink)));
             progress.increase(1);
         }
@@ -56,7 +57,6 @@ public class LeecherWs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

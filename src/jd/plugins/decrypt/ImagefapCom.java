@@ -17,10 +17,8 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -39,7 +37,8 @@ public class ImagefapCom extends PluginForDecrypt {
         parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
         if (!parameter.contains("view=2")) parameter += "&view=2";
 
-        String links[] = new Regex(br.getPage(parameter), Pattern.compile("image\\.php\\?id=(.*?)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        br.getPage(parameter);
+        String links[] = br.getRegex("image\\.php\\?id=(.*?)\">").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             DownloadLink link = createDownloadlink("http://imagefap.com/image.php?id=" + element);
@@ -52,8 +51,7 @@ public class ImagefapCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
 }

@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -44,10 +43,11 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String page = br.getPage(parameter);
-        String name = new Regex(page, patternDLC).getMatch(1);
-        String link = new Regex(page, patternDLC).getMatch(0);
-        String pass = new Regex(page, patternPW).getMatch(0);
+        br.getPage(parameter);
+        String name = br.getRegex(patternDLC).getMatch(1);
+        String link = br.getRegex(patternDLC).getMatch(0);
+        String pass = br.getRegex(patternPW).getMatch(0);
+
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         Browser.download(container, link);
@@ -73,7 +73,6 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }
