@@ -173,7 +173,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
         switch (box.getSelectedIndex()) {
         case 0:
-            lh = new SubPanelLiveHeaderReconnect(new HTTPLiveHeader());
+            lh = new SubPanelLiveHeaderReconnect(configuration, new HTTPLiveHeader());
             JDUtilities.addToGridBag(panel, lh, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         case 1:
@@ -185,7 +185,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
             JDUtilities.addToGridBag(panel, er, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         case 3:
-            lhclr = new SubPanelCLRReconnect();
+            lhclr = new SubPanelCLRReconnect(configuration);
             JDUtilities.addToGridBag(panel, lhclr, 0, 2, 5, 1, 1, 1, new Insets(0, 0, 0, 0), GridBagConstraints.BOTH, GridBagConstraints.NORTH);
             break;
         }

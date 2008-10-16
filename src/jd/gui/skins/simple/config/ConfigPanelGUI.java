@@ -41,33 +41,18 @@ public class ConfigPanelGUI extends ConfigPanel {
 
     private ConfigEntriesPanel cep;
 
-    private SubConfiguration config;
+    private SubConfiguration subConfig;
 
     public ConfigPanelGUI(Configuration configuration) {
         super();
+        subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         initPanel();
         load();
     }
 
     @Override
     public void initPanel() {
-        this.add(cep = new ConfigEntriesPanel(setupConfiguration()));
-    }
-
-    @Override
-    public void load() {
-        loadConfigEntries();
-    }
-
-    @Override
-    public void save() {
-        cep.save();
-        config.save();
-    }
-
-    private ConfigContainer setupConfiguration() {
         ConfigContainer container = new ConfigContainer(this);
-        config = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
 
         ConfigEntry ce;
 
@@ -75,13 +60,13 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigContainer look = new ConfigContainer(this, JDLocale.L("gui.config.gui.look.tab", "Anzeige & Bedienung"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, look));
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")));
         ce.setDefaultValue(Locale.getDefault());
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")));
         ce.setDefaultValue("default");
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")));
         ce.setDefaultValue("noSounds");
 
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
@@ -102,19 +87,19 @@ public class ConfigPanelGUI extends ConfigPanel {
             plafs[i] = info[i].getName();
         }
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")));
         ce.setDefaultValue(defplaf);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, SimpleGUI.PARAM_DISABLE_TREETABLE_TOOLTIPPS, JDLocale.L("gui.config.gui.disabletooltipps", "ToolTipps der DownloadListe abschalten")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_TREETABLE_TOOLTIPPS, JDLocale.L("gui.config.gui.disabletooltipps", "ToolTipps der DownloadListe abschalten")));
         ce.setDefaultValue(false);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")));
         ce.setDefaultValue(false);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")));
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")));
         ce.setDefaultValue(true);
 
-        Object[] BrowserArray = (Object[]) config.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
+        Object[] BrowserArray = (Object[]) subConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
         if (BrowserArray == null) {
             BrowserLauncher launcher;
             List<?> ar = null;
@@ -135,19 +120,19 @@ public class ConfigPanelGUI extends ConfigPanel {
                 }
                 BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
             }
-            config.setProperty(SimpleGUI.PARAM_BROWSER_VARS, BrowserArray);
-            config.setProperty(SimpleGUI.PARAM_BROWSER, BrowserArray[0]);
-            config.save();
+            subConfig.setProperty(SimpleGUI.PARAM_BROWSER_VARS, BrowserArray);
+            subConfig.setProperty(SimpleGUI.PARAM_BROWSER, BrowserArray[0]);
+            subConfig.save();
         }
 
         // Links Tab
         ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, links));
 
-        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, config, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackagelimit", "Schwelle der Auto. Paketverwaltung."), 0, 100));
+        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, LinkGrabber.PROPERTY_AUTOPACKAGE_LIMIT, JDLocale.L("gui.config.gui.autopackagelimit", "Schwelle der Auto. Paketverwaltung."), 0, 100));
         ce.setDefaultValue(99);
 
-        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck", "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")));
+        links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, LinkGrabber.PROPERTY_ONLINE_CHECK, JDLocale.L("gui.config.gui.linkgrabber.onlinecheck", "Linkgrabber:Linkstatus überprüfen(Verfügbarkeit)")));
         ce.setDefaultValue(true);
 
         links.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_RELOADCONTAINER, JDLocale.L("gui.config.reloadContainer", "Heruntergeladene Container einlesen")));
@@ -161,13 +146,24 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigContainer extended = new ConfigContainer(this, JDLocale.L("gui.config.gui.extended", "Erweiterte Einstellungen"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, config, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
         ce.setDefaultValue(BrowserArray[0]);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, config, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode", "'Missing-Language-Entries' Datei anlegen")));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode", "'Missing-Language-Entries' Datei anlegen")));
         ce.setDefaultValue(true);
 
-        return container;
-
+        this.add(cep = new ConfigEntriesPanel(container));
     }
+
+    @Override
+    public void load() {
+        loadConfigEntries();
+    }
+
+    @Override
+    public void save() {
+        cep.save();
+        subConfig.save();
+    }
+
 }

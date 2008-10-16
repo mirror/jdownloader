@@ -22,10 +22,8 @@ import jd.config.CFGConfig;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.config.SubConfiguration;
 import jd.controlling.interaction.PackageManager;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * @author JD-Team
@@ -35,9 +33,9 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     private static final long serialVersionUID = 4145243293360008779L;
 
-    private ConfigEntriesPanel cep;
+    private Configuration configuration;
 
-    private SubConfiguration config;
+    private ConfigEntriesPanel cep;
 
     private ConfigContainer container;
 
@@ -47,17 +45,21 @@ public class ConfigPanelAddons extends ConfigPanel {
 
     public ConfigPanelAddons(Configuration configuration) {
         super();
+        this.configuration = configuration;
         initPanel();
         load();
     }
 
     public void initPanel() {
-        setupContainer();
+        container = new ConfigContainer(this);
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.settings.tab", "Settings"))));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.install.tab", "Installation & updates"))));
+
         setLayout(new BorderLayout());
 
         add(cep = new ConfigEntriesPanel(container), BorderLayout.CENTER);
-        cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(JDUtilities.getConfiguration()));
-        cep.getSubPanels().get(1).add(spr = new SubPanelRessources(JDUtilities.getConfiguration()));
+        cep.getSubPanels().get(0).add(sppo = new SubPanelPluginsOptional(configuration));
+        cep.getSubPanels().get(1).add(spr = new SubPanelRessources(configuration));
     }
 
     public void load() {
@@ -68,16 +70,8 @@ public class ConfigPanelAddons extends ConfigPanel {
         cep.save();
         sppo.save();
         spr.save();
-        config.save();
         CFGConfig.getConfig("JDU").save();
         new PackageManager().interact(this);
-    }
-
-    public void setupContainer() {
-        config = JDUtilities.getSubConfig("DOWNLOAD");
-        container = new ConfigContainer(this);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.settings.tab", "Settings"))));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, new ConfigContainer(this, JDLocale.L("gui.config.addons.install.tab", "Installation & updates"))));
     }
 
 }

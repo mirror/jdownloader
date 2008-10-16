@@ -106,7 +106,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
 
     private JButton btnTrigger;
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS);
+    private SubConfiguration subConfig;
 
     private Interaction currentInteraction;
 
@@ -123,6 +123,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
     @SuppressWarnings("unchecked")
     public ConfigPanelEventmanager(Configuration configuration) {
         super();
+        subConfig = JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS);
         interactions = (Vector<Interaction>) subConfig.getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
         initPanel();
         load();
