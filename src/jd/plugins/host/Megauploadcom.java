@@ -22,8 +22,6 @@ import java.net.URL;
 import java.util.HashMap;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -71,14 +69,13 @@ public class Megauploadcom extends PluginForHost {
 
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
         this.enablePremium("http://www.megaupload.com/premium/en/");
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-      this.setBrowserExclusive();
-      br.setDebug(true);
+        this.setBrowserExclusive();
+        br.setDebug(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
@@ -104,17 +101,8 @@ public class Megauploadcom extends PluginForHost {
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-
-        String countryID = getPluginConfig().getStringProperty("COUNTRY_ID", "-");
         logger.info("PREMOIM");
         String url = "http://www.megaupload.com/de/";
-        if (!countryID.equals("-")) {
-            logger.info("Use Country trick");
-
-            link = link.replace(".com/", ".com/" + countryID + "/");
-            url = url.replaceAll("/de/", "/" + countryID + "/");
-
-        }
 
         downloadLink.getLinkStatus().setStatusText("Login");
         this.setBrowserExclusive();
@@ -160,7 +148,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -169,18 +157,6 @@ public class Megauploadcom extends PluginForHost {
 
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-
-        String countryID = getPluginConfig().getStringProperty("COUNTRY_ID", "-");
-        if (!countryID.equals("-")) {
-            logger.info("Use Country trick");
-
-            try {
-                link = "http://" + new URL(link).getHost() + "/" + countryID + "/?d=" + link.substring(link.indexOf("?d=") + 3);
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-
-        }
 
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
@@ -233,11 +209,9 @@ public class Megauploadcom extends PluginForHost {
 
                 return;
             }
-            if (countryID.equals("-")) {
-                br.postPage("http://" + new URL(link).getHost() + "/de/", pwdata + "&pass=" + pass);
-            } else {
-                br.postPage("http://" + new URL(link).getHost() + "/" + countryID + "/", pwdata + "&pass=" + pass);
-            }
+
+            br.postPage("http://" + new URL(link).getHost() + "/de/", pwdata + "&pass=" + pass);
+
             if (br.containsHTML(PATTERN_PASSWORD_WRONG)) {
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
@@ -253,13 +227,13 @@ public class Megauploadcom extends PluginForHost {
         String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
         tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
         String url = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
-br.setDebug(true);
+        br.setDebug(true);
 
-dl=br.openDownload(downloadLink, url,true,1);
-//        dl = RAFDownload.download(downloadLink, br.createRequest(url));
-//        dl.setResume(true);
+        dl = br.openDownload(downloadLink, url, true, 1);
+        // dl = RAFDownload.download(downloadLink, br.createRequest(url));
+        // dl.setResume(true);
         if (!dl.getConnection().isOK()) {
-            
+
             logger.warning("Download Limit!");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
             String wait = dl.getConnection().getHeaderField("Retry-After");
@@ -273,9 +247,9 @@ dl=br.openDownload(downloadLink, url,true,1);
             return;
 
         }
-        if(!dl.getConnection().isContentDisposition()){
+        if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,30*60*1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         }
 
         dl.startDownload();
@@ -342,9 +316,5 @@ dl=br.openDownload(downloadLink, url,true,1);
 
     public void resetPluginGlobals() {
 
-    }
-
-    private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, getPluginConfig(), "COUNTRY_ID", new String[] { "-", "en", "de", "fr", "es", "pt", "nl", "it", "cn", "ct", "jp", "kr", "ru", "fi", "se", "dk", "tr", "sa", "vn", "pl" }, "LänderID").setDefaultValue("-"));
     }
 }
