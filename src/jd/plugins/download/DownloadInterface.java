@@ -1186,11 +1186,6 @@ abstract public class DownloadInterface {
             }
 
         }
-        // Das geht nicht!!!
-        if (this.downloadLink.getFinalFileName() == null) {
-            String name = Plugin.getFileNameFormHeader(connection);
-            this.downloadLink.setFinalFileName(name);
-        }
         fileSize = downloadLink.getDownloadSize();
 
         return connection;
@@ -1349,7 +1344,7 @@ abstract public class DownloadInterface {
     protected void error(int id, String string) {
 
         logger.severe("Error occured: " + LinkStatus.toString(id));
-      
+
         if (errors.indexOf(id) < 0) {
             errors.add(id);
         }
@@ -1476,7 +1471,6 @@ abstract public class DownloadInterface {
         if (this.doFileSizeCheck && (totaleLinkBytesLoaded <= 0 || totaleLinkBytesLoaded != fileSize && fileSize > 0)) {
 
             logger.severe("DOWNLOAD INCOMPLETE DUE TO FILESIZECHECK");
-         
 
             error(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, JDLocale.L("download.error.message.incomplete", "Download unvollständig"));
 
@@ -1662,6 +1656,12 @@ abstract public class DownloadInterface {
     public boolean startDownload() throws Exception {
         logger.finer("Start Download");
         if (!connected) connect();
+        // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
+        // mehrfachAufruf von connect entstehen kann
+        if (this.downloadLink.getFinalFileName() == null) {
+            String name = Plugin.getFileNameFormHeader(connection);
+            this.downloadLink.setFinalFileName(name);
+        }
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
         downloadLink.getLinkStatus().setStatusText(null);
         if (connection == null || !connection.isOK()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
@@ -1810,7 +1810,7 @@ abstract public class DownloadInterface {
                     try {
                         this.wait(interval);
                     } catch (Exception e) {
-//                        e.printStackTrace();
+                        // e.printStackTrace();
 
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {

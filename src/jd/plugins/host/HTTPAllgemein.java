@@ -26,7 +26,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class HTTPAllgemein extends PluginForHost {
@@ -73,7 +72,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -81,8 +80,8 @@ public class HTTPAllgemein extends PluginForHost {
     public void handle(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
-
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
         dl.startDownload();

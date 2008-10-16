@@ -855,7 +855,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      *            Neuer Name des Downloads
      */
     public void setName(String name) {
-        if (name != null && name.length() > 3) {
+        if (name != null && name.length() > 0) {
             this.name = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(name));
             updatePartID();
         }
@@ -882,7 +882,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * 
      */
     public void setFinalFileName(String newfinalFileName) {
-        if (newfinalFileName != null && newfinalFileName.length() > 3) {
+        if (newfinalFileName != null && newfinalFileName.length() > 0) {
             finalFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(newfinalFileName));
             updatePartID();
         } else {
