@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -54,8 +53,8 @@ public class RappersIn extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2785 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        
+        return getVersion("$Revision$");
     }
 
     @Override

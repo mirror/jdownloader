@@ -19,7 +19,6 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
@@ -62,7 +61,7 @@ public class YouPornCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        
+        return getVersion("$Revision$");
     }
 }

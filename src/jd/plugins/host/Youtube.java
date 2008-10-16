@@ -21,7 +21,6 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.parser.Form;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -51,8 +50,8 @@ public class Youtube extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        
+        return getVersion("$Revision$");
     }
 
     @Override

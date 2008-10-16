@@ -91,8 +91,8 @@ public class GigaSizeCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2851 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        
+        return getVersion("$Revision$");
     }
 
     public int getMaxSimultanFreeDownloadNum() {

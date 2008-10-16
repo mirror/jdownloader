@@ -65,8 +65,8 @@ public class SpiegelDe extends PluginForHost {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 3181 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        
+        return getVersion("$Revision$");
     }
 
     @Override
