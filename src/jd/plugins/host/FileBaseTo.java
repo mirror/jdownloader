@@ -17,18 +17,18 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
-import jd.http.Browser;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class FileBaseTo extends PluginForHost {
 
@@ -42,31 +42,21 @@ public class FileBaseTo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        try {
-            String url = downloadLink.getDownloadURL();
-            br.getPage(url);
-
-            downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
-            if (br.containsHTML("Angeforderte Datei herunterladen")) {
-
-                br.getPage(url + "&dl=1");
-            }
-
-            if (br.containsHTML("Vielleicht wurde der Eintrag")) {
-
-            return false; }
-
-            String size = br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getMatch(0);
-            downloadLink.setDownloadSize(Regex.getSize(size));
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        downloadLink.setName(Plugin.extractFileNameFromURL(url).replaceAll("&dl=1", ""));
+        if (br.containsHTML("Angeforderte Datei herunterladen")) {
+            br.getPage(url + "&dl=1");
         }
-        return false;
+
+        if (br.containsHTML("Vielleicht wurde der Eintrag")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String size = br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getMatch(0);
+        downloadLink.setDownloadSize(Regex.getSize(size));
+        return true;
+
     }
 
     @Override
@@ -77,39 +67,33 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+  
+    
+     
+        getFileInformation(downloadLink);
 
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-        String url = downloadLink.getDownloadURL();
+        String url = downloadLink.getDownloadURL()+ "&dl=1";
         br.getPage(url);
-        Form caform=null;
+        Form caform = null;
         br.setFollowRedirects(true);
-        while((caform = br.getFormbyValue("Ok!"))!=null)
-        {
+        int i = 5;
+        while ((caform = br.getFormbyValue("Ok!")) != null) {
+            if (i-- <= 0) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
-            
             Browser.download(captchaFile, br.openGetConnection(br.getRegex("<img src=\"(http://filebase.to/captcha/CaptchaImage.php.*?)\" alt=\"\">").getMatch(0)));
             String capTxt = Plugin.getCaptchaCode(this, "datenklo.net", captchaFile, false, downloadLink);
             caform.put("uid", capTxt);
-            caform.action=url;
-            System.out.println(caform);
-            System.out.println(caform.getVarsMap());
-            br.createFormRequest(caform);
-            
-            
-        }
-        System.out.println(br);
+            caform.action = url;  
+            br.submitForm(caform);
 
-        Form dl_form = br.getFormbyName("waitform");
+        }
+
+        Form dlForm = br.getFormbyName("waitform");
         String value = br.getRegex(Pattern.compile("document\\.waitform\\.wait\\.value = \"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
-        dl_form.put("wait", value);
+        dlForm.put("wait", value);
+        br.openDownload(downloadLink, dlForm,true,0).startDownload();
 
-        dl = RAFDownload.download(downloadLink, br.createFormRequest(dl_form));
-        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
