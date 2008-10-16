@@ -137,6 +137,7 @@ public class GetRouterInfo {
             progressBar.setMaximum(100);
         }
     }
+
     public static boolean checkport(String host, int port) {
         Socket sock;
         try {
@@ -149,43 +150,35 @@ public class GetRouterInfo {
         return false;
 
     }
-    public static boolean checkport80(String host) {
-        Socket sock;
-        try {
-            sock = new Socket(host, 80);
-            sock.setSoTimeout(200);
-            return true;
-        } catch (UnknownHostException e) {
-        } catch (IOException e) {
-        }
-        return false;
 
+    public static boolean checkport80(String host) {
+        return checkport(host, 80);
     }
 
     public String getAdress() {
-        if (adress != null && !adress.matches("\\s*")) { 
+        if (adress != null && !adress.matches("\\s*")) {
             setProgress(100);
-            return adress; }
+            return adress;
+        }
         try {
-            
 
-        setProgressText("try to find the router ip");
-        String _255 = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
-        String exIP = "(?:" + _255 + "\\.){3}" + _255;
-        Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}("+exIP+").*");
-        Process proc;
-           proc = Runtime.getRuntime().exec("netstat -rn");
-           InputStream inputstream = proc.getInputStream();
-           InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
-           BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
-           String line;
-           while ((line = bufferedreader.readLine()) != null) {
-              Matcher m = pat.matcher(line);
-              if(m.matches()){
-                  setProgress(100);
-                 return  m.group(1);
-              }
-           }
+            setProgressText("try to find the router ip");
+            String _255 = "(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)";
+            String exIP = "(?:" + _255 + "\\.){3}" + _255;
+            Pattern pat = Pattern.compile("^\\s*(?:0\\.0\\.0\\.0\\s*){1,2}(" + exIP + ").*");
+            Process proc;
+            proc = Runtime.getRuntime().exec("netstat -rn");
+            InputStream inputstream = proc.getInputStream();
+            InputStreamReader inputstreamreader = new InputStreamReader(inputstream);
+            BufferedReader bufferedreader = new BufferedReader(inputstreamreader);
+            String line;
+            while ((line = bufferedreader.readLine()) != null) {
+                Matcher m = pat.matcher(line);
+                if (m.matches()) {
+                    setProgress(100);
+                    return m.group(1);
+                }
+            }
         } catch (Exception e) {
         }
         if (new File("/sbin/route").exists()) {

@@ -1,25 +1,36 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.gui.skins.simple.config;
 
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.LogRecord;
 
 import javax.swing.JButton;
-import javax.swing.ScrollPaneConstants;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
-import jd.gui.skins.simple.components.MiniLogDialog;
-import jd.router.GetRouterInfo;
+import jd.router.FindRouterIP;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener, ControlListener {
+public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener {
 
     private static final long serialVersionUID = 6710420298517566329L;
 
@@ -28,8 +39,6 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener,
     private JButton btnFindIP;
 
     private GUIConfigEntry ip;
-
-    private MiniLogDialog mld;
 
     private GUIConfigEntry pass;
 
@@ -45,43 +54,9 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener,
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == btnFindIP) {
-            JDUtilities.getController().addControlListener(this);
-            mld = new MiniLogDialog(JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
-            mld.getBtnOK().setEnabled(false);
-            mld.getProgress().setMaximum(100);
-            mld.getProgress().setValue(2);
-            // mld.setEnabled(true);
-            new Thread() {
-                @Override
-                public void run() {
-                    ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Suche nach RouterIP..."));
-                    mld.getProgress().setValue(60);
-                    GetRouterInfo rinfo = new GetRouterInfo(null);
-                    mld.getProgress().setValue(80);
-                    ip.setData(rinfo.getAdress());
-                    mld.getProgress().setValue(100);
-
-                    mld.getBtnOK().setEnabled(true);
-                    mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "Fenster schließen"));
-                }
-            }.start();
-
+            new FindRouterIP(ip);
         }
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
-            LogRecord l = (LogRecord) event.getParameter();
-
-            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo")) {
-                mld.setText(JDUtilities.formatSeconds((int) l.getMillis() / 1000) + " : " + l.getMessage() + "\r\n" + mld.getText());
-                mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-                mld.getProgress().setValue(mld.getProgress().getValue() + 1);
-            }
-        }
-
     }
 
     @Override

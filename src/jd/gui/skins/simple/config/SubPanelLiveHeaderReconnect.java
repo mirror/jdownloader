@@ -29,7 +29,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.logging.LogRecord;
 
 import javax.swing.DefaultListModel;
 import javax.swing.Icon;
@@ -42,7 +41,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.ScrollPaneConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -51,16 +49,14 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
-import jd.event.ControlEvent;
-import jd.event.ControlListener;
-import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
+import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener, ControlListener {
+class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener {
 
     private static final long serialVersionUID = 6710420298517566329L;
 
@@ -75,8 +71,6 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
     private GUIConfigEntry ip;
 
     private HTTPLiveHeader lh;
-
-    private MiniLogDialog mld;
 
     private GUIConfigEntry pass;
 
@@ -93,33 +87,9 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() == btnFindIP) {
-            JDUtilities.getController().addControlListener(this);
-            mld = new MiniLogDialog(JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
-            mld.getBtnOK().setEnabled(false);
-            mld.getProgress().setMaximum(100);
-            mld.getProgress().setValue(2);
-
-            new Thread() {
-                @Override
-                public void run() {
-                    ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Suche nach RouterIP..."));
-                    mld.getProgress().setValue(60);
-                    GetRouterInfo rinfo = new GetRouterInfo(null);
-                    mld.getProgress().setValue(80);
-                    ip.setData(rinfo.getAdress());
-                    mld.getProgress().setValue(100);
-
-                    mld.getBtnOK().setEnabled(true);
-                    mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "Fenster schließen"));
-
-                    JDUtilities.getController().addControlListener(SubPanelLiveHeaderReconnect.this);
-                }
-            }.start();
-
-        }
-        if (e.getSource() == btnSelectRouter) {
+            new FindRouterIP(ip);
+        } else if (e.getSource() == btnSelectRouter) {
             Vector<String[]> scripts = lh.getLHScripts();
 
             Collections.sort(scripts, new Comparator<String[]>() {
@@ -264,22 +234,8 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener,
                 }
 
             }
-        }
-        if (e.getSource() == btnAutoConfig) {
+        } else if (e.getSource() == btnAutoConfig) {
             GetRouterInfo.autoConfig(pass, user, ip, routerScript);
-        }
-
-    }
-
-    public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
-            LogRecord l = (LogRecord) event.getParameter();
-
-            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo")) {
-                mld.setText(JDUtilities.formatSeconds((int) l.getMillis() / 1000) + " : " + l.getMessage() + "\r\n" + mld.getText());
-                mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
-                mld.getProgress().setValue(mld.getProgress().getValue() + 1);
-            }
         }
 
     }

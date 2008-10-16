@@ -21,7 +21,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Logger;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -36,26 +35,10 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class MiniLogDialog extends JFrame implements ActionListener {
-    @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = -1749561448228487759L;
 
-    public static void main(String args[]) {
-
-        // MiniLogDialog mld = new MiniLogDialog(new JFrame(), "String message",
-        // Thread.currentThread(), true, true);
-        // String tmp[] = new String[args.length - 1];
-        // for(int i = 1; i < args.length; i++)
-        // tmp[i - 1] = args[i];
-        //
-        // runCommand(args[0], tmp, null);
-    }
-
-    private JButton btnNOTOK;
+    private JButton btnNotOK;
 
     private JButton btnOK;
 
@@ -63,74 +46,55 @@ public class MiniLogDialog extends JFrame implements ActionListener {
 
     private JLabel lblMessage;
 
-    // private Thread thread;
-
     private JProgressBar progress;
 
     private JScrollPane scrollPane;
-
-    // private static int REL = GridBagConstraints.RELATIVE;
-
-    // private static int REM = GridBagConstraints.REMAINDER;
 
     public MiniLogDialog(String message) {
         super();
 
         setLayout(new GridBagLayout());
         setVisible(true);
-        // this.thread = ob;
         setTitle(message);
         setAlwaysOnTop(true);
+        setPreferredSize(new Dimension(400, 300));
+        setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
+        setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
-        btnNOTOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+        btnOK.addActionListener(this);
+        btnNotOK = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+        btnNotOK.addActionListener(this);
         lblMessage = new JLabel(message);
         htmlArea = new JTextArea();
-        scrollPane = new JScrollPane(htmlArea);
         htmlArea.setEditable(false);
         htmlArea.setLineWrap(false);
-        // htmlArea.setContentType("text/html");
         htmlArea.setText("");
-        // htmlArea.requestFocusInWindow();
-
-        setPreferredSize(new Dimension(400, 300));
+        scrollPane = new JScrollPane(htmlArea);
         progress = new JProgressBar();
 
-        // this.setAlwaysOnTop(true);
-        setTitle(JDLocale.L("gui.dialogs.progress.title", "Fortschritt...bitte warten"));
-        btnOK.addActionListener(this);
-        btnNOTOK.addActionListener(this);
         getRootPane().setDefaultButton(btnOK);
-        setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+
         JDUtilities.addToGridBag(this, lblMessage, 0, 0, 4, 1, 0, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.NORTHWEST);
         JDUtilities.addToGridBag(this, progress, 0, 1, 4, 1, 1, 0, null, GridBagConstraints.HORIZONTAL, GridBagConstraints.WEST);
         JDUtilities.addToGridBag(this, scrollPane, 0, 2, 4, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.EAST);
-
         JDUtilities.addToGridBag(this, btnOK, 3, 3, 1, 1, 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        // if (cancel) JDUtilities.addToGridBag(this, btnNOTOK, 3, 3, 1, 1, ok ?
-        // 0 : 1, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
-        try {
-            SimpleGUI.restoreWindow(null, this);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
+        SimpleGUI.restoreWindow(null, this);
 
         pack();
 
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnOK) {
-            setVisible(false);
-            dispose();
-        }
-        if (e.getSource() == btnNOTOK) {
+        if (e.getSource() == btnOK || e.getSource() == btnNotOK) {
             setVisible(false);
             dispose();
         }
     }
 
     public JButton getBtnNOTOK() {
-        return btnNOTOK;
+        return btnNotOK;
     }
 
     public JButton getBtnOK() {
@@ -171,7 +135,6 @@ public class MiniLogDialog extends JFrame implements ActionListener {
 
     public void setMaximum(int value) {
         progress.setMaximum(value);
-
     }
 
     public void setMessage(String txt) {
@@ -183,9 +146,7 @@ public class MiniLogDialog extends JFrame implements ActionListener {
     }
 
     public void setString(String txt) {
-
         progress.setString(txt);
-
     }
 
     public void setStringPainted(boolean v) {
