@@ -16,6 +16,7 @@
 
 package jd.router;
 
+import java.text.SimpleDateFormat;
 import java.util.logging.LogRecord;
 
 import javax.swing.ScrollPaneConstants;
@@ -49,7 +50,6 @@ public class FindRouterIP implements ControlListener {
                 ip.setData(ipAdress);
                 mld.getProgress().setValue(100);
 
-                JDUtilities.getController().removeControlListener(FindRouterIP.this);
                 mld.setTitle(JDLocale.LF("gui.config.routeripfinder.ready", "IP found: %s", ipAdress));
                 mld.getBtnOK().setEnabled(true);
                 mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "Fenster schließen"));
@@ -58,11 +58,11 @@ public class FindRouterIP implements ControlListener {
     }
 
     public void controlEvent(ControlEvent event) {
-        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED && mld != null && mld.isEnabled()) {
+        if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
             LogRecord l = (LogRecord) event.getParameter();
 
-            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo")) {
-                mld.setText(JDUtilities.formatSeconds((int) l.getMillis() / 1000) + " : " + l.getMessage() + "\r\n" + mld.getText());
+            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo") && mld != null && mld.isEnabled()) {
+                mld.appendLine(new SimpleDateFormat("HH:mm:ss").format(l.getMillis()) + " : " + l.getMessage());
                 mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
                 mld.getProgress().setValue(mld.getProgress().getValue() + 1);
             }

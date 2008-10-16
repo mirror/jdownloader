@@ -38,6 +38,8 @@ public class MiniLogDialog extends JFrame implements ActionListener {
 
     private static final long serialVersionUID = -1749561448228487759L;
 
+    private String lineSeparator = System.getProperty("line.separator");
+
     private JButton btnNotOK;
 
     private JButton btnOK;
@@ -90,6 +92,14 @@ public class MiniLogDialog extends JFrame implements ActionListener {
         if (e.getSource() == btnOK || e.getSource() == btnNotOK) {
             setVisible(false);
             dispose();
+        }
+    }
+
+    public void appendLine(String text) {
+        if (htmlArea.getText().equals("")) {
+            htmlArea.setText(text);
+        } else {
+            htmlArea.append(lineSeparator + text);
         }
     }
 
