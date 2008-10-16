@@ -39,6 +39,11 @@ public class LinksaveIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
+        br.getPage(parameter);
+        if (br.containsHTML("<title>LinkSave.in - Error 404</title>") || br.containsHTML("")) {
+            logger.info("LinkSave.in Folder not found!");
+            return decryptedLinks;
+        }
         parameter = parameter + ".dlc";
         URL url = new URL(parameter);
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
