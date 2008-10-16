@@ -582,8 +582,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2851 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     @Override

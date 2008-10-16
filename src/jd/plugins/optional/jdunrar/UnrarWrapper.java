@@ -43,6 +43,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     private static final int STARTED = 1 << 3;
     private static final int NO_FILES_FOUND = 1 << 4;
     private static final int FAILED = 1 << 5;
+    @SuppressWarnings("unused")
     private static final int FAILED_CRC = 1 << 6;
     private ArrayList<UnrarListener> listener = new ArrayList<UnrarListener>();
     private DownloadLink link;
@@ -155,12 +156,12 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
         exec.addParameter("x");
         exec.addParameter(file.getAbsolutePath());
-        if(extractTo!=null){
+        if (extractTo != null) {
             extractTo.mkdirs();
             exec.setRunin(extractTo.getAbsolutePath());
-            
-        }else{
-            exec.setRunin(file.getParentFile().getAbsolutePath());  
+
+        } else {
+            exec.setRunin(file.getParentFile().getAbsolutePath());
         }
         exec.setWaitTimeout(-1);
         exec.addProcessListener(this);
@@ -507,10 +508,10 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
             if ((match = new Regex(latestLine, "Bad archive (.*)").getMatch(0)) != null) {
                 this.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
-                System.err.println("Bad archive. Prop. CRC error in "+match);
+                System.err.println("Bad archive. Prop. CRC error in " + match);
                 exec.interrupt();
             }
-            
+
             if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
                 this.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                 exec.interrupt();
@@ -544,8 +545,6 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     }
 
     public void onBufferChanged(Executer exec, StringBuffer buffer) {
-        // TODO Auto-generated method stub
-
     }
 
     public String getPassword() {
@@ -553,12 +552,10 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     }
 
     public long getTotalSize() {
-
         return this.totalSize;
     }
 
     public ArchivFile getCurrentFile() {
-
         return this.currentlyWorkingOn;
     }
 
@@ -568,12 +565,10 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
     public DownloadLink getDownloadLink() {
         return this.link;
-
     }
 
     public void setExtractTo(File dl) {
-      this.extractTo=dl;
-        
+        this.extractTo = dl;
     }
 
 }

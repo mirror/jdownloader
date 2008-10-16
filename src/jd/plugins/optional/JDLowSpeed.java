@@ -28,7 +28,6 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.JDController;
 import jd.event.ControlEvent;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
@@ -164,9 +163,7 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public String getVersion() {
-
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     @Override

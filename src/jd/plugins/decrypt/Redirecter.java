@@ -36,7 +36,7 @@ public class Redirecter extends PluginForDecrypt {
 
         // Workaround for preview.tinyurl.com Links
         parameter = parameter.replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
-        
+
         br.getPage(parameter);
         if (br.getRedirectLocation() == null) return null;
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));

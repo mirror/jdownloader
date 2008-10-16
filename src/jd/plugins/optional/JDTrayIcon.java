@@ -52,7 +52,6 @@ import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -212,8 +211,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     private void hideTooltip() {

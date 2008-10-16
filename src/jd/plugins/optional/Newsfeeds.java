@@ -472,8 +472,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     public boolean initAddon() {

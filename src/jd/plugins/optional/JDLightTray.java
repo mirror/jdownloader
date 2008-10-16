@@ -40,7 +40,6 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -110,8 +109,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     @Override

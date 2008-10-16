@@ -44,7 +44,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -166,12 +165,10 @@ public class StreamingShareTool extends PluginOptional {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     public boolean initAddon() {
-
         return true;
     }
 
@@ -205,7 +202,7 @@ public class StreamingShareTool extends PluginOptional {
                 // logger.info(links.get(i).getName());
                 // logger.info(links.get(i).getBrowserUrl());
                 // logger.info(links.get(i).getSourcePluginComment());
-                //logger.info(links.get(i).getProperty("convertto").toString());
+                // logger.info(links.get(i).getProperty("convertto").toString());
 
             }
         }

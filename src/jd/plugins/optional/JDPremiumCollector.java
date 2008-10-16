@@ -32,7 +32,6 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.PluginOptional;
@@ -171,8 +170,7 @@ public class JDPremiumCollector extends PluginOptional {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     public static int getAddonInterfaceVersion() {
