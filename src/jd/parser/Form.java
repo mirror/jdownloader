@@ -19,6 +19,7 @@ package jd.parser;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -547,12 +548,13 @@ public class Form {
 
     }
 
+    @SuppressWarnings("deprecation")
     public HashMap<String, String> getVarsMap() {
         HashMap<String, String> ret = new HashMap<String, String>();
         for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
 
             String key = it.next();
-            ret.put(key, vars.get(key).getValue());
+            ret.put(key, URLEncoder.encode(vars.get(key).getValue()));
 
         }
         return ret;
