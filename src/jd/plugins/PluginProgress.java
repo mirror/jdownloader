@@ -21,42 +21,43 @@ import java.awt.Color;
 public class PluginProgress {
 
     private long total;
-    public long getTotal() {
-        return total;
-    }
 
-    public void setTotal(long total) {
+    private long current;
+
+    private Color color;
+
+    public PluginProgress(long current, long total, Color color) {
         this.total = total;
-    }
-
-    public long getCurrent() {
-        return current;
-    }
-
-    public void setCurrent(long current) {
         this.current = current;
+        this.color = color;
     }
 
     public Color getColor() {
         return color;
     }
 
+    public long getCurrent() {
+        return current;
+    }
+
+    public double getPercent() {
+        return Math.round((current * 10000.0) / total) / 100.0;
+    }
+
+    public long getTotal() {
+        return total;
+    }
+
     public void setColor(Color color) {
         this.color = color;
     }
 
-    private long current;
-    private Color color;
-
-    public PluginProgress(long current, long totalSize, Color yellow) {
-        this.total=totalSize;
-        this.current=current;
-        this.color=yellow;
+    public void setCurrent(long current) {
+        this.current = current;
     }
 
-    public double getPercent() {
-        // TODO Auto-generated method stub
-        return Math.round((current*10000.0)/total)/100.0;
+    public void setTotal(long total) {
+        this.total = total;
     }
 
 }

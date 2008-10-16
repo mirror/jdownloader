@@ -1,5 +1,3 @@
-package jd.utils;
-
 /*
  * SwingHTMLPreview.java
  *

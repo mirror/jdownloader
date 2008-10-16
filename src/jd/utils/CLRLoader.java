@@ -16,21 +16,11 @@
 
 package jd.utils;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.StringReader;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Vector;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import jd.gui.skins.simple.SimpleGUI;
-import jd.http.Browser;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -38,8 +28,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 public class CLRLoader {
-
-    private static Vector<String> IDS;
 
     static Logger logger = JDUtilities.getLogger();
 
@@ -79,7 +67,7 @@ public class CLRLoader {
                     String action = node.getAttributes().getNamedItem("action").getNodeValue().trim();
                     String basicauth = null;
                     if (method.equalsIgnoreCase("post")) {
-                        hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");                        
+                        hlh.append("            " + method.toUpperCase() + " /" + action + " HTTP/1.1" + "\r\n");
                     } else if (method.equalsIgnoreCase("get")) {
                     } else if (method.equalsIgnoreCase("auth")) {
                         basicauth = action;
@@ -108,7 +96,7 @@ public class CLRLoader {
 
                     if (method.equalsIgnoreCase("post")) {
                         hlh.append("            Host: %%%routerip%%%" + "\r\n");
-                        CLRLoader.inputAuth(hlh, basicauth);                        
+                        CLRLoader.inputAuth(hlh, basicauth);
                         hlh.append("\r\n");
                         hlh.append(post.trim());
                         hlh.append("\r\n");
@@ -146,57 +134,5 @@ public class CLRLoader {
             }
         }
 
-    }
-
-    public static void log(String arg) {
-        System.out.println(arg);
-    }
-
-    public static void main(String args[]) {
-        IDS = new Vector<String>();
-        Vector<String[]> res = new Vector<String[]>();
-
-        try {
-            Browser br = new Browser();
-            br.getPage("http://cryptload.info/clr/");
-
-            String[][] matches = br.getRegex(Pattern.compile("<option value=\"(.*?)\">(.*?)</option>", Pattern.CASE_INSENSITIVE)).getMatches();
-
-            for (int i = matches.length - 1; i >= 0; i--) {
-                String[] next = matches[i];
-                if (IDS.contains(next[0])) {
-                    continue;
-                }
-                br.postPage("http://cryptload.info/clrfile/", "clrid=" + next[0] + "&submit=myRouter.clr+herunterladen");
-
-                String[] ret = CLRLoader.createLiveHeader(br.toString());
-                if (ret != null) {
-                    res.add(ret);
-                    IDS.add(next[0]);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        CLRLoader.saveTolist(res, new File("c:/clrList.xml"));
-
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void saveTolist(Vector<String[]> list, File file) {
-        if (file.exists()) {
-            list.addAll((Collection<? extends String[]>) JDUtilities.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
-            Collections.sort(list, new Comparator<String[]>() {
-                public int compare(String[] a, String[] b) {
-                    return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
-                }
-            });
-
-        }
-        JDUtilities.saveObject(null, list, file, null, null, true);
-    }
-
-    public CLRLoader() {
     }
 }
