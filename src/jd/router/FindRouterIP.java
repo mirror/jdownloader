@@ -16,6 +16,8 @@
 
 package jd.router;
 
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.text.SimpleDateFormat;
 import java.util.logging.LogRecord;
 
@@ -28,17 +30,18 @@ import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class FindRouterIP implements ControlListener {
+public class FindRouterIP implements ControlListener, WindowListener {
 
     private MiniLogDialog mld;
 
     public FindRouterIP(final GUIConfigEntry ip) {
-        JDUtilities.getController().addControlListener(this);
         mld = new MiniLogDialog(JDLocale.L("gui.config.routeripfinder", "Router IPsearch"));
+        mld.addWindowListener(this);
         mld.getBtnOK().setEnabled(false);
         mld.getProgress().setMaximum(100);
         mld.getProgress().setValue(2);
 
+        JDUtilities.getController().addControlListener(this);
         new Thread() {
             @Override
             public void run() {
@@ -61,11 +64,33 @@ public class FindRouterIP implements ControlListener {
         if (event.getID() == ControlEvent.CONTROL_LOG_OCCURED) {
             LogRecord l = (LogRecord) event.getParameter();
 
-            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo") && mld != null && mld.isEnabled()) {
+            if (l.getSourceClassName().startsWith("jd.router.GetRouterInfo")) {
                 mld.appendLine(new SimpleDateFormat("HH:mm:ss").format(l.getMillis()) + " : " + l.getMessage());
                 mld.getScrollPane().setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
                 mld.getProgress().setValue(mld.getProgress().getValue() + 1);
             }
         }
+    }
+
+    public void windowActivated(WindowEvent e) {
+    }
+
+    public void windowClosed(WindowEvent e) {
+        JDUtilities.getController().removeControlListener(this);
+    }
+
+    public void windowClosing(WindowEvent e) {
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+    }
+
+    public void windowIconified(WindowEvent e) {
+    }
+
+    public void windowOpened(WindowEvent e) {
     }
 }
