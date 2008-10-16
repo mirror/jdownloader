@@ -42,8 +42,8 @@ public class RomsZopharNet extends PluginForDecrypt {
         br.getPage(param.toString());
 
         String filename = new Regex(parameter, patternSupported).getMatch(1);
-        String file = new Regex(br, patternDownload.pattern()).getMatch(0);
-        long filesize = Regex.getSize(new Regex(br, patternFilesize.pattern()).getMatch(0));
+        String file = br.getRegex(patternDownload).getMatch(0);
+        long filesize = Regex.getSize(br.getRegex(patternFilesize).getMatch(0));
         DownloadLink dlLink = createDownloadlink("http://roms.zophar.net/download-file/" + file);
         dlLink.setDownloadSize(filesize);
         dlLink.setName(filename);
@@ -55,7 +55,6 @@ public class RomsZopharNet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

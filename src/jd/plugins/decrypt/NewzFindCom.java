@@ -18,11 +18,9 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.HTMLParser;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -40,7 +38,8 @@ public class NewzFindCom extends PluginForDecrypt {
 
         Vector<String> passwords = HTMLParser.findPasswords(br.getPage(parameter));
 
-        String links[] = new Regex(br.getPage("http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1)), Pattern.compile("<link title=\"(.*?)\"")).getColumn(0);
+        br.getPage("http://newzfind.com/ajax/links.html?a=" + parameter.substring(parameter.lastIndexOf("/") + 1));
+        String links[] = br.getRegex("<link title=\"(.*?)\"").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             DownloadLink dl_link = createDownloadlink(element);
@@ -54,8 +53,7 @@ public class NewzFindCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
 }

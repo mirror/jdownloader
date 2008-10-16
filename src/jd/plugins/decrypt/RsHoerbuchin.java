@@ -45,7 +45,7 @@ public class RsHoerbuchin extends PluginForDecrypt {
         } else {
             dLink = form.getAction(null);
         }
-        logger.info(dLink);
+
         decryptedLinks.add(createDownloadlink(dLink));
 
         return decryptedLinks;
@@ -53,7 +53,6 @@ public class RsHoerbuchin extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

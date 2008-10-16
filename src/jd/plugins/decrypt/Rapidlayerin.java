@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -40,10 +38,10 @@ public class Rapidlayerin extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String page = br.getPage(parameter);
-        String fun_id = new Regex(page, Pattern.compile("function (.*?)\\(", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String all = "function " + new Regex(page, Pattern.compile("function (.*?)a=", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        String dec = new Regex(page, Pattern.compile("a=(.*?);document.write", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        br.getPage(parameter);
+        String fun_id = br.getRegex("function (.*?)\\(").getMatch(0);
+        String all = "function " + br.getRegex("function (.*?)a=").getMatch(0);
+        String dec = br.getRegex("a=(.*?);document.write").getMatch(0);
 
         Context cx = Context.enter();
         Scriptable scope = cx.initStandardObjects();
@@ -61,7 +59,6 @@ public class Rapidlayerin extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

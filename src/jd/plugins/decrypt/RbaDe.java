@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -43,31 +42,26 @@ public class RbaDe extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        Browser br = new Browser();
-        br.clearCookies(getHost());
-        String page = br.getPage(cryptedLink.getCryptedUrl());
-        if (new Regex(cryptedLink, PATTERN_SUPPORTED_BATTLE).matches()) {
-            String links[] = new Regex(page, REGEX_DOWNLOADLINK).getColumn(0);
-            for (String link : links) {
-                decryptedLinks.add(createDownloadlink("http://www.r-b-a.de/" + link));
-            }
-            return decryptedLinks;
-        } else if (new Regex(cryptedLink, PATTERN_SUPPORTED_USER).matches()) {
-            String links[] = new Regex(page, BATTLE_REL_PATH).getColumn(0);
-            for (String link : links) {
-                DownloadLink dl_link = createDownloadlink("http://www.r-b-a.de/" + link);
-                decryptedLinks.add(dl_link);
-                logger.info(link);
-            }
-            return decryptedLinks;
-        }
 
-        return null;
+        br.clearCookies(getHost());
+        br.getPage(cryptedLink.getCryptedUrl());
+
+        String[] links = null;
+        if (new Regex(cryptedLink, PATTERN_SUPPORTED_BATTLE).matches()) {
+            links = br.getRegex(REGEX_DOWNLOADLINK).getColumn(0);
+        } else if (new Regex(cryptedLink, PATTERN_SUPPORTED_USER).matches()) {
+            links = br.getRegex(BATTLE_REL_PATH).getColumn(0);
+        }
+        if (links == null) return null;
+
+        for (String link : links) {
+            decryptedLinks.add(createDownloadlink("http://www.r-b-a.de/" + link));
+        }
+        return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

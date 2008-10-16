@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,9 +35,9 @@ public class RockHouseIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String page = br.getPage(parameter);
-        String links[][] = new Regex(page, Pattern.compile("<td><a href=\'(.*?)\' target=\'_blank\'>", Pattern.CASE_INSENSITIVE)).getMatches();
-        String pw = Encoding.htmlDecode(new Regex(page, Pattern.compile("<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        br.getPage(parameter);
+        String links[][] = br.getRegex("<td><a href=\'(.*?)\' target=\'_blank\'>").getMatches();
+        String pw = Encoding.htmlDecode(br.getRegex("<td class=\'button\'>Passwort:</td><td class=\'button\'>(.*?)<").getMatch(0));
         for (String[] element : links) {
             DownloadLink link = createDownloadlink(element[0].replaceAll("\n", ""));
             link.addSourcePluginPassword(pw);
@@ -51,7 +49,6 @@ public class RockHouseIn extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

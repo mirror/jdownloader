@@ -51,14 +51,13 @@ public class RapidFolderCom extends PluginForDecrypt {
         boolean running = true;
         while (running) {
             downloadUrl = DOWNLOAD_PHP.replaceAll("\\{id\\}", id).replaceAll("\\{subid\\}", String.valueOf(count));
-            String page = br.getPage(downloadUrl);
             // Bei manchen Downloads ist page == ""; Dann gibt es eine
             // redirectUrl, bei anderen Downloads steht die RedirectUrl im html
             // source.
-            if (page.equals("")) {
+            if (br.getPage(downloadUrl).equals("")) {
                 redirectUrl = br.getRedirectLocation();
             } else {
-                redirectUrl = new Regex(page, PATTERN_REDIRECT_URL).getMatch(0);
+                redirectUrl = br.getRegex(PATTERN_REDIRECT_URL).getMatch(0);
             }
             running = !(redirectUrl == null || redirectUrl.equals("http://"));
             if (running) {
@@ -73,7 +72,6 @@ public class RapidFolderCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 3210 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

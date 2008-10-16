@@ -37,17 +37,18 @@ public class RaidrushOrg extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String page = br.getPage(parameter);
-        String title = new Regex(page, "<big><strong>(.*?)</strong></big>").getMatch(0);
-        String pass = new Regex(page, "<strong>Passwort\\:</strong> <small>(.*?)</small>").getMatch(0);
+        br.getPage(parameter);
+        String title = br.getRegex("<big><strong>(.*?)</strong></big>").getMatch(0);
+        String pass = br.getRegex("<strong>Passwort\\:</strong> <small>(.*?)</small>").getMatch(0);
         FilePackage fp = new FilePackage();
         fp.setName(title);
         fp.setPassword(pass);
 
-        String[][] matches = new Regex(page, "ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
+        String[][] matches = br.getRegex("ddl\\(\\'(.*?)\\'\\,\\'([\\d]*?)\\'\\)").getMatches();
         progress.setRange(matches.length);
         for (String[] match : matches) {
-            String link = new Regex(br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]), "unescape\\(\"(.*?)\"\\)").getMatch(0);
+            br.getPage("http://raidrush.org/ext/exdl.php?go=" + match[0] + "&fid=" + match[1]);
+            String link = br.getRegex("unescape\\(\"(.*?)\"\\)").getMatch(0);
             link = new Regex(Encoding.htmlDecode(link), "\"0\"><frame src\\=\"(.*?)\" name\\=\"GO_SAVE\"").getMatch(0);
             DownloadLink dl = createDownloadlink(link);
             dl.addSourcePluginPassword(pass);
@@ -61,7 +62,6 @@ public class RaidrushOrg extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

@@ -17,10 +17,8 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,15 +34,14 @@ public class RnB4Uin extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String page = br.getPage("http://rnb4u.in/download.php?action=load&fileid=" + parameter.substring(parameter.lastIndexOf("=") + 1) + "&sp=1");
-        decryptedLinks.add(createDownloadlink(new Regex(page, Pattern.compile("URL=(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)));
+        br.getPage("http://rnb4u.in/download.php?action=load&fileid=" + parameter.substring(parameter.lastIndexOf("=") + 1) + "&sp=1");
+        decryptedLinks.add(createDownloadlink(br.getRegex("URL=(.*?)\"").getMatch(0)));
 
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

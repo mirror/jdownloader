@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,7 +35,8 @@ public class RsprotectCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String link = new Regex(br.getPage(parameter), "<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"", Pattern.CASE_INSENSITIVE).getMatch(0);
+        br.getPage(parameter);
+        String link = br.getRegex("<FORM ACTION=\"(.*?)\" METHOD=\"post\" ID=\"postit\"").getMatch(0);
         if (link == null) return null;
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
@@ -46,7 +45,6 @@ public class RsprotectCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

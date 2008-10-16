@@ -30,7 +30,7 @@ public class RappersIn extends PluginForDecrypt {
 
     private static final Pattern PATTERN_USIDERID = Pattern.compile("artist\\.php\\?action=add2favs&amp;id=(\\d+)");
     private static final Pattern PATTERN_NICKNAME = Pattern.compile("<title>rappers.in Artistpage von (.+?)</title>");
-    private static final Pattern PATTERN_PAGE_INFOS = Pattern.compile(PATTERN_USIDERID.pattern() + "|" + PATTERN_NICKNAME);
+    private static final Pattern PATTERN_PAGE_INFOS = Pattern.compile(PATTERN_USIDERID.pattern() + "|" + PATTERN_NICKNAME.pattern());
     private static final Pattern PATTERN_DURL = Pattern.compile("<filename>(.+?)</filename>");
     private static final Pattern PATTERN_TITEL = Pattern.compile("<title>(.+?)</title>");
 
@@ -42,10 +42,10 @@ public class RappersIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        String page = br.getPage(param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl());
         // Komplexes Parsingkonstrukt, da in einem durchlauf geparst werden
         // soll!
-        Regex pageInfos = new Regex(page, PATTERN_PAGE_INFOS);
+        Regex pageInfos = br.getRegex(PATTERN_PAGE_INFOS);
         String nick = null;
         String userId = null;
         for (String s : pageInfos.getRow(0)) {
@@ -65,9 +65,9 @@ public class RappersIn extends PluginForDecrypt {
             StringBuilder sb = new StringBuilder("http://www.rappers.in/artistplaylist_main-");
             sb.append(userId);
             sb.append("-1808.xml?281");
-            page = br.getPage(sb.toString());
-            String[] dUrls = new Regex(page, PATTERN_DURL).getColumn(0);
-            String[] titel = new Regex(page, PATTERN_TITEL).getColumn(0);
+            br.getPage(sb.toString());
+            String[] dUrls = br.getRegex(PATTERN_DURL).getColumn(0);
+            String[] titel = br.getRegex(PATTERN_TITEL).getColumn(0);
             assert titel.length == dUrls.length : "ungültiges xml";
             parseTitelNames(titel, nick);
             FilePackage fp = new FilePackage();
@@ -76,7 +76,6 @@ public class RappersIn extends PluginForDecrypt {
                 DownloadLink dlLink = createDownloadlink(dUrls[i].replaceAll("http://", "httpRappersIn://").replaceAll("rappers.in", "viaRappersIn"));
                 dlLink.setFinalFileName(titel[i] + ".mp3");
                 dlLink.setFilePackage(fp);
-                System.out.println(dlLink.getDownloadURL());
                 decryptedLinks.add(dlLink);
 
             }
@@ -98,7 +97,6 @@ public class RappersIn extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 2798 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }
