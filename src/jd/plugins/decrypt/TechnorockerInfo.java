@@ -17,10 +17,8 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,7 +34,8 @@ public class TechnorockerInfo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String link = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"(.*?)\"><b>here</b>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        br.getPage(parameter);
+        String link = br.getRegex("<a href=\"(.*?)\"><b>here</b>").getMatch(0);
         if (link == null) return null;
         DownloadLink dl_link = createDownloadlink(link);
         dl_link.addSourcePluginPassword("technorocker");
@@ -47,7 +46,6 @@ public class TechnorockerInfo extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

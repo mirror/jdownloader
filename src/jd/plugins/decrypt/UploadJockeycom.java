@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,10 +35,11 @@ public class UploadJockeycom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String links[][] = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"http://www\\.uploadjockey\\.com/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+        br.getPage(parameter);
+        String links[] = br.getRegex("<a href=\"http://www\\.uploadjockey\\.com/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"").getColumn(0);
         progress.setRange(links.length);
-        for (String[] element : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(element[0])));
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(element)));
             progress.increase(1);
         }
 
@@ -49,7 +48,6 @@ public class UploadJockeycom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

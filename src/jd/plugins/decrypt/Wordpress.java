@@ -33,10 +33,7 @@ public class Wordpress extends PluginForDecrypt {
 
     public Wordpress(PluginWrapper wrapper) {
         super(wrapper);
-        addDefaultPasswords();
-    }
 
-    private void addDefaultPasswords() {
         /* Die defaultpasswörter der einzelnen seiten */
         /* Host, defaultpw1, defaultpw2, usw */
         defaultPasswords.add(new String[] { "doku.cc", "doku.cc", "doku.dl.am" });
@@ -84,7 +81,6 @@ public class Wordpress extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

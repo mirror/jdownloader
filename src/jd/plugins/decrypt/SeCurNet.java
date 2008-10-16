@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,10 +35,12 @@ public class SeCurNet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String layerLinks[] = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        br.getPage(parameter);
+        String layerLinks[] = br.getRegex("href=\"http://se-cur\\.net/out\\.php\\?d=(.*?)\"").getColumn(0);
         progress.setRange(layerLinks.length);
         for (String element : layerLinks) {
-            String link = new Regex(br.getPage("http://se-cur.net/out.php?d=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            br.getPage("http://se-cur.net/out.php?d=" + element);
+            String link = br.getRegex("src=\"(.*?)\"").getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
             progress.increase(1);
         }
@@ -50,7 +50,6 @@ public class SeCurNet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

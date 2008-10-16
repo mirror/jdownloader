@@ -17,19 +17,17 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class SAUGUS extends PluginForDecrypt {
 
-    private Pattern patternSupported_go = Pattern.compile("http://[\\w\\.]*?saug\\.us/go.+\\.php", Pattern.CASE_INSENSITIVE);
-    private Pattern patternSupported_folder = Pattern.compile("http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html", Pattern.CASE_INSENSITIVE);
+    private String patternSupported_go = "http://[\\w\\.]*?saug\\.us/go.+\\.php";
+    private String patternSupported_folder = "http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html";
 
     public SAUGUS(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,7 +39,7 @@ public class SAUGUS extends PluginForDecrypt {
         String parameter = param.toString();
         String server_folder_id = "";
         String server_id = "";
-        if (new Regex(parameter, patternSupported_folder).matches()) {
+        if (parameter.matches(patternSupported_folder)) {
             if (parameter.contains("folder2")) {
                 server_folder_id = "2";
             }
@@ -49,24 +47,24 @@ public class SAUGUS extends PluginForDecrypt {
                 server_id = "s2.";
             }
             br.getPage(parameter);
-            String folder_id = br.getRegex(Pattern.compile("onload=\"loadFolder\\('(.*?)'\\);\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String folder_id = br.getRegex("onload=\"loadFolder\\('(.*?)'\\);\">").getMatch(0);
             if (folder_id == null) return null;
             br.postPage("http://" + server_id + "saug.us/folder" + server_folder_id + ".php", "id=" + folder_id);
-            String ids[] = br.getRegex(Pattern.compile("javascript:page\\('.*?\\?url=(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            String ids[] = br.getRegex("javascript:page\\('.*?\\?url=(.*?)'\\)").getColumn(0);
             for (String id : ids) {
                 br.getPage("http://" + server_id + "saug.us/go" + server_folder_id + ".php?url=" + id);
-                String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("</iframe>--><iframe src=\"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
+                String link = Encoding.htmlDecode(br.getRegex("</iframe>--><iframe src=\"(.*?)\";").getMatch(0));
                 if (link != null) {
                     if (link.startsWith("http")) {
                         decryptedLinks.add(this.createDownloadlink(link));
                     } else if (link.startsWith("go_x")) {
                         br.getPage("http://" + server_id + "saug.us/" + link);
-                        link = br.getRegex(Pattern.compile("<p class=\"downloadlink\">(.*?)<fon", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                        link = br.getRegex("<p class=\"downloadlink\">(.*?)<fon").getMatch(0);
                         if (link != null) decryptedLinks.add(this.createDownloadlink(link));
                     }
                 }
             }
-        } else if (new Regex(parameter, patternSupported_go).matches()) {
+        } else if (parameter.matches(patternSupported_go)) {
             if (parameter.contains("folder2")) {
                 server_folder_id = "2";
             }
@@ -74,13 +72,13 @@ public class SAUGUS extends PluginForDecrypt {
                 server_id = "s2.";
             }
             br.getPage(parameter);
-            String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("</iframe>--><iframe src=\"(.*?)[\r\n\t]*?\";", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            String link = Encoding.htmlDecode(br.getRegex("</iframe>--><iframe src=\"(.*?)[\r\n\t]*?\";").getMatch(0));
             if (link != null) {
                 if (link.startsWith("http")) {
                     decryptedLinks.add(this.createDownloadlink(link));
                 } else if (link.startsWith("go_x")) {
                     br.getPage("http://" + server_id + "saug.us/" + link);
-                    link = br.getRegex(Pattern.compile("<p class=\"downloadlink\">(.*?)<fon", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    link = br.getRegex("<p class=\"downloadlink\">(.*?)<fon").getMatch(0);
                     if (link != null) decryptedLinks.add(this.createDownloadlink(link));
                 }
             }
@@ -90,7 +88,6 @@ public class SAUGUS extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

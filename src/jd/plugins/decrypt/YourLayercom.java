@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,16 +35,13 @@ public class YourLayercom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.getPage(param.toString());
         String link = br.getRegex(Pattern.compile("frameborder=\"0\" src=\"(.*?)\"></body>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (link != null) {
-            decryptedLinks.add(createDownloadlink(link));
-            return decryptedLinks;
-        }
-        return null;
+        if (link == null) return null;
+        decryptedLinks.add(createDownloadlink(link));
+        return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

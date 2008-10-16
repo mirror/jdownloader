@@ -17,8 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
@@ -52,89 +50,80 @@ public class UrlShieldnet extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
+        boolean do_continue = true;
+        Form form;
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
 
-            boolean do_continue = true;
-            Form form;
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
+        br.getPage(parameter);
+        br.setFollowRedirects(false);
+        for (int retry = 1; retry < 5; retry++) {
+            if (br.containsHTML("Invalid Password")) {
+                br.getPage(parameter);
+            }
+            if (br.containsHTML("<b>Password</b>")) {
+                do_continue = false;
+                /* Passwort */
+                form = br.getForm(0);
+                passCode = getUserInput(null, param);
+                form.put("password", passCode);
 
-            br.getPage(parameter);
-            br.setFollowRedirects(false);
+                br.submitForm(form);
+            } else {
+                do_continue = true;
+                break;
+            }
+        }
+        if (do_continue == true) {
+            if (br.containsHTML("window.alert")) {
+                logger.severe(br.getRegex("window.alert\\(\"(.*?)\"\\)").getMatch(0));
+                do_continue = false;
+            }
+        }
+        if (do_continue == true) {
+            /* doofes JS */
+            String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            all = all.replaceAll("document\\.writeln\\(s\\);", "");
+            Context cx = Context.enter();
+            Scriptable scope = cx.initStandardObjects();
+            String fun = "function f(){" + all + " \n return unescape(unc('" + dec + "'))} f()";
+            Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
+            String java_page = Context.toString(result);
+            Context.exit();
+
+            /* Link zur richtigen Seiten */
+            String page_link = new Regex(java_page, Pattern.compile("src=\"(/content\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String url = "http://www.urlshield.net" + page_link;
+
             for (int retry = 1; retry < 5; retry++) {
-                if (br.containsHTML("Invalid Password")) {
-                    br.getPage(parameter);
-                }
-                if (br.containsHTML("<b>Password</b>")) {
-                    do_continue = false;
-                    /* Passwort */
-                    form = br.getForm(0);
-                    passCode = getUserInput(null, param);
-                    form.put("password", passCode);
-
-                    br.submitForm(form);
-                } else {
-                    do_continue = true;
+                if (br.getRedirectLocation() != null) {
+                    decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
                     break;
                 }
-            }
-            if (do_continue == true) {
-                if (br.containsHTML("window.alert")) {
-                    logger.severe(br.getRegex("window.alert\\(\"(.*?)\"\\)").getMatch(0));
-                    do_continue = false;
+
+                br.getPage(url);
+                if (br.containsHTML("getkey.php?id")) {
+                    String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    form = br.getForm(0);
+                    /* Captcha zu verarbeiten */
+                    captchaFile = getLocalCaptchaFile(this);
+                    HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.urlshield.net" + captchaurl).openConnection());
+                    Browser.download(captchaFile, captcha_con);
+                    /* CaptchaCode holen */
+                    captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+                    form.put("userkey", captchaCode);
+
+                    br.submitForm(form);
                 }
             }
-            if (do_continue == true) {
-                /* doofes JS */
-                String all = Encoding.htmlDecode(br.getRegex(Pattern.compile("SCRIPT>eval\\(unescape\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                String dec = br.getRegex(Pattern.compile("<SCRIPT>dc\\('(.*?)'\\)", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                all = all.replaceAll("document\\.writeln\\(s\\);", "");
-                Context cx = Context.enter();
-                Scriptable scope = cx.initStandardObjects();
-                String fun = "function f(){" + all + " \n return unescape(unc('" + dec + "'))} f()";
-                Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
-                String java_page = Context.toString(result);
-                Context.exit();
-
-                /* Link zur richtigen Seiten */
-                String page_link = new Regex(java_page, Pattern.compile("src=\"(/content\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                String url = "http://www.urlshield.net" + page_link;
-
-                for (int retry = 1; retry < 5; retry++) {
-                    if (br.getRedirectLocation() != null) {
-                        decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-                        break;
-                    }
-
-                    br.getPage(url);
-                    if (br.containsHTML("getkey.php?id")) {
-                        String captchaurl = br.getRegex(Pattern.compile("src=\"(/getkey\\.php\\?id=.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                        form = br.getForm(0);
-                        /* Captcha zu verarbeiten */
-                        captchaFile = getLocalCaptchaFile(this);
-                        HTTPConnection captcha_con = new HTTPConnection(new URL("http://www.urlshield.net" + captchaurl).openConnection());
-                        Browser.download(captchaFile, captcha_con);
-                        /* CaptchaCode holen */
-                        captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
-                        form.put("userkey", captchaCode);
-
-                        br.submitForm(form);
-                    }
-                }
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return null;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
         }
+
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

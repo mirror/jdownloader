@@ -23,7 +23,6 @@ import java.util.Vector;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -55,10 +54,10 @@ public class Wiireloaded extends PluginForDecrypt {
             Thread.sleep(500);
         } catch (Exception e) {
         }
-        String page = br.getPage(parameter);
+        br.getPage(parameter);
         progress.increase(1);
         int max = 10;
-        while (page.contains("captcha/captcha.php") || page.contains("Sicherheitscode war falsch")) {
+        while (br.containsHTML("captcha/captcha\\.php") || br.containsHTML("Sicherheitscode war falsch")) {
             if (max-- <= 0) {
                 logger.severe("Captcha Code has been wrong many times. abort.");
                 return null;
@@ -77,16 +76,15 @@ public class Wiireloaded extends PluginForDecrypt {
                     Thread.sleep(500);
                 } catch (Exception e) {
                 }
-                page = br.submitForm(post);
+                br.submitForm(post);
             }
         }
-        String[][] ids = new Regex(page, "onClick=\"popup_dl\\((.*?)\\)\"").getMatches();
+        String[] ids = br.getRegex("onClick=\"popup_dl\\((.*?)\\)\"").getColumn(0);
         logger.finer("ids found" + ids.length);
         progress.addToMax(ids.length);
         Browser brc = br.cloneBrowser();
-        for (String[] element : ids) {
-            String u = "http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element[0];
-            brc.getPage(u);
+        for (String element : ids) {
+            brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);
             Form form = brc.getForm(0);
             form.setVariable(0, submitvalue + "");
             brc.submitForm(form);
@@ -128,7 +126,6 @@ public class Wiireloaded extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

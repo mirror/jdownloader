@@ -65,7 +65,7 @@ public class Xlinkin extends PluginForDecrypt {
 
                 for (int retry = 1; retry <= 10; retry++) {
                     try {
-                        this.page = decodepage(this.br.getPage("http://xlink.in/?go=" + this.link));
+                        this.page = decodePage(this.br.getPage("http://xlink.in/?go=" + this.link));
                         this.downloadlink = new Regex(this.page, "<iframe src='(.*?)'", Pattern.CASE_INSENSITIVE).getMatch(0);
                         break;
                     } catch (Exception e) {
@@ -105,7 +105,8 @@ public class Xlinkin extends PluginForDecrypt {
 
         for (int retry = 1; retry <= 10; retry++) {
             try {
-                String links[] = new Regex(br.getPage(parameter), "window.open\\('\\?go=(.*?)','.*?'\\)", Pattern.CASE_INSENSITIVE).getColumn(0);
+                br.getPage(parameter);
+                String links[] = br.getRegex("window.open\\('\\?go=(.*?)','.*?'\\)").getColumn(0);
                 progress.setRange(links.length);
                 Xlinkin_Linkgrabber Xlinkin_Linkgrabbers[] = new Xlinkin_Linkgrabber[links.length];
                 for (int i = 0; i < links.length; ++i) {
@@ -136,7 +137,7 @@ public class Xlinkin extends PluginForDecrypt {
         return null;
     }
 
-    private static String decodepage(String page) {
+    private static String decodePage(String page) {
         if (page == null) return null;
         StringBuffer sb = new StringBuffer();
         String pattern = "(document\\.write\\(\".*?\"\\);)";
@@ -153,7 +154,6 @@ public class Xlinkin extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

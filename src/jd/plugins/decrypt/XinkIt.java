@@ -63,10 +63,10 @@ public class XinkIt extends PluginForDecrypt {
             }
         }
         if (do_continue) {
-            String ids[][] = br.getRegex("startDownload\\('(.*?)'\\);").getMatches();
+            String ids[] = br.getRegex("startDownload\\('(.*?)'\\);").getColumn(0);
             progress.setRange(ids.length);
-            for (String[] element : ids) {
-                decryptedLinks.add(createDownloadlink(XinkItDecodeLink(br.getPage("http://xink.it/encd_" + element[0]))));
+            for (String element : ids) {
+                decryptedLinks.add(createDownloadlink(XinkItDecodeLink(br.getPage("http://xink.it/encd_" + element))));
                 progress.increase(1);
             }
         }
@@ -77,8 +77,7 @@ public class XinkIt extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     /**

@@ -37,38 +37,33 @@ public class ShareProtect extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            br.getPage(parameter);
-            String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getColumn(0);
-            StringBuffer htmlc = new StringBuffer();
-            for (String element : matches) {
-                htmlc.append(Encoding.htmlDecode(element) + "\n");
-            }
-
-            String[] links = new Regex(htmlc, "<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getColumn(0);
-            progress.setRange(links.length);
-            htmlc = new StringBuffer();
-            for (String element : links) {
-
-                br.getPage("http://" + br.getHost() + "/" + element);
-                htmlc.append(Encoding.htmlDecode(br.getRegex("unescape\\(\\'(.*?)'\\)").getMatch(0)) + "\n");
-                progress.increase(1);
-            }
-            br.getRequest().setHtmlCode(htmlc.toString());
-            Form[] forms = br.getForms();
-            for (Form element : forms) {
-                decryptedLinks.add(createDownloadlink(element.action));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+        br.getPage(parameter);
+        String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getColumn(0);
+        StringBuffer htmlc = new StringBuffer();
+        for (String element : matches) {
+            htmlc.append(Encoding.htmlDecode(element) + "\n");
         }
+
+        String[] links = new Regex(htmlc, "<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getColumn(0);
+        progress.setRange(links.length);
+        htmlc = new StringBuffer();
+        for (String element : links) {
+
+            br.getPage("http://" + br.getHost() + "/" + element);
+            htmlc.append(Encoding.htmlDecode(br.getRegex("unescape\\(\\'(.*?)'\\)").getMatch(0)) + "\n");
+            progress.increase(1);
+        }
+        br.getRequest().setHtmlCode(htmlc.toString());
+        Form[] forms = br.getForms();
+        for (Form element : forms) {
+            decryptedLinks.add(createDownloadlink(element.action));
+        }
+
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

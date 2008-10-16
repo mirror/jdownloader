@@ -39,7 +39,7 @@ public class UCashin extends PluginForDecrypt {
         String id = new Regex(param.toString(), patternSupported).getMatch(0);
         br.getPage("http://ucash.in/" + id);
 
-        String link = br.getRegex(Pattern.compile("<a href=\"(.*?)\">click to continue</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String link = br.getRegex("<a href=\"(.*?)\">click to continue</a>").getMatch(0);
         if (link == null) { return null; }
         decryptedLinks.add(createDownloadlink(link));
 
@@ -48,7 +48,6 @@ public class UCashin extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

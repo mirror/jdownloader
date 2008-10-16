@@ -82,13 +82,15 @@ public class Serienjunkies extends PluginForDecrypt {
         passwords.add("serienjunkies.dl.am");
         passwords.add("serienjunkies.org");
     }
+
     public boolean[] checkLinks(DownloadLink[] urls) {
         boolean[] ret = new boolean[urls.length];
         for (int i = 0; i < ret.length; i++) {
-            ret[i]=false;
+            ret[i] = false;
         }
         return ret;
     }
+
     public synchronized boolean canHandle(String data) {
         boolean cat = false;
         if (data == null) return false;
@@ -512,8 +514,7 @@ public class Serienjunkies extends PluginForDecrypt {
     }
 
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     private String isNext() {
@@ -663,7 +664,7 @@ public class Serienjunkies extends PluginForDecrypt {
             try {
                 result = pl.getAvailableDownloads(downloadLink, 2);
             } catch (Exception e) {
-               e.printStackTrace();
+                e.printStackTrace();
             }
             if (result == null) {
                 ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();

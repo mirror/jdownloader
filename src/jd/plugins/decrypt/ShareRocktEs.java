@@ -38,11 +38,11 @@ public class ShareRocktEs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         String parameter = param.toString();
 
-        String page = br.getPage(parameter);
+        br.getPage(parameter);
         br.setFollowRedirects(false);
         String[] matches;
         if (new Regex(parameter, PATTEREN_SUPPORTED_V).matches()) {
-            matches = new Regex(page, Pattern.compile("window\\.open\\('\\?go=(.*?)','_blank'\\)")).getColumn(0);
+            matches = br.getRegex("window\\.open\\('\\?go=(.*?)','_blank'\\)").getColumn(0);
         } else {
             String match = new Regex(parameter, PATTERN_SUPPORTED_GO).getMatch(0);
             if (match == null) { return null; }
@@ -76,7 +76,6 @@ public class ShareRocktEs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

@@ -17,11 +17,9 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,10 +35,12 @@ public class Xailicom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String links[] = new Regex(br.getPage(parameter), Pattern.compile("onClick='popuptt\\(\"(.*?)\"\\)", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        br.getPage(parameter);
+        String links[] = br.getRegex("onClick='popuptt\\(\"(.*?)\"\\)").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
-            String link = new Regex(br.getPage("http://www.xaili.com/include/get.php?link=" + element), Pattern.compile("src=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            br.getPage("http://www.xaili.com/include/get.php?link=" + element);
+            String link = br.getRegex("src=\"(.*?)\"").getMatch(0);
             decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
             progress.increase(1);
         }
@@ -50,7 +50,6 @@ public class Xailicom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

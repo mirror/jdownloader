@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -31,8 +30,7 @@ import jd.utils.JDUtilities;
 
 public class VetaXin extends PluginForDecrypt {
 
-    static private final Pattern patternSupported_Download = Pattern.compile("http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported_Page = Pattern.compile("http://[\\w\\.]*?vetax\\.in/view/\\d+", Pattern.CASE_INSENSITIVE);
+    static private final String patternSupported_Download = "http://[\\w\\.]*?vetax\\.in/(dload|mirror)/[a-zA-Z0-9]+";
 
     public VetaXin(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,7 +42,7 @@ public class VetaXin extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        if (new Regex(parameter, patternSupported_Download).matches()) {
+        if (parameter.matches(patternSupported_Download)) {
             String links[] = br.getRegex(Pattern.compile("<input name=\"feld.*?\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             if (links == null) { return null; }
             progress.setRange(links.length);
@@ -52,7 +50,7 @@ public class VetaXin extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(element));
                 progress.increase(1);
             }
-        } else if (new Regex(parameter, patternSupported_Page).matches()) {
+        } else {
             String pw = br.getRegex(Pattern.compile("<strong>Passwort:</strong></td>.*?<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String links[] = br.getRegex(Pattern.compile("<a href=\"(/(dload|mirror)/.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             String rsdf = br.getRegex(Pattern.compile("<a href=\"(/crypt\\.php\\?.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
@@ -81,7 +79,6 @@ public class VetaXin extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

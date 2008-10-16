@@ -17,10 +17,8 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,7 +34,8 @@ public class SaveRaidrushWs extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String[][] links = new Regex(br.getPage(parameter), Pattern.compile("get\\('(.*?)','FREE','(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
+        br.getPage(parameter);
+        String[][] links = br.getRegex("get\\('(.*?)','FREE','(.*?)'\\);").getMatches();
         progress.setRange(links.length);
         for (String[] elements : links) {
             decryptedLinks.add(createDownloadlink("http://" + br.getPage("http://save.raidrush.ws/404.php.php?id=" + elements[0] + "&key=" + elements[1])));
@@ -48,7 +47,6 @@ public class SaveRaidrushWs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }
