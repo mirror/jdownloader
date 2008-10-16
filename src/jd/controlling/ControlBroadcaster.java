@@ -21,7 +21,6 @@ import java.util.Vector;
 
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
-import jd.plugins.event.PluginEvent;
 
 /**
  * Diese Klasse
@@ -32,7 +31,7 @@ public class ControlBroadcaster extends Thread {
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
-     * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
+     * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
      */
     transient private Vector<ControlListener> controlListener = null;
 

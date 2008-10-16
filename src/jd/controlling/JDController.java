@@ -47,7 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.plugins.event.PluginEvent;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -175,7 +174,7 @@ public class JDController implements ControlListener, UIListener {
     /**
      * Hiermit wird der Eventmechanismus realisiert. Alle hier eingetragenen
      * Listener werden benachrichtigt, wenn mittels
-     * {@link #firePluginEvent(PluginEvent)} ein Event losgeschickt wird.
+     * {@link #fireControlEvent(ControlEvent)} ein Event losgeschickt wird.
      */
     private transient ArrayList<ControlListener> controlListener = null;
 
