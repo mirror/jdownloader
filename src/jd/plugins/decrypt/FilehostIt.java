@@ -36,10 +36,10 @@ public class FilehostIt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String[][] links = new Regex(br.getPage(parameter), Pattern.compile("<td>\n								<div align=\"center\"><a href=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getMatches();
+        String[] links = new Regex(br.getPage(parameter), Pattern.compile("<td>\n								<div align=\"center\"><a href=\"(.*?)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
-        for (String[] element : links) {
-            decryptedLinks.add(createDownloadlink(element[0]));
+        for (String element : links) {
+            decryptedLinks.add(createDownloadlink(element));
             progress.increase(1);
         }
 
@@ -48,7 +48,6 @@ public class FilehostIt extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

@@ -36,16 +36,16 @@ public class FrozenRomsIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String getLinks[][];
+        String getLinks[];
 
         if (parameter.indexOf("get") != -1) {
-            getLinks = new Regex(parameter, Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getMatches();
+            getLinks = new Regex(parameter, Pattern.compile("http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html", Pattern.CASE_INSENSITIVE)).getColumn(0);
         } else {
-            getLinks = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html\"")).getMatches();
+            getLinks = new Regex(br.getPage(parameter), Pattern.compile("href=\"http://[\\w\\.]*?frozen-roms\\.in/get_(.*?)\\.html\"")).getColumn(0);
         }
         progress.setRange(getLinks.length);
-        for (String[] element : getLinks) {
-            br.getPage("http://frozen-roms.in/get_" + element[0] + ".html");
+        for (String element : getLinks) {
+            br.getPage("http://frozen-roms.in/get_" + element + ".html");
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
             progress.increase(1);
         }
@@ -55,7 +55,6 @@ public class FrozenRomsIn extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

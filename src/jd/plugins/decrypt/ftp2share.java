@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -30,7 +29,6 @@ import jd.plugins.PluginForDecrypt;
 
 public class ftp2share extends PluginForDecrypt {
 
-    private static final Pattern patternSupported_File = Pattern.compile("http://[\\w\\.]*?ftp2share\\.net/file/[a-zA-Z0-9\\-]+/(.*?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern patternSupported_Folder = Pattern.compile("http://[\\w\\.]*?ftp2share\\.net/folder/[a-zA-Z0-9\\-]+/(.*?)", Pattern.CASE_INSENSITIVE);
 
     public ftp2share(PluginWrapper wrapper) {
@@ -42,40 +40,25 @@ public class ftp2share extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            Browser br = new Browser();
-
-            if (parameter.matches(patternSupported_Folder.pattern())) {
-                if (!parameter.contains("?system")) {
-                    parameter = parameter + "?system=*";
-                }
-
-                br.getPage(parameter);
-
-                String links[][] = new Regex(br, Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (String[] element : links) {
-                    String link = Encoding.Base64Decode(Encoding.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
-                    decryptedLinks.add(createDownloadlink(link));
-                }
-            } else if (parameter.matches(patternSupported_File.pattern())) {
-
-                br.getPage(parameter);
-                Form[] forms = br.getForms();
-                if (forms.length > 1) {
-                    br.submitForm(forms[1]);
-
-                }
-                String links[][] = br.getRegex(Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getMatches();
-                for (String[] element : links) {
-                    String link = Encoding.Base64Decode(Encoding.filterString(element[0], "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
-                    decryptedLinks.add(createDownloadlink(link));
-                }
+        if (parameter.matches(patternSupported_Folder.pattern())) {
+            if (!parameter.contains("?system")) {
+                parameter = parameter + "?system=*";
             }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            br.getPage(parameter);
+        } else {
+            br.getPage(parameter);
+            Form[] forms = br.getForms();
+            if (forms.length > 1) {
+                br.submitForm(forms[1]);
+            }
         }
+
+        String links[] = br.getRegex(Pattern.compile("<a href=\"javascript\\:go\\('(.*?)'\\)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        for (String element : links) {
+            String link = Encoding.Base64Decode(Encoding.filterString(element, "qwertzuiopasdfghjklyxcvbnmMNBVCXYASDFGHJKLPOIUZTREWQ1234567890=/"));
+            decryptedLinks.add(createDownloadlink(link));
+        }
+
         return decryptedLinks;
     }
 
