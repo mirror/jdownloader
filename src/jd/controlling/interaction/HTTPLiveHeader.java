@@ -457,6 +457,26 @@ public class HTTPLiveHeader extends Interaction {
                         logger.finer("Variables set: " + variables);
                     }
 
+                    if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
+                        String[] parseLines = HTTPLiveHeader.splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
+                        for (String parseLine : parseLines) {
+                            String varname = new Regex(parseLine, "(.*?):").getMatch(0);
+                            String pattern = new Regex(parseLine, ".*?:(.+)").getMatch(0);
+                            if (varname != null && pattern != null) {
+                                varname = varname.trim();
+                                pattern = pattern.trim();
+                                String found = br.getRegex(pattern).getMatch(0);
+                                if (found != null) {
+                                    found = found.trim();
+                                    logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->" + found);
+                                    variables.put(varname, found);
+                                } else {
+                                    logger.finer("Parse: Varname=" + varname + " Pattern=" + pattern + "->NOT FOUND!");
+                                }
+                            }
+                        }
+                    }
+
                     if (toDo.getNodeName().equalsIgnoreCase("REQUEST")) {
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
@@ -469,7 +489,10 @@ public class HTTPLiveHeader extends Interaction {
                             retbr = null;
                         }
                         try {
-                            /*ne kleine pause, damit der router nicht ddos denkt*/
+                            /*
+                             * ne kleine pause, damit der router nicht ddos
+                             * denkt
+                             */
                             Thread.sleep(150);
                         } catch (Exception e) {
                         }
@@ -603,7 +626,7 @@ public class HTTPLiveHeader extends Interaction {
             logger.info("Rec succ: " + afterIP);
             return true;
         }
-        if (maxretries==-1 || retries <= maxretries) {
+        if (maxretries == -1 || retries <= maxretries) {
             progress.finalize();
             return doInteraction(arg);
         }
@@ -705,7 +728,7 @@ public class HTTPLiveHeader extends Interaction {
                 logger.severe("Host nicht gefunden: " + request);
                 return null;
             }
-            try {                
+            try {
                 br.setConnectTimeout(5000);
                 br.setReadTimeout(5000);
                 if (requestProperties != null) {
