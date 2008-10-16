@@ -73,9 +73,9 @@ public class LinkCryptWs extends PluginForDecrypt {
         }
 
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
-        
+
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-        
+
         /* TODO: Das kann man sicher besser lösen.. bitte mal wer reinschauen */
         FileOutputStream out = new FileOutputStream(container);
         for (int i = 0; i < br.toString().length(); i++) {
@@ -91,7 +91,6 @@ public class LinkCryptWs extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 3179 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

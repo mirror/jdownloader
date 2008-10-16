@@ -17,13 +17,11 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -42,9 +40,9 @@ public class LinkBankeu extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String page = br.getPage(parameter);
-        String[][] links = new Regex(page, Pattern.compile("onclick='posli\\(\"([\\d]+)\",\"([\\d]+)\"\\);'", Pattern.CASE_INSENSITIVE)).getMatches();
-        String[] mirrors = new Regex(page, Pattern.compile("onclick='mirror\\(\"(.*?)\"\\);'", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        br.getPage(parameter);
+        String[][] links = br.getRegex("onclick='posli\\(\"([\\d]+)\",\"([\\d]+)\"\\);'").getMatches();
+        String[] mirrors = br.getRegex("onclick='mirror\\(\"(.*?)\"\\);'").getColumn(0);
         for (String[] element : links) {
             br.getPage("http://www.linkbank.eu/posli.php?match=" + element[0] + "&id=" + element[1]);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
@@ -60,8 +58,7 @@ public class LinkBankeu extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     private void setConfigElements() {

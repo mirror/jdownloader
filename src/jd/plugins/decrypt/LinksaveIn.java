@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -39,10 +38,9 @@ public class LinksaveIn extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-        URL url;
 
         parameter = parameter + ".dlc";
-        url = new URL(parameter);
+        URL url = new URL(parameter);
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
         // Api ! nicht in org tauschen!
@@ -56,7 +54,6 @@ public class LinksaveIn extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

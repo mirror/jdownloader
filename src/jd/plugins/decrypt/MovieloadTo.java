@@ -17,10 +17,8 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -36,7 +34,8 @@ public class MovieloadTo extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String links[] = new Regex(br.getPage(parameter), Pattern.compile("; popup_dl\\((.*?)\\)\" ")).getColumn(0);
+        br.getPage(parameter);
+        String links[] = br.getRegex("; popup_dl\\((.*?)\\)\" ").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
             br.getPage("http://movieload.to/v2/protector/futsch.php?i=" + element);
@@ -51,7 +50,6 @@ public class MovieloadTo extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

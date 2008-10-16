@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -40,13 +39,11 @@ public class LinkbaseBiz extends PluginForDecrypt {
 
         private int Worker_ID;
         private Browser br;
-        private String page;
         private String link;
 
         public LinkbaseBiz_Linkgrabber(int id, Browser br) {
             this.downloadlink = null;
             this.link = null;
-            this.page = null;
             this.gotjob = false;
             this._status = THREADFAIL;
             this.Worker_ID = id;
@@ -65,8 +62,8 @@ public class LinkbaseBiz extends PluginForDecrypt {
 
                 for (int retry = 1; retry <= 10; retry++) {
                     try {
-                        this.page = decodepage(this.br.getPage("http://linkbase.biz/?go=" + this.link));
-                        this.downloadlink = new Regex(this.page, "<iframe src='(.*?)'", Pattern.CASE_INSENSITIVE).getMatch(0);
+                        decodepage(this.br.getPage("http://linkbase.biz/?go=" + this.link));
+                        this.downloadlink = this.br.getRegex("<iframe src='(.*?)'").getMatch(0);
                         break;
                     } catch (Exception e) {
                         logger.finest("LinkbaseBiz_Linkgrabber: id=" + new Integer(this.Worker_ID) + " GetRequest-Error, try again!");
@@ -105,7 +102,8 @@ public class LinkbaseBiz extends PluginForDecrypt {
 
         for (int retry = 1; retry <= 10; retry++) {
             try {
-                String links[] = new Regex(br.getPage(parameter), "window.open\\('\\?go=(.*?)','.*?'\\)", Pattern.CASE_INSENSITIVE).getColumn(0);
+                br.getPage(parameter);
+                String links[] = br.getRegex("window.open\\('\\?go=(.*?)','.*?'\\)").getColumn(0);
                 progress.setRange(links.length);
                 LinkbaseBiz_Linkgrabber LinkbaseBiz_Linkgrabbers[] = new LinkbaseBiz_Linkgrabber[links.length];
                 for (int i = 0; i < links.length; ++i) {
@@ -153,7 +151,6 @@ public class LinkbaseBiz extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision: 3180 $", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

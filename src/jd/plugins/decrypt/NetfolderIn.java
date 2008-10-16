@@ -17,18 +17,16 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class NetfolderIn extends PluginForDecrypt {
 
-    static private final Pattern patternSupported_1 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}", Pattern.CASE_INSENSITIVE);
-    static private final Pattern patternSupported_2 = Pattern.compile("http://[\\w\\.]*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?", Pattern.CASE_INSENSITIVE);
+    static private final String patternSupported_1 = "http://[\\w\\.]*?netfolder\\.in/folder\\.php\\?folder_id\\=[a-zA-Z0-9]{7}";
+    static private final String patternSupported_2 = "http://[\\w\\.]*?netfolder\\.in/[a-zA-Z0-9]{7}/.*?";
 
     public NetfolderIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,25 +37,25 @@ public class NetfolderIn extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String page = br.getPage(parameter);
-        if (parameter.matches(patternSupported_2.pattern())) {
+        br.getPage(parameter);
+        if (parameter.matches(patternSupported_2)) {
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-        } else if (parameter.matches(patternSupported_1.pattern())) {
+        } else if (parameter.matches(patternSupported_1)) {
             String password = "";
             for (int retrycounter = 1; retrycounter <= 5; ++retrycounter) {
-                int check = new Regex(page, Pattern.compile("input type=\"password\" name=\"password\"", Pattern.CASE_INSENSITIVE)).count();
+                int check = br.getRegex("input type=\"password\" name=\"password\"").count();
                 if (check > 0) {
                     password = getUserInput(null, param);
-                    page = br.postPage(parameter, "password=" + password + "&save=Absenden");
+                    br.postPage(parameter, "password=" + password + "&save=Absenden");
                 } else {
                     break;
                 }
             }
 
-            String[][] links = new Regex(page, Pattern.compile("href=\"http://netload\\.in/(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+            String[] links = br.getRegex("href=\"http://netload\\.in/(.*?)\"").getColumn(0);
             progress.setRange(links.length);
-            for (int i = 0; i < links.length; ++i) {
-                decryptedLinks.add(createDownloadlink("http://netload.in/" + links[i][0]));
+            for (String element : links) {
+                decryptedLinks.add(createDownloadlink("http://netload.in/" + element));
                 progress.increase(1);
             }
         }
@@ -67,7 +65,6 @@ public class NetfolderIn extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

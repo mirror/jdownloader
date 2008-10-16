@@ -20,8 +20,6 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,34 +35,27 @@ public class MediafireFolder extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
-            Browser br = new Browser();
+        br.getPage(parameter);
+        String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);
+        if (reqlink == null) { return null; }
+        br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
+        String links[][] = br.getRegex(Pattern.compile("[a-z]{2}\\[[0-9]+\\]=Array\\('[0-9]+'\\,'[0-9]+'\\,[0-9]+\\,'([a-z0-9]*?)'\\,'[a-f0-9]{32}'\\,'(.*?)'\\,'([\\d]*?)'", Pattern.CASE_INSENSITIVE)).getMatches();
+        progress.setRange(links.length);
 
-            br.getPage(parameter);
-            String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);
-            if (reqlink == null) { return null; }
-            br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);
-            String links[][] = br.getRegex(Pattern.compile("[a-z]{2}\\[[0-9]+\\]=Array\\('[0-9]+'\\,'[0-9]+'\\,[0-9]+\\,'([a-z0-9]*?)'\\,'[a-f0-9]{32}'\\,'(.*?)'\\,'([\\d]*?)'", Pattern.CASE_INSENSITIVE)).getMatches();
-            progress.setRange(links.length);
+        for (String[] element : links) {
 
-            for (String[] element : links) {
-
-                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
-                link.setName(element[1]);
-                link.setDownloadSize(Long.parseLong(element[2]));
-                decryptedLinks.add(link);
-                progress.increase(1);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
+            link.setName(element[1]);
+            link.setDownloadSize(Long.parseLong(element[2]));
+            decryptedLinks.add(link);
+            progress.increase(1);
         }
+
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

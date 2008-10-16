@@ -139,7 +139,7 @@ public class MySpaceCom extends PluginForDecrypt {
             nick = i == 0 ? matches[i][1] : nick;
             playerUrl = i == 1 ? matches[i][0] : playerUrl;
         }
-        nick=Encoding.deepHtmlDecode(nick);
+        nick = Encoding.deepHtmlDecode(nick);
         String[] titles = null;
         String[] dUrls = null;
         // HandlePlayers
@@ -195,7 +195,7 @@ public class MySpaceCom extends PluginForDecrypt {
 
         for (int i = 0; i < titles.length; i++) {
             String title = Encoding.deepHtmlDecode(titles[i]);
-          
+
             String link = dUrls[i];
             DownloadLink dl_link = createDownloadlink("myspace://" + link);
 
@@ -300,8 +300,7 @@ public class MySpaceCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 
     private void setConfigElements() {

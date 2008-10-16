@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
@@ -45,72 +44,66 @@ public class Lixin extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        try {
+        boolean lix_continue = true;
+        Matcher matcher;
+        Form form;
+        /* zuerst mal den evtl captcha abarbeiten */
 
-            boolean lix_continue = true;
-            Matcher matcher;
-            Form form;
-            /* zuerst mal den evtl captcha abarbeiten */
-
-            br.getPage(parameter);
-            for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
-                form = br.getForm(0);
-                if (form != null) {
-                    matcher = patternCaptcha.matcher(form.getHtmlCode());
-                    if (matcher.find()) {
-                        lix_continue = false;
-                        String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
-                        File captchaFile = this.getLocalCaptchaFile(this);
-                        Browser.download(captchaFile, captchaAddress);
-                        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
-                        captchaCode = captchaCode.toUpperCase();
-                        form.put("capt", captchaCode);
+        br.getPage(parameter);
+        for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
+            form = br.getForm(0);
+            if (form != null) {
+                matcher = patternCaptcha.matcher(form.getHtmlCode());
+                if (matcher.find()) {
+                    lix_continue = false;
+                    String captchaAddress = "http://" + getHost() + "/" + matcher.group(1);
+                    File captchaFile = this.getLocalCaptchaFile(this);
+                    Browser.download(captchaFile, captchaAddress);
+                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+                    captchaCode = captchaCode.toUpperCase();
+                    form.put("capt", captchaCode);
+                    br.submitForm(form);
+                } else {
+                    if (form.hasSubmitValue("continue")) {
                         br.submitForm(form);
                     } else {
-                        if (form.hasSubmitValue("continue")) {
-                            br.submitForm(form);
-                        } else {
-                            lix_continue = true;
-                            break;
-                        }
-                    }
-                } else {
-                    lix_continue = true;
-                    break;
-                }
-            }
-            if (lix_continue == true) {
-                /* EinzelLink filtern */
-                matcher = patternIframe.matcher(br + "");
-                if (matcher.find()) {
-                    /* EinzelLink gefunden */
-                    String link = matcher.group(1);
-                    decryptedLinks.add(createDownloadlink(link));
-                } else {
-                    /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
-                    Form[] forms = br.getForms();
-                    for (Form element : forms) {
-
-                        br.submitForm(element);
-                        matcher = patternIframe.matcher(br + "");
-                        if (matcher.find()) {
-                            /* EinzelLink gefunden */
-                            String link = matcher.group(1);
-                            decryptedLinks.add(createDownloadlink(link));
-                        }
+                        lix_continue = true;
+                        break;
                     }
                 }
+            } else {
+                lix_continue = true;
+                break;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
         }
+        if (lix_continue == true) {
+            /* EinzelLink filtern */
+            matcher = patternIframe.matcher(br + "");
+            if (matcher.find()) {
+                /* EinzelLink gefunden */
+                String link = matcher.group(1);
+                decryptedLinks.add(createDownloadlink(link));
+            } else {
+                /* KEIN EinzelLink gefunden, evtl ist es ein Folder */
+                Form[] forms = br.getForms();
+                for (Form element : forms) {
+
+                    br.submitForm(element);
+                    matcher = patternIframe.matcher(br + "");
+                    if (matcher.find()) {
+                        /* EinzelLink gefunden */
+                        String link = matcher.group(1);
+                        decryptedLinks.add(createDownloadlink(link));
+                    }
+                }
+            }
+        }
+
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }

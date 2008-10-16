@@ -18,10 +18,8 @@ package jd.plugins.decrypt;
 
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -37,7 +35,8 @@ public class MirrorItDe extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        String[][] links = new Regex(br.getPage(parameter), Pattern.compile("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)", Pattern.CASE_INSENSITIVE)).getMatches();
+        br.getPage(parameter);
+        String[][] links = br.getRegex("launchDownloadURL\\(\'(.*?)\', \'(.*?)\'\\)").getMatches();
         progress.setRange(links.length);
         for (String[] element : links) {
             br.getPage("http://www.mirrorit.de/Out?id=" + URLDecoder.decode(element[0], "UTF-8") + "&num=" + element[1]);
@@ -51,7 +50,6 @@ public class MirrorItDe extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
 }
