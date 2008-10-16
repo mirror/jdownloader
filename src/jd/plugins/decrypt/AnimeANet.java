@@ -17,17 +17,14 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.regex.Pattern;
 
 import jd.PluginPattern;
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class AnimeANet extends PluginForDecrypt {
-    final static String host = "animea.net";
 
     public AnimeANet(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,15 +36,16 @@ public class AnimeANet extends PluginForDecrypt {
         String parameter = param.toString();
         parameter = parameter.replaceAll(" ", "+");
 
+        br.getPage(parameter);
         if (PluginPattern.decrypterPattern_AnimeANet_Series.matcher(parameter).matches()) {
-            String[] links = new Regex(br.getPage(parameter), Pattern.compile("<a href=\"/download/(.*?)\\.html\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            String[] links = br.getRegex("<a href=\"/download/(.*?)\\.html\"").getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink("http://www.animea.net/download/" + element + ".html"));
                 progress.increase(1);
             }
         } else {
-            String[] links = new Regex(br.getPage(parameter), Pattern.compile("/><a href=\"(.*?)\" rel=\"nofollow\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            String[] links = br.getRegex("/><a href=\"(.*?)\" rel=\"nofollow\"").getColumn(0);
             progress.setRange(links.length);
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink(element));
@@ -59,7 +57,7 @@ public class AnimeANet extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        String ret = new Regex("$Revision$", "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return getVersion("$Revision$");
     }
+
 }

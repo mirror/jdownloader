@@ -509,6 +509,11 @@ public abstract class Plugin implements ActionListener {
      */
     public abstract String getVersion();
 
+    protected String getVersion(String revision) {
+        String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        return ret == null ? "0.0" : ret;
+    }
+
     /**
      * Initialisiert das Plugin vor dem ersten Gebrauch
      */
