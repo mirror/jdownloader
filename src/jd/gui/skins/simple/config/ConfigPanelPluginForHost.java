@@ -71,17 +71,17 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.config.plugin.host.column_id2", "ID");
+                return JDLocale.L("gui.column_id", "ID");
             case 1:
-                return JDLocale.L("gui.config.plugin.host.column_host2", "Host");
+                return JDLocale.L("gui.column_host", "Host");
             case 2:
-                return JDLocale.L("gui.config.plugin.host.column_version2", "Version");
+                return JDLocale.L("gui.column_version", "Version");
             case 3:
-                return JDLocale.L("gui.config.plugin.host.column_coder2", "Ersteller");
+                return JDLocale.L("gui.column_coder", "Ersteller");
             case 4:
-                return JDLocale.L("gui.config.plugin.host.column_agb2", "AGB");
+                return JDLocale.L("gui.column_agb", "AGB");
             case 5:
-                return JDLocale.L("gui.config.plugin.host.column_agbChecked2", "akzeptieren");
+                return JDLocale.L("gui.column_agbChecked", "akzeptieren");
             }
             return super.getColumnName(column);
         }

@@ -61,11 +61,11 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.config.plugin.container.column_host", "Host");
+                return JDLocale.L("gui.column_host", "Host");
             case 1:
-                return JDLocale.L("gui.config.plugin.container.column_version", "Version");
+                return JDLocale.L("gui.column_version", "Version");
             case 2:
-                return JDLocale.L("gui.config.plugin.container.column_author", "Ersteller");
+                return JDLocale.L("gui.column_coder", "Ersteller");
             }
             return super.getColumnName(column);
         }
