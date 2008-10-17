@@ -37,15 +37,11 @@ public class ConvertDialog extends JFrame {
     private static final long serialVersionUID = -9146764850581039090L;
 
     public static enum ConversionMode {
-         AUDIOMP3                   ("Audio (MP3)"               , new String[] { ".mp3" })
-        ,VIDEOFLV                   ("Video (FLV)"               , new String[] { ".flv" })
-        ,AUDIOMP3_AND_VIDEOFLV      ("Audio & Video (MP3 & FLV)" , new String[] { ".mp3", ".flv" })
-        ,VIDEOMP4                   ("Video (MP4)"               , new String[] { ".mp4" })
-        ,VIDEO3GP                   ("Video (3GP)"               , new String[] { ".3gp" })
-        /**width=804, hight=640 bitrate=480*/
-        ,PODCAST                    ("Video (MP4-Podcast)"       , new String[] { ".mp4" })
-        /**width=426, hight=320 bitrate=404*/
-        ,IPHONE                     ("Video (Ipohone)"           , new String[] { ".mp4" });
+        AUDIOMP3("Audio (MP3)", new String[] { ".mp3" }), VIDEOFLV("Video (FLV)", new String[] { ".flv" }), AUDIOMP3_AND_VIDEOFLV("Audio & Video (MP3 & FLV)", new String[] { ".mp3", ".flv" }), VIDEOMP4("Video (MP4)", new String[] { ".mp4" }), VIDEO3GP("Video (3GP)", new String[] { ".3gp" })
+        /** width=804, hight=640 bitrate=480 */
+        , PODCAST("Video (MP4-Podcast)", new String[] { ".mp4" })
+        /** width=426, hight=320 bitrate=404 */
+        , IPHONE("Video (Ipohone)", new String[] { ".mp4" });
 
         String text;
         String[] ext;
@@ -160,18 +156,5 @@ public class ConvertDialog extends JFrame {
         return selectedValue;
 
     }
-
-    /***************************************************************************
-     * public static void main(String[] args) { //ConversionMode[] mode =
-     * {ConversionMode
-     * .AudioMp3,ConversionMode.Video_Flv,ConversionMode.AudioMp3andVideoFlv};
-     * DisplayDialog(new
-     * ConversionMode[]{ConversionMode.AUDIOMP3,ConversionMode.
-     * VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV}); DisplayDialog(new
-     * ConversionMode
-     * []{ConversionMode.VIDEOFLV,ConversionMode.AUDIOMP3_AND_VIDEOFLV});
-     * DisplayDialog(new
-     * ConversionMode[]{ConversionMode.AUDIOMP3_AND_VIDEOFLV}); }/
-     **************************************************************************/
 
 }

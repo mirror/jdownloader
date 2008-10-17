@@ -67,7 +67,7 @@ public final class JavaScript {
     }
 
     /**
-     * TODO muss noch �berarbeitet werden
+     * TODO muss noch überarbeitet werden
      * 
      * @param args
      */

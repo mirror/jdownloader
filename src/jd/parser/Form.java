@@ -19,7 +19,6 @@ package jd.parser;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -493,9 +492,6 @@ public class Form {
 
     public class InputField extends Property {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = 7859094911920903660L;
         private String key = null;
         private String value = null;
@@ -517,17 +513,14 @@ public class Form {
         public void setKey(String string) {
             if (string != null) string = string.trim();
             this.key = string;
-
         }
 
         public void setType(String string) {
             if (string != null) string = string.trim();
             this.type = string;
-
         }
 
         public String getValue() {
-            // TODO Auto-generated method stub
             return value;
         }
 
@@ -536,19 +529,16 @@ public class Form {
         }
 
         public String getKey() {
-            // TODO Auto-generated method stub
             return key;
         }
 
         public void setValue(String value) {
             if (value != null) value = value.trim();
             this.value = value;
-
         }
 
     }
 
-    @SuppressWarnings("deprecation")
     public HashMap<String, String> getVarsMap() {
         HashMap<String, String> ret = new HashMap<String, String>();
         for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
@@ -561,11 +551,4 @@ public class Form {
         return ret;
     }
 
-    public static void main(String[] args) {
-
-        String form = "<form> <img name=\"hansi\" id=captchaimg src=\"includes/captcha123.php\" alt=\"Captcha zur Identifikation zulässiger Downloader\" /><input type=\"hidden\" name=fid value=\"b508ebe05cef57954307942f5a9e36c1\" /><input type=\"hidden\" name=\"captchaco\" size=1 /><input type=\"text\" name=\"mooo\" size=\"6\" /><input style=\"font-weight: bold;\" type=\"submit\" value=\"Download starten\" /><br /><div style=\"text-align:left; padding-left:80px;\"><a style=\"font-size:8pt; color:grey;\" href=\"#\" onClick=\"javascript:refreshimage();\">Reload Captcha</a><br /></div></form>";
-        @SuppressWarnings("unused")
-        Form[] forms = Form.getForms(form);
-
-    }
 }

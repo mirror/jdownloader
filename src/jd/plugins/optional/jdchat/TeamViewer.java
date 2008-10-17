@@ -16,38 +16,22 @@
 
 package jd.plugins.optional.jdchat;
 
-import java.util.logging.Logger;
-
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse kümmert sich um alle Teamviewer Handlings im JDChat
  */
 public class TeamViewer {
 
-    // private static Logger logger = JDUtilities.getLogger();
-    /**
-     * 
-     */
     private static final long serialVersionUID = -9146764850581039090L;
 
-    protected Logger logger = JDUtilities.getLogger();
-
     public static String[] handleTeamviewer() {
-        return TeamViewer.AskForTeamviewerIDPW();
+        return TeamViewer.askForTeamviewerIDPW();
     }
 
-    public static String[] AskForTeamviewerIDPW() {
-        //System.out.println("Ask for Teamviewer ID & PW.");
-
-    	return SimpleGUI.CURRENTGUI.showTwoTextFieldDialog(JDLocale.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
-    }
-
-    public static void main(String[] args) {
-        TeamViewer.AskForTeamviewerIDPW();
-
+    public static String[] askForTeamviewerIDPW() {
+        return SimpleGUI.CURRENTGUI.showTwoTextFieldDialog(JDLocale.L("plugin.optional.jdchat.teamviewer.yourtvdata", "Deine Teamviewer Daten:"), "ID:", "PW:", "", "");
     }
 
 }

@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 
 import jd.utils.JDUtilities;
 
-
 public class Regex {
     public static String[] getLines(String arg) {
         if (arg == null) { return new String[] {}; }
@@ -192,7 +191,6 @@ public class Regex {
         return ar.toArray(new String[][] {});
     }
 
-
     public String[] getColumn(int x) {
         if (matcher == null) { return null; }
         x++;
@@ -275,8 +273,8 @@ public class Regex {
             date = dateFormat.parse(expire);
             return (date.getTime());
         } catch (ParseException e) {
-            JDUtilities.getLogger().severe("Could not format date "+expire+" with formater "+timeformat+": "+dateFormat.format(new Date()));
-            
+            JDUtilities.getLogger().severe("Could not format date " + expire + " with formater " + timeformat + ": " + dateFormat.format(new Date()));
+
             e.printStackTrace();
         }
         return -1;
@@ -318,23 +316,21 @@ public class Regex {
         }
         return null;
     }
-/**
- * Formatiert zeitangaben 2h 40 min 2 sek
- * @param wait
- */
+
+    /**
+     * Formatiert zeitangaben 2h 40 min 2 sek
+     * 
+     * @param wait
+     */
     public static int getMilliSeconds2(String wait) {
-       String minutes= new Regex(wait,"(\\d*?)[ ]*m").getMatch(0);
-       String hours= new Regex(wait,"(\\d*?)[ ]*(h|st)").getMatch(0);
-       String seconds= new Regex(wait,"(\\d*?)[ ]*se").getMatch(0);
-       if(minutes==null)minutes="0";
-       if(hours==null)hours="0";
-       if(seconds==null)seconds="0";
-       return Integer.parseInt(hours)*60*60*1000+Integer.parseInt(minutes)*60*1000+Integer.parseInt(seconds)*1000;
-        
-        
+        String minutes = new Regex(wait, "(\\d*?)[ ]*m").getMatch(0);
+        String hours = new Regex(wait, "(\\d*?)[ ]*(h|st)").getMatch(0);
+        String seconds = new Regex(wait, "(\\d*?)[ ]*se").getMatch(0);
+        if (minutes == null) minutes = "0";
+        if (hours == null) hours = "0";
+        if (seconds == null) seconds = "0";
+        return Integer.parseInt(hours) * 60 * 60 * 1000 + Integer.parseInt(minutes) * 60 * 1000 + Integer.parseInt(seconds) * 1000;
+
     }
-    public static void main(String args[]) {
-        
-       
-    }
+
 }
