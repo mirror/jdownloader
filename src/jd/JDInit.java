@@ -563,6 +563,7 @@ public class JDInit {
         new DecryptPluginWrapper("best-movies.us", "BestMovies", "http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+");
         new DecryptPluginWrapper("blog-xx.net", "BlogXXNet", "http://[\\w\\.]*?blog-xx\\.net/wp/(.*?)/");
         new DecryptPluginWrapper("bm4u.in", "Bm4uin", "http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+");
+        new DecryptPluginWrapper("brazil-series.com","BrazilSeriesCom","http://[\\w\\.]*?brazil-series\\.com/(\\w+/\\w+/\\w+_ep\\d+\\.htm|\\w+/\\d+t/\\w+_intro.htm|\\w+/\\w+_intro.htm)");
         new DecryptPluginWrapper("cine.to", "CineTo", "http://[\\w\\.]*?cine\\.to/index\\.php\\?do=show_download\\&id=[a-zA-Z0-9]+|http://[\\w\\.]*?cine\\.to/index\\.php\\?do=protect\\&id=[a-zA-Z0-9]+");
         new DecryptPluginWrapper("clipfish.de", "ClipfishDe", "http://[\\w\\.]*?clipfish\\.de/n\\.php/channel/\\d+/video/(\\d+)|http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?");
         new DecryptPluginWrapper("collectr.net", "Collectr", "http://[\\w\\.]*?collectr\\.net/out/[0-9]*[/]{0,1}[\\d]*");
