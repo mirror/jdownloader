@@ -46,7 +46,7 @@ public class BrazilSeriesCom extends PluginForDecrypt {
     //Decrypt episode
 
     private static final Pattern PATTERN_SERIEN_TITEL = Pattern.compile("<title>(.+?)</title>");
-    private static final Pattern PATTERN_EPISODE_NAME = Pattern.compile("<!-- InstanceBeginEditable name=\"(.+?)\" -->Baby Shower<!-- InstanceEndEditable --");
+    private static final Pattern PATTERN_EPISODE_NAME = Pattern.compile("<!-- InstanceBeginEditable name=\"Nome ingles\" -->(.+?)<!-- InstanceEndEditable -->");
 
     private static final Pattern PATTERN_AVI_LINKS       = Pattern.compile("Download \\( Formato : AVI sem Legenda \\)(.+?)Download \\( Formato : RMVB Legendado \\)",Pattern.CASE_INSENSITIVE|Pattern.DOTALL|Pattern.MULTILINE);  
     private static final Pattern PATTERN_RMVB_LINKS      = Pattern.compile("Download \\( Formato : RMVB Legendado \\)(.+?)Download \\( Legendas \\)",Pattern.CASE_INSENSITIVE|Pattern.DOTALL|Pattern.MULTILINE);  
