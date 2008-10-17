@@ -38,28 +38,24 @@ public class DumpRu extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
+            setBrowserExclusive();
 
-            String url = downloadLink.getDownloadURL();
+            br.getPage(downloadLink.getDownloadURL());
 
-            br.getPage(url);
-            
             // File not found
-            if (br.containsHTML("Запрошенный файл не обнаружен"))
-            {
+            if (br.containsHTML("Запрошенный файл не обнаружен")) {
                 logger.warning("File not found");
                 return false;
             }
-            
+
             // Filesize
             String size = br.getRegex("Размер: <span class=\"comment\">(.*?)</span>").getMatch(0);
             downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
-            
+
             // Filename
             String name = br.getRegex("<span class=\"name_of_file\">(.*?)</span>").getMatch(0).trim();
             downloadLink.setName(name);
-            
+
             return true;
         } catch (Exception e) {
             e.printStackTrace();
@@ -69,8 +65,7 @@ public class DumpRu extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
-        return getVersion("$Revision: 3397 $");
+        return getVersion("$Revision$");
     }
 
     @Override
