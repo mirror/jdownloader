@@ -1668,44 +1668,6 @@ public class Base64 {
 
     } // end getAlphabet
 
-    /**
-     * Encodes or decodes two files from the command line; <strong>feel free to
-     * delete this method (in fact you probably should) if you're embedding this
-     * code into a larger program.</strong>
-     */
-    public final static void main(String[] args) {
-        if (args.length < 3) {
-            Base64.usage("Not enough arguments.");
-        } // end if: args.length < 3
-        else {
-            String flag = args[0];
-            String infile = args[1];
-            String outfile = args[2];
-            if (flag.equals("-e")) {
-                Base64.encodeFileToFile(infile, outfile);
-            } // end if: encode
-            else if (flag.equals("-d")) {
-                Base64.decodeFileToFile(infile, outfile);
-            } // end else if: decode
-            else {
-                Base64.usage("Unknown flag: " + flag);
-            } // end else
-        } // end else
-    } // end main
-
-    /* ******** I N N E R C L A S S I N P U T S T R E A M ******** */
-
-    /**
-     * Prints command line usage.
-     * 
-     * @param msg
-     *            A message to include with usage info.
-     */
-    private final static void usage(String msg) {
-        System.err.println(msg);
-        System.err.println("Usage: java Base64 -e|-d inputfile outputfile");
-    } // end usage
-
     /* ******** I N N E R C L A S S O U T P U T S T R E A M ******** */
 
     /** Defeats instantiation. */

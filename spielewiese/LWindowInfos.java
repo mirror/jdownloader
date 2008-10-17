@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
+import jd.utils.JDUtilities;
 
 public class LWindowInfos {
     public static class WindowInformations {
