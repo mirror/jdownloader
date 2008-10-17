@@ -717,7 +717,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         exec.waitTimeout();
         String ret=exec.getErrorStream()+" "+exec.getStream();
         String version;
-        if((version=new Regex(ret,"UNRAR (.*?) freeware").getMatch(0))!=null){
+        if((version=new Regex(ret,"UNRAR.*?([//d]+\\.[//d]+).*?freeware").getMatch(0))!=null){
            double d = Double.parseDouble(version.trim());
            
            if(d>=3.7d){
