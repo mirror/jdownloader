@@ -46,9 +46,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
+import jd.utils.Executer;
 import jd.utils.GetExplorer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.OSDetector;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
@@ -303,6 +305,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             this.getPluginConfig().save();
         }
         System.out.println("Start link " + link);
+        link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
+        link.getLinkStatus().setErrorMessage(null);
         UnrarWrapper wrapper = new UnrarWrapper(link);
         File dl = this.getExtractToPath(link);
 
@@ -330,10 +334,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     public synchronized void setWrappersActive(int wrappersActive) {
         this.wrappersActive = wrappersActive;
     }
-
+/**
+ * Bestimmt den Pfad in den das Archiv entpackt werden soll
+ * @param link
+ * @return
+ */
     private File getExtractToPath(DownloadLink link) {
-        String path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDUtilities.getConfiguration().getDefaultDownloadDirectory());
-
+        String path;
+        if(!getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, false)){
+            path=new File(link.getFileOutput()).getParent();
+        }else{
+            path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+        }
+       
         File ret = new File(path);
         if (!this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false)) { return ret; }
 
@@ -599,11 +612,20 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
-
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
         ConfigEntry ce;
+        ConfigEntry conditionEntry;
+        if(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,null)==null||this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,"").trim().length()==0){
+            checkUnrarCommand();
+        }
+        config.addEntry(ce=new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
+     
+        
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDLocale.L("gui.config.unrar.use_extractto", "Use customized extract path")));
+        ce.setDefaultValue(false);
+        conditionEntry = ce;
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDLocale.L("gui.config.unrar.path", "Extract to")));
         ce.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDLocale.L("gui.config.unrar.remove_after_extract", "Delete archives after suc. extraction?")));
         ce.setDefaultValue(false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDLocale.L("gui.config.unrar.overwrite", "Overwrite existing files?")));
@@ -617,13 +639,97 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, JDLocale.L("gui.config.unrar.use_subpath", "Use subpath")));
         ce.setDefaultValue(false);
-        ConfigEntry conditionEntry = ce;
+        conditionEntry = ce;
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH, JDLocale.L("gui.config.unrar.subpath", "Subpath")));
         ce.setDefaultValue("/%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDLocale.L("gui.config.unrar.ask_path", "Ask for unknown passwords?")));
         ce.setDefaultValue(true);
+        
+        
+       
+    }
+/**
+ * Überprüft den eingestellten UNrarbefehl und setzt ihn notfalls neu.
+ */
+    private void checkUnrarCommand() {
+        String path=this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND);
+        
+        if(path==null||!isUnrarCommandValid(path)){
+            if(OSDetector.isWindows()){
+                
+                path=JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath();
+                this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,path);
+                this.getPluginConfig().save();
+                return;
+            }else{
+                if(isUnrarCommandValid("unrar")){
+                    path="unrar";
+                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,path);
+                    this.getPluginConfig().save();
+                    return;
+                }
+                
+                if(isUnrarCommandValid("rar")){
+                    path="rar";
+                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,path);
+                    this.getPluginConfig().save();
+                    return;
+                }
+                try {
+                    String[] charset = System.getenv("PATH").split(":");
+                    for (String element : charset) {
+                        File fi = new File(element, "unrar");
+                        File fi2 = new File(element, "rar");
+                        if (fi.isFile()&&isUnrarCommandValid(fi.getAbsolutePath())) {
+                            path=fi.getAbsolutePath();
+                            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,path);
+                            this.getPluginConfig().save();
+                            return;
+                        } else if (fi2.isFile()&&isUnrarCommandValid(fi2.getAbsolutePath())) {
+                            path=fi2.getAbsolutePath();
+                            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,path);
+                            this.getPluginConfig().save();
+                            return;
+                        }
+                    }
+                } catch (Throwable e) {
+                }
+                
+                
+                path="please install unrar";
+                this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND,path);
+                this.getPluginConfig().save();
+            }
+            
+        }
+        
+    }
+/**
+ * Prüft ob ein bestimmter Unrarbefehl gültig ist
+ * @param path
+ * @return
+ */
+    private boolean isUnrarCommandValid(String path) {
+        Executer exec = new Executer(path);
+        exec.start();
+        exec.waitTimeout();
+        String ret=exec.getErrorStream()+" "+exec.getStream();
+        String version;
+        if((version=new Regex(ret,"UNRAR (.*?) freeware").getMatch(0))!=null){
+           double d = Double.parseDouble(version.trim());
+           
+           if(d>=3.7d){
+               return true;
+           }else{
+              System.err.println("Wrong unrarversion: "+version);
+              return false;
+           }
+        }else{
+            System.err.println("Wrong unrar: "+Regex.getLines(exec.getErrorStream())[0]);
+            return false;
+        }
 
     }
 

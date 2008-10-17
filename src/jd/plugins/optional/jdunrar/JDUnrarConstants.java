@@ -45,4 +45,5 @@ public class JDUnrarConstants {
     public static final String CONFIG_KEY_REMVE_AFTER_EXTRACT = "REMOVE_AFTER_EXTRACT";
     public static final String CONFIG_KEY_ASK_UNKNOWN_PASS = "ASK_UNKNOWN_PASS";
     public static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
+    public static final String CONFIG_KEY_USE_EXTRACT_PATH = "USE_EXTRACT_PATH";
 }
