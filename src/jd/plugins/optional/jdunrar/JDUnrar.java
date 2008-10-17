@@ -712,22 +712,22 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
  * @return
  */
     private boolean isUnrarCommandValid(String path) {
+        try{
         Executer exec = new Executer(path);
         exec.start();
         exec.waitTimeout();
         String ret=exec.getErrorStream()+" "+exec.getStream();
-        String version;
-        if((version=new Regex(ret,"UNRAR.*?([//d]+\\.[//d]+).*?freeware").getMatch(0))!=null){
-           double d = Double.parseDouble(version.trim());
-           
-           if(d>=3.7d){
+     
+        if(new Regex(ret,"RAR.*?freeware").matches()){
+         
                return true;
-           }else{
-              System.err.println("Wrong unrarversion: "+version);
-              return false;
-           }
+          
         }else{
             System.err.println("Wrong unrar: "+Regex.getLines(exec.getErrorStream())[0]);
+            return false;
+        }
+        }catch(Exception e){
+            e.printStackTrace();
             return false;
         }
 
