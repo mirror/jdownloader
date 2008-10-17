@@ -118,17 +118,20 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
         tabbedPane = new JTabbedPane();
         tabbedPane.setBorder(null);
-        tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
+
         String laf = UIManager.getLookAndFeel().getName().toLowerCase();
         if (laf.contains("nimbus") || laf.contains("gtk")) {
             tabbedPane.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+        } else {
+            tabbedPane.setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         }
 
-        tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
-        tabbedPane.setTabPlacement(SwingConstants.LEFT);
         if (System.getProperty("os.name").toLowerCase().contains("mac") && UIManager.getLookAndFeel().getClass().getName().equals(UIManager.getSystemLookAndFeelClassName())) {
             tabbedPane.setTabPlacement(SwingConstants.TOP);
             tabbedPane.setTabLayoutPolicy(JTabbedPane.WRAP_TAB_LAYOUT);
+        } else {
+            tabbedPane.setTabPlacement(SwingConstants.LEFT);
+            tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
         }
 
         addConfigPanel(ConfigPanelGeneral.class, JDTheme.V("gui.images.config.home"), JDLocale.L("gui.config.tabLables.general", "General settings"));
@@ -136,12 +139,12 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         addConfigPanel(ConfigPanelGUI.class, JDTheme.V("gui.images.config.gui"), JDLocale.L("gui.config.tabLables.gui", "Benutzeroberfläche"));
         addConfigPanel(ConfigPanelReconnect.class, JDTheme.V("gui.images.config.reconnect"), JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"));
         addConfigPanel(ConfigPanelUnrar.class, JDTheme.V("gui.images.config.unrar"), JDLocale.L("gui.config.tabLables.unrar", "Archiv extract settings"));
-        addConfigPanel(ConfigPanelCaptcha.class, JDTheme.V("gui.images.config.ocr", "ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
+        addConfigPanel(ConfigPanelCaptcha.class, JDTheme.V("gui.images.config.ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
         addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.V("gui.images.config.host"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.V("gui.images.config.decrypt"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));
         addConfigPanel(ConfigPanelAddons.class, JDTheme.V("gui.images.config.packagemanager"), JDLocale.L("gui.config.tabLables.addons", "Addon manager"));
         addConfigPanel(ConfigPanelPluginForContainer.class, JDTheme.V("gui.images.config.container"), JDLocale.L("gui.config.tabLables.containerPlugin", "Link-Container settings"));
-        addConfigPanel(ConfigPanelEventmanager.class, JDTheme.V("gui.images.config.eventmanager", "eventmanager"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
+        addConfigPanel(ConfigPanelEventmanager.class, JDTheme.V("gui.images.config.eventmanager"), JDLocale.L("gui.config.tabLables.eventManager", "Eventmanager"));
 
         try {
             tabbedPane.setFont(new Font("Courier", Font.PLAIN, 12));
@@ -236,8 +239,12 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
     }
 
     /**
-     * @author JD-Team Fügt einen neuen ConfigTab hinzu
-     * @param configPanel
+     * Fügt einen neuen ConfigTab hinzu
+     * 
+     * @param configPanelClass
+     * @param img
+     * @param title
+     * @author JD-Team
      */
     private void addConfigPanel(Class<?> configPanelClass, String img, String title) {
         configClasses.add(configPanelClass);

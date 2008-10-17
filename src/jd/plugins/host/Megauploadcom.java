@@ -75,7 +75,7 @@ public class Megauploadcom extends PluginForHost {
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
-        br.setDebug(true);
+        // br.setDebug(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
@@ -131,7 +131,6 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getAGBLink() {
-
         return "http://www.megaupload.com/terms/";
     }
 
@@ -148,7 +147,6 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -315,6 +313,5 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void resetPluginGlobals() {
-
     }
 }
