@@ -75,7 +75,8 @@ public class BluehostTo extends PluginForHost {
         dl.setResume(false);
         dl.setChunkNum(1);
         con = dl.connect();
-        if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
+       
+        if (!con.isContentDisposition()) {
 
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
 

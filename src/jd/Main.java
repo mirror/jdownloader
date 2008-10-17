@@ -435,8 +435,7 @@ public class Main {
         init.loadModules();
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 
-        init.checkUpdate();
-        init.checkMessage();
+   
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
         
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
@@ -459,7 +458,8 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
-
+        init.checkUpdate();
+        init.checkMessage();
         Level level = JDUtilities.getLogger().getLevel();
         if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !debug) {
             JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), JDLocale.LF("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.", level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), true, JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);

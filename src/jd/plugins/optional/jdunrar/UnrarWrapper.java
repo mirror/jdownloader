@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import jd.config.SubConfiguration;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.utils.DynByteBuffer;
 import jd.utils.Executer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -54,7 +55,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     private String password;
     private boolean isProtected = false;
     private ArrayList<ArchivFile> files;
-    private boolean overwriteFiles = true;
+    private boolean overwriteFiles = false;
 
     private int totalSize;
     private ArchivFile currentlyWorkingOn;
@@ -67,11 +68,15 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     private int volumeNum = 1;
     private Exception exception;
     private File extractTo;
+    private boolean removeAfterExtraction;
+
+    private ArrayList<String> archiveParts;
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = new File(link.getFileOutput());
+        archiveParts = new ArrayList<String>();
     }
 
     public void addUnrarListener(UnrarListener listener) {
@@ -96,19 +101,43 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 }
                 if (this.isProtected && this.password == null) {
                     fireEvent(JDUnrarConstants.WRAPPER_CRACK_PASSWORD);
-                    crackPassword();
 
                     if (this.isProtected && this.password == null) {
-                        this.status = FAILED;
+
                         fireEvent(JDUnrarConstants.WRAPPER_FAILED_PASSWORD);
-                        return;
+
+                        // Falls das event das passwort setzt
+                        String[] tmp = passwordList;
+                        while (password != null) {
+                            this.passwordList = new String[] { password };
+                            password = null;
+                            crackPassword();
+                            if (password == null) {
+                                fireEvent(JDUnrarConstants.WRAPPER_FAILED_PASSWORD);
+                            } else {
+                                fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
+                                break;
+                            }
+                        }
+                        passwordList = tmp;
+                        /*
+                     
+                         */
+                        if (password == null) {
+                            this.status = FAILED;
+                            return;
+                        }
+
                     } else {
                         fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
                     }
                 }
 
                 this.extract();
-                if (this.status == STARTED) {
+                if (this.status == STARTED&&getExtractedSize()>=this.getTotalSize()) {
+                    if (removeAfterExtraction) {
+                        removeArchiveFiles();
+                    }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                 } else {
                     fireEvent(this.status);
@@ -123,6 +152,23 @@ public class UnrarWrapper extends Thread implements ProcessListener {
             this.exception = e;
             e.printStackTrace();
             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+        }
+
+    }
+
+    private void removeArchiveFiles() {
+        for (String file : archiveParts) {
+            if (file != null && file.trim().length() > 0) {
+                if (new File(file).isAbsolute()) {
+                    new File(file).delete();
+                    new File(file).deleteOnExit();
+                    JDUtilities.getLogger().warning("Deleted archive after extraction: " + new File(file));
+                } else {
+                    new File(this.file.getParentFile(), file).delete();
+                    new File(this.file.getParentFile(), file).deleteOnExit();
+                    JDUtilities.getLogger().warning("Deleted archive after extraction: " + new File(this.file.getParentFile(), file));
+                }
+            }
         }
 
     }
@@ -270,21 +316,22 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 exec.setWaitTimeout(-1);
                 exec.addProcessListener(new ProcessListener() {
 
-                    public void onBufferChanged(Executer exec, StringBuffer buffer) {
+                    public void onBufferChanged(Executer exec, DynByteBuffer buffer) {
                         // Der Process schreibt die entpackten files auf die
                         // standardausgabe. Auf der fehlerausgabe stehen die
                         // restlichen processausgebn.
                         // Es werden nur die ersten 10 zeichen gebraucht,
                         // deshalb wird der Process anschließend abgebrochen
                         if (buffer == exec.getInputStreamBuffer()) {
-                            if (buffer.length() >= 30) {
+                            if (buffer.position() >= 30) {
                                 exec.interrupt();
                             }
                         }
 
                     }
 
-                    public void onProcess(Executer exec, String latestLine, StringBuffer buffer) {
+                    public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
+
                     }
 
                 });
@@ -293,17 +340,22 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 // wurde
                 exec.waitTimeout();
                 String sig = "";
-
-                for (int i = 0; i < exec.getInputStreamBuffer().length(); i++) {
-                    String s = Integer.toHexString(exec.getInputStreamBuffer().charAt(i));
-                    sig += s.length() < 2 ? "0" + s : s;
+                DynByteBuffer buff = exec.getInputStreamBuffer();
+                buff.flip();
+                for (int i = 0; i < buff.limit(); i++) {
+                    byte f = buff.get();
+                    String s = Integer.toHexString((int) f);
+                    s = (s.length() < 2 ? "0" + s : s);
+                    s = s.substring(s.length() - 2);
+                    sig += s;
                 }
 
                 System.out.println(exec.getInputStreamBuffer() + " : " + sig);
+                if (sig.trim().length() < 8) continue;
                 Signature signature = FileSignatures.getSignature(sig);
 
                 if (signature != null) {
-                    if (signature.getExtension().matcher(this.file.getName()).matches()) {
+                    if (signature.getExtension().matcher(file.getFilepath()).matches()) {
                         // signatur passt zur extension
                         this.password = pass;
                         return;
@@ -311,10 +363,11 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                         // signatur passt nicht zur extension.... Es wird
                         // weitergesucht.
 
-                        if (!signature.getDesc().equals("TXTfile")) {
+                        if (!signature.getDesc().equals("Plaintext")) {
                             this.password = pass;
+                        } else {
+                            if (password == null) password = pass;
                         }
-                        if (password == null) password = pass;
 
                     }
                 }
@@ -463,7 +516,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
     }
 
-    public void onProcess(Executer exec, String latestLine, StringBuffer buffer) {
+    public void onProcess(Executer exec, String latestLine, DynByteBuffer buffer) {
 
         System.out.println(latestLine);
         if (latestLine.length() > 0) {
@@ -480,7 +533,10 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 this.fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_NEW_SINGLE_FILE_STARTED);
 
             }
+            if ((match = new Regex(latestLine, "Extracting from(.*)").getMatch(0)) != null) {
+                archiveParts.add(match.trim());
 
+            }
             if ((match = new Regex(latestLine, "Extracting from.*part(\\d+)\\.").getMatch(0)) != null) {
 
                 this.currentVolume = Integer.parseInt(match.trim());
@@ -544,7 +600,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
         return null;
     }
 
-    public void onBufferChanged(Executer exec, StringBuffer buffer) {
+    public void onBufferChanged(Executer exec, DynByteBuffer buffer) {
     }
 
     public String getPassword() {
@@ -568,7 +624,24 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     }
 
     public void setExtractTo(File dl) {
+
         this.extractTo = dl;
+
+    }
+
+    public void setRemoveAfterExtract(boolean setProperty) {
+        this.removeAfterExtraction = setProperty;
+
+    }
+
+    public void setOverwrite(boolean booleanProperty) {
+        this.overwriteFiles = booleanProperty;
+
+    }
+
+    public void setPassword(String pass) {
+        this.password = pass;
+
     }
 
 }

@@ -40,5 +40,9 @@ public class JDUnrarConstants {
     public static final int WRAPPER_EXTRACTION_FAILED_CRC = 16;
     public static final int WRAPPER_CRACK_PASSWORD = 17;
     public static final String CONFIG_KEY_UNRARPATH = "UNRARPATH";
-
+    public static final String CONFIG_KEY_USE_SUBPATH = "USE_SUBPATH";
+    public static final String CONFIG_KEY_SUBPATH = "SUBPATH";
+    public static final String CONFIG_KEY_REMVE_AFTER_EXTRACT = "REMOVE_AFTER_EXTRACT";
+    public static final String CONFIG_KEY_ASK_UNKNOWN_PASS = "ASK_UNKNOWN_PASS";
+    public static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
 }

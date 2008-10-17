@@ -554,7 +554,8 @@ public class Form {
         for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
 
             String key = it.next();
-            ret.put(key, URLEncoder.encode(vars.get(key).getValue()));
+            InputField field = vars.get(key);
+            ret.put(key, Encoding.urlEncode(field.getValue()));
 
         }
         return ret;

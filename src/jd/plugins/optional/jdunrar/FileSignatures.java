@@ -29,9 +29,9 @@ import jd.utils.JDUtilities;
 public class FileSignatures {
 
     public static void main(String args[]) throws IOException {
-        Signature sig = getFileSignature(new File("C:\\Users\\coalado\\.jd_home\\plugins\\jdunrar\\template.xml"));
+        Signature sig = getFileSignature(new File("C:\\Users\\coalado\\.jd_home\\downloads\\Wild_Amateur_Orgy.wmv"));
         sig = sig;
-        scan(null);
+//        scan(null);
 
     }
 /**
@@ -61,11 +61,15 @@ public class FileSignatures {
                     out += (":::");
                     out += (".+\\." + ext);
                     Signature sss;
-                    if ((sss = getSignature(sig)) == null) System.out.println(out + "  " + f + "\r\n");
+                    if (( sss= getSignature(sig)) == null){
+                        System.out.println(out + "  " + f + "\r\n");
+                    }else{
+                        System.out.println(out + "  " + f + "<<<bekannt:"+sss.getExtension()+" \r\n");
+                         
+                    }
 
                 } catch (IOException e) {
-
-                }
+e.printStackTrace();                }
             }
 
         }

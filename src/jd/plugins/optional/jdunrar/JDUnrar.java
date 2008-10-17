@@ -52,8 +52,6 @@ import jd.utils.JDUtilities;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
-    private static final String DEFAULT_EXTRACT_PATH = "%DEFAULTDOWNLOADDIR%\\extracted\\%SUBFOLDER%\\%ARCHIVENAME%\\";
-
     public static int getAddonInterfaceVersion() {
         return 2;
     }
@@ -310,6 +308,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         wrapper.addUnrarListener(this);
         wrapper.setExtractTo(dl);
+        wrapper.setRemoveAfterExtract( this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, false));
+       
+        wrapper.setOverwrite(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_OVERWRITE, true));
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         wrapper.setPasswordList(PasswordList.getPasswordList().toArray(new String[] {}));
 
@@ -331,30 +332,32 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     }
 
     private File getExtractToPath(DownloadLink link) {
-        String path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARPATH, DEFAULT_EXTRACT_PATH);
+        String path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDUtilities.getConfiguration().getDefaultDownloadDirectory());
 
-        String def = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
+        File ret = new File(path);
+        if (!this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false)) { return ret; }
+
+        path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH, "/%PACKAGENAME%");
+
         try {
-            path = path.replace("%DEFAULTDOWNLOADDIR%", new File(def).getAbsolutePath());
+
             path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
             path = path.replace("%ARCHIVENAME%", getArchiveName(link));
-            path = path.replace("%ARCHIVEPATH%", new File(link.getFileOutput()).getParent());
             path = path.replace("%HOSTER%", link.getHost());
 
-            String dif = new File(def).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
+            String dif = new File(JDUtilities.getConfiguration().getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
             if (new File(dif).isAbsolute()) {
                 dif = "";
             }
             path = path.replace("%SUBFOLDER%", dif);
-            File ret;
-            path = path.replaceAll("[/]+", "\\");
+
+            path = path.replaceAll("[/]+", "\\\\");
             path = path.replaceAll("[\\\\]+", "\\\\");
 
-            if (!(ret = new File(JDUtilities.validatePath(path))).isAbsolute()) return JDUtilities.getResourceFile(JDUtilities.validatePath(path));
-            return ret;
+            return new File(ret, path);
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
+            return ret;
         }
     }
 
@@ -599,12 +602,28 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
         ConfigEntry ce;
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDLocale.L("gui.config.unrar.path", "Extract to")));
-        ce.setDefaultValue(DEFAULT_EXTRACT_PATH);
-
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDLocale.L("gui.config.unrar.path", "Extract to")));
+        ce.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMVE_AFTER_EXTRACT, JDLocale.L("gui.config.unrar.remove_after_extract", "Delete archives after suc. extraction?")));
+        ce.setDefaultValue(false);
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_OVERWRITE, JDLocale.L("gui.config.unrar.overwrite", "Overwrite existing files?")));
+        ce.setDefaultValue(false);
         ConfigContainer pws = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, pws));
         pws.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.L("plugins.optional.jdunrar.config.passwordlist", "List of all passwords. Each line one password")));
+
+        ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, JDLocale.L("gui.config.unrar.use_subpath", "Use subpath")));
+        ce.setDefaultValue(false);
+        ConfigEntry conditionEntry = ce;
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH, JDLocale.L("gui.config.unrar.subpath", "Subpath")));
+        ce.setDefaultValue("/%PACKAGENAME%");
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, JDLocale.L("gui.config.unrar.ask_path", "Ask for unknown passwords?")));
+        ce.setDefaultValue(true);
 
     }
 
@@ -641,8 +660,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
             ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
             ls.setStatusText("Extract failed(password)");
+            
+           
             wrapper.getDownloadLink().requestGuiUpdate();
-            this.onFinished(wrapper);
+            
+            
+            if(this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)){
+                String pass=JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.optional.jdunrar.askForPassword","Password for %s?",wrapper.getDownloadLink().getName()));
+                if(pass==null){
+                    this.onFinished(wrapper);
+                    break;
+                }
+                wrapper.setPassword(pass);
+            }
 
             break;
 

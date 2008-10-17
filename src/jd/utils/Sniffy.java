@@ -51,7 +51,7 @@ public final class Sniffy {
           
             String hash2 = JDUtilities.getLocalHash(reader2);
             if (hash2==null||!hash2.equals("3c2298676457b5c49e55dbee3451c4b1")) {
-                System.out.println("p Manipulated");
+                System.err.println("p Manipulated");
                 return true;
             }
 

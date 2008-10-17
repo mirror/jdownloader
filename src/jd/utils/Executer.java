@@ -16,32 +16,34 @@
 
 package jd.utils;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
     class StreamObserver extends Thread {
 
-        private BufferedReader reader;
-        private StringBuffer sb;
+        private BufferedInputStream reader;
+        private DynByteBuffer sb;
         private boolean started;
 
-        public StreamObserver(InputStream stream, StringBuffer sb) {
-            reader = new BufferedReader(new InputStreamReader(stream));
-            this.sb = sb;
+        public StreamObserver(InputStream stream, DynByteBuffer errorStreamBuffer) {
+            reader = new BufferedInputStream(stream);
+            this.sb = errorStreamBuffer;
         }
 
         @Override
         public void run() {
             this.started = true;
-            String line;
+            int num;
             try {
-                while ((line = readLine(reader)) != null) {
+                while ((num = readLine()) > 0) {
+                    String line = new String(sb.getLast(num)).trim();
                     if (line.length() > 0) {
                         fireEvent(line, sb);
                     }
@@ -54,24 +56,24 @@ public class Executer extends Thread {
             }
         }
 
-        private String readLine(BufferedReader reader2) throws IOException, InterruptedException {
-            StringBuffer s = new StringBuffer();
-            char[] buffer = new char[1];
+        private int readLine() throws IOException, InterruptedException {
+            int i = 0;
+            byte[] buffer = new byte[1];
             for (;;) {
 
                 if (this.isInterrupted()) {
 
                 throw new InterruptedException(); }
+                int read = 0;
+                if ((read = reader.read(buffer)) < 0) {
 
-                if (reader2.read(buffer) < 0) { return s.length() == 0 ? null : s.toString(); }
-                sb.append(buffer);
+                return i; }
+                i += read;
+                sb.put(buffer, read);
                 fireEvent(sb);
                 if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
 
-                    if (s.length() > 0) return s.toString();
-                } else {
-                    s.append(buffer);
-                }
+                return i; }
             }
 
         }
@@ -86,8 +88,8 @@ public class Executer extends Thread {
     private Logger logger = JDUtilities.getLogger();
     private ArrayList<String> parameter;
     private String runIn;
-    private StringBuffer inputStreamBuffer;
-    private StringBuffer errorStreamBuffer;
+    private DynByteBuffer inputStreamBuffer;
+    private DynByteBuffer errorStreamBuffer;
     private ArrayList<ProcessListener> listener = new ArrayList<ProcessListener>();
     private int waitTimeout = 60;
     private int exitValue = -1;
@@ -99,8 +101,9 @@ public class Executer extends Thread {
     public Executer(String command) {
         this.command = command;
         parameter = new ArrayList<String>();
-        inputStreamBuffer = new StringBuffer();
-        errorStreamBuffer = new StringBuffer();
+
+        inputStreamBuffer = new DynByteBuffer(1024 * 4);
+        errorStreamBuffer = new DynByteBuffer(1024 * 4);
         setName("Executer: " + command);
 
     }
@@ -150,17 +153,16 @@ public class Executer extends Thread {
         params.add(command);
         params.addAll(parameter);
 
-        
-        String out="";
-        for(String p:params){
-            out+=p+" ";
+        String out = "";
+        for (String p : params) {
+            out += p + " ";
         }
         System.out.println(out + "");
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
-//        List<String> g = pb.command();
-//        pb.command(out);
-//        g = pb.command();
-       
+        // List<String> g = pb.command();
+        // pb.command(out);
+        // g = pb.command();
+
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
                 pb.directory(new File(runIn));
@@ -170,13 +172,13 @@ public class Executer extends Thread {
                     // File(params.get(0)).getParentFile());
                     pb.directory(new File(params.get(0)).getParentFile());
                 } else {
-                    logger.severe("Working drectory " + runIn + " does not exist!");
+                    logger.severe("Working directory " + runIn + " does not exist!");
                 }
             }
         }
 
         try {
-          
+
             process = pb.start();
 
             if (waitTimeout == 0) { return; }
@@ -204,16 +206,15 @@ public class Executer extends Thread {
                 logger.severe("Timeout " + waitTimeout + " kill observerthread(error)");
                 sbeObserver.interrupt();
             }
-           logger.finer("Destroy Subprocesses if still running.");
+            logger.finer("Destroy Subprocesses if still running.");
             try {
                 process.destroy();
-                
+
             } catch (Exception e) {
                 e.printStackTrace();
             }
             exitValue = process.exitValue();
 
-           
         } catch (IOException e1) {
 
             e1.printStackTrace();
@@ -232,11 +233,11 @@ public class Executer extends Thread {
         process.destroy();
     }
 
-    public StringBuffer getInputStreamBuffer() {
+    public DynByteBuffer getInputStreamBuffer() {
         return inputStreamBuffer;
     }
 
-    public StringBuffer getErrorStreamBuffer() {
+    public DynByteBuffer getErrorStreamBuffer() {
         return errorStreamBuffer;
     }
 
@@ -278,14 +279,14 @@ public class Executer extends Thread {
 
     }
 
-    private void fireEvent(String line, StringBuffer sb) {
+    private void fireEvent(String line, DynByteBuffer sb) {
 
         for (ProcessListener listener : this.listener) {
             listener.onProcess(this, line, sb);
         }
     }
 
-    private void fireEvent(StringBuffer sb) {
+    private void fireEvent(DynByteBuffer sb) {
         for (ProcessListener listener : this.listener) {
             listener.onBufferChanged(this, sb);
         }
