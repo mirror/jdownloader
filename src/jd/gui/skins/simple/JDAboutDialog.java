@@ -91,7 +91,7 @@ public class JDAboutDialog {
                 { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
                 { " Execute", " ---", " hoster, decrypter, addons, ..." },
                 { " ToKaM", " tokam@frogged.de", " Hoster / Decrypter" },
-                { " gocsp"," ---"," Mac Integration"},
+                { " gocsp"," ---"," Mac Integration" },
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
@@ -112,6 +112,7 @@ public class JDAboutDialog {
         };
 
         JTable table = new JTable(devs, new String[] { "Entwickler", "Email", "Ressort" });
+        table.setEnabled(false);
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(0), 80);
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
 
