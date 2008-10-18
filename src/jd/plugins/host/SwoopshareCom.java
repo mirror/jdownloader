@@ -33,8 +33,7 @@ public class SwoopshareCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
+    public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
             int lIndex;
             if ((lIndex = downloadLink.getDownloadURL().lastIndexOf("cshare.de/")) != -1) {
                 downloadLink.setUrlDownload("http://www.swoopshare.com/" + downloadLink.getDownloadURL().substring(lIndex+10));
@@ -54,10 +53,6 @@ public class SwoopshareCom extends PluginForHost {
             downloadLink.setName(name);
 
             return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 
     @Override
