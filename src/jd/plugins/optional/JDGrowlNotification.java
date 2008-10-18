@@ -1,20 +1,14 @@
 package jd.plugins.optional;
 
 import java.awt.event.ActionEvent;
-import java.util.Date;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-
-import com.sun.j3d.utils.scenegraph.io.state.javax.media.j3d.LinkState;
+import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
-import jd.config.SubConfiguration;
 import jd.controlling.SingleDownloadController;
-import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -24,7 +18,6 @@ import jd.utils.Executer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.OSDetector;
-import jd.utils.Replacer;
 
 ;
 
@@ -109,7 +102,7 @@ public class JDGrowlNotification extends PluginOptional {
             case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
                 growlNotification("Download abgebrochen", "", "Download abgebrochen");
                 break;
-            
+
             default:
 
                 break;
