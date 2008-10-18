@@ -655,7 +655,7 @@ public class JDInit {
         new DecryptPluginWrapper("saug.us", "SAUGUS", "http://[\\w\\.]*?saug\\.us/folder.?-[a-zA-Z0-9\\-]{30,50}\\.html|http://[\\w\\.]*?saug\\.us/go.+\\.php");
         new DecryptPluginWrapper("save.raidrush.ws", "SaveRaidrushWs", "http://[\\w\\.]*?save\\.raidrush\\.ws/\\?id\\=[a-zA-Z0-9]+");
         new DecryptPluginWrapper("scum.in", "ScumIn", "http://[\\w\\.]*?scum\\.in/index\\.php\\?id=\\d+");
-        //TODO finish work! new DecryptPluginWrapper("sdx.cc","SdxCc","http://[\\w\\.]*?sdx\\.cc/infusions/(pro_download_panel|user_uploads)/download\\.php\\?did=\\d+");
+        new DecryptPluginWrapper("sdx.cc","SdxCc","http://[\\w\\.]*?sdx\\.cc/infusions/(pro_download_panel|user_uploads)/download\\.php\\?did=\\d+");
         new DecryptPluginWrapper("secured.in", "Secured", "http://[\\w\\.]*?secured\\.in/download-[\\d]+-[a-zA-Z0-9]{8}\\.html");
         new DecryptPluginWrapper("se-cur.net", "SeCurNet", "http://[\\w\\.]*?se-cur\\.net/q\\.php\\?d=.+");
         new DecryptPluginWrapper("Serienjunkies.org", "Serienjunkies", new String(), PluginWrapper.LOAD_ON_INIT);

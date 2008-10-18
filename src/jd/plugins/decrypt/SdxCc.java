@@ -16,10 +16,14 @@
 
 package jd.plugins.decrypt;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
+import com.sun.org.apache.bcel.internal.generic.DLOAD;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -27,10 +31,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
 public class SdxCc extends PluginForDecrypt {
-    //TODO decrypter in arbeit wird heute 18.10 noch fertig gemacht! (gn8)
-    //TODO könnte sogar schon funktionieren.
-    private static final Pattern PATTERN_DOWNLOADLINK_TEAM     = Pattern.compile("<td align='center' valign='bottom'><b><a href='(file\\.php\\?did=\\d+&file_id=\\d+)' target='_blank'><u><h2>D O W N L O A D</h2></u></a></b>",Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_DOWNLOADLINK_USER     = Pattern.compile("<td align='center' valign='bottom'><b><a href='\\.\\./\\.\\./(infusions/user_uploads/file\\.php\\?did=\\d+&file_id=\\d+)' target='_blank'><u><h2>D O W N L O A D</h2></u></a>");
+    /*
+     * Achtung Seite ist sooo langsam, dass es ständig timeouts gibt!
+     */
+    private static final Pattern PATTERN_DOWNLOADLINK     = Pattern.compile("<td align='center' valign='bottom'><b><a href='(.+?)' target='_blank'><u><h2>D O W N L O A D</h2></u></a></b>",Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_DOWNLOADLINK_CENTER   = Pattern.compile("<center><div class='quote'><b><a href='(.+?)' target='_blank'>2\\.SFT</a></b></div></center><br />");
     private static final Pattern PATTERN_PASSWORD              = Pattern.compile("</tr><tr><td align='center' class='tbl2'>Passwort:<br>(.+?)</td></tr><tr>",Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_FOLDER_NAME           = Pattern.compile("<script type='text/javascript' src='\\.\\./\\.\\./includes/forum\\.js'></script><font size='\\+\\d+'><b>(.+?)</b></font>");      
@@ -41,27 +45,32 @@ public class SdxCc extends PluginForDecrypt {
     public static void main(String[] args) throws IOException {
         Browser br = new Browser();
         br.setFollowRedirects(false);
-        String page = br.getPage("http://www.sdx.cc/infusions/user_uploads/download.php?did=8902");
+        String page = br.getPage("http://www.sdx.cc/infusions/user_uploads/download.php?did=43164");
         String pw = new Regex(page,PATTERN_PASSWORD).getMatch(0);
         String name = new Regex(page,PATTERN_FOLDER_NAME).getMatch(0);
+        System.out.println(page);
         for(String link:new Regex(page, PATTERN_DOWNLOADLINK_TEAM).getColumn(0)){
-            br.getPage("http://www.sdx.cc/infusions/pro_download_panel/"+link);
+            System.out.println("dl link team");
+            System.out.println(br.getBaseURL()+link);
+            br.getPage(br.getBaseURL()+link);
             System.out.println(br.getRedirectLocation());
             System.out.println(pw);
             System.out.println(name);
 
         }
         for(String link:new Regex(page, PATTERN_DOWNLOADLINK_USER).getColumn(0)){
-            System.out.println("http://www.sdx.cc/infusions/pro_download_panel/"+link);
+            System.out.println("dl link user");
             br.getPage("http://www.sdx.cc/"+link);
             System.out.println(br.getRedirectLocation());
             System.out.println(pw);
             System.out.println(name);
         }
         for(String link:new Regex(page, PATTERN_DOWNLOADLINK_CENTER).getColumn(0)){
+            System.out.println("dl link center");
             System.out.println(link);
-        }   
-    }*/
+        }
+    }
+    */
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
@@ -73,13 +82,9 @@ public class SdxCc extends PluginForDecrypt {
         name = name!=null?name.trim():"";
         pw   = pw  !=null?pw.trim()  :"sdx.cc";
         br.setFollowRedirects(false);
-        for(String link:new Regex(page, PATTERN_DOWNLOADLINK_TEAM).getColumn(0)){
-            br.getPage("http://www.sdx.cc/infusions/pro_download_panel/"+link);
+        for(String link:new Regex(page, PATTERN_DOWNLOADLINK).getColumn(0)){
+            br.getPage(br.getBaseURL()+link);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));     
-        }
-        for(String link:new Regex(page, PATTERN_DOWNLOADLINK_USER).getColumn(0)){
-            br.getPage("http://www.sdx.cc"+link);
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
         for(String link:new Regex(page, PATTERN_DOWNLOADLINK_CENTER).getColumn(0)){
             decryptedLinks.add(createDownloadlink(link));
