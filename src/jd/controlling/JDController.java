@@ -536,7 +536,21 @@ public class JDController implements ControlListener, UIListener {
             return;
         }
         switch (event.getID()) {
-
+        case ControlEvent.CONTROL_ON_FILEOUTPUT:
+            File[] list = (File[]) event.getParameter();
+            
+            for (File file : list) {
+                
+                if (isContainerFile(file)) {
+                    if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
+                        loadContainerFile(file);
+                    }
+                }
+            
+            }
+            
+            
+            break;
         case ControlEvent.CONTROL_LOG_OCCURED:
             if (fileLogger != null) {
                 LogRecord l = (LogRecord) event.getParameter();

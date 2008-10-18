@@ -75,6 +75,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
+  
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = new File(link.getFileOutput());
         archiveParts = new ArrayList<String>();
@@ -143,13 +144,14 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 }
 
                 this.extract();
-                if (this.status == STARTED&&getExtractedSize()>=this.getTotalSize()) {
+         
+                if (this.status == STARTED&& this.checkSizes()) {
                     if (removeAfterExtraction) {
                         removeArchiveFiles();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                 } else {
-                    fireEvent(this.status);
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                 }
 
             } else {
@@ -165,6 +167,18 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
     }
 
+    private boolean checkSizes() {
+        boolean c=true;
+        for (ArchivFile f : files) {
+          if(f.getSize()!=f.getFile().length()){
+              c=false;
+          }else{
+              f.setPercent(100);
+          }
+        }
+        return c;
+        
+    }
     private void removeArchiveFiles() {
         for (String file : archiveParts) {
             if (file != null && file.trim().length() > 0) {
@@ -430,6 +444,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
             exec.waitTimeout();
             String res = exec.getStream() + " \r\n " + exec.getErrorStream();
+            System.out.println(res);
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
             if (res.indexOf(" (password incorrect ?)") != -1) {
                 System.err.println("Password incorrect: " + file.getName() + " pw: " + pass);
@@ -484,6 +499,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                             if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
 
                                 tmp = new ArchivFile(name);
+                                tmp.setPath(this.getExtractTo());
                                 long size;
                                 tmp.setSize(size = Long.parseLong(matchervolumes.group(2)));
                                 totalSize += size;

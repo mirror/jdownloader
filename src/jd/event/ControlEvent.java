@@ -144,6 +144,11 @@ public class ControlEvent extends AWTEvent {
  * parameter:menuitem arraylist
  */
     public static final int CONTROL_LINKLIST_CONTEXT_MENU = 22;
+/**
+ * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt wurde. Andere plugins und addons können dieses event abrufen und entscheiden wie die files weiterverareitet werden sollen.
+ * Die files werden als File[] parameter übergeben
+ */
+public static final int CONTROL_ON_FILEOUTPUT = 33;
 
     /**
      * Die ID des Ereignisses
