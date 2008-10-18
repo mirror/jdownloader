@@ -743,13 +743,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             tooltip = null;
         }
         if (e.getButton() == MouseEvent.BUTTON1 && 2 == e.getClickCount()) {
-            Point point = e.getPoint();
-            int row = rowAtPoint(point);
-            TreePath path = getPathForRow(row);
-            if (path == null) { return; }
+            TreePath path = getPathForRow(rowAtPoint(e.getPoint()));
+            if (path == null) return;
             Object obj = path.getLastPathComponent();
             if (obj instanceof DownloadLink) {
-                new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), (DownloadLink) getPathForRow(row).getLastPathComponent());
+                new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), (DownloadLink) obj);
+            } else if (obj instanceof FilePackage) {
+                new PackageInfo(SimpleGUI.CURRENTGUI.getFrame(), (FilePackage) obj);
             }
         }
     }
@@ -898,9 +898,6 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 }
             }
             popup.show(this, point.x, point.y);
-
-            logger.info(getSelectedFilePackages() + "");
-            logger.info(getSelectedDownloadLinks() + "");
         }
     }
 
