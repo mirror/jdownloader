@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.jdunrar;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class ArchivFile {
@@ -23,6 +24,15 @@ public class ArchivFile {
     private String filepath;
 
     private int percent;
+    private File path;
+
+    public File getPath() {
+        return path;
+    }
+
+    public void setPath(File file) {
+        this.path = file;
+    }
 
     private long size = 0;
 
@@ -80,6 +90,10 @@ public class ArchivFile {
 
     public String toString() {
         return this.filepath;
+    }
+
+    public File getFile() {
+        return new File(path,this.filepath);
     }
 
 }

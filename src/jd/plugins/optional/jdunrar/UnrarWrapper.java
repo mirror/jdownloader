@@ -55,6 +55,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     private String password;
     private boolean isProtected = false;
     private ArrayList<ArchivFile> files;
+  
     private boolean overwriteFiles = false;
 
     private int totalSize;
@@ -78,7 +79,12 @@ public class UnrarWrapper extends Thread implements ProcessListener {
         this.file = new File(link.getFileOutput());
         archiveParts = new ArrayList<String>();
     }
-
+    public UnrarWrapper(DownloadLink link,File file) {
+        this.link = link;
+        if (link == null) { throw new IllegalArgumentException("link==null"); }
+        this.file = file;
+        archiveParts = new ArrayList<String>();
+    }
     public void addUnrarListener(UnrarListener listener) {
         this.removeUnrarListener(listener);
         this.listener.add(listener);
@@ -88,6 +94,9 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     private void removeUnrarListener(UnrarListener listener) {
         this.listener.remove(listener);
 
+    }
+    public ArrayList<ArchivFile> getFiles() {
+        return files;
     }
 
     public void run() {
@@ -459,6 +468,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                             if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
                                 tmp = new ArchivFile(name);
                                 tmp.setSize(size);
+                                tmp.setPath(this.getExtractTo());
                                 tmp.setProtected(true);
                                 tmp.addVolume(vol);
                                 files.add(tmp);
@@ -627,6 +637,10 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
         this.extractTo = dl;
 
+    }
+
+    public File getExtractTo() {
+        return extractTo;
     }
 
     public void setRemoveAfterExtract(boolean setProperty) {
