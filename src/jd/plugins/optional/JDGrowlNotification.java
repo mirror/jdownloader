@@ -16,7 +16,9 @@ import jd.utils.Replacer;;
 
 
 public class JDGrowlNotification extends PluginOptional {
-    
+    public static int getAddonInterfaceVersion() {
+        return 2;
+    }
     public JDGrowlNotification(PluginWrapper wrapper) {
         super(wrapper);
         // TODO Auto-generated constructor stub
@@ -24,7 +26,7 @@ public class JDGrowlNotification extends PluginOptional {
 
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
+
 
     
     @Override
@@ -58,12 +60,12 @@ public class JDGrowlNotification extends PluginOptional {
     public void actionPerformed(ActionEvent e) {
         MenuItem mi = (MenuItem) e.getSource();
         if (mi.getActionID() == 0) {
-            subConfig.setProperty(PROPERTY_ENABLED, true);
-            subConfig.save();
+            getPluginConfig().setProperty(PROPERTY_ENABLED, true);
+            getPluginConfig().save();
             JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdgrowlnotification.statusmessage.enabled", "Notifications An"));
         } else {
-            subConfig.setProperty(PROPERTY_ENABLED, false);
-            subConfig.save();
+            getPluginConfig().setProperty(PROPERTY_ENABLED, false);
+            getPluginConfig().save();
             JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdgrowlnotification.statusmessage.disabled", "´" + "Notifications Aus"));
         }
     }
@@ -86,7 +88,7 @@ public class JDGrowlNotification extends PluginOptional {
     public void controlEvent(ControlEvent event) {
         
         super.controlEvent(event);
-        if (subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
+        if (getPluginConfig().getBooleanProperty(PROPERTY_ENABLED, false)) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if (((InteractionTrigger) event.getSource()) == Interaction.INTERACTION_APPSTART) {
                     growlNotification("jDownloader gestartet...", 
