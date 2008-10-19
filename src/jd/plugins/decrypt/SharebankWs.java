@@ -21,22 +21,33 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class SharebankWs extends PluginForDecrypt {
-
+    private static final String  REGEX_FOLDER = "http://[\\w\\.]*?sharebank\\.ws/\\?v=[a-zA-Z0-9]+";
+    private static final String  REGEX_DLLINK = "http://[\\w\\.]*?sharebank\\.ws/\\?go=([a-zA-Z0-9]+)";
     public SharebankWs(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.getPage(parameter);
-        String[] links = br.getRegex(Pattern.compile("go=(.*?)'")).getColumn(0);
+        String url = param.toString();
+        Regex urlGoRegex = new Regex(url,Pattern.compile(REGEX_DLLINK));
+
+        String[] links = null;
+        if(url.matches(REGEX_FOLDER)){
+            br.getPage(url);
+            links =  br.getRegex(Pattern.compile("go=(.*?)'")).getColumn(0);
+
+        }else if(urlGoRegex.matches()){
+            links = new String[]{urlGoRegex.getMatch(0)};
+        }else{
+            logger.severe("Ungültiges Pattern in der JDinit für Sharebank.Ws");
+        }
 
         progress.setRange(links.length);
         for (String element : links) {
