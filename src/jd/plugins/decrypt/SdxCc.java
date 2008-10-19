@@ -38,30 +38,6 @@ public class SdxCc extends PluginForDecrypt {
     public SdxCc(PluginWrapper wrapper) {
         super(wrapper);
     }
-    /*
-    public static void main(String[] args) throws IOException {
-        Browser br = new Browser();
-        br.setFollowRedirects(false);
-        String page = br.getPage("http://www.sdx.cc/infusions/user_uploads/download.php?did=43164");
-        String pw = new Regex(page,PATTERN_PASSWORD).getMatch(0);
-        String name = new Regex(page,PATTERN_FOLDER_NAME).getMatch(0);
-        System.out.println(page);
-        for(String link:new Regex(page, PATTERN_DOWNLOADLINK).getColumn(0)){
-            System.out.println("dl link team");
-            System.out.println(br.getBaseURL()+link);
-            br.getPage(br.getBaseURL()+link);
-            System.out.println(br.getRedirectLocation());
-            System.out.println(pw);
-            System.out.println(name);
-
-        }
-        page = new Regex(page,PATTERN_BETWEEN_NAME_UPLOADER).getMatch(1);
-        System.out.println(page);
-        for(String link:new Regex(page,PATTERN_ANYLINK).getColumn(1)){
-            System.out.println(link);
-        }
-    }
-     */
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
