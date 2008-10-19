@@ -19,6 +19,8 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.http.HTTPConnection;
 import jd.plugins.DownloadLink;
@@ -26,14 +28,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class HTTPAllgemein extends PluginForHost {
 
+    public static final String DISABLED = "HttpAllgemeinDisabled";
+    
     private String contentType;
-
     public HTTPAllgemein(PluginWrapper wrapper) {
         super(wrapper);
+        setConfigElements();
     }
 
     @Override
@@ -102,6 +107,9 @@ public class HTTPAllgemein extends PluginForHost {
     @Override
     public void handleFree(DownloadLink link) throws Exception {
 
+    }
+    private void setConfigElements() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLED, JDLocale.L("plugins.host.HttpAllgemein.Disable", "Disable plugin")).setDefaultValue(false));
     }
 
 }

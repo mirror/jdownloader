@@ -258,15 +258,6 @@ public class MySpaceCom extends PluginForDecrypt {
         return parseMyspace2SongIds(songIds);
     }
 
-    private String[] parseMyspace2SongXml(String songId) throws IOException {
-        br.setFollowRedirects(true);
-        String[] ret = new String[2];
-        String page = br.getPage("http://myspace.com/Modules/MusicServices/Services/MusicPlayerService.ashx?action=getSong&songId=" + songId);
-        ret[0] = new Regex(page, TITEL_MYSPACE_2).getMatch(0);
-        ret[1] = new Regex(page, DURLS_MYSPACE_2).getMatch(0);
-        return ret;
-    }
-
     private String[][] parseMyspace2SongIds(String[] songIds) throws IOException {
         String[][] ret = new String[2][songIds.length];
         for (int i = 0; i < songIds.length; i++) {
@@ -274,6 +265,15 @@ public class MySpaceCom extends PluginForDecrypt {
             ret[0][i] = data[0];
             ret[1][i] = data[1];
         }
+        return ret;
+    }
+
+    private String[] parseMyspace2SongXml(String songId) throws IOException {
+        br.setFollowRedirects(true);
+        String[] ret = new String[2];
+        String page = br.getPage("http://myspace.com/Modules/MusicServices/Services/MusicPlayerService.ashx?action=getSong&songId=" + songId);
+        ret[0] = new Regex(page, TITEL_MYSPACE_2).getMatch(0);
+        ret[1] = new Regex(page, DURLS_MYSPACE_2).getMatch(0);
         return ret;
     }
 
