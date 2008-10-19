@@ -72,6 +72,6 @@ public class RapidFolderCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision : 3332 $");
+        return getVersion("$Revision: 3332 $");
     }
 }
