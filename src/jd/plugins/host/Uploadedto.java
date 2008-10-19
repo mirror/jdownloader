@@ -298,8 +298,8 @@ public class Uploadedto extends PluginForHost {
         Request request = br.createFormRequest(form);
         sleep(10000l,downloadLink);
         dl = new RAFDownload(this, downloadLink, request);
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
+//        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+//        dl.setResume(true);
         try {
             dl.connect();
         } catch (Exception e) {
@@ -319,8 +319,8 @@ public class Uploadedto extends PluginForHost {
                 request.getHttpConnection().disconnect();
                 request = br.createGetRequest(null);
                 dl = new RAFDownload(this, downloadLink, request);
-                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-                dl.setResume(true);
+//                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+//                dl.setResume(true);
                 dl.connect();
             }
         }
