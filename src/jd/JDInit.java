@@ -782,6 +782,7 @@ public class JDInit {
         new OptionalPluginWrapper("StreamingShareTool", 1.5);
         new OptionalPluginWrapper("LangFileEditor", 1.5);
         new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
+        new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5);        
         new OptionalPluginWrapper("JDPremiumCollector", 1.5);
         new OptionalPluginWrapper("JDGrowlNotification", 1.5);
     }

@@ -1828,7 +1828,7 @@ public class JDUtilities {
      * Speichert ein Objekt
      * 
      * @param frame
-     *            ein Fenster
+     *            ein Fenster 
      * @param objectToSave
      *            Das zu speichernde Objekt
      * @param fileOutput
