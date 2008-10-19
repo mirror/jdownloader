@@ -35,6 +35,10 @@ public class FastLoadNet extends PluginForHost {
 
     private String link;
 
+    private boolean throttled;
+    private static boolean TICKET_MESSAGE = false;
+    private boolean speedTicket;
+
     private static int SIM = 20;
 
     public FastLoadNet(PluginWrapper wrapper) {
@@ -61,7 +65,14 @@ public class FastLoadNet extends PluginForHost {
         String filename = lines[0].substring(10).trim();
         long fileSize = Long.parseLong(lines[1].substring(10).trim());
         this.link = lines[2].substring(6).toString();
-
+        String th = lines[3].substring(11).trim();
+        th = th.length() > 0 ? th : "0";
+        this.throttled = Integer.parseInt(th) == 1;
+        SIM=20;
+        if(throttled)SIM = 1;
+        String tk = lines[4].substring(12).trim();
+        tk = tk.length() > 0 ? tk : "0";
+        this.speedTicket = Integer.parseInt(tk) == 1;
         if (filename != null) {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(fileSize);
@@ -74,7 +85,7 @@ public class FastLoadNet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -102,15 +113,34 @@ public class FastLoadNet extends PluginForHost {
 
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
+
+        if (this.throttled && !this.speedTicket && !TICKET_MESSAGE) {
+            if (JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("plugins.host.fastload.ticketmessage", "Get a Fastload.net Speedticket to boost speed up to 300kb/s"), 15)) {
+                try {
+                    JLinkButton.openURL("http://www.fast-load.net/getticket.php");
+                } catch (MalformedURLException e1) {
+                    e1.printStackTrace();
+                }
+                downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.fastload.wait_ticketmessage", "Wait for Speedticket"));
+                downloadLink.requestGuiUpdate();
+                int i = 0;
+                while (!speedTicket && i < 90000) {
+                    Thread.sleep(1000);
+                    getFileInformation(downloadLink);
+                    i += 1000;
+
+                }
+            }
+            TICKET_MESSAGE = true;
+        }
         br.setDebug(true);
-        String msg = JDLocale.L("plugins.host.fastload.getticketmsg", "Get Fastload-Ticket!");
-        JDUtilities.getGUI().displayMiniWarning(msg, msg, 30);
+
         dl = br.openDownload(downloadLink, this.link);
         if (!dl.getConnection().isContentDisposition()) {
-            SIM = 1;
+            
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         }
-        SIM = 20;
+   
         dl.startDownload();
 
     }

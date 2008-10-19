@@ -122,6 +122,7 @@ public class ShareBaseTo extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
+        br.setDebug(true);
         /* für links welche noch mit .de in der liste stehen */
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         String url = downloadLink.getDownloadURL();
@@ -132,7 +133,7 @@ public class ShareBaseTo extends PluginForHost {
         }
 
         Form form = br.getFormbyValue("Please Activate Javascript");
-        form.setVariable(0, "Download+Now+%21");
+        form.setVariable(0, "Download Now !");
         br.submitForm(form);
 
         if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {

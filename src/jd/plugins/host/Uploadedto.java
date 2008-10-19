@@ -225,27 +225,26 @@ public class Uploadedto extends PluginForHost {
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+  
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("ist aufgebraucht")) {
-            linkStatus.setStatusText(JDLocale.L("plugins.uploadedto.message.linkgrabber.trafficlimit", "Traffic limit reached. Could not get fileinfo"));
-            return true;
-        }
+       String id=new Regex(downloadLink.getDownloadURL(),"http://uploaded.to/file/(.*?)/").getMatch(0);
+       
+        br.getPage("http://uploaded.to/api/file?id="+id);
+        String[] lines = Regex.getLines(br+"");
+       
+        
+        String fileName = lines[0].trim();
+  
+     
+        long fileSize =Long.parseLong(lines[1].trim());
+        downloadLink.setName(fileName);
 
-        Regex info = br.getRegex("Dateiname:.*?</td><td><b>(.*?)</b></td></tr>.*?<tr><td style=\"padding-left:4px;\">Dateityp:.*?</td><td>(.*?)</td></tr>.*?<tr><td style=\"padding-left:4px;\">Dateig.*?</td><td>(.*?)</td>");
-
-        String fileName = Encoding.htmlDecode(info.getMatch(0));
-        if (fileName == null) return false;
-        String ext = Encoding.htmlDecode(info.getMatch(1));
-        String fileSize = Encoding.htmlDecode(info.getMatch(2));
-        downloadLink.setName(fileName.trim() + "" + ext.trim());
-
-        downloadLink.setDownloadSize(Regex.getSize(fileSize));
+        downloadLink.setDownloadSize(fileSize);
+        downloadLink.setSha1Hash(lines[2].trim());
 
         return true;
     }

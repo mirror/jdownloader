@@ -164,9 +164,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     private String decrypterPassword;
 
-    private String MD5Hash;
+    private String mD5Hash;
 
     private transient PluginProgress pluginProgress;
+
+    private String sha1Hash;
 
     /**
      * Erzeugt einen neuen DownloadLink
@@ -973,12 +975,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setMD5Hash(String string) {
-        this.MD5Hash = string;
+        this.mD5Hash = string;
 
     }
 
     public String getMD5Hash() {
-        return MD5Hash;
+        return mD5Hash;
     }
 
     public void setPluginProgress(PluginProgress progress) {
@@ -988,6 +990,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public PluginProgress getPluginProgress() {
         return pluginProgress;
+    }
+
+    public void setSha1Hash(String hash) {
+      this.sha1Hash=hash;
+        
+    }
+
+    public String getSha1Hash() {
+        return sha1Hash;
     }
 
 }
