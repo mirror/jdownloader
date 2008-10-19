@@ -52,6 +52,6 @@ public class LinkrAt extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 3442 $");
     }
 }

@@ -92,6 +92,6 @@ public class SdxCc extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 3436 $");
     }
 }

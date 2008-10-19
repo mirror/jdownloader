@@ -66,7 +66,7 @@ public class SpiegelDe extends PluginForHost {
     @Override
     public String getVersion() {
         
-        return getVersion("$Revision$");
+        return getVersion("$Revision : 3337 $");
     }
 
     @Override

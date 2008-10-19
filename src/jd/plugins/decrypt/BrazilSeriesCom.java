@@ -127,7 +127,7 @@ public class BrazilSeriesCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 3426 $");
     }
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), AVI_ONLY, JDLocale.L("plugins.decrypt.brazil-series.com1", "Download-Formato : AVI sem Legenda somente")).setDefaultValue(false));

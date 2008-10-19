@@ -153,6 +153,6 @@ public class SpiegelDe extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision : 3339$");
     }
 }
