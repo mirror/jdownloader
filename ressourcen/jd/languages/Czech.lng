@@ -1,3 +1,5 @@
+$translater$ = ChangeMe
+$version$ = $Revision$
 addons.jdlowspeed.statusmessage.enabled = Povolit pomalorychlostní detekci
 addons.jdshutdown.menu.enable = Povolit vypnutí
 addons.schedule.menu.add = Přidat
@@ -902,5 +904,5 @@ sys.warning.linklist.incompatible = Seznam odkazů je nekompatibilní.
 system.download.triggerfileexists = Soubor již existuje:
 system.download.triggerfileexists.overwrite = Přepsat
 system.download.triggerfileexists.skip = Přeskočit odkaz
-﻿action.passwordlist.name = Edituj seznam hesel
-﻿plugins.serienjunkies.catdialog.action = Vyberte vaši akci:
+action.passwordlist.name = Edituj seznam hesel
+plugins.serienjunkies.catdialog.action = Vyberte vaši akci:

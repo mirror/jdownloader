@@ -1,3 +1,5 @@
+$translater$ = ChangeMe
+$version$ = $Revision$
 controller.status.aborted = Abortado
 controller.status.abused = Fichero borrado
 controller.status.active = Activado
@@ -594,4 +596,4 @@ sys.warning.linklist.incompatible = Lista de enlaces incompatible. Rechazado Gua
 system.download.triggerfileexists = Si el fichero ya existe:
 system.download.triggerfileexists.overwrite = Sobre escribir
 system.download.triggerfileexists.skip = Saltar enlace
-﻿action.passwordlist.name = Editar lista de contraseñas
+action.passwordlist.name = Editar lista de contraseñas

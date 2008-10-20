@@ -1,3 +1,5 @@
+$translater$ = ChangeMe
+$version$ = $Revision$
 addons.jdlowspeed.statusmessage.disabled = Запретить медленное обнаружение
 addons.jdlowspeed.statusmessage.enabled = Разрешить медленное обнаружение
 addons.jdshutdown.menu.enable = Разрешить закрытие
@@ -991,4 +993,4 @@ sys.warning.linklist.incompatible = Список ссылок не совмес�
 system.download.triggerfileexists = если файл существует:
 system.download.triggerfileexists.overwrite = Перезаписать
 system.download.triggerfileexists.skip = пропустить
-п>їaction.passwordlist.name = Править список паролей
+action.passwordlist.name = Править список паролей

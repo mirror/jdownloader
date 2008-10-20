@@ -1,3 +1,5 @@
+$translater$ = ChangeMe
+$version$ = $Revision$
 addons.jdlowspeed.statusmessage.disabled = Devredışı bırak
 addons.jdlowspeed.statusmessage.enabled = Etkinleştir
 addons.jdshutdown.menu.disable = Devredışı bırak
@@ -1312,4 +1314,4 @@ system.update.success.message = Yeni güncellemeler yüklendi<hr>%s
 system.update.success.message.infolink = %s v.%s <a href='%s'>INFO</a><br/>
 train.method = captcha idman yöntemi seç:
 wrapper.webupdate.updatefile = Takmabirimi güncelle %s
-ï»¿action.passwordlist.name = Parolaları Düzenle
+action.passwordlist.name = Parolaları Düzenle

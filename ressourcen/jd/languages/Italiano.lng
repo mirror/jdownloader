@@ -1,3 +1,5 @@
+$translater$ = ChangeMe
+$version$ = $Revision$
 action.passwordlist.name = Modifica lista delle password
 addons.jdlowspeed.statusmessage.disabled = Disattiva rilevamento scarsit�  di banda
 addons.jdlowspeed.statusmessage.enabled = Abilita rilevamento lentezza banda

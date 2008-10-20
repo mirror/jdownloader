@@ -60,6 +60,16 @@ public class JDLocale {
         return localeFile;
     }
 
+    public static String getTranslater() {
+        return getLocaleString("$translater$", "JD-Team");
+    }
+
+    public static String getVersion() {
+        String info = getLocaleString("$version$", "0.0");
+        String ret = new Regex(info, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        return ret == null ? info : ret;
+    }
+
     public static Vector<String> getLocaleIDs() {
         File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
         if (!dir.exists()) { return null; }

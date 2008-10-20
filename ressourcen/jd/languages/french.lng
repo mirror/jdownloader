@@ -1,3 +1,5 @@
+$translater$ = ChangeMe
+$version$ = $Revision$
 addons.jdlowspeed.statusmessage.disabled = Désactiver la détection des connexions bas débit
 addons.jdlowspeed.statusmessage.enabled = Activer la détection des connexion bas débits
 addons.jdshutdown.menu.enable = Activer l'éteinte
@@ -1023,5 +1025,5 @@ sys.warning.linklist.incompatible = Liste de liens incompatible. Sauvegarde reje
 system.download.triggerfileexists = Si le fichier existe déjà:
 system.download.triggerfileexists.overwrite = Réécrire
 system.download.triggerfileexists.skip = Passer un lien
-﻿action.passwordlist.name = Éditer le liste des mots de passe
-﻿plugins.serienjunkies.catdialog.action = Choisissez votre action:
+action.passwordlist.name = Éditer le liste des mots de passe
+plugins.serienjunkies.catdialog.action = Choisissez votre action:

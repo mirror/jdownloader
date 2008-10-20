@@ -69,7 +69,6 @@ import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -101,7 +100,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private ChartAPI_Entity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
     private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
-    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuEditComment, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
+    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
     private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
@@ -110,7 +109,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private Vector<String[]> sourceEntries = new Vector<String[]>();
     private Vector<Pattern> sourcePatterns = new Vector<Pattern>();
     private Vector<String[]> fileEntries = new Vector<String[]>();
-    private Vector<String> fileComment = new Vector<String>();
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
@@ -254,8 +252,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuKey.add(mnuEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
         mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteSelectedKeys", "Delete Selected Key(s)")));
         mnuKey.addSeparator();
-        mnuKey.add(mnuEditComment = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editComment", "Edit Comment")));
-        mnuKey.addSeparator();
         mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
         mnuKey.add(mnuClearAll = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearAllValues", "Clear All Values")));
         mnuKey.addSeparator();
@@ -267,7 +263,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuAdd.addActionListener(this);
         mnuEdit.addActionListener(this);
         mnuDelete.addActionListener(this);
-        mnuEditComment.addActionListener(this);
         mnuClear.addActionListener(this);
         mnuClearAll.addActionListener(this);
         mnuAdopt.addActionListener(this);
@@ -588,25 +583,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 }
             }
 
-        } else if (e.getSource() == mnuEditComment) {
-
-            String comment = "";
-            if (fileComment.size() > 0) {
-                StringBuilder sb = new StringBuilder();
-                for (String line : fileComment)
-                    sb.append(line + "\r\n");
-                comment = sb.substring(0, sb.length() - 2);
-            }
-
-            String newComment = TextAreaDialog.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.editComment", "Edit Comment"), JDLocale.L("plugins.optional.langfileeditor.editComment.message", "Edit the comment of the current language file"), comment);
-            if (newComment != null) {
-                fileComment.clear();
-                if (!newComment.equals("")) {
-                    for (String line : Regex.getLines(newComment))
-                        fileComment.add(Encoding.UTF8Decode(line));
-                }
-            }
-
         }
 
     }
@@ -640,11 +616,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     private void saveLanguageFile(File file) {
         StringBuilder sb = new StringBuilder();
-
-        if (fileComment.size() > 0) {
-            for (String line : fileComment)
-                sb.append("# " + line + "\n");
-        }
 
         for (String[] entry : data) {
             if (!entry[2].equals("")) sb.append(entry[0] + " = " + entry[2] + "\n");
@@ -706,6 +677,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
                 }
 
+                if (entry[0].startsWith("$") && entry[0].endsWith("$")) {
+                    data.add(new String[] { entry[0], JDLocale.L("plugins.optional.langfileeditor.languageFileInfo", "<LanguageFile Information Entry>"), entry[1] });
+                    breakIt = true;
+                }
+
                 if (breakIt) continue;
                 data.add(new String[] { entry[0], "", entry[1] });
 
@@ -740,23 +716,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private void getLanguageFileEntries() {
 
         fileEntries.clear();
-        fileComment.clear();
         Vector<String> keys = new Vector<String>();
 
-        String file = JDUtilities.getLocalFile(languageFile);
+        String[] lines = Regex.getLines(JDUtilities.getLocalFile(languageFile));
 
-        // KommentarBlock am Anfang der Datei einlesen
-        for (String line : Regex.getLines(file)) {
-            if (line.startsWith("#")) {
-                fileComment.add(Encoding.UTF8Decode(line.substring(1).trim()));
-            } else {
-                break;
-            }
-        }
-
-        String[][] matches = new Regex(file, Pattern.compile("(.*?)[\\s]*?=[\\s]*?(.*?)[\\r]?\\n")).getMatches();
-
-        for (String[] match : matches) {
+        for (String line : lines) {
+            String[] match = new Regex(line, Pattern.compile("^(.*?)[\\s]*?=[\\s]*?(.*?)$")).getRow(0);
 
             match[0] = match[0].trim().toLowerCase();
             match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");

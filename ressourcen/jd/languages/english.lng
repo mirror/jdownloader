@@ -1,3 +1,5 @@
+$translater$ = JD-Team
+$version$ = $Revision$
 addons.jdlowspeed.statusmessage.disabled = Disable Low Speeddetection
 addons.jdlowspeed.statusmessage.enabled = Enable lowspeed detection
 addons.jdshutdown.menu.disable = Disable shutdown

@@ -1,3 +1,5 @@
+$translater$ = ChangeMe
+$version$ = $Revision$
 ﻿addons.jdgrowlnotification.menu.enable = Aktywuj wiadomości
 addons.jdlowspeed.statusmessage.disabled = Deaktywuj wykrywanie powolnych transferów
 addons.jdlowspeed.statusmessage.enabled = Aktywuj wykrywanie powolnych transferów
