@@ -40,7 +40,6 @@ import jd.DecryptPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionListener, MouseListener {
 
@@ -132,7 +131,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
     }
 
     private void editEntry(DecryptPluginWrapper dpw) {
-        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), dpw.getPlugin().getConfig());
+        SimpleGUI.showConfigDialog(ConfigurationDialog.DIALOG, dpw.getPlugin().getConfig());
     }
 
     private void editEntry() {

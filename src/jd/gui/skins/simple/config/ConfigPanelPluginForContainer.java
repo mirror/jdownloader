@@ -40,7 +40,6 @@ import jd.CPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class ConfigPanelPluginForContainer extends ConfigPanel implements ActionListener, MouseListener {
 
@@ -110,7 +109,7 @@ public class ConfigPanelPluginForContainer extends ConfigPanel implements Action
     }
 
     private void editEntry() {
-        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig());
+        SimpleGUI.showConfigDialog(ConfigurationDialog.DIALOG, pluginsForContainer.get(table.getSelectedRow()).getPlugin().getConfig());
     }
 
     @Override

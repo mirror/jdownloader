@@ -199,7 +199,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     }
 
     private void editEntry(HostPluginWrapper hpw) {
-        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), hpw.getPlugin().getConfig());
+        SimpleGUI.showConfigDialog(ConfigurationDialog.DIALOG, hpw.getPlugin().getConfig());
     }
 
     private void editEntry() {

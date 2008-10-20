@@ -58,7 +58,7 @@ public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        new JDUnrarPasswordListDialog(JDUtilities.getParentFrame(this)).setVisible(true);
+        new JDUnrarPasswordListDialog(ConfigurationDialog.DIALOG).setVisible(true);
     }
 
     @Override
