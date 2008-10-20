@@ -25,30 +25,52 @@ public class PluginPattern {
     static private Logger logger = JDUtilities.getLogger();
 
     static public Pattern decrypterPattern_UCMS_Plugin() {
-        StringBuilder Complete_Pattern = new StringBuilder();
-        String[] List = { "saugking.net", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "oxygen-warez.com", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz",
+        StringBuilder completePattern = new StringBuilder();
+        String[] list = { "saugking.net", "oxygen-warez.com", "filefox.in", "alphawarez.us", "pirate-loads.com", "fettrap.com", "omega-music.com", "hardcoremetal.biz", "flashload.org", "twin-warez.com", "oneload.org", "steelwarez.com", "fullstreams.info", "lionwarez.com", "1dl.in", "chrome-database.com", "oneload.org", "youwarez.biz", "saugking.net", "leetpornz.com", "freefiles4u.com", "dark-load.net", "crimeland.de", "get-warez.in", "meinsound.com", "projekt-tempel-news.de.vu", "datensau.org", "musik.am", "spreaded.net", "relfreaks.com", "babevidz.com", "serien24.com", "porn-freaks.net", "xxx-4-free.net", "porn-traffic.net", "chili-warez.net", "game-freaks.net", "isos.at", "your-load.com", "mov-world.net", "xtreme-warez.net", "sceneload.to", "oxygen-warez.com", "epicspeedload.in", "serienfreaks.to", "serienfreaks.in", "warez-load.com", "ddl-scene.com", "mp3king.cinipac-hosting.biz",
                 "xwebb.extra.hu/1dl", "wii-reloaded.ath.cx/sites/epic", "wankingking.com", "projekt-tempel-news.org", "porn-ox.in", "music-dome.cc", "sound-load.com", "hoerspiele.to", "jim2008.extra.hu", "ex-yu.extra.hu", "firefiles.in", "gez-load.net", "wrzunlimited.1gb.in", "streamload.in", "toxic.to", "mp3z.to", "sexload.to", "sound-load.com", "sfulc.exofire.net/cms", "fickdiehure.com", "dream-team.bz/cms", "omega-warez.com", "ddl-scene.cc", "xxxstreams.org", "scene-warez.com", "dokuh.tv", "titanload.to", "ddlshock.com", "xtreme-warez.us" };
-        for (String Pattern : List) {
-            if (Complete_Pattern.length() > 0) {
-                Complete_Pattern.append("|");
+        for (String pattern : list) {
+            if (completePattern.length() > 0) {
+                completePattern.append("|");
             }
-            Complete_Pattern.append("(http://[\\w\\.]*?" + Pattern.replaceAll("\\.", "\\\\.") + "/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html))");
+            completePattern.append("(http://[\\w\\.]*?" + pattern.replaceAll("\\.", "\\\\.") + "/(\\?id=.+|[\\?]*?/.*?\\.html|category/.*?/.*?\\.html|download/.*?/.*?\\.html))");
         }
-        logger.finest("UCMS: " + List.length + " Pattern added!");
-        return Pattern.compile(Complete_Pattern.toString(), Pattern.CASE_INSENSITIVE);
+        logger.finest("UCMS: " + list.length + " Pattern added!");
+        return Pattern.compile(completePattern.toString(), Pattern.CASE_INSENSITIVE);
+    }
+
+    static public Pattern decrypterPattern_Wordpress_Plugin() {
+        StringBuilder completePattern = new StringBuilder();
+        completePattern.append("http://[\\w\\.]*?(");
+        completePattern.append("(game-blog\\.us/game-.+\\.html)");
+        completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");
+        String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc" };
+        for (String pattern : listType1) {
+            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
+        }
+        String[] listType2 = { "hoerbuch.in", "xxx-blog.org" };
+        for (String pattern : listType2) {
+            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/blog\\.php\\?id=[\\d]+)");
+        }
+        String[] listType3 = { "sky-porn.info/blog", "best-movies.us" };
+        for (String pattern : listType3) {
+            completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
+        }
+        completePattern.append(")");
+        logger.finest("UCMS: " + (1 + 1 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
+        return Pattern.compile(completePattern.toString(), Pattern.CASE_INSENSITIVE);
     }
 
     static public final Pattern decrypterPattern_Redirecter_Plugin() {
-        StringBuilder Complete_Pattern = new StringBuilder();
-        String[] List = { "http://[\\w\\.]*?fyad\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?is\\.gd/[a-zA-Z0-9]+", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*?rurl\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+" };
-        for (String Pattern : List) {
-            if (Complete_Pattern.length() > 0) {
-                Complete_Pattern.append("|");
+        StringBuilder completePattern = new StringBuilder();
+        String[] list = { "http://[\\w\\.]*?fyad\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?is\\.gd/[a-zA-Z0-9]+", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*?rurl\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+" };
+        for (String pattern : list) {
+            if (completePattern.length() > 0) {
+                completePattern.append("|");
             }
-            Complete_Pattern.append(Pattern);
+            completePattern.append(pattern);
         }
-        logger.finest("Redirecter: " + List.length + " Pattern added!");
-        return Pattern.compile(Complete_Pattern.toString(), Pattern.CASE_INSENSITIVE);
+        logger.finest("Redirecter: " + list.length + " Pattern added!");
+        return Pattern.compile(completePattern.toString(), Pattern.CASE_INSENSITIVE);
     }
 
     static public final Pattern decrypterPattern_AnimeANet_Series = Pattern.compile("http://[\\w\\.]*?animea\\.net/download/[\\d]+/(.*?)\\.html", Pattern.CASE_INSENSITIVE);
@@ -61,7 +83,5 @@ public class PluginPattern {
     static public final Pattern decrypterPattern_DreiDlAm_1 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+", Pattern.CASE_INSENSITIVE);
     static public final Pattern decrypterPattern_DreiDlAm_2 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/", Pattern.CASE_INSENSITIVE);
     static public final Pattern decrypterPattern_DreiDlAm_3 = Pattern.compile("http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html", Pattern.CASE_INSENSITIVE);
-
-    static public final Pattern decrypterPattern_Wordpress = Pattern.compile("http://[\\w\\.]*?(hd-area\\.org/\\d{4}/\\d{2}/\\d{2}/.+|movie-blog\\.org/\\d{4}/\\d{2}/\\d{2}/.+|hoerbuch\\.in/blog\\.php\\?id=[\\d]+|doku\\.cc/\\d{4}/\\d{2}/\\d{2}/.+|xxx-blog\\.org/blog\\.php\\?id=[\\d]+|sky-porn\\.info/blog/\\?p=[\\d]+|best-movies\\.us/\\?p=[\\d]+|game-blog\\.us/game-.+\\.html|pressefreiheit\\.ws/[\\d]+/.+\\.html).*", Pattern.CASE_INSENSITIVE);
 
 }

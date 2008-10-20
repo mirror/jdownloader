@@ -1,5 +1,3 @@
-package jd.plugins.optional.hjsplit.jaxe;
-
 /*
  * Copyright (C) 2002 - 2005 Leonardo Ferracci
  *
@@ -20,6 +18,8 @@ package jd.plugins.optional.hjsplit.jaxe;
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA  02111-1307, USA.  Or, visit http://www.gnu.org/copyleft/gpl.html
  */
+
+package jd.plugins.optional.hjsplit.jaxe;
 
 import java.io.File;
 

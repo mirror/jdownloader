@@ -103,11 +103,12 @@ public class JDPremiumCollector extends PluginOptional {
             }
 
             plg.getPlugin().setPremiumAccounts(accounts);
+            logger.info(plg.getHost() + " : " + accounts.size() + " accounts inserted");
             accountsFound += accounts.size();
         }
 
         SimpleGUI.CURRENTGUI.setStatusBarText(JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector") + ": " + JDLocale.LF("plugins.optional.premiumcollector.inserted", "Successfully inserted %s accounts!", accountsFound));
-        logger.info(accountsFound + " accounts inserted");
+        logger.info("totally : " + accountsFound + " accounts inserted");
     }
 
     @Override
