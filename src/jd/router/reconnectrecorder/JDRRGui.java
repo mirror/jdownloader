@@ -122,8 +122,9 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
     }
     private void save() {
+        if (ip_after.equalsIgnoreCase(ip_before)) { return; }
         if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).result) {
-//            if (ip_after.equalsIgnoreCase(ip_before)) { return; }
+
             saved=true;
             Configuration configuration = JDUtilities.getConfiguration();
 
@@ -157,13 +158,13 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                 infopopup.dispose();
                 infopopup = null;
             }
-            save();
+
             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                 setScript("");
                 for (String element : JDRR.steps) {
                     appendScript(element + System.getProperty("line.separator"));
                 }
-
+                save();
             } else {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
             }
@@ -310,7 +311,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                     } catch (Exception e) {
                     }
                     if (infopopup != null) infopopup.dispose();
-                    save();
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                         setScript("");
                         for (String element : JDRR.steps) {
