@@ -145,6 +145,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             btnCancel.setText(JDLocale.L("gui.config.jdrr.close", "Schließen"));
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Methode");
             configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
             JDUtilities.saveConfig();
         }
