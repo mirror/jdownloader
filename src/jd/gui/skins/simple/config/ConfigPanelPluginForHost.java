@@ -319,6 +319,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             priority.add(plg.getHost());
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
+        ((SimpleGUI) JDUtilities.getGUI()).createHostPluginsMenuEntries();
     }
 
 }

@@ -651,6 +651,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JMenu menAddons;
 
+    private JMenu menHosts;
+
     private JMenuItem menViewLog = null;
 
     /**
@@ -1405,57 +1407,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu menFile = new JMenu(JDLocale.L("gui.menu.file", "File"));
         JMenu menExtra = new JMenu(JDLocale.L("gui.menu.extra", "Extras"));
         menAddons = new JMenu(JDLocale.L("gui.menu.addons", "Addons"));
+        menHosts = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
 
         menViewLog = SimpleGUI.createMenuItem(actionLog);
-        // add menus to parents
 
-        // Adds the menus form the Addons
-        JMenuItem mi;
+        // Adds the menus from the Addons
         createOptionalPluginsMenuEntries();
 
-        // Adds the menus form the plugins
-        JMenu menHosts = new JMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
-
-        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-            if (wrapper.isLoaded()) {
-                final Plugin helpPlugin = wrapper.getPlugin();
-                if (helpPlugin.createMenuitems() != null) {
-                    mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
-                    if (mi != null) {
-                        menHosts.add(mi);
-
-                        ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                        ((JMenu) mi).addMenuListener(new MenuListener() {
-                            public void menuCanceled(MenuEvent e) {
-                            }
-
-                            public void menuDeselected(MenuEvent e) {
-                            }
-
-                            public void menuSelected(MenuEvent e) {
-                                JMenu m = (JMenu) e.getSource();
-                                JMenuItem c;
-                                m.removeAll();
-                                for (MenuItem menuItem : helpPlugin.createMenuitems()) {
-                                    c = SimpleGUI.getJMenuItem(menuItem);
-                                    if (c == null) {
-                                        m.addSeparator();
-                                    } else {
-                                        m.add(c);
-                                    }
-                                }
-                            }
-                        });
-                    } else {
-                        menHosts.addSeparator();
-                    }
-                }
-            }
-        }
-        if (menHosts.getItemCount() == 0) {
-            menHosts.setEnabled(false);
-        }
+        // Adds the menus from the Host Plugins
+        createHostPluginsMenuEntries();
 
         JMenu menAdd = createMenu(JDLocale.L("gui.menu.add", "Add"), "gui.images.add");
         menAdd.add(SimpleGUI.createMenuItem(actionAddLinks));
@@ -1570,6 +1531,50 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         if (menAddons.getItem(menAddons.getItemCount() - 1) == null) {
             menAddons.remove(menAddons.getItemCount() - 1);
+        }
+    }
+
+    public void createHostPluginsMenuEntries() {
+        menHosts.removeAll();
+
+        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+            if (wrapper.isLoaded()) {
+                final Plugin helpPlugin = wrapper.getPlugin();
+                if (helpPlugin.createMenuitems() != null) {
+                    JMenuItem mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
+                    if (mi != null) {
+                        menHosts.add(mi);
+
+                        ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                        ((JMenu) mi).addMenuListener(new MenuListener() {
+                            public void menuCanceled(MenuEvent e) {
+                            }
+
+                            public void menuDeselected(MenuEvent e) {
+                            }
+
+                            public void menuSelected(MenuEvent e) {
+                                JMenu m = (JMenu) e.getSource();
+                                JMenuItem c;
+                                m.removeAll();
+                                for (MenuItem menuItem : helpPlugin.createMenuitems()) {
+                                    c = SimpleGUI.getJMenuItem(menuItem);
+                                    if (c == null) {
+                                        m.addSeparator();
+                                    } else {
+                                        m.add(c);
+                                    }
+                                }
+                            }
+                        });
+                    } else {
+                        menHosts.addSeparator();
+                    }
+                }
+            }
+        }
+        if (menHosts.getItemCount() == 0) {
+            menHosts.setEnabled(false);
         }
     }
 
