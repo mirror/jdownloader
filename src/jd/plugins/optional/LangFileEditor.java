@@ -40,6 +40,7 @@ import java.util.regex.Pattern;
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JColorChooser;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -90,12 +91,15 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
     private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
     private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
+    private static final String PROPERTY_SOURCE = "PROPERTY_COMPARETO";
 
     private JFrame frame;
     private JTable table;
     private MyTableModel tableModel;
-    private File sourceFolder, languageFile;
-    private ComboBrowseFile cmboFolder, cmboFile;
+    private File sourceFile, languageFile;
+    private JPanel topFile, topFolder;
+    private JComboBox cmboSelectSource;
+    private ComboBrowseFile cmboSource[], cmboFile;
     private ChartAPI_PIE keyChart;
     private ChartAPI_Entity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
@@ -146,20 +150,34 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         table.setRowSelectionAllowed(true);
         table.setColumnSelectionAllowed(false);
 
-        JPanel topFolder = new JPanel(new BorderLayout(5, 5));
-        topFolder.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:")), BorderLayout.LINE_START);
-        topFolder.add(cmboFolder = new ComboBrowseFile("LANGFILEEDITOR_FOLDER"));
-        cmboFolder.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        cmboFolder.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
-        cmboFolder.addActionListener(this);
+        cmboSource = new ComboBrowseFile[2];
 
-        JPanel topFile = new JPanel(new BorderLayout(5, 5));
-        topFile.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")), BorderLayout.LINE_START);
-        topFile.add(cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE"));
+        cmboSource[0] = new ComboBrowseFile("LANGFILEEDITOR_SOURCEFOLDER");
+        cmboSource[0].setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
+        cmboSource[0].setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
+        cmboSource[0].addActionListener(this);
+
+        cmboSource[1] = new ComboBrowseFile("LANGFILEEDITOR_SOURCEFILE");
+        cmboSource[1].setFileSelectionMode(JDFileChooser.FILES_ONLY);
+        cmboSource[1].setFileFilter(fileFilter);
+        cmboSource[1].setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
+        cmboSource[1].addActionListener(this);
+
+        cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE");
         cmboFile.setFileSelectionMode(JDFileChooser.FILES_ONLY);
         cmboFile.setFileFilter(fileFilter);
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
+
+        topFolder = new JPanel(new BorderLayout(5, 5));
+        topFolder.add(cmboSelectSource = new JComboBox(new String[] { JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:"), JDLocale.L("plugins.optional.langfileeditor.sourceFile", "Source File:") }), BorderLayout.LINE_START);
+        cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 0));
+        cmboSelectSource.addActionListener(this);
+        topFolder.add(cmboSource[cmboSelectSource.getSelectedIndex()]);
+
+        topFile = new JPanel(new BorderLayout(5, 5));
+        topFile.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.languageFile", "Language File:")), BorderLayout.LINE_START);
+        topFile.add(cmboFile);
 
         keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60, frame.getBackground());
         keyChart.addEntity(entDone = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, Color.GREEN));
@@ -187,8 +205,8 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
 
-        sourceFolder = cmboFolder.getCurrentPath();
-        if (sourceFolder != null) getSourceEntries();
+        sourceFile = cmboSource[cmboSelectSource.getSelectedIndex()].getCurrentPath();
+        if (sourceFile != null) getSourceEntries();
         languageFile = cmboFile.getCurrentPath();
         if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
         getLanguageFileEntries();
@@ -342,11 +360,27 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 frame.toFront();
             }
 
-        } else if (e.getSource() == cmboFolder) {
+        } else if (e.getSource() == cmboSelectSource) {
 
-            File sourceFolder = cmboFolder.getCurrentPath();
-            if (sourceFolder != this.sourceFolder && sourceFolder != null) {
-                this.sourceFolder = sourceFolder;
+            int index = cmboSelectSource.getSelectedIndex();
+
+            if (index != subConfig.getIntegerProperty(PROPERTY_SOURCE, 0)) {
+                subConfig.setProperty(PROPERTY_SOURCE, index);
+                subConfig.save();
+
+                topFolder.remove(cmboSource[1 - index]);
+                topFolder.add(cmboSource[index]);
+
+                sourceFile = cmboSource[index].getCurrentPath();
+                getSourceEntries();
+                initLocaleData();
+            }
+
+        } else if (e.getSource() == cmboSource[0] || e.getSource() == cmboSource[1]) {
+
+            File sourceFile = cmboSource[cmboSelectSource.getSelectedIndex()].getCurrentPath();
+            if (sourceFile != this.sourceFile && sourceFile != null) {
+                this.sourceFile = sourceFile;
                 getSourceEntries();
                 initLocaleData();
             }
@@ -715,10 +749,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     private void getLanguageFileEntries() {
 
-        fileEntries.clear();
+        getLanguageFileEntries(languageFile, fileEntries);
+
+    }
+
+    private void getLanguageFileEntries(File file, Vector<String[]> data) {
+
+        data.clear();
         Vector<String> keys = new Vector<String>();
 
-        String[] lines = Regex.getLines(JDUtilities.getLocalFile(languageFile));
+        String[] lines = Regex.getLines(JDUtilities.getLocalFile(file));
 
         for (String line : lines) {
             String[] match = new Regex(line, Pattern.compile("^(.*?)[\\s]*?=[\\s]*?(.*?)$")).getRow(0);
@@ -730,7 +770,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 match[0] = Encoding.UTF8Decode(match[0]);
                 match[1] = Encoding.UTF8Decode(match[1]);
                 keys.add(match[0]);
-                fileEntries.add(new String[] { match[0], match[1] });
+                data.add(new String[] { match[0], match[1] });
 
             }
 
@@ -740,12 +780,29 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     private void getSourceEntries() {
 
+        if (cmboSelectSource.getSelectedIndex() == 0) {
+            getSourceEntriesFromFolder();
+        } else {
+            getSourceEntriesFromFile();
+        }
+
+    }
+
+    private void getSourceEntriesFromFile() {
+
+        sourcePatterns.clear();
+        getLanguageFileEntries(sourceFile, sourceEntries);
+
+    }
+
+    private void getSourceEntriesFromFolder() {
+
         sourceEntries.clear();
         sourcePatterns.clear();
         Vector<String> keys = new Vector<String>();
 
         String[][] matches;
-        for (File file : getSourceFiles(sourceFolder)) {
+        for (File file : getSourceFiles(sourceFile)) {
 
             matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]")).getMatches();
 
