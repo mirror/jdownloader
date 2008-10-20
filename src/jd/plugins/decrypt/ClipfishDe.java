@@ -31,11 +31,11 @@ import jd.plugins.PluginForDecrypt;
 
 public class ClipfishDe extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_CAHNNEL_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/n\\.php/channel/\\d+/video/(\\d+)");
+    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/n\\.php/channel/\\d+/video/(\\d+)");
     private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_FLV_FILE = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_TITEL = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
-
+    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_TITEL          = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
+    private static final String  XML_PATH               = "http://www.clipfish.de/video_n.php?vid=";
     public ClipfishDe(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -63,7 +63,7 @@ public class ClipfishDe extends PluginForDecrypt {
             logger.severe("No VidID found");
             return decryptedLinks;
         }
-        String page = br.getPage("http://www.clipfish.de/video_n.php?vid=" + vidId);
+        String page = br.getPage(XML_PATH + vidId);
         String pathToflv = new Regex(page, PATTERN_FLV_FILE).getMatch(0);
         if (pathToflv == null) return null;
         DownloadLink downloadLink = createDownloadlink(pathToflv);

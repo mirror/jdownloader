@@ -17,11 +17,14 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.Vector;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
+import jd.gui.skins.simple.ConvertDialog;
+import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.HTTPConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -29,6 +32,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
+import jd.utils.JDMediaConvert;
 import jd.utils.JDUtilities;
 
 public class HTTPAllgemein extends PluginForHost {
@@ -89,7 +93,26 @@ public class HTTPAllgemein extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
-        dl.startDownload();
+        if(!downloadLink.getDownloadURL().endsWith(".flv")){
+            dl.startDownload();
+        }else{
+            //Es handelt sich um eine Flash Datei
+            Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
+            possibleconverts.add(ConversionMode.VIDEOFLV);
+            possibleconverts.add(ConversionMode.AUDIOMP3);
+            possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
+            ConversionMode convertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), downloadLink.getName());
+            if (convertTo != null) {
+                downloadLink.setFinalFileName(downloadLink.getName() + ".tmp");
+                downloadLink.setSourcePluginComment("Convert to " + convertTo.GetText());
+                if(dl.startDownload()){
+                    ConversionMode inType = ConversionMode.VIDEOFLV;
+                    if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
+                        logger.severe("Video-Convert failed!");
+                    }
+                }
+            }
+        }
     }
 
     public int getMaxSimultanFreeDownloadNum() {
