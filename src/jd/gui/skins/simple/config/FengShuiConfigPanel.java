@@ -158,6 +158,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                 if (jd.user != null) username.setText(jd.user);
                 if (jd.pass != null) password.setText(jd.pass);
                 Reconnectmethode = jd.methode;
+                routername.setText("Reconnect Recorder Methode");
             }
         } else if (e.getSource() == btnPremium) {
             JPopupMenu popup = new JPopupMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
