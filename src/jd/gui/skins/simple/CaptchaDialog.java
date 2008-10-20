@@ -230,6 +230,7 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
 
         }
         this.pack();
+        this.setResizable(false);
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
 
         this.toFront();

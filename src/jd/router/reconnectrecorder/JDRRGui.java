@@ -38,15 +38,12 @@ import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
-
-import jd.gui.skins.simple.SimpleGUI;
-
-import jd.router.RouterInfoCollector;
-
 import jd.config.Configuration;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.parser.Regex;
+import jd.router.RouterInfoCollector;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -98,19 +95,14 @@ public class JDRRGui extends JFrame implements ActionListener {
         infolable.setEditable(false);
         infolable.setContentType("text/html");
         infolable.addHyperlinkListener(JLinkButton.getHyperlinkListener());
-        infolable.setText(JDLocale.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">" +
-        		"Überprüfe die IP-Adresse des Routers und drück auf Start,<br>" +
-        		"ein Browserfenster mit der Startseite des Routers öffnet sich,<br>" +
-        		"nach dem Reconnect drückst du auf Stop und speicherst.<br>" +
-        		"Mehr Informationen gibt es " +
-        		"</span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
+        infolable.setText(JDLocale.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
         bpanel.add(btnCancel);
         bpanel.add(btnStartStop);
 
         JPanel spanel = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
-        spanel.add(new JLabel(JDLocale.L("gui.fengshuiconfig.routerip", "RouterIP")+":"));
+        spanel.add(new JLabel(JDLocale.L("gui.fengshuiconfig.routerip", "RouterIP") + ":"));
 
         c.weightx = 100;
 
@@ -131,8 +123,9 @@ public class JDRRGui extends JFrame implements ActionListener {
     public JDRRGui() {
         this(null);
     }
+    
     private void save() {
-        if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(),JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES|CountdownConfirmDialog.STYLE_NO).result) {
+        if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).result) {
             if (ip_after.equalsIgnoreCase(ip_before)) { return; }
             Configuration configuration = JDUtilities.getConfiguration();
             String temp = "";
@@ -166,7 +159,7 @@ public class JDRRGui extends JFrame implements ActionListener {
                 }
                 save();
             } else {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild","Reconnect failed"));
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
             }
             btnStartStop.setText(JDLocale.L("gui.btn_start", "Start"));
             return;
@@ -178,7 +171,7 @@ public class JDRRGui extends JFrame implements ActionListener {
             infopopup = new JDRRInfoPopup(ip_before);
             infopopup.setVisible(true);
             btnCancel.setEnabled(true);
-            btnStartStop.setText(JDLocale.L("gui.btn_stop", "start"));
+            btnStartStop.setText(JDLocale.L("gui.btn_stop", "Stop"));
             try {
                 JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
             } catch (MalformedURLException e1) {
@@ -205,7 +198,7 @@ public class JDRRGui extends JFrame implements ActionListener {
             setModal(false);
             setLayout(new GridBagLayout());
             JPanel p = new JPanel(new GridBagLayout());
-            btnStop = new JButton(JDLocale.L("gui.btn_stop","Stop"));
+            btnStop = new JButton(JDLocale.L("gui.btn_stop", "Stop"));
             btnStop.addActionListener(this);
             statusicon = new RRStatus();
             JDUtilities.addToGridBag(p, statusicon, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
@@ -246,7 +239,7 @@ public class JDRRGui extends JFrame implements ActionListener {
 
                 new Thread() {
                     public void run() {
-                        this.setName(JDLocale.L("gui.config.jdrr.popup.title","JDRRPopup"));
+                        this.setName(JDLocale.L("gui.config.jdrr.popup.title", "JDRRPopup"));
                         while (JDRR.running) {
                             try {
                                 Thread.sleep(5000);
@@ -315,7 +308,7 @@ public class JDRRGui extends JFrame implements ActionListener {
                         }
                         save();
                     } else {
-                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild","Reconnect failed"));
+                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
                     }
                     btnStartStop.setText(JDLocale.L("gui.btn_start", "Start"));
                     dispose();

@@ -472,10 +472,7 @@ public abstract class Plugin implements ActionListener {
      * @return internes property objekt
      */
     public SubConfiguration getPluginConfig() {
-
-        SubConfiguration cfg = JDUtilities.getSubConfig(wrapper.getConfigName());
-
-        return cfg;
+        return JDUtilities.getSubConfig(wrapper.getConfigName());
     }
 
     /**

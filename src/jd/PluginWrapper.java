@@ -189,14 +189,12 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     }
 
     public SubConfiguration getPluginConfig() {
-        String name = getHost();
-        return JDUtilities.getSubConfig(name);
+        return JDUtilities.getSubConfig(getHost());
     }
 
     public Plugin getNewPluginInstance() {
-        Plugin plg = getPlugin();
         try {
-            return plg.getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
+            return getPlugin().getClass().getConstructor(new Class[] { PluginWrapper.class }).newInstance(new Object[] { this });
         } catch (IllegalArgumentException e) {
             e.printStackTrace();
         } catch (SecurityException e) {

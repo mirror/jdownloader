@@ -126,6 +126,7 @@ public class AgbDialog extends JDialog implements ActionListener {
         panel.setBorder(new EmptyBorder(n, n, n, n));
 
         pack();
+        setResizable(false);
         setLocation(JDUtilities.getCenterOfComponent(null, this));
         setVisible(true);
 

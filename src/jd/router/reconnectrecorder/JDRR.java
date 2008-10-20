@@ -15,9 +15,11 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.router.reconnectrecorder;
+
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
+
 import jd.utils.JDUtilities;
 
 public class JDRR {
@@ -28,10 +30,6 @@ public class JDRR {
     static ServerSocket Server_Socket;
     static final String PROPERTY_PORT = "PARAM_PORT";
     static String auth;
-
-    public static int getAddonInterfaceVersion() {
-        return 2;
-    }
 
     static public void startServer(String serverip) {
         steps = new Vector<String>();
@@ -90,12 +88,14 @@ public class JDRR {
             new JDRRGui().setVisible(true);
         }
     }
+
     public void show(String ip) {
         if (!gui) {
             gui = true;
             new JDRRGui(ip).setVisible(true);
         }
     }
+
     public static void main(String[] args) {
         new JDRR().show();
     }

@@ -519,7 +519,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;
-        ConfigEntry conditionEntry;
 
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_KEY_REMOVE_MERGED, JDLocale.L("gui.config.hjsplit.remove_merged", "Delete archive after merging")));
         ce.setDefaultValue(true);
