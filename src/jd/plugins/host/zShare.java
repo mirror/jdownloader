@@ -18,6 +18,8 @@ package jd.plugins.host;
 
 import jd.PluginWrapper;
 import jd.parser.Form;
+import jd.parser.JavaScript;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -40,32 +42,18 @@ public class zShare extends PluginForHost {
             br.setCookiesExclusive(true);
             br.clearCookies(getHost());
             br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
-            String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">([0-9\\.\\,]*)(.*?)</font></td>").getRow(0);
+            String[] fileInfo = br.getRegex("File Name: .*?<font color=\".666666\">(.*?)</font>.*?Image Size: <font color=\".666666\">(.*?)</font></td>").getRow(0);
             downloadLink.setName(fileInfo[0]);
-            try {
-                double length = Double.parseDouble(fileInfo[1].replaceAll("\\,", "").trim());
-                int bytes;
-                if (fileInfo[2].equalsIgnoreCase("kb")) {
-                    bytes = (int) (length * 1024);
-                } else if (fileInfo[2].equalsIgnoreCase("mb")) {
-                    bytes = (int) (length * 1024 * 1024);
-                } else {
-                    bytes = (int) length;
-                }
-                downloadLink.setDownloadSize(bytes);
-            } catch (Exception e) {
-            }
+            downloadLink.setDownloadSize(Regex.getSize(fileInfo[1].replaceAll(",", "")));
             // Datei ist noch verfuegbar
             return true;
         } catch (Exception e) {
-            // TODO: handle exception
         }
         return false;
     }
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -86,7 +74,7 @@ public class zShare extends PluginForHost {
         // Javascript für link
         String fnc = br.getRegex("(var link\\_enc\\=.*link\\_enc\\[i\\]\\;\\})").getMatch(0);
         // JS ausführen
-        String link = new jd.parser.JavaScript(fnc).runJavaScript();
+        String link = new JavaScript(fnc).runJavaScript();
         // Link laden
         dl = br.openDownload(downloadLink, link, true, 1);
         // Möglicherweise serverfehler...
