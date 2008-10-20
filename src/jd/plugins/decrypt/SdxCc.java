@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
+
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -29,12 +30,13 @@ public class SdxCc extends PluginForDecrypt {
     /*
      * Achtung Seite ist sooo langsam, dass es ständig timeouts gibt!
      */
-    private static final Pattern PATTERN_DOWNLOADLINK          = Pattern.compile("<td align='center' valign='bottom'><b><a href='(.+?)' target='_blank'><u><h2>D O W N L O A D</h2></u></a></b>",Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_PASSWORD              = Pattern.compile("</tr><tr><td align='center' class='tbl2'>Passwort:<br>(.+?)</td></tr><tr>",Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_FOLDER_NAME           = Pattern.compile("<script type='text/javascript' src='\\.\\./\\.\\./includes/forum\\.js'></script><font size='\\+\\d+'><b>(.+?)</b></font>"); 
-    private static final Pattern PATTERN_UPPLOADER             = Pattern.compile("</tr><tr><td align='center' class='tbl2'><a href='profile\\.php\\?id=\\d+'>.+?</a>");
-    private static final Pattern PATTERN_BETWEEN_NAME_UPLOADER = Pattern.compile(PATTERN_FOLDER_NAME.toString()+"(.+?)"+PATTERN_UPPLOADER.toString(),Pattern.MULTILINE|Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_ANYLINK               = Pattern.compile("<a href=('|\")(.+?)('|\")");
+    private static final Pattern PATTERN_DOWNLOADLINK = Pattern.compile("<td align='center' valign='bottom'><b><a href='(.+?)' target='_blank'><u><h2>D O W N L O A D</h2></u></a></b>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_PASSWORD = Pattern.compile("</tr><tr><td align='center' class='tbl2'>Passwort:<br>(.+?)</td></tr><tr>", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_FOLDER_NAME = Pattern.compile("<script type='text/javascript' src='\\.\\./\\.\\./includes/forum\\.js'></script><font size='\\+\\d+'><b>(.+?)</b></font>");
+    private static final Pattern PATTERN_UPPLOADER = Pattern.compile("</tr><tr><td align='center' class='tbl2'><a href='profile\\.php\\?id=\\d+'>.+?</a>");
+    private static final Pattern PATTERN_BETWEEN_NAME_UPLOADER = Pattern.compile(PATTERN_FOLDER_NAME.toString() + "(.+?)" + PATTERN_UPPLOADER.toString(), Pattern.MULTILINE | Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_ANYLINK = Pattern.compile("<a href=('|\")(.+?)('|\")");
+
     public SdxCc(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -44,30 +46,30 @@ public class SdxCc extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = cryptedLink.getCryptedUrl();
         String page = br.getPage(url);
-        String pw = new Regex(page,PATTERN_PASSWORD).getMatch(0);
-        String name = new Regex(page,PATTERN_FOLDER_NAME).getMatch(0);
-        name = name!=null?name.trim():"";
-        pw   = pw  !=null?pw.trim()  :"sdx.cc";
+        String pw = new Regex(page, PATTERN_PASSWORD).getMatch(0);
+        String name = new Regex(page, PATTERN_FOLDER_NAME).getMatch(0);
+        name = name != null ? name.trim() : "";
+        pw = pw != null ? pw.trim() : "sdx.cc";
         br.setFollowRedirects(false);
-        for(String link:new Regex(page, PATTERN_DOWNLOADLINK).getColumn(0)){
-            br.getPage(br.getBaseURL()+link);
-            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));     
+        for (String link : new Regex(page, PATTERN_DOWNLOADLINK).getColumn(0)) {
+            br.getPage(br.getBaseURL() + link);
+            decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
         }
-        for(String link:new Regex(new Regex(page,PATTERN_BETWEEN_NAME_UPLOADER).getMatch(1),PATTERN_ANYLINK).getColumn(1)){
-            decryptedLinks.add(createDownloadlink(link));   
+        for (String link : new Regex(new Regex(page, PATTERN_BETWEEN_NAME_UPLOADER).getMatch(1), PATTERN_ANYLINK).getColumn(1)) {
+            decryptedLinks.add(createDownloadlink(link));
         }
         FilePackage fp = new FilePackage();
         fp.setName(name);
-        for(DownloadLink dlLink:decryptedLinks){
+        for (DownloadLink dlLink : decryptedLinks) {
             dlLink.setFilePackage(fp);
             dlLink.addSourcePluginPassword(pw);
             dlLink.setDecrypterPassword(pw);
         }
-        return decryptedLinks.size()>0?decryptedLinks:null;
+        return decryptedLinks.size() > 0 ? decryptedLinks : null;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3436 $");
+        return getVersion("$Revision$");
     }
 }

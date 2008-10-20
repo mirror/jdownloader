@@ -54,7 +54,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return 2;
     }
 
-    @SuppressWarnings("unchecked")
     public JDHJSplit(PluginWrapper wrapper) {
         super(wrapper);
         initConfig();
@@ -64,7 +63,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     /**
      * das controllevent fängt heruntergeladene file ab und wertet sie aus
      */
-    @SuppressWarnings("unchecked")
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
@@ -172,9 +170,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     private boolean validateArchive(File file) {
         File startFile = getStartFile(file);
-        if(!startFile.exists()||!startFile.isFile())return false;
+        if (!startFile.exists() || !startFile.isFile()) return false;
         int type = getArchiveType(file);
-        
+
         switch (type) {
         case ARCHIVE_TYPE_UNIX:
             return validateUnixType(startFile);
@@ -187,16 +185,18 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             return false;
         }
     }
-private boolean validateUnixType(File startFile) {
+
+    private boolean validateUnixType(File startFile) {
         // TODO Auto-generated method stub
         return false;
     }
 
-/**
- * SUcht den dateinamen und den pfad der des startvolumes heraus
- * @param file
- * @return
- */
+    /**
+     * SUcht den dateinamen und den pfad der des startvolumes heraus
+     * 
+     * @param file
+     * @return
+     */
     private File getStartFile(File file) {
         int type = getArchiveType(file);
         switch (type) {
@@ -237,7 +237,6 @@ private boolean validateUnixType(File startFile) {
 
         if (name.matches("(?is).*\\.7z\\.[\\d]+$")) return ARCHIVE_TYPE_7Z;
 
-        boolean unix = false;
         if (name.matches(".*\\.\\a.$")) { return ARCHIVE_TYPE_UNIX; }
         if (name.matches("\\.[\\d]+($|\\.)")) { return ARCHIVE_TYPE_NORMAL; }
 
@@ -274,7 +273,7 @@ private boolean validateUnixType(File startFile) {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3441 $");
+        return getVersion("$Revision$");
     }
 
     @Override

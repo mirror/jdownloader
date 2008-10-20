@@ -21,9 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.config.Configuration;
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.http.Request;
 import jd.parser.Form;
@@ -36,7 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class Uploadedto extends PluginForHost {
 

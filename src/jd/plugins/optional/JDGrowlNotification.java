@@ -19,8 +19,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.OSDetector;
 
-;
-
 public class JDGrowlNotification extends PluginOptional {
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -34,18 +32,13 @@ public class JDGrowlNotification extends PluginOptional {
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
     @Override
-    public String getCoder() {
-        return "jD-Team";
-    }
-
-    @Override
     public String getRequirements() {
         return "JRE 1.5+";
     }
 
     @Override
     public String getVersion() {
-        return "0.1";
+        return getVersion("$Revision$");
     }
 
     @Override

@@ -22,7 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 
 public class SwoopshareCom extends PluginForHost {
-    
+
     public SwoopshareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -34,25 +34,25 @@ public class SwoopshareCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
-            int lIndex;
-            if ((lIndex = downloadLink.getDownloadURL().lastIndexOf("cshare.de/")) != -1) {
-                downloadLink.setUrlDownload("http://www.swoopshare.com/" + downloadLink.getDownloadURL().substring(lIndex+10));
-            }
-            
-            setBrowserExclusive();
-            br.setFollowRedirects(true);
+        int lIndex;
+        if ((lIndex = downloadLink.getDownloadURL().lastIndexOf("cshare.de/")) != -1) {
+            downloadLink.setUrlDownload("http://www.swoopshare.com/" + downloadLink.getDownloadURL().substring(lIndex + 10));
+        }
 
-            br.getPage(downloadLink.getDownloadURL());
-            
-            // Filesize
-            String size = br.getRegex("</b> \\((.*)yte\\)").getMatch(0);
-            downloadLink.setDownloadSize(Regex.getSize(size));
-            
-            // Filename
-            String name = br.getRegex("<title>cshare.de - Download (.*)</title>").getMatch(0);
-            downloadLink.setName(name);
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
 
-            return true;
+        br.getPage(downloadLink.getDownloadURL());
+
+        // Filesize
+        String size = br.getRegex("</b> \\((.*)yte\\)").getMatch(0);
+        downloadLink.setDownloadSize(Regex.getSize(size));
+
+        // Filename
+        String name = br.getRegex("<title>cshare.de - Download (.*)</title>").getMatch(0);
+        downloadLink.setName(name);
+
+        return true;
     }
 
     @Override
@@ -64,10 +64,10 @@ public class SwoopshareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        
+
         String redirectLocation = br.getURL();
         String country = redirectLocation.substring(0, redirectLocation.lastIndexOf(".swoopshare.com/"));
-        
+
         String link = country + ".swoopshare.com" + br.getRegex("&#187;</span> <a href=\"(.*?)\"").getMatch(0);
         dl = br.openDownload(downloadLink, link);
         dl.startDownload();
@@ -84,5 +84,5 @@ public class SwoopshareCom extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-    
+
 }

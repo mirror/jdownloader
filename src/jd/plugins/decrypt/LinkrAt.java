@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.plugins.decrypt;
+
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
@@ -26,8 +27,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class LinkrAt extends PluginForDecrypt {
-    private static final Pattern PATTERN_MAIN_FRAME     = Pattern.compile("<frame src=\"(.+?)\" name=\"Mainframe\" scrolling=\"no\">");
-    private static final Pattern PATTERN_DOWNLOAD_LINK  = Pattern.compile("window.open\\('(.+?)'\\);");
+    private static final Pattern PATTERN_MAIN_FRAME = Pattern.compile("<frame src=\"(.+?)\" name=\"Mainframe\" scrolling=\"no\">");
+    private static final Pattern PATTERN_DOWNLOAD_LINK = Pattern.compile("window.open\\('(.+?)'\\);");
+
     public LinkrAt(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -37,21 +39,21 @@ public class LinkrAt extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = cryptedLink.getCryptedUrl();
         String redirect = null;
-        while(url!=null){
-            redirect = !url.equals(cryptedLink.getCryptedUrl())?url:"keine rekursion";
+        while (url != null) {
+            redirect = !url.equals(cryptedLink.getCryptedUrl()) ? url : "keine rekursion";
             br.getPage(url);
             url = br.getRedirectLocation();
         }
         br.getPage(redirect);
-        for(Form form:Form.getForms(br.getRequest())){
-            String mainFrame = br.getPage(new Regex(br.submitForm(form),PATTERN_MAIN_FRAME).getMatch(0));
-            decryptedLinks.add(createDownloadlink(new Regex(mainFrame,PATTERN_DOWNLOAD_LINK).getMatch(0)));
+        for (Form form : Form.getForms(br.getRequest())) {
+            String mainFrame = br.getPage(new Regex(br.submitForm(form), PATTERN_MAIN_FRAME).getMatch(0));
+            decryptedLinks.add(createDownloadlink(new Regex(mainFrame, PATTERN_DOWNLOAD_LINK).getMatch(0)));
         }
-        return decryptedLinks.size()>0?decryptedLinks:null;
+        return decryptedLinks.size() > 0 ? decryptedLinks : null;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3442 $");
+        return getVersion("$Revision$");
     }
 }
