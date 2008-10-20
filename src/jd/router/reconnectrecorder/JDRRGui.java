@@ -25,6 +25,8 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.net.MalformedURLException;
 
 import javax.swing.JButton;
@@ -48,7 +50,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDRRGui extends JFrame implements ActionListener {
+public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
     private static final long serialVersionUID = 1L;
 
@@ -65,21 +67,22 @@ public class JDRRGui extends JFrame implements ActionListener {
     private void appendScript(String script) {
         this.script += script;
     }
-
+    
     private JTextField routerip;
-
+    public boolean saved = false;
     private String ip_before;
     private String ip_after;
     public String RouterIP = null;
     private JButton btnStop;
     private JDRRInfoPopup infopopup;
-
-    public JDRRGui(String ip) {
-        super();
+    public String methode  = null, user=null,pass=null;
+    
+    public JDRRGui(JFrame frame, String ip) {
+        super(frame);
         RouterIP = ip;
         int n = 10;
         this.setTitle(JDLocale.L("gui.config.jdrr.title", "Reconnect Recorder"));
-
+        addWindowListener(this);
         if (RouterIP == null) RouterIP = RouterInfoCollector.getRouterIP();
 
         routerip = new JTextField(RouterIP);
@@ -114,31 +117,33 @@ public class JDRRGui extends JFrame implements ActionListener {
         panel.add(spanel, BorderLayout.NORTH);
         panel.add(infolable, BorderLayout.CENTER);
         panel.add(bpanel, BorderLayout.SOUTH);
-        this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         this.setContentPane(panel);
         this.pack();
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
     }
-
-    public JDRRGui() {
-        this(null);
-    }
-    
     private void save() {
         if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).result) {
-            if (ip_after.equalsIgnoreCase(ip_before)) { return; }
+//            if (ip_after.equalsIgnoreCase(ip_before)) { return; }
+            saved=true;
             Configuration configuration = JDUtilities.getConfiguration();
-            String temp = "";
+
+            StringBuffer b = new StringBuffer();
             for (String element : JDRR.steps) {
-                temp = temp + (element + System.getProperty("line.separator"));
+                b.append(element + System.getProperty("line.separator"));
             }
+            methode=b.toString().trim();
+        
             if (JDRR.auth != null) {
-                configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, new Regex(JDRR.auth, "(.+?):").getMatch(0));
-                configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, new Regex(JDRR.auth, ".+?:(.+)").getMatch(0));
+                user=new Regex(JDRR.auth, "(.+?):").getMatch(0);
+                pass=new Regex(JDRR.auth, ".+?:(.+)").getMatch(0);
+                configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, user);
+                configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, pass);
             }
+            btnCancel.setText(JDLocale.L("gui.config.jdrr.close", "Schließen"));
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, temp);
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
             configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
+            JDUtilities.saveConfig();
         }
 
     }
@@ -152,12 +157,13 @@ public class JDRRGui extends JFrame implements ActionListener {
                 infopopup.dispose();
                 infopopup = null;
             }
+            save();
             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                 setScript("");
                 for (String element : JDRR.steps) {
                     appendScript(element + System.getProperty("line.separator"));
                 }
-                save();
+
             } else {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
             }
@@ -180,12 +186,15 @@ public class JDRRGui extends JFrame implements ActionListener {
             }
             return;
         }
+        close();
+    }
+    private void close() {
         JDRR.gui = false;
         JDRR.running = false;
         JDRR.stopServer();
         dispose();
-    }
 
+    }
     public class JDRRInfoPopup extends JDialog implements ActionListener {
         /**
          * 
@@ -301,6 +310,7 @@ public class JDRRGui extends JFrame implements ActionListener {
                     } catch (Exception e) {
                     }
                     if (infopopup != null) infopopup.dispose();
+                    save();
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                         setScript("");
                         for (String element : JDRR.steps) {
@@ -321,5 +331,40 @@ public class JDRRGui extends JFrame implements ActionListener {
                 closePopup();
             }
         }
+    }
+
+    public void windowActivated(WindowEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void windowClosed(WindowEvent e) {
+close();
+        
+    }
+
+    public void windowClosing(WindowEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void windowDeactivated(WindowEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void windowDeiconified(WindowEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void windowIconified(WindowEvent e) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void windowOpened(WindowEvent e) {
+        // TODO Auto-generated method stub
+        
     }
 }
