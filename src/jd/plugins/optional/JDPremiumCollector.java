@@ -73,42 +73,48 @@ public class JDPremiumCollector extends PluginOptional {
             return;
         }
 
-        ArrayList<HostPluginWrapper> pluginsForHost = JDUtilities.getPluginsForHost();
-        String[][] accs = br.getRegex("<premacc id=\"(.*?)\">.*?<login>(.*?)</login>.*?<password>(.*?)</password>.*?<hoster>(.*?)</hoster>.*?</premacc>").getMatches();
+        new Thread(new Runnable() {
 
-        int accountsFound = 0;
-        for (HostPluginWrapper plg : pluginsForHost) {
-            if (!plg.isPremiumEnabled()) continue;
+            public void run() {
+                String[][] accs = br.getRegex("<premacc id=\"(.*?)\">.*?<login>(.*?)</login>.*?<password>(.*?)</password>.*?<hoster>(.*?)</hoster>.*?</premacc>").getMatches();
 
-            ArrayList<Account> accounts = new ArrayList<Account>();
-            for (String[] acc : accs) {
-                if (acc[3].equalsIgnoreCase(plg.getHost())) {
-                    Account account = new Account(acc[1], acc[2]);
-                    if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
-                        try {
-                            AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
-                            if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) accounts.add(account);
-                        } catch (Exception e1) {
-                            e1.printStackTrace();
+                int accountsFound = 0;
+                for (HostPluginWrapper plg : JDUtilities.getPluginsForHost()) {
+                    if (!plg.isPremiumEnabled()) continue;
+
+                    ArrayList<Account> accounts = new ArrayList<Account>();
+                    for (String[] acc : accs) {
+                        if (acc[3].equalsIgnoreCase(plg.getHost())) {
+                            Account account = new Account(acc[1], acc[2]);
+                            if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
+                                try {
+                                    AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
+                                    if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) accounts.add(account);
+                                } catch (Exception e1) {
+                                    e1.printStackTrace();
+                                }
+                            } else {
+                                accounts.add(account);
+                            }
                         }
-                    } else {
-                        accounts.add(account);
                     }
+
+                    if (accounts.size() == 0) continue;
+                    if (!subConfig.getBooleanProperty(PROPERTY_OVERWRITE, true)) {
+                        if (JOptionPane.showConfirmDialog(guiFrame, JDLocale.LF("plugins.optional.premiumcollector.accountsFound.message", "Found %s accounts for %s plugin! Replace old saved accounts with new accounts?", accounts.size(), plg.getHost()), JDLocale.L("plugins.optional.premiumcollector.accountsFound", "Accounts found!"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) continue;
+                    }
+
+                    plg.getPlugin().setPremiumAccounts(accounts);
+                    logger.info(plg.getHost() + " : " + accounts.size() + " accounts inserted");
+                    accountsFound += accounts.size();
                 }
+
+                SimpleGUI.CURRENTGUI.setStatusBarText(JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector") + ": " + JDLocale.LF("plugins.optional.premiumcollector.inserted", "Successfully inserted %s accounts!", accountsFound));
+                logger.info("totally : " + accountsFound + " accounts inserted");
             }
 
-            if (accounts.size() == 0) continue;
-            if (!subConfig.getBooleanProperty(PROPERTY_OVERWRITE, true)) {
-                if (JOptionPane.showConfirmDialog(guiFrame, JDLocale.LF("plugins.optional.premiumcollector.accountsFound.message", "Found %s accounts for %s plugin! Replace old saved accounts with new accounts?", accounts.size(), plg.getHost()), JDLocale.L("plugins.optional.premiumcollector.accountsFound", "Accounts found!"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) continue;
-            }
+        }).start();
 
-            plg.getPlugin().setPremiumAccounts(accounts);
-            logger.info(plg.getHost() + " : " + accounts.size() + " accounts inserted");
-            accountsFound += accounts.size();
-        }
-
-        SimpleGUI.CURRENTGUI.setStatusBarText(JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector") + ": " + JDLocale.LF("plugins.optional.premiumcollector.inserted", "Successfully inserted %s accounts!", accountsFound));
-        logger.info("totally : " + accountsFound + " accounts inserted");
     }
 
     @Override

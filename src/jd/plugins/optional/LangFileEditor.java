@@ -91,7 +91,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
     private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
     private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
-    private static final String PROPERTY_SOURCE = "PROPERTY_COMPARETO";
+    private static final String PROPERTY_SOURCE = "PROPERTY_SOURCE";
 
     private JFrame frame;
     private JTable table;
