@@ -37,6 +37,8 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 import javax.swing.event.CellEditorListener;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.metal.MetalButtonUI;
 import javax.swing.table.TableCellEditor;
@@ -417,7 +419,17 @@ public class JLinkButton extends JButton {
     public Color getVisitedLinkColor() {
         return visitedLinkColor;
     }
+    public static HyperlinkListener getHyperlinkListener()
+    {
+        return new HyperlinkListener(){
 
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
+                openURL(e.getURL());
+                }
+                
+            }};
+    }
     public boolean isLinkVisited() {
         return isLinkVisited;
     }
