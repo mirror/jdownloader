@@ -151,6 +151,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
     private HostPluginWrapper draggedPlugin;
 
+    private boolean changed = false;
+
     private ArrayList<HostPluginWrapper> pluginsForHost;
 
     private JTable table;
@@ -188,6 +190,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         pluginsForHost.add(id, draggedPlugin);
         tableModel.fireTableRowsUpdated(Math.min(oldId, id), Math.max(oldId, id));
         table.getSelectionModel().setSelectionInterval(id, id);
+        changed = true;
     }
 
     public void drop(DropTargetDropEvent e) {
@@ -319,7 +322,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             priority.add(plg.getHost());
         }
         configuration.setProperty(Configuration.PARAM_HOST_PRIORITY, priority);
-        ((SimpleGUI) JDUtilities.getGUI()).createHostPluginsMenuEntries();
+        if (changed) ((SimpleGUI) JDUtilities.getGUI()).createHostPluginsMenuEntries();
     }
 
 }
