@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.jdreconnectrecorder;
+package jd.router.reconnectrecorder;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -31,18 +31,22 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.SwingConstants;
+import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
+
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
+
+import jd.gui.skins.simple.SimpleGUI;
+
+import jd.router.RouterInfoCollector;
 
 import jd.config.Configuration;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.parser.Regex;
-import jd.router.GetRouterInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -55,118 +59,80 @@ public class JDRRGui extends JFrame implements ActionListener {
 
     private JButton btnStartStop;
 
-    private JButton btnSave;
+    private String script;
 
-    private JTextArea script;
+    private void setScript(String script) {
+        this.script = script;
+    }
+
+    private void appendScript(String script) {
+        this.script += script;
+    }
 
     private JTextField routerip;
 
-    private JButton btnFindIP;
-
     private String ip_before;
     private String ip_after;
-
+    public String RouterIP = null;
     private JButton btnStop;
-
     private JDRRInfoPopup infopopup;
 
-    public JDRRGui() {
+    public JDRRGui(String ip) {
         super();
+        RouterIP = ip;
         int n = 10;
-        this.setTitle("Reconnect Recorder");
+        this.setTitle(JDLocale.L("gui.config.jdrr.title", "Reconnect Recorder"));
 
-        btnFindIP = new JButton(JDLocale.L("gui.config.liveHeader.btnFindIP", "Router IP ermitteln"));
-        btnFindIP.addActionListener(this);
+        if (RouterIP == null) RouterIP = RouterInfoCollector.getRouterIP();
 
-        routerip = new JTextField("");
-        routerip.setHorizontalAlignment(SwingConstants.RIGHT);
-        routerip.setText(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
-
+        routerip = new JTextField(RouterIP);
+        // routerip.setHorizontalAlignment(SwingConstants.RIGHT);
+        // routerip.setText(RouterIP);
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
+        btnCancel.setEnabled(false);
 
-        btnSave = new JButton(JDLocale.L("gui.btn_save", "Speichern"));
-        btnSave.addActionListener(this);
-        btnSave.setEnabled(false);
-
-        btnStartStop = new JButton("Start");
+        btnStartStop = new JButton(JDLocale.L("gui.btn_start", "Start"));
         btnStartStop.addActionListener(this);
-
-        script = new JTextArea();
-        script.setEditable(true);
-
-        script.setCaretPosition(0);
-
+        JTextPane infolable = new JTextPane();
+        infolable.setEditable(false);
+        infolable.setContentType("text/html");
+        infolable.addHyperlinkListener(JLinkButton.getHyperlinkListener());
+        infolable.setText(JDLocale.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">" +
+        		"Überprüfe die IP-Adresse des Routers und drück auf Start,<br>" +
+        		"ein Browserfenster mit der Startseite des Routers öffnet sich,<br>" +
+        		"nach dem Reconnect drückst du auf Stop und speicherst.<br>" +
+        		"Mehr Informationen gibt es " +
+        		"</span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
-        bpanel.add(btnSave);
         bpanel.add(btnCancel);
         bpanel.add(btnStartStop);
-        bpanel.add(btnFindIP);
 
-        JPanel spanel = new JPanel(new BorderLayout(n, n));
-        spanel.add(routerip, BorderLayout.CENTER);
+        JPanel spanel = new JPanel(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        spanel.add(new JLabel(JDLocale.L("gui.fengshuiconfig.routerip", "RouterIP")+":"));
+
+        c.weightx = 100;
+
+        c.fill = GridBagConstraints.BOTH;
+        spanel.add(routerip, c);
 
         JPanel panel = new JPanel(new BorderLayout(n, n));
         panel.setBorder(new EmptyBorder(n, n, n, n));
         panel.add(spanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(script), BorderLayout.CENTER);
+        panel.add(infolable, BorderLayout.CENTER);
         panel.add(bpanel, BorderLayout.SOUTH);
-
-        this.getRootPane().setDefaultButton(btnSave);
         this.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         this.setContentPane(panel);
-        this.setPreferredSize(new Dimension(400, 300));
         this.pack();
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnFindIP) {
-            new Thread() {
-                @Override
-                public void run() {
-                    GetRouterInfo rinfo = new GetRouterInfo(null);
-                    if (rinfo.getAdress() != null) routerip.setText(rinfo.getAdress());
-                }
-            }.start();
-            return;
-        } else if (e.getSource() == btnStop || e.getSource() == btnStartStop && btnStartStop.getText().contains("Stop")) {
-            ip_after = JDUtilities.getIPAddress();
-            JDRR.running = false;
-            JDRR.stopServer();
-            if (infopopup != null) {
-                infopopup.dispose();
-                infopopup = null;
-            }
-            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                script.setText("");
-                for (String element : JDRR.steps) {
-                    script.append(element + System.getProperty("line.separator"));
-                }
-                btnSave.setEnabled(true);
-            } else {
-                script.setText("Reconnect failed");
-                btnSave.setEnabled(false);
-            }
-            btnStartStop.setText("Start");
-            return;
-        } else if (e.getSource() == btnStartStop && btnStartStop.getText().contains("Start")) {
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
-            ip_before = JDUtilities.getIPAddress();
-            script.setText("");
-            JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
-            infopopup = new JDRRInfoPopup(ip_before);
-            infopopup.setVisible(true);
-            btnStartStop.setText("Stop");
-            btnSave.setEnabled(false);
-            try {
-                JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
-            } catch (MalformedURLException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            }
-            return;
-        } else if (e.getSource() == btnSave) {
+    public JDRRGui() {
+        this(null);
+    }
+    private void save() {
+        if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(),JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES|CountdownConfirmDialog.STYLE_NO).result) {
             if (ip_after.equalsIgnoreCase(ip_before)) { return; }
             Configuration configuration = JDUtilities.getConfiguration();
             String temp = "";
@@ -180,15 +146,50 @@ public class JDRRGui extends JFrame implements ActionListener {
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, temp);
             configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
+        }
 
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() == btnStop || e.getSource() == btnStartStop && btnStartStop.getText().contains("Stop")) {
+            ip_after = JDUtilities.getIPAddress();
+            JDRR.running = false;
+            JDRR.stopServer();
+            if (infopopup != null) {
+                infopopup.dispose();
+                infopopup = null;
+            }
+            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
+                setScript("");
+                for (String element : JDRR.steps) {
+                    appendScript(element + System.getProperty("line.separator"));
+                }
+                save();
+            } else {
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild","Reconnect failed"));
+            }
+            btnStartStop.setText(JDLocale.L("gui.btn_start", "Start"));
+            return;
+        } else if (e.getSource() == btnStartStop && btnStartStop.getText().contains("Start")) {
+            if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
+            ip_before = JDUtilities.getIPAddress();
+            setScript("");
+            JDRR.startServer(RouterInfoCollector.getRouterIP());
+            infopopup = new JDRRInfoPopup(ip_before);
+            infopopup.setVisible(true);
+            btnCancel.setEnabled(true);
+            btnStartStop.setText(JDLocale.L("gui.btn_stop", "start"));
+            try {
+                JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
+            } catch (MalformedURLException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+            return;
         }
         JDRR.gui = false;
         JDRR.running = false;
         JDRR.stopServer();
-        if (infopopup != null) {
-            infopopup.dispose();
-            infopopup = null;
-        }
         dispose();
     }
 
@@ -204,7 +205,7 @@ public class JDRRGui extends JFrame implements ActionListener {
             setModal(false);
             setLayout(new GridBagLayout());
             JPanel p = new JPanel(new GridBagLayout());
-            btnStop = new JButton("Stop");
+            btnStop = new JButton(JDLocale.L("gui.btn_stop","Stop"));
             btnStop.addActionListener(this);
             statusicon = new RRStatus();
             JDUtilities.addToGridBag(p, statusicon, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
@@ -245,7 +246,7 @@ public class JDRRGui extends JFrame implements ActionListener {
 
                 new Thread() {
                     public void run() {
-                        this.setName("JDRRPopup");
+                        this.setName(JDLocale.L("gui.config.jdrr.popup.title","JDRRPopup"));
                         while (JDRR.running) {
                             try {
                                 Thread.sleep(5000);
@@ -308,16 +309,15 @@ public class JDRRGui extends JFrame implements ActionListener {
                     }
                     if (infopopup != null) infopopup.dispose();
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                        script.setText("");
+                        setScript("");
                         for (String element : JDRR.steps) {
-                            script.append(element + System.getProperty("line.separator"));
+                            appendScript(element + System.getProperty("line.separator"));
                         }
-                        btnSave.setEnabled(true);
+                        save();
                     } else {
-                        script.setText("Reconnect failed");
-                        btnSave.setEnabled(false);
+                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild","Reconnect failed"));
                     }
-                    btnStartStop.setText("Start");
+                    btnStartStop.setText(JDLocale.L("gui.btn_start", "Start"));
                     dispose();
                 }
             }.start();

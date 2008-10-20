@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.jdreconnectrecorder;
+package jd.router.reconnectrecorder;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
@@ -150,7 +150,7 @@ class ProxyThread extends Thread {
 
                         }
                     }
-                    JDUtilities.getLogger().finer(headers + "");
+                    JDUtilities.getLogger().info(headers + "");
                     JDRRUtils.createStep(headers, postdata, steps);
                 } catch (Exception e) {
                     e.printStackTrace();

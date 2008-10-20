@@ -14,24 +14,13 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.plugins.optional.jdreconnectrecorder;
-
-import java.awt.event.ActionEvent;
+package jd.router.reconnectrecorder;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Vector;
-
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.config.MenuItem;
-import jd.config.SubConfiguration;
-import jd.plugins.PluginOptional;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class JDRR extends PluginOptional {
+public class JDRR {
 
     static public Vector<String> steps;
     static boolean gui = false;
@@ -40,28 +29,8 @@ public class JDRR extends PluginOptional {
     static final String PROPERTY_PORT = "PARAM_PORT";
     static String auth;
 
-    public JDRR(PluginWrapper wrapper) {
-        super(wrapper);
-    }
-
     public static int getAddonInterfaceVersion() {
         return 2;
-    }
-
-    @Override
-    public String getRequirements() {
-        return "JRE 1.5+";
-    }
-
-    @Override
-    public boolean initAddon() {
-        running = false;
-        SubConfiguration subConfig = JDUtilities.getSubConfig("JDRR");
-        ConfigEntry cfg;
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.jdrr.port", "Port"), 1024, 65000));
-        cfg.setStep(1);
-        cfg.setDefaultValue(8972);
-        return true;
     }
 
     static public void startServer(String serverip) {
@@ -115,36 +84,19 @@ public class JDRR extends PluginOptional {
 
     }
 
-    @Override
-    public void onExit() {
-        stopServer();
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getActionCommand().equals("Create ReconnectScript")) {
-            if (!gui) {
-                gui = true;
-                new JDRRGui().setVisible(true);
-            }
+    public void show() {
+        if (!gui) {
+            gui = true;
+            new JDRRGui().setVisible(true);
         }
     }
-
-    @Override
-    public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Create ReconnectScript", 0).setActionListener(this));
-        return menu;
+    public void show(String ip) {
+        if (!gui) {
+            gui = true;
+            new JDRRGui(ip).setVisible(true);
+        }
     }
-
-    @Override
-    public String getVersion() {
-        return getVersion("$Revision$");
+    public static void main(String[] args) {
+        new JDRR().show();
     }
-
-    @Override
-    public String getHost() {
-        return JDLocale.L("plugins.optional.jdreconnectrecorder.name", "ReconnectRecorder");
-    }
-
 }

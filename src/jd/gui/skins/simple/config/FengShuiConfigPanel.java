@@ -65,6 +65,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import jd.router.reconnectrecorder.JDRR;
+
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -98,7 +100,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     private static final String PUSHGAP = " :70";
     private static FengShuiConfigPanel instance;
 
-    private JButton btnMore, btnApply, btnCancel, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
+    private JButton btnrr, btnMore, btnApply, btnCancel, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
     private JComboBox languages;
     private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
     private Configuration config = JDUtilities.getConfiguration();
@@ -148,6 +150,8 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         } else if (e.getSource() == btnApply) {
             save();
             dispose();
+        } else if (e.getSource() == btnrr) {
+            new JDRR().show();
         } else if (e.getSource() == btnPremium) {
             JPopupMenu popup = new JPopupMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
             for (Iterator<HostPluginWrapper> it = JDUtilities.getPluginsForHost().iterator(); it.hasNext();) {
@@ -553,17 +557,17 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         }
 
         btnTestReconnect = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test reconnect"));
-
+        btnrr = new JButton(JDLocale.L("modules.reconnect.rr", "Record Reconnect"));
         btnAutoConfig = new JButton("Automatisch");
         btnSelectRouter = new JButton("Manuell");
 
         btnAutoConfig.addActionListener(this);
         btnSelectRouter.addActionListener(this);
         btnTestReconnect.addActionListener(this);
-
-        addComponents(panel, "Router erkennen", btnAutoConfig, GAPLEFT + ", w pref!, split 2");
-        panel.add(btnSelectRouter, GAPLEFT + GAPRIGHT + ", w pref!" + WRAP_BETWEEN_ROWS);
-
+        btnrr.addActionListener(this);
+        addComponents(panel, "Router erkennen", btnAutoConfig, GAPLEFT + ", w pref!, split 3");
+        panel.add(btnSelectRouter);
+        panel.add(btnrr, GAPLEFT + GAPRIGHT + ", w pref!" + WRAP_BETWEEN_ROWS);
         int n = 10;
         ip = new JTextField(n);
         routername = new JTextField(n);
@@ -579,10 +583,10 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         password.setText(config.getStringProperty(Configuration.PARAM_HTTPSEND_PASS, ""));
 
         String constr = GAPLEFT + ", w pref!, growx, spanx" + WRAP_BETWEEN_ROWS;
-        addComponents(panel, "RouterIP:", subpanel(ip, "Routername:", routername), constr);
-        addComponents(panel, "Username:", subpanel(username, "Password:", password), constr);
+        addComponents(panel, JDLocale.L("gui.fengshuiconfig.routerip", "RouterIP")+":", subpanel(ip, JDLocale.L("gui.fengshuiconfig.routername","Routername")+":", routername), constr);
+        addComponents(panel, JDLocale.L("gui.fengshuiconfig.username", "Username")+":", subpanel(username, JDLocale.L("gui.fengshuiconfig.routerpassword", "Password")+":", password), constr);
 
-        addComponents(panel, "Einstellungen testen", btnTestReconnect, GAPLEFT + ", w pref!, wrap" + PUSHGAP + ":push");
+        addComponents(panel, JDLocale.L("gui.fengshuiconfig.testsettings", "Einstellungen testen"+":"), btnTestReconnect, GAPLEFT + ", w pref!, wrap" + PUSHGAP + ":push");
 
         getRouterIp();
 
@@ -599,7 +603,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         return panel;
     }
 
-    private JComponent subpanel(JTextField c1, String l2, JTextField c2) {
+    private JComponent subpanel(JComponent c1, String l2, JComponent c2) {
         JPanel subpanel = new JPanel(new MigLayout(DEBUG + ", ins 0", "[grow,fill]10[right, 70!]10[grow,fill]"));
         subpanel.add(c1);
         subpanel.add(getLabel(l2));
