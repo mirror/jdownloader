@@ -76,7 +76,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     private JButton btnStop;
     private JDRRInfoPopup infopopup;
     public String methode = null, user = null, pass = null;
-
+    private boolean isSaveMSG =false;
     public JDRRGui(JFrame frame, String ip) {
         super(frame);
         RouterIP = ip;
@@ -123,7 +123,8 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     }
 
     private void save() {
-        if (ip_after.equalsIgnoreCase(ip_before)) { return; }
+        if (ip_after.equalsIgnoreCase(ip_before) || isSaveMSG) { return; }
+        isSaveMSG=true;
         if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).result) {
 
             saved = true;
