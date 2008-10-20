@@ -210,7 +210,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
         public JDRRInfoPopup(String ipbefore) {
             super();
-            setModal(false);
+            setModal(true);
             setLayout(new GridBagLayout());
             JPanel p = new JPanel(new GridBagLayout());
             btnStop = new JButton(JDLocale.L("gui.btn_stop", "Stop"));
