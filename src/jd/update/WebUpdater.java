@@ -222,7 +222,7 @@ public class WebUpdater implements Serializable {
                     continue;
                 }
                 hash = getLocalHash(new File(akt));
-                log(new File(akt) + "");
+
                 if (!hash.equalsIgnoreCase(files.elementAt(i).elementAt(1))) {
                     log("UPDATE AV. " + files.elementAt(i) + " - " + hash);
                     continue;
