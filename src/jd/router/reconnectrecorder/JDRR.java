@@ -20,8 +20,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Vector;
 
-import jd.gui.skins.simple.SimpleGUI;
-
 import jd.utils.JDUtilities;
 
 public class JDRR {
@@ -84,21 +82,4 @@ public class JDRR {
 
     }
 
-    public void show() {
-        if (!gui) {
-            gui = true;
-            new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(),null).setVisible(true);
-        }
-    }
-
-    public void show(String ip) {
-        if (!gui) {
-            gui = true;
-            new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(),ip).setVisible(true);
-        }
-    }
-
-    public static void main(String[] args) {
-        new JDRR().show();
-    }
 }

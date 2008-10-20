@@ -67,7 +67,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     private void appendScript(String script) {
         this.script += script;
     }
-    
+
     private JTextField routerip;
     public boolean saved = false;
     private String ip_before;
@@ -75,8 +75,8 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     public String RouterIP = null;
     private JButton btnStop;
     private JDRRInfoPopup infopopup;
-    public String methode  = null, user=null,pass=null;
-    
+    public String methode = null, user = null, pass = null;
+
     public JDRRGui(JFrame frame, String ip) {
         super(frame);
         RouterIP = ip;
@@ -121,22 +121,23 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         this.pack();
         this.setLocation(JDUtilities.getCenterOfComponent(null, this));
     }
+
     private void save() {
         if (ip_after.equalsIgnoreCase(ip_before)) { return; }
         if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).result) {
 
-            saved=true;
+            saved = true;
             Configuration configuration = JDUtilities.getConfiguration();
 
             StringBuffer b = new StringBuffer();
             for (String element : JDRR.steps) {
                 b.append(element + System.getProperty("line.separator"));
             }
-            methode=b.toString().trim();
-        
+            methode = b.toString().trim();
+
             if (JDRR.auth != null) {
-                user=new Regex(JDRR.auth, "(.+?):").getMatch(0);
-                pass=new Regex(JDRR.auth, ".+?:(.+)").getMatch(0);
+                user = new Regex(JDRR.auth, "(.+?):").getMatch(0);
+                pass = new Regex(JDRR.auth, ".+?:(.+)").getMatch(0);
                 configuration.setProperty(Configuration.PARAM_HTTPSEND_USER, user);
                 configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, pass);
             }
@@ -189,6 +190,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         }
         close();
     }
+
     private void close() {
         JDRR.gui = false;
         JDRR.running = false;
@@ -196,6 +198,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         dispose();
 
     }
+
     public class JDRRInfoPopup extends JDialog implements ActionListener {
         /**
          * 
@@ -335,36 +338,36 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
     public void windowActivated(WindowEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void windowClosed(WindowEvent e) {
-close();
-        
+        close();
+
     }
 
     public void windowClosing(WindowEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void windowDeactivated(WindowEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void windowDeiconified(WindowEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void windowIconified(WindowEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void windowOpened(WindowEvent e) {
         // TODO Auto-generated method stub
-        
+
     }
 }

@@ -65,8 +65,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import jd.router.reconnectrecorder.JDRRGui;
-
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -84,6 +82,7 @@ import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
+import jd.router.reconnectrecorder.JDRRGui;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -151,20 +150,14 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             save();
             dispose();
         } else if (e.getSource() == btnRR) {
-            {
-                JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(), ip.getText());
-                jd.setModal(true);
-                jd.setVisible(true);
-                if(jd.saved)
-                {
+            JDRRGui jd = new JDRRGui(SimpleGUI.CURRENTGUI.getFrame(), ip.getText());
+            jd.setModal(true);
+            jd.setVisible(true);
+            if (jd.saved) {
                 ip.setText(jd.RouterIP);
-                if(jd.user!=null)
-                    username.setText(jd.user);
-                if(jd.pass!=null)
-                    password.setText(jd.pass);
-                Reconnectmethode=jd.methode;
-                }
-            
+                if (jd.user != null) username.setText(jd.user);
+                if (jd.pass != null) password.setText(jd.pass);
+                Reconnectmethode = jd.methode;
             }
         } else if (e.getSource() == btnPremium) {
             JPopupMenu popup = new JPopupMenu(JDLocale.L("gui.menu.plugins.phost", "Premium Hoster"));
