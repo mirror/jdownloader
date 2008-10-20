@@ -17,10 +17,11 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
+import jd.parser.Form;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class zShare extends PluginForHost {
 
@@ -64,7 +65,7 @@ public class zShare extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -73,14 +74,26 @@ public class zShare extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
 
-        br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/image"));
-
-        Regex reg = br.getRegex("<img src=\"(http://[^\"]*?/download/[a-f0-9]*?/[\\d]*?/[\\d]*?/.*?)\"");
-
-        String url = reg.getMatches()[0][0];
-
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(url));
-
+        br.getPage(downloadLink.getDownloadURL().replaceFirst("zshare.net/(download|video|audio|flash)", "zshare.net/download"));
+        // Form abrufen
+        Form download = br.getForm(0);
+        // Formparameter setzen (zufällige Klickpositionen im Bild)
+        download.put("imageField.x", (Math.random() * 160) + "");
+        download.put("imageField.y", (Math.random() * 60) + "");
+        download.put("imageField", null);
+        // Form abschicken
+        br.submitForm(download);
+        // Javascript für link
+        String fnc = br.getRegex("(var link\\_enc\\=.*link\\_enc\\[i\\]\\;\\})").getMatch(0);
+        // JS ausführen
+        String link = new jd.parser.JavaScript(fnc).runJavaScript();
+        // Link laden
+        dl = br.openDownload(downloadLink, link, true, 1);
+        // Möglicherweise serverfehler...
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
         dl.startDownload();
     }
 
