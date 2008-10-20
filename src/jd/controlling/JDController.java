@@ -538,18 +538,17 @@ public class JDController implements ControlListener, UIListener {
         switch (event.getID()) {
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
             File[] list = (File[]) event.getParameter();
-            
+
             for (File file : list) {
-                
+
                 if (isContainerFile(file)) {
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_RELOADCONTAINER, true)) {
                         loadContainerFile(file);
                     }
                 }
-            
+
             }
-            
-            
+
             break;
         case ControlEvent.CONTROL_LOG_OCCURED:
             if (fileLogger != null) {
@@ -587,7 +586,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
                     removePackage(lastDownloadFinished.getFilePackage());
@@ -2083,5 +2082,28 @@ public class JDController implements ControlListener, UIListener {
         }
         return null;
 
+    }
+
+    public ArrayList<DownloadLink> getMatchingLinks(String matcher) {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        try {
+            Iterator<FilePackage> iterator = packages.iterator();
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                while (it2.hasNext()) {
+                    nextDownloadLink = it2.next();
+                    if (new File(nextDownloadLink.getFileOutput()).getName().matches(matcher)) {
+                        ret.add(nextDownloadLink);
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ret;
     }
 }
