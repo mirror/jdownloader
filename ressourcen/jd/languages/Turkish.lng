@@ -7,6 +7,8 @@
 # free.loader.tx@gmail.com
 # underworldgodtx@hotmail.com
 #Many fixes were made.Birçok düzeltme yapıldı.
+$translater$ = Tamer Ray Frost
+$version$ = $Revision$
 addons.jdlowspeed.statusmessage.disabled = Devredışı bırak
 addons.jdlowspeed.statusmessage.enabled = Etkinleştir
 addons.jdshutdown.menu.disable = Devredışı bırak
