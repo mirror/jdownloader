@@ -25,14 +25,16 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
 public class DatenGigantCom extends PluginForHost {
-    private static final Pattern PATTERN_FILENAME = Pattern.compile("<td align=left width=100px><b>File Name:</b></td>\\s+?$\\s+^\\s+<td align=left width=150px>(.+?)</td>",Pattern.MULTILINE|Pattern.UNIX_LINES);
-    private static final Pattern PATTERN_FILESIZE = Pattern.compile("<td align=left><b>File Groesse:</b></td>\\s+?$\\s+?^\\s+?<td align=left>(.+?)</td>",Pattern.MULTILINE|Pattern.UNIX_LINES);
-    private static final Pattern PATTERN_OFFLINE  = Pattern.compile("Die angeforderte Datei wurde nicht gefunden<br />");
-    private static final String  AGB_LINK         = "http://www.datengigant.com/en/rules.php";
-    private static final Pattern PATTERN_DL_URL   = Pattern.compile("<input type=button id=downloadbtn class=button_download name=downloadbtn value='bitte warten ' onclick='if\\(timeout>0\\) \\{alert\\(\"Bitte warte einen Moment, waehrend die Datei aus der Datenbank abgefragt wird!\"\\);return false;\\}document.location=\"(.+?)\"; this.disabled=true;'>");
+    private static final Pattern PATTERN_FILENAME = Pattern.compile("<td align=left width=100px><b>File Name:</b></td>\\s+?$\\s+^\\s+<td align=left width=150px>(.+?)</td>", Pattern.MULTILINE | Pattern.UNIX_LINES);
+    private static final Pattern PATTERN_FILESIZE = Pattern.compile("<td align=left><b>File Groesse:</b></td>\\s+?$\\s+?^\\s+?<td align=left>(.+?)</td>", Pattern.MULTILINE | Pattern.UNIX_LINES);
+    private static final Pattern PATTERN_OFFLINE = Pattern.compile("Die angeforderte Datei wurde nicht gefunden<br />");
+    private static final String AGB_LINK = "http://www.datengigant.com/en/rules.php";
+    private static final Pattern PATTERN_DL_URL = Pattern.compile("<input type=button id=downloadbtn class=button_download name=downloadbtn value='bitte warten ' onclick='if\\(timeout>0\\) \\{alert\\(\"Bitte warte einen Moment, waehrend die Datei aus der Datenbank abgefragt wird!\"\\);return false;\\}document.location=\"(.+?)\"; this.disabled=true;'>");
+
     public DatenGigantCom(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public String getAGBLink() {
         return AGB_LINK;
@@ -43,12 +45,10 @@ public class DatenGigantCom extends PluginForHost {
         try {
             br.clearCookies(getHost());
             String url = downloadLink.getDownloadURL();
-            String page = br.getPage(url);
-            downloadLink.setName(new Regex(page,PATTERN_FILENAME).getMatch(0));
-            downloadLink.setDownloadSize(Regex.getSize(new Regex(page,PATTERN_FILESIZE).getMatch(0)));
-            if(new Regex(page, PATTERN_OFFLINE).matches()||!new Regex(page,PATTERN_DL_URL).matches()){
-                return false;
-            }
+            br.getPage(url);
+            downloadLink.setName(br.getRegex(PATTERN_FILENAME).getMatch(0));
+            downloadLink.setDownloadSize(Regex.getSize(br.getRegex(PATTERN_FILESIZE).getMatch(0)));
+            if (br.getRegex(PATTERN_OFFLINE).matches() || !br.getRegex(PATTERN_DL_URL).matches()) { return false; }
             return true;
         } catch (Exception e) {
             return false;
@@ -58,14 +58,13 @@ public class DatenGigantCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        String page  = br.getPage(downloadLink.getDownloadURL());
-        String dUrl = new Regex(page, PATTERN_DL_URL).getMatch(0); 
+        br.getPage(downloadLink.getDownloadURL());
+        String dUrl = br.getRegex(PATTERN_DL_URL).getMatch(0);
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(dUrl));
         dl.startDownload();
     }

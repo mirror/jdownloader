@@ -169,10 +169,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 
-        topFolder = new JPanel(new BorderLayout(5, 5));
-        topFolder.add(cmboSelectSource = new JComboBox(new String[] { JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:"), JDLocale.L("plugins.optional.langfileeditor.sourceFile", "Source File:") }), BorderLayout.LINE_START);
+        cmboSelectSource = new JComboBox(new String[] { JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:"), JDLocale.L("plugins.optional.langfileeditor.sourceFile", "Source File:") });
         cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 0));
         cmboSelectSource.addActionListener(this);
+
+        topFolder = new JPanel(new BorderLayout(5, 5));
+        topFolder.add(cmboSelectSource, BorderLayout.LINE_START);
         topFolder.add(cmboSource[cmboSelectSource.getSelectedIndex()]);
 
         topFile = new JPanel(new BorderLayout(5, 5));
