@@ -78,12 +78,8 @@ public class Main {
      *            Positionierung der Komponente innerhalb der zugewiesen Zelle/n
      */
     public static void addToGridBag(Container cont, Component comp, int x, int y, int width, int height, int weightX, int weightY, Insets insets, int fill, int anchor) {
-        if (cont == null) {
-
-        return; }
-        if (comp == null) {
-
-        return; }
+        if (cont == null) return;
+        if (comp == null) return;
         Main.addToGridBag(cont, comp, x, y, width, height, weightX, weightY, insets, 0, 0, fill, anchor);
     }
 
@@ -215,11 +211,8 @@ public class Main {
                         break;
                     } catch (UnsupportedLookAndFeelException e) {
                     } catch (ClassNotFoundException e) {
-
                     } catch (InstantiationException e) {
-
                     } catch (IllegalAccessException e) {
-
                     }
                 }
             }
@@ -232,11 +225,8 @@ public class Main {
                         break;
                     } catch (UnsupportedLookAndFeelException e) {
                     } catch (ClassNotFoundException e) {
-
                     } catch (InstantiationException e) {
-
                     } catch (IllegalAccessException e) {
-
                     }
                 }
             }
@@ -264,7 +254,8 @@ public class Main {
         final JTextArea logWindow = new JTextArea(30, 120);
         JScrollPane scrollPane = new JScrollPane(logWindow);
         scrollPane.setAutoscrolls(true);
-        logWindow.setEditable(true);
+        logWindow.setEditable(false);
+        logWindow.setAutoscrolls(true);
 
         Main.addToGridBag(frame, new JLabel("Webupdate is running..."), REL, REL, REM, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
         Main.addToGridBag(frame, new JLabel("List files: "), REL, REL, REL, 1, 0, 0, INSETS, NORESIZE, NORTHWEST);
@@ -320,7 +311,7 @@ public class Main {
                 }
             }
         }.start();
-        WebUpdater updater = new WebUpdater(null);
+        WebUpdater updater = new WebUpdater();
         updater.setOSFilter(OSFilter);
         String warnHash = updater.getLocalHash(new File("updatewarnings.html"));
 
@@ -339,7 +330,6 @@ public class Main {
                     Main.log(log, "Local: " + new File("").getAbsolutePath());
                     if (runtype == 2) {
                         Main.log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
-
                         Main.runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
                         // }
                     } else if (runtype == 1 && new File("jd/Main.class").exists()) {
@@ -463,7 +453,6 @@ public class Main {
             Main.log(log, "Local: " + new File("").getAbsolutePath());
             if (runtype == 2) {
                 Main.log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
-
                 Main.runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
                 // }
             } else if (runtype == 1 && new File("jd/Main.class").exists()) {

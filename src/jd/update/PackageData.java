@@ -19,89 +19,86 @@ package jd.update;
 public class PackageData extends Property {
 
     private static final long serialVersionUID = 313280647294844981L;
-    private boolean preselected = false;
-    private boolean selected;
+
     private int id;
     private int installedVersion = 0;
-    private boolean updating = false;
     private int sortID = -1;
     private boolean downloaded;
-    private boolean installed;;
+    private boolean installed;
+    private boolean preselected = false;
+    private boolean selected;
+    private boolean updating = false;
 
-    public void setPreselected(boolean b) {
-        this.preselected = b;
-
-    }
-    public boolean equals(PackageData d){
-        return d.id==this.id;
-    }
-
-    public boolean isPreselected() {
-        return preselected;
-    }
-
-    public void setSelected(boolean b) {
-        this.selected = b;
-
-    }
-
-    public boolean isSelected() {
-        return selected;
+    public boolean equals(PackageData d) {
+        return d.id == this.id;
     }
 
     public int getId() {
         return id;
     }
 
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public int getInstalledVersion() {
-        return Math.max(0,this.installedVersion);
-    }
-
-    public boolean isUptodate() {
-        return Integer.parseInt(this.getStringProperty("version")) == getInstalledVersion();
-    }
-
-    public void setInstalledVersion(int installed) {
-        this.installedVersion = installed;
-    }
-
-    public boolean isUpdating() {
-        return updating;
-    }
-
-    public void setUpdating(boolean updating) {
-        this.updating = updating;
+        return Math.max(0, this.installedVersion);
     }
 
     public int getSortID() {
         return this.sortID;
-
-    }
-
-    public void setSortID(int sortID) {
-        this.sortID = sortID;
-    }
-
-    public void setDownloaded(boolean b) {
-        this.downloaded = b;
-
     }
 
     public boolean isDownloaded() {
         return downloaded;
     }
 
-    public void setInstalled(boolean b) {
-        installed = b;
-
-    }
-
     public boolean isInstalled() {
         return installed;
+    }
+
+    public boolean isPreselected() {
+        return preselected;
+    }
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public boolean isUpdating() {
+        return updating;
+    }
+
+    public boolean isUptodate() {
+        return getIntegerProperty("version") == getInstalledVersion();
+    }
+
+    public void setDownloaded(boolean b) {
+        this.downloaded = b;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setInstalled(boolean b) {
+        installed = b;
+    }
+
+    public void setInstalledVersion(int installed) {
+        this.installedVersion = installed;
+    }
+
+    public void setPreselected(boolean b) {
+        this.preselected = b;
+    }
+
+    public void setSelected(boolean b) {
+        this.selected = b;
+    }
+
+    public void setSortID(int sortID) {
+        this.sortID = sortID;
+    }
+
+    public void setUpdating(boolean updating) {
+        this.updating = updating;
     }
 
 }

@@ -586,7 +586,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
                     removePackage(lastDownloadFinished.getFilePackage());
@@ -2030,7 +2030,7 @@ public class JDController implements ControlListener, UIListener {
             // uiInterface.setDownloadLinks(downloadLinks);
             break;
         case UIEvent.UI_INTERACT_UPDATE:
-            new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
+            new JDInit().doWebupdate(true);
             break;
         }
     }

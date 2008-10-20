@@ -37,12 +37,13 @@ import jd.update.WebUpdater;
 /**
  * Wie benutze ich diese Klasse.
  * 
- * Diese klasse sollte in einem working directory ausgeführt werden das leer ist.
- * z.B. d:/jd_update Nach dem Start wird die aktuelle JD version vom bluehost
- * server geladen. anschließend fragt der Updater nach einem ordner in dem sich
- * die neuen files befinden. Die neuen files werden hochgeladen und auf crc
- * Fehler beim Upload geprüft. Anschließend wird eine neue hashliste erstellt
- * und auf unseren server geladen. Die DLC hashes werden ebenfalls aktualisiert.
+ * Diese klasse sollte in einem working directory ausgeführt werden das leer
+ * ist. z.B. d:/jd_update Nach dem Start wird die aktuelle JD version vom
+ * bluehost server geladen. anschließend fragt der Updater nach einem ordner in
+ * dem sich die neuen files befinden. Die neuen files werden hochgeladen und auf
+ * crc Fehler beim Upload geprüft. Anschließend wird eine neue hashliste
+ * erstellt und auf unseren server geladen. Die DLC hashes werden ebenfalls
+ * aktualisiert.
  * 
  * Svn Ordner und files werden ignoriert und übersprungen.
  * 
@@ -134,14 +135,14 @@ public class JDUpdater {
             return;
 
         }
-      
+
         CONFIG.setProperty("LASTSELECTEDDIR1", workingdir);
 
         System.out.print(": " + workingdir.getAbsolutePath() + "\r\n");
         //
         if (!new File("").getAbsolutePath().equals(workingdir.getAbsolutePath())) {
             System.out.print("\r\n\r\n");
-            System.err.println("JDUpdater muss in " + workingdir + " ausgeführt werden! Aktuell ausgeführt in: "+new File("").getAbsolutePath());
+            System.err.println("JDUpdater muss in " + workingdir + " ausgeführt werden! Aktuell ausgeführt in: " + new File("").getAbsolutePath());
             return;
         }
         fc = new JFileChooser();
@@ -167,7 +168,7 @@ public class JDUpdater {
         System.out.println("Webroot updateserver: " + webRoot);
 
         System.out.println("Hashlist laden");
-        WebUpdater updater = new WebUpdater(null);
+        WebUpdater updater = new WebUpdater();
         updater.setOSFilter(false);
         updater.ignorePlugins(false);
         Vector<Vector<String>> files = null;
@@ -177,7 +178,6 @@ public class JDUpdater {
             e.printStackTrace();
         }
 
-   
         ArrayList<File> localfiles = getLocalFileList(workingdir);
         HashMap<String, String> webupdaterfiles = new HashMap<String, String>();
         if (files == null) files = new Vector<Vector<String>>();

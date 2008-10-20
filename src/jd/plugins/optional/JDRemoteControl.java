@@ -490,7 +490,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
                 }
 
-                new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
+                new JDInit().doWebupdate(true);
 
                 response.getWriter().println("Do Webupdate...");
             }

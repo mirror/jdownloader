@@ -20,61 +20,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-import javax.swing.JOptionPane;
-
-import jd.gui.skins.simple.components.JDFileChooser;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
 
 public class FileSignatures {
 
-    public static void main(String args[]) throws IOException {
-        Signature sig = getFileSignature(new File("C:\\Users\\coalado\\.jd_home\\downloads\\Wild_Amateur_Orgy.wmv"));
-        sig = sig;
-//        scan(null);
-
-    }
-/**
- * Durchsucht Verzeichnisse auf der hdd nach neuen signaturen
- * @param file
- */
-    private static void scan(File file) {
-        if (file == null) {
-            JDFileChooser fc = new JDFileChooser();
-            fc.setApproveButtonText("Folders to scan");
-            fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-
-            fc.showOpenDialog(null);
-            file = fc.getSelectedFile();
-            if (file == null) return;
-        }
-        if (file == null) return;
-        for (File f : file.listFiles()) {
-            if (f.isDirectory()) {
-                if (JOptionPane.showConfirmDialog(null, "Scan " + f) == JOptionPane.OK_OPTION) scan(f);
-            } else {
-                try {
-                    String out = "";
-                    String sig = readFileSignature(f);
-                    String ext = JDUtilities.getFileExtension(f);
-                    out += (sig + ":::");
-                    out += (":::");
-                    out += (".+\\." + ext);
-                    Signature sss;
-                    if (( sss= getSignature(sig)) == null){
-                        System.out.println(out + "  " + f + "\r\n");
-                    }else{
-                        System.out.println(out + "  " + f + "<<<bekannt:"+sss.getExtension()+" \r\n");
-                         
-                    }
-
-                } catch (IOException e) {
-e.printStackTrace();                }
-            }
-
-        }
-
-    }
 /**
  * Überprüft eine datei auf ihre signatur
  * @param f

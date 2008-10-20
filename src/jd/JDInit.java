@@ -143,8 +143,6 @@ public class JDInit {
         }
     }
 
-    private int cid = -1;
-
     private boolean installerVisible = false;
 
     private SplashScreen splashScreen;
@@ -216,7 +214,7 @@ public class JDInit {
         JDUtilities.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);
     }
 
-    public void doWebupdate(final int oldCid, final boolean guiCall) {
+    public void doWebupdate(final boolean guiCall) {
         CFGConfig cfg = CFGConfig.getConfig("WEBUPDATE");
 
         cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
@@ -237,8 +235,7 @@ public class JDInit {
         final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
         LASTREQUEST = System.currentTimeMillis();
-        final WebUpdater updater = new WebUpdater(null);
-        updater.setCid(oldCid);
+        final WebUpdater updater = new WebUpdater();
         logger.finer("Get available files");
         // logger.info(files + "");
         final Vector<Vector<String>> files;
@@ -265,12 +262,6 @@ public class JDInit {
                     JDUtilities.getController().setWaitingUpdates(files);
                 }
 
-                cid = updater.getCid();
-                if (getCid() > 0 && getCid() != JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1)) {
-                    JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
-                    JDUtilities.saveConfig();
-                }
-
                 if (!guiCall && JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
                     logger.severe("Webupdater disabled");
                     progress.finalize();
@@ -292,7 +283,7 @@ public class JDInit {
                 if (files.size() > 0 || packages.size() > 0) {
 
                     progress.setStatus(org - (files.size() + packages.size()));
-                    logger.finer("FIles to update: " + files);
+                    logger.finer("Files to update: " + files);
                     logger.finer("JDUs to update: " + packages.size());
 
                     createQueueBackup();
@@ -344,10 +335,6 @@ public class JDInit {
                 }
 
                 progress.finalize();
-                if (getCid() > 0 && getCid() != JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1)) {
-                    JDUtilities.getConfiguration().setProperty(Configuration.CID, getCid());
-                    JDUtilities.saveConfig();
-                }
             }
 
         }.start();
@@ -380,13 +367,8 @@ public class JDInit {
 
     }
 
-    public int getCid() {
-        return cid;
-    }
-
     void init() {
         CookieHandler.setDefault(null);
-
     }
 
     public JDController initController() {
@@ -394,7 +376,6 @@ public class JDInit {
     }
 
     public UIInterface initGUI(JDController controller) {
-
         UIInterface uiInterface = new SimpleGUI();
         controller.setUiInterface(uiInterface);
         controller.addControlListener(uiInterface);
@@ -589,7 +570,6 @@ public class JDInit {
         new DecryptPluginWrapper("frozen-roms.in", "FrozenRomsIn", "http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html");
         new DecryptPluginWrapper("ftp2share.net", "ftp2share", "http://[\\w\\.]*?ftp2share\\.net/folder/[a-zA-Z0-9\\-]+/(.*?)|http://[\\w\\.]*?ftp2share\\.net/file/[a-zA-Z0-9\\-]+/(.*?)");
         new DecryptPluginWrapper("fucktheindustry.ru", "FuckTheIndustryRu", "http://[\\w\\.]*?92\\.241\\.164\\.63/file\\.php\\?id=[\\d]+");
-        new DecryptPluginWrapper("Gamez.am", "Gamezam", "javascript:laden\\('include/infos\\.php\\?id=(\\d+)',1\\)", PluginWrapper.ACCEPTONLYSURLSFALSE);
         new DecryptPluginWrapper("gapping.org", "GappingOrg", "http://[\\w\\.]*?gapping\\.org/index\\.php\\?folderid=\\d+|http://[\\w\\.]*?gapping\\.org/f/\\d+\\.html|http://[\\w\\.]*?gapping\\.org/file\\.php\\?id=.+|http://[\\w\\.]*?gapping\\.org/g.*?\\.html|http://[\\w\\.]*?gapping\\.org/d/.*\\.html");
         new DecryptPluginWrapper("gwarez.cc", "Gwarezcc", "http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/");
         new DecryptPluginWrapper("Hider.ath.cx", "HiderAthCx", "http://[\\w\\.]*?hider\\.ath\\.cx/\\d+");

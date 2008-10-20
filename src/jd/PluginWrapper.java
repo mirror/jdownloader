@@ -116,7 +116,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                     File path = JDUtilities.getResourceFile(plg);
                     String hash = JDUtilities.getLocalHash(path);
                     if (hash == null || !hash.equalsIgnoreCase(entry.get(1))) {
-                        new WebUpdater(null).updateFile(entry);
+                        new WebUpdater().updateFile(entry);
                         logger.info("UPdated plugin: " + plg);
 
                     }

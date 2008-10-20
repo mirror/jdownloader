@@ -31,8 +31,6 @@ import jd.utils.JDUtilities;
 public class Configuration extends Property implements Serializable {
     public static final String AUTOTRAIN_ERROR_LEVEL = "AUTOTRAIN_ERROR_LEVEL";
 
-    public static final String CID = "CID";
-
     public static final String CONFIG_INTERACTIONS = "EVENTS";
 
     public static final String JAC_SHOW_TIMEOUT = "JAC_SHOW_TIMEOUT";
@@ -44,8 +42,6 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_CLIPBOARD_ALWAYS_ACTIVE = "CLIPBOARD_ALWAYS_ACTIVE";
 
     public static final String PARAM_CURRENT_BROWSE_PATH = "CURRENT_BROWSE_PATH";
-
-    // public static final String PARAM_HOME_DIRECTORY = "HOME_DIRECTORY";
 
     public static final String PARAM_DISABLE_RECONNECT = "DISABLE_RECONNECT";
 
@@ -67,13 +63,6 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_FILE_EXISTS = "FILE_EXISTS";
 
-    // public static final String PARAM_NO_TRAY = "NO_TRAY";
-
-    // public static final String PARAM_MIN_FREE_SPACE = "MIN_FREE_SPACE";
-
-    // public static final String PARAM_FILEWRITER_INSTANCE =
-    // "FILEWRITER_INSTANCE";
-
     public static final String PARAM_FINISHED_DOWNLOADS_ACTION = "FINISHED_DOWNLOADS_ACTION";
 
     public static final String PARAM_GLOBAL_IP_CHECK_SITE = "GLOBAL_IP_CHECK_SITE";
@@ -82,16 +71,9 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_GLOBAL_IP_MASK = "PARAM_GLOBAL_IP_MASK";
 
-    // public static final String PARAM_WEBUPDATE_LOAD_ALL_TOOLS =
-    // "WEBUPDATE_LOAD_ALL_TOOLS";
-
     public static final String PARAM_GLOBAL_IP_PATTERN = "GLOBAL_IP_PATTERN";
 
     public static final String PARAM_HOST_PRIORITY = "HOST_PRIORITY";
-
-    // public static final String PARAM_WRITE_LOG = "WRITE_LOG";
-
-    // public static final String PARAM_WRITE_LOG_PATH = "WRITE_LOG_PATH";
 
     public static final String PARAM_HTTPSEND_IP = "HTTPSEND_IP";
 
@@ -102,7 +84,7 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_HTTPSEND_ROUTERNAME = "PARAM_HTTPSEND_ROUTERNAME";
 
     public static final String PARAM_HTTPSEND_REQUESTS = "HTTPSEND_REQUESTS";
-    
+
     public static final String PARAM_HTTPSEND_REQUESTS_CLR = "HTTPSEND_REQUESTS_CLR";
 
     public static final String PARAM_HTTPSEND_RETRIES = "HTTPSEND_RETRIES";
@@ -115,14 +97,6 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_JAC_METHODS = "JAC_METHODS";
 
-    // public static final String PARAM_TWEAK_DOWNLOAD_CPU =
-    // "TWEAK_DOWNLOAD_CPU";
-
-    // public static final String PARAM_TWEAK_GUI_INTERVAL =
-    // "TWEAK_GUI_INTERVAL";
-
-    // public static final String PARAM_TWEAK_LOG = "TWEAK_LOG";
-
     public static final String PARAM_LOGGER_LEVEL = "LOGGER_LEVEL";
 
     public static final String PARAM_RECONNECT_TYPE = "RECONNECT_TYPE";
@@ -132,10 +106,6 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_SHOW_CONTAINER_ONLOAD_OVERVIEW = "SHOW_CONTAINER_ONLOAD_OVERVIEW";
 
     public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
-
-    // public static final String JAC_USE_CES = "JAC_USE_CES";
-
-    // public static final String JAC_CES_LOGIN = "JAC_CES_LOGIN";
 
     public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
 

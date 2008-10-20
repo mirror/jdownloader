@@ -143,8 +143,7 @@ public class Main {
     }
 
     public static void main(String args[]) {
-        
-        
+
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
             logger.info("apple.laf.useScreenMenuBar=true");
@@ -155,8 +154,7 @@ public class Main {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             new MacOSController();
         }
-        
-        
+
         for (String p : args) {
             if (p.equalsIgnoreCase("-debug")) {
                 debug = true;
@@ -418,28 +416,26 @@ public class Main {
             }
         }
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.webupdate", "Check Updates"));
-
-        init.doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), false);
+        init.doWebupdate(false);
 
         Main.setSplashStatus(splashScreen, 15, JDLocale.L("gui.splash.text.loadPlugins", "Lade Plugins"));
-
         init.initPlugins();
+
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loadGUI", "Lade Benutzeroberfläche"));
-
         init.initGUI(controller);
+
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
-
         init.loadDownloadQueue();
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
 
+        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
         init.loadModules();
+
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 
-   
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
-        
+
         controller.setInitStatus(JDController.INIT_STATUS_COMPLETE);
-       
+
         // init.createQueueBackup();
 
         Properties pr = System.getProperties();

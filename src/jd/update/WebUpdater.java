@@ -51,79 +51,12 @@ import sun.misc.BASE64Encoder;
  *         vergleicht sie mit den lokalen versionen
  */
 public class WebUpdater implements Serializable {
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 1946622313175234371L;
 
-    public static final String USE_CAPTCHA_EXCHANGE_SERVER = "USE_CAPTCHA_EXCHANGE_SERVER";
+    private static final long serialVersionUID = 1946622313175234371L;
 
     public static HashMap<String, Vector<String>> PLUGIN_LIST = null;
 
-    public static String htmlDecode(String str) {
-        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
-        // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
-        // Br0th3rs.part1.rar
-        if (str == null) { return null; }
-        StringBuffer sb = new StringBuffer();
-        String pattern = "(\\&\\#x[a-f0-9A-F]+\\;?)";
-        Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
-        while (r.find()) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1).replaceAll("\\&\\#x", "").replaceAll("\\;", ""), 16);
-                if (c == '$' || c == '\\') {
-                    r.appendReplacement(sb, "\\" + c);
-                } else {
-                    r.appendReplacement(sb, "" + c);
-                }
-            }
-        }
-        r.appendTail(sb);
-        str = sb.toString();
-
-        sb = new StringBuffer();
-        pattern = "(\\&\\#\\d+\\;?)";
-        r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
-        while (r.find()) {
-
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1).replaceAll("\\&\\#", "").replaceAll("\\;", ""), 10);
-                if (c == '$' || c == '\\') {
-                    r.appendReplacement(sb, "\\" + c);
-                } else {
-                    r.appendReplacement(sb, "" + c);
-                }
-            }
-        }
-        r.appendTail(sb);
-        str = sb.toString();
-
-        sb = new StringBuffer();
-        pattern = "(\\%[a-f0-9A-F]{2})";
-        r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
-        while (r.find()) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1).replaceFirst("\\%", ""), 16);
-                if (c == '$' || c == '\\') {
-                    r.appendReplacement(sb, "\\" + c);
-                } else {
-                    r.appendReplacement(sb, "" + c);
-                }
-            }
-        }
-        r.appendTail(sb);
-        str = sb.toString();
-
-        try {
-            str = URLDecoder.decode(str, "UTF-8");
-        } catch (Exception e) {
-        }
-        return HTMLEntities.unhtmlentities(str);
-    }
-
-    private int cid = -1;
-
-    private boolean OSFilter = true;
+    private boolean ignorePlugins = true;
 
     /**
      * Pfad zur lis.php auf dem updateserver
@@ -137,54 +70,21 @@ public class WebUpdater implements Serializable {
      */
     public String onlinePath;
 
+    private boolean OSFilter = true;
+
     private JProgressBar progresslist = null;
 
     private JProgressBar progressload = null;
 
-    /**
-     * Anzahl der ganzen Files
-     */
-    private transient int totalFiles = 0;
-
-    /**
-     * anzahl der aktualisierten Files
-     */
-    private transient int updatedFiles = 0;
-
     public byte[] sum;
-
-    private boolean ignorePlugins = true;
-
-
 
     /**
      * @param path
      *            (Dir Pfad zum Updateserver)
      */
-    public WebUpdater(String path) {
+    public WebUpdater() {
         logger = new StringBuffer();
-        if (path != null) {
-            setListPath(path);
-        } else {
-            setListPath("http://service.jdownloader.org/update/jd");
-        }
-
-    }
-
-    public static String Base64Encode(String plain) {
-
-        if (plain == null) { return null; }
-        String base64 = new BASE64Encoder().encode(plain.getBytes());
-
-        return base64;
-    }
-
-    public void setOSFilter(boolean filter) {
-        this.OSFilter = filter;
-    }
-
-    public boolean getOSFilter() {
-        return this.OSFilter;
+        setListPath("http://service.jdownloader.org/update/jd");
     }
 
     /**
@@ -349,33 +249,13 @@ public class WebUpdater implements Serializable {
         }
         HashMap<String, Vector<String>> plugins = new HashMap<String, Vector<String>>();
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
-     
+
         try {
             if (progresslist != null) {
                 progresslist.setValue(20);
             }
 
-            if (cid > 0) {
-                source = getRequest(new URL(listPath + "?cid=" + cid));
-            } else {
-
-                source = getRequest(new URL(listPath));
-            }
-            if (cid < 0 && source != null && source.indexOf("<br>") > 0) {
-                String cid = source.substring(0, source.indexOf("<br>")).trim();
-                if (cid != null) {
-                    try {
-                        log("New CID: " + cid);
-                        this.cid = Integer.parseInt(cid);
-                    } catch (Exception e) {
-                        log("CID Error: " + cid);
-                        this.cid = 0;
-                    }
-                }
-
-            } else {
-                log("NO CID: ");
-            }
+            source = getRequest(new URL(listPath));
 
             if (progresslist != null) {
                 progresslist.setValue(80);
@@ -450,10 +330,6 @@ public class WebUpdater implements Serializable {
         return ret;
     }
 
-    public int getCid() {
-        return cid;
-    }
-
     /**
      * @return the listPath
      */
@@ -496,6 +372,10 @@ public class WebUpdater implements Serializable {
         return onlinePath;
     }
 
+    public boolean getOSFilter() {
+        return this.OSFilter;
+    }
+
     /**
      * LIest eine webseite ein und gibt deren source zurück
      * 
@@ -503,8 +383,7 @@ public class WebUpdater implements Serializable {
      * @return String inhalt von urlStr
      */
     public String getRequest(URL link) throws Exception {
-        
-  
+
         HttpURLConnection httpConnection = (HttpURLConnection) link.openConnection();
 
         if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
@@ -546,37 +425,8 @@ public class WebUpdater implements Serializable {
         return htmlCode.toString();
     }
 
-    /**
-     * @return the totalFiles
-     */
-    public int getTotalFiles() {
-        return totalFiles;
-    }
-
-    /**
-     * Gibt die Anzhal der aktualisierten Files zurück
-     * 
-     * @return the updatedFiles
-     */
-    public int getUpdatedFiles() {
-        return updatedFiles;
-    }
-
-    /**
-     * Gibt die Anzahl der aktualisierbaren files zurück.
-     * 
-     * @return Anzahld er neuen Datein
-     * @throws Exception
-     */
-    public int getUpdateNum() throws Exception {
-        Vector<Vector<String>> files = getAvailableFiles();
-
-        if (files == null) { return 0; }
-
-        totalFiles = files.size();
-        filterAvailableUpdates(files);
-        return files.size();
-
+    public void ignorePlugins(boolean b) {
+        this.ignorePlugins = b;
     }
 
     public void log(String buf) {
@@ -588,29 +438,8 @@ public class WebUpdater implements Serializable {
         }
     }
 
-    /**
-     * Startet das Updaten
-     * 
-     * @throws Exception
-     */
-    public void run() throws Exception {
-
-        Vector<Vector<String>> files = getAvailableFiles();
-        if (files != null) {
-            // log(files.toString());
-            totalFiles = files.size();
-            filterAvailableUpdates(files);
-            updateFiles(files);
-        }
-    }
-
-    public void setCid(int cid) {
-        this.cid = cid;
-    }
-
     public void setDownloadProgress(JProgressBar progresslist) {
         progressload = progresslist;
-
     }
 
     /**
@@ -626,12 +455,22 @@ public class WebUpdater implements Serializable {
 
     public void setListProgress(JProgressBar progresslist) {
         this.progresslist = progresslist;
-
     }
 
     public void setLogger(StringBuffer log) {
-
         logger = log;
+    }
+
+    public void setOSFilter(boolean filter) {
+        this.OSFilter = filter;
+    }
+
+    public void updateFile(Vector<String> file) {
+
+        String[] tmp = file.elementAt(0).split("\\?");
+        log("Webupdater: download " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
+        downloadBinary(tmp[0], tmp[1]);
+
     }
 
     /**
@@ -644,19 +483,17 @@ public class WebUpdater implements Serializable {
         if (progressload != null) {
             progressload.setMaximum(files.size());
         }
-        updatedFiles = 0;
         for (int i = files.size() - 1; i >= 0; i--) {
 
             akt = new File(files.elementAt(i).elementAt(0)).getAbsolutePath();
             if (!new File(akt + ".noUpdate").exists()) {
-                updatedFiles++;
 
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
-                    log("Webupdater: download" + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
+                    log("Webupdater: download " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
                     downloadBinary(tmp[0], tmp[1]);
                 } else {
-                    log("Webupdater:  download" + onlinePath + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
+                    log("Webupdater:  download " + onlinePath + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
                     downloadBinary(akt, onlinePath + "/" + files.elementAt(i).elementAt(0));
                 }
                 log("Webupdater: ready");
@@ -671,10 +508,11 @@ public class WebUpdater implements Serializable {
     }
 
     /**
-     * @author JD-Team Macht ein urlRawEncode und spart dabei die angegebenen
-     *         Zeichen aus
+     * Macht ein urlRawEncode und spart dabei die angegebenen Zeichen aus
+     * 
      * @param str
      * @return str URLCodiert
+     * @author JD-Team
      */
     private String urlEncode(String str) {
         try {
@@ -711,17 +549,73 @@ public class WebUpdater implements Serializable {
         }
     }
 
-    public void updateFile(Vector<String> file) {
+    public static String Base64Encode(String plain) {
 
-        String[] tmp = file.elementAt(0).split("\\?");
-        log("Webupdater: download" + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
-        downloadBinary(tmp[0], tmp[1]);
+        if (plain == null) { return null; }
+        String base64 = new BASE64Encoder().encode(plain.getBytes());
 
+        return base64;
     }
 
-    public void ignorePlugins(boolean b) {
-        this.ignorePlugins = b;
+    public static String htmlDecode(String str) {
+        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
+        // Br0th3rs.part1.rar
+        if (str == null) { return null; }
+        StringBuffer sb = new StringBuffer();
+        String pattern = "(\\&\\#x[a-f0-9A-F]+\\;?)";
+        Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
+        while (r.find()) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1).replaceAll("\\&\\#x", "").replaceAll("\\;", ""), 16);
+                if (c == '$' || c == '\\') {
+                    r.appendReplacement(sb, "\\" + c);
+                } else {
+                    r.appendReplacement(sb, "" + c);
+                }
+            }
+        }
+        r.appendTail(sb);
+        str = sb.toString();
 
+        sb = new StringBuffer();
+        pattern = "(\\&\\#\\d+\\;?)";
+        r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
+        while (r.find()) {
+
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1).replaceAll("\\&\\#", "").replaceAll("\\;", ""), 10);
+                if (c == '$' || c == '\\') {
+                    r.appendReplacement(sb, "\\" + c);
+                } else {
+                    r.appendReplacement(sb, "" + c);
+                }
+            }
+        }
+        r.appendTail(sb);
+        str = sb.toString();
+
+        sb = new StringBuffer();
+        pattern = "(\\%[a-f0-9A-F]{2})";
+        r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
+        while (r.find()) {
+            if (r.group(1).length() > 0) {
+                char c = (char) Integer.parseInt(r.group(1).replaceFirst("\\%", ""), 16);
+                if (c == '$' || c == '\\') {
+                    r.appendReplacement(sb, "\\" + c);
+                } else {
+                    r.appendReplacement(sb, "" + c);
+                }
+            }
+        }
+        r.appendTail(sb);
+        str = sb.toString();
+
+        try {
+            str = URLDecoder.decode(str, "UTF-8");
+        } catch (Exception e) {
+        }
+        return HTMLEntities.unhtmlentities(str);
     }
 
 }

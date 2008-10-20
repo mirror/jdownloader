@@ -27,7 +27,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.config.CFGConfig;
-import jd.config.Configuration;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.http.Browser;
@@ -286,7 +285,7 @@ public class PackageManager extends Interaction implements Serializable {
                                 String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list);
                                 boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
                                 if (ret) {
-                                    new JDInit().doWebupdate(JDUtilities.getConfiguration().getIntegerProperty(Configuration.CID, -1), true);
+                                    new JDInit().doWebupdate(true);
                                 }
                             }
 
