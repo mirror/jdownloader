@@ -128,20 +128,27 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
             editEntry();
         } else if (e.getSource() == btnLoad) {
             loadEntry();
-            btnLoad.setEnabled(false);
         }
     }
 
-    private void editEntry() {
-        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsForDecrypt.get(table.getSelectedRow()).getPlugin().getConfig());
+    private void editEntry(DecryptPluginWrapper dpw) {
+        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), dpw.getPlugin().getConfig());
     }
 
-    private void loadEntry() {
+    private void editEntry() {
+        editEntry(pluginsForDecrypt.get(table.getSelectedRow()));
+    }
+
+    private void loadEntry(DecryptPluginWrapper dpw) {
         int cur = table.getSelectedRow();
-        DecryptPluginWrapper dpw = pluginsForDecrypt.get(cur);
         dpw.getPlugin();
         tableModel.fireTableRowsUpdated(cur, cur);
         btnEdit.setEnabled(dpw.hasConfig());
+        btnLoad.setEnabled(false);
+    }
+
+    private void loadEntry() {
+        loadEntry(pluginsForDecrypt.get(table.getSelectedRow()));
     }
 
     @Override
@@ -210,13 +217,11 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
 
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
-            int row = table.getSelectedRow();
-            DecryptPluginWrapper dpw = pluginsForDecrypt.get(row);
+            DecryptPluginWrapper dpw = pluginsForDecrypt.get(table.getSelectedRow());
             if (!dpw.isLoaded()) {
-                dpw.getPlugin();
-                tableModel.fireTableRowsUpdated(row, row);
+                loadEntry(dpw);
             } else if (dpw.hasConfig()) {
-                editEntry();
+                editEntry(dpw);
             }
         }
     }

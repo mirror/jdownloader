@@ -172,7 +172,6 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             editEntry();
         } else if (e.getSource() == btnLoad) {
             loadEntry();
-            btnLoad.setEnabled(false);
         }
     }
 
@@ -199,16 +198,24 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void dropActionChanged(DropTargetDragEvent dtde) {
     }
 
+    private void editEntry(HostPluginWrapper hpw) {
+        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), hpw.getPlugin().getConfig());
+    }
+
     private void editEntry() {
-        SimpleGUI.showConfigDialog(JDUtilities.getParentFrame(this), pluginsForHost.get(table.getSelectedRow()).getPlugin().getConfig());
+        editEntry(pluginsForHost.get(table.getSelectedRow()));
+    }
+
+    private void loadEntry(HostPluginWrapper hpw) {
+        int cur = table.getSelectedRow();
+        hpw.getPlugin();
+        tableModel.fireTableRowsUpdated(cur, cur);
+        btnEdit.setEnabled(hpw.hasConfig());
+        btnLoad.setEnabled(false);
     }
 
     private void loadEntry() {
-        int cur = table.getSelectedRow();
-        HostPluginWrapper dpw = pluginsForHost.get(cur);
-        dpw.getPlugin();
-        tableModel.fireTableRowsUpdated(cur, cur);
-        btnEdit.setEnabled(dpw.hasConfig());
+        loadEntry(pluginsForHost.get(table.getSelectedRow()));
     }
 
     @Override
@@ -223,9 +230,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 if (table.getSelectedColumn() < 0) return;
-                HostPluginWrapper dpw = pluginsForHost.get(table.getSelectedRow());
-                btnEdit.setEnabled(dpw.hasConfig());
-                btnLoad.setEnabled(!dpw.isLoaded());
+                HostPluginWrapper hpw = pluginsForHost.get(table.getSelectedRow());
+                btnEdit.setEnabled(hpw.hasConfig());
+                btnLoad.setEnabled(!hpw.isLoaded());
             }
         });
         table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<HostPluginWrapper>(pluginsForHost));
@@ -293,12 +300,11 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
     public void mouseClicked(MouseEvent e) {
         if (e.getClickCount() > 1) {
             int row = table.getSelectedRow();
-            HostPluginWrapper dpw = pluginsForHost.get(row);
-            if (!dpw.isLoaded()) {
-                dpw.getPlugin();
-                tableModel.fireTableRowsUpdated(row, row);
-            } else if (dpw.hasConfig()) {
-                editEntry();
+            HostPluginWrapper hpw = pluginsForHost.get(row);
+            if (!hpw.isLoaded()) {
+                loadEntry(hpw);
+            } else if (hpw.hasConfig()) {
+                editEntry(hpw);
             }
         }
     }
