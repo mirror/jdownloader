@@ -741,13 +741,13 @@ abstract public class DownloadInterface {
                     }
                 }
             }
-            if (allConnected) {
+            if (connection!=null&&allConnected) {
 
                 this.connection.disconnect();
 
             }
 
-            if (this.isExternalyAborted()) {
+            if (connection!=null&&this.isExternalyAborted()) {
 
                 this.connection.disconnect();
 

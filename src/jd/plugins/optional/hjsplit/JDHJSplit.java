@@ -30,6 +30,7 @@ import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
@@ -38,6 +39,8 @@ import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.optional.jdunrar.JDUnrarConstants;
 import jd.unrar.hjsplitt.JAxeJoiner;
@@ -75,21 +78,59 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     /**
-     * das controllevent fängt heruntergeladene file ab und wertet sie aus
+     * das controllevent fängt heruntergeladene file ab und wertet sie aus.
+     * CONTROL_PLUGIN_INACTIVE: Wertet die frisch fertig gewordenen Downloads
+     * aus. CONTROL_ON_FILEOUTPUT: wertet frisch fertig verarbeitete files aus,
+     * z.B. frisch entpackte CONTROL_LINKLIST_CONTEXT_MENU: wird verwendet um
+     * ins kontextmenü der gui die menüpunkte zu schreiben
      */
+    @SuppressWarnings("unchecked")
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
+        DownloadLink link;
 
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
+            if (!(event.getSource() instanceof PluginForHost)) { return; }
+            link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            File file = new File(link.getFileOutput());
 
+            if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                if (link.getFilePackage().isExtractAfterDownload()) {
+                    file = this.getStartFile(file);
+                    if (this.validateArchive(file)) {
+                        addFileList(new File[] { file });
+                    }
+
+                }
+            }
+            break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
 
             addFileList((File[]) event.getParameter());
             break;
 
         case ControlEvent.CONTROL_LINKLIST_CONTEXT_MENU:
+            ArrayList<MenuItem> items = (ArrayList<MenuItem>) event.getParameter();
+            MenuItem m;
+            if (event.getSource() instanceof DownloadLink) {
+                link = (DownloadLink) event.getSource();
+
+                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdhjsplit.linkmenu.merge", "Merge"), 1000).setActionListener(this));
+                m.setEnabled(false);
+                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && this.isStartVolume(new File(link.getFileOutput()))) m.setEnabled(true);
+                if (new File(link.getFileOutput()).exists() && link.getName().matches(".*rar$")) m.setEnabled(true);
+
+                m.setProperty("LINK", link);
+
+            } else {
+                FilePackage fp = (FilePackage) event.getSource();
+                items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
+                m.setProperty("PACKAGE", fp);
+
+            }
+
             break;
 
         }
@@ -136,13 +177,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             } else {
                 JDUtilities.getController().removeControlListener(this);
             }
-
             break;
         case 21:
             JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");
             fc.setMultiSelectionEnabled(true);
             FileFilter ff = new FileFilter() {
-
                 public boolean accept(File pathname) {
                     if (isStartVolume(pathname)) return true;
                     if (pathname.isDirectory()) return true;
@@ -151,7 +190,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
                 @Override
                 public String getDescription() {
-                    // TODO Auto-generated method stub
                     return "HJSPLIT-Startvolumes";
                 }
 
@@ -160,7 +198,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
             File[] list = fc.getSelectedFiles();
             if (list == null) return;
-
             addFileList(list);
             break;
         case 4:
@@ -173,10 +210,41 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
             pop.setVisible(true);
             break;
+
+        case 1000:
+            File file = new File(((DownloadLink) source.getProperty("LINK")).getFileOutput());
+            file = this.getStartFile(file);
+            if (this.validateArchive(file)) {
+                addFileList(new File[] { file });
+            }
+            break;
+
+        case 1001:
+
+            FilePackage fp = (FilePackage) source.getProperty("PACKAGE");
+            ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
+            for (DownloadLink l : fp.getDownloadLinks()) {
+                if (l.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    file = new File(l.getFileOutput());
+                    if (this.validateArchive(file)) {
+                        links.add(l);
+                    }
+                }
+            }
+            if (links.size() <= 0) return;
+            addFileList(links.toArray(new File[] {}));
+            break;
+
         }
 
     }
 
+    /**
+     * Fügt lokale files der mergqueue hinzu. es muss sich bereits zum
+     * startarchive handeln.
+     * 
+     * @param list
+     */
     private void addFileList(File[] list) {
         DownloadLink link;
         for (File archiveStartFile : list) {
@@ -186,20 +254,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 logger.info("Archive " + archiveStartFile + " is incomplete or no archive. Validation failed");
                 return;
             }
-
-            // try {
-            // Signature signature =
-            // FileSignatures.getFileSignature(archiveStartFile);
-            // if (signature.getDesc().equals("Rar Archiv") ||
-            // signature.getDesc().equals("7-Zip Archiv")) {
-            // logger.info("Archive " + archiveStartFile + " is " +
-            // signature.getDesc() + ". cannot merge this type");
-            // return;
-            // }
-            // } catch (IOException e1) {
-            // // TODO Auto-generated catch block
-            // e1.printStackTrace();
-            // }
             link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile);
             if (link == null) link = createDummyLink(archiveStartFile);
 
@@ -262,7 +316,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                         if (System.currentTimeMillis() - last > 100) {
                             progress.setStatus((int) (pe.getCurrent() * 100 / pe.getMax()));
                             last = System.currentTimeMillis();
-                            progress.setStatusText(output.getName()+": "+(pe.getCurrent() / 1048576) + " MB merged");
+                            progress.setStatusText(output.getName() + ": " + (pe.getCurrent() / 1048576) + " MB merged");
                         }
                     } catch (Exception e) {
                         // TODO: handle exception
@@ -270,7 +324,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
                 }
             });
-          
+
             if (this.getPluginConfig().getBooleanProperty(CONFIG_KEY_OVERWRITE, false)) {
 
                 if (output.exists()) output.delete();
@@ -285,7 +339,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 }
             }
 
-        
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_FILEOUTPUT, new File[] { output }));
         } catch (Exception e) {
             e.printStackTrace();
@@ -298,6 +351,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         }
     }
 
+    /**
+     * Gibt die zu entpackende Datei zurück.
+     * 
+     * @param file
+     * @return
+     */
     private File getOutputFile(File file) {
 
         int type = getArchiveType(file);
@@ -314,6 +373,16 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         }
     }
 
+    /**
+     * Validiert ein archiv. Archive haben zwei formen: unix: *.aa..*.ab..*.ac .
+     * das zweite a wird hochgezählt normal: *.001...*.002
+     * 
+     * Die Funktion versucht zu prüfen ob das archiv komplett heruntergeladen
+     * wurde und ob es ein gültoges archiv ist.
+     * 
+     * @param file
+     * @return
+     */
     private boolean validateArchive(File file) {
         File startFile = getStartFile(file);
         if (startFile == null || !startFile.exists() || !startFile.isFile()) return false;
@@ -332,6 +401,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         }
     }
 
+    /**
+     * Gibt alle files die zum archiv von file gehören zurück
+     * 
+     * @param file
+     * @return
+     */
     private ArrayList<File> getFileList(File file) {
 
         File startFile = getStartFile(file);
@@ -352,6 +427,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     }
 
+    /**
+     * Validiert typ normal (siehe validateArchiv)
+     * 
+     * @param file
+     * @return
+     */
     private ArrayList<File> validateNormalType(File file) {
         final String matcher = file.getName().replaceFirst("\\.[\\d]+($|\\..*)", "\\\\.[\\\\d]+$1");
         ArrayList<DownloadLink> missing = JDUtilities.getController().getMatchingLinks(matcher);
@@ -384,7 +465,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     /**
      * Validiert das archiv auf 2 arten 1. wird ind er downloadliste nach
      * passenden unfertigen archiven gesucht 2. wird das archiv durchnummeriert
-     * und geprüft ob es lücken/fehlende files gibts
+     * und geprüft ob es lücken/fehlende files gibts siehe (validateArchiv)
      * 
      * @param file
      * @return

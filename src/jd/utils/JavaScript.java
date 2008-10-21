@@ -16,12 +16,14 @@
 
 package jd.utils;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 import jd.http.Browser;
 import jd.parser.Regex;
 
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.EcmaError;
 import org.mozilla.javascript.Scriptable;
 
 public class JavaScript {
@@ -82,9 +84,9 @@ public class JavaScript {
                     res = eval(res, cx, scope, br);
                     rep += res;
 
-                } catch (Exception e) {
+                } catch (EcmaError e) {
                     // TODO Auto-generated catch block
-
+e.printStackTrace(System.err);
                     System.out.println(e.getMessage() + "\r\n" + content);
                 }
             }

@@ -467,7 +467,15 @@ public class Browser {
             new URL(string);
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
-            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0) == '/' ? string : "/" + string);
+            String path = request.getHttpConnection().getURL().getPath();
+            int id;
+            if((id=path.lastIndexOf("/"))>0){
+        path=path.substring(0,id);
+            }
+         if(path.trim().length()==0)path="/";
+           
+          //  path.substring(path.lastIndexOf("/"))
+            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0) == '/' ? string : path+"/" + string);
         }
         return string;
     }

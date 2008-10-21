@@ -291,38 +291,40 @@ public class Uploadedto extends PluginForHost {
 
         Form form = br.getFormbyValue("Download");
 
-        Request request = br.createFormRequest(form);
+    form.put("download_submit", "Download");
         sleep(10000l,downloadLink);
-        dl = new RAFDownload(this, downloadLink, request);
+      
 //        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
 //        dl.setResume(true);
-        try {
-            dl.connect();
-        } catch (Exception e) {
-            error = new Regex(request.getLocation(), "http://uploaded.to/\\?view=(.*?)").getMatch(0);
-            if (error == null) {
-                error = new Regex(request.getLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
-            }
-            if (error != null) {
-                String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
-
-                throw new PluginException(LinkStatus.ERROR_FATAL, message);
-
-            }
-
-            if (request.getLocation() != null) {
-                br.setRequest(request);
-                request.getHttpConnection().disconnect();
-                request = br.createGetRequest(null);
-                dl = new RAFDownload(this, downloadLink, request);
-//                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-//                dl.setResume(true);
-                dl.connect();
-            }
-        }
-        if (request.getHttpConnection().getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
-        }
+        
+        br.openDownload(downloadLink, form);
+//        try {
+//            dl.connect();
+//        } catch (Exception e) {
+//            error = new Regex(request.getLocation(), "http://uploaded.to/\\?view=(.*?)").getMatch(0);
+//            if (error == null) {
+//                error = new Regex(request.getLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
+//            }
+//            if (error != null) {
+//                String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
+//
+//                throw new PluginException(LinkStatus.ERROR_FATAL, message);
+//
+//            }
+//
+//            if (request.getLocation() != null) {
+//                br.setRequest(request);
+//                request.getHttpConnection().disconnect();
+//                request = br.createGetRequest(null);
+//                dl = new RAFDownload(this, downloadLink, request);
+////                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
+////                dl.setResume(true);
+//                dl.connect();
+//            }
+//        }
+//        if (request.getHttpConnection().getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+//
+//        }
 
         dl.startDownload();
 

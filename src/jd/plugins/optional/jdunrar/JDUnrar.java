@@ -436,27 +436,27 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21);
         m.setActionListener(this);
         menu.add(m);
-
-        MenuItem queue;
-        queue = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.optional.jdunrar.menu.queue", "Current Queue"), 3);
-        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.start", "Start queue"), 30);
-
-        m.setActionListener(this);
-        queue.addMenuItem(m);
-        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.clear", "Clear queue"), 31);
-
-        m.setActionListener(this);
-        queue.addMenuItem(m);
-        queue.addMenuItem(m = new MenuItem(MenuItem.SEPARATOR));
-        int i = 0;
-        for (DownloadLink link : this.queue) {
-            m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.menu.queue.extract", "Extract %s", link.getName()), 3000 + i);
-            m.setActionListener(this);
-            queue.addMenuItem(m);
-            i++;
-
-        }
-        menu.add(queue);
+//
+//        MenuItem queue;
+//        queue = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.optional.jdunrar.menu.queue", "Current Queue"), 3);
+//        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.start", "Start queue"), 30);
+//
+//        m.setActionListener(this);
+//        queue.addMenuItem(m);
+//        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.clear", "Clear queue"), 31);
+//
+//        m.setActionListener(this);
+//        queue.addMenuItem(m);
+//        queue.addMenuItem(m = new MenuItem(MenuItem.SEPARATOR));
+//        int i = 0;
+//        for (DownloadLink link : this.queue) {
+//            m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.menu.queue.extract", "Extract %s", link.getName()), 3000 + i);
+//            m.setActionListener(this);
+//            queue.addMenuItem(m);
+//            i++;
+//
+//        }
+//        menu.add(queue);
 
         menu.add(m = new MenuItem(MenuItem.SEPARATOR));
 
@@ -476,7 +476,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private void menuitemActionPerformed(ActionEvent e, MenuItem source) {
         SubConfiguration cfg = this.getPluginConfig();
         switch (source.getActionID()) {
-        case 0:
+        case 1:
             boolean newValue;
             cfg.setProperty("ACTIVATED", newValue = !cfg.getBooleanProperty("ACTIVATED", true));
             if (newValue) {
