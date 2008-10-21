@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 
@@ -136,23 +135,20 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-       this.setBrowserExclusive();
-       br.setFollowRedirects(true);
-       br.getPage(downloadLink.getDownloadURL());
-       
-      String filename = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div").trim();
-        String size= br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div[2]").trim();
-        if(filename==null||filename.length()==0){
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage(downloadLink.getDownloadURL());
+
+        String filename = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div").trim();
+        String size = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div[2]").trim();
+        if (filename == null || filename.length() == 0) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(size));
-//        try {
-//            return checkLinks(new DownloadLink[] { downloadLink })[0];
-//        } catch (Exception e) {
-//        }
-        
-        
+        // try {
+        // return checkLinks(new DownloadLink[] { downloadLink })[0];
+        // } catch (Exception e) {
+        // }
+
         return true;
     }
 
@@ -180,7 +176,7 @@ public class Megauploadcom extends PluginForHost {
         br.getPage(link);
         if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
 
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
 
         }
         if (br.containsHTML(ERROR_FILENOTFOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -265,13 +261,14 @@ public class Megauploadcom extends PluginForHost {
         }
 
         dl.startDownload();
-        //Wenn ein Download Premium mit mehreren chunks angefangen wird, und dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd die mehrfachchunks aus premium nicht resumen kann.
-        //In diesem Fall wird der link resetted.
-        if(linkStatus.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED)&&linkStatus.getErrorMessage().contains("Limit Exceeded")){
-          downloadLink.setChunksProgress(null);
-          linkStatus.setStatus(LinkStatus.ERROR_RETRY);
+        // Wenn ein Download Premium mit mehreren chunks angefangen wird, und
+        // dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd die
+        // mehrfachchunks aus premium nicht resumen kann.
+        // In diesem Fall wird der link resetted.
+        if (linkStatus.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED) && linkStatus.getErrorMessage().contains("Limit Exceeded")) {
+            downloadLink.setChunksProgress(null);
+            linkStatus.setStatus(LinkStatus.ERROR_RETRY);
         }
-
 
     }
 
@@ -282,45 +279,51 @@ public class Megauploadcom extends PluginForHost {
      */
     public boolean[] checkLinks(DownloadLink[] urls) {
         return null;
-//        try {
-//            if (urls == null) { return null; }
-//            boolean[] ret = new boolean[urls.length];
-//            HashMap<String, String> post = new HashMap<String, String>();
-//            for (int j = 0; j < urls.length; j++) {
-//                if (!canHandle(urls[j].getDownloadURL())) { return null; }
-//                post.put("id" + j, new Regex(urls[j].getDownloadURL(), ".*?\\?d\\=(.{8})").getMatch(0));
-//            }
-//            Browser b = new Browser();
-//            b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l", "de");
-//            b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar", "1");
-//            String pag = b.postPage("http://www.megaupload.com/mgr_linkcheck.php", post).replaceFirst("0=www.megaupload.com&1=www.megarotic.com&", "").replaceFirst("id[\\d]+=", "").trim();
-//            String[] pg = pag.split("&id[\\d]+=");
-//            for (int j = 0; j < pg.length; j++) {
-//                try {
-//                    String[] infos = pg[j].split("&[sdn]=");
-//                    if (infos.length < 4 || !infos[0].equals("0")) {
-//                        ret[j] = false;
-//                    } else {
-//                        ret[j] = true;
-//                        urls[j].setDownloadSize(Integer.parseInt(infos[1]));
-//                        urls[j].setName(Encoding.htmlDecode(infos[3].trim()));
-//                    }
-//                } catch (Exception e) {
-//                    ret[j] = false;
-//                }
-//
-//            }
-//            return ret;
-//
-//        } catch (MalformedURLException e) {
-//
-//            e.printStackTrace();
-//            return null;
-//        } catch (Exception e) {
-//
-//            e.printStackTrace();
-//            return null;
-//        }
+        // try {
+        // if (urls == null) { return null; }
+        // boolean[] ret = new boolean[urls.length];
+        // HashMap<String, String> post = new HashMap<String, String>();
+        // for (int j = 0; j < urls.length; j++) {
+        // if (!canHandle(urls[j].getDownloadURL())) { return null; }
+        // post.put("id" + j, new Regex(urls[j].getDownloadURL(),
+        // ".*?\\?d\\=(.{8})").getMatch(0));
+        // }
+        // Browser b = new Browser();
+        // b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l",
+        // "de");
+        // b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar",
+        // "1");
+        // String pag =
+        // b.postPage("http://www.megaupload.com/mgr_linkcheck.php",
+        // post).replaceFirst("0=www.megaupload.com&1=www.megarotic.com&",
+        // "").replaceFirst("id[\\d]+=", "").trim();
+        // String[] pg = pag.split("&id[\\d]+=");
+        // for (int j = 0; j < pg.length; j++) {
+        // try {
+        // String[] infos = pg[j].split("&[sdn]=");
+        // if (infos.length < 4 || !infos[0].equals("0")) {
+        // ret[j] = false;
+        // } else {
+        // ret[j] = true;
+        // urls[j].setDownloadSize(Integer.parseInt(infos[1]));
+        // urls[j].setName(Encoding.htmlDecode(infos[3].trim()));
+        // }
+        // } catch (Exception e) {
+        // ret[j] = false;
+        // }
+        //
+        // }
+        // return ret;
+        //
+        // } catch (MalformedURLException e) {
+        //
+        // e.printStackTrace();
+        // return null;
+        // } catch (Exception e) {
+        //
+        // e.printStackTrace();
+        // return null;
+        // }
 
     }
 

@@ -119,8 +119,13 @@ public class JDPremiumCollector extends PluginOptional {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
-            fetchAccounts();
+        if (e.getSource() instanceof MenuItem) {
+            MenuItem mi = (MenuItem) e.getSource();
+            if (mi.getActionID() == 0) {
+                fetchAccounts();
+            } else if (mi.getActionID() == 1) {
+                SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), getConfig());
+            }
         }
     }
 
@@ -165,6 +170,7 @@ public class JDPremiumCollector extends PluginOptional {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
+        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("gui.btn_settings", "Einstellungen"), 1).setActionListener(this));
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.premiumcollector.fetchAccounts", "Fetch Accounts"), 0).setActionListener(this));
 
         return menu;

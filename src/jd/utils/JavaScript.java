@@ -16,7 +16,6 @@
 
 package jd.utils;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
 
 import jd.http.Browser;
@@ -86,7 +85,7 @@ public class JavaScript {
 
                 } catch (EcmaError e) {
                     // TODO Auto-generated catch block
-e.printStackTrace(System.err);
+                    e.printStackTrace(System.err);
                     System.out.println(e.getMessage() + "\r\n" + content);
                 }
             }

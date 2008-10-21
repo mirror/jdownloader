@@ -30,7 +30,6 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
@@ -128,7 +127,7 @@ public class Uploadedto extends PluginForHost {
         correctURL(downloadLink);
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        br.setDebug(true);
+        // br.setDebug(true);
         br.setCookie("http://uploaded.to/", "lang", "de");
 
         String user = account.getUser();
@@ -222,22 +221,20 @@ public class Uploadedto extends PluginForHost {
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
-  
+
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);
-       String id=new Regex(downloadLink.getDownloadURL(),"http://uploaded.to/file/(.*?)/").getMatch(0);
-       
-        br.getPage("http://uploaded.to/api/file?id="+id);
-        String[] lines = Regex.getLines(br+"");
-       
-        
+        String id = new Regex(downloadLink.getDownloadURL(), "http://uploaded.to/file/(.*?)/").getMatch(0);
+
+        br.getPage("http://uploaded.to/api/file?id=" + id);
+        String[] lines = Regex.getLines(br + "");
+
         String fileName = lines[0].trim();
-  
-     
-        long fileSize =Long.parseLong(lines[1].trim());
+
+        long fileSize = Long.parseLong(lines[1].trim());
         downloadLink.setName(fileName);
 
         downloadLink.setDownloadSize(fileSize);
@@ -247,7 +244,6 @@ public class Uploadedto extends PluginForHost {
     }
 
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
@@ -257,7 +253,7 @@ public class Uploadedto extends PluginForHost {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
-        br.setDebug(true);
+        // br.setDebug(true);
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         br.setCookiesExclusive(true);
@@ -291,40 +287,48 @@ public class Uploadedto extends PluginForHost {
 
         Form form = br.getFormbyValue("Download");
 
-    form.put("download_submit", "Download");
-        sleep(10000l,downloadLink);
-      
-//        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-//        dl.setResume(true);
-        
-        br.openDownload(downloadLink, form);
-//        try {
-//            dl.connect();
-//        } catch (Exception e) {
-//            error = new Regex(request.getLocation(), "http://uploaded.to/\\?view=(.*?)").getMatch(0);
-//            if (error == null) {
-//                error = new Regex(request.getLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
-//            }
-//            if (error != null) {
-//                String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
-//
-//                throw new PluginException(LinkStatus.ERROR_FATAL, message);
-//
-//            }
-//
-//            if (request.getLocation() != null) {
-//                br.setRequest(request);
-//                request.getHttpConnection().disconnect();
-//                request = br.createGetRequest(null);
-//                dl = new RAFDownload(this, downloadLink, request);
-////                dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-////                dl.setResume(true);
-//                dl.connect();
-//            }
-//        }
-//        if (request.getHttpConnection().getContentLength() == 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-//
-//        }
+        form.put("download_submit", "Download");
+        sleep(10000l, downloadLink);
+
+        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
+        // 2));
+        // dl.setResume(true);
+
+        dl = br.openDownload(downloadLink, form);
+        // try {
+        // dl.connect();
+        // } catch (Exception e) {
+        // error = new Regex(request.getLocation(),
+        // "http://uploaded.to/\\?view=(.*?)").getMatch(0);
+        // if (error == null) {
+        // error = new Regex(request.getLocation(),
+        // "\\?view=(.*?)&id\\_a").getMatch(0);
+        // }
+        // if (error != null) {
+        // String message = JDLocale.L("plugins.errors.uploadedto." + error,
+        // error.replaceAll("_", " "));
+        //
+        // throw new PluginException(LinkStatus.ERROR_FATAL, message);
+        //
+        // }
+        //
+        // if (request.getLocation() != null) {
+        // br.setRequest(request);
+        // request.getHttpConnection().disconnect();
+        // request = br.createGetRequest(null);
+        // dl = new RAFDownload(this, downloadLink, request);
+        // //
+        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
+        // 2));
+        // // dl.setResume(true);
+        // dl.connect();
+        // }
+        // }
+        // if (request.getHttpConnection().getContentLength() == 0) { throw new
+        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 *
+        // 1000l);
+        //
+        // }
 
         dl.startDownload();
 
