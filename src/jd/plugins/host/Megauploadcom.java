@@ -166,7 +166,7 @@ public class Megauploadcom extends PluginForHost {
         br.getPage(link);
         if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
 
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
 
         }
         if (br.containsHTML(ERROR_FILENOTFOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

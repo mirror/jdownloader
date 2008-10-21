@@ -38,7 +38,7 @@ import jd.utils.JDUtilities;
 public class HTTPAllgemein extends PluginForHost {
 
     public static final String DISABLED = "HttpAllgemeinDisabled";
-    
+
     private String contentType;
     public HTTPAllgemein(PluginWrapper wrapper) {
         super(wrapper);

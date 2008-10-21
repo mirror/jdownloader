@@ -34,7 +34,7 @@ import jd.plugins.PluginForDecrypt;
 public class Collectr extends PluginForDecrypt {
     private static final Pattern PAT_SUPPORTED_OUT    = Pattern.compile("http://[\\w\\.]*?collectr\\.net/out/(\\d+/)?\\d+",Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_AB_18        = Pattern.compile("Hast du das 18 Lebensjahr bereits abgeschlossen\\?.*");
-    
+
     private static final Pattern PAT_SUPPORTED_FOLDER = Pattern.compile("http://[\\w\\.]*?collectr\\.net/links/(\\w+)",Pattern.CASE_INSENSITIVE);
     private static final Pattern PATTERN_GETLINK      = Pattern.compile("<a href=\"javascript:getLink\\(lnk\\[(\\d+)\\]\\)\">(.+?)  #\\d+</a>");
     private static final Pattern PATTERN_SAPCHA       = Pattern.compile("useSaptcha\\s+=\\s+(\\d+);");
@@ -52,15 +52,15 @@ public class Collectr extends PluginForDecrypt {
         String page = br.getPage(url);
         if(new Regex(url,PAT_SUPPORTED_OUT).matches()){
             Form[] forms = br.getForms();
-    
+
             if (Regex.matches(page, PATTERN_AB_18)) {
                 forms[0].put("o18", "o18=true");
                 br.submitForm(forms[0]);
             }
-    
+
             String links[] = br.getRegex("<iframe id=\"displayPage\" src=\"(.*?)\" name=\"displayPage\"").getColumn(0);
             progress.setRange(links.length);
-    
+
             for (String element : links) {
                 decryptedLinks.add(createDownloadlink(element));
                 progress.increase(1);
