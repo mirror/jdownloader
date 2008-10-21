@@ -65,7 +65,7 @@ public class Serienjunkies extends PluginForHost {
 
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) throws PluginException {
-        Vector<String> links = new Vector<String>();
+        final Vector<String> links = new Vector<String>();
         Browser br = new Browser();
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
@@ -143,27 +143,54 @@ public class Serienjunkies extends PluginForHost {
                 links.add(br.getRedirectLocation());
             }
             Form[] forms = br.getForms();
+            Vector<Thread> threads = new Vector<Thread>();
             for (int i = 0; i < forms.length; i++) {
                 if (!forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
                     try {
+                        final String action = forms[i].action;
+                        
+                        Thread t = new Thread(new Runnable() {
+                            public void run() {
+                                for (int j = 0; j < 4; j++) {
+                                    try {
+                                        Thread.sleep(1000 * j);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+                                    Browser br = new Browser();
+                                    try {
+                                        br.getPage(action);
+                                        br.getPage(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+                                        String loc = br.getRedirectLocation();
+                                        if (loc != null) {
 
-                        for (int j = 0; j < 4; j++) {
-                            if (i > 0) {
-                                Thread.sleep(1000 * i);
+                                            links.add(loc);
+                                            break;
+                                        }
+                                    } catch (IOException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+
+                                }
                             }
-                            br.getPage(forms[i].action);
-
-                            String loc = br.openGetConnection(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0)).getHeaderField("Location");
-                            if (loc != null) {
-
-                                links.add(loc);
-                                break;
-                            }
-                        }
-
+                        });
+                        t.start();
+                        threads.add(t);
                     } catch (Exception e) {
                     }
-
+                    for (Thread t : threads) {
+                        while(t.isAlive())
+                        {
+                            try {
+                                Thread.sleep(10);
+                            } catch (InterruptedException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    }
                 }
             }
         } catch (IOException e) {
@@ -398,7 +425,7 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
