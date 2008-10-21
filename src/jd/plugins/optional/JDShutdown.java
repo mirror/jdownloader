@@ -24,7 +24,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
-import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
@@ -35,43 +34,36 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class JDShutdown extends PluginOptional {
-    public JDShutdown(PluginWrapper wrapper) {
-        super(wrapper);
-        // TODO Auto-generated constructor stub
-    }
-
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDSHUTDOWN");
 
     private static final int count = 60;
-
-    private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
 
     public static int getAddonInterfaceVersion() {
         return 2;
     }
 
+    private MenuItem menuItem;
+
+    public JDShutdown(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+
     @Override
     public void actionPerformed(ActionEvent e) {
-        MenuItem mi = (MenuItem) e.getSource();
-        if (mi.getActionID() == 0) {
-            subConfig.setProperty(PROPERTY_ENABLED, true);
-            subConfig.save();
-            JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "JDownloader wird das System nach dem Download herunterfahren."));
-        } else {
-            subConfig.setProperty(PROPERTY_ENABLED, false);
-            subConfig.save();
-            JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird von JDownloader NICHT heruntergefahren."));
+        if (e.getSource() == menuItem) {
+            if (!menuItem.isSelected()) {
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
+            } else {
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
+            }
         }
     }
 
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
-        if (subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
+        if (menuItem.isSelected()) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
-                    subConfig.setProperty(PROPERTY_ENABLED, false);
-                    subConfig.save();
                     shutDown();
                 }
             }
@@ -81,14 +73,11 @@ public class JDShutdown extends PluginOptional {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        MenuItem m;
-        if (!subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.enable", "Herunterfahren aktivieren"), 0).setActionListener(this));
-            m.setSelected(false);
-        } else {
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu.disable", "Herunterfahren deaktivieren"), 1).setActionListener(this));
-            m.setSelected(true);
-        }
+
+        if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "System nach dem Downloaden herunterfahren"), 0).setActionListener(this);
+        menu.add(menuItem);
+        menuItem.setSelected(!menuItem.isSelected());
+
         return menu;
     }
 
@@ -118,10 +107,6 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public void onExit() {
-        // Wollen wir, dass der Status auch beim "normalen" Beenden resettet
-        // wird?
-        // subConfig.setProperty(PROPERTY_ENABLED, false);
-        // subConfig.save();
     }
 
     public void shutDown() {
