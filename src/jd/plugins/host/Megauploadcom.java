@@ -268,7 +268,8 @@ public class Megauploadcom extends PluginForHost {
         //Wenn ein Download Premium mit mehreren chunks angefangen wird, und dann versucht wird ihn free zu resumen, schlägt das fehl, weil jd die mehrfachchunks aus premium nicht resumen kann.
         //In diesem Fall wird der link resetted.
         if(linkStatus.hasStatus(LinkStatus.ERROR_DOWNLOAD_FAILED)&&linkStatus.getErrorMessage().contains("Limit Exceeded")){
-          downloadLink.reset();
+          downloadLink.setChunksProgress(null);
+          linkStatus.setStatus(LinkStatus.ERROR_RETRY);
         }
 
 
