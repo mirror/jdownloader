@@ -25,9 +25,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class zShare extends PluginForHost {
+public class ZShareNet extends PluginForHost {
 
-    public zShare(PluginWrapper wrapper) {
+    public ZShareNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 

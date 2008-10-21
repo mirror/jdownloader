@@ -93,7 +93,7 @@ public class HTTPAllgemein extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
-        if(!downloadLink.getDownloadURL().endsWith(".flv")){
+        if(!downloadLink.getDownloadURL().toLowerCase().endsWith(".flv")){
             dl.startDownload();
         }else{
             //Es handelt sich um eine Flash Datei
