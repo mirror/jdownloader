@@ -737,6 +737,9 @@ public class JDInit {
         new HostPluginWrapper("zshare.net", "ZShareNet", "http://[\\w\\.]*?zshare\\.net/(download|video|image|audio|flash)/.*");
         new HostPluginWrapper("gigasize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*");
 
+        new HostPluginWrapper("letitbit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[a-zA-Z0-9]+?/.*");
+
+     
     }
 
     public void loadPluginOptional() {
