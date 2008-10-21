@@ -50,7 +50,8 @@ public class JDShutdown extends PluginOptional {
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == menuItem) {
-            if (!menuItem.isSelected()) {
+            menuItem.setSelected(!menuItem.isSelected());
+            if (menuItem.isSelected()) {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
             } else {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
@@ -76,7 +77,6 @@ public class JDShutdown extends PluginOptional {
 
         if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "System nach dem Downloaden herunterfahren"), 0).setActionListener(this);
         menu.add(menuItem);
-        menuItem.setSelected(!menuItem.isSelected());
 
         return menu;
     }
