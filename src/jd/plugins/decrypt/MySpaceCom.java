@@ -308,7 +308,7 @@ public class MySpaceCom extends PluginForDecrypt {
         // downloadModes.add("Mp3s immer in hoher Quallität herunterladen.");
         // downloadModes.add("Mp3s immer in normaler Quallität herunterladen.");
         // downloadModes.add("Bei jedem Download erneut nachfragen.");
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS1, JDLocale.L("plugins.decrypt.myspacecom0", "Load all downloads into \"myspace.com/\"")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS1, JDLocale.L("plugins.decrypt.myspacecom0", "Load all downloads into 'myspace.com/'")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS2, JDLocale.L("plugins.decrypt.myspacecom1", "Create a subfolder for each artist")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_DL_NAME_MODIFICATION, JDLocale.L("plugins.decrypt.myspacecom2", "Put the myspace username as prefix to the filename of all downloads")).setDefaultValue(true));
         // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX,

@@ -135,7 +135,7 @@ public class ConfigPanelEventmanager extends ConfigPanel implements ActionListen
             InteractionTrigger event = (InteractionTrigger) JOptionPane.showInputDialog(this, JDLocale.L("gui.config.eventmanager.new.selectTrigger.title", "Trigger auswählen"), JDLocale.L("gui.config.eventmanager.new.selectTrigger.desc", "Wann soll eine Aktion ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, InteractionTrigger.getAllTrigger(), null);
             if (event == null) return;
 
-            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, JDLocale.LF("gui.config.eventmanager.new.selectAction.title", "Aktion auswählen für \"%s\"", event.getName()), JDLocale.L("gui.config.eventmanager.new.selectAction.desc", "Welche Aktion soll ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, Interaction.getInteractionList(), null);
+            Interaction interaction = (Interaction) JOptionPane.showInputDialog(this, JDLocale.LF("gui.config.eventmanager.new.selectAction.title", "Aktion auswählen für '%s'", event.getName()), JDLocale.L("gui.config.eventmanager.new.selectAction.desc", "Welche Aktion soll ausgeführt werden?"), JOptionPane.QUESTION_MESSAGE, null, Interaction.getInteractionList(), null);
             if (interaction == null) return;
 
             interaction.setTrigger(event);

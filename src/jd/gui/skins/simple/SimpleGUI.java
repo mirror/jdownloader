@@ -848,10 +848,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.APP_LOAD_DLC:
             fc = new JDFileChooser("_LOADSAVEDLC");
             fc.setFileFilter(new JDFileFilter(null, ".dlc|.rsdf|.ccf|.linkbackup", true));
-            fc.showOpenDialog(frame);
-            ret = fc.getSelectedFile();
-            if (ret != null) {
-                fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret));
+            if (fc.showOpenDialog(frame) == JDFileChooser.APPROVE_OPTION) {
+                ret = fc.getSelectedFile();
+                if (ret != null) {
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, ret));
+                }
             }
             break;
         case JDAction.APP_INSTALL_JDU:
@@ -1795,7 +1796,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     return;
                 }
                 if (!ai.isValid()) {
-                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for \"%s\" isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return;
                 }
                 JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]40"));
