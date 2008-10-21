@@ -373,14 +373,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
 
             fc.setCurrentDirectory(fp.getDownloadDirectory() != null ? new File(fp.getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
-            fc.showOpenDialog(this);
-            ret = fc.getSelectedFile();
-
-            if (ret != null) {
-                fp.setDownloadDirectory(ret.getAbsolutePath());
+            if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
+                ret = fc.getSelectedFile();
+                if (ret != null) {
+                    fp.setDownloadDirectory(ret.getAbsolutePath());
+                }
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
             }
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
-
             break;
         case TreeTableAction.PACKAGE_EDIT_NAME:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");

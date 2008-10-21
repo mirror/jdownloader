@@ -858,38 +858,37 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.APP_INSTALL_JDU:
             fc = new JDFileChooser("_INSTALLJDU");
             fc.setFileFilter(new JDFileFilter(JDLocale.L("gui.menu.action.install.filefilter", "JD Addons"), ".jdu", true));
-            fc.showOpenDialog(frame);
-            ret = fc.getSelectedFile();
-            if (ret != null) {
+            if (fc.showOpenDialog(frame) == JDFileChooser.APPROVE_OPTION) {
+                ret = fc.getSelectedFile();
+                if (ret != null) {
+                    UnZip u = new UnZip(ret, JDUtilities.getResourceFile("."));
+                    File[] files;
+                    try {
+                        files = u.extract();
+                        if (files != null) {
+                            boolean c = false;
+                            for (File element : files) {
+                                if (element.getAbsolutePath().endsWith("readme.html")) {
 
-                UnZip u = new UnZip(ret, JDUtilities.getResourceFile("."));
-                File[] files;
-                try {
-                    files = u.extract();
-                    if (files != null) {
-                        boolean c = false;
-                        for (File element : files) {
-                            if (element.getAbsolutePath().endsWith("readme.html")) {
+                                    String html = JDUtilities.getLocalFile(element);
+                                    if (Regex.matches(html, "src\\=\"(.*?)\"")) {
+                                        html = new Regex(html, "src\\=\"(.*?)\"").getMatch(0);
+                                        html = JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + ret.getName() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
+                                    }
 
-                                String html = JDUtilities.getLocalFile(element);
-                                if (Regex.matches(html, "src\\=\"(.*?)\"")) {
-                                    html = new Regex(html, "src\\=\"(.*?)\"").getMatch(0);
-                                    html = JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + ret.getName() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
+                                    JDUtilities.getGUI().showCountdownConfirmDialog(html, 30);
+                                    c = true;
                                 }
-
-                                JDUtilities.getGUI().showCountdownConfirmDialog(html, 30);
-                                c = true;
                             }
-                        }
-                        if (!c) {
-                            JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + ret.getName() + "</b>", 15);
-                        }
+                            if (!c) {
+                                JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + ret.getName() + "</b>", 15);
+                            }
 
+                        }
+                    } catch (Exception e3) {
+                        e3.printStackTrace();
                     }
-                } catch (Exception e3) {
-                    e3.printStackTrace();
                 }
-
             }
             break;
         case JDAction.APP_EXIT:
