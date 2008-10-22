@@ -619,7 +619,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             sortedOn = 1;
             sortOn();
-            ;
 
         } else if (e.getSource() == mnuDownloadSource) {
 
@@ -738,7 +737,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         }
 
-        Collections.sort(data, new StringArrayComparator());
+        Collections.sort(data, new Comparator<String[]>() {
+            public int compare(String[] a, String[] b) {
+                return a[0].compareToIgnoreCase(b[0]);
+            }
+        });
         tableModel.fireTableRowsInserted(0, data.size() - 1);
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
 
@@ -976,16 +979,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             data.get(row)[col] = (String) value;
             this.fireTableRowsUpdated(row, row);
             setInfoLabels();
-        }
-
-    }
-
-    private class StringArrayComparator implements Comparator<String[]> {
-
-        public int compare(String[] s1, String[] s2) {
-
-            return s1[0].compareToIgnoreCase(s2[0]);
-
         }
 
     }
