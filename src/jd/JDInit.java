@@ -541,6 +541,7 @@ public class JDInit {
 
         new DecryptPluginWrapper("animea.net", "AnimeANet", PluginPattern.decrypterPattern_AnimeANet_Plugin);
         new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html");
+        new DecryptPluginWrapper("bad5.com", "URLCash", "http://.+bat5\\.com");
         new DecryptPluginWrapper("best-movies.us", "BestMovies", "http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+");
         new DecryptPluginWrapper("blog-xx.net", "BlogXXNet", "http://[\\w\\.]*?blog-xx\\.net/wp/(.*?)/");
         new DecryptPluginWrapper("bm4u.in", "Bm4uin", "http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+");
@@ -679,7 +680,7 @@ public class JDInit {
         new HostPluginWrapper("clipfish.de", "ClipfishDe", "http://[\\w\\.]*?pg\\d+\\.clipfish\\.de/media/.+?\\.flv");
         new HostPluginWrapper("data.hu", "DataHu", "http://[\\w\\.]*?data.hu/get/.+/.+");
         new HostPluginWrapper("dataup.de", "Dataupde", "http://[\\w\\.]*?dataup\\.de/\\d+/(.*)");
-        new HostPluginWrapper("datengigant.com","DatenGigantCom","http://[\\w\\.]*?datengigant\\.com/\\w+?/file/\\d+/.+?\\.html");
+        new HostPluginWrapper("datengigant.com", "DatenGigantCom", "http://[\\w\\.]*?datengigant\\.com/\\w+?/file/\\d+/.+?\\.html");
         new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[0-9]+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("dump.ru", "DumpRu", "http://[\\w\\.]*?dump\\.ru/file/[0-9]+");
         new HostPluginWrapper("fast-load.net", "FastLoadNet", "http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
@@ -739,7 +740,6 @@ public class JDInit {
 
         new HostPluginWrapper("letitbit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[a-zA-Z0-9]+?/.*");
 
-     
     }
 
     public void loadPluginOptional() {
