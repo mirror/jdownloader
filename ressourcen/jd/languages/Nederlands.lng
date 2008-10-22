@@ -1,4 +1,6 @@
-﻿﻿action.passwordlist.name = Paswoord lijst bewerken
+﻿﻿$translater$ = ChangeMe
+$version$ = $Revision$
+action.passwordlist.name = Paswoord lijst bewerken
 ﻿﻿addons.jdlowspeed.statusmessage.disabled = Lage Snelheid detectie uitschakelen
 ﻿addons.jdlowspeed.statusmessage.enabled = Lage Snelheiddetectie ingeschakeld
 addons.jdshutdown.menu.disable = Na Download Systeem Afsluiten Deactiveren
