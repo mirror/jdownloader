@@ -58,6 +58,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 
 import jd.JDFileFilter;
 import jd.PluginWrapper;
@@ -110,6 +111,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextEdit, mnuContextTranslate;
 
+    private int sortedOn = 1;
     private Vector<String[]> sourceEntries = new Vector<String[]>();
     private Vector<Pattern> sourcePatterns = new Vector<Pattern>();
     private Vector<String[]> fileEntries = new Vector<String[]>();
@@ -143,6 +145,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         tableModel = new MyTableModel();
         table = new JTable(tableModel);
+        table.getTableHeader().addMouseListener(this);
         table.addKeyListener(this);
         table.addMouseListener(this);
         table.setDefaultRenderer(String.class, new MyTableCellRenderer());
@@ -349,6 +352,15 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuContextAdopt.addActionListener(this);
         mnuContextTranslate.addActionListener(this);
 
+    }
+
+    public void sortOn() {
+        Collections.sort(data, new Comparator<String[]>() {
+            public int compare(String[] a, String[] b) {
+                return sortedOn > 0 ? a[Math.abs(sortedOn) - 1].compareToIgnoreCase(b[Math.abs(sortedOn) - 1]) : b[Math.abs(sortedOn) - 1].compareToIgnoreCase(a[Math.abs(sortedOn) - 1]);
+            }
+        });
+        tableModel.fireTableDataChanged();
     }
 
     @Override
@@ -605,8 +617,9 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuSort) {
 
-            Collections.sort(data, new StringArrayComparator());
-            tableModel.fireTableRowsUpdated(0, data.size() - 1);
+            sortedOn = 1;
+            sortOn();
+            ;
 
         } else if (e.getSource() == mnuDownloadSource) {
 
@@ -890,6 +903,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     }
 
     public void mousePressed(MouseEvent e) {
+        if (e.getSource() instanceof JTableHeader) {
+            JTableHeader header = (JTableHeader) e.getSource();
+            int column = header.columnAtPoint(e.getPoint()) + 1;
+            if (sortedOn == column) {
+                sortedOn *= -1;
+            } else {
+                sortedOn = column;
+            }
+            sortOn();
+        }
     }
 
     public void mouseReleased(MouseEvent e) {
