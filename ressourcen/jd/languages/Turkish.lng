@@ -1,6 +1,6 @@
 $translater$ = Tamer Ray Frost
 $version$ = $Revision$
-addons.jdgrowlnotification.menu.enable = Messages activate
+addons.jdgrowlnotification.menu.enable = Mesajları etkinleştir
 addons.jdlowspeed.statusmessage.disabled = Devredışı bırak
 addons.jdlowspeed.statusmessage.enabled = Etkinleştir
 addons.jdshutdown.menu.disable = Devredışı bırak
