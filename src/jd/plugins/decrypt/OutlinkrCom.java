@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -35,18 +34,16 @@ public class OutlinkrCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
-        if (parameter.contains("outlinkr.com/files/"))
-        {
+        if (parameter.contains("outlinkr.com/files/")) {
             br.getPage(parameter);
             String link = br.getRegex("Target : <a href=\"(.*?)\">").getMatch(0);
             decryptedLinks.add(createDownloadlink(link));
         } else {
             br.getPage(parameter);
             String[] links = br.getRegex("<a target=\"_blank\" href=(.*?)>").getColumn(0);
-            
+
             progress.setRange(links.length);
-            for (String element : links)
-            {
+            for (String element : links) {
                 decryptedLinks.add(createDownloadlink(element));
                 progress.increase(1);
             }
