@@ -267,7 +267,7 @@ public class Form {
     private InputField getNameValue(String data) {
 
         String[][] matches = new Regex(data, "(\\w+?)[ ]*=[ ]*[\"'](.*?)[\"']").getMatches();
-        String[][] matches2 = new Regex(data, "(\\w+?)[ ]*=[ ]*([^\"^'.]+?)[ />]").getMatches();
+        String[][] matches2 = new Regex(data, "(\\w+?)[ ]*=[ ]*([^ ^\"^'.]+)[ />]?").getMatches();
         InputField ret = new InputField();
 
         for (String[] match : matches) {
@@ -544,8 +544,13 @@ public class Form {
         for (Iterator<String> it = vars.keySet().iterator(); it.hasNext();) {
 
             String key = it.next();
-            InputField field = vars.get(key);
-            ret.put(key, Encoding.urlEncode(field.getValue()));
+            if (key != null) {/*
+                               * namenlose Values werden nicht uebermittelt
+                               * (siehe Liveheader im Firefox)
+                               */
+                InputField field = vars.get(key);
+                ret.put(key, Encoding.urlEncode(field.getValue()));
+            }
 
         }
         return ret;

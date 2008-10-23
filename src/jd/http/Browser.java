@@ -469,13 +469,13 @@ public class Browser {
             if (request == null || request.getHttpConnection() == null) return string;
             String path = request.getHttpConnection().getURL().getPath();
             int id;
-            if((id=path.lastIndexOf("/"))>0){
-        path=path.substring(0,id);
+            if ((id = path.lastIndexOf("/")) > 0) {
+                path = path.substring(0, id);
             }
-         if(path.trim().length()==0)path="/";
-           
-          //  path.substring(path.lastIndexOf("/"))
-            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0) == '/' ? string : path+"/" + string);
+            if (path.trim().length() == 0) path = "/";
+
+            // path.substring(path.lastIndexOf("/"))
+            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0) == '/' ? string : path + "/" + string);
         }
         return string;
     }
@@ -794,9 +794,11 @@ public class Browser {
                 } else {
                     stbuffer.append("&");
                 }
-                stbuffer.append(entry.getKey());
-                stbuffer.append("=");
-                stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
+                if (entry.getKey() != null) {
+                    stbuffer.append(entry.getKey());
+                    stbuffer.append("=");
+                    stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
+                }
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
@@ -1126,7 +1128,7 @@ public class Browser {
     }
 
     public void setRequest(Request request) throws MalformedURLException {
-if(request==null)return;
+        if (request == null) return;
         updateCookies(request);
         this.request = request;
 
@@ -1200,7 +1202,7 @@ if(request==null)return;
 
     public DownloadInterface openDownload(DownloadLink downloadLink, Form form, boolean resume, int chunks) throws Exception {
 
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest( form), resume, chunks);
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest(form), resume, chunks);
         try {
             dl.connect(this);
         } catch (PluginException e) {
@@ -1226,8 +1228,8 @@ if(request==null)return;
     }
 
     public DownloadInterface openDownload(DownloadLink downloadLink, Form form) throws Exception {
-       
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest( form));
+
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createRequest(form));
         try {
             dl.connect(this);
         } catch (PluginException e) {
@@ -1258,7 +1260,7 @@ if(request==null)return;
     }
 
     public DownloadInterface openDownload(DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest( url,postdata));
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url, postdata));
         try {
             dl.connect(this);
         } catch (PluginException e) {
@@ -1266,7 +1268,7 @@ if(request==null)return;
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createPostRequest(dl.getRequest().getLocation(),postdata));
+                    dl = RAFDownload.download(downloadLink, this.createPostRequest(dl.getRequest().getLocation(), postdata));
                     try {
                         dl.connect(this);
                         break;
@@ -1283,9 +1285,9 @@ if(request==null)return;
         return dl;
     }
 
-    public void forceDebug(boolean b) { 
+    public void forceDebug(boolean b) {
         this.debug = b;
-        
+
     }
 
 }
