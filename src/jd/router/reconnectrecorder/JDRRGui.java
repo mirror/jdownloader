@@ -56,7 +56,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
     private JButton btnCancel;
 
-    private JButton btnStartStop;
+    private JButton btnStart;
 
     private String script;
 
@@ -76,7 +76,8 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     private JButton btnStop;
     private JDRRInfoPopup infopopup;
     public String methode = null, user = null, pass = null;
-    private boolean isSaveMSG =false;
+    private boolean isSaveMSG = false;
+
     public JDRRGui(JFrame frame, String ip) {
         super(frame);
         RouterIP = ip;
@@ -90,10 +91,9 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         // routerip.setText(RouterIP);
         btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
         btnCancel.addActionListener(this);
-        btnCancel.setEnabled(false);
 
-        btnStartStop = new JButton(JDLocale.L("gui.btn_start", "Start"));
-        btnStartStop.addActionListener(this);
+        btnStart = new JButton(JDLocale.L("gui.btn_start", "Start"));
+        btnStart.addActionListener(this);
         JTextPane infolable = new JTextPane();
         infolable.setEditable(false);
         infolable.setContentType("text/html");
@@ -101,7 +101,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         infolable.setText(JDLocale.L("gui.config.jdrr.infolable", "<span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>"));
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
         bpanel.add(btnCancel);
-        bpanel.add(btnStartStop);
+        bpanel.add(btnStart);
 
         JPanel spanel = new JPanel(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
@@ -124,7 +124,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
     private void save() {
         if (ip_after.equalsIgnoreCase(ip_before) || isSaveMSG) { return; }
-        isSaveMSG=true;
+        isSaveMSG = true;
         if (new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("gui.config.jdrr.savereconnect", "Der Reconnect war erfolgreich möchten sie jetzt speichern?"), 10, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO).result) {
 
             saved = true;
@@ -143,7 +143,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                 configuration.setProperty(Configuration.PARAM_HTTPSEND_PASS, pass);
             }
             btnCancel.setText(JDLocale.L("gui.config.jdrr.close", "Schließen"));
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             configuration.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, methode);
             configuration.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, "Reconnect Recorder Methode");
             configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
@@ -153,41 +153,19 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == btnStop || e.getSource() == btnStartStop && btnStartStop.getText().contains("Stop")) {
-            ip_after = JDUtilities.getIPAddress();
-            JDRR.running = false;
-            JDRR.stopServer();
-            if (infopopup != null) {
-                infopopup.dispose();
-                infopopup = null;
-            }
-
-            if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
-                setScript("");
-                for (String element : JDRR.steps) {
-                    appendScript(element + System.getProperty("line.separator"));
-                }
-                save();
-            } else {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
-            }
-            btnStartStop.setText(JDLocale.L("gui.btn_start", "Start"));
-            return;
-        } else if (e.getSource() == btnStartStop && btnStartStop.getText().contains("Start")) {
-            if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText());
+        if (e.getSource() == btnStart && JDRR.running == false) {
+            if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             ip_before = JDUtilities.getIPAddress();
             setScript("");
-            JDRR.startServer(RouterInfoCollector.getRouterIP());
-            infopopup = new JDRRInfoPopup(ip_before);
-            infopopup.setVisible(true);
-            btnCancel.setEnabled(true);
-            btnStartStop.setText(JDLocale.L("gui.btn_stop", "Stop"));
+            JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));            
             try {
                 JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
             } catch (MalformedURLException e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
+            infopopup = new JDRRInfoPopup(ip_before);
+            infopopup.setVisible(true);
             return;
         }
         close();
@@ -195,16 +173,12 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
     private void close() {
         JDRR.gui = false;
-        JDRR.running = false;
         JDRR.stopServer();
         dispose();
-
     }
 
     public class JDRRInfoPopup extends JDialog implements ActionListener {
-        /**
-         * 
-         */
+
         private static final long serialVersionUID = 1L;
         RRStatus statusicon;
 
@@ -231,9 +205,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         }
 
         public class RRStatus extends JComponent {
-            /**
-             * 
-             */
+
             private static final long serialVersionUID = -3280613281656283625L;
 
             private int status;
@@ -264,7 +236,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                                 setStatus(1);
                                 closePopup();
-                                break;
+                                return;
                             }
                         }
                     }
@@ -307,7 +279,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             } else {
                 statusicon.setStatus(-1);
             }
-            JDRR.running = false;
             JDRR.stopServer();
             new Thread() {
                 public void run() {
@@ -315,7 +286,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                         Thread.sleep(3000);
                     } catch (Exception e) {
                     }
-                    if (infopopup != null) infopopup.dispose();
                     if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                         setScript("");
                         for (String element : JDRR.steps) {
@@ -325,7 +295,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                     } else {
                         JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
                     }
-                    btnStartStop.setText(JDLocale.L("gui.btn_start", "Start"));
                     dispose();
                 }
             }.start();

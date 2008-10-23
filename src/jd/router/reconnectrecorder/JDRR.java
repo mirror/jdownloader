@@ -45,7 +45,7 @@ public class JDRR {
 
     static public void stopServer() {
         running = false;
-        steps.add("[[[/HSRC]]]");
+        if (steps != null) steps.add("[[[/HSRC]]]");
         try {
             Server_Socket.close();
         } catch (Exception e) {
