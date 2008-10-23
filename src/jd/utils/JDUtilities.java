@@ -1816,7 +1816,7 @@ public class JDUtilities {
         exec.setRunin(runIn);
         exec.setWaitTimeout(waitForReturn);
         exec.start();
-        exec.waitTimeout();
+        exec.waitTimeout(); 
         return exec.getStream() + " \r\n " + exec.getErrorStream();
     }
 
