@@ -227,7 +227,7 @@ public class Uploadedto extends PluginForHost {
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);
-        String id = new Regex(downloadLink.getDownloadURL(), "http://uploaded.to/file/(.*?)/").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "uploaded.to/file/(.*?)/").getMatch(0);
 
         br.getPage("http://uploaded.to/api/file?id=" + id);
         String[] lines = Regex.getLines(br + "");

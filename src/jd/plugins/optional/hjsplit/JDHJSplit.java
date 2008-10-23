@@ -42,11 +42,11 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.plugins.optional.jdunrar.JDUnrarConstants;
 import jd.unrar.hjsplitt.JAxeJoiner;
 import jd.unrar.hjsplitt.JoinerFactory;
 import jd.unrar.hjsplitt.ProgressEvent;
 import jd.unrar.hjsplitt.ProgressEventListener;
+import jd.utils.Jobber;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -62,7 +62,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     /**
      * Wird als reihe für anstehende extracthjobs verwendet
      */
-    private ArrayList<DownloadLink> queue;
+    private Jobber queue;
 
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -71,8 +71,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     @SuppressWarnings("unchecked")
     public JDHJSplit(PluginWrapper wrapper) {
         super(wrapper);
-        this.queue = (ArrayList<DownloadLink>) this.getPluginConfig().getProperty(JDUnrarConstants.CONFIG_KEY_LIST, new ArrayList<DownloadLink>());
-
+        this.queue = new Jobber(1);
         initConfig();
 
     }
@@ -99,7 +98,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 if (link.getFilePackage().isExtractAfterDownload()) {
                     file = this.getStartFile(file);
-                    if(file==null)return;
+                    if (file == null) return;
                     if (this.validateArchive(file)) {
                         addFileList(new File[] { file });
                     }
@@ -259,97 +258,65 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             if (link == null) link = createDummyLink(archiveStartFile);
 
             final DownloadLink finalLink = link;
-            new Thread() {
-                public void run() {
 
-                    addToQueue(finalLink);
-                }
-            }.start();
+            addToQueue(finalLink);
 
         }
-
-    }
-
-    /**
-     * Fügt einen Link der Extractqueue hinzu
-     * 
-     * @param link
-     */
-    private void addToQueue(DownloadLink link) {
-        synchronized (queue) {
-
-            this.queue.add(link);
-            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
-            this.getPluginConfig().save();
-        }
-        this.startExtraction();
 
     }
 
     /**
      * Startet das abwarbeiten der extractqueue
      */
-    private synchronized void startExtraction() {
+    private void addToQueue(final DownloadLink link) {
 
-        if (queue.size() == 0) {
-            System.out.print("return 0 queue");
-            return;
-        }
+        queue.add(new Runnable() {
 
-        final DownloadLink link;
+            public void run() {
 
-        synchronized (queue) {
-            link = queue.remove(0);
-            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
-            this.getPluginConfig().save();
-        }
-        final ProgressController progress = new ProgressController("Default HJMerge", 100);
-        try {
-            JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
-            final File output = getOutputFile(new File(link.getFileOutput()));
+                final ProgressController progress = new ProgressController("Default HJMerge", 100);
 
-            join.setProgressEventListener(new ProgressEventListener() {
+                JAxeJoiner join = JoinerFactory.getJoiner(new File(link.getFileOutput()));
+                final File output = getOutputFile(new File(link.getFileOutput()));
 
-                long last = System.currentTimeMillis() + 1000;
+                join.setProgressEventListener(new ProgressEventListener() {
 
-                public void handleEvent(ProgressEvent pe) {
-                    try {
-                        if (System.currentTimeMillis() - last > 100) {
-                            progress.setStatus((int) (pe.getCurrent() * 100 / pe.getMax()));
-                            last = System.currentTimeMillis();
-                            progress.setStatusText(output.getName() + ": " + (pe.getCurrent() / 1048576) + " MB merged");
+                    long last = System.currentTimeMillis() + 1000;
+
+                    public void handleEvent(ProgressEvent pe) {
+                        try {
+                            if (System.currentTimeMillis() - last > 100) {
+                                progress.setStatus((int) (pe.getCurrent() * 100 / pe.getMax()));
+                                last = System.currentTimeMillis();
+                                progress.setStatusText(output.getName() + ": " + (pe.getCurrent() / 1048576) + " MB merged");
+                            }
+                        } catch (Exception e) {
+                            // TODO: handle exception
                         }
-                    } catch (Exception e) {
-                        // TODO: handle exception
+
                     }
+                });
+
+                if (getPluginConfig().getBooleanProperty(CONFIG_KEY_OVERWRITE, false)) {
+
+                    if (output.exists()) output.delete();
 
                 }
-            });
-
-            if (this.getPluginConfig().getBooleanProperty(CONFIG_KEY_OVERWRITE, false)) {
-
-                if (output.exists()) output.delete();
-
-            }
-            join.run();
-            if (this.getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {
-                ArrayList<File> list = getFileList(new File(link.getFileOutput()));
-                for (File f : list) {
-                    f.delete();
-                    f.deleteOnExit();
+                join.run();
+                if (getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {
+                    ArrayList<File> list = getFileList(new File(link.getFileOutput()));
+                    for (File f : list) {
+                        f.delete();
+                        f.deleteOnExit();
+                    }
                 }
-            }
-
-            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_FILEOUTPUT, new File[] { output }));
-        } catch (Exception e) {
-            e.printStackTrace();
-            try {
                 progress.finalize();
-            } catch (Exception e2) {
-                // TODO: handle exception
+                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_FILEOUTPUT, new File[] { output }));
             }
-            startExtraction();
-        }
+
+        });
+        queue.start();
+
     }
 
     /**
@@ -438,8 +405,15 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         final String matcher = file.getName().replaceFirst("\\.[\\d]+($|\\..*)", "\\\\.[\\\\d]+$1");
         ArrayList<DownloadLink> missing = JDUtilities.getController().getMatchingLinks(matcher);
         for (DownloadLink miss : missing) {
-            if (new File(miss.getFileOutput()).exists() && new File(miss.getFileOutput()).getParentFile().equals(file.getParentFile())) continue;
-            return null;
+            File par1 = new File(miss.getFileOutput()).getParentFile();
+            File par2 = file.getParentFile();
+            if(par1.equals(par2)){
+                
+                if(!new File(miss.getFileOutput()).exists()){
+                    return null;
+                }
+            }
+            
         }
         File[] files = file.getParentFile().listFiles(new java.io.FileFilter() {
             public boolean accept(File pathname) {
@@ -546,7 +520,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @return
      */
     private int getArchiveType(File file) {
-      
+
         String name = file.getName();
 
         if (name.matches("(?is).*\\.7z\\.[\\d]+$")) return ARCHIVE_TYPE_7Z;

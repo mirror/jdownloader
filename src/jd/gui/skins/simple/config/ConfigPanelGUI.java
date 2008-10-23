@@ -16,6 +16,9 @@
 
 package jd.gui.skins.simple.config;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Locale;
 
@@ -27,7 +30,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
-import jd.plugins.optional.jdunrar.JDUnrarConstants;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -63,7 +66,7 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")));
         ce.setDefaultValue(Locale.getDefault());
-        
+
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", subConfig.getStringProperty(SimpleGUI.PARAM_LOCALE, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())));
 
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -150,6 +153,22 @@ public class ConfigPanelGUI extends ConfigPanel {
         // Extended Tab
         ConfigContainer extended = new ConfigContainer(this, JDLocale.L("gui.config.gui.extended", "Erweiterte Einstellungen"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
+
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+
+            public void actionPerformed(ActionEvent arg0) {
+                try {
+                    if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
+                        JLinkButton.openURL("http://jdownloader.org");
+                    }
+                } catch (MalformedURLException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+
+            }
+        }, JDLocale.L("gui.config.gui.testbrowser", "Test browser")));
+
         ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_USE, JDLocale.L("gui.config.gui.use_custum_browser", "Use custum browser"));
         ce.setDefaultValue(false);
         ConfigEntry conditionEntry = ce;
@@ -157,10 +176,10 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setDefaultValue(BrowserArray[0]);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
         extended.addEntry(conditionEntry);
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig,  SimpleGUI.PARAM_CUSTOM_ROWSER, JDLocale.L("gui.config.gui.custum_browser", "Browserpath")));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER, JDLocale.L("gui.config.gui.custum_browser", "Browserpath")));
         ce.setDefaultValue("C:\\Programme\\Mozilla Firefox\\firefox.exe");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig,  SimpleGUI.PARAM_CUSTOM_ROWSER_PARAM, JDLocale.L("gui.config.gui.custum_browser_param", "Parameter %url (one parameter per line)")));
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_PARAM, JDLocale.L("gui.config.gui.custum_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue("-new-tab\r\n%url");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode", "'Missing-Language-Entries' Datei anlegen")));

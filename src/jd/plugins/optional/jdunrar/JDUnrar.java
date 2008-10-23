@@ -47,6 +47,7 @@ import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
 import jd.utils.Executer;
 import jd.utils.GetExplorer;
+import jd.utils.Jobber;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.OSDetector;
@@ -62,14 +63,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     /**
      * Wird als reihe für anstehende extracthjobs verwendet
      */
-    private ArrayList<DownloadLink> queue;
+    private Jobber queue;
  
 
     @SuppressWarnings("unchecked")
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
-        this.queue = (ArrayList<DownloadLink>) this.getPluginConfig().getProperty(JDUnrarConstants.CONFIG_KEY_LIST, new ArrayList<DownloadLink>());
-
+    this.queue=new Jobber(1);
         // this.waitQueue = (ArrayList<DownloadLink>)
         // this.getPluginConfig().getProperty
         // (JDUnrarConstants.CONFIG_KEY_WAITLIST, new
@@ -301,48 +301,22 @@ if(link==null)return;
         return match;
     }
 
-    /**
-     * Fügt einen Link der Extractqueue hinzu
-     * 
-     * @param link
-     */
-    private void addToQueue(DownloadLink link) {
-        synchronized (queue) {
 
-            this.queue.add(link);
-            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
-            this.getPluginConfig().save();
-        }
-        this.startExtraction();
-
-    }
 
     /**
      * Startet das abwarbeiten der extractqueue
      */
-    private synchronized void startExtraction() {
-        if (queue.size() == 0) {
-            System.out.print("return 0 queue");
-            return;
-        }
-        System.out.println("Start Extracvt " + queue.get(0));
+private void addToQueue(final DownloadLink link) {
+
      
 
-        DownloadLink link;
-        if (queue.size() == 0) {
-            System.out.print("return 0 queue");
-            return;
-        }
+     
+      
   
-        synchronized (queue) {
-            link = queue.remove(0);
-            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
-            this.getPluginConfig().save();
-        }
         
         if(!new File(link.getFileOutput()).exists()){
             
-            startExtraction();
+            
             return;
         }
         System.out.println("Start link " + link);
@@ -363,7 +337,9 @@ if(link==null)return;
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         wrapper.setPasswordList(PasswordList.getPasswordList().toArray(new String[] {}));
 
-        wrapper.run();
+       
+        queue.add(wrapper);
+        queue.start();
         ArrayList<DownloadLink> list = this.getArchiveList(link);
         for (DownloadLink l : list) {
             if (l == null) continue;
@@ -527,9 +503,7 @@ if(link==null)return;
             }
             break;
 
-        case 30:
-            this.startExtraction();
-            break;
+   
 
         case 4:
             ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config);
@@ -541,9 +515,7 @@ if(link==null)return;
             pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
             pop.setVisible(true);
             break;
-        case 31:
-            this.queue.clear();
-            break;
+   
 
         case 1000:
 
@@ -605,25 +577,7 @@ if(link==null)return;
 
             break;
         }
-        if (source.getActionID() >= 3000) {
-            int id = source.getActionID() - 3000;
-
-            if (queue.size() <= id) return;
-          
-            DownloadLink link;
-            synchronized (queue) {
-                link = queue.remove(id);
-                this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
-                this.getPluginConfig().save();
-            }
-
-            UnrarWrapper wrapper = new UnrarWrapper(link);
-            wrapper.addUnrarListener(this);
-            wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
-            wrapper.setPasswordList(PasswordList.getPasswordList().toArray(new String[] {}));
-
-            wrapper.start();
-        }
+       
 
     }
 
@@ -1140,7 +1094,7 @@ if(link==null)return;
         if (wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER") != null) {
             ((ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER")).finalize(2000);
         }
-        this.startExtraction();
+      
 
     }
 
