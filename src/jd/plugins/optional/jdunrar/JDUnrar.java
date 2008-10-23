@@ -93,7 +93,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (!(event.getSource() instanceof PluginForHost)) { return; }
             DownloadLink link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             link = findStartLink(link);
-
+if(link==null)return;
             if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 if (link.getFilePackage().isExtractAfterDownload()) {
                     if (getArchivePartType(link) == JDUnrarConstants.MULTIPART_START_PART || getArchivePartType(link) == JDUnrarConstants.SINGLE_PART_ARCHIVE) {

@@ -603,5 +603,14 @@ public abstract class PluginForHost extends Plugin {
         getPluginConfig().setProperty(PROPERTY_PREMIUM, accounts);
         getPluginConfig().save();
     }
+/**
+ * Diese funktion wird vom Controller aufegrufen wenn ein DownloadLink frisch in die Linkliste eingefügt worden ist. 
+ * Hier können Initialisierungsfunktionen für das PLugin stehen.
+ * @throws Exception 
+ */
+    public void prepareLink(DownloadLink downloadLink) throws Exception {
+        // TODO Auto-generated method stub
+        
+    }
 
 }

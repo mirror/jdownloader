@@ -138,7 +138,7 @@ public class JDController implements ControlListener, UIListener {
                         // JDUtilities.getLogger().severe("PAUSE");
                     }
                 } catch (Exception e) {
-                     e.printStackTrace();
+                    e.printStackTrace();
                     eventStart = 0;
                 }
             }
@@ -550,6 +550,22 @@ public class JDController implements ControlListener, UIListener {
             }
 
             break;
+
+        case ControlEvent.CONTROL_DOWNLOADLIST_ADDED_LINKS:
+            ArrayList<DownloadLink> linksAdded = (ArrayList<DownloadLink>) event.getParameter();
+
+            for (DownloadLink link : linksAdded) {
+                link.getLinkStatus().setStatusText(JDLocale.L("sys.linklist.addnew.prepare", "Preparing Downloadlink"));
+                link.requestGuiUpdate();
+                try {
+                    link.getPlugin().prepareLink(link);
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                link.getLinkStatus().setStatusText(null);
+            }
+            break;
         case ControlEvent.CONTROL_LOG_OCCURED:
             if (fileLogger != null) {
                 LogRecord l = (LogRecord) event.getParameter();
@@ -586,7 +602,7 @@ public class JDController implements ControlListener, UIListener {
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 Interaction.handleInteraction(Interaction.INTERACTION_DOWNLOAD_PACKAGE_FINISHED, this);
 
-                // this.getInfoFileWriterModule().interact(lastDownloadFinished);
+                //this.getInfoFileWriterModule().interact(lastDownloadFinished);
 
                 if (JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 2) {
                     removePackage(lastDownloadFinished.getFilePackage());
