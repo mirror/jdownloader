@@ -342,6 +342,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     private static final long serialVersionUID = 3966433144683787356L;
 
+    public static final String PARAM_CUSTOM_ROWSER = "CUSTOM_ROWSER";
+
+    public static final String PARAM_CUSTOM_ROWSER_USE = "PARAM_CUSTOM_ROWSER_USE";
+
+    public static final String PARAM_CUSTOM_ROWSER_PARAM = "PARAM_CUSTOM_ROWSER_PARAM";
+
     private static boolean uiInitated = false;
 
     /**

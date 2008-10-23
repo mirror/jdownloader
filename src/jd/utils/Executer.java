@@ -111,6 +111,7 @@ public class Executer extends Thread {
     }
 
     public void addParameters(String[] par) {
+        if(par==null) return;
         for (String p : par) {
             parameter.add(p);
         }

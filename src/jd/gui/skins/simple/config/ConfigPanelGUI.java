@@ -27,6 +27,7 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.plugins.optional.jdunrar.JDUnrarConstants;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -149,10 +150,19 @@ public class ConfigPanelGUI extends ConfigPanel {
         // Extended Tab
         ConfigContainer extended = new ConfigContainer(this, JDLocale.L("gui.config.gui.extended", "Erweiterte Einstellungen"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
-
+        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_USE, JDLocale.L("gui.config.gui.use_custum_browser", "Use custum browser"));
+        ce.setDefaultValue(false);
+        ConfigEntry conditionEntry = ce;
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
         ce.setDefaultValue(BrowserArray[0]);
-
+        ce.setEnabledCondidtion(conditionEntry, "==", false);
+        extended.addEntry(conditionEntry);
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig,  SimpleGUI.PARAM_CUSTOM_ROWSER, JDLocale.L("gui.config.gui.custum_browser", "Browserpath")));
+        ce.setDefaultValue("C:\\Programme\\Mozilla Firefox\\firefox.exe");
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
+        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig,  SimpleGUI.PARAM_CUSTOM_ROWSER_PARAM, JDLocale.L("gui.config.gui.custum_browser_param", "Parameter %url (one parameter per line)")));
+        ce.setDefaultValue("-new-tab\r\n%url");
+        ce.setEnabledCondidtion(conditionEntry, "==", true);
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode", "'Missing-Language-Entries' Datei anlegen")));
         ce.setDefaultValue(true);
 

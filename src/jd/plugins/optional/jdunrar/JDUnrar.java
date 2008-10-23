@@ -63,12 +63,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * Wird als reihe für anstehende extracthjobs verwendet
      */
     private ArrayList<DownloadLink> queue;
-    /**
-     * Ist der startpart schon fertig, aber noch nicht alle anderen archivteile,
-     * wird der link auf die wartequeue geschoben
-     */
-    // private ArrayList<DownloadLink> waitQueue;
-    private int wrappersActive = 0;
+ 
 
     @SuppressWarnings("unchecked")
     public JDUnrar(PluginWrapper wrapper) {
@@ -278,7 +273,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         File file;
         if ((file = new File(filename + ".part1.rar")).exists()) {
+        } else if ((file = new File(filename + ".part01.rar")).exists()) {
         } else if ((file = new File(filename + ".part001.rar")).exists()) {
+        } else if ((file = new File(filename + ".part0001.rar")).exists()) {
         } else if ((file = new File(filename + ".part000.rar")).exists()) {
         } else {
             return null;
@@ -329,23 +326,24 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             return;
         }
         System.out.println("Start Extracvt " + queue.get(0));
-        if (this.getWrappersActive() > 1) {
-            System.out.print("return " + queue.get(0) + "3 running");
-            return;
-        }
+     
 
         DownloadLink link;
         if (queue.size() == 0) {
             System.out.print("return 0 queue");
             return;
         }
-        this.setWrappersActive(this.getWrappersActive() + 1);
-
-        System.out.println("Start Warppers active now: " + this.getWrappersActive());
+  
         synchronized (queue) {
             link = queue.remove(0);
             this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_LIST, queue);
             this.getPluginConfig().save();
+        }
+        
+        if(!new File(link.getFileOutput()).exists()){
+            
+            startExtraction();
+            return;
         }
         System.out.println("Start link " + link);
         link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
@@ -365,7 +363,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         wrapper.setPasswordList(PasswordList.getPasswordList().toArray(new String[] {}));
 
-        wrapper.start();
+        wrapper.run();
         ArrayList<DownloadLink> list = this.getArchiveList(link);
         for (DownloadLink l : list) {
             if (l == null) continue;
@@ -374,13 +372,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     }
 
-    public synchronized int getWrappersActive() {
-        return wrappersActive;
-    }
 
-    public synchronized void setWrappersActive(int wrappersActive) {
-        this.wrappersActive = wrappersActive;
-    }
 
     /**
      * Bestimmt den Pfad in den das Archiv entpackt werden soll
@@ -617,7 +609,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             int id = source.getActionID() - 3000;
 
             if (queue.size() <= id) return;
-            this.setWrappersActive(this.getWrappersActive() + 1);
+          
             DownloadLink link;
             synchronized (queue) {
                 link = queue.remove(id);
@@ -1143,9 +1135,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     private void onFinished(UnrarWrapper wrapper) {
         // progress.get(wrapper).finalize(3000l);
-        this.setWrappersActive(this.getWrappersActive() - 1);
-        System.out.println("End " + wrapper.getDownloadLink() + " wrappers now: " + this.getWrappersActive());
-        wrapper.getDownloadLink().setPluginProgress(null);
+       
+       wrapper.getDownloadLink().setPluginProgress(null);
         if (wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER") != null) {
             ((ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER")).finalize(2000);
         }

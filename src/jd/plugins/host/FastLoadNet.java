@@ -33,12 +33,6 @@ import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
 
-    private String link;
-
-    private boolean throttled;
-    private static boolean TICKET_MESSAGE = false;
-    private boolean speedTicket;
-
     private static int SIM = 20;
 
     public FastLoadNet(PluginWrapper wrapper) {
@@ -58,21 +52,42 @@ public class FastLoadNet extends PluginForHost {
         br.clearCookies(getHost());
         String pid = downloadLink.getDownloadURL().substring(downloadurl.indexOf("pid=") + 4).trim();
         br.getPage("http://www.fast-load.net/api/jdownloader/" + pid);
-
+        if (br.getRegex("No Such File").matches()) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (br.getRegex("Server Down").matches()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
         String[] lines = Regex.getLines(br + "");
 
         String filename = lines[0].substring(10).trim();
         long fileSize = Long.parseLong(lines[1].substring(10).trim());
-        this.link = lines[2].substring(6).toString();
-        String th = lines[3].substring(11).trim();
-        th = th.length() > 0 ? th : "0";
-        this.throttled = Integer.parseInt(th) == 1;
-        SIM=20;
-        if(throttled)SIM = 1;
-        String tk = lines[4].substring(12).trim();
-        tk = tk.length() > 0 ? tk : "0";
-        this.speedTicket = Integer.parseInt(tk) == 1;
+        String uui = JDUtilities.getMD5(System.currentTimeMillis() + "_" + (Math.random() * Integer.MAX_VALUE));
+
+        if (downloadLink.getProperty("ONEWAYLINK", null) != null) {
+            if (filename != null) {
+                downloadLink.setName(filename.trim());
+                downloadLink.setDownloadSize(fileSize);
+                return true;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
+        try {
+            JLinkButton.openURL("http://www.fast-load.net/getdownload.php?fid=" + pid + "&jid=" + uui);
+        } catch (MalformedURLException e1) {
+            e1.printStackTrace();
+        }
+        while (true) {
+            Thread.sleep(1000);
+            br.getPage("http://www.fast-load.net/system/checkconfirmation.php?fid=" + pid + "&jid=" + uui);
+            if (br.containsHTML("wrong link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+
+            if (br.containsHTML("not confirmed")) {
+                continue;
+
+            } else {
+
+                downloadLink.setProperty("ONEWAYLINK", br + "");
+                break;
+            }
+        }
         if (filename != null) {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(fileSize);
@@ -114,39 +129,52 @@ public class FastLoadNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
 
-        if (this.throttled && !this.speedTicket && !TICKET_MESSAGE) {
-            if (JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("plugins.host.fastload.ticketmessage", "Get a Fastload.net Speedticket to boost speed up to 300kb/s"), 15)) {
-                try {
-                    JLinkButton.openURL("http://www.fast-load.net/getticket.php");
-                } catch (MalformedURLException e1) {
-                    e1.printStackTrace();
-                }
-                downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.fastload.wait_ticketmessage", "Wait for Speedticket"));
-                downloadLink.requestGuiUpdate();
-                int i = 0;
-                while (!speedTicket && i < 90000) {
-                    Thread.sleep(1000);
-                    getFileInformation(downloadLink);
-                    i += 1000;
-
-                }
-            }
-            TICKET_MESSAGE = true;
-        }
+        // if (this.throttled && !this.speedTicket && !TICKET_MESSAGE) {
+        // if (JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L(
+        // "plugins.host.fastload.ticketmessage",
+        // "Get a Fastload.net Speedticket to boost speed up to 300kb/s"), 15))
+        // {
+        // try {
+        // JLinkButton.openURL("http://www.fast-load.net/getticket.php");
+        // } catch (MalformedURLException e1) {
+        // e1.printStackTrace();
+        // }
+        // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
+        // "plugins.host.fastload.wait_ticketmessage", "Wait for Speedticket"));
+        // downloadLink.requestGuiUpdate();
+        // int i = 0;
+        // while (!speedTicket && i < 90000) {
+        // Thread.sleep(1000);
+        // getFileInformation(downloadLink);
+        // i += 1000;
+        //
+        // }
+        // }
+        // TICKET_MESSAGE = true;
+        // }
         br.setDebug(true);
 
-        dl = br.openDownload(downloadLink, this.link);
+        dl = br.openDownload(downloadLink, downloadLink.getStringProperty("ONEWAYLINK", null));
         if (!dl.getConnection().isContentDisposition()) {
-            
+            String page = br.loadConnection(dl.getConnection()).trim();
+
+            if (page.equals("wrong link")) {
+                logger.warning("Ticket abgelaufen");
+                downloadLink.setProperty("ONEWAYLINK", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         }
-   
+
         dl.startDownload();
 
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return SIM;
+        return 1;
+        // return
+        // Math.min(SIM,JDUtilities.getController().getRunningDownloadNumByHost
+        // (this)+1);
     }
 
     @Override

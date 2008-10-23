@@ -30,6 +30,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.io.File;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -64,6 +65,7 @@ import jd.gui.skins.simple.PackageInfo;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.HTMLTooltip;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.components.JLinkButton;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -229,13 +231,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
 
-                try {
-                    new BrowserLauncher().openURLinBrowser(link.getBrowserUrl());
-                } catch (BrowserLaunchingInitializingException e1) {
-                    e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
-                    e1.printStackTrace();
-                }
+            
+                    try {
+                        JLinkButton.openURL(link.getBrowserUrl());
+                    } catch (MalformedURLException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+             
 
             }
 

@@ -138,7 +138,7 @@ public class JDController implements ControlListener, UIListener {
                         // JDUtilities.getLogger().severe("PAUSE");
                     }
                 } catch (Exception e) {
-                    // e.printStackTrace();
+                     e.printStackTrace();
                     eventStart = 0;
                 }
             }

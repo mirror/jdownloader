@@ -99,6 +99,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 if (link.getFilePackage().isExtractAfterDownload()) {
                     file = this.getStartFile(file);
+                    if(file==null)return;
                     if (this.validateArchive(file)) {
                         addFileList(new File[] { file });
                     }
@@ -545,6 +546,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @return
      */
     private int getArchiveType(File file) {
+      
         String name = file.getName();
 
         if (name.matches("(?is).*\\.7z\\.[\\d]+$")) return ARCHIVE_TYPE_7Z;
