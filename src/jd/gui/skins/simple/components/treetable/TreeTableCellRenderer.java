@@ -65,14 +65,14 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
     public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
 
         if (value instanceof DownloadLink) {
-            int id = ((DownloadLink) value).getPartByName();
-            if (((DownloadLink) value).getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                PackageData pd = (PackageData) ((DownloadLink) value).getProperty("JDU");
+            DownloadLink dl = (DownloadLink) value;
+            if (dl.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                PackageData pd = (PackageData) dl.getProperty("JDU");
                 lbl_link.setText(JDLocale.L("gui.treetable.part.label_update", "Update") + " " + pd.getInstalledVersion() + " -> " + pd.getStringProperty("version"));
             } else {
-                lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")) + "  ");
+                int id = dl.getPartByName();
+                lbl_link.setText(JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0")));
             }
-
             if (selected) {
                 lbl_link.setForeground(FONT_COLOR_SELECTED);
                 lbl_link.setBackground(FONT_COLOR_SELECTED);
@@ -82,9 +82,9 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
             }
             return lbl_link;
         } else if (value instanceof FilePackage) {
-
+            FilePackage fp = (FilePackage) value;
             if (expanded) {
-                lbl_fp_opened.setText(((FilePackage) value).getName());
+                lbl_fp_opened.setText(fp.getName());
                 if (selected) {
                     lbl_fp_opened.setForeground(FONT_COLOR_SELECTED);
                     lbl_fp_opened.setBackground(FONT_COLOR_SELECTED);
@@ -94,7 +94,7 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
                 }
                 return lbl_fp_opened;
             } else {
-                lbl_fp_closed.setText(((FilePackage) value).getName());
+                lbl_fp_closed.setText(fp.getName());
                 if (selected) {
                     lbl_fp_closed.setForeground(FONT_COLOR_SELECTED);
                     lbl_fp_closed.setBackground(FONT_COLOR_SELECTED);
@@ -104,7 +104,6 @@ public class TreeTableCellRenderer extends DefaultTreeRenderer {
                 }
                 return lbl_fp_closed;
             }
-
         }
         if (selected) {
             lbl_link.setForeground(FONT_COLOR_SELECTED);
