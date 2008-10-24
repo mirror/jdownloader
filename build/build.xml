@@ -24,8 +24,10 @@
 				<exclude name="jd/plugins/host/**" />
 				<exclude name="jd/captcha/methods/**" />
 				<exclude name="jd/plugins/optional/**" />
+				<include name="jd/plugins/host/HTTPAllgemein*" />
 			</fileset>
 			<fileset dir="${res}">
+				
 				<include name="*.properties" />
 				<exclude name="jd/captcha/methods" />
 			</fileset>
@@ -118,7 +120,11 @@
 				<include name="jd/plugins/optional/jdunrar/**" />
 			</fileset>
 		</jar>
-	
+		<jar jarfile="${dist}/pluginressourcen/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/hjsplit/**" />
+			</fileset>
+		</jar>
 		<jar jarfile="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDInfoFileWriter*" />

@@ -132,7 +132,7 @@ public class HTTPAllgemein extends PluginForHost {
 
     }
     private void setConfigElements() {
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLED, JDLocale.L("plugins.host.HttpAllgemein.Disable", "Disable plugin")).setDefaultValue(false));
+//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLED, JDLocale.L("plugins.host.HttpAllgemein.Disable", "Disable plugin")).setDefaultValue(false));
     }
 
 }

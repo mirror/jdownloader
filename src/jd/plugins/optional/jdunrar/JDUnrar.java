@@ -32,6 +32,7 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
+import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
@@ -322,12 +323,14 @@ private void addToQueue(final DownloadLink link) {
         System.out.println("Start link " + link);
         link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
         link.getLinkStatus().setErrorMessage(null);
+        File dl = this.getExtractToPath(link);
         if (link.getHost().equals(DUMMY_HOSTER)) {
+            dl=new File(link.getFileOutput()).getParentFile();
             ProgressController progress = new ProgressController(JDLocale.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", link.getFileOutput()), 100);
             link.setProperty("PROGRESSCONTROLLER", progress);
         }
         UnrarWrapper wrapper = new UnrarWrapper(link);
-        File dl = this.getExtractToPath(link);
+       
 
         wrapper.addUnrarListener(this);
         wrapper.setExtractTo(dl);
@@ -599,6 +602,8 @@ private void addToQueue(final DownloadLink link) {
     @Override
     public boolean initAddon() {
         if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+            JDUtilities.getConfiguration().setProperty(Unrar.PROPERTY_ENABLED, false);
+            
             JDUtilities.getController().addControlListener(this);
         }
         return true;
@@ -766,14 +771,15 @@ private void addToQueue(final DownloadLink link) {
 
             break;
         case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
-            ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-            ls.setStatusText("Extract failed(password)");
+           
 
             wrapper.getDownloadLink().requestGuiUpdate();
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
                 String pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()));
                 if (pass == null) {
+                    ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
+                    ls.setStatusText("Extract failed(password)");
                     this.onFinished(wrapper);
                     break;
                 }

@@ -31,7 +31,6 @@ import jd.parser.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.host.HTTPAllgemein;
 import jd.utils.JDUtilities;
 
 /**
@@ -125,20 +124,23 @@ public class DistributeData extends ControlBroadcaster {
         Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             HostPluginWrapper pHost = iteratorHost.next();
-            //Falls diese schleife nicht durch return terminiert 
-            //wird 100% der rapper für http allgemein gefunden
-            if(pHost.getHost().equals("http links")){wrapper = pHost;}
+            // Falls diese schleife nicht durch return terminiert
+            // wird 100% der rapper für http allgemein gefunden
+            if (pHost.getHost().equals("http links")) {
+                wrapper = pHost;
+            }
             if (pHost.canHandle(data)) { return true; }
         }
-        if(!new HTTPAllgemein(wrapper).getPluginConfig().getBooleanProperty(HTTPAllgemein.DISABLED)){
-            //httpallgemein is Enabled
-            data = data.replaceAll("http://", "httpviajd://");
-            iteratorHost = JDUtilities.getPluginsForHost().iterator();
-            while (iteratorHost.hasNext()) {
-                HostPluginWrapper pHost = iteratorHost.next();
-                if (pHost.canHandle(data)) { return true; }
-            }
+        // if(!new HTTPAllgemein(wrapper).getPluginConfig().getBooleanProperty(
+        // HTTPAllgemein.DISABLED)){
+        // httpallgemein is Enabled
+        data = data.replaceAll("http://", "httpviajd://");
+        iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+            HostPluginWrapper pHost = iteratorHost.next();
+            if (pHost.canHandle(data)) { return true; }
         }
+        // }
 
         return false;
     }
@@ -172,7 +174,7 @@ public class DistributeData extends ControlBroadcaster {
             Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
             while (iteratorDecrypt.hasNext()) {
                 DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
-                if (pDecrypt.usePlugin() &&  pDecrypt.canHandle(url)) {
+                if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
                     try {
                         PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
@@ -284,7 +286,9 @@ public class DistributeData extends ControlBroadcaster {
         Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             HostPluginWrapper pHost = iteratorHost.next();
-            if(pHost.getHost().equals("http links")){wrapper = pHost;}
+            if (pHost.getHost().equals("http links")) {
+                wrapper = pHost;
+            }
             if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
                 Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (foundpassword.size() > 0) {
@@ -302,30 +306,31 @@ public class DistributeData extends ControlBroadcaster {
 
             }
         }
-        if(!new HTTPAllgemein(wrapper).getPluginConfig().getBooleanProperty(HTTPAllgemein.DISABLED)){
-            //httpallgemein is Enabled
-            data = data.replaceAll("http://", "httpviajd://");
-            iteratorHost = JDUtilities.getPluginsForHost().iterator();
-            while (iteratorHost.hasNext()) {
-                HostPluginWrapper pHost = iteratorHost.next();
-                if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
-                    Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
-                    if (foundpassword.size() > 0) {
-                        Iterator<DownloadLink> iter = dl.iterator();
-                        while (iter.hasNext()) {
-                            iter.next().addSourcePluginPasswords(foundpassword);
-                        }
-                    }
-                    links.addAll(dl);
-                    if (pHost.isAcceptOnlyURIs()) {
-                        data = pHost.getPlugin().cutMatches(data);
-                    } else {
-                        orgData = pHost.getPlugin().cutMatches(orgData);
+        // if (!new HTTPAllgemein(wrapper).getPluginConfig().getBooleanProperty(
+        // HTTPAllgemein.DISABLED)) {
+        // httpallgemein is Enabled
+        data = data.replaceAll("http://", "httpviajd://");
+        iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        while (iteratorHost.hasNext()) {
+            HostPluginWrapper pHost = iteratorHost.next();
+            if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
+                Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
+                if (foundpassword.size() > 0) {
+                    Iterator<DownloadLink> iter = dl.iterator();
+                    while (iter.hasNext()) {
+                        iter.next().addSourcePluginPasswords(foundpassword);
                     }
                 }
+                links.addAll(dl);
+                if (pHost.isAcceptOnlyURIs()) {
+                    data = pHost.getPlugin().cutMatches(data);
+                } else {
+                    orgData = pHost.getPlugin().cutMatches(orgData);
+                }
             }
-            data = data.replaceAll("httpviajd://", "http://"); 
         }
+        data = data.replaceAll("httpviajd://", "http://");
+        // }
         return links;
     }
 

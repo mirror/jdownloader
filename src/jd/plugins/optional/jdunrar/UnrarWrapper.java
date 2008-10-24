@@ -55,7 +55,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     private String password;
     private boolean isProtected = false;
     private ArrayList<ArchivFile> files;
-  
+
     private boolean overwriteFiles = false;
 
     private int totalSize;
@@ -75,17 +75,19 @@ public class UnrarWrapper extends Thread implements ProcessListener {
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
-  
+
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = new File(link.getFileOutput());
         archiveParts = new ArrayList<String>();
     }
-    public UnrarWrapper(DownloadLink link,File file) {
+
+    public UnrarWrapper(DownloadLink link, File file) {
         this.link = link;
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = file;
         archiveParts = new ArrayList<String>();
     }
+
     public void addUnrarListener(UnrarListener listener) {
         this.removeUnrarListener(listener);
         this.listener.add(listener);
@@ -96,6 +98,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
         this.listener.remove(listener);
 
     }
+
     public ArrayList<ArchivFile> getFiles() {
         return files;
     }
@@ -113,26 +116,25 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                     fireEvent(JDUnrarConstants.WRAPPER_CRACK_PASSWORD);
 
                     if (this.isProtected && this.password == null) {
-
-                        fireEvent(JDUnrarConstants.WRAPPER_FAILED_PASSWORD);
-
-                        // Falls das event das passwort setzt
-                        String[] tmp = passwordList;
-                        while (password != null) {
-                            this.passwordList = new String[] { password };
-                            password = null;
-                            crackPassword();
-                            if (password == null) {
-                                fireEvent(JDUnrarConstants.WRAPPER_FAILED_PASSWORD);
-                            } else {
-                                fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
-                                break;
+                        crackPassword();
+                        if (password == null) {
+                            fireEvent(JDUnrarConstants.WRAPPER_FAILED_PASSWORD);
+                            if (password != null) {
+                                String[] tmp = passwordList;
+                                this.passwordList = new String[] { password };
+                                password = null;
+                                crackPassword();
+                                passwordList = tmp;
                             }
+                            if (password != null) {
+                                fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
+                            }
+
+                        } else {
+                            fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
+
                         }
-                        passwordList = tmp;
-                        /*
-                     
-                         */
+
                         if (password == null) {
                             this.status = FAILED;
                             return;
@@ -144,8 +146,8 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 }
 
                 this.extract();
-         
-                if (this.status == STARTED&& this.checkSizes()) {
+
+                if (this.status == STARTED && this.checkSizes()) {
                     if (removeAfterExtraction) {
                         removeArchiveFiles();
                     }
@@ -168,17 +170,18 @@ public class UnrarWrapper extends Thread implements ProcessListener {
     }
 
     private boolean checkSizes() {
-        boolean c=true;
+        boolean c = true;
         for (ArchivFile f : files) {
-          if(f.getSize()!=f.getFile().length()){
-              c=false;
-          }else{
-              f.setPercent(100);
-          }
+            if (f.getSize() != f.getFile().length()) {
+                c = false;
+            } else {
+                f.setPercent(100);
+            }
         }
         return c;
-        
+
     }
+
     private void removeArchiveFiles() {
         for (String file : archiveParts) {
             if (file != null && file.trim().length() > 0) {
