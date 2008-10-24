@@ -48,9 +48,9 @@ import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
 import jd.utils.Executer;
 import jd.utils.GetExplorer;
-import jd.utils.Jobber;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Jobber;
 import jd.utils.OSDetector;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
@@ -65,12 +65,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * Wird als reihe für anstehende extracthjobs verwendet
      */
     private Jobber queue;
- 
 
-    @SuppressWarnings("unchecked")
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
-    this.queue=new Jobber(1);
+        this.queue = new Jobber(1);
         // this.waitQueue = (ArrayList<DownloadLink>)
         // this.getPluginConfig().getProperty
         // (JDUnrarConstants.CONFIG_KEY_WAITLIST, new
@@ -94,7 +92,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (!(event.getSource() instanceof PluginForHost)) { return; }
             DownloadLink link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             link = findStartLink(link);
-if(link==null)return;
+            if (link == null) return;
             if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                 if (link.getFilePackage().isExtractAfterDownload()) {
                     if (getArchivePartType(link) == JDUnrarConstants.MULTIPART_START_PART || getArchivePartType(link) == JDUnrarConstants.SINGLE_PART_ARCHIVE) {
@@ -302,35 +300,24 @@ if(link==null)return;
         return match;
     }
 
-
-
     /**
      * Startet das abwarbeiten der extractqueue
      */
-private void addToQueue(final DownloadLink link) {
+    private void addToQueue(final DownloadLink link) {
 
-     
+        if (!new File(link.getFileOutput()).exists()) {
 
-     
-      
-  
-        
-        if(!new File(link.getFileOutput()).exists()){
-            
-            
-            return;
-        }
+        return; }
         System.out.println("Start link " + link);
         link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
         link.getLinkStatus().setErrorMessage(null);
         File dl = this.getExtractToPath(link);
         if (link.getHost().equals(DUMMY_HOSTER)) {
-            dl=new File(link.getFileOutput()).getParentFile();
+            dl = new File(link.getFileOutput()).getParentFile();
             ProgressController progress = new ProgressController(JDLocale.LF("plugins.optional.jdunrar.progress.extractfile", "Extract %s", link.getFileOutput()), 100);
             link.setProperty("PROGRESSCONTROLLER", progress);
         }
         UnrarWrapper wrapper = new UnrarWrapper(link);
-       
 
         wrapper.addUnrarListener(this);
         wrapper.setExtractTo(dl);
@@ -340,7 +327,6 @@ private void addToQueue(final DownloadLink link) {
         wrapper.setUnrarCommand(getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         wrapper.setPasswordList(PasswordList.getPasswordList().toArray(new String[] {}));
 
-       
         queue.add(wrapper);
         queue.start();
         ArrayList<DownloadLink> list = this.getArchiveList(link);
@@ -350,8 +336,6 @@ private void addToQueue(final DownloadLink link) {
         }
 
     }
-
-
 
     /**
      * Bestimmt den Pfad in den das Archiv entpackt werden soll
@@ -407,27 +391,35 @@ private void addToQueue(final DownloadLink link) {
         m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21);
         m.setActionListener(this);
         menu.add(m);
-//
-//        MenuItem queue;
-//        queue = new MenuItem(MenuItem.CONTAINER, JDLocale.L("plugins.optional.jdunrar.menu.queue", "Current Queue"), 3);
-//        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.start", "Start queue"), 30);
-//
-//        m.setActionListener(this);
-//        queue.addMenuItem(m);
-//        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.queue.clear", "Clear queue"), 31);
-//
-//        m.setActionListener(this);
-//        queue.addMenuItem(m);
-//        queue.addMenuItem(m = new MenuItem(MenuItem.SEPARATOR));
-//        int i = 0;
-//        for (DownloadLink link : this.queue) {
-//            m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.menu.queue.extract", "Extract %s", link.getName()), 3000 + i);
-//            m.setActionListener(this);
-//            queue.addMenuItem(m);
-//            i++;
-//
-//        }
-//        menu.add(queue);
+        //
+        // MenuItem queue;
+        // queue = new MenuItem(MenuItem.CONTAINER,
+        // JDLocale.L("plugins.optional.jdunrar.menu.queue", "Current Queue"),
+        // 3);
+        // m = new MenuItem(MenuItem.NORMAL,
+        // JDLocale.L("plugins.optional.jdunrar.menu.queue.start",
+        // "Start queue"), 30);
+        //
+        // m.setActionListener(this);
+        // queue.addMenuItem(m);
+        // m = new MenuItem(MenuItem.NORMAL,
+        // JDLocale.L("plugins.optional.jdunrar.menu.queue.clear",
+        // "Clear queue"), 31);
+        //
+        // m.setActionListener(this);
+        // queue.addMenuItem(m);
+        // queue.addMenuItem(m = new MenuItem(MenuItem.SEPARATOR));
+        // int i = 0;
+        // for (DownloadLink link : this.queue) {
+        // m = new MenuItem(MenuItem.NORMAL,
+        // JDLocale.LF("plugins.optional.jdunrar.menu.queue.extract",
+        // "Extract %s", link.getName()), 3000 + i);
+        // m.setActionListener(this);
+        // queue.addMenuItem(m);
+        // i++;
+        //
+        // }
+        // menu.add(queue);
 
         menu.add(m = new MenuItem(MenuItem.SEPARATOR));
 
@@ -506,8 +498,6 @@ private void addToQueue(final DownloadLink link) {
             }
             break;
 
-   
-
         case 4:
             ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config);
 
@@ -518,7 +508,6 @@ private void addToQueue(final DownloadLink link) {
             pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
             pop.setVisible(true);
             break;
-   
 
         case 1000:
 
@@ -580,7 +569,6 @@ private void addToQueue(final DownloadLink link) {
 
             break;
         }
-       
 
     }
 
@@ -603,7 +591,7 @@ private void addToQueue(final DownloadLink link) {
     public boolean initAddon() {
         if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
             JDUtilities.getConfiguration().setProperty(Unrar.PROPERTY_ENABLED, false);
-            
+
             JDUtilities.getController().addControlListener(this);
         }
         return true;
@@ -771,7 +759,6 @@ private void addToQueue(final DownloadLink link) {
 
             break;
         case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
-           
 
             wrapper.getDownloadLink().requestGuiUpdate();
 
@@ -926,17 +913,16 @@ private void addToQueue(final DownloadLink link) {
         switch (id) {
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
 
-         
-                if (wrapper.getException() != null) {
+            if (wrapper.getException() != null) {
 
-                    pc.setStatusText(wrapper.getFile().getName()+": "+"Extract failed: " + wrapper.getException().getMessage());
+                pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract failed: " + wrapper.getException().getMessage());
 
-                } else {
+            } else {
 
-                    pc.setStatusText(wrapper.getFile().getName()+": "+"Extract failed");
+                pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract failed");
 
-                }
-            
+            }
+
             this.onFinished(wrapper);
 
             break;
@@ -961,7 +947,7 @@ private void addToQueue(final DownloadLink link) {
 
             break;
         case JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE:
-            pc.setStatusText(wrapper.getFile().getName()+": "+"Open archive");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + "Open archive");
 
             break;
         case JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
@@ -969,11 +955,11 @@ private void addToQueue(final DownloadLink link) {
             break;
         case JDUnrarConstants.WRAPPER_PASSWORD_FOUND:
 
-            pc.setStatusText(wrapper.getFile().getName()+": "+"Password found");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + "Password found");
             break;
         case JDUnrarConstants.WRAPPER_ON_PROGRESS:
 
-            pc.setStatusText(wrapper.getFile().getName()+": "+"Extracting");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + "Extracting");
             pc.setRange(wrapper.getTotalSize());
             pc.setStatus(wrapper.getExtractedSize());
 
@@ -986,7 +972,7 @@ private void addToQueue(final DownloadLink link) {
             break;
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC:
 
-            pc.setStatusText(wrapper.getFile().getName()+": "+"Extract: failed(CRC)");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract: failed(CRC)");
 
             this.onFinished(wrapper);
 
@@ -1004,7 +990,7 @@ private void addToQueue(final DownloadLink link) {
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 
-            pc.setStatusText(wrapper.getFile().getName()+": "+"Extract: OK");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract: OK");
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
                 File fileOutput = new File(wrapper.getDownloadLink().getFileOutput());
@@ -1095,12 +1081,11 @@ private void addToQueue(final DownloadLink link) {
 
     private void onFinished(UnrarWrapper wrapper) {
         // progress.get(wrapper).finalize(3000l);
-       
-       wrapper.getDownloadLink().setPluginProgress(null);
+
+        wrapper.getDownloadLink().setPluginProgress(null);
         if (wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER") != null) {
             ((ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER")).finalize(2000);
         }
-      
 
     }
 

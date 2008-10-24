@@ -120,22 +120,23 @@ public class DistributeData extends ControlBroadcaster {
             DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) { return true; }
         }
-        HostPluginWrapper wrapper = null;
-        Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-        while (iteratorHost.hasNext()) {
-            HostPluginWrapper pHost = iteratorHost.next();
-            // Falls diese schleife nicht durch return terminiert
-            // wird 100% der rapper für http allgemein gefunden
-            if (pHost.getHost().equals("http links")) {
-                wrapper = pHost;
-            }
-            if (pHost.canHandle(data)) { return true; }
-        }
+        // HostPluginWrapper wrapper = null;
+        // Iterator<HostPluginWrapper> iteratorHost =
+        // JDUtilities.getPluginsForHost().iterator();
+        // while (iteratorHost.hasNext()) {
+        // HostPluginWrapper pHost = iteratorHost.next();
+        // // Falls diese schleife nicht durch return terminiert
+        // // wird 100% der rapper für http allgemein gefunden
+        // if (pHost.getHost().equals("http links")) {
+        // wrapper = pHost;
+        // }
+        // if (pHost.canHandle(data)) { return true; }
+        // }
         // if(!new HTTPAllgemein(wrapper).getPluginConfig().getBooleanProperty(
         // HTTPAllgemein.DISABLED)){
         // httpallgemein is Enabled
         data = data.replaceAll("http://", "httpviajd://");
-        iteratorHost = JDUtilities.getPluginsForHost().iterator();
+        Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             HostPluginWrapper pHost = iteratorHost.next();
             if (pHost.canHandle(data)) { return true; }
@@ -282,13 +283,13 @@ public class DistributeData extends ControlBroadcaster {
         }
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt
-        HostPluginWrapper wrapper = null;
+        // HostPluginWrapper wrapper = null;
         Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
         while (iteratorHost.hasNext()) {
             HostPluginWrapper pHost = iteratorHost.next();
-            if (pHost.getHost().equals("http links")) {
-                wrapper = pHost;
-            }
+            // if (pHost.getHost().equals("http links")) {
+            // wrapper = pHost;
+            // }
             if (pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
                 Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
                 if (foundpassword.size() > 0) {

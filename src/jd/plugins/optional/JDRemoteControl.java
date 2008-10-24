@@ -22,7 +22,6 @@ package jd.plugins.optional;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
-import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -50,8 +49,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-
-import jd.utils.httpserver.*;
+import jd.utils.httpserver.Handler;
+import jd.utils.httpserver.HttpServer;
+import jd.utils.httpserver.Request;
+import jd.utils.httpserver.Response;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
     public JDRemoteControl(PluginWrapper wrapper) {
@@ -695,9 +696,10 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     }
 
     private DecimalFormat f = new DecimalFormat("#0.00");
-    
+
     private HttpServer server;
-    
+
+    @SuppressWarnings("deprecation")
     public void actionPerformed(ActionEvent e) {
         if (server == null) { return; }
         try {

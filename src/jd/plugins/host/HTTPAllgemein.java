@@ -20,8 +20,6 @@ import java.io.IOException;
 import java.util.Vector;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
@@ -31,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDMediaConvert;
 import jd.utils.JDUtilities;
 
@@ -40,6 +37,7 @@ public class HTTPAllgemein extends PluginForHost {
     public static final String DISABLED = "HttpAllgemeinDisabled";
 
     private String contentType;
+
     public HTTPAllgemein(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
@@ -93,10 +91,10 @@ public class HTTPAllgemein extends PluginForHost {
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
         dl.setResume(true);
-        if(!downloadLink.getDownloadURL().toLowerCase().endsWith(".flv")){
+        if (!downloadLink.getDownloadURL().toLowerCase().endsWith(".flv")) {
             dl.startDownload();
-        }else{
-            //Es handelt sich um eine Flash Datei
+        } else {
+            // Es handelt sich um eine Flash Datei
             Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3);
@@ -105,7 +103,7 @@ public class HTTPAllgemein extends PluginForHost {
             if (convertTo != null) {
                 downloadLink.setFinalFileName(downloadLink.getName() + ".tmp");
                 downloadLink.setSourcePluginComment("Convert to " + convertTo.GetText());
-                if(dl.startDownload()){
+                if (dl.startDownload()) {
                     ConversionMode inType = ConversionMode.VIDEOFLV;
                     if (!JDMediaConvert.ConvertFile(downloadLink, inType, convertTo)) {
                         logger.severe("Video-Convert failed!");
@@ -131,8 +129,12 @@ public class HTTPAllgemein extends PluginForHost {
     public void handleFree(DownloadLink link) throws Exception {
 
     }
+
     private void setConfigElements() {
-//        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLED, JDLocale.L("plugins.host.HttpAllgemein.Disable", "Disable plugin")).setDefaultValue(false));
+        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
+        // getPluginConfig(), DISABLED,
+        // JDLocale.L("plugins.host.HttpAllgemein.Disable",
+        // "Disable plugin")).setDefaultValue(false));
     }
 
 }

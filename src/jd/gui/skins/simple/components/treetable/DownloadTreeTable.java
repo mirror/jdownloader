@@ -80,10 +80,6 @@ import jd.utils.JDUtilities;
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.tree.TreeModelSupport;
 
-import edu.stanford.ejalbert.BrowserLauncher;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
 public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
 
     abstract class Caller {
@@ -231,14 +227,12 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
 
-            
-                    try {
-                        JLinkButton.openURL(link.getBrowserUrl());
-                    } catch (MalformedURLException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-             
+                try {
+                    JLinkButton.openURL(link.getBrowserUrl());
+                } catch (MalformedURLException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
 
             }
 

@@ -32,7 +32,7 @@ import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
 
-    private static int SIM = 20;
+    // private static int SIM = 20;
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,16 +69,16 @@ public class FastLoadNet extends PluginForHost {
 
     private String getModifiedID(DownloadLink downloadLink) {
         String pid = downloadLink.getDownloadURL().substring(downloadLink.getDownloadURL().indexOf("pid=") + 4).trim();
-        String first= pid.substring(0, pid.length()-4);
-        String last=pid.substring(pid.length()-4);
-        return last+first;
+        String first = pid.substring(0, pid.length() - 4);
+        String last = pid.substring(pid.length() - 4);
+        return last + first;
     }
 
     public void prepareLink(DownloadLink downloadLink) throws Exception {
         String uui = JDUtilities.getMD5(System.currentTimeMillis() + "_" + (Math.random() * Integer.MAX_VALUE));
         String id = this.getModifiedID(downloadLink);
         if (downloadLink.getProperty("ONEWAYLINK", null) != null) { return; }
-        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.fastload.prepare","Wait for linkconfirmation"));
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.fastload.prepare", "Wait for linkconfirmation"));
         downloadLink.requestGuiUpdate();
         try {
             JLinkButton.openURL("http://www.fast-load.net/getdownload.php?fid=" + id + "&jid=" + uui);
@@ -152,7 +152,7 @@ public class FastLoadNet extends PluginForHost {
         // TICKET_MESSAGE = true;
         // }
         br.setDebug(true);
-this.prepareLink(downloadLink);
+        this.prepareLink(downloadLink);
         dl = br.openDownload(downloadLink, downloadLink.getStringProperty("ONEWAYLINK", null));
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection()).trim();

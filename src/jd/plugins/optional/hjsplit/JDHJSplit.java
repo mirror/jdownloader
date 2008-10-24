@@ -46,9 +46,9 @@ import jd.unrar.hjsplitt.JAxeJoiner;
 import jd.unrar.hjsplitt.JoinerFactory;
 import jd.unrar.hjsplitt.ProgressEvent;
 import jd.unrar.hjsplitt.ProgressEventListener;
-import jd.utils.Jobber;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.Jobber;
 
 public class JDHJSplit extends PluginOptional implements ControlListener {
 
@@ -68,12 +68,10 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         return 2;
     }
 
-    @SuppressWarnings("unchecked")
     public JDHJSplit(PluginWrapper wrapper) {
         super(wrapper);
         this.queue = new Jobber(1);
         initConfig();
-
     }
 
     /**
@@ -407,13 +405,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         for (DownloadLink miss : missing) {
             File par1 = new File(miss.getFileOutput()).getParentFile();
             File par2 = file.getParentFile();
-            if(par1.equals(par2)){
-                
-                if(!new File(miss.getFileOutput()).exists()){
-                    return null;
-                }
+            if (par1.equals(par2)) {
+
+                if (!new File(miss.getFileOutput()).exists()) { return null; }
             }
-            
+
         }
         File[] files = file.getParentFile().listFiles(new java.io.FileFilter() {
             public boolean accept(File pathname) {

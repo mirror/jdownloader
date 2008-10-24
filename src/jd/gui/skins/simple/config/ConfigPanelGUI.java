@@ -67,6 +67,9 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")));
         ce.setDefaultValue(Locale.getDefault());
 
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode", "'Missing-Language-Entries' Datei anlegen")));
+        ce.setDefaultValue(true);
+
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.LF("gui.config.gui.languageFileInfo", "Current Language File: %s from %s in version %s", subConfig.getStringProperty(SimpleGUI.PARAM_LOCALE, Locale.getDefault().toString()), JDLocale.getTranslater(), JDLocale.getVersion())));
 
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
@@ -169,21 +172,22 @@ public class ConfigPanelGUI extends ConfigPanel {
             }
         }, JDLocale.L("gui.config.gui.testbrowser", "Test browser")));
 
-        ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_USE, JDLocale.L("gui.config.gui.use_custum_browser", "Use custum browser"));
-        ce.setDefaultValue(false);
-        ConfigEntry conditionEntry = ce;
+        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_USE, JDLocale.L("gui.config.gui.use_custum_browser", "Use custum browser"));
+        conditionEntry.setDefaultValue(false);
+
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
         ce.setDefaultValue(BrowserArray[0]);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
+
         extended.addEntry(conditionEntry);
+
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER, JDLocale.L("gui.config.gui.custum_browser", "Browserpath")));
         ce.setDefaultValue("C:\\Programme\\Mozilla Firefox\\firefox.exe");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
+
         extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_PARAM, JDLocale.L("gui.config.gui.custum_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue("-new-tab\r\n%url");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDLocale.LOCALE_EDIT_MODE, JDLocale.L("gui.config.localeditmode", "'Missing-Language-Entries' Datei anlegen")));
-        ce.setDefaultValue(true);
 
         this.add(cep = new ConfigEntriesPanel(container));
     }
