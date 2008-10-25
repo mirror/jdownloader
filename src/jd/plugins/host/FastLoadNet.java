@@ -25,6 +25,7 @@ import java.util.concurrent.Semaphore;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
+import jd.controlling.ProgressController;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -226,11 +227,20 @@ public class FastLoadNet extends PluginForHost {
     public class Refresh_Tickets extends Thread {
         private ArrayList<DownloadLink> links;
         private boolean running = false;
+        ProgressController progress;
 
         public Refresh_Tickets(ArrayList<DownloadLink> links) {
             this.links = links;
             running = true;
             this.setName("FastLoad_Refresh_all_Tickets");
+            progress = new ProgressController("Refresh FastLoad Tickets");
+            long counter = 0;
+            for (DownloadLink link : links) {
+                if (link.isEnabled()) {
+                    counter++;
+                }
+            }
+            progress.setRange(counter);
         }
 
         public void stop_running() {
@@ -245,15 +255,18 @@ public class FastLoadNet extends PluginForHost {
                     try {
                         prepareLink2(link, false);
                     } catch (InterruptedException e) {
+                        progress.finalize();
                         Refresh_ALL = false;
                         break;
                     } catch (Exception e) {
                     }
+                    progress.increase(1l);
                     link.getLinkStatus().setStatusText(null);
                     link.requestGuiUpdate();
                 }
             }
             Refresh_ALL = false;
+            progress.finalize();
         }
     }
 
