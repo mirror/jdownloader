@@ -744,7 +744,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             Object obj = path.getLastPathComponent();
             if (obj instanceof DownloadLink) {
                 new DownloadInfo(SimpleGUI.CURRENTGUI.getFrame(), (DownloadLink) obj);
-            } else if (obj instanceof FilePackage) {
+            } else if (obj instanceof FilePackage && columnAtPoint(e.getPoint()) > 0) {
                 new PackageInfo(SimpleGUI.CURRENTGUI.getFrame(), (FilePackage) obj);
             }
         }
@@ -754,7 +754,6 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
     }
 
     public void mouseEntered(MouseEvent e) {
-
     }
 
     public void mouseExited(MouseEvent e) {
@@ -787,12 +786,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             tooltipTimer.setCaller(new Caller() {
                 public void call() {
                     if (moColumn == mouseOverColumn && moRow == mouseOverRow) {
-                        // logger.info(moColumn+"="+mouseOverColumn+" -
-                        // "+moRow+" - "+mouseOverRow);
                         showToolTip(moRow, moColumn);
                     }
-                    // logger.info(moColumn+"="+mouseOverColumn+" - "+moRow+" -
-                    // "+mouseOverRow);
                 }
             });
         }

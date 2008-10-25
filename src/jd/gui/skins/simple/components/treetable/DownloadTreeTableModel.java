@@ -175,7 +175,6 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
      * What is shown in a cell column for a node.
      */
     public Object getValueAt(Object node, int column) {
-        String value = null;
 
         if (node instanceof DownloadLink) {
             DownloadLink downloadLink = (DownloadLink) node;
@@ -183,24 +182,17 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             case COL_PART:
                 if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
                     PackageData pd = (PackageData) downloadLink.getProperty("JDU");
-                    value = JDLocale.L("gui.treetable.part.label_update", "Update") + " " + pd.getInstalledVersion() + " -> " + pd.getStringProperty("version");
+                    return JDLocale.L("gui.treetable.part.label_update", "Update") + " " + pd.getInstalledVersion() + " -> " + pd.getStringProperty("version");
                 } else {
                     int id = downloadLink.getPartByName();
-                    value = JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0"));
+                    return JDLocale.L("gui.treetable.part.label", "Datei") + " " + (id < 0 ? "" : JDUtilities.fillInteger(id, 3, "0"));
                 }
-                break;
             case COL_FILE:
-                value = downloadLink.getName();
-                if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                    value = value.substring(0, value.length() - 4);
-                }
-                break;
+                return downloadLink.getName().replaceAll("\\.jdu", "");
             case COL_HOSTER:
-                value = downloadLink.getHost();
-                break;
+                return downloadLink.getHost();
             case COL_STATUS:
-                value = downloadLink.getLinkStatus().getStatusString();
-                break;
+                return downloadLink.getLinkStatus().getStatusString();
             case COL_PROGRESS:
                 return downloadLink;
             }
@@ -208,26 +200,23 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             FilePackage filePackage = (FilePackage) node;
             switch (column) {
             case COL_PART:
-                value = filePackage.getName();
-                break;
+                return filePackage.getName();
             case COL_FILE:
-                value = filePackage.getDownloadLinks().size() + " " + JDLocale.L("gui.treetable.parts", "Teil(e)");
-                break;
+                return filePackage.getDownloadLinks().size() + " " + JDLocale.L("gui.treetable.parts", "Teil(e)");
             case COL_HOSTER:
-                value = "";
-                break;
+                return "";
             case COL_STATUS:
                 return filePackage;
             case COL_PROGRESS:
                 return filePackage;
             }
         } else if (node instanceof String) {
-            value = 0 == column ? node.toString() : "";
+            return (column == 0) ? node.toString() : "";
         } else {
             System.out.println("node.class: " + node.getClass());
         }
 
-        return value;
+        return null;
     }
 
     @Override
