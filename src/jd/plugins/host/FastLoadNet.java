@@ -244,11 +244,13 @@ public class FastLoadNet extends PluginForHost {
                 if (link.isEnabled()) {
                     try {
                         prepareLink2(link, false);
-                    } catch (Exception e) {
-                        link.getLinkStatus().setStatusText(null);
-                        link.getLinkStatus().setStatusText(null);
+                    } catch (InterruptedException e) {
+                        Refresh_ALL = false;
                         break;
+                    } catch (Exception e) {
                     }
+                    link.getLinkStatus().setStatusText(null);
+                    link.requestGuiUpdate();
                 }
             }
             Refresh_ALL = false;
