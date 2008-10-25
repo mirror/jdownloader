@@ -64,7 +64,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         }
 
         public int getColumnCount() {
-            return 6;
+            return 7;
         }
 
         @Override
@@ -82,6 +82,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 return JDLocale.L("gui.column_agb", "AGB");
             case 5:
                 return JDLocale.L("gui.column_agbChecked", "akzeptieren");
+            case 6:
+                return JDLocale.L("gui.column_usePlugin", "Plugin benutzen");
             }
             return super.getColumnName(column);
         }
@@ -117,13 +119,15 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 });
             case 5:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
+            case 6:
+                return pluginsForHost.get(rowIndex).usePlugin();
             }
             return null;
         }
 
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
-            return columnIndex == 4 || columnIndex == 5;
+            return columnIndex == 4 || columnIndex == 5 || columnIndex == 6;
         }
 
         @Override
@@ -137,6 +141,8 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 } else {
                     pluginsForHost.get(row).setAGBChecked((Boolean) value);
                 }
+            } else if (col == 6) {
+                pluginsForHost.get(row).setUsePlugin((Boolean) value);
             }
         }
     }
