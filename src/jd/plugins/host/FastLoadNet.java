@@ -20,6 +20,7 @@ import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.concurrent.Semaphore;
 
 import jd.PluginWrapper;
@@ -37,6 +38,8 @@ public class FastLoadNet extends PluginForHost {
 
     private static final String PROPERTY_TICKET = "FASTLOAD_TICKET";
     private static Semaphore userio_sem = new Semaphore(1);
+    private static boolean Refresh_ALL = false;
+    private static Refresh_Tickets refresh_thread = null;
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -80,19 +83,17 @@ public class FastLoadNet extends PluginForHost {
 
     public void prepareLink(DownloadLink downloadLink) throws Exception {
         if (getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false)) {
-            prepareLink2(downloadLink);
+            prepareLink2(downloadLink, true);
         }
     }
 
-    public void prepareLink2(DownloadLink downloadLink) throws Exception {
-        downloadLink.getLinkStatus().setStatusText("Acquiring Ticket");
-        downloadLink.requestGuiUpdate();
-        acquireUserIO_Semaphore();
+    public void prepareLink2(DownloadLink downloadLink, boolean use_semaphore) throws Exception {
         String uui = JDUtilities.getMD5(System.currentTimeMillis() + "_" + (Math.random() * Integer.MAX_VALUE));
         String id = this.getModifiedID(downloadLink);
         if (downloadLink.getProperty("ONEWAYLINK", null) != null) { return; }
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.fastload.prepare", "Wait for linkconfirmation"));
         downloadLink.requestGuiUpdate();
+        if (use_semaphore) acquireUserIO_Semaphore();
         try {
             JLinkButton.openURL("http://www.fast-load.net/getdownload.php?fid=" + id + "&jid=" + uui);
         } catch (MalformedURLException e1) {
@@ -108,7 +109,7 @@ public class FastLoadNet extends PluginForHost {
 
             if (br.containsHTML("wrong link")) {
                 downloadLink.getLinkStatus().setStatusText(null);
-                releaseUserIO_Semaphore();
+                if (use_semaphore) releaseUserIO_Semaphore();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
@@ -123,11 +124,11 @@ public class FastLoadNet extends PluginForHost {
         if (!confirmed) {
             logger.warning("Kein Ticket geholt");
             downloadLink.setProperty("ONEWAYLINK", null);
-            releaseUserIO_Semaphore();
+            if (use_semaphore) releaseUserIO_Semaphore();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         downloadLink.getLinkStatus().setStatusText(null);
-        releaseUserIO_Semaphore();
+        if (use_semaphore) releaseUserIO_Semaphore();
     }
 
     @Override
@@ -138,7 +139,7 @@ public class FastLoadNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setDebug(true);
-        this.prepareLink2(downloadLink);
+        this.prepareLink2(downloadLink, true);
         dl = br.openDownload(downloadLink, downloadLink.getStringProperty("ONEWAYLINK", null));
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection()).trim();
@@ -154,7 +155,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 3;
     }
 
     @Override
@@ -184,6 +185,8 @@ public class FastLoadNet extends PluginForHost {
         MenuItem m;
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_ticket", "Get Ticket immediately"), 0).setActionListener(this));
         m.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_refresh", "Refresh all Tickets"), 1).setActionListener(this));
+        m.setSelected(Refresh_ALL);
         m.setActionListener(this);
         return menu;
     }
@@ -195,11 +198,61 @@ public class FastLoadNet extends PluginForHost {
                 getPluginConfig().setProperty(PROPERTY_TICKET, !getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false));
                 getPluginConfig().save();
                 break;
+            case 1:
+                Refresh_ALL = !Refresh_ALL;
+                if (Refresh_ALL == true) {
+                    ArrayList<DownloadLink> links = JDUtilities.getController().getDownloadLinks(this);
+                    if (refresh_thread != null) {
+                        refresh_thread.stop_running();
+                        if (refresh_thread.isAlive()) refresh_thread.interrupt();
+                        refresh_thread = null;
+                    }
+                    refresh_thread = new Refresh_Tickets(links);
+                    refresh_thread.start();
+                } else {
+                    if (refresh_thread != null) {
+                        refresh_thread.stop_running();
+                        if (refresh_thread.isAlive()) refresh_thread.interrupt();
+                        refresh_thread = null;
+                    }
+                }
+                break;
             default:
                 break;
             }
+        }
+    }
 
+    public class Refresh_Tickets extends Thread {
+        private ArrayList<DownloadLink> links;
+        private boolean running = false;
+
+        public Refresh_Tickets(ArrayList<DownloadLink> links) {
+            this.links = links;
+            running = true;
+            this.setName("FastLoad_Refresh_all_Tickets");
         }
 
+        public void stop_running() {
+            running = false;
+        }
+
+        public void run() {
+            Iterator<DownloadLink> iter = links.iterator();
+            while (running && iter.hasNext()) {
+                DownloadLink link = iter.next();
+                if (link.isEnabled()) {
+                    try {
+                        prepareLink2(link, false);
+                    } catch (Exception e) {
+                        link.getLinkStatus().setStatusText(null);
+                        link.getLinkStatus().setStatusText(null);
+                        break;
+                    }
+                }
+            }
+            Refresh_ALL = false;
+        }
     }
+
 }
