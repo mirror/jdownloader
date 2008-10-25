@@ -127,7 +127,7 @@ public abstract class PluginForHost extends Plugin {
         if ((blocker = JDUtilities.getController().getLinkThatBlocks(downloadLink)) != null) throw new PluginException(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), blocker.getPlugin().getHost()));
     }
 
-    public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException {
+    public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
             Browser.download(captchaFile, br.openGetConnection(captchaAddress));

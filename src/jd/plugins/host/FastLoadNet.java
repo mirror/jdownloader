@@ -16,8 +16,11 @@
 
 package jd.plugins.host;
 
+import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
+
 import java.util.ArrayList;
+import java.util.concurrent.Semaphore;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
@@ -32,7 +35,8 @@ import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
 
-    // private static int SIM = 20;
+    private static final String PROPERTY_TICKET = "FASTLOAD_TICKET";
+    private static Semaphore userio_sem = new Semaphore(1);
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,6 +79,15 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public void prepareLink(DownloadLink downloadLink) throws Exception {
+        if (getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false)) {
+            prepareLink2(downloadLink);
+        }
+    }
+
+    public void prepareLink2(DownloadLink downloadLink) throws Exception {
+        downloadLink.getLinkStatus().setStatusText("Acquiring Ticket");
+        downloadLink.requestGuiUpdate();
+        acquireUserIO_Semaphore();
         String uui = JDUtilities.getMD5(System.currentTimeMillis() + "_" + (Math.random() * Integer.MAX_VALUE));
         String id = this.getModifiedID(downloadLink);
         if (downloadLink.getProperty("ONEWAYLINK", null) != null) { return; }
@@ -86,77 +99,49 @@ public class FastLoadNet extends PluginForHost {
             e1.printStackTrace();
         }
         int i = 30;
+        boolean confirmed = false;
         while (i-- > 0) {
-
             Thread.sleep(1000);
-
+            downloadLink.getLinkStatus().setStatusText("Waiting for Ticket: " + i + " secs");
+            downloadLink.requestGuiUpdate();
             br.getPage("http://www.fast-load.net/system/checkconfirmation.php?fid=" + id + "&jid=" + uui);
 
-            if (br.containsHTML("wrong link")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            if (br.containsHTML("wrong link")) {
+                downloadLink.getLinkStatus().setStatusText(null);
+                releaseUserIO_Semaphore();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
 
             if (br.containsHTML("not confirmed")) {
                 continue;
-
             } else {
-
                 downloadLink.setProperty("ONEWAYLINK", (br + "").trim());
+                confirmed = true;
                 break;
             }
         }
+        if (!confirmed) {
+            logger.warning("Kein Ticket geholt");
+            downloadLink.setProperty("ONEWAYLINK", null);
+            releaseUserIO_Semaphore();
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
         downloadLink.getLinkStatus().setStatusText(null);
+        releaseUserIO_Semaphore();
     }
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
-    }
-
-    public ArrayList<MenuItem> createMenuitems() {
-
-        ArrayList<MenuItem> menuList = super.createMenuitems();
-        // if (menuList == null) menuList = new ArrayList<MenuItem>();
-        //
-        // MenuItem m = new MenuItem(MenuItem.NORMAL,
-        // JDLocale.L("plugins.menu.fastload", "Get Freeticket"), 1);
-        // m.setActionListener(this);
-        // menuList.add(m);
-        return menuList;
-
     }
 
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-
-        // if (this.throttled && !this.speedTicket && !TICKET_MESSAGE) {
-        // if (JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L(
-        // "plugins.host.fastload.ticketmessage",
-        // "Get a Fastload.net Speedticket to boost speed up to 300kb/s"), 15))
-        // {
-        // try {
-        // JLinkButton.openURL("http://www.fast-load.net/getticket.php");
-        // } catch (MalformedURLException e1) {
-        // e1.printStackTrace();
-        // }
-        // downloadLink.getLinkStatus().setStatusText(JDLocale.L(
-        // "plugins.host.fastload.wait_ticketmessage", "Wait for Speedticket"));
-        // downloadLink.requestGuiUpdate();
-        // int i = 0;
-        // while (!speedTicket && i < 90000) {
-        // Thread.sleep(1000);
-        // getFileInformation(downloadLink);
-        // i += 1000;
-        //
-        // }
-        // }
-        // TICKET_MESSAGE = true;
-        // }
         br.setDebug(true);
-        this.prepareLink(downloadLink);
+        this.prepareLink2(downloadLink);
         dl = br.openDownload(downloadLink, downloadLink.getStringProperty("ONEWAYLINK", null));
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection()).trim();
-
             if (page.equals("wrong link")) {
                 logger.warning("Ticket abgelaufen");
                 downloadLink.setProperty("ONEWAYLINK", null);
@@ -164,16 +149,12 @@ public class FastLoadNet extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         }
-
         dl.startDownload();
 
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
-        // return
-        // Math.min(SIM,JDUtilities.getController().getRunningDownloadNumByHost
-        // (this)+1);
+        return 20;
     }
 
     @Override
@@ -184,4 +165,41 @@ public class FastLoadNet extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
+    public static void acquireUserIO_Semaphore() throws InterruptedException {
+        try {
+            userio_sem.acquire();
+        } catch (InterruptedException e) {
+            userio_sem.drainPermits();
+            userio_sem.release(1);
+            throw e;
+        }
+    }
+
+    public static void releaseUserIO_Semaphore() {
+        userio_sem.release();
+    }
+
+    public ArrayList<MenuItem> createMenuitems() {
+        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        MenuItem m;
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_ticket", "Get Ticket immediately"), 0).setActionListener(this));
+        m.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false));
+        m.setActionListener(this);
+        return menu;
+    }
+
+    public void actionPerformed(ActionEvent e) {
+        if (e.getSource() instanceof MenuItem) {
+            switch (((MenuItem) e.getSource()).getActionID()) {
+            case 0:
+                getPluginConfig().setProperty(PROPERTY_TICKET, !getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false));
+                getPluginConfig().save();
+                break;
+            default:
+                break;
+            }
+
+        }
+
+    }
 }

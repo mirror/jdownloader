@@ -141,7 +141,13 @@ public class CaptchaDialog extends JDialog implements ActionListener, KeyListene
                 @Override
                 public void run() {
 
-                    String code = JDUtilities.getCaptcha(plugin, host, file, true);
+                    String code=null;
+                    try {
+                        code = JDUtilities.getCaptcha(plugin, host, file, true);
+                    } catch (InterruptedException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {

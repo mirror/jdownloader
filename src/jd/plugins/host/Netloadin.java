@@ -188,7 +188,7 @@ public class Netloadin extends PluginForHost {
 
     }
 
-    private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) throws IOException, PluginException {
+    private void checkPassword(DownloadLink downloadLink, LinkStatus linkStatus) throws IOException, PluginException, InterruptedException {
         if (!br.containsHTML("download_password")) return;
         String pass = downloadLink.getStringProperty("LINK_PASSWORD", LINK_PASS);
 

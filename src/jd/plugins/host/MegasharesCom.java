@@ -127,7 +127,7 @@ public class MegasharesCom extends PluginForHost {
         dl.startDownload();
     }
 
-    private boolean checkPassword(DownloadLink link) throws IOException, PluginException {
+    private boolean checkPassword(DownloadLink link) throws IOException, PluginException, InterruptedException {
 
         if (br.containsHTML("This link requires a password")) {
             Form form = br.getFormbyValue("Validate Password");

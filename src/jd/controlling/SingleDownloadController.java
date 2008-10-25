@@ -280,7 +280,7 @@ public class SingleDownloadController extends Thread {
 
     }
 
-    private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) {
+    private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) throws InterruptedException {
 
         downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
 

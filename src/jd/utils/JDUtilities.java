@@ -217,11 +217,13 @@ public class JDUtilities {
         return ret;
     }
 
-    public static void acquireUserIO_Semaphore() {
+    public static void acquireUserIO_Semaphore() throws InterruptedException {
         try {
             userio_sem.acquire();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            userio_sem.drainPermits();
+            userio_sem.release(1);
+            throw e;
         }
     }
 
@@ -618,14 +620,14 @@ public class JDUtilities {
         return JDUtilities.fillInteger(hours, 2, "0") + ":" + JDUtilities.fillInteger(minutes, 2, "0") + ":" + JDUtilities.fillInteger(seconds, 2, "0");
     }
 
-    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) {
+    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws InterruptedException {
         link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
         String code = getCaptcha(plugin, method, file, forceJAC);
         link.getProgressController().setProgressText(null);
         return code;
     }
 
-    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) {
+    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws InterruptedException {
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         String code = getCaptcha(plugin, method, file, forceJAC);
@@ -634,7 +636,7 @@ public class JDUtilities {
         return code;
     }
 
-    public static String getUserInput(String message, DownloadLink link) {
+    public static String getUserInput(String message, DownloadLink link) throws InterruptedException {
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         String code = getUserInput(message);
@@ -643,7 +645,7 @@ public class JDUtilities {
         return code;
     }
 
-    public static String getUserInput(String message, String defaultmessage, DownloadLink link) {
+    public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws InterruptedException {
         link.getLinkStatus().addStatus(LinkStatus.WAITING_USERIO);
         link.requestGuiUpdate();
         String code = getUserInput(message, defaultmessage);
@@ -652,21 +654,21 @@ public class JDUtilities {
         return code;
     }
 
-    public static String getUserInput(String message, CryptedLink link) {
+    public static String getUserInput(String message, CryptedLink link) throws InterruptedException {
         link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
         String password = getUserInput(message);
         link.getProgressController().setProgressText(null);
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage, CryptedLink link) {
+    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws InterruptedException {
         link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
         String password = getUserInput(message, defaultmessage);
         link.getProgressController().setProgressText(null);
         return password;
     }
 
-    public static String getUserInput(String message) {
+    public static String getUserInput(String message) throws InterruptedException {
         acquireUserIO_Semaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
         String password = JDUtilities.getGUI().showUserInputDialog(message);
@@ -674,7 +676,7 @@ public class JDUtilities {
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage) {
+    public static String getUserInput(String message, String defaultmessage) throws InterruptedException {
         acquireUserIO_Semaphore();
         if (message == null) message = JDLocale.L("gui.linkgrabber.password", "Password?");
         if (defaultmessage == null) defaultmessage = "";
@@ -695,8 +697,9 @@ public class JDUtilities {
      *            der Host von dem die Methode verwendet werden soll
      * @param file
      * @return Der vom Benutzer eingegebene Text
+     * @throws InterruptedException 
      */
-    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) {
+    public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) throws InterruptedException {
         String host;
         if (method == null) {
             host = plugin.getHost();
@@ -1816,7 +1819,7 @@ public class JDUtilities {
         exec.setRunin(runIn);
         exec.setWaitTimeout(waitForReturn);
         exec.start();
-        exec.waitTimeout(); 
+        exec.waitTimeout();
         return exec.getStream() + " \r\n " + exec.getErrorStream();
     }
 
@@ -1828,7 +1831,7 @@ public class JDUtilities {
      * Speichert ein Objekt
      * 
      * @param frame
-     *            ein Fenster 
+     *            ein Fenster
      * @param objectToSave
      *            Das zu speichernde Objekt
      * @param fileOutput

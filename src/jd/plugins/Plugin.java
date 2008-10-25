@@ -89,50 +89,51 @@ public abstract class Plugin implements ActionListener {
      * @param plugin
      * @return captchacode
      * @throws PluginException
+     * @throws InterruptedException 
      */
-    public static String getCaptchaCode(File file, Plugin plugin, DownloadLink link) throws PluginException {
+    public static String getCaptchaCode(File file, Plugin plugin, DownloadLink link) throws PluginException, InterruptedException {
         String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
         if (captchaText == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return captchaText;
     }
 
-    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws PluginException {
+    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws PluginException, InterruptedException {
         String captchaText = JDUtilities.getCaptcha(plugin, method, file, forceJAC, link);
         if (captchaText == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return captchaText;
     }
 
-    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws DecrypterException {
+    public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, CryptedLink link) throws DecrypterException, InterruptedException {
         String captchaText = JDUtilities.getCaptcha(plugin, method, file, forceJAC, link);
         if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return captchaText;
     }
 
-    public static String getCaptchaCode(File file, Plugin plugin, CryptedLink link) throws DecrypterException {
+    public static String getCaptchaCode(File file, Plugin plugin, CryptedLink link) throws DecrypterException, InterruptedException {
         String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
         if (captchaText == null) throw new DecrypterException(DecrypterException.CAPTCHA);
         return captchaText;
     }
 
-    public static String getUserInput(String message, CryptedLink link) throws DecrypterException {
+    public static String getUserInput(String message, CryptedLink link) throws DecrypterException, InterruptedException {
         String password = JDUtilities.getUserInput(message, link);
         if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
         return password;
     }
 
-    public static String getUserInput(String message, DownloadLink link) throws PluginException {
+    public static String getUserInput(String message, DownloadLink link) throws PluginException, InterruptedException {
         String password = JDUtilities.getUserInput(message, link);
         if (password == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws PluginException {
+    public static String getUserInput(String message, String defaultmessage, DownloadLink link) throws PluginException, InterruptedException {
         String password = JDUtilities.getUserInput(message, defaultmessage, link);
         if (password == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return password;
     }
 
-    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws DecrypterException {
+    public static String getUserInput(String message, String defaultmessage, CryptedLink link) throws DecrypterException, InterruptedException {
         String password = JDUtilities.getUserInput(message, defaultmessage, link);
         if (password == null) throw new DecrypterException(DecrypterException.PASSWORD);
         return password;
