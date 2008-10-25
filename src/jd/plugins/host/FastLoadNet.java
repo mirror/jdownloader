@@ -37,7 +37,6 @@ import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
 
-    private static final String PROPERTY_TICKET = "FASTLOAD_TICKET";
     private static Semaphore userio_sem = new Semaphore(1);
     private static boolean Refresh_ALL = false;
     private static Refresh_Tickets refresh_thread = null;
@@ -82,13 +81,7 @@ public class FastLoadNet extends PluginForHost {
         return last + first;
     }
 
-    public void prepareLink(DownloadLink downloadLink) throws Exception {
-        if (getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false)) {
-            prepareLink2(downloadLink, true);
-        }
-    }
-
-    public void prepareLink2(DownloadLink downloadLink, boolean use_semaphore) throws Exception {
+    public void prepare(DownloadLink downloadLink, boolean use_semaphore) throws Exception {
         String uui = JDUtilities.getMD5(System.currentTimeMillis() + "_" + (Math.random() * Integer.MAX_VALUE));
         String id = this.getModifiedID(downloadLink);
         if (downloadLink.getProperty("ONEWAYLINK", null) != null) { return; }
@@ -140,7 +133,7 @@ public class FastLoadNet extends PluginForHost {
     public void handleFree(final DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.setDebug(true);
-        this.prepareLink2(downloadLink, true);
+        prepare(downloadLink, true);
         dl = br.openDownload(downloadLink, downloadLink.getStringProperty("ONEWAYLINK", null));
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection()).trim();
@@ -184,9 +177,7 @@ public class FastLoadNet extends PluginForHost {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_ticket", "Get Ticket immediately"), 0).setActionListener(this));
-        m.setSelected(getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false));
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_refresh", "Refresh all Tickets"), 1).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_refresh", "Refresh all Tickets"), 0).setActionListener(this));
         m.setSelected(Refresh_ALL);
         m.setActionListener(this);
         return menu;
@@ -196,10 +187,6 @@ public class FastLoadNet extends PluginForHost {
         if (e.getSource() instanceof MenuItem) {
             switch (((MenuItem) e.getSource()).getActionID()) {
             case 0:
-                getPluginConfig().setProperty(PROPERTY_TICKET, !getPluginConfig().getBooleanProperty(PROPERTY_TICKET, false));
-                getPluginConfig().save();
-                break;
-            case 1:
                 Refresh_ALL = !Refresh_ALL;
                 if (Refresh_ALL == true) {
                     ArrayList<DownloadLink> links = JDUtilities.getController().getDownloadLinks(this);
@@ -234,13 +221,12 @@ public class FastLoadNet extends PluginForHost {
             running = true;
             this.setName("FastLoad_Refresh_all_Tickets");
             progress = new ProgressController("Refresh FastLoad Tickets");
-            long counter = 0;
+            progress.setRange(0);
             for (DownloadLink link : links) {
                 if (link.isEnabled()) {
-                    counter++;
+                    progress.addToMax(1l);
                 }
             }
-            progress.setRange(counter);
         }
 
         public void stop_running() {
@@ -253,7 +239,7 @@ public class FastLoadNet extends PluginForHost {
                 DownloadLink link = iter.next();
                 if (link.isEnabled()) {
                     try {
-                        prepareLink2(link, false);
+                        prepare(link, false);
                     } catch (InterruptedException e) {
                         progress.finalize();
                         Refresh_ALL = false;
