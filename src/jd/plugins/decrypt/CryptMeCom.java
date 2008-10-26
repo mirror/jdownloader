@@ -67,13 +67,11 @@ public class CryptMeCom extends PluginForDecrypt {
 
         if (decryptedLinks.size() == 0) {
             String folderId = new Regex(parameter, "folder/([a-zA-Z0-9]+)\\.html").getMatch(0);
-            String[] folderSize = br.getRegex("<a onclick=\"return newpopup\\(('.*?', '.*?')\\);\" ").getColumn(0);
-
-            for (int i = 1; i <= folderSize.length; i++) {
-                String encodedLink = new Regex(br.getPage("http://crypt-me.com/go.php?id=" + folderId + "&lk=" + i), "<iframe src=\"http://anonym.to/\\?(.*?)\"").getMatch(0);
-
+            int folderSize = br.getRegex("<a onclick=\"return newpopup\\(('.*?', '.*?')\\);\" ").count();
+            for (int i = 1; i <= folderSize; i++) {
+                br.getPage("http://crypt-me.com/go.php?id=" + folderId + "&lk=" + i);
+                String encodedLink = br.getRegex("<iframe src=\"http://anonym.to/\\?(.*?)\"").getMatch(0);
                 decryptedLinks.add(createDownloadlink(encodedLink));
-
             }
         }
 
