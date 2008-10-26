@@ -81,9 +81,7 @@ public class HTTPAllgemein extends PluginForHost {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL());
-        dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        dl.setResume(true);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
         dl.startDownload();
     }
 

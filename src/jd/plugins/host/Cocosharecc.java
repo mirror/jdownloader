@@ -52,7 +52,7 @@ public class Cocosharecc extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -75,8 +75,6 @@ public class Cocosharecc extends PluginForHost {
         if (downloadURL == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         dl = br.openDownload(downloadLink, downloadURL);
-        dl.connect();
-
         /* DownloadLimit? */
         if (dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         dl.startDownload();
