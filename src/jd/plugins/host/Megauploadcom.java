@@ -35,7 +35,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -74,8 +73,7 @@ public class Megauploadcom extends PluginForHost {
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        this.setBrowserExclusive();
-        // br.setDebug(true);
+        this.setBrowserExclusive();        
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
@@ -98,36 +96,27 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
-        LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        logger.info("PREMOIM");
-        String url = "http://www.megaupload.com/de/";
-
-        downloadLink.getLinkStatus().setStatusText("Login");
-        this.setBrowserExclusive();
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows; U; Windows NT 6.0; de; rv:1.8.1.14) Gecko/20080404 Firefox/2.0.0.14;MEGAUPLOAD 1.0");
-        br.getHeaders().put("X-MUTB", link);
-        br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.postPage(url, "login=" + account.getUser() + "&password=" + account.getPass());
-        if (br.getCookie(url, "user") == null || br.getCookie(url, "user").length() == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_PREMIUM);
-        }
-
+        getFileInformation(parameter);
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");        
+        br.postPage("http://megaupload.com/de/", "login=" + account.getUser() + "&password=" + account.getPass());
+        String cookie = br.getCookie("http://megaupload.com", "user");
+        if (cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account Invalid", LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         String id = Request.parseQuery(link).get("d");
-        br.getHeaders().clear();
-        br.getHeaders().put("TE", "trailers");
-        br.getHeaders().put("Connection", "TE");
         br.setFollowRedirects(false);
-        br.getPage("http://" + new URL(link).getHost() + "/mgr_dl.php?d=" + id + "&u=" + br.getCookie(url, "user"));
-
-        downloadLink.getLinkStatus().setStatusText("Premium");
-
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);
-
-        dl.headFake("bytes=656546546546546-");
+        String dlUrl = "http://megaupload.com/de/?d=" + id;
+        br.getPage(dlUrl);
+        if (br.getRedirectLocation() == null) {
+            String[] tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
+            Character l = (char) Math.abs(Integer.parseInt(tmp[1].trim()));
+            String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
+            tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
+            dlUrl = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
+        }
+        br.setFollowRedirects(true);
+        br.setDebug(true);
+        dl = br.openDownload(downloadLink, dlUrl, true, 0);
         dl.startDownload();
-
     }
 
     public String getAGBLink() {
@@ -144,11 +133,6 @@ public class Megauploadcom extends PluginForHost {
         if (filename == null || filename.length() == 0) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(size));
-        // try {
-        // return checkLinks(new DownloadLink[] { downloadLink })[0];
-        // } catch (Exception e) {
-        // }
-
         return true;
     }
 
@@ -162,12 +146,9 @@ public class Megauploadcom extends PluginForHost {
 
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
-
+        getFileInformation(parameter);
         DownloadLink downloadLink = (DownloadLink) parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");        
         br.setFollowRedirects(true);
 
         br.setCookie(parameter.getDownloadURL(), "l", "de");
@@ -269,61 +250,6 @@ public class Megauploadcom extends PluginForHost {
             downloadLink.setChunksProgress(null);
             linkStatus.setStatus(LinkStatus.ERROR_RETRY);
         }
-
-    }
-
-    /**
-     * Bietet der hoster eine Möglichkeit mehrere Links gleichzeitig zu prüfen,
-     * kann das über diese Funktion gemacht werden. Bei RS.com ist das derzeit
-     * deaktiviert, weil der Linkchecker nicht mehr über SSL erreichbar ist.
-     */
-    public boolean[] checkLinks(DownloadLink[] urls) {
-        return null;
-        // try {
-        // if (urls == null) { return null; }
-        // boolean[] ret = new boolean[urls.length];
-        // HashMap<String, String> post = new HashMap<String, String>();
-        // for (int j = 0; j < urls.length; j++) {
-        // if (!canHandle(urls[j].getDownloadURL())) { return null; }
-        // post.put("id" + j, new Regex(urls[j].getDownloadURL(),
-        // ".*?\\?d\\=(.{8})").getMatch(0));
-        // }
-        // Browser b = new Browser();
-        // b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "l",
-        // "de");
-        // b.setCookie("http://www.megaupload.com/mgr_linkcheck.php", "toolbar",
-        // "1");
-        // String pag =
-        // b.postPage("http://www.megaupload.com/mgr_linkcheck.php",
-        // post).replaceFirst("0=www.megaupload.com&1=www.megarotic.com&",
-        // "").replaceFirst("id[\\d]+=", "").trim();
-        // String[] pg = pag.split("&id[\\d]+=");
-        // for (int j = 0; j < pg.length; j++) {
-        // try {
-        // String[] infos = pg[j].split("&[sdn]=");
-        // if (infos.length < 4 || !infos[0].equals("0")) {
-        // ret[j] = false;
-        // } else {
-        // ret[j] = true;
-        // urls[j].setDownloadSize(Integer.parseInt(infos[1]));
-        // urls[j].setName(Encoding.htmlDecode(infos[3].trim()));
-        // }
-        // } catch (Exception e) {
-        // ret[j] = false;
-        // }
-        //
-        // }
-        // return ret;
-        //
-        // } catch (MalformedURLException e) {
-        //
-        // e.printStackTrace();
-        // return null;
-        // } catch (Exception e) {
-        //
-        // e.printStackTrace();
-        // return null;
-        // }
 
     }
 

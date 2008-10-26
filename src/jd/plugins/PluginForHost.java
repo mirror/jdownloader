@@ -91,7 +91,6 @@ public abstract class PluginForHost extends Plugin {
     protected void setBrowserExclusive() {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-
     }
 
     public void actionPerformed(ActionEvent e) {
