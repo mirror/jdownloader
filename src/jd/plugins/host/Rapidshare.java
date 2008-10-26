@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -122,12 +121,9 @@ public class Rapidshare extends PluginForHost {
         return link;
     }
 
-    private final String ACCEPT_LANGUAGE = "en-gb, en;q=0.8";
-
     public Rapidshare(PluginWrapper wrapper) {
         super(wrapper);
 
-        setMaxConnections(35);
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
@@ -184,8 +180,7 @@ public class Rapidshare extends PluginForHost {
 
     /**
      * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
-     * kann das über diese Funktion gemacht werden. Beir s.com istd as derzeitd
-     * eaktiviert, weild er Linkchecker nicht mehr über ssl erreichbar ist.
+     * kann das über diese Funktion gemacht werden.
      */
     public boolean[] checkLinks(DownloadLink[] urls) {
         try {
@@ -259,11 +254,6 @@ public class Rapidshare extends PluginForHost {
                 Thread.sleep(400);
             }
 
-        } catch (MalformedURLException e) {
-
-            System.gc();
-            e.printStackTrace();
-            return null;
         } catch (Exception e) {
             System.gc();
             e.printStackTrace();
@@ -549,7 +539,7 @@ public class Rapidshare extends PluginForHost {
         String[] er = Regex.getLines(error);
 
         if (er == null || er.length == 0) { return null; }
-        error = JDLocale.L("plugins.host.rapidshare.errors." + JDUtilities.getMD5(er[0]), er[0]);
+        error = JDLocale.L("plugins.host.rapidshare.errors." + JDUtilities.getMD5(er[0]) + "", er[0]);
         if (error.equals(er[0])) {
             logger.warning("NO TRANSLATIONKEY FOUND FOR: " + er[0] + "(" + JDUtilities.getMD5(er[0]) + ")");
         }
@@ -732,7 +722,6 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_TELEKOMSERVER, JDLocale.L("plugins.hoster.rapidshare.com.telekom", "Telekom Server verwenden falls verfügbar")).setDefaultValue(false));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PROPERTY_USE_PRESELECTED, JDLocale.L("plugins.hoster.rapidshare.com.preSelection", "Vorauswahl übernehmen")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, JDLocale.L("plugins.hoster.rapidshare.com.extendedTab", "Erweiterte Einstellungen")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
     }
 
