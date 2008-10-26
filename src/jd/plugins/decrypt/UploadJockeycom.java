@@ -36,10 +36,11 @@ public class UploadJockeycom extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String links[] = br.getRegex("<a href=\"http://www\\.uploadjockey\\.com/redirect\\.php\\?url=([a-zA-Z0-9=]+)\"").getColumn(0);
+        String links[] = br.getRegex("<a href=\"http://www\\.uploadjockey\\.com/redirect\\.php\\?url=(.*?)&.*?\"").getColumn(0);
         progress.setRange(links.length);
         for (String element : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(element)));
+            String link=Encoding.Base64Decode(element);
+            decryptedLinks.add(createDownloadlink(link));
             progress.increase(1);
         }
 
