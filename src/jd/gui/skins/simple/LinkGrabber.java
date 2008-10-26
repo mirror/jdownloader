@@ -76,7 +76,6 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.text.PlainDocument;
 
@@ -111,22 +110,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     class PackageTab extends JPanel implements ActionListener, MouseListener, KeyListener {
 
         /**
-         * 
-         * @author JD-Team
-         * 
-         */
-        private class InternalTable extends JTable {
-
-            private static final long serialVersionUID = 4424930948374806098L;
-
-            private InternalTableCellRenderer internalTableCellRenderer = new InternalTableCellRenderer();
-
-            public TableCellRenderer getCellRenderer(int arg0, int arg1) {
-                return internalTableCellRenderer;
-            }
-        }
-
-        /**
          * Celllistrenderer Für die Linklisten
          * 
          * @author JD-Team
@@ -145,17 +128,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                int id = row;
-                DownloadLink dLink = linkList.get(id);
+
+                DownloadLink dLink = linkList.get(row);
 
                 if (isSelected) {
                     c.setBackground(Color.DARK_GRAY);
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE.darker());
-
                     } else if (dLink.isAvailabilityChecked()) {
                         c.setBackground(COLOR_DONE.darker());
-
                     }
                     if (Math.abs(sortedOn) == column) {
                         c.setBackground(COLOR_SORT_MARK.darker());
@@ -169,12 +150,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         c.setBackground(COLOR_ERROR_OFFLINE);
                     } else if (dLink.isAvailabilityChecked()) {
                         c.setBackground(COLOR_DONE);
-
                     }
-
                     if (Math.abs(sortedOn) == column) {
                         c.setBackground(COLOR_SORT_MARK);
                     }
+
                     c.setForeground(Color.BLACK);
                 }
 
@@ -187,11 +167,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             private static final long serialVersionUID = -7475394342173736030L;
 
             public Class<?> getColumnClass(int columnIndex) {
-                switch (columnIndex) {
-                case 0:
-                    return Integer.class;
-
-                }
                 return String.class;
             }
 
@@ -212,14 +187,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     return JDLocale.L("gui.linkgrabber.packagetab.table.column.size", "Größe");
                 case 4:
                     return JDLocale.L("gui.linkgrabber.packagetab.table.column.info", "Info");
-
                 }
                 return super.getColumnName(column);
 
             }
 
             public int getRowCount() {
-
                 return linkList.size();
             }
 
@@ -236,7 +209,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     return linkList.get(rowIndex).isAvailabilityChecked() && linkList.get(rowIndex).getDownloadSize() > 0 ? JDUtilities.formatBytesToMB(linkList.get(rowIndex).getDownloadSize()) : "~";
                 case 4:
                     return getInfoString(linkList.get(rowIndex));
-
                 }
                 return null;
             }
@@ -386,10 +358,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private void buildGui() {
             setLayout(new GridBagLayout());
-            JLabel lblName = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "packagename"));
-            JLabel lblSaveto = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter"));
-            JLabel lblPassword = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort"));
-            JLabel lblComment = new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar"));
 
             txtName = new JTextField();
             txtPassword = new JTextField();
@@ -397,8 +365,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
             chbExtract.setSelected(true);
-//            // Vorrübergehend noch ohne Funktion
-//            chbExtract.setEnabled(false);
+            // // Vorrübergehend noch ohne Funktion
+            // chbExtract.setEnabled(false);
             chbExtract.setHorizontalTextPosition(SwingConstants.LEFT);
 
             brwSaveTo = new ComboBrowseFile("DownloadSaveTo");
@@ -443,19 +411,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     autoDownloadDir(PackageTab.this.getPackageName());
                 }
             });
-            table = new InternalTable();
-            table.getTableHeader().addMouseListener(this);
-            InternalTableModel internalTableModel = new InternalTableModel();
-            table.addKeyListener(this);
-            table.setModel(internalTableModel);
 
+            InternalTableModel internalTableModel = new InternalTableModel();
+            table = new JTable(internalTableModel);
             table.setGridColor(Color.BLUE);
             table.setAutoCreateColumnsFromModel(true);
-            table.setModel(internalTableModel);
-            table.addMouseListener(this);
             table.setDragEnabled(true);
+            table.setDefaultRenderer(String.class, new InternalTableCellRenderer());
+            table.addKeyListener(this);
+            table.addMouseListener(this);
             table.getTableHeader().setPreferredSize(new Dimension(-1, 25));
             table.getTableHeader().setReorderingAllowed(false);
+            table.getTableHeader().addMouseListener(this);
 
             setPreferredSize(new Dimension(700, 350));
 
@@ -500,10 +467,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             JDUtilities.addToGridBag(extractPW, txtPassword, 0, 0, 1, 1, 100, 100, null, GridBagConstraints.BOTH, GridBagConstraints.WEST);
             JDUtilities.addToGridBag(extractPW, chbExtract, 1, 0, 1, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.EAST);
 
-            east.add(lblName);
-            east.add(lblSaveto);
-            east.add(lblPassword);
-            east.add(lblComment);
+            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.name", "packagename")));
+            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.saveto", "Speichern unter")));
+            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.password", "Archivpasswort")));
+            east.add(new JLabel(JDLocale.L("gui.linkgrabber.packagetab.lbl.comment", "Kommentar")));
 
             center.add(txtName);
             center.add(brwSaveTo);
@@ -699,13 +666,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         private void autoDownloadDir(String name) {
-            if (name==null||name.equals(lastName)||name.length()<3) return;
+            if (name == null || name.equals(lastName) || name.length() < 3) return;
             this.lastName = name;
             ArrayList<String[]> list = getDownloadDirList();
             String[] best = null;
             int bestValue = Integer.MAX_VALUE;
             for (String[] entry : list) {
-                if(entry[0]==null||entry[0].equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory()))continue;
+                if (entry[0] == null || entry[0].equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) continue;
                 int value = JDUtilities.getLevenshteinDistance(entry[1], name);
                 if (name.startsWith(entry[1]) || name.endsWith(entry[1]) || entry[1].startsWith(name) || entry[1].endsWith(name)) value -= 3;
 
@@ -714,13 +681,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     bestValue = value;
                 }
             }
-            
+
             if (bestValue < 4) {
                 final String newdir = best[0];
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
 
-                       setDownloadDirectory(newdir);
+                        setDownloadDirectory(newdir);
                     }
 
                 });
@@ -1393,7 +1360,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     @SuppressWarnings("unchecked")
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
-        if (packageName.length() < 5||downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
+        if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
         ((ArrayList<String[]>) guiConfig.getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>())).add(new String[] { downloadDirectory, packageName });
         guiConfig.save();
     }

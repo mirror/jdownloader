@@ -152,6 +152,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         tableModel = new MyTableModel();
         table = new JXTable(tableModel);
         table.getTableHeader().addMouseListener(this);
+        table.getTableHeader().setReorderingAllowed(false);
         table.addKeyListener(this);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -976,6 +977,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
 
             JXTable table = new JXTable(new MyDupeTableModel(dupes));
+            table.getTableHeader().setReorderingAllowed(false);
             table.addHighlighter(HighlighterFactory.createAlternateStriping());
             table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
             JScrollPane scroll = new JScrollPane(table);
