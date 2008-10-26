@@ -45,7 +45,7 @@ public class Vipfilecom extends PluginForHost {
 
         br.getPage(downloadURL);
         if (!br.containsHTML("This file not found")) {
-            String fileSize = br.getRegex("Size:.*?<b style=\"padding-left:5px;\">(.*?)</b>").getMatch(0);
+            String fileSize = br.getRegex("<span.*?Size:.*?<b style=.*?>(.*?)</b>").getMatch(0);
             downloadLink.setDownloadSize(Regex.getSize(fileSize));
             downloadLink.setName(new Regex(downloadURL, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0));
             return true;
@@ -57,7 +57,7 @@ public class Vipfilecom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -73,19 +73,9 @@ public class Vipfilecom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-        br.setFollowRedirects(false);
-        br.getPage(link);
-        if (br.getRedirectLocation() == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
-        }
-        br.getPage(br.getRedirectLocation());
+        br.setFollowRedirects(true);
 
-        if (br.getRedirectLocation() == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
-        }
-        br.openDownload(downloadLink, br.getRedirectLocation()).startDownload();
+        br.openDownload(downloadLink, link, true, 1).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
