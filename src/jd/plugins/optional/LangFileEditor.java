@@ -157,19 +157,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         cmboSource[0] = new ComboBrowseFile("LANGFILEEDITOR_SOURCEFOLDER");
         cmboSource[0].setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
-        cmboSource[0].setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboSource[0].addActionListener(this);
 
         cmboSource[1] = new ComboBrowseFile("LANGFILEEDITOR_SOURCEFILE");
         cmboSource[1].setFileSelectionMode(JDFileChooser.FILES_ONLY);
         cmboSource[1].setFileFilter(fileFilter);
-        cmboSource[1].setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboSource[1].addActionListener(this);
 
         cmboFile = new ComboBrowseFile("LANGFILEEDITOR_FILE");
         cmboFile.setFileSelectionMode(JDFileChooser.FILES_ONLY);
         cmboFile.setFileFilter(fileFilter);
-        cmboFile.setButtonText(JDLocale.L("plugins.optional.langfileeditor.browse", "Browse"));
         cmboFile.addActionListener(this);
 
         cmboSelectSource = new JComboBox(new String[] { JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:"), JDLocale.L("plugins.optional.langfileeditor.sourceFile", "Source File:") });
@@ -983,19 +980,29 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    private class DupeDialog extends JDialog implements ActionListener {
+    private class DupeDialog extends JDialog implements ActionListener, MouseListener {
 
         private static final long serialVersionUID = 1L;
+
+        private MyDupeTableModel tableModel;
+
+        private Vector<String[]> dupes;
+
+        private int sortedOn = 1;
 
         public DupeDialog(JFrame owner, Vector<String[]> dupes) {
 
             super(owner);
 
+            this.dupes = dupes;
+
             setModal(true);
             setLayout(new BorderLayout());
             setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
 
-            JTable table = new JTable(new MyDupeTableModel(dupes));
+            tableModel = new MyDupeTableModel();
+            JTable table = new JTable(tableModel);
+            table.getTableHeader().addMouseListener(this);
             JScrollPane scroll = new JScrollPane(table);
             scroll.setPreferredSize(new Dimension(900, 350));
 
@@ -1024,12 +1031,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         class MyDupeTableModel extends AbstractTableModel {
 
             private static final long serialVersionUID = -5434313385327397539L;
-            private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.firstKey", "First Key"), JDLocale.L("plugins.optional.langfileeditor.secondKey", "Second Key") };
-            private Vector<String[]> tableData = new Vector<String[]>();
 
-            public MyDupeTableModel(Vector<String[]> data) {
-                tableData = data;
-                this.fireTableRowsInserted(0, tableData.size() - 1);
+            private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.firstKey", "First Key"), JDLocale.L("plugins.optional.langfileeditor.secondKey", "Second Key") };
+
+            public MyDupeTableModel() {
+                this.fireTableRowsInserted(0, dupes.size() - 1);
             }
 
             public int getColumnCount() {
@@ -1037,7 +1043,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             }
 
             public int getRowCount() {
-                return tableData.size();
+                return dupes.size();
             }
 
             public String getColumnName(int col) {
@@ -1045,7 +1051,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             }
 
             public String getValueAt(int row, int col) {
-                return tableData.get(row)[col];
+                return dupes.get(row)[col];
             }
 
             public Class<?> getColumnClass(int c) {
@@ -1053,9 +1059,43 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             }
 
             public boolean isCellEditable(int row, int col) {
-                return col == 1 || col == 2;
+                return false;
             }
 
+        }
+
+        public void mouseClicked(MouseEvent e) {
+        }
+
+        public void mouseEntered(MouseEvent e) {
+        }
+
+        public void mouseExited(MouseEvent e) {
+        }
+
+        public void mousePressed(MouseEvent e) {
+            if (e.getSource() instanceof JTableHeader) {
+                JTableHeader header = (JTableHeader) e.getSource();
+                int column = header.columnAtPoint(e.getPoint()) + 1;
+                if (sortedOn == column) {
+                    sortedOn *= -1;
+                } else {
+                    sortedOn = column;
+                }
+                sortOn();
+            }
+        }
+
+        public void mouseReleased(MouseEvent e) {
+        }
+
+        public void sortOn() {
+            Collections.sort(dupes, new Comparator<String[]>() {
+                public int compare(String[] a, String[] b) {
+                    return sortedOn > 0 ? a[Math.abs(sortedOn) - 1].compareToIgnoreCase(b[Math.abs(sortedOn) - 1]) : b[Math.abs(sortedOn) - 1].compareToIgnoreCase(a[Math.abs(sortedOn) - 1]);
+                }
+            });
+            tableModel.fireTableDataChanged();
         }
 
     }
