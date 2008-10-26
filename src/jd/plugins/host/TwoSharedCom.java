@@ -60,7 +60,7 @@ public class TwoSharedCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3529 $");
+        return getVersion("$Revision$");
     }
 
     @Override

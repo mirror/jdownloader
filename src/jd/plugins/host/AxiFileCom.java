@@ -27,7 +27,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 public class AxiFileCom extends PluginForHost {
-/*TODO: PW support, problem: filename und filesize sind ohne pw nicht zu bekommen*/
+    /*
+     * TODO: PW support, problem: filename und filesize sind ohne pw nicht zu
+     * bekommen
+     */
     public AxiFileCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -52,7 +55,7 @@ public class AxiFileCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3529 $");
+        return getVersion("$Revision$");
     }
 
     @Override

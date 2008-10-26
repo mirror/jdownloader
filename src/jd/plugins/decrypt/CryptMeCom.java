@@ -54,25 +54,15 @@ public class CryptMeCom extends PluginForDecrypt {
 
         String containerId = br.getRegex("<a href='http://crypt-me.com/dl\\.php\\?file=(.*?)\\.(dlc|ccf|rsdf)' target='_blank'>").getMatch(0);
 
-        if (br.containsHTML("<a href='.*?' target='_blank'>\\.dlc Download</a>")) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-            Browser.download(container, "http://crypt-me.com/dl.php?file=" + containerId + ".dlc");
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-            container.delete();
-        }
-
-        if (decryptedLinks.size() == 0 && br.containsHTML("<a href='.*?' target='_blank'>\\.ccf Download</a>")) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
-            Browser.download(container, "http://crypt-me.com/dl.php?file=" + containerId + ".ccf");
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-            container.delete();
-        }
-
-        if (decryptedLinks.size() == 0 && br.containsHTML("<a href='.*?' target='_blank'>\\.rsdf Download</a>")) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
-            Browser.download(container, "http://crypt-me.com/dl.php?file=" + containerId + ".rsdf");
-            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
-            container.delete();
+        String[] containers = new String[] { ".dlc", ".ccf", ".rsdf" };
+        for (String container : containers) {
+            if (decryptedLinks.size() != 0) break;
+            if (br.containsHTML("<a href='.*?' target='_blank'>\\" + container + " Download</a>")) {
+                File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container);
+                Browser.download(containerFile, "http://crypt-me.com/dl.php?file=" + containerId + container);
+                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(containerFile));
+                containerFile.delete();
+            }
         }
 
         if (decryptedLinks.size() == 0) {
