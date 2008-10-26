@@ -36,11 +36,7 @@ public class Wiireloaded extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
-        int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);
-        if (submitvalue == -1) {
-            logger.info("SubmitValue unknown, pls inform Support");
-            return null;
-        }
+        int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);        
         String parameter = param.toString();
         Vector<String> link_passwds = new Vector<String>();
         link_passwds.add("wii-reloaded.info");
@@ -84,39 +80,56 @@ public class Wiireloaded extends PluginForDecrypt {
         progress.addToMax(ids.length);
         Browser brc = br.cloneBrowser();
         for (String element : ids) {
-            brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);
-            Form form = brc.getForm(0);
-            form.setVariable(0, submitvalue + "");
-            brc.submitForm(form);
-            if (brc.getRedirectLocation() == null) {
-                /* neuer submit value suchen */
-                logger.info("Searching new SubmitValue");
-                boolean found = false;
-                for (int i = 0; i <= 100; i++) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (Exception e) {
+            for (int retry = 1; retry < 5; retry++) {
+                brc.getPage("http://wii-reloaded.ath.cx/protect/hastesosiehtsaus.php?i=" + element);
+                if (brc.containsHTML("captcha/numeric.php")) {
+                    String adr = "http://wii-reloaded.ath.cx/protect/captcha/numeric.php";
+                    File captchaFile = Plugin.getLocalCaptchaFile(this, ".jpg");
+                    Browser.download(captchaFile, brc.cloneBrowser().openGetConnection(adr));
+                    if (!captchaFile.exists() || captchaFile.length() == 0) {
+                        return null;
+                    } else {
+                        String capTxt = Plugin.getCaptchaCode(this, "wii-numeric", captchaFile, false, param);
+                        Form post = brc.getForm(0);
+                        post.put("insertvalue", capTxt);
+                        brc.submitForm(post);
                     }
-                    form.setVariable(0, i + "");
+                } else {
+                    Form form = brc.getForm(0);
+                    form.setVariable(0, submitvalue + "");
                     brc.submitForm(form);
-                    if (brc.getRedirectLocation() != null) {
-                        found = true;
-                        getPluginConfig().setProperty("WIIReloaded_SubmitValue", i);
-                        submitvalue = i;
-                        logger.info("SubmitValue found!");
-                        break;
+                    if (brc.getRedirectLocation() == null) {
+                        /* neuer submit value suchen */
+                        logger.info("Searching new SubmitValue");
+                        boolean found = false;
+                        for (int i = 0; i <= 100; i++) {
+                            try {
+                                Thread.sleep(100);
+                            } catch (Exception e) {
+                            }
+                            form.setVariable(0, i + "");
+                            brc.submitForm(form);
+                            if (brc.getRedirectLocation() != null) {
+                                found = true;
+                                getPluginConfig().setProperty("WIIReloaded_SubmitValue", i);
+                                submitvalue = i;
+                                logger.info("SubmitValue found!");
+                                break;
+                            }
+                        }
+                        if (found == false) {
+                            logger.info("SubmitValue NOT found!");
+                            getPluginConfig().setProperty("WIIReloaded_SubmitValue", -1);
+                            return null;
+                        }
                     }
                 }
-                if (found == false) {
-                    logger.info("SubmitValue NOT found!");
-                    getPluginConfig().setProperty("WIIReloaded_SubmitValue", -1);
-                    return null;
+                if (brc.getRedirectLocation() != null) {
+                    DownloadLink link = createDownloadlink(brc.getRedirectLocation());
+                    link.setSourcePluginPasswords(link_passwds);
+                    decryptedLinks.add(link);
+                    break;
                 }
-            }
-            if (brc.getRedirectLocation() != null) {
-                DownloadLink link = createDownloadlink(brc.getRedirectLocation());
-                link.setSourcePluginPasswords(link_passwds);
-                decryptedLinks.add(link);
             }
             progress.increase(1);
         }
