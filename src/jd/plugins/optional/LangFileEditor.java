@@ -51,14 +51,11 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.JTableHeader;
 
 import jd.JDFileFilter;
 import jd.PluginWrapper;
@@ -78,6 +75,12 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
+import org.jdesktop.swingx.JXTable;
+import org.jdesktop.swingx.decorator.ColorHighlighter;
+import org.jdesktop.swingx.decorator.ComponentAdapter;
+import org.jdesktop.swingx.decorator.HighlightPredicate;
+import org.jdesktop.swingx.decorator.HighlighterFactory;
+
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
  * entries from source and compares them to the keypairs in the language file.
@@ -95,7 +98,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private static final String PROPERTY_SOURCE = "PROPERTY_SOURCE";
 
     private JFrame frame;
-    private JTable table;
+    private JXTable table;
     private MyTableModel tableModel;
     private File sourceFile, languageFile;
     private JPanel topFile, topFolder;
@@ -106,12 +109,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
     private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
-    private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes, mnuSort;
+    private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes;
     private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextEdit, mnuContextTranslate;
 
-    private int sortedOn = 1;
     private Vector<String[]> sourceEntries = new Vector<String[]>();
     private Vector<Pattern> sourcePatterns = new Vector<Pattern>();
     private Vector<String[]> fileEntries = new Vector<String[]>();
@@ -121,6 +123,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
     private boolean colorizeMissing, colorizeOld;
     private Color colorMissing, colorOld;
+    private ColorHighlighter missingHighlighter, oldHighlighter;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
@@ -143,15 +146,20 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         colorMissing = (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED);
         colorOld = (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE);
 
+        missingHighlighter = new ColorHighlighter(new MissingPredicate(), colorMissing, null);
+        oldHighlighter = new ColorHighlighter(new OldPredicate(), colorOld, null);
+
         tableModel = new MyTableModel();
-        table = new JTable(tableModel);
+        table = new JXTable(tableModel);
         table.getTableHeader().addMouseListener(this);
         table.addKeyListener(this);
         table.addMouseListener(this);
-        table.setDefaultRenderer(String.class, new MyTableCellRenderer());
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        table.setRowSelectionAllowed(true);
-        table.setColumnSelectionAllowed(false);
+        table.setHorizontalScrollEnabled(false);
+        table.addHighlighter(HighlighterFactory.createAlternateStriping());
+        table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
+        if (colorizeMissing) table.addHighlighter(missingHighlighter);
+        if (colorizeOld) table.addHighlighter(oldHighlighter);
 
         cmboSource = new ComboBrowseFile[2];
 
@@ -300,13 +308,10 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuEntries.add(mnuSelectOld = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.selectOld", "Select Old Entries")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
-        mnuEntries.addSeparator();
-        mnuEntries.add(mnuSort = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.sortEntries", "Sort Entries")));
 
         mnuSelectMissing.addActionListener(this);
         mnuSelectOld.addActionListener(this);
         mnuShowDupes.addActionListener(this);
-        mnuSort.addActionListener(this);
 
         // Colorize Menü
         mnuColorize.add(mnuColorizeMissing = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeMissing", "Colorize Missing Entries")));
@@ -349,15 +354,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuContextAdopt.addActionListener(this);
         mnuContextTranslate.addActionListener(this);
 
-    }
-
-    public void sortOn() {
-        Collections.sort(data, new Comparator<String[]>() {
-            public int compare(String[] a, String[] b) {
-                return sortedOn > 0 ? a[Math.abs(sortedOn) - 1].compareToIgnoreCase(b[Math.abs(sortedOn) - 1]) : b[Math.abs(sortedOn) - 1].compareToIgnoreCase(a[Math.abs(sortedOn) - 1]);
-            }
-        });
-        tableModel.fireTableDataChanged();
     }
 
     @Override
@@ -515,6 +511,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             subConfig.setProperty(PROPERTY_COLORIZE_MISSING, colorizeMissing);
             subConfig.save();
             mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
+            if (colorizeMissing) {
+                table.addHighlighter(missingHighlighter);
+            } else {
+                table.removeHighlighter(missingHighlighter);
+            }
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuColorizeOld) {
@@ -523,6 +524,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             subConfig.setProperty(PROPERTY_COLORIZE_OLD, colorizeOld);
             subConfig.save();
             mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
+            if (colorizeOld) {
+                table.addHighlighter(oldHighlighter);
+            } else {
+                table.removeHighlighter(oldHighlighter);
+            }
             tableModel.fireTableDataChanged();
 
         } else if (e.getSource() == mnuPickMissingColor) {
@@ -611,11 +617,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             frame.setVisible(false);
             frame.dispose();
-
-        } else if (e.getSource() == mnuSort) {
-
-            sortedOn = 1;
-            sortOn();
 
         } else if (e.getSource() == mnuDownloadSource) {
 
@@ -903,42 +904,23 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     }
 
     public void mousePressed(MouseEvent e) {
-        if (e.getSource() instanceof JTableHeader) {
-            JTableHeader header = (JTableHeader) e.getSource();
-            int column = header.columnAtPoint(e.getPoint()) + 1;
-            if (sortedOn == column) {
-                sortedOn *= -1;
-            } else {
-                sortedOn = column;
-            }
-            sortOn();
-        }
     }
 
     public void mouseReleased(MouseEvent e) {
     }
 
-    private class MyTableCellRenderer extends DefaultTableCellRenderer {
+    private class MissingPredicate implements HighlightPredicate {
 
-        private static final long serialVersionUID = 1L;
+        public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
+            return (table.getValueAt(arg1.row, 2).equals(""));
+        }
 
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+    }
 
-            String[] r = data.get(row);
+    private class OldPredicate implements HighlightPredicate {
 
-            if (isSelected) {
-                c.setBackground(Color.LIGHT_GRAY);
-            } else if (colorizeMissing && r[2].equals("")) {
-                c.setBackground(colorMissing);
-            } else if (colorizeOld && r[1].equals("")) {
-                c.setBackground(colorOld);
-            } else {
-                c.setBackground(Color.WHITE);
-            }
-
-            return c;
+        public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
+            return (table.getValueAt(arg1.row, 1).equals(""));
         }
 
     }
@@ -946,6 +928,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private class MyTableModel extends AbstractTableModel {
 
         private static final long serialVersionUID = -5434313385327397539L;
+
         private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.key", "Key"), JDLocale.L("plugins.optional.langfileeditor.sourceValue", "Source Value"), JDLocale.L("plugins.optional.langfileeditor.languageFileValue", "Language File Value") };
 
         public int getColumnCount() {
@@ -980,29 +963,21 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
     }
 
-    private class DupeDialog extends JDialog implements ActionListener, MouseListener {
+    private class DupeDialog extends JDialog implements ActionListener {
 
         private static final long serialVersionUID = 1L;
-
-        private MyDupeTableModel tableModel;
-
-        private Vector<String[]> dupes;
-
-        private int sortedOn = 1;
 
         public DupeDialog(JFrame owner, Vector<String[]> dupes) {
 
             super(owner);
 
-            this.dupes = dupes;
-
             setModal(true);
             setLayout(new BorderLayout());
             setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
 
-            tableModel = new MyDupeTableModel();
-            JTable table = new JTable(tableModel);
-            table.getTableHeader().addMouseListener(this);
+            JXTable table = new JXTable(new MyDupeTableModel(dupes));
+            table.setHorizontalScrollEnabled(false);
+            table.addHighlighter(HighlighterFactory.createAlternateStriping());
             JScrollPane scroll = new JScrollPane(table);
             scroll.setPreferredSize(new Dimension(900, 350));
 
@@ -1034,8 +1009,11 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.firstKey", "First Key"), JDLocale.L("plugins.optional.langfileeditor.secondKey", "Second Key") };
 
-            public MyDupeTableModel() {
-                this.fireTableRowsInserted(0, dupes.size() - 1);
+            private Vector<String[]> tableData;
+
+            public MyDupeTableModel(Vector<String[]> data) {
+                tableData = data;
+                this.fireTableRowsInserted(0, tableData.size() - 1);
             }
 
             public int getColumnCount() {
@@ -1043,7 +1021,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             }
 
             public int getRowCount() {
-                return dupes.size();
+                return tableData.size();
             }
 
             public String getColumnName(int col) {
@@ -1051,7 +1029,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             }
 
             public String getValueAt(int row, int col) {
-                return dupes.get(row)[col];
+                return tableData.get(row)[col];
             }
 
             public Class<?> getColumnClass(int c) {
@@ -1062,40 +1040,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 return false;
             }
 
-        }
-
-        public void mouseClicked(MouseEvent e) {
-        }
-
-        public void mouseEntered(MouseEvent e) {
-        }
-
-        public void mouseExited(MouseEvent e) {
-        }
-
-        public void mousePressed(MouseEvent e) {
-            if (e.getSource() instanceof JTableHeader) {
-                JTableHeader header = (JTableHeader) e.getSource();
-                int column = header.columnAtPoint(e.getPoint()) + 1;
-                if (sortedOn == column) {
-                    sortedOn *= -1;
-                } else {
-                    sortedOn = column;
-                }
-                sortOn();
-            }
-        }
-
-        public void mouseReleased(MouseEvent e) {
-        }
-
-        public void sortOn() {
-            Collections.sort(dupes, new Comparator<String[]>() {
-                public int compare(String[] a, String[] b) {
-                    return sortedOn > 0 ? a[Math.abs(sortedOn) - 1].compareToIgnoreCase(b[Math.abs(sortedOn) - 1]) : b[Math.abs(sortedOn) - 1].compareToIgnoreCase(a[Math.abs(sortedOn) - 1]);
-                }
-            });
-            tableModel.fireTableDataChanged();
         }
 
     }
