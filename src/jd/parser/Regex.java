@@ -221,8 +221,8 @@ public class Regex {
         String ret = "";
         String[][] match = getMatches();
         for (int i = 0; i < match.length; i++) {
-            for (int j = 0; j < match.length; j++) {
-                ret += "match[" + i + "][" + j + "]=" + match[i][j] + System.getProperty("line.separator");
+            for (int j = 0; j < match[i].length; j++) {
+                ret += "match[" + i + "][" + j + "] = " + match[i][j] + System.getProperty("line.separator");
             }
         }
         matcher.reset();

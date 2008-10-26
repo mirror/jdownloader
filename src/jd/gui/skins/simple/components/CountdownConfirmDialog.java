@@ -45,9 +45,6 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     @SuppressWarnings("unused")
     private static Logger logger = JDUtilities.getLogger();
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
     public final static int STYLE_OK = 1 << 1;
     public final static int STYLE_CANCEL = 1 << 2;
@@ -91,7 +88,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
     public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
         super(owner);
-        System.out.println(owner);
+
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         setModal(true);

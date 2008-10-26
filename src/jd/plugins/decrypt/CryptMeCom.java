@@ -52,27 +52,23 @@ public class CryptMeCom extends PluginForDecrypt {
             br.submitForm(form);
         }
 
-        String containerId = br.getRegex("<a href='http://crypt-me.com/dl\\.php\\?file=(.*?)\\.(dlc|ccf|rsdf)' target='_blank'>").getMatch(0);
+        // Angebotene Containerformate herausfinden
+        String[][] containers = br.getRegex("<a href='(http://crypt-me.com/dl\\.php\\?file=.*?(\\..*?))' target='_blank'>").getMatches();
 
-        String[] containers = new String[] { ".dlc", ".ccf", ".rsdf" };
-        for (String container : containers) {
-            if (decryptedLinks.size() != 0) break;
-            if (br.containsHTML("<a href='.*?' target='_blank'>\\" + container + " Download</a>")) {
-                File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container);
-                Browser.download(containerFile, "http://crypt-me.com/dl.php?file=" + containerId + container);
-                decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(containerFile));
-                containerFile.delete();
-            }
+        for (String[] container : containers) {
+            File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container[1]);
+            Browser.download(containerFile, container[0]);
+            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(containerFile));
+            containerFile.delete();
+            if (decryptedLinks.size() != 0) return decryptedLinks;
         }
 
-        if (decryptedLinks.size() == 0) {
-            String folderId = new Regex(parameter, "folder/([a-zA-Z0-9]+)\\.html").getMatch(0);
-            int folderSize = br.getRegex("<a onclick=\"return newpopup\\(('.*?', '.*?')\\);\" ").count();
-            for (int i = 1; i <= folderSize; i++) {
-                br.getPage("http://crypt-me.com/go.php?id=" + folderId + "&lk=" + i);
-                String encodedLink = br.getRegex("<iframe src=\"http://anonym.to/\\?(.*?)\"").getMatch(0);
-                decryptedLinks.add(createDownloadlink(encodedLink));
-            }
+        String folderId = new Regex(parameter, "folder/([a-zA-Z0-9]+)\\.html").getMatch(0);
+        int folderSize = br.getRegex("<a onclick=\"return newpopup\\(('.*?', '.*?')\\);\" ").count();
+        for (int i = 1; i <= folderSize; i++) {
+            br.getPage("http://crypt-me.com/go.php?id=" + folderId + "&lk=" + i);
+            String encodedLink = br.getRegex("<iframe src=\"http://anonym.to/\\?(.*?)\"").getMatch(0);
+            decryptedLinks.add(createDownloadlink(encodedLink));
         }
 
         return decryptedLinks;
