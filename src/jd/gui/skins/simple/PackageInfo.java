@@ -55,9 +55,7 @@ public class PackageInfo extends JDialog implements ChangeListener {
     private static Logger logger = JDUtilities.getLogger();
     private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
     private static final String PROPERTY_REFRESHRATE = "PROPERTY_PACKAGE_REFRESHRATE";
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -9146764850581039090L;
     private FilePackage fp;
     private int dlLinksSize = 0;
@@ -68,6 +66,7 @@ public class PackageInfo extends JDialog implements ChangeListener {
     private DecimalFormat c = new DecimalFormat("0.00");
     private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
     private boolean firstRun = true;
+
     /**
      * @param frame
      * @param dlink
@@ -145,8 +144,8 @@ public class PackageInfo extends JDialog implements ChangeListener {
                 JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + string);
                 if (tmpJBar.getBackground().getRed() != 150 && tmpJBar.getBackground().getGreen() != 150 && tmpJBar.getBackground().getBlue() != 150) {
                     int col = new Float(200f / tmpJBar.getMaximum() * tmpJBar.getValue()).intValue();
-                    if(col <= 50) {
-                        tmpJLbl.setForeground(new Color(col, col, col));                        
+                    if (col <= 50) {
+                        tmpJLbl.setForeground(new Color(col, col, col));
                     } else {
                         tmpJLbl.setForeground(new Color(50, col, 50));
                     }
@@ -195,18 +194,22 @@ public class PackageInfo extends JDialog implements ChangeListener {
     }
 
     private void initDialog() {
-        if(firstRun == true) {
+        if (firstRun == true) {
             panel.setVisible(false);
         }
-            
-        if(dlLinksSize != fp.getDownloadLinks().size()) {
+
+        if (dlLinksSize != fp.getDownloadLinks().size()) {
             hmObjects.clear();
             dlLinksSize = fp.getDownloadLinks().size();
             panel.removeAll();
         }
-        
+
         addEntry(JDLocale.L("gui.packageinfo.name", "Name"), fp.getName());
-        if (fp.hasPassword()) addEntry(JDLocale.L("gui.packageinfo.password", "Password"), new JTextField(fp.getPassword()));
+        if (fp.hasPassword()) {
+            JTextField pw = new JTextField(fp.getPassword());
+            pw.setEditable(false);
+            addEntry(JDLocale.L("gui.packageinfo.password", "Password"), pw);
+        }
         if (fp.hasComment()) addEntry(JDLocale.L("gui.packageinfo.comment", "Comment"), fp.getComment());
         addEntry(JDLocale.L("gui.packageinfo.dldirectory", "Downloaddirectory"), fp.getDownloadDirectory());
         addEntry(JDLocale.L("gui.packageinfo.packagesize", "Packagesize"), JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " [" + fp.getTotalEstimatedPackageSize() + " KB]");
@@ -230,10 +233,13 @@ public class PackageInfo extends JDialog implements ChangeListener {
             }
             addEntry(++i + ". " + link.getName(), p);
         }
-        
-        /* Gewisse Formatierungsgeschichten werden erst beim zweiten Durchlauf gesetzt. Um nicht eine Timerperiode abwarten zu müssen
-           wird nach dem ersten (unsichtbarem) Durchlauf direkt ein zweiter gestartet. */
-        if(firstRun == true) {
+
+        /*
+         * Gewisse Formatierungsgeschichten werden erst beim zweiten Durchlauf
+         * gesetzt. Um nicht eine Timerperiode abwarten zu müssen wird nach dem
+         * ersten (unsichtbarem) Durchlauf direkt ein zweiter gestartet.
+         */
+        if (firstRun == true) {
             firstRun = false;
             initDialog();
             panel.setVisible(true);

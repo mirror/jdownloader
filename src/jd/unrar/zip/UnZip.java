@@ -34,12 +34,13 @@ public class UnZip {
 
     /** The buffer for reading/writing the ZipFile data */
     protected byte[] b;
-    @SuppressWarnings("unchecked")
-    protected SortedSet dirsMade;
+
+    protected SortedSet<String> dirsMade;
     /**
      * Der Ziehpfand in dem entpackt werden soll
      */
     private File targetPath = null;
+
     protected boolean warnedMkDir = false;
 
     protected ZipFile zipF;
@@ -73,13 +74,12 @@ public class UnZip {
 
     }
 
-    @SuppressWarnings("unchecked")
     public File[] extract() throws Exception {
-        dirsMade = new TreeSet();
+        dirsMade = new TreeSet<String>();
 
         zipF = new ZipFile(zipFile);
 
-        Enumeration all = zipF.entries();
+        Enumeration<?> all = zipF.entries();
         LinkedList<File> ret = new LinkedList<File>();
         while (all.hasMoreElements()) {
             File file = getFile((ZipEntry) all.nextElement());
@@ -94,7 +94,6 @@ public class UnZip {
 
     }
 
-    @SuppressWarnings("unchecked")
     protected File getFile(ZipEntry e) throws IOException {
         String zipName = e.getName();
         if (zipName.startsWith("/")) {
@@ -131,11 +130,10 @@ public class UnZip {
         return toExtract;
     }
 
-    @SuppressWarnings("unchecked")
     public String[] listFiles() {
         try {
             zipF = new ZipFile(zipFile);
-            Enumeration all = zipF.entries();
+            Enumeration<?> all = zipF.entries();
             LinkedList<String> ret = new LinkedList<String>();
             while (all.hasMoreElements()) {
                 ret.add(((ZipEntry) all.nextElement()).getName());

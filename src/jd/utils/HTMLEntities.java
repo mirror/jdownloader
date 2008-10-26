@@ -58,14 +58,12 @@ public class HTMLEntities {
     /**
      * Map to convert extended characters in html entities.
      */
-    @SuppressWarnings("unchecked")
-    private static final Hashtable htmlentities_map = new Hashtable();
+    private static final Hashtable<Integer, String> htmlentities_map = new Hashtable<Integer, String>();
 
     /**
      * Map to convert html entities in exteden characters.
      */
-    @SuppressWarnings("unchecked")
-    private static final Hashtable unhtmlentities_map = new Hashtable();
+    private static final Hashtable<String, Integer> unhtmlentities_map = new Hashtable<String, Integer>();
 
     // ==============================================================================
     // METHODS
@@ -189,12 +187,11 @@ public class HTMLEntities {
     /**
      * Initialize HTML entities table.
      */
-    @SuppressWarnings("unchecked")
     private static void initializeEntitiesTables() {
         // initialize html translation maps
         for (int i = 0; i < html_entities_table.length; ++i) {
-            htmlentities_map.put(html_entities_table[i][1], html_entities_table[i][0]);
-            unhtmlentities_map.put(html_entities_table[i][0], html_entities_table[i][1]);
+            htmlentities_map.put((Integer) html_entities_table[i][1], (String) html_entities_table[i][0]);
+            unhtmlentities_map.put((String) html_entities_table[i][0], (Integer) html_entities_table[i][1]);
         }
     }
 
@@ -272,7 +269,7 @@ public class HTMLEntities {
                         iso = new Integer(entity.substring(2, entity.length() - 1));
                     }
                 } else {
-           
+
                     iso = (Integer) unhtmlentities_map.get(entity);
                 }
                 if (iso == null) {

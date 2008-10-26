@@ -56,9 +56,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
     private static Logger logger = JDUtilities.getLogger();
     private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
     private static final String PROPERTY_REFRESHRATE = "PROPERTY_LINK_REFRESHRATE";
-    /**
-     * 
-     */
+
     private static final long serialVersionUID = -9146764850581039090L;
     private DownloadLink downloadLink;
     private int i = 0;
@@ -68,6 +66,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
     private DecimalFormat c = new DecimalFormat("0.00");
     private HashMap<String, JComponent> hmObjects = new HashMap<String, JComponent>();
     private boolean firstRun = true;
+
     /**
      * @param frame
      * @param dlink
@@ -145,8 +144,8 @@ public class DownloadInfo extends JFrame implements ChangeListener {
                 JLabel tmpJLbl = (JLabel) hmObjects.get("JLabel_" + name);
                 if (tmpJBar.getBackground().getRed() != 150 && tmpJBar.getBackground().getGreen() != 150 && tmpJBar.getBackground().getBlue() != 150) {
                     int col = new Float(200f / tmpJBar.getMaximum() * tmpJBar.getValue()).intValue();
-                    if(col <= 50) {
-                        tmpJLbl.setForeground(new Color(col, col, col));                        
+                    if (col <= 50) {
+                        tmpJLbl.setForeground(new Color(col, col, col));
                     } else {
                         tmpJLbl.setForeground(new Color(50, col, 50));
                     }
@@ -199,88 +198,89 @@ public class DownloadInfo extends JFrame implements ChangeListener {
         if (hmObjects.get("JLabelCaption_" + name) != null) {
             panel.remove(hmObjects.get("JLabelCaption_" + name));
             panel.remove(hmObjects.get("JLabelValue_" + name));
-            
+
             hmObjects.remove("JLabelCaption_" + name);
             hmObjects.remove("JLabelValue_" + name);
             i--;
-        } else if(hmObjects.get(name) != null) {
+        } else if (hmObjects.get(name) != null) {
             panel.remove(hmObjects.get(name));
             panel.remove(hmObjects.get("JLabel_" + name));
-            
+
             hmObjects.remove(name);
             hmObjects.remove("JLabel_" + name);
             i--;
         }
     }
-    
+
     private void initDialog() {
-        if(firstRun == true) {
+        if (firstRun == true) {
             panel.setVisible(false);
         }
-        
-        //this.i = 0;
+
         addEntry("file", JDLocale.L("gui.linkinfo.file", "File"), new File(downloadLink.getFileOutput()).getName() + " @ " + downloadLink.getHost());
-        
+
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasPassword()) {
-            addEntry("pass", JDLocale.L("gui.linkinfo.password", "Passwort"), new JTextField(downloadLink.getFilePackage().getPassword()));
+            JTextField pw = new JTextField(downloadLink.getFilePackage().getPassword());
+            pw.setEditable(false);
+            addEntry("pass", JDLocale.L("gui.linkinfo.password", "Passwort"), pw);
         } else {
             removeEntry("pass");
         }
-        
+
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasComment()) {
             addEntry("comment", JDLocale.L("gui.linkinfo.comment", "Kommentar"), downloadLink.getFilePackage().getComment());
         } else {
             removeEntry("comment");
         }
-        
+
         if (downloadLink.getFilePackage() != null) {
             addEntry("package", JDLocale.L("gui.linkinfo.package", "Packet"), downloadLink.getFilePackage().toString());
         } else {
             removeEntry("package");
         }
-        
+
         if (downloadLink.getDownloadSize() > 0) {
             addEntry("filesize", JDLocale.L("gui.linkinfo.filesize", "Dateigröße"), JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()));
         } else {
             removeEntry("filesize");
         }
-        
+
         if (downloadLink.isAborted()) {
             addEntry("aborted", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("linkinformation.download.aborted", "Abgebrochen"));
         } else {
             removeEntry("aborted");
         }
-        
+
         if (downloadLink.isAvailabilityChecked()) {
             addEntry("avaible", JDLocale.L("gui.linkinfo.available", "Verfügbar"), downloadLink.isAvailable() ? JDLocale.L("gui.linkinfo.available.ok", "Datei OK") : JDLocale.L("linkinformation.available.error", "Fehler!"));
         } else {
             addEntry("avaible", JDLocale.L("gui.linkinfo.available", "Verfügbar"), JDLocale.L("gui.linkinfo.available.notchecked", "noch nicht überprüft"));
         }
-        
+
         if (downloadLink.getDownloadSpeed() > 0) {
             addEntry("speed", JDLocale.L("gui.linkinfo.speed", "Geschwindigkeit"), downloadLink.getDownloadSpeed() / 1024 + " kb/s");
         } else {
             removeEntry("speed");
         }
-        
+
         if (downloadLink.getFileOutput() != null) {
             addEntry("saveto", JDLocale.L("gui.linkinfo.saveto", "Speichern in"), downloadLink.getFileOutput());
         } else {
             removeEntry("saveto");
         }
-        
+
         if (downloadLink.getLinkStatus().getRemainingWaittime() > 0) {
             addEntry("waittime", JDLocale.L("gui.linkinfo.waittime", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
         } else {
             removeEntry("waittime");
         }
-        
+
         if (downloadLink.getLinkStatus().isPluginActive()) {
             addEntry("linkstatus", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.underway", "ist in Bearbeitung"));
         } else {
             addEntry("linkstatus", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.notunderway", "ist nicht in Bearbeitung"));
         }
-        
+
         if (!downloadLink.isEnabled()) {
             addEntry("enabled", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.deactivated", "ist deaktiviert"));
         } else {
@@ -309,8 +309,8 @@ public class DownloadInfo extends JFrame implements ChangeListener {
                 removeEntry("conn_" + j);
             }
         }
-        
-        if(firstRun == true) {
+
+        if (firstRun == true) {
             firstRun = false;
             initDialog();
             panel.setVisible(true);
