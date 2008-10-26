@@ -91,10 +91,11 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
     public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
         super(owner);
-
+        System.out.println(owner);
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         setModal(true);
+        setAlwaysOnTop(true);
         addWindowListener(new WindowListener() {
 
             public void windowActivated(WindowEvent e) {

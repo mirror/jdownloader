@@ -25,7 +25,6 @@ import jd.utils.JDUtilities;
 public class JDRR {
 
     static public Vector<String> steps;
-    static boolean gui = false;
     static boolean running = false;
     static ServerSocket Server_Socket;
     static final String PROPERTY_PORT = "PARAM_PORT";
@@ -40,6 +39,7 @@ public class JDRR {
             running = true;
             new JDRRServer(Server_Socket, serverip).start();
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -49,6 +49,7 @@ public class JDRR {
         try {
             Server_Socket.close();
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -70,13 +71,16 @@ public class JDRR {
                 } catch (Exception e) {
                     break;
                 }
-                JDRRproxy record = new JDRRproxy(Client_Socket, steps, serverip);
-                record.start();
+                if (running) {
+                    JDRRproxy record = new JDRRproxy(Client_Socket, steps, serverip);
+                    record.start();
+                }
             }
             running = false;
             try {
                 Server_Socket.close();
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
