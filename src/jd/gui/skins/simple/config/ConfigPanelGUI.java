@@ -154,38 +154,37 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setInstantHelp(JDLocale.L("gui.config.showContainerOnLoadInfo.helpurl", "http://jdownloader.org/wiki/index.php?title=Konfiguration_der_Benutzeroberfl%C3%A4che"));
 
         // Extended Tab
-        ConfigContainer extended = new ConfigContainer(this, JDLocale.L("gui.config.gui.extended", "Erweiterte Einstellungen"));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, extended));
+        ConfigContainer browser = new ConfigContainer(this, JDLocale.L("gui.config.gui.Browser", "Browser"));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, browser));
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 
             public void actionPerformed(ActionEvent arg0) {
-                try {
-                    if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
+                if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
+                    try {
                         JLinkButton.openURL("http://jdownloader.org");
+                    } catch (MalformedURLException e) {
+                        e.printStackTrace();
                     }
-                } catch (MalformedURLException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
                 }
 
             }
         }, JDLocale.L("gui.config.gui.testbrowser", "Test browser")));
 
-        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_USE, JDLocale.L("gui.config.gui.use_custum_browser", "Use custum browser"));
+        ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_USE, JDLocale.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
         ce.setDefaultValue(BrowserArray[0]);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
-        extended.addEntry(conditionEntry);
+        browser.addEntry(conditionEntry);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER, JDLocale.L("gui.config.gui.custum_browser", "Browserpath")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER, JDLocale.L("gui.config.gui.custom_browser", "Browserpath")));
         ce.setDefaultValue("C:\\Programme\\Mozilla Firefox\\firefox.exe");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
-        extended.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_ROWSER_PARAM, JDLocale.L("gui.config.gui.custum_browser_param", "Parameter %url (one parameter per line)")));
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue("-new-tab\r\n%url");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 

@@ -180,10 +180,10 @@ public class JLinkButton extends JButton {
 
     public static void openURL(URL url) {
         SubConfiguration cfg = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-        if (cfg.getBooleanProperty(SimpleGUI.PARAM_CUSTOM_ROWSER, false)) {
+        if (cfg.getBooleanProperty(SimpleGUI.PARAM_CUSTOM_BROWSER, false)) {
 
-            Executer exec = new Executer(cfg.getStringProperty(SimpleGUI.PARAM_CUSTOM_ROWSER));
-            String params = cfg.getStringProperty(SimpleGUI.PARAM_CUSTOM_ROWSER_PARAM).replace("%url", url + "");
+            Executer exec = new Executer(cfg.getStringProperty(SimpleGUI.PARAM_CUSTOM_BROWSER));
+            String params = cfg.getStringProperty(SimpleGUI.PARAM_CUSTOM_BROWSER_PARAM).replace("%url", url + "");
             exec.addParameters(Regex.getLines(params));
             exec.start();
 
