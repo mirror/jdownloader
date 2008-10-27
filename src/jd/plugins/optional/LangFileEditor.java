@@ -640,7 +640,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         int len = rows.length - 1;
         for (int i = len; i >= 0; --i) {
             int cur = rows[i];
-            String temp = data.remove(cur)[0];
+            String temp = data.remove(getIndex(data, table.getValueAt(cur, 0).toString()))[0];
             for (int j = dupes.size() - 1; j >= 0; --j) {
                 if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
             }
@@ -755,12 +755,20 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private String getValue(Vector<String[]> vector, String key) {
 
         for (String[] entry : vector) {
-
             if (entry[0].equalsIgnoreCase(key)) return entry[1];
-
         }
 
         return null;
+
+    }
+
+    private int getIndex(Vector<String[]> vector, String key) {
+
+        for (int i = 0; i < vector.size(); ++i) {
+            if (vector.get(i)[0].equalsIgnoreCase(key)) return i;
+        }
+
+        return -1;
 
     }
 
