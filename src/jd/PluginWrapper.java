@@ -47,19 +47,16 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     protected Logger logger = JDUtilities.getLogger();
     protected Plugin loadedPlugin = null;
     private boolean acceptOnlyURIs = true;
-    @SuppressWarnings("unused")
-    private String pluginName;
     private static URLClassLoader CL;
     private static final HashMap<String, PluginWrapper> WRAPPER = new HashMap<String, PluginWrapper>();
 
-    public PluginWrapper(String name, String host, String className, String pattern, int flags) {
+    public PluginWrapper(String host, String className, String pattern, int flags) {
 
         if (pattern != null) {
             this.pattern = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
         }
         this.host = host.toLowerCase();
         this.className = className;
-        this.pluginName = name.toLowerCase();
         if ((flags & PluginWrapper.LOAD_ON_INIT) != 0) this.getPlugin();
         if ((flags & ACCEPTONLYSURLSFALSE) != 0) this.acceptOnlyURIs = false;
         WRAPPER.put(className, this);
@@ -182,10 +179,6 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
     public void setAcceptOnlyURIs(boolean acceptOnlyURIs) {
         this.acceptOnlyURIs = acceptOnlyURIs;
-    }
-
-    public void setPluginName(String pluginName) {
-        this.pluginName = pluginName.toLowerCase();
     }
 
     public SubConfiguration getPluginConfig() {

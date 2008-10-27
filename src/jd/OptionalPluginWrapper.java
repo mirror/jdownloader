@@ -33,13 +33,13 @@ public class OptionalPluginWrapper extends PluginWrapper {
     private double version;
 
     public OptionalPluginWrapper(String string, double d) {
-        super(string, string, "jd.plugins.optional." + string, null, 0);
+        super(string, "jd.plugins.optional." + string, null, 0);
         this.version = d;
 
         if (loadPlugin() != null) OPTIONAL_WRAPPER.add(this);
-
     }
 
+    @Override
     public PluginOptional getPlugin() {
         return (PluginOptional) loadedPlugin;
     }
@@ -77,8 +77,7 @@ public class OptionalPluginWrapper extends PluginWrapper {
                     return (PluginOptional) loadedPlugin;
                 }
             } catch (Exception e) {
-                
-                
+
                 logger.severe("Addon " + this.getClassName() + " is outdated and incompatible. Please update(Packagemanager) :" + e.getLocalizedMessage());
             }
 

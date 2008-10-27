@@ -30,7 +30,7 @@ public class CPluginWrapper extends PluginWrapper {
     }
 
     public CPluginWrapper(String name, String host, String className, String patternSupported, int flags) {
-        super(name, host, "jd.plugins.a." + className, patternSupported, flags);
+        super(host, "jd.plugins.a." + className, patternSupported, flags);
         if (loadPlugin() != null) C_WRAPPER.add(this);
     }
 
@@ -67,6 +67,7 @@ public class CPluginWrapper extends PluginWrapper {
         return null;
     }
 
+    @Override
     public boolean canHandle(String data) {
         return getPlugin().canHandle(data);
     }
