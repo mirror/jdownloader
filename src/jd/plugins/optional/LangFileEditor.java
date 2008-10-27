@@ -24,7 +24,6 @@ import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.BufferedWriter;
@@ -51,8 +50,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.AbstractTableModel;
@@ -88,7 +86,7 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
  * @author eXecuTe|Greeny
  */
 
-public class LangFileEditor extends PluginOptional implements KeyListener, MouseListener {
+public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
     private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
@@ -106,13 +104,13 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private ComboBrowseFile cmboSource[], cmboFile;
     private ChartAPI_PIE keyChart;
     private ChartAPI_Entity entDone, entMissing, entOld;
-    private JMenu mnuFile, mnuKey, mnuEntries, mnuColorize;
+    private JMenu mnuFile, mnuKey, mnuEntries;
     private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
-    private JMenuItem mnuAdd, mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuDelete, mnuEdit, mnuTranslate, mnuTranslateMissing;
-    private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuSelectMissing, mnuSelectOld, mnuShowDupes;
+    private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuContinueSearch, mnuDelete, mnuSearch, mnuTranslate, mnuTranslateMissing;
+    private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
     private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
-    private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextEdit, mnuContextTranslate;
+    private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
     private Vector<String[]> sourceEntries = new Vector<String[]>();
     private Vector<Pattern> sourcePatterns = new Vector<Pattern>();
@@ -120,6 +118,7 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
     private Vector<String[]> data = new Vector<String[]>();
     private Vector<String[]> dupes = new Vector<String[]>();
     private String lngKey = null;
+    private String searchFor = "";
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
     private boolean colorizeMissing, colorizeOld;
     private Color colorMissing, colorOld;
@@ -153,7 +152,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         table = new JXTable(tableModel);
         table.getTableHeader().addMouseListener(this);
         table.getTableHeader().setReorderingAllowed(false);
-        table.addKeyListener(this);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
@@ -265,32 +263,34 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         mnuNew.addActionListener(this);
         mnuSave.addActionListener(this);
-        mnuSave.setEnabled(false);
         mnuSaveAs.addActionListener(this);
-        mnuSaveAs.setEnabled(false);
         mnuReload.addActionListener(this);
-        mnuReload.setEnabled(false);
         mnuDownloadSource.addActionListener(this);
         mnuClose.addActionListener(this);
+
+        mnuSave.setEnabled(false);
+        mnuSaveAs.setEnabled(false);
+        mnuReload.setEnabled(false);
+
+        mnuNew.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
+        mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
+        mnuReload.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
 
         // Key Menü
         mnuKey = new JMenu(JDLocale.L("plugins.optional.langfileeditor.key", "Key"));
         mnuKey.setEnabled(false);
 
-        mnuKey.add(mnuAdd = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.addKey", "Add Key")));
-        mnuKey.add(mnuEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
-        mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteSelectedKeys", "Delete Selected Key(s)")));
+        mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteKeys", "Delete Key(s)")));
         mnuKey.addSeparator();
         mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
         mnuKey.add(mnuClearAll = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearAllValues", "Clear All Values")));
         mnuKey.addSeparator();
         mnuKey.add(mnuAdopt = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults", "Adopt Default(s)")));
         mnuKey.add(mnuAdoptMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
+        mnuKey.addSeparator();
         mnuKey.add(mnuTranslate = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate", "Translate with Google")));
         mnuKey.add(mnuTranslateMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate.missing", "Translate Missing Entries with Google")));
 
-        mnuAdd.addActionListener(this);
-        mnuEdit.addActionListener(this);
         mnuDelete.addActionListener(this);
         mnuClear.addActionListener(this);
         mnuClearAll.addActionListener(this);
@@ -299,27 +299,22 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuTranslate.addActionListener(this);
         mnuTranslateMissing.addActionListener(this);
 
+        mnuDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
+
         // Entries Menü
         mnuEntries = new JMenu(JDLocale.L("plugins.optional.langfileeditor.entries", "Entries"));
         mnuEntries.setEnabled(false);
 
-        mnuEntries.add(mnuColorize = new JMenu(JDLocale.L("plugins.optional.langfileeditor.colorize", "Colorize")));
+        mnuEntries.add(mnuColorizeMissing = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeMissing", "Colorize Missing Entries")));
+        mnuEntries.add(mnuPickMissingColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries")));
         mnuEntries.addSeparator();
-        mnuEntries.add(mnuSelectMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.selectMissing", "Select Missing Entries")));
-        mnuEntries.add(mnuSelectOld = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.selectOld", "Select Old Entries")));
+        mnuEntries.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
+        mnuEntries.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
-
-        mnuSelectMissing.addActionListener(this);
-        mnuSelectOld.addActionListener(this);
-        mnuShowDupes.addActionListener(this);
-
-        // Colorize Menü
-        mnuColorize.add(mnuColorizeMissing = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeMissing", "Colorize Missing Entries")));
-        mnuColorize.add(mnuPickMissingColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries")));
-        mnuColorize.addSeparator();
-        mnuColorize.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
-        mnuColorize.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
+        mnuEntries.addSeparator();
+        mnuEntries.add(mnuSearch = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.search", "Search")));
+        mnuEntries.add(mnuContinueSearch = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.continueSearch", "Continue Search")));
 
         mnuColorizeMissing.setSelected(colorizeMissing);
         mnuColorizeOld.setSelected(colorizeOld);
@@ -331,6 +326,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         mnuPickMissingColor.addActionListener(this);
         mnuColorizeOld.addActionListener(this);
         mnuPickOldColor.addActionListener(this);
+        mnuShowDupes.addActionListener(this);
+        mnuSearch.addActionListener(this);
+        mnuContinueSearch.addActionListener(this);
+
+        mnuSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
+        mnuContinueSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0));
 
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(mnuFile);
@@ -341,15 +342,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         // Context Menü
         mnuContextPopup = new JPopupMenu();
 
-        mnuContextPopup.add(mnuContextEdit = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.editSelectedValues", "Edit Selected Value(s)")));
-        mnuContextPopup.add(mnuContextDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteSelectedKeys", "Delete Selected Key(s)")));
-        mnuContextPopup.addSeparator();
+        mnuContextPopup.add(mnuContextDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteKeys", "Delete Key(s)")));
         mnuContextPopup.add(mnuContextClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
         mnuContextPopup.addSeparator();
         mnuContextPopup.add(mnuContextAdopt = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults", "Adopt Default(s)")));
         mnuContextPopup.add(mnuContextTranslate = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.translate", "Translate with Google")));
 
-        mnuContextEdit.addActionListener(this);
         mnuContextDelete.addActionListener(this);
         mnuContextClear.addActionListener(this);
         mnuContextAdopt.addActionListener(this);
@@ -428,37 +426,16 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 saveLanguageFile(languageFile);
             }
 
-        } else if (e.getSource() == mnuEdit || e.getSource() == mnuContextEdit) {
-
-            int[] rows = table.getSelectedRows();
-
-            for (int i = 0; i < rows.length; i++) {
-                EditDialog dialog = new EditDialog(frame, data.get(rows[i]));
-                if (dialog.value != null) tableModel.setValueAt(dialog.value, rows[i], 2);
-            }
-
         } else if (e.getSource() == mnuDelete || e.getSource() == mnuContextDelete) {
 
             deleteSelectedKeys();
-
-        } else if (e.getSource() == mnuAdd) {
-
-            AddDialog dialog = new AddDialog(frame);
-
-            if (dialog.key != null && dialog.value != null && !dialog.key.equals("") && !dialog.value.equals("")) {
-                data.add(new String[] { dialog.key, "", dialog.value });
-            }
-
-            setInfoLabels();
-            tableModel.fireTableRowsInserted(data.size() - 1, data.size() - 1);
 
         } else if (e.getSource() == mnuAdoptMissing) {
 
             for (int i = 0; i < data.size(); i++) {
 
-                if (data.get(i)[2].equals("")) {
-                    String def = data.get(i)[1];
-                    if (!def.equals("")) tableModel.setValueAt(def, i, 2);
+                if (tableModel.getValueAt(i, 2).equals("")) {
+                    tableModel.setValueAt(tableModel.getValueAt(i, 1), i, 2);
                 }
 
             }
@@ -471,17 +448,15 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
 
-            for (int i : table.getSelectedRows()) {
+            for (int i : getSelectedRows()) {
                 String def = tableModel.getValueAt(i, 1);
                 if (!def.equals("")) tableModel.setValueAt(def, i, 2);
             }
 
         } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
 
-            int[] rows = table.getSelectedRows();
-
-            for (int row : rows) {
-                tableModel.setValueAt("", row, 2);
+            for (int i : getSelectedRows()) {
+                tableModel.setValueAt("", i, 2);
             }
 
             setInfoLabels();
@@ -490,20 +465,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             for (int i = 0; i < table.getRowCount(); i++) {
                 tableModel.setValueAt("", i, 2);
-            }
-
-        } else if (e.getSource() == mnuSelectMissing) {
-
-            table.clearSelection();
-            for (int i = 0; i < table.getRowCount(); i++) {
-                if (tableModel.getValueAt(i, 2).equals("")) table.getSelectionModel().addSelectionInterval(i, i);
-            }
-
-        } else if (e.getSource() == mnuSelectOld) {
-
-            table.clearSelection();
-            for (int i = 0; i < table.getRowCount(); i++) {
-                if (tableModel.getValueAt(i, 1).equals("")) table.getSelectionModel().addSelectionInterval(i, i);
             }
 
         } else if (e.getSource() == mnuColorizeMissing) {
@@ -574,12 +535,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
             for (int i = 0; i < data.size(); i++) {
 
-                if (data.get(i)[2].equals("")) {
+                if (tableModel.getValueAt(i, 2).equals("")) {
 
                     String def = data.get(i)[1];
 
                     if (!def.equals("")) {
-                        logger.finer("Working on " + data.get(i)[0] + ":");
+                        logger.finer("Working on " + tableModel.getValueAt(i, 0) + ":");
                         String result = JDLocale.translate(lngKey, def);
                         logger.finer("Google translated \"" + def + "\" to \"" + result + "\" with LanguageKey " + lngKey);
                         tableModel.setValueAt(result, i, 2);
@@ -601,12 +562,12 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 lngKey = result;
             }
 
-            for (int i : table.getSelectedRows()) {
+            for (int i : getSelectedRows()) {
 
                 String def = tableModel.getValueAt(i, 1);
 
                 if (!def.equals("")) {
-                    logger.finer("Working on " + data.get(i)[0] + ":");
+                    logger.finer("Working on " + tableModel.getValueAt(i, 0) + ":");
                     String result = JDLocale.translate(lngKey, def);
                     logger.finer("Google translated \"" + def + "\" to \"" + result + "\" with LanguageKey " + lngKey);
                     tableModel.setValueAt(result, i, 2);
@@ -630,17 +591,36 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
                 }
             }
 
+        } else if (e.getSource() == mnuSearch) {
+
+            searchFor = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.searchFor", "String to search for: (Startposition is the first selected row)"), searchFor);
+            search();
+
+        } else if (e.getSource() == mnuContinueSearch) {
+
+            search();
+
         }
 
     }
 
+    private void search() {
+        if (!searchFor.equals("")) {
+            int begin = table.getSelectedRow();
+            if (begin == table.getRowCount()) begin = -1;
+            if (table.getSearchable().search(searchFor, begin) == -1) {
+                table.getSearchable().search(searchFor, -1);
+            }
+        }
+    }
+
     private void deleteSelectedKeys() {
-        int[] rows = table.getSelectedRows();
+        int[] rows = getSelectedRows();
 
         int len = rows.length - 1;
         for (int i = len; i >= 0; --i) {
             int cur = rows[i];
-            String temp = data.remove(getIndex(data, table.getValueAt(cur, 0).toString()))[0];
+            String temp = data.remove(cur)[0];
             for (int j = dupes.size() - 1; j >= 0; --j) {
                 if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
             }
@@ -650,6 +630,27 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         table.getSelectionModel().setSelectionInterval(newRow, newRow);
 
         setInfoLabels();
+    }
+
+    private int[] getSelectedRows() {
+        int[] rows = table.getSelectedRows();
+        int[] ret = new int[rows.length];
+
+        for (int i = 0; i < rows.length; ++i) {
+            ret[i] = getOriginalIndex(rows[i]);
+        }
+
+        return ret;
+    }
+
+    private int getOriginalIndex(int row) {
+        String key = table.getValueAt(row, 0).toString();
+
+        for (int i = 0; i < data.size(); ++i) {
+            if (data.get(i)[0].equalsIgnoreCase(key)) return i;
+        }
+
+        return -1;
     }
 
     private boolean isSupportedLanguageKey(String lngKey) {
@@ -759,16 +760,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
         }
 
         return null;
-
-    }
-
-    private int getIndex(Vector<String[]> vector, String key) {
-
-        for (int i = 0; i < vector.size(); ++i) {
-            if (vector.get(i)[0].equalsIgnoreCase(key)) return i;
-        }
-
-        return -1;
 
     }
 
@@ -882,18 +873,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
 
         return fileContents;
 
-    }
-
-    public void keyPressed(KeyEvent e) {
-    }
-
-    public void keyReleased(KeyEvent e) {
-        if (e.getKeyCode() == KeyEvent.VK_DELETE) {
-            deleteSelectedKeys();
-        }
-    }
-
-    public void keyTyped(KeyEvent e) {
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -1049,145 +1028,6 @@ public class LangFileEditor extends PluginOptional implements KeyListener, Mouse
             public boolean isCellEditable(int row, int col) {
                 return false;
             }
-
-        }
-
-    }
-
-    private class EditDialog extends JDialog implements ActionListener {
-
-        private static final long serialVersionUID = 1L;
-
-        private JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
-        private JButton btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
-        private JButton btnAdopt = new JButton(JDLocale.L("plugins.optional.langfileeditor.adoptDefaultValue", "Adopt Default Value"));
-
-        private JTextArea taSourceValue = new JTextArea(5, 20);
-        private JTextArea taFileValue = new JTextArea(5, 20);
-
-        public String value;
-
-        public EditDialog(JFrame owner, String[] entry) {
-
-            super(owner);
-
-            setModal(true);
-            setLayout(new BorderLayout(5, 5));
-            setTitle(JDLocale.L("plugins.optional.langfileeditor.editValue", "Edit Value"));
-            getRootPane().setDefaultButton(btnOK);
-
-            btnOK.addActionListener(this);
-            btnCancel.addActionListener(this);
-            btnAdopt.addActionListener(this);
-
-            taSourceValue.setText(entry[1]);
-            taFileValue.setText(entry[2]);
-            taSourceValue.setEditable(false);
-
-            JPanel fields = new JPanel(new BorderLayout(5, 5));
-            fields.add(new JScrollPane(taSourceValue), BorderLayout.PAGE_START);
-            fields.add(new JScrollPane(taFileValue), BorderLayout.PAGE_END);
-
-            JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-            buttons.add(btnAdopt);
-            buttons.add(btnOK);
-            buttons.add(btnCancel);
-
-            JPanel main = new JPanel(new BorderLayout(5, 5));
-            main.setBorder(new EmptyBorder(5, 5, 5, 5));
-            main.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ": " + entry[0]), BorderLayout.PAGE_START);
-            main.add(fields, BorderLayout.CENTER);
-            main.add(buttons, BorderLayout.PAGE_END);
-
-            setContentPane(main);
-            pack();
-            setLocation(JDUtilities.getCenterOfComponent(owner, this));
-            setVisible(true);
-
-        }
-
-        public void actionPerformed(ActionEvent e) {
-
-            if (e.getSource() == btnOK) {
-
-                value = taFileValue.getText();
-                dispose();
-
-            } else if (e.getSource() == btnCancel) {
-
-                value = null;
-                dispose();
-
-            } else if (e.getSource() == btnAdopt) {
-
-                taFileValue.setText(taSourceValue.getText());
-
-            }
-
-        }
-
-    }
-
-    private class AddDialog extends JDialog implements ActionListener {
-
-        private static final long serialVersionUID = 1L;
-
-        private JButton btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
-        private JButton btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
-
-        private JTextField tfKey = new JTextField(20);
-        private JTextArea taValue = new JTextArea(5, 20);
-
-        public String value;
-        public String key;
-
-        public AddDialog(JFrame owner) {
-
-            super(owner);
-
-            setModal(true);
-            setLayout(new BorderLayout(5, 5));
-            setTitle(JDLocale.L("plugins.optional.langfileeditor.addKey", "Add Key"));
-            getRootPane().setDefaultButton(btnOK);
-
-            btnOK.addActionListener(this);
-            btnCancel.addActionListener(this);
-
-            JPanel keyPanel = new JPanel(new BorderLayout(5, 5));
-            keyPanel.add(new JLabel(JDLocale.L("plugins.optional.langfileeditor.key", "Key") + ":"), BorderLayout.LINE_START);
-            keyPanel.add(tfKey, BorderLayout.CENTER);
-
-            JPanel buttons = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-            buttons.add(btnOK);
-            buttons.add(btnCancel);
-
-            JPanel main = new JPanel(new BorderLayout(5, 5));
-            main.setBorder(new EmptyBorder(5, 5, 5, 5));
-            main.add(keyPanel, BorderLayout.PAGE_START);
-            main.add(new JScrollPane(taValue), BorderLayout.CENTER);
-            main.add(buttons, BorderLayout.PAGE_END);
-
-            setContentPane(main);
-            pack();
-            setLocation(JDUtilities.getCenterOfComponent(owner, this));
-            setVisible(true);
-
-        }
-
-        public void actionPerformed(ActionEvent e) {
-
-            if (e.getSource() == btnOK) {
-
-                value = taValue.getText().trim();
-                key = tfKey.getText().trim();
-
-            } else if (e.getSource() == btnCancel) {
-
-                value = null;
-
-            }
-
-            dispose();
 
         }
 
