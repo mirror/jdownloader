@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -62,8 +63,12 @@ public class LinkbaseBiz extends PluginForDecrypt {
 
                 for (int retry = 1; retry <= 10; retry++) {
                     try {
-                        decodepage(this.br.getPage("http://linkbase.biz/?go=" + this.link));
-                        this.downloadlink = this.br.getRegex("<iframe src='(.*?)'").getMatch(0);
+                        String page = decodepage(this.br.getPage("http://linkbase.biz/?go=" + this.link));
+                        String link = new Regex(page, "<iframe src='(.*?)'").getMatch(0);
+                        if (link == null) {
+                            link = br.getRegex("<iframe src='(.*?)'").getMatch(0);
+                        }
+                        this.downloadlink = link;
                         break;
                     } catch (Exception e) {
                         logger.finest("LinkbaseBiz_Linkgrabber: id=" + new Integer(this.Worker_ID) + " GetRequest-Error, try again!");
