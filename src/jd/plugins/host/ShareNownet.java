@@ -66,7 +66,6 @@ public class ShareNownet extends PluginForHost {
                 return true;
             }
         } catch (Exception e) {
-
             e.printStackTrace();
         }
         downloadLink.setAvailable(false);
@@ -75,7 +74,6 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
@@ -96,6 +94,7 @@ public class ShareNownet extends PluginForHost {
 
             /* CaptchaCode holen */
             captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+            form.put("Submit", "Download+Now");
             form.put("captcha", captchaCode);
         }
 
@@ -103,7 +102,7 @@ public class ShareNownet extends PluginForHost {
         dl = br.openDownload(downloadLink, form);
 
         if (!dl.getConnection().isContentDisposition() || dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
+        if (dl.getConnection().isContentDisposition() && dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         /* Datei herunterladen */
         dl.startDownload();
     }
