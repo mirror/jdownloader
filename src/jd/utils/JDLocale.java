@@ -60,11 +60,11 @@ public class JDLocale {
     }
 
     public static String getTranslater() {
-        return getLocaleString("$translater$", "JD-Team");
+        return JDLocale.L("$translater$", "JD-Team");
     }
 
     public static String getVersion() {
-        String info = getLocaleString("$version$", "0.0");
+        String info = JDLocale.L("$version$", "0.0");
         String ret = new Regex(info, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
         return ret == null ? info : ret;
     }
@@ -86,10 +86,10 @@ public class JDLocale {
         }
 
         key = key.toLowerCase();
-        if (def == null) def = key;
-        if (data.containsKey(key)) { return data.get(key); }
+        if (data.containsKey(key)) return data.get(key);
 
         System.out.println("Key not found: " + key);
+        if (def == null) def = key;
         if (defaultData.containsKey(key)) {
             def = defaultData.get(key);
         }

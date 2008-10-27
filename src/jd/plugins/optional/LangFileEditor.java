@@ -651,6 +651,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         for (String element : lngKeys) {
             if (element.equals(lngKey)) return true;
         }
+
         return false;
     }
 
@@ -699,31 +700,21 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         }
 
-        boolean breakIt;
+        String info;
         for (String[] entry : fileEntries) {
 
             if (getValue(data, entry[0]) == null) {
 
-                breakIt = false;
+                info = "";
+
                 for (Pattern pattern : sourcePatterns) {
-
                     if (pattern.matcher(entry[0]).matches()) {
-
-                        data.add(new String[] { entry[0], JDLocale.L("plugins.optional.langfileeditor.patternEntry", "<Entry matches Pattern>"), entry[1] });
-                        breakIt = true;
+                        info = JDLocale.L("plugins.optional.langfileeditor.patternEntry", "<Entry matches Pattern>");
                         break;
-
                     }
-
                 }
 
-                if (entry[0].startsWith("$") && entry[0].endsWith("$")) {
-                    data.add(new String[] { entry[0], JDLocale.L("plugins.optional.langfileeditor.languageFileInfo", "<LanguageFile Information Entry>"), entry[1] });
-                    breakIt = true;
-                }
-
-                if (breakIt) continue;
-                data.add(new String[] { entry[0], "", entry[1] });
+                data.add(new String[] { entry[0], info, entry[1] });
 
             }
 
@@ -893,7 +884,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private class MissingPredicate implements HighlightPredicate {
 
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (arg1.row < table.getRowCount() && table.getValueAt(arg1.row, 2).equals(""));
+            return (table.getValueAt(arg1.row, 2).equals(""));
         }
 
     }
@@ -901,7 +892,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private class OldPredicate implements HighlightPredicate {
 
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (arg1.row < table.getRowCount() && table.getValueAt(arg1.row, 1).equals(""));
+            return (table.getValueAt(arg1.row, 1).equals(""));
         }
 
     }
