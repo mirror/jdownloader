@@ -29,6 +29,7 @@ import java.awt.event.MouseListener;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -413,6 +414,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             if (chooser.showSaveDialog(frame) == JDFileChooser.APPROVE_OPTION) {
                 languageFile = chooser.getSelectedFile();
                 if (!languageFile.getAbsolutePath().endsWith(".lng")) languageFile = new File(languageFile.getAbsolutePath() + ".lng");
+                if (!languageFile.exists()) {
+                    try {
+                        languageFile.createNewFile();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                }
                 cmboFile.setCurrentPath(languageFile);
             }
 
@@ -758,9 +766,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         Vector<String> keys = new Vector<String>();
 
         String[] lines = Regex.getLines(JDUtilities.getLocalFile(file));
+        String[] match;
 
         for (String line : lines) {
-            String[] match = new Regex(line, Pattern.compile("^(.*?)[\\s]*?=[\\s]*?(.*?)$")).getRow(0);
+            match = new Regex(line, Pattern.compile("^(.*?)[\\s]*?=[\\s]*?(.*?)$")).getRow(0);
+            if (match == null) break;
 
             match[0] = match[0].trim().toLowerCase();
             match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
