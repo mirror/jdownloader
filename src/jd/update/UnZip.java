@@ -28,31 +28,21 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public class UnZip {
-    public boolean autoDelete = false;
 
     /** The buffer for reading/writing the ZipFile data */
     protected byte[] b;
-    @SuppressWarnings("unchecked")
-    protected SortedSet dirsMade;
+
+    protected SortedSet<String> dirsMade;
     /**
      * Der Ziehpfand in dem entpackt werden soll
      */
     private File targetPath = null;
+
     protected boolean warnedMkDir = false;
 
     protected ZipFile zipF;
 
     private File zipFile = null;
-
-    /**
-     * Konstruktor in dem nur das zipFile angegeben wird
-     * 
-     * @param zipFile
-     */
-
-    public UnZip(File zipFile) {
-        this(zipFile, null);
-    }
 
     /**
      * Konstruktor mit einem bestimmten Ziel
@@ -63,21 +53,15 @@ public class UnZip {
     public UnZip(File zipFile, File targetPath) {
         b = new byte[8092];
         this.zipFile = zipFile;
-        if (targetPath == null) {
-            this.targetPath = zipFile.getParentFile();
-        } else {
-            this.targetPath = targetPath;
-        }
-
+        this.targetPath = targetPath;
     }
 
-    @SuppressWarnings("unchecked")
     public File[] extract() throws Exception {
-        dirsMade = new TreeSet();
+        dirsMade = new TreeSet<String>();
 
         zipF = new ZipFile(zipFile);
 
-        Enumeration all = zipF.entries();
+        Enumeration<?> all = zipF.entries();
         LinkedList<File> ret = new LinkedList<File>();
         while (all.hasMoreElements()) {
             File file = getFile((ZipEntry) all.nextElement());
@@ -85,14 +69,10 @@ public class UnZip {
                 ret.add(file);
             }
         }
-        if (autoDelete) {
-            zipFile.delete();
-        }
-        return ret.toArray(new File[ret.size()]);
 
+        return ret.toArray(new File[ret.size()]);
     }
 
-    @SuppressWarnings("unchecked")
     protected File getFile(ZipEntry e) throws IOException {
         String zipName = e.getName();
         if (zipName.startsWith("/")) {
@@ -127,23 +107,6 @@ public class UnZip {
         is.close();
         os.close();
         return toExtract;
-    }
-
-    @SuppressWarnings("unchecked")
-    public String[] listFiles() {
-        try {
-            zipF = new ZipFile(zipFile);
-            Enumeration all = zipF.entries();
-            LinkedList<String> ret = new LinkedList<String>();
-            while (all.hasMoreElements()) {
-                ret.add(((ZipEntry) all.nextElement()).getName());
-            }
-            return ret.toArray(new String[ret.size()]);
-
-        } catch (IOException err) {
-            err.printStackTrace();
-        }
-        return null;
     }
 
 }

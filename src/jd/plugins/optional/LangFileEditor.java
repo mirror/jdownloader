@@ -207,8 +207,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         main.add(top, BorderLayout.PAGE_START);
         main.add(new JScrollPane(table));
 
-        buildMenu();
-
+        frame.setJMenuBar(buildMenu());
         frame.setResizable(true);
         frame.pack();
         SimpleGUI.restoreWindow(null, frame);
@@ -246,7 +245,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         keyChart.fetchImage();
     }
 
-    private void buildMenu() {
+    private JMenuBar buildMenu() {
         // File Menü
         mnuFile = new JMenu(JDLocale.L("plugins.optional.langfileeditor.file", "File"));
 
@@ -330,15 +329,22 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuSearch.addActionListener(this);
         mnuContinueSearch.addActionListener(this);
 
+        mnuColorizeMissing.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
+        mnuColorizeOld.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0));
+        mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
         mnuSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
         mnuContinueSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0));
 
+        // Menü-Bar zusammensetzen
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(mnuFile);
         menuBar.add(mnuKey);
         menuBar.add(mnuEntries);
-        frame.setJMenuBar(menuBar);
 
+        return menuBar;
+    }
+
+    private void buildContextMenu() {
         // Context Menü
         mnuContextPopup = new JPopupMenu();
 
@@ -352,7 +358,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuContextClear.addActionListener(this);
         mnuContextAdopt.addActionListener(this);
         mnuContextTranslate.addActionListener(this);
-
     }
 
     @Override
@@ -881,6 +886,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             if (!table.isRowSelected(row)) {
                 table.getSelectionModel().setSelectionInterval(row, row);
             }
+            if (mnuContextPopup == null) buildContextMenu();
             mnuContextPopup.show(table, e.getX(), e.getY());
         }
     }
