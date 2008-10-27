@@ -437,7 +437,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         } else if (e.getSource() == mnuAdoptMissing) {
 
-            for (int i = 0; i < data.size(); i++) {
+            for (int i = 0; i < tableModel.getRowCount(); ++i) {
 
                 if (tableModel.getValueAt(i, 2).equals("")) {
                     tableModel.setValueAt(tableModel.getValueAt(i, 1), i, 2);
@@ -453,22 +453,22 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
 
-            for (int i : getSelectedRows()) {
-                String def = tableModel.getValueAt(i, 1);
-                if (!def.equals("")) tableModel.setValueAt(def, i, 2);
+            for (int row : getSelectedRows()) {
+                String def = tableModel.getValueAt(row, 1);
+                if (!def.equals("")) tableModel.setValueAt(def, row, 2);
             }
 
         } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
 
-            for (int i : getSelectedRows()) {
-                tableModel.setValueAt("", i, 2);
+            for (int row : getSelectedRows()) {
+                tableModel.setValueAt("", row, 2);
             }
 
             setInfoLabels();
 
         } else if (e.getSource() == mnuClearAll) {
 
-            for (int i = 0; i < table.getRowCount(); i++) {
+            for (int i = 0; i < table.getRowCount(); ++i) {
                 tableModel.setValueAt("", i, 2);
             }
 
@@ -528,56 +528,21 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         } else if (e.getSource() == mnuTranslateMissing) {
 
-            if (lngKey == null) {
-                String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
-                if (result == null) return;
-                if (!isSupportedLanguageKey(result)) {
-                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key, you have entered, is not supported by Google!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Language Key!"), JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                lngKey = result;
-            }
+            if (getLanguageKey() == null) return;
 
-            for (int i = 0; i < data.size(); i++) {
-
+            for (int i = tableModel.getRowCount() - 1; i >= 0; --i) {
                 if (tableModel.getValueAt(i, 2).equals("")) {
-
-                    String def = data.get(i)[1];
-
-                    if (!def.equals("")) {
-                        logger.finer("Working on " + tableModel.getValueAt(i, 0) + ":");
-                        String result = JDLocale.translate(lngKey, def);
-                        logger.finer("Google translated \"" + def + "\" to \"" + result + "\" with LanguageKey " + lngKey);
-                        tableModel.setValueAt(result, i, 2);
-                    }
-
+                    translateRow(i);
                 }
-
             }
 
         } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
 
-            if (lngKey == null) {
-                String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
-                if (result == null) return;
-                if (!isSupportedLanguageKey(result)) {
-                    JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key, you have entered, is not supported by Google!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Language Key!"), JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-                lngKey = result;
-            }
+            if (getLanguageKey() == null) return;
 
-            for (int i : getSelectedRows()) {
-
-                String def = tableModel.getValueAt(i, 1);
-
-                if (!def.equals("")) {
-                    logger.finer("Working on " + tableModel.getValueAt(i, 0) + ":");
-                    String result = JDLocale.translate(lngKey, def);
-                    logger.finer("Google translated \"" + def + "\" to \"" + result + "\" with LanguageKey " + lngKey);
-                    tableModel.setValueAt(result, i, 2);
-                }
-
+            int[] rows = getSelectedRows();
+            for (int i = rows.length - 1; i >= 0; --i) {
+                translateRow(rows[i]);
             }
 
         } else if (e.getSource() == mnuClose) {
@@ -619,19 +584,41 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
     }
 
+    private String getLanguageKey() {
+        if (lngKey == null) {
+            String result = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.message", "Please insert the Language Key to provide a correct translation of Google:"), JDLocale.L("plugins.optional.langfileeditor.translate.title", "Insert Language Key"), JOptionPane.QUESTION_MESSAGE);
+            if (result == null) return null;
+            if (!isSupportedLanguageKey(result)) {
+                JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.translate.error.message", "The Language Key, you have entered, is not supported by Google!"), JDLocale.L("plugins.optional.langfileeditor.translate.error.title", "Wrong Language Key!"), JOptionPane.ERROR_MESSAGE);
+                return null;
+            }
+            lngKey = result;
+        }
+        return lngKey;
+    }
+
+    private void translateRow(int row) {
+
+        String def = tableModel.getValueAt(row, 1);
+        if (!def.equals("")) {
+            String res = JDLocale.translate(lngKey, def);
+            if (res != null) tableModel.setValueAt(res, row, 2);
+        }
+
+    }
+
     private void deleteSelectedKeys() {
         int[] rows = getSelectedRows();
 
         int len = rows.length - 1;
         for (int i = len; i >= 0; --i) {
-            int cur = rows[i];
-            String temp = data.remove(cur)[0];
+            String temp = data.remove(rows[i])[0];
             for (int j = dupes.size() - 1; j >= 0; --j) {
                 if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
             }
-            tableModel.fireTableRowsDeleted(cur, cur);
+            tableModel.fireTableRowsDeleted(rows[i], rows[i]);
         }
-        int newRow = Math.min(rows[len] - len, data.size() - 1);
+        int newRow = Math.min(rows[len] - len, tableModel.getRowCount() - 1);
         table.getSelectionModel().setSelectionInterval(newRow, newRow);
 
         setInfoLabels();
@@ -651,8 +638,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private int getOriginalIndex(int row) {
         String key = table.getValueAt(row, 0).toString();
 
-        for (int i = 0; i < data.size(); ++i) {
-            if (data.get(i)[0].equalsIgnoreCase(key)) return i;
+        for (int i = 0; i < tableModel.getRowCount(); ++i) {
+            if (tableModel.getValueAt(i, 0).equalsIgnoreCase(key)) return i;
         }
 
         return -1;
@@ -906,7 +893,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private class MissingPredicate implements HighlightPredicate {
 
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (table.getValueAt(arg1.row, 2).equals(""));
+            return (arg1.row < table.getRowCount() && table.getValueAt(arg1.row, 2).equals(""));
         }
 
     }
@@ -914,7 +901,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private class OldPredicate implements HighlightPredicate {
 
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
-            return (table.getValueAt(arg1.row, 1).equals(""));
+            return (arg1.row < table.getRowCount() && table.getValueAt(arg1.row, 1).equals(""));
         }
 
     }

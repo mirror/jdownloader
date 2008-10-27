@@ -18,7 +18,6 @@ package jd.utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Vector;
@@ -207,9 +206,8 @@ public class JDLocale {
 
     public static String translate(String from, String to, String msg) {
 
-        PostRequest r;
         try {
-            r = new PostRequest("http://translate.google.com/translate_t?sl=" + from + "&tl=" + to);
+            PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + from + "&tl=" + to);
 
             r.setPostVariable("hl", "de");
             r.setPostVariable("text", msg);
@@ -217,14 +215,9 @@ public class JDLocale {
             r.setPostVariable("tl", to);
             r.setPostVariable("ie", "UTF8");
 
-            try {
-                return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(r.load(), "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            }
-        } catch (MalformedURLException e1) {
-            e1.printStackTrace();
+            return Encoding.UTF8Decode(Encoding.htmlDecode(new Regex(r.load(), "<div id\\=result_box dir\\=\"ltr\">(.*?)</div>").getMatch(0)));
+        } catch (IOException e) {
+            e.printStackTrace();
             return null;
         }
 
