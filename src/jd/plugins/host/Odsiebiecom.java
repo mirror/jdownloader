@@ -29,7 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class Odsiebiecom extends PluginForHost {
     private String captchaCode;
@@ -141,7 +140,7 @@ public class Odsiebiecom extends PluginForHost {
                     if (captcha_con.getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
                     Browser.download(captchaFile, captcha_con);
                     /* CaptchaCode holen */
-                    captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+                    captchaCode = Plugin.getCaptchaCode(this, "none", captchaFile, false, downloadLink);
                 }
 
                 capform.setVariable(0, captchaCode);
@@ -165,9 +164,12 @@ public class Odsiebiecom extends PluginForHost {
          */
         downloadurl = downloadurl.replaceAll(" ", "%20");
         /* Datei herunterladen */
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadurl));
-        dl.setChunkNum(1);
-        dl.setResume(false);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, downloadurl, false, 1);
+        if (dl.getConnection().getContentType().contains("text")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
+        }
         dl.startDownload();
     }
 
