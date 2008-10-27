@@ -192,7 +192,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60, frame.getBackground());
         keyChart.addEntity(entDone = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, Color.GREEN));
         keyChart.addEntity(entMissing = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing"), 0, colorMissing));
-        keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Probably Old"), 0, colorOld));
+        keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old"), 0, colorOld));
 
         JPanel topLeft = new JPanel(new BorderLayout(5, 5));
         topLeft.add(topFolder, BorderLayout.PAGE_START);
@@ -242,7 +242,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         entMissing.setData(numMissing);
         entMissing.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing") + " [" + entMissing.getData() + "]");
         entOld.setData(numOld);
-        entOld.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Probably Old") + " [" + entOld.getData() + "]");
+        entOld.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old") + " [" + entOld.getData() + "]");
         keyChart.fetchImage();
     }
 
@@ -770,7 +770,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         for (String line : lines) {
             match = new Regex(line, Pattern.compile("^(.*?)[\\s]*?=[\\s]*?(.*?)$")).getRow(0);
-            if (match == null) break;
+            if (match == null) continue;
 
             match[0] = match[0].trim().toLowerCase();
             match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
