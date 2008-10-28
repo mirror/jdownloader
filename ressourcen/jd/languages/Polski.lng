@@ -1718,3 +1718,8 @@ train.method = Wybierz metodę:
 wrapper.webupdate.updateFile = Aktualizuj wtyczkę %s
 wrapper.webupdate.updatefile = Aktualizuj wtyczkę %s
 $translater$ = djuzi
+plugins.optional.langfileeditor.continuesearch = Szukaj następny
+plugins.optional.langfileeditor.deletekeys = Usuń klucz(e)
+plugins.optional.langfileeditor.search = Szukaj
+plugins.optional.langfileeditor.searchfor = Wyrażenie do wyszukania: (Wyszukiwanie zacznie się od zaznaczonego wiersza)
+
