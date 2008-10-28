@@ -20,20 +20,20 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
 
 public class BluehostTo extends PluginForHost {
 
     public BluehostTo(PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium();
     }
 
     private void correctUrl(DownloadLink downloadLink) {
@@ -42,47 +42,35 @@ public class BluehostTo extends PluginForHost {
         downloadLink.setUrlDownload(url);
     }
 
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        this.setBrowserExclusive();
+        getFileInformation(downloadLink);
+        br.setFollowRedirects(true);
+        br.getPage("http://bluehost.to");
+        br.postPage("http://bluehost.to/setcookie.php", "loginname=" + account.getUser() + "&loginpass=" + account.getPass() + "&gobutton.x=&gobutton.y=");
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), false, 1);
+        if (dl.getConnection().getContentType().contains("text")) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Beta Error");
+        }
+        dl.startDownload();
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        // LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        // String page = null;
-        Browser br = new Browser();
-
-        correctUrl(downloadLink);
-
-        // String page = br.getPage("http://bluehost.to/fileinfo/url=" +
-        // downloadLink.getDownloadURL());
-        // String[] dat = page.split("\\, ");
-
-        // vorrübergehen abgeschalten, bis api wieder online ist
-        // if (dat.length != 5) {
-        // linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-        // return;
-        // }
-
-        // br.getPage("http://bluehost.to/fetchinfo");
+        this.setBrowserExclusive();
+        getFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
-
             logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         }
         Form[] forms = br.getForms();
-        HTTPConnection con;
-        dl = new RAFDownload(this, downloadLink, br.createFormRequest(forms[2]));
-        dl.setResume(false);
-        dl.setChunkNum(1);
-        con = dl.connect();
-       
-        if (!con.isContentDisposition()) {
-
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
+        dl = br.openDownload(downloadLink, forms[2], false, 1);
+        if (!dl.getConnection().isContentDisposition()) {            
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         }
-
         dl.startDownload();
-
     }
 
     @Override
@@ -91,8 +79,7 @@ public class BluehostTo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         correctUrl(downloadLink);
         // String page;
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis
@@ -104,16 +91,18 @@ public class BluehostTo extends PluginForHost {
 
         if (dat.length != 5) {
             Browser br = new Browser();
-            //              
             br.getPage(downloadLink.getDownloadURL());
-            downloadLink.setName(br.getRegex("dl_filename2\">(.*?)</div>").getMatch(0).trim());
-            downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(0).trim() + " " + br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(1).trim()));
+            String filename = br.getRegex("dl_filename2\">(.*?)</div>").getMatch(0);
+            String filesize = br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(0).trim() + " " + br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(1);
+            if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            downloadLink.setName(filename.trim());
+            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
             return true;
+        } else {
+            downloadLink.setName(dat[0]);
+            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
         }
-        downloadLink.setName(dat[0]);
-        downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
         return true;
-
     }
 
     @Override
@@ -123,7 +112,7 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -133,11 +122,9 @@ public class BluehostTo extends PluginForHost {
 
     @Override
     public void reset() {
-
     }
 
     @Override
     public void resetPluginGlobals() {
-
     }
 }

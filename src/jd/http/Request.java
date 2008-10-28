@@ -178,8 +178,7 @@ public abstract class Request {
         if (cookieHeaders == null) { return; }
         if (cookies == null) {
             cookies = new ArrayList<Cookie>();
-        }
-        ;
+        }        
 
         String host = httpConnection.getURL().getHost();
 
@@ -218,16 +217,10 @@ public abstract class Request {
         return htmlCode.contains(html);
     }
 
-    /*
-     * private void setCookies(HashMap<String, String> cookies) { this.cookies =
-     * cookies; }
-     * 
-     * private void setCookieString(String cookieString) {
-     * 
-     * cookies = new HashMap<String, String>(); StringTokenizer st = new
-     * StringTokenizer(cookieString, ";="); while (st.hasMoreTokens())
-     * cookies.put(st.nextToken().trim(), st.nextToken().trim()); }
-     */
+    public void setCookies(ArrayList<Cookie> cookies) {
+        this.cookies = cookies;
+    }
+
     public String followRedirect() throws IOException {
         if (getLocation() == null) { return null; }
 

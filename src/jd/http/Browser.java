@@ -459,6 +459,41 @@ public class Browser {
         return request;
     }
 
+    public Request createGetRequestfromOldRequest(Request oldrequest) throws Exception {
+        String string = getURL(oldrequest.getLocation());
+        if (currentURL == null) {
+            currentURL = new URL(string);
+        }
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        GetRequest request = new GetRequest(string);
+        request.setCookies(oldrequest.getCookies());
+        doAuth(request);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+
+        // if (this.doRedirects && request.getLocation() != null) {
+        // this.openGetConnection(null);
+        // } else {
+        //
+        // currentURL = new URL(string);
+        // }
+        // return this.request.getHttpConnection();
+        return request;
+    }
+
     private String getURL(String string) {
         if (string == null) string = this.getRedirectLocation();
         if (string == null) return null;
@@ -517,6 +552,35 @@ public class Browser {
             currentURL = new URL(url);
         }
         return this.request.getHttpConnection();
+
+    }
+
+    public Request createPostRequestfromOldRequest(Request oldrequest, String postdata) throws IOException {
+        String url = getURL(oldrequest.getLocation());
+        HashMap<String, String> post = Request.parseQuery(postdata);
+        if (snifferCheck()) {
+            // throw new IOException("Sniffer found");
+        }
+        PostRequest request = new PostRequest(url);
+        request.setCookies(oldrequest.getCookies());
+        doAuth(request);
+        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        // request.setFollowRedirects(doRedirects);
+        if (connectTimeout > 0) {
+            request.setConnectTimeout(connectTimeout);
+        }
+        if (readTimeout > 0) {
+            request.setReadTimeout(readTimeout);
+        }
+        forwardCookies(request);
+        request.getHeaders().put("Referer", currentURL.toString());
+        if (post != null) {
+            request.getPostData().putAll(post);
+        }
+        if (headers != null) {
+            request.getHeaders().putAll(headers);
+        }
+        return request;
 
     }
 
@@ -1156,7 +1220,7 @@ public class Browser {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createGetRequest(dl.getRequest().getLocation()));
+                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()));
                     try {
                         dl.connect(this);
                         break;
@@ -1183,7 +1247,7 @@ public class Browser {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createRequest(dl.getRequest().getLocation()), b, c);
+                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()), b, c);
                     try {
                         dl.connect(this);
                         break;
@@ -1210,7 +1274,7 @@ public class Browser {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createRequest(dl.getRequest().getLocation()), resume, chunks);
+                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()), resume, chunks);
                     try {
                         dl.connect(this);
                         break;
@@ -1237,7 +1301,7 @@ public class Browser {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createRequest(dl.getRequest().getLocation()));
+                    dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()));
                     try {
                         dl.connect(this);
                         break;
@@ -1268,7 +1332,7 @@ public class Browser {
 
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createPostRequest(dl.getRequest().getLocation(), postdata));
+                    dl = RAFDownload.download(downloadLink, this.createPostRequestfromOldRequest(dl.getRequest(), postdata));
                     try {
                         dl.connect(this);
                         break;

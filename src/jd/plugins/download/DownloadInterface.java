@@ -1011,7 +1011,7 @@ abstract public class DownloadInterface {
     }
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
-        this(plugin, downloadLink);
+        this(plugin, downloadLink);        
         this.request = request;
 
     }
@@ -1138,7 +1138,7 @@ abstract public class DownloadInterface {
     }
 
     public HTTPConnection connect(Browser br) throws Exception {
-        br.setRequest(request);
+        br.setRequest(request);        
         HTTPConnection ret = connect();
 
         return ret;
@@ -1170,7 +1170,7 @@ abstract public class DownloadInterface {
             }
 
         }
-        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
+        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());        
         if (request.getLocation() != null) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED); }
         connection = request.getHttpConnection();
         if (connection.getRange() != null) {
