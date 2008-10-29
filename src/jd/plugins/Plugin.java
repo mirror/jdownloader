@@ -89,7 +89,7 @@ public abstract class Plugin implements ActionListener {
      * @param plugin
      * @return captchacode
      * @throws PluginException
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     public static String getCaptchaCode(File file, Plugin plugin, DownloadLink link) throws PluginException, InterruptedException {
         String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
@@ -318,7 +318,6 @@ public abstract class Plugin implements ActionListener {
      * @param param
      */
     public void fireControlEvent(int controlID, Object param) {
-
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
@@ -508,8 +507,7 @@ public abstract class Plugin implements ActionListener {
     public abstract String getVersion();
 
     protected String getVersion(String revision) {
-        String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? "0.0" : ret;
+        return JDUtilities.getVersion(revision);
     }
 
     /**

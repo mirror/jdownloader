@@ -65,8 +65,8 @@ public class JDLocale {
 
     public static String getVersion() {
         String info = JDLocale.L("$version$", "0.0");
-        String ret = new Regex(info, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
-        return ret == null ? info : ret;
+        String ret = JDUtilities.getVersion(info);
+        return (ret.equals("0.0")) ? info : ret;
     }
 
     public static Vector<String> getLocaleIDs() {

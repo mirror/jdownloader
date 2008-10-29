@@ -160,8 +160,6 @@ public class JDUtilities {
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
 
-    public static final int JD_REVISION_NUM = Integer.parseInt(new Regex("$Id$", "JDUtilities\\.java (\\d+?) ").getMatch(0));
-
     /**
      * Versionsstring der Applikation
      */
@@ -697,7 +695,7 @@ public class JDUtilities {
      *            der Host von dem die Methode verwendet werden soll
      * @param file
      * @return Der vom Benutzer eingegebene Text
-     * @throws InterruptedException 
+     * @throws InterruptedException
      */
     public static String getCaptcha(Plugin plugin, String method, File file, boolean forceJAC) throws InterruptedException {
         String host;
@@ -1573,13 +1571,24 @@ public class JDUtilities {
     }
 
     /**
-     * parsed den JD_REVISION String auf
+     * Parsed den Revision-String ins Format 0.000
      * 
-     * @return RevissionID
+     * @return RevisionID
      */
     public static String getRevision() {
-        double r = (double) JD_REVISION_NUM / 1000.0;
+        double r = Double.parseDouble(getVersion("$Revision$")) / 1000.0;
         return new DecimalFormat("0.000").format(r).replace(",", ".");
+    }
+
+    /**
+     * Parsed den String revision und gibt die RevisionsNummer zurück
+     * 
+     * @param revision
+     * @return RevisionsNummer
+     */
+    public static String getVersion(String revision) {
+        String ret = new Regex(revision, "\\$Revision: ([\\d]*?) \\$").getMatch(0);
+        return ret == null ? "0.0" : ret;
     }
 
     /**

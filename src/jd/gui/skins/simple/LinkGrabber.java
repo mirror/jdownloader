@@ -1366,10 +1366,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + files);
     }
 
-    @SuppressWarnings("unchecked")
     private void addToDownloadDirs(String downloadDirectory, String packageName) {
         if (packageName.length() < 5 || downloadDirectory.equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) return;
-        ((ArrayList<String[]>) guiConfig.getProperty("DOWNLOADDIR_LIST", new ArrayList<String[]>())).add(new String[] { downloadDirectory, packageName });
+        getDownloadDirList().add(new String[] { downloadDirectory, packageName });
         guiConfig.save();
     }
 
