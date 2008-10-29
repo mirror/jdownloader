@@ -136,7 +136,7 @@ public class HTMLEntities {
 
         for (int i = 0; i < str.length(); ++i) {
             char ch = str.charAt(i);
-            String entity = (String) htmlentities_map.get(new Integer((int) ch)); // get
+            String entity = htmlentities_map.get(new Integer((int) ch)); // get
             // equivalent
             // html
             // entity
@@ -269,8 +269,7 @@ public class HTMLEntities {
                         iso = new Integer(entity.substring(2, entity.length() - 1));
                     }
                 } else {
-
-                    iso = (Integer) unhtmlentities_map.get(entity);
+                    iso = unhtmlentities_map.get(entity);
                 }
                 if (iso == null) {
                     buf.append(entity);

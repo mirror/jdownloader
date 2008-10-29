@@ -120,7 +120,7 @@ public class JDSimpleWebserverRequestHandler {
                 fp.add(link);
                 JDWebinterface.Link_Adder_Packages.add(fp);
             } else {
-                String newPackageName = autoPackage ? getSimString(JDWebinterface.Link_Adder_Packages.get(bestIndex).getName(), packageName) : packageName;
+                String newPackageName = autoPackage ? JDUtilities.getSimString(JDWebinterface.Link_Adder_Packages.get(bestIndex).getName(), packageName) : packageName;
                 JDWebinterface.Link_Adder_Packages.get(bestIndex).setName(newPackageName);
                 JDWebinterface.Link_Adder_Packages.get(bestIndex).add(link);
             }
@@ -140,20 +140,6 @@ public class JDSimpleWebserverRequestHandler {
         return c * 100 / b.length();
     }
 
-    private String getSimString(String a, String b) {
-
-        String ret = "";
-        for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
-            if (a.charAt(i) == b.charAt(i)) {
-                ret += a.charAt(i);
-            } else {
-                // return ret;
-            }
-        }
-        return ret;
-    }
-
-    // @SuppressWarnings("static-access")
     public void handle() {
 
         String request = headers.get(null);
@@ -555,7 +541,7 @@ public class JDSimpleWebserverRequestHandler {
             wrapper = pluginsForContainer.get(i);
             if (wrapper.canHandle(file.getName())) {
                 try {
-                    pContainer=(PluginsC)wrapper.getNewPluginInstance();                 
+                    pContainer = (PluginsC) wrapper.getNewPluginInstance();
                     pContainer.initContainer(file.getAbsolutePath());
                     Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
                     if (links != null && links.size() != 0) {
