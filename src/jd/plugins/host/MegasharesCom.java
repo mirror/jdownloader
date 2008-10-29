@@ -18,11 +18,15 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
@@ -33,8 +37,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
+
+/*TODO: Support für andere Linkcards(bestimmte Anzahl Downloads,unlimited usw) einbauen*/
 
 public class MegasharesCom extends PluginForHost {
     static private final String AGB_LINK = "http://d01.megashares.com/tos.php";
@@ -43,12 +48,62 @@ public class MegasharesCom extends PluginForHost {
 
     public MegasharesCom(PluginWrapper wrapper) {
         super(wrapper);
+        enablePremium("http://www.megashares.com/lc_order.php?tid=sasky");
+    }
+
+    private void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("http://d01.megashares.com/");
+        br.postPage("http://d01.megashares.com/", "lc_email=" + Encoding.urlEncode(account.getUser()) + "&lc_pin=" + Encoding.urlEncode(account.getPass()) + "&lc_signin=Sign-In");
+        if (br.getCookie("http://megashares.com", "linkcard") == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        String expires = br.getRegex("</font> Expires: <font.*?>(.*?)</font>").getMatch(0);
+        if (expires == null) {
+            ai.setValid(false);
+            return ai;
+        }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.UK);
+        try {
+            Date date = dateFormat.parse(expires);
+            ai.setValidUntil(date.getTime());
+        } catch (ParseException e) {
+        }
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        login(account);
+        // Password protection
+        br.getPage(downloadLink.getDownloadURL());
+        if (!checkPassword(downloadLink)) { return; }
+        String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
+        if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        dl = br.openDownload(downloadLink, dlLink, true, 0);
+        if (!dl.connect(br).isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        dl.startDownload();
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         String link = downloadLink.getDownloadURL();
-        br.setDebug(false);
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         br.getPage(link);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Cookies holen
@@ -84,7 +139,6 @@ public class MegasharesCom extends PluginForHost {
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
             String code = Plugin.getCaptchaCode(file, this, downloadLink);
-            // /?d01=ec0acc7&
             String geturl = link + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
             br.getPage(geturl);
             br.getPage(link);
@@ -102,28 +156,15 @@ public class MegasharesCom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        // // aktuellen Fortschritt prüfen und range Header setzen
-        // long[] chunkProgress = downloadLink.getChunksProgress();
-        // if (chunkProgress != null) {
-        // br.getHeaders().put("Range", "bytes=" + (chunkProgress[0] + 1) +
-        // "-");
-        //
-        // }
         // Dateigröße holen
         dat = br.getRegex("<dt>Filename:&nbsp;<strong>(.*?)</strong>&nbsp;&nbsp;&nbsp;(.*?)</dt>").getRow(0);
-
         br.setDebug(true);
-
-        dl = RAFDownload.download(downloadLink, br.createRequest(url), true, 1);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, url, true, 1);
         if (!dl.connect(br).isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-
-        // downloadLink.setDownloadSize(Regex.getSize(dat[1]));
-        // dl.setFilesize(Regex.getSize(dat[1]));
-        // dl.setFilesizeCheck(false);
-        // dl.setResume(true);
         dl.startDownload();
     }
 
@@ -164,10 +205,6 @@ public class MegasharesCom extends PluginForHost {
         return true;
     }
 
-    public AccountInfo getAccountInformation(Account account) throws Exception {
-        return null;
-    }
-
     @Override
     public String getAGBLink() {
         return AGB_LINK;
@@ -186,7 +223,6 @@ public class MegasharesCom extends PluginForHost {
             return true;
         }
         if (br.containsHTML("This link requires a password")) {
-
             downloadLink.getLinkStatus().setStatusText("Password protected");
             return true;
         }
@@ -195,12 +231,10 @@ public class MegasharesCom extends PluginForHost {
         downloadLink.setName(dat[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
         return true;
-
     }
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 

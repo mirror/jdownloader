@@ -67,7 +67,8 @@ public class BluehostTo extends PluginForHost {
         }
         Form[] forms = br.getForms();
         dl = br.openDownload(downloadLink, forms[2], false, 1);
-        if (!dl.getConnection().isContentDisposition()) {            
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         }
         dl.startDownload();

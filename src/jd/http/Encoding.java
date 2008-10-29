@@ -115,10 +115,9 @@ public class Encoding {
      * @param str
      * @return str URLCodiert
      */
-    @SuppressWarnings("deprecation")
     public static String urlEncode(String str) {
         try {
-            return URLEncoder.encode(str);
+            return URLEncoder.encode(str,"UTF-8");
         } catch (Exception e) {
             // TODO: handle exception
         }
