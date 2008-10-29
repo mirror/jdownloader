@@ -122,7 +122,7 @@ public class DistributeData extends ControlBroadcaster {
      * @return
      */
     private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
-        if (decryptedLinks.size() == 0) { return false; }
+        if (decryptedLinks.isEmpty()) return false;
         boolean hasDecryptedLinks = false;
 
         for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
@@ -147,18 +147,18 @@ public class DistributeData extends ControlBroadcaster {
 
                         CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
                         url = plg.cutMatches(url);
-                        /* reicht die Decrypter Passwörter weiter */
-                        for (CryptedLink clink : decryptableLinks) {
-                            clink.setDecrypterPassword(link.getDecrypterPassword());
+                        // Reicht die Decrypter Passwörter weiter
+                        for (CryptedLink cLink : decryptableLinks) {
+                            cLink.setDecrypterPassword(link.getDecrypterPassword());
                         }
-                        ArrayList<DownloadLink> links = plg.decryptLinks(decryptableLinks);
 
-                        // Reicht die passwörter weiter
-                        for (int t = 0; t < links.size(); t++) {
-                            links.get(t).addSourcePluginPasswords(link.getSourcePluginPasswords());
+                        ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
+                        // Reicht die Passwörter weiter
+                        for (DownloadLink dLink : dLinks) {
+                            dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
                         }
-                        decryptedLinks.addAll(links);
 
+                        decryptedLinks.addAll(dLinks);
                         canDecrypt = true;
                         break;
                     } catch (Exception e) {
@@ -180,8 +180,7 @@ public class DistributeData extends ControlBroadcaster {
      * Ermittelt über die Plugins alle Passenden Links und gibt diese in einem
      * Vector zurück
      * 
-     * @param (optional) searchpw (true,false))
-     * @return link-Vector
+     * @return Link-Vector
      */
     public Vector<DownloadLink> findLinks() {
         return findLinks(true);
@@ -197,8 +196,6 @@ public class DistributeData extends ControlBroadcaster {
             foundPasswords = HTMLParser.findPasswords(data);
         }
 
-        // Zuerst wird data durch die Such Plugins geschickt.
-        // decryptedLinks.addAll(handleSearchPlugins());
         this.orgData = data;
         reformDataString();
 
@@ -242,8 +239,8 @@ public class DistributeData extends ControlBroadcaster {
         useHoster(foundPasswords, links);
         data = data.replaceAll("http://", "httpviajd://");
         useHoster(foundPasswords, links);
-
         data = data.replaceAll("httpviajd://", "http://");
+
         return links;
     }
 

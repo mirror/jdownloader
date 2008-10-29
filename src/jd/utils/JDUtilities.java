@@ -46,29 +46,19 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import java.util.SimpleTimeZone;
 import java.util.Vector;
 import java.util.concurrent.Semaphore;
@@ -86,11 +76,6 @@ import java.util.zip.CheckedInputStream;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
@@ -118,8 +103,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-
-import org.w3c.dom.Document;
 
 /**
  * @author astaldo/JD-Team
@@ -184,13 +167,10 @@ public class JDUtilities {
      */
     public static Logger logger = JDUtilities.getLogger();
 
-    /**
-     * RessourceBundle für Texte
-     */
-    private static ResourceBundle resourceBundle = null;
-
     public static final int RUNTYPE_LOCAL = 1;
+
     public static final int RUNTYPE_LOCAL_ENV = 3;
+
     public static final int RUNTYPE_LOCAL_JARED = 2;
 
     private static final int RUNTYPE_WEBSTART = 0;
@@ -205,7 +185,6 @@ public class JDUtilities {
     private static Semaphore userio_sem = new Semaphore(1);
 
     public static String getSimString(String a, String b) {
-
         String ret = "";
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
             if (a.charAt(i) == b.charAt(i)) {
@@ -240,26 +219,6 @@ public class JDUtilities {
     public static void addImage(String imageName, Image image) {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
         images.put(imageName, image);
-    }
-
-    public static String asHex(byte buf[]) {
-        StringBuffer strbuf = new StringBuffer(buf.length * 2);
-        int i;
-        strbuf.append("new byte[]{");
-        for (i = 0; i < buf.length; i++) {
-            strbuf.append("(byte) 0x");
-            if (((int) buf[i] & 0xff) < 0x10) {
-                strbuf.append("0");
-            }
-
-            strbuf.append(Long.toString((int) buf[i] & 0xff, 16));
-            if (i < buf.length - 1) {
-                strbuf.append(", ");
-            }
-        }
-        strbuf.append("};");
-
-        return strbuf.toString();
     }
 
     /**
@@ -367,41 +326,9 @@ public class JDUtilities {
         if (captchaCode == null) {
             captchaCode = "null";
         }
-        String isGoodText;
-        if (isGood) {
-            isGoodText = "_GOOD";
-        } else {
-            isGoodText = "_BAD";
-        }
         int idx = dest.lastIndexOf('.');
-        dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + isGoodText + dest.substring(idx);
-        final File file2 = new File(dest);
-        file.renameTo(file2);
-        /*
-         * if(!isGood) { new Thread(new Runnable(){
-         * 
-         * public void run() { Upload.uploadToCollector(plugin, file2);
-         * 
-         * }}).start(); }
-         */
-    }
-
-    public static String arrayToString(String[] a, String separator) {
-
-        String result = "";
-
-        if (a.length > 0) {
-
-            result = a[0];
-
-            for (int i = 1; i < a.length; i++) {
-                result = result + separator + a[i];
-            }
-
-        }
-
-        return result;
-
+        dest = dest.substring(0, idx) + "_" + captchaCode.toUpperCase() + (isGood ? "_GOOD" : "_BAD") + dest.substring(idx);
+        file.renameTo(new File(dest));
     }
 
     public static String convertExceptionReadable(Exception e) {
@@ -463,7 +390,6 @@ public class JDUtilities {
             }
             return false;
         } catch (IOException e) {
-
             e.printStackTrace();
         }
         try {
@@ -475,7 +401,6 @@ public class JDUtilities {
                 outChannel.close();
             }
         } catch (IOException e) {
-
             e.printStackTrace();
             return false;
         }
@@ -486,11 +411,7 @@ public class JDUtilities {
         ArrayList<CPluginWrapper> pfc = CPluginWrapper.getCWrapper();
         for (int i = 0; i < pfc.size(); i++) {
             String pn = pfc.get(i).getHost();
-            if (pn.equalsIgnoreCase(encryption)) {
-
-            return pfc.get(i).getPlugin().createContainerString(downloadLinks);
-
-            }
+            if (pn.equalsIgnoreCase(encryption)) return pfc.get(i).getPlugin().createContainerString(downloadLinks);
         }
         return null;
     }
@@ -575,31 +496,17 @@ public class JDUtilities {
     }
 
     public static String formatKbReadable(int value) {
-
         DecimalFormat c = new DecimalFormat("0.00");
-        ;
-        if (value >= 1024 * 1024) {
-
-        return c.format(value / (1024 * 1024.0)) + " GB"; }
-        if (value >= 1024) {
-
-        return c.format(value / 1024.0) + " MB"; }
+        if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
+        if (value >= 1024) return c.format(value / 1024.0) + " MB";
         return value + " KB";
-
     }
 
     public static String formatKbReadable(long value) {
-
         DecimalFormat c = new DecimalFormat("0.00");
-        ;
-        if (value >= 1024 * 1024) {
-
-        return c.format(value / (1024 * 1024.0)) + " GB"; }
-        if (value >= 1024) {
-
-        return c.format(value / 1024.0) + " MB"; }
+        if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
+        if (value >= 1024) return c.format(value / 1024.0) + " MB";
         return value + " KB";
-
     }
 
     /**
@@ -875,40 +782,6 @@ public class JDUtilities {
     }
 
     /**
-     * Untersucht zwei String, ob zwei String ähnlich anfangen. Der
-     * übereinstimmende Text wird dann zurückgegeben
-     * 
-     * @param a
-     *            Erster String, der vergleicht werden soll
-     * @param b
-     *            Zweiter String, der vergleicht werden soll
-     * @return Übereinstimmender Text
-     */
-    public static String getEqualString(String a, String b) {
-        String first, second;
-        int index = 0;
-        if (a.length() <= b.length()) {
-            first = a.toLowerCase();
-            second = b.toLowerCase();
-        } else {
-            first = b;
-            second = a;
-        }
-        for (int i = 0; i < first.length(); i++) {
-            if (first.charAt(i) == second.charAt(i)) {
-                index = i;
-            } else {
-                break;
-            }
-        }
-        if (index > 0) {
-            return first.substring(0, index + 1);
-        } else {
-            return "";
-        }
-    }
-
-    /***************************************************************************
      * Gibt die Endung einer FIle zurück oder null
      * 
      * @param ret
@@ -927,81 +800,6 @@ public class JDUtilities {
     public static UIInterface getGUI() {
         if (JDUtilities.getController() == null) { return null; }
         return JDUtilities.getController().getUiInterface();
-    }
-
-    // /**
-    // * @author astaldo
-    // * @return homeDirectory
-    // */
-    // public static String getHomeDirectory() {
-    // return homeDirectory;
-    // }
-
-    /**
-     * Lädt eine Klasse aus dem homedir. UNd instanziert sie mit den gegebenen
-     * arumenten
-     * 
-     * @param classPath
-     * @param arguments
-     * @return
-     */
-    @SuppressWarnings("unchecked")
-    public static Object getHomeDirInstance(String classPath, Object[] arguments) {
-        classPath = classPath.replaceAll("\\.class", "");
-        classPath = classPath.replaceAll("\\/", ".");
-        classPath = classPath.replaceAll("\\\\", ".");
-        logger.finer("Load Class form homedir: " + classPath);
-        Class newClass = null;
-        // Zuerst versuchen die klasse aus dem appdir zu laden( praktisch zum
-        // entwicklen solcher klassen)
-        try {
-            newClass = Class.forName(classPath);
-        } catch (ClassNotFoundException e1) {
-        }
-        // Falls das nicht geklappt hat wird die klasse im homedir gesucht
-        if (newClass == null) {
-            try {
-                String url = Encoding.urlEncode(new File(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath()).toURI().toURL().toString());
-                URLClassLoader cl = new URLClassLoader(new URL[] { new URL(url) }, Thread.currentThread().getContextClassLoader());
-                newClass = Class.forName(classPath, true, cl);
-            } catch (ClassNotFoundException e) {
-
-                e.printStackTrace();
-            } catch (MalformedURLException e) {
-
-                e.printStackTrace();
-            }
-        }
-        try {
-            // newClass = Class.forName(classPath);
-            Class[] classes = new Class[arguments.length];
-            for (int i = 0; i < arguments.length; i++) {
-                classes[i] = arguments[i].getClass();
-            }
-            Constructor con = newClass.getConstructor(classes);
-            return con.newInstance(arguments);
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (NoSuchMethodException e) {
-
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-
-            e.printStackTrace();
-        } catch (InstantiationException e) {
-
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-
-            e.printStackTrace();
-        } catch (Exception e) {
-
-            e.printStackTrace();
-        }
-        return null;
     }
 
     /**
@@ -1096,7 +894,6 @@ public class JDUtilities {
      * @return gibt den Pfad zu den JAC Methoden zurück
      */
     public static String getJACMethodsDirectory() {
-
         return "jd/captcha/methods/";
     }
 
@@ -1317,53 +1114,33 @@ public class JDUtilities {
                 }
 
                 public void publish(LogRecord logRecord) {
-                    // System.out.println(logRecord.getLevel() + ":");
-                    // System.out.println(logRecord.getSourceClassName() + ":");
-                    // System.out.println(logRecord.getSourceMethodName() +
-                    // ":");
-                    // System.out.println("<" + logRecord.getMessage() + ">");
-                    // System.out.println("\n");
                     if (JDUtilities.getController() != null) {
                         JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LOG_OCCURED, logRecord);
                     }
                 }
             });
 
-            // logger.finer("Init Logger:" + LOGGER_NAME);
-            // Leitet System.out zum Logger um.
-            // final PrintStream err = System.err;
             OutputStream os = new OutputStream() {
                 private StringBuffer buffer = new StringBuffer();
 
                 public void write(int b) throws IOException {
-                    // err.write(b);
                     if (b == 13 || b == 10) {
                         if (buffer.length() > 0) {
                             JDUtilities.getLogger().severe(buffer.toString());
                             if (buffer.indexOf("OutOfMemoryError") >= 0) {
                                 logger.finer("Restart");
-                                boolean res;
-                                res = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"));
-
-                                if (res) {
-
+                                if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"))) {
                                     JDUtilities.restartJD();
                                 }
                             }
-
                         }
                         buffer = new StringBuffer();
-
                     } else {
                         buffer.append((char) b);
-
                     }
-
                 }
-
             };
             System.setErr(new PrintStream(os));
-
         }
         return logger;
     }
@@ -1414,8 +1191,6 @@ public class JDUtilities {
 
     public static String getPercent(long downloadCurrent, long downloadMax) {
         DecimalFormat c = new DecimalFormat("0.00");
-        ;
-
         return c.format(100.0 * downloadCurrent / (double) downloadMax) + "%";
     }
 
@@ -1506,22 +1281,6 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert einer char aus dem aktuellen ResourceBundle zurück
-     * 
-     * @param key
-     *            Identifier des gewünschten chars
-     * @return der gewünschte char
-     */
-    public static char getResourceChar(String key) {
-        char result = 0;
-        String s = JDUtilities.getResourceString(key);
-        if (s != null && s.length() > 0) {
-            result = s.charAt(0);
-        }
-        return result;
-    }
-
-    /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
      * @author JD-Team
@@ -1547,30 +1306,6 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert eine Zeichenkette aus dem aktuellen ResourceBundle zurück
-     * 
-     * @param key
-     *            Identifier der gewünschten Zeichenkette
-     * @return Die gewünschte Zeichnenkette
-     */
-    public static String getResourceString(String key) {
-        if (resourceBundle == null) {
-            if (locale == null) {
-                locale = Locale.getDefault();
-            }
-            resourceBundle = ResourceBundle.getBundle("LanguagePack", locale);
-        }
-        String result = key;
-        try {
-
-            result = resourceBundle.getString(key);
-        } catch (MissingResourceException e) {
-            logger.warning("resource missing:" + e.getKey());
-        }
-        return result;
-    }
-
-    /**
      * Parsed den Revision-String ins Format 0.000
      * 
      * @return RevisionID
@@ -1591,9 +1326,6 @@ public class JDUtilities {
         return ret == null ? "0.0" : ret;
     }
 
-    /**
-     * 
-     */
     public static int getRunType() {
 
         try {
@@ -1639,19 +1371,6 @@ public class JDUtilities {
         return JDUtilities.getScaledImageIcon(JDUtilities.getImage(imageName), width, height);
     }
 
-    /**
-     * Gibt den Stacktrace einer exception zurück
-     * 
-     * @param e
-     * @return
-     */
-    public static String getStackTraceForException(Exception e) {
-        StringWriter sw = new StringWriter(2000);
-        PrintWriter pw = new PrintWriter(sw);
-        e.printStackTrace(pw);
-        return sw.getBuffer().toString();
-    }
-
     public static SubConfiguration getSubConfig(String name) {
         if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
 
@@ -1676,7 +1395,6 @@ public class JDUtilities {
      * @return Das geladene Objekt
      */
     public static Object loadObject(JFrame frame, File fileInput, boolean asXML) {
-        // logger.info("load file: " + fileInput + " (xml:" + asXML + ")");
         Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
@@ -1689,13 +1407,10 @@ public class JDUtilities {
             }
         }
         if (fileInput != null) {
-            // String hash = getLocalHash(fileInput);
-            try {
-                JDUtilities.waitOnObject(fileInput);
-                saveReadObject.add(fileInput);
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
+
+            JDUtilities.waitOnObject(fileInput);
+            saveReadObject.add(fileInput);
+
             try {
                 FileInputStream fis = new FileInputStream(fileInput);
                 BufferedInputStream buff = new BufferedInputStream(fis);
@@ -1710,61 +1425,23 @@ public class JDUtilities {
                 }
                 fis.close();
                 buff.close();
-                // Object15475dea4e088fe0e9445da30604acd1
-                // Object80d11614908074272d6b79abe91eeca1
-                // logger.info("Loaded Object (" + hash + "): ");
-                try {
-                    saveReadObject.remove(fileInput);
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
-                return objectLoaded;
-            } catch (ClassNotFoundException e) {
-                logger.severe(e.getMessage());
-                // e.printStackTrace();
-            } catch (FileNotFoundException e) {
-                logger.severe(e.getMessage());
-            } catch (IOException e) {
-                logger.severe(e.getMessage());
-            } catch (Exception e) {
-                logger.severe(e.getMessage());
-            }
-            try {
+
                 saveReadObject.remove(fileInput);
+                return objectLoaded;
             } catch (Exception e) {
-                // TODO: handle exception
+                logger.severe(e.getMessage());
             }
+            saveReadObject.remove(fileInput);
         }
         return null;
     }
 
-    public static void logException(Error e) {
-        JDUtilities.getLogger().log(Level.SEVERE, "Error", e);
-        e.printStackTrace();
-
-    }
-
-    /**
-     * Fügt dem Log eine Exception hinzu
-     * 
-     * @param e
-     */
-    public static void logException(Exception e) {
-        JDUtilities.getLogger().log(Level.SEVERE, "Exception", e);
-        e.printStackTrace();
-    }
-
     public static void playMp3(File file) {
-        AdvancedPlayer p;
         try {
-            p = new AdvancedPlayer(new FileInputStream(file.getAbsolutePath()));
-
-            p.play();
+            new AdvancedPlayer(new FileInputStream(file.getAbsolutePath())).play();
         } catch (FileNotFoundException e) {
-
             e.printStackTrace();
         } catch (JavaLayerException e) {
-
             e.printStackTrace();
         }
     }
@@ -1779,19 +1456,6 @@ public class JDUtilities {
         }
 
         return dir.delete();
-    }
-
-    /**
-     * Ersetzt die Platzhalter in einem String
-     * 
-     * @param command
-     * @return Neuer String mit ersetzen Platzhaltern
-     */
-    public static String replacePlaceHolder(String command) {
-        if (controller == null) { return command; }
-        command = command.replaceAll("\\%LASTFILE", controller.getLastFinishedFile());
-        command = command.replaceAll("\\%CAPTCHAIMAGE", controller.getLastCaptchaImage());
-        return command;
     }
 
     public static void restartJD() {
@@ -1855,7 +1519,6 @@ public class JDUtilities {
      *            Soll das Objekt in eine XML Datei gespeichert werden?
      */
     public static void saveObject(JFrame frame, Object objectToSave, File fileOutput, String name, String extension, boolean asXML) {
-        // String hashPre;
         if (fileOutput == null) {
             JDFileFilter fileFilter = new JDFileFilter(extension, extension, true);
             JFileChooser fileChooserSave = new JFileChooser();
@@ -1869,19 +1532,16 @@ public class JDUtilities {
                 currentDirectory = fileChooserSave.getCurrentDirectory();
             }
         }
-        // logger.info("save file: " + fileOutput + " object: " + objectToSave);
+
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
 
             }
-            try {
-                JDUtilities.waitOnObject(fileOutput);
-                saveReadObject.add(fileOutput);
-            } catch (Exception e) {
-                // TODO: handle exception
-            }
-            // hashPre = getLocalHash(fileOutput);
+
+            JDUtilities.waitOnObject(fileOutput);
+            saveReadObject.add(fileOutput);
+
             if (fileOutput.exists()) {
                 fileOutput.delete();
             }
@@ -1905,27 +1565,11 @@ public class JDUtilities {
                 e.printStackTrace();
             }
             String hashPost = JDUtilities.getLocalHash(fileOutput);
-            // if (fileOutput.exists()) {
-            // logger.info(fileOutput.delete()+"");
-            // }
-            // logger.info(""+objectToSave);
             if (hashPost == null) {
                 logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
-            } // else if (hashPost.equals(hashPre)) {
-            // logger.warning("Schreibvorgang: " + fileOutput + " Datei
-            // wurde nicht überschrieben "+hashPost+" - "+hashPre);
-            // } else {
-            // logger.finer("Schreibvorgang: " + fileOutput + " erfolgreich:
-            // " + hashPost);
-            // }
-            try {
-                saveReadObject.remove(fileOutput);
-            } catch (Exception e) {
-                // TODO: handle exception
             }
+            saveReadObject.remove(fileOutput);
 
-            // logger.info(" -->"+JDUtilities.loadObject(null, fileOutput,
-            // false));
         } else {
             logger.severe("Schreibfehler: Fileoutput: null");
         }
@@ -1948,7 +1592,7 @@ public class JDUtilities {
      * @param bytearray
      * @return Erfolg true/false
      */
-    public static boolean savetofile(File file, byte[] b) {
+    public static boolean saveToFile(File file, byte[] b) {
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
@@ -1964,12 +1608,6 @@ public class JDUtilities {
             output.write(b, 0, b.length);
             output.close();
             return true;
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-            return false;
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -2018,22 +1656,6 @@ public class JDUtilities {
         } catch (InterruptedException e) {
             return false;
         }
-
-    }
-
-    /**
-     * Sortiert einen Vector<HashMap<String, Comparable>>
-     * 
-     * @param packageData
-     * @param key
-     */
-    public static void sortHashVectorOn(Vector<HashMap<String, String>> packageData, final String key) {
-        if (packageData.size() == 0 || !packageData.get(0).containsKey(key)) { return; }
-        Collections.sort(packageData, new Comparator<HashMap<String, String>>() {
-            public int compare(HashMap<String, String> a, HashMap<String, String> b) {
-                return a.get(key).compareTo(b.get(key));
-            }
-        });
 
     }
 
@@ -2119,28 +1741,6 @@ public class JDUtilities {
             // e.printStackTrace();
             return false;
         }
-    }
-
-    public static String xmltoStr(Document header) {
-        Transformer transformer;
-        try {
-            transformer = TransformerFactory.newInstance().newTransformer();
-
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-
-            // initialize StreamResult with File object to save to file
-            StreamResult result = new StreamResult(new StringWriter());
-
-            DOMSource source = new DOMSource(header);
-
-            transformer.transform(source, result);
-
-            String xmlString = result.getWriter().toString();
-            return xmlString;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public static DatabaseConnector getDatabaseConnector() {

@@ -186,7 +186,7 @@ public class JDSimpleWebserver extends Thread {
                                                     }
                                                     if (containertyp != null && (containertyp.contains("dlc") || containertyp.contains("ccf") || containertyp.contains("rsdf"))) {
                                                         File containerfile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containertyp);
-                                                        if (JDUtilities.savetofile(containerfile, JDHexUtils.getByteArray(element[0].substring(element[0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
+                                                        if (JDUtilities.saveToFile(containerfile, JDHexUtils.getByteArray(element[0].substring(element[0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
                                                             /*
                                                              * RequestParameter
                                                              * zusammenbauen
