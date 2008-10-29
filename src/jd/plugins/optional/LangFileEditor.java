@@ -32,10 +32,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.HashMap;
+import java.util.TreeMap;
 import java.util.Vector;
-import java.util.regex.Pattern;
+import java.util.Map.Entry;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBoxMenuItem;
@@ -84,7 +84,8 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
  * entries from source and compares them to the keypairs in the language file.
  * 
- * @author eXecuTe|Greeny
+ * @author eXecuTe
+ * @author Greeny
  */
 
 public class LangFileEditor extends PluginOptional implements MouseListener {
@@ -113,11 +114,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
-    private Vector<String[]> sourceEntries = new Vector<String[]>();
-    private Vector<Pattern> sourcePatterns = new Vector<Pattern>();
-    private Vector<String[]> fileEntries = new Vector<String[]>();
-    private Vector<String[]> data = new Vector<String[]>();
-    private Vector<String[]> dupes = new Vector<String[]>();
+    private HashMap<String, String> sourceEntries = new HashMap<String, String>();
+    private Vector<String> sourcePatterns = new Vector<String>();
+    private HashMap<String, String> fileEntries = new HashMap<String, String>();
+    private TreeMap<String, KeyInfo> data = new TreeMap<String, KeyInfo>();
+    private HashMap<String, Vector<String>> dupes = new HashMap<String, Vector<String>>();
     private String lngKey = null;
     private String searchFor = "";
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
@@ -227,11 +228,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         int numMissing = 0, numOld = 0;
 
-        for (String[] entry : data) {
+        for (KeyInfo entry : data.values()) {
 
-            if (entry[1].equals("")) {
+            if (entry.isOld()) {
                 numOld++;
-            } else if (entry[2].equals("")) {
+            } else if (entry.isMissing()) {
                 numMissing++;
             }
 
@@ -615,14 +616,21 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     }
 
+    @SuppressWarnings("unchecked")
     private void deleteSelectedKeys() {
         int[] rows = getSelectedRows();
 
         int len = rows.length - 1;
+        String[] keys = dupes.keySet().toArray(new String[dupes.size()]);
+        Object[] obj = dupes.values().toArray();
+        Vector<String> values;
         for (int i = len; i >= 0; --i) {
-            String temp = data.remove(rows[i])[0];
-            for (int j = dupes.size() - 1; j >= 0; --j) {
-                if (dupes.get(j)[1].equals(temp) || dupes.get(j)[2].equals(temp)) dupes.remove(j);
+            String temp = tableModel.getValueAt(rows[i], 0);
+            data.remove(temp);
+            for (int j = obj.length - 1; j >= 0; --j) {
+                values = (Vector<String>) obj[j];
+                values.remove(temp);
+                if (values.size() == 1) dupes.remove(keys[j]);
             }
             tableModel.fireTableRowsDeleted(rows[i], rows[i]);
         }
@@ -666,8 +674,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private void saveLanguageFile(File file) {
         StringBuilder sb = new StringBuilder();
 
-        for (String[] entry : data) {
-            if (!entry[2].equals("")) sb.append(entry[0] + " = " + entry[2] + "\n");
+        for (Entry<String, KeyInfo> entry : data.entrySet()) {
+            if (!entry.getValue().isMissing()) sb.append(entry.getKey() + " = " + entry.getValue().getLanguage() + "\n");
         }
 
         try {
@@ -685,54 +693,61 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private void initLocaleData() {
 
-        Vector<String[]> dupeHelp = new Vector<String[]>();
+        HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
         dupes.clear();
         lngKey = null;
 
         String value;
-        String[] temp;
-        for (String[] entry : sourceEntries) {
+        Vector<String> values;
+        String key;
+        String language;
+        KeyInfo keyInfo;
+        for (Entry<String, String> entry : sourceEntries.entrySet()) {
 
-            temp = new String[] { entry[0], entry[1], getValue(fileEntries, entry[0]) };
-            if (temp[2] == null) temp[2] = "";
+            key = entry.getKey();
+            keyInfo = new KeyInfo(entry.getValue(), fileEntries.get(entry.getKey()));
+            data.put(key, keyInfo);
+            if (!keyInfo.isMissing()) {
 
-            data.add(temp);
-            if (!temp[2].equals("")) {
-
-                value = getValue(dupeHelp, temp[2]);
-                if (value != null) dupes.add(new String[] { temp[2], temp[0], value });
-                dupeHelp.add(new String[] { temp[2], temp[0] });
+                language = keyInfo.getLanguage();
+                if (dupeHelp.containsKey(language)) {
+                    values = dupes.get(language);
+                    if (values != null) {
+                        values.add(key);
+                    } else {
+                        values = new Vector<String>();
+                        values.add(dupeHelp.get(language));
+                        values.add(key);
+                        dupes.put(language, values);
+                    }
+                }
+                dupeHelp.put(language, key);
 
             }
 
         }
 
-        String info;
-        for (String[] entry : fileEntries) {
+        for (Entry<String, String> entry : fileEntries.entrySet()) {
 
-            if (getValue(data, entry[0]) == null) {
+            key = entry.getKey();
+            if (!data.containsKey(key)) {
 
-                info = "";
+                value = null;
 
-                for (Pattern pattern : sourcePatterns) {
-                    if (pattern.matcher(entry[0]).matches()) {
-                        info = JDLocale.L("plugins.optional.langfileeditor.patternEntry", "<Entry matches Pattern>");
+                for (String pattern : sourcePatterns) {
+                    if (key.matches(pattern)) {
+                        value = JDLocale.L("plugins.optional.langfileeditor.patternEntry", "<Entry matches Pattern>");
                         break;
                     }
                 }
 
-                data.add(new String[] { entry[0], info, entry[1] });
+                data.put(key, new KeyInfo(value, entry.getValue()));
 
             }
 
         }
 
-        Collections.sort(data, new Comparator<String[]>() {
-            public int compare(String[] a, String[] b) {
-                return a[0].compareToIgnoreCase(b[0]);
-            }
-        });
         tableModel.fireTableRowsInserted(0, data.size() - 1);
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
 
@@ -744,42 +759,30 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuSaveAs.setEnabled(true);
     }
 
-    private String getValue(Vector<String[]> vector, String key) {
-
-        for (String[] entry : vector) {
-            if (entry[0].equalsIgnoreCase(key)) return entry[1];
-        }
-
-        return null;
-
-    }
-
     private void getLanguageFileEntries() {
 
         getLanguageFileEntries(languageFile, fileEntries);
 
     }
 
-    private void getLanguageFileEntries(File file, Vector<String[]> data) {
+    private void getLanguageFileEntries(File file, HashMap<String, String> data) {
 
         data.clear();
-        Vector<String> keys = new Vector<String>();
 
         String[] lines = Regex.getLines(JDUtilities.getLocalFile(file));
         String[] match;
 
         for (String line : lines) {
-            match = new Regex(line, Pattern.compile("^(.*?)[\\s]*?=[\\s]*?(.*?)$")).getRow(0);
+            match = new Regex(line, "^(.*?)[\\s]*?=[\\s]*?(.*?)$").getRow(0);
             if (match == null) continue;
 
             match[0] = match[0].trim().toLowerCase();
             match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
-            if (!keys.contains(match[0]) && !match[0].equals("") && !match[1].equals("")) {
+            if (!data.containsKey(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
                 match[0] = Encoding.UTF8Decode(match[0]);
                 match[1] = Encoding.UTF8Decode(match[1]);
-                keys.add(match[0]);
-                data.add(new String[] { match[0], match[1] });
+                data.put(match[0], match[1]);
 
             }
 
@@ -808,35 +811,29 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         sourceEntries.clear();
         sourcePatterns.clear();
-        Vector<String> keys = new Vector<String>();
 
         String[][] matches;
         for (File file : getSourceFiles(sourceFile)) {
 
-            matches = new Regex(JDUtilities.getLocalFile(file), Pattern.compile("JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]")).getMatches();
+            matches = new Regex(JDUtilities.getLocalFile(file), "JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]").getMatches();
 
             for (String[] match : matches) {
 
                 match[0] = match[0].trim().toLowerCase();
-                if (keys.contains(match[0])) continue;
+                if (sourceEntries.containsKey(match[0])) continue;
 
                 if (match[0].indexOf("\"") == -1) {
 
                     match[0] = Encoding.UTF8Decode(match[0]);
                     match[1] = Encoding.UTF8Decode(match[1].substring(1, match[1].length() - 1));
-                    keys.add(match[0]);
-                    sourceEntries.add(new String[] { match[0], match[1] });
+                    sourceEntries.put(match[0], match[1]);
 
                 } else {
 
                     if (match[0].contains(",")) match[0] = match[0].substring(0, match[0].indexOf(",") + 1);
                     match[0] = match[0].replaceAll("\\.", "\\\\.");
                     match[0] = match[0].replaceAll("\"(.*?)[\",]", "(.*?)");
-
-                    if (keys.contains(match[0])) continue;
-
-                    keys.add(Encoding.UTF8Decode(match[0]));
-                    sourcePatterns.add(Pattern.compile(match[0], Pattern.CASE_INSENSITIVE));
+                    sourcePatterns.add(match[0]);
 
                 }
 
@@ -891,6 +888,43 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     public void mouseReleased(MouseEvent e) {
     }
 
+    private class KeyInfo {
+
+        private String source = "";
+
+        private String language = "";
+
+        public KeyInfo(String source, String language) {
+            this.setSource(source);
+            this.setLanguage(language);
+        }
+
+        public String getLanguage() {
+            return this.language;
+        }
+
+        public String getSource() {
+            return this.source;
+        }
+
+        public void setLanguage(String language) {
+            if (language != null) this.language = language;
+        }
+
+        public void setSource(String source) {
+            if (source != null) this.source = source;
+        }
+
+        public boolean isMissing() {
+            return this.getLanguage().equals("");
+        }
+
+        public boolean isOld() {
+            return this.getSource().equals("");
+        }
+
+    }
+
     private class MissingPredicate implements HighlightPredicate {
 
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
@@ -926,7 +960,15 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
 
         public String getValueAt(int row, int col) {
-            return data.get(row)[col];
+            switch (col) {
+            case 0:
+                return data.keySet().toArray(new String[data.size()])[row];
+            case 1:
+                return data.values().toArray(new KeyInfo[data.size()])[row].getSource();
+            case 2:
+                return data.values().toArray(new KeyInfo[data.size()])[row].getLanguage();
+            }
+            return "";
         }
 
         public Class<?> getColumnClass(int c) {
@@ -934,13 +976,15 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
 
         public boolean isCellEditable(int row, int col) {
-            return (col == 2);
+            return (col == 0 || col == 2);
         }
 
         public void setValueAt(Object value, int row, int col) {
-            data.get(row)[col] = (String) value;
-            this.fireTableRowsUpdated(row, row);
-            setInfoLabels();
+            if (col == 2) {
+                data.values().toArray(new KeyInfo[data.size()])[row].setLanguage((String) value);
+                this.fireTableRowsUpdated(row, row);
+                setInfoLabels();
+            }
         }
 
     }
@@ -949,7 +993,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         private static final long serialVersionUID = 1L;
 
-        public DupeDialog(JFrame owner, Vector<String[]> dupes) {
+        public DupeDialog(JFrame owner, HashMap<String, Vector<String>> dupes) {
 
             super(owner);
 
@@ -957,8 +1001,12 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             setLayout(new BorderLayout());
             setTitle(JDLocale.L("plugins.optional.langfileeditor.duplicatedEntries", "Duplicated Entries") + " [" + dupes.size() + "]");
 
-            JXTable table = new JXTable(new MyDupeTableModel(dupes));
+            MyDupeTableModel internalTableModel = new MyDupeTableModel(dupes);
+            JXTable table = new JXTable(internalTableModel);
             table.getTableHeader().setReorderingAllowed(false);
+            table.getColumnModel().getColumn(0).setPreferredWidth(50);
+            table.getColumnModel().getColumn(0).setMinWidth(50);
+            table.getColumnModel().getColumn(0).setMaxWidth(50);
             table.addHighlighter(HighlighterFactory.createAlternateStriping());
             table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
             JScrollPane scroll = new JScrollPane(table);
@@ -990,11 +1038,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             private static final long serialVersionUID = -5434313385327397539L;
 
-            private String[] columnNames = { JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.firstKey", "First Key"), JDLocale.L("plugins.optional.langfileeditor.secondKey", "Second Key") };
+            private String[] columnNames = { "*", JDLocale.L("plugins.optional.langfileeditor.string", "String"), JDLocale.L("plugins.optional.langfileeditor.keys", "Keys") };
 
-            private Vector<String[]> tableData;
+            private HashMap<String, Vector<String>> tableData;
 
-            public MyDupeTableModel(Vector<String[]> data) {
+            public MyDupeTableModel(HashMap<String, Vector<String>> data) {
                 tableData = data;
                 this.fireTableRowsInserted(0, tableData.size() - 1);
             }
@@ -1012,7 +1060,21 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             }
 
             public String getValueAt(int row, int col) {
-                return tableData.get(row)[col];
+                switch (col) {
+                case 0:
+                    return String.valueOf(tableData.get(getValueAt(row, 1)).size());
+                case 1:
+                    return tableData.keySet().toArray(new String[data.size()])[row];
+                case 2:
+                    String ret = "";
+                    Vector<String> values = tableData.get(getValueAt(row, 1));
+                    for (String value : values) {
+                        if (!ret.isEmpty()) ret += ", ";
+                        ret += value;
+                    }
+                    return ret;
+                }
+                return "";
             }
 
             public Class<?> getColumnClass(int c) {
@@ -1020,7 +1082,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             }
 
             public boolean isCellEditable(int row, int col) {
-                return false;
+                return (col == 1);
             }
 
         }
