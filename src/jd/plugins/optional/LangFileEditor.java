@@ -219,7 +219,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         if (sourceFile != null) getSourceEntries();
         languageFile = cmboFile.getCurrentPath();
         if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
-        getLanguageFileEntries();
         initLocaleData();
 
     }
@@ -403,7 +402,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             File languageFile = cmboFile.getCurrentPath();
             if (languageFile != this.languageFile && languageFile != null) {
                 this.languageFile = languageFile;
-                getLanguageFileEntries();
                 initLocaleData();
             }
 
@@ -457,7 +455,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else if (e.getSource() == mnuReload) {
 
             getSourceEntries();
-            getLanguageFileEntries();
             initLocaleData();
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
@@ -693,34 +690,32 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private void initLocaleData() {
 
+        getLanguageFileEntries(languageFile, fileEntries);
+
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
         dupes.clear();
         lngKey = null;
 
-        String value;
         Vector<String> values;
-        String key;
-        String language;
+        String value, key, language;
         KeyInfo keyInfo;
         for (Entry<String, String> entry : sourceEntries.entrySet()) {
 
             key = entry.getKey();
-            keyInfo = new KeyInfo(entry.getValue(), fileEntries.get(entry.getKey()));
+            keyInfo = new KeyInfo(entry.getValue(), fileEntries.remove(key));
             data.put(key, keyInfo);
             if (!keyInfo.isMissing()) {
 
                 language = keyInfo.getLanguage();
                 if (dupeHelp.containsKey(language)) {
                     values = dupes.get(language);
-                    if (values != null) {
-                        values.add(key);
-                    } else {
+                    if (values == null) {
                         values = new Vector<String>();
                         values.add(dupeHelp.get(language));
-                        values.add(key);
                         dupes.put(language, values);
                     }
+                    values.add(key);
                 }
                 dupeHelp.put(language, key);
 
@@ -757,12 +752,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuReload.setEnabled(true);
         mnuSave.setEnabled(true);
         mnuSaveAs.setEnabled(true);
-    }
-
-    private void getLanguageFileEntries() {
-
-        getLanguageFileEntries(languageFile, fileEntries);
-
     }
 
     private void getLanguageFileEntries(File file, HashMap<String, String> data) {
@@ -1007,10 +996,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             table.getColumnModel().getColumn(0).setPreferredWidth(50);
             table.getColumnModel().getColumn(0).setMinWidth(50);
             table.getColumnModel().getColumn(0).setMaxWidth(50);
+            table.getColumnModel().getColumn(2).setMinWidth(450);
             table.addHighlighter(HighlighterFactory.createAlternateStriping());
             table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
-            JScrollPane scroll = new JScrollPane(table);
-            scroll.setPreferredSize(new Dimension(900, 350));
 
             JButton btnClose = new JButton(JDLocale.L("plugins.optional.langfileeditor.close", "Close"));
             btnClose.addActionListener(this);
@@ -1019,9 +1007,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             JPanel buttons = new JPanel(new FlowLayout());
             buttons.add(btnClose);
 
-            add(scroll, BorderLayout.CENTER);
+            add(new JScrollPane(table), BorderLayout.CENTER);
             add(buttons, BorderLayout.PAGE_END);
 
+            setMinimumSize(new Dimension(900, 600));
+            setPreferredSize(new Dimension(900, 600));
             pack();
             setLocation(JDUtilities.getCenterOfComponent(owner, this));
             setVisible(true);
@@ -1042,8 +1032,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             private HashMap<String, Vector<String>> tableData;
 
+            private String[] keys;
+
             public MyDupeTableModel(HashMap<String, Vector<String>> data) {
                 tableData = data;
+                keys = data.keySet().toArray(new String[data.size()]);
                 this.fireTableRowsInserted(0, tableData.size() - 1);
             }
 
@@ -1059,17 +1052,17 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 return columnNames[col];
             }
 
-            public String getValueAt(int row, int col) {
+            public Object getValueAt(int row, int col) {
                 switch (col) {
                 case 0:
-                    return String.valueOf(tableData.get(getValueAt(row, 1)).size());
+                    return tableData.get(getValueAt(row, 1)).size();
                 case 1:
-                    return tableData.keySet().toArray(new String[data.size()])[row];
+                    return keys[row];
                 case 2:
                     String ret = "";
-                    Vector<String> values = tableData.get(getValueAt(row, 1));
+                    Vector<String> values = tableData.get(keys[row]);
                     for (String value : values) {
-                        if (!ret.isEmpty()) ret += ", ";
+                        if (!ret.isEmpty()) ret += " || ";
                         ret += value;
                     }
                     return ret;
@@ -1077,7 +1070,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 return "";
             }
 
-            public Class<?> getColumnClass(int c) {
+            public Class<?> getColumnClass(int col) {
+                if (col == 0) return Integer.class;
                 return String.class;
             }
 
