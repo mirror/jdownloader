@@ -19,7 +19,6 @@ package jd.controlling;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -87,46 +86,31 @@ public class DistributeData extends ControlBroadcaster {
         }
     }
 
-    public DistributeData(String data, boolean fromClipboard) {
-        super("JD-DistributeData");
-        this.data = data;
-        try {
-            this.data = URLDecoder.decode(this.data, "UTF-8");
-        } catch (Exception e) {
-            logger.warning("text not url decodeable");
-        }
-        if (fromClipboard) {
-            clipboard = true;
-        }
+    public DistributeData(String data, boolean clipboard) {
+        this(data);
+        this.clipboard = clipboard;
     }
 
     public DistributeData(String data, boolean hideGrabber, boolean startDownload) {
-        super("JD-DistributeData");
-        this.data = data;
-        try {
-            this.data = URLDecoder.decode(this.data, "UTF-8");
-        } catch (Exception e) {
-            logger.warning("text not url decodeable");
-        }
+        this(data);
         this.hideGrabber = hideGrabber;
         this.startDownload = startDownload;
     }
 
-    static public boolean hasPluginfor(String tmp) {
+    static public boolean hasPluginFor(String tmp) {
         String data = tmp;
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return false;
-        Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
-        while (iteratorDecrypt.hasNext()) {
-            DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
-            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) { return true; }
+
+        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
 
         data = data.replaceAll("http://", "httpviajd://");
-        Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-        while (iteratorHost.hasNext()) {
-            HostPluginWrapper pHost = iteratorHost.next();
-            if (pHost.usePlugin() && pHost.canHandle(data)) { return true; }
+
+        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+            if (pHost.usePlugin() && pHost.canHandle(data)) return true;
         }
+
         return false;
     }
 
@@ -156,9 +140,7 @@ public class DistributeData extends ControlBroadcaster {
             }
 
             boolean canDecrypt = false;
-            Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
-            while (iteratorDecrypt.hasNext()) {
-                DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
+            for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                 if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
                     try {
                         PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
@@ -180,7 +162,6 @@ public class DistributeData extends ControlBroadcaster {
                         canDecrypt = true;
                         break;
                     } catch (Exception e) {
-
                         e.printStackTrace();
                     }
                 }
@@ -209,10 +190,11 @@ public class DistributeData extends ControlBroadcaster {
     public Vector<DownloadLink> findLinks(boolean searchpw) {
 
         Vector<DownloadLink> links = new Vector<DownloadLink>();
-        if (JDUtilities.getPluginsForHost() == null) { return new Vector<DownloadLink>(); }
-        Vector<String> foundpassword = new Vector<String>();
+        if (JDUtilities.getPluginsForHost() == null) return new Vector<DownloadLink>();
+
+        Vector<String> foundPasswords = new Vector<String>();
         if (searchpw == true) {
-            foundpassword = HTMLParser.findPasswords(data);
+            foundPasswords = HTMLParser.findPasswords(data);
         }
 
         // Zuerst wird data durch die Such Plugins geschickt.
@@ -221,29 +203,21 @@ public class DistributeData extends ControlBroadcaster {
         reformDataString();
 
         // es werden die entschlüsselten Links (soweit überhaupt
-        // vorhanden)
-        // an die HostPlugins geschickt, damit diese einen Downloadlink
-        // erstellen können
+        // vorhanden) an die HostPlugins geschickt, damit diese einen
+        // Downloadlink erstellen können
 
         // Edit Coa:
         // Hier werden auch die SourcePLugins in die Downloadlinks gesetzt
 
-        Iterator<DownloadLink> iterator = handleDecryptPlugins().iterator();
-
-        while (iterator.hasNext()) {
-            DownloadLink decrypted = iterator.next();
-
-            Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-            while (iteratorHost.hasNext()) {
-
+        for (DownloadLink decrypted : handleDecryptPlugins()) {
+            for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
                 try {
-                    HostPluginWrapper pHost = iteratorHost.next();
                     if (pHost.usePlugin() && pHost.canHandle(decrypted.getDownloadURL())) {
                         Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != JDUtilities.getController().getDefaultFilePackage() ? decrypted.getFilePackage() : null);
 
                         for (int c = 0; c < dLinks.size(); c++) {
 
-                            dLinks.get(c).addSourcePluginPasswords(foundpassword);
+                            dLinks.get(c).addSourcePluginPasswords(foundPasswords);
                             dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
                             dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
                             dLinks.get(c).setName(decrypted.getName());
@@ -255,64 +229,41 @@ public class DistributeData extends ControlBroadcaster {
                             dLinks.get(c).setSubdirectory(decrypted);
 
                         }
-
                         links.addAll(dLinks);
                     }
                 } catch (Exception e) {
                     logger.severe("Decrypter/Search Fehler: " + e.getMessage());
                     e.printStackTrace();
                 }
-
             }
         }
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt
-        // HostPluginWrapper wrapper = null;
-        Iterator<HostPluginWrapper> iteratorHost = JDUtilities.getPluginsForHost().iterator();
-        while (iteratorHost.hasNext()) {
-            HostPluginWrapper pHost = iteratorHost.next();
-            // if (pHost.getHost().equals("http links")) {
-            // wrapper = pHost;
-            // }
-            if (pHost.usePlugin() && pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
-                Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
-                if (foundpassword.size() > 0) {
-                    Iterator<DownloadLink> iter = dl.iterator();
-                    while (iter.hasNext()) {
-                        iter.next().addSourcePluginPasswords(foundpassword);
-                    }
-                }
-                links.addAll(dl);
-                if (pHost.isAcceptOnlyURIs()) {
-                    data = pHost.getPlugin().cutMatches(data);
-                } else {
-                    orgData = pHost.getPlugin().cutMatches(orgData);
-                }
-
-            }
-        }
+        useHoster(foundPasswords, links);
         data = data.replaceAll("http://", "httpviajd://");
-        iteratorHost = JDUtilities.getPluginsForHost().iterator();
-        while (iteratorHost.hasNext()) {
-            HostPluginWrapper pHost = iteratorHost.next();
-            if (pHost.usePlugin() && pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
-                Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
-                if (foundpassword.size() > 0) {
-                    Iterator<DownloadLink> iter = dl.iterator();
-                    while (iter.hasNext()) {
-                        iter.next().addSourcePluginPasswords(foundpassword);
-                    }
-                }
-                links.addAll(dl);
-                if (pHost.isAcceptOnlyURIs()) {
-                    data = pHost.getPlugin().cutMatches(data);
-                } else {
-                    orgData = pHost.getPlugin().cutMatches(orgData);
-                }
-            }
-        }
+        useHoster(foundPasswords, links);
+
         data = data.replaceAll("httpviajd://", "http://");
         return links;
+    }
+
+    private void useHoster(Vector<String> passwords, Vector<DownloadLink> links) {
+        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+            if (pHost.usePlugin() && pHost.canHandle(pHost.isAcceptOnlyURIs() ? data : orgData)) {
+                Vector<DownloadLink> dl = pHost.getPlugin().getDownloadLinks(pHost.isAcceptOnlyURIs() ? data : orgData, null);
+                if (passwords.size() > 0) {
+                    for (DownloadLink dLink : dl) {
+                        dLink.addSourcePluginPasswords(passwords);
+                    }
+                }
+                links.addAll(dl);
+                if (pHost.isAcceptOnlyURIs()) {
+                    data = pHost.getPlugin().cutMatches(data);
+                } else {
+                    orgData = pHost.getPlugin().cutMatches(orgData);
+                }
+            }
+        }
     }
 
     public Vector<DownloadLink> getLinkData() {
@@ -322,10 +273,9 @@ public class DistributeData extends ControlBroadcaster {
     private ArrayList<DownloadLink> handleDecryptPlugins() {
 
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (DecryptPluginWrapper.getDecryptWrapper() == null) { return decryptedLinks; }
-        Iterator<DecryptPluginWrapper> iteratorDecrypt = DecryptPluginWrapper.getDecryptWrapper().iterator();
-        while (iteratorDecrypt.hasNext()) {
-            DecryptPluginWrapper pDecrypt = iteratorDecrypt.next();
+        if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
+
+        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
@@ -334,7 +284,6 @@ public class DistributeData extends ControlBroadcaster {
                     CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
 
                     if (plg.isAcceptOnlyURIs()) {
-
                         data = plg.cutMatches(data);
                     } else {
                         orgData = plg.cutMatches(orgData);
@@ -343,7 +292,6 @@ public class DistributeData extends ControlBroadcaster {
                     decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
 
                 } catch (Exception e) {
-
                     e.printStackTrace();
                 }
             }

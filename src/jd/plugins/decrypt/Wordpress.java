@@ -68,7 +68,7 @@ public class Wordpress extends PluginForDecrypt {
         String[] links = br.getRegex(Pattern.compile("href=.*?(http://[^\"']+)", Pattern.CASE_INSENSITIVE)).getColumn(0);
         progress.setRange(links.length);
         for (String link : links) {
-            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginfor(link)) {
+            if (!new Regex(link, this.getSupportedLinks()).matches() && DistributeData.hasPluginFor(link)) {
                 DownloadLink dLink = createDownloadlink(link);
                 dLink.setSourcePluginPasswords(link_passwds);
                 decryptedLinks.add(dLink);
