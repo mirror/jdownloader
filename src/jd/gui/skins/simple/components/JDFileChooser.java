@@ -69,7 +69,7 @@ public class JDFileChooser extends JFileChooser {
     public File[] getSelectedFiles() {
         File[] ret = super.getSelectedFiles();
    
-        if (ret == null||ret.length==0) return null;
+        if (ret == null||ret.length==0) return ret;
         if (ret[0].isDirectory()) {
             JDUtilities.setCurrentWorkingDirectory(ret[0], fcID);
         } else {

@@ -464,7 +464,7 @@ public class UnrarWrapper extends Thread implements ProcessListener {
                 for (String volume : volumes) {
                     res = volume;
 
-                    Pattern patternvolumes = Pattern.compile("(.*)" + System.getProperty("line.separator") + ".*?([\\d]+).*?[\\d]+.*[\\d]+\\-[\\d]+\\-[\\d]+ [\\d]+:[\\d]+  (.{1})(.{1})(.{1})", Pattern.CASE_INSENSITIVE);
+                    Pattern patternvolumes = Pattern.compile("(.*)" + System.getProperty("line.separator") + ".*?([\\d]+).*?[\\d]+.*?[\\d]+\\-[\\d]+\\-[\\d]+.*?[\\d]+:[\\d]+.*?(.{1})(.{1})(.{1})", Pattern.CASE_INSENSITIVE);
                     Matcher matchervolumes = patternvolumes.matcher(res);
 
                     String vol = new Regex(res, "       volume (\\d+)").getMatch(0);
