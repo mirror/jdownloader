@@ -77,8 +77,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
-import javazoom.jl.decoder.JavaLayerException;
-import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.CPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.JDClassLoader;
@@ -1434,16 +1432,6 @@ public class JDUtilities {
             saveReadObject.remove(fileInput);
         }
         return null;
-    }
-
-    public static void playMp3(File file) {
-        try {
-            new AdvancedPlayer(new FileInputStream(file.getAbsolutePath())).play();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (JavaLayerException e) {
-            e.printStackTrace();
-        }
     }
 
     public static boolean removeDirectoryOrFile(File dir) {

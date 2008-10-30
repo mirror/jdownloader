@@ -29,10 +29,6 @@ import jd.JDFileFilter;
 import jd.http.Encoding;
 import jd.parser.Regex;
 
-/**
- * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
- * werte einzusetzen
- */
 public class JDSounds {
     private static HashMap<String, String> data = new HashMap<String, String>();
 
@@ -45,8 +41,9 @@ public class JDSounds {
     public static final String PARAM_CURRENTTHEME = "SOUND_CURRENTTHEME";
 
     private static boolean playing = false;
-    // private static File themeFile; ;
+
     private static final String SOUND_DIR = "jd/snd/";
+
     private static String THEMES_DIR = "jd/themes/";
 
     public static boolean getParalell() {
@@ -108,35 +105,22 @@ public class JDSounds {
             new Thread() {
                 @Override
                 public void run() {
-                    AdvancedPlayer p;
                     try {
-                        p = new AdvancedPlayer(new FileInputStream(f.getAbsolutePath()));
-
-                        p.play();
-
+                        new AdvancedPlayer(new FileInputStream(f.getAbsolutePath())).play();
                     } catch (FileNotFoundException e) {
-
                         e.printStackTrace();
                     } catch (JavaLayerException e) {
-
                         e.printStackTrace();
                     }
                     playing = false;
-
                 }
-
             }.start();
         } else {
-            AdvancedPlayer p;
             try {
-                p = new AdvancedPlayer(new FileInputStream(f.getAbsolutePath()));
-
-                p.play();
+                new AdvancedPlayer(new FileInputStream(f.getAbsolutePath())).play();
             } catch (FileNotFoundException e) {
-
                 e.printStackTrace();
             } catch (JavaLayerException e) {
-
                 e.printStackTrace();
             }
             playing = false;
@@ -178,19 +162,8 @@ public class JDSounds {
         paralellSounds = v;
     }
 
-    /*
-     * private static void saveData() { Iterator<Entry<String, String>>
-     * iterator; if (data == null) return; iterator =
-     * data.entrySet().iterator(); // stellt die Wartezeiten zurück Entry<String,
-     * String> i; String str = ""; Vector<String> ret = new Vector<String>();
-     * while (iterator.hasNext()) { i = iterator.next(); ret.add(i.getKey() + " = " +
-     * i.getValue()); } Collections.sort(ret); for (int x = 0; x < ret.size();
-     * x++) str += ret.get(x) + System.getProperty("line.separator");
-     * JDUtilities.writeLocalFile(themeFile, str); }
-     */
     public static void setSoundTheme(String themeID) {
         File file = JDUtilities.getResourceFile(THEMES_DIR + themeID + ".snd");
-        // themeFile = file;
         if (!file.exists()) {
             logger.severe("SoundTheme " + themeID + " not installed");
             return;
