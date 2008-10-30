@@ -98,35 +98,33 @@ public class JDSounds {
      * @return
      */
     private static boolean playSound(final File f, boolean threated) {
-        if (f == null || !f.exists()) { return false; }
-        if (playing && !paralellSounds) { return false; }
+        if (f == null || !f.exists()) return false;
+        if (playing && !paralellSounds) return false;
         playing = true;
         if (threated) {
             new Thread() {
                 @Override
                 public void run() {
-                    try {
-                        new AdvancedPlayer(new FileInputStream(f.getAbsolutePath())).play();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                    } catch (JavaLayerException e) {
-                        e.printStackTrace();
-                    }
+                    JDSounds.playMp3(f);
                     playing = false;
                 }
             }.start();
         } else {
-            try {
-                new AdvancedPlayer(new FileInputStream(f.getAbsolutePath())).play();
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (JavaLayerException e) {
-                e.printStackTrace();
-            }
+            JDSounds.playMp3(f);
             playing = false;
         }
 
         return true;
+    }
+
+    private static void playMp3(File f) {
+        try {
+            new AdvancedPlayer(new FileInputStream(f.getAbsolutePath())).play();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (JavaLayerException e) {
+            e.printStackTrace();
+        }
     }
 
     /**

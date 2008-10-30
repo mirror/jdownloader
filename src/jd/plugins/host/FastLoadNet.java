@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.awt.event.ActionEvent;
 import java.net.MalformedURLException;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
