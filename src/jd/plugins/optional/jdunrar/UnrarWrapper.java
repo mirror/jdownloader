@@ -367,7 +367,7 @@ public class UnrarWrapper extends Thread {
                     sig += s;
                 }
 
-                System.out.println(exec.getInputStreamBuffer() + " : " + sig);
+                JDUtilities.getLogger().finest(exec.getInputStreamBuffer() + " : " + sig);
                 if (sig.trim().length() < 8) continue;
                 Signature signature = FileSignatures.getSignature(sig);
 
@@ -412,19 +412,20 @@ public class UnrarWrapper extends Thread {
         int i = 0;
         fireEvent(JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE);
         while (true) {
-            Executer exec = new Executer(unrarCommand);            
+            Executer exec = new Executer(unrarCommand);
             if (i > 0) {
                 if (passwordList.length < i) {
                     this.status = COULD_NOT_FIND_PASSWORD;
                     return;
                 }
                 pass = this.passwordList[i - 1];
-            }
-            pass = escapePassword(pass);
+            }            
             i++;
             exec.addParameter("v");
             if (pass == null || pass.length() == 0) {
                 exec.addParameter("-p-");
+            } else {
+                exec.addParameter("-p");
             }
             UnrarProcessListener uw = new UnrarProcessListener(this, pass);
             uw.handle_onProcess = false;
@@ -437,10 +438,10 @@ public class UnrarWrapper extends Thread {
             exec.start();
             exec.waitTimeout();
             String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-            System.out.println(res);
+            JDUtilities.getLogger().finest(res);
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
             if (res.indexOf(" (password incorrect ?)") != -1) {
-                System.err.println("Password incorrect: " + file.getName() + " pw: " + pass);
+                JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
                 this.status = OPENED_SUCCESSFULL;
@@ -452,7 +453,7 @@ public class UnrarWrapper extends Thread {
                 this.totalSize = 0;
                 for (String volume : volumes) {
                     res = volume;
-                    
+
                     Pattern patternvolumes = Pattern.compile("(.+)\\s*?([\\d]+).*?[\\d]+\\-[\\d]+\\-[\\d]+.*?[\\d]+:[\\d]+.*?(.{1})(.{1})(.{1})", Pattern.CASE_INSENSITIVE);
                     Matcher matchervolumes = patternvolumes.matcher(res);
 
@@ -553,10 +554,10 @@ public class UnrarWrapper extends Thread {
         @Override
         public void onBufferChanged(Executer exec, DynByteBuffer buffer, DynByteBuffer origin) {
             if (new Regex(buffer.toString(), ".*?password.*: ").matches()) {
-                System.out.print(buffer.toString());
+                debugmsg(buffer.toString());
                 exec.writetoOutputStream(this.password);
             } else if (new Regex(buffer.toString(), ".*?current.*?password.*?ll ").matches()) {
-                System.out.print(buffer.toString());
+                debugmsg(buffer.toString());
                 exec.writetoOutputStream("A");
             } else if (interruptafter > 0 && origin == exec.getInputStreamBuffer()) {
                 if (origin.position() >= interruptafter) {
@@ -567,7 +568,7 @@ public class UnrarWrapper extends Thread {
 
         @Override
         public void onProcess(Executer exec, String latestLine, DynByteBuffer buffer) {
-            System.out.println(latestLine);
+            debugmsg(latestLine);
             String match = null;
             if (latestLine.length() > 0) {
                 // Neue Datei wurde angefangen
@@ -575,14 +576,11 @@ public class UnrarWrapper extends Thread {
                     String currentWorkingFile = match.trim();
                     uw.currentlyWorkingOn = getArchivFile(currentWorkingFile);
                     uw.fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_NEW_SINGLE_FILE_STARTED);
-
                 }
                 if ((match = new Regex(latestLine, "Extracting from(.*)").getMatch(0)) != null) {
                     archiveParts.add(match.trim());
-
                 }
                 if ((match = new Regex(latestLine, "Extracting from.*part(\\d+)\\.").getMatch(0)) != null) {
-
                     uw.currentVolume = Integer.parseInt(match.trim());
                     long ext = uw.totalSize / uw.volumeNum * (currentVolume - 1);
                     if (ext == 0) { return; }
@@ -590,7 +588,6 @@ public class UnrarWrapper extends Thread {
                         uw.speed = ext / ((System.currentTimeMillis() - uw.startTime) / 1000);
                     } catch (Exception e) {
                     }
-
                 }
                 // ruft die prozentangaben der aktuellen datei
                 if ((match = new Regex(latestLine, "(\\d+)\\%").getMatch(0)) != null) {
@@ -608,7 +605,7 @@ public class UnrarWrapper extends Thread {
 
                 if ((match = new Regex(latestLine, "Bad archive (.*)").getMatch(0)) != null) {
                     uw.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
-                    System.err.println("Bad archive. Prop. CRC error in " + match);
+                    debugmsg("Bad archive. Prop. CRC error in " + match);
                     exec.interrupt();
                 }
 

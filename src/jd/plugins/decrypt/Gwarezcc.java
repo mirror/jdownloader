@@ -168,7 +168,7 @@ public class Gwarezcc extends PluginForDecrypt {
         replace.put("\\|KAR\\|", "o");
         replace.put("\\|SUS\\|", "p");
         replace.put("\\|POT\\|", "q");
-        replace.put("\\|OPU\\|", "r");
+        replace.put("\\|hOPU\\|", "r");
         replace.put("\\|qYXV\\|", "s");
         replace.put("\\|SXW\\|", "t");
         replace.put("\\|UYX\\|", "u");

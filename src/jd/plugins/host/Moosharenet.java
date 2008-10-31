@@ -16,58 +16,54 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
+import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
+import jd.parser.Form;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 
-public class Moosharede extends PluginForHost {
-    public Moosharede(PluginWrapper wrapper) {
+public class Moosharenet extends PluginForHost {
+    public Moosharenet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.mooshare.de/infos.php";
+        return "http://mooshare.net/?section=faq";
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
-            br.setFollowRedirects(false);
-            br.getPage(downloadLink.getDownloadURL());
-            if (br.getRedirectLocation() == null) {
-                String filename = br.getRegex("<center>Dateiname: <b>(.*?)</b>").getMatch(0);
-                if (filename != "") {
-                    downloadLink.setName(filename);
-                    return true;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return false;
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        Form form = br.getForm(2);
+        if (form == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        br.submitForm(form);
+        String filename = br.getRegex(Pattern.compile(">Datei</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile(">Gr..e</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(filename);
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        return true;
     }
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
         /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        getFileInformation(downloadLink);
+        
 
         /* DownloadLink holen */
         String url = br.getRegex("popup\\('(.*?)',").getMatch(0);

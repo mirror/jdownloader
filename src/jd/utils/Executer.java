@@ -162,7 +162,7 @@ public class Executer extends Thread {
         for (String p : params) {
             out += p + " ";
         }
-        System.out.println(out + "");
+        logger.finest("Execute: " + out);
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -185,7 +185,7 @@ public class Executer extends Thread {
             if (waitTimeout == 0) { return; }
             outputStream = process.getOutputStream();
             sbeObserver = new StreamObserver(process.getErrorStream(), errorStreamBuffer);
-            sboObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);            
+            sboObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);
             sbeObserver.start();
             sboObserver.start();
 
@@ -240,6 +240,7 @@ public class Executer extends Thread {
     }
 
     public void writetoOutputStream(String data) {
+        if (data == null || data.length() == 0) return;
         data = data.trim() + "\n";
         try {
             outputStream.write(data.getBytes());
@@ -293,7 +294,6 @@ public class Executer extends Thread {
     }
 
     private void fireEvent(String line, DynByteBuffer sb) {
-
         for (ProcessListener listener : this.listener) {
             if (listener.handle_onProcess) listener.onProcess(this, line, sb);
         }
@@ -307,7 +307,6 @@ public class Executer extends Thread {
 
     private void removeProcessListener(ProcessListener listener) {
         this.listener.remove(listener);
-
     }
 
 }
