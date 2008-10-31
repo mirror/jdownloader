@@ -20,6 +20,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -28,11 +29,13 @@ public class Executer extends Thread {
 
         private BufferedInputStream reader;
         private DynByteBuffer sb;
+        private DynByteBuffer dynbuf;
         private boolean started;
 
         public StreamObserver(InputStream stream, DynByteBuffer errorStreamBuffer) {
             reader = new BufferedInputStream(stream);
             this.sb = errorStreamBuffer;
+            dynbuf = new DynByteBuffer(1024);
         }
 
         @Override
@@ -44,6 +47,7 @@ public class Executer extends Thread {
                     String line = new String(sb.getLast(num)).trim();
                     if (line.length() > 0) {
                         fireEvent(line, sb);
+                        dynbuf.clear();
                     }
                 }
             } catch (IOException e) {
@@ -68,10 +72,11 @@ public class Executer extends Thread {
                 return i; }
                 i += read;
                 sb.put(buffer, read);
-                fireEvent(sb);
+                dynbuf.put(buffer, read);
                 if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
 
                 return i; }
+                fireEvent(dynbuf, sb);
             }
 
         }
@@ -94,7 +99,8 @@ public class Executer extends Thread {
 
     private Process process;
     private StreamObserver sbeObserver;
-    private StreamObserver sbObserver;
+    private StreamObserver sboObserver;
+    private OutputStream outputStream = null;
 
     public Executer(String command) {
         this.command = command;
@@ -111,7 +117,7 @@ public class Executer extends Thread {
     }
 
     public void addParameters(String[] par) {
-        if(par==null) return;
+        if (par == null) return;
         for (String p : par) {
             parameter.add(p);
         }
@@ -133,7 +139,7 @@ public class Executer extends Thread {
         return runIn;
     }
 
-    public String getStream() {
+    public String getOutputStream() {
         return inputStreamBuffer.toString();
     }
 
@@ -158,10 +164,6 @@ public class Executer extends Thread {
         }
         System.out.println(out + "");
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
-        // List<String> g = pb.command();
-        // pb.command(out);
-        // g = pb.command();
-
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
                 pb.directory(new File(runIn));
@@ -181,14 +183,15 @@ public class Executer extends Thread {
             process = pb.start();
 
             if (waitTimeout == 0) { return; }
+            outputStream = process.getOutputStream();
             sbeObserver = new StreamObserver(process.getErrorStream(), errorStreamBuffer);
-            sbObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);
+            sboObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);            
             sbeObserver.start();
-            sbObserver.start();
+            sboObserver.start();
 
             long waiter = System.currentTimeMillis() + waitTimeout * 1000;
             if (waitTimeout < 0) waiter = Long.MAX_VALUE;
-            while ((!sbObserver.isStarted() || !sbeObserver.isStarted()) || (waiter > System.currentTimeMillis() && (sbeObserver.isAlive() || sbObserver.isAlive()))) {
+            while ((!sboObserver.isStarted() || !sbeObserver.isStarted()) || (waiter > System.currentTimeMillis() && (sbeObserver.isAlive() || sboObserver.isAlive()))) {
 
                 try {
                     Thread.sleep(50);
@@ -197,9 +200,9 @@ public class Executer extends Thread {
                 }
 
             }
-            if (sbObserver.isAlive()) {
+            if (sboObserver.isAlive()) {
                 logger.severe("Timeout " + waitTimeout + " kill observerthread(input)");
-                sbObserver.interrupt();
+                sboObserver.interrupt();
             }
             if (sbeObserver.isAlive()) {
                 logger.severe("Timeout " + waitTimeout + " kill observerthread(error)");
@@ -228,12 +231,23 @@ public class Executer extends Thread {
     public void interrupt() {
         super.interrupt();
         if (sbeObserver != null) this.sbeObserver.interrupt();
-        if (sbObserver != null) this.sbObserver.interrupt();
+        if (sboObserver != null) this.sboObserver.interrupt();
         process.destroy();
     }
 
     public DynByteBuffer getInputStreamBuffer() {
         return inputStreamBuffer;
+    }
+
+    public void writetoOutputStream(String data) {
+        data = data.trim() + "\n";
+        try {
+            outputStream.write(data.getBytes());
+            outputStream.flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public DynByteBuffer getErrorStreamBuffer() {
@@ -281,15 +295,14 @@ public class Executer extends Thread {
     private void fireEvent(String line, DynByteBuffer sb) {
 
         for (ProcessListener listener : this.listener) {
-            listener.onProcess(this, line, sb);
+            if (listener.handle_onProcess) listener.onProcess(this, line, sb);
         }
     }
 
-    private void fireEvent(DynByteBuffer sb) {
+    private void fireEvent(DynByteBuffer sb, DynByteBuffer origin) {
         for (ProcessListener listener : this.listener) {
-            listener.onBufferChanged(this, sb);
+            if (listener.handle_onBufferChanged) listener.onBufferChanged(this, sb, origin);
         }
-
     }
 
     private void removeProcessListener(ProcessListener listener) {

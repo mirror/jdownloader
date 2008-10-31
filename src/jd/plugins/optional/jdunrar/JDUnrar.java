@@ -707,7 +707,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             Executer exec = new Executer(path);
             exec.start();
             exec.waitTimeout();
-            String ret = exec.getErrorStream() + " " + exec.getStream();
+            String ret = exec.getErrorStream() + " " + exec.getOutputStream();
 
             if (new Regex(ret, "RAR.*?freeware").matches()) {
 
@@ -880,6 +880,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             for (DownloadLink link : list) {
                 if (link == null) continue;
+                link.getLinkStatus().addStatus(LinkStatus.FINISHED);
                 link.getLinkStatus().setStatusText("Extract: OK");
                 link.requestGuiUpdate();
             }

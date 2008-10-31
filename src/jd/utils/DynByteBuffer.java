@@ -32,6 +32,10 @@ public class DynByteBuffer {
         this.buffer.put(buffer);
     }
 
+    public void clear() {
+        this.buffer.clear();
+    }
+
     public String toString() {
         return new String(this.getLast(buffer.position()));
     }

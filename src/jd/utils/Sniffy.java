@@ -59,7 +59,7 @@ public final class Sniffy {
             exec.setWaitTimeout(10);
             exec.start();
             exec.waitTimeout();
-            String list = exec.getStream() + " \r\n " + exec.getErrorStream();
+            String list = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
             
         
             boolean check2 = false;

@@ -16,14 +16,26 @@
 
 package jd.utils;
 
-public interface ProcessListener {
+public class ProcessListener {
     /**
      * 
-     * @param exec  Source Object
-     * @param latest  Die zuletzte gelesene zeile. \b chars werden als new line char angesehen
-     * @param sb  Der complette BUffer  (exec.getInputStringBuffer()| exec.getErrorStringBuffer())
+     * @param exec
+     *            Source Object
+     * @param latest
+     *            Die zuletzte gelesene zeile. \b chars werden als new line char
+     *            angesehen
+     * @param sb
+     *            Der complette BUffer (exec.getInputStringBuffer()|
+     *            exec.getErrorStringBuffer())
      */
- abstract public void onProcess(Executer exec, String latestLine,DynByteBuffer sb);
+    public boolean handle_onProcess = true;
+    public boolean handle_onBufferChanged = true;
+    public int interruptafter = -1;
 
-    public abstract void onBufferChanged(Executer exec, DynByteBuffer sb);
+    public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
+    };
+
+    public void onBufferChanged(Executer exec, DynByteBuffer sb, DynByteBuffer origin) {
+    };
+
 }

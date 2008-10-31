@@ -1481,7 +1481,7 @@ public class JDUtilities {
         exec.setWaitTimeout(waitForReturn);
         exec.start();
         exec.waitTimeout();
-        return exec.getStream() + " \r\n " + exec.getErrorStream();
+        return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
     }
 
     public static void saveConfig() {
