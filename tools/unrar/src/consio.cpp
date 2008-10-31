@@ -67,19 +67,6 @@ void RawPrint(char *Msg,MESSAGE_TYPE MessageType)
     default:
       return;
   }
-#ifdef _WIN_32
-  CharToOem(Msg,Msg);
-
-  char OutMsg[MaxMsgSize],*OutPos=OutMsg;
-  for (int I=0;Msg[I]!=0;I++)
-  {
-    if (Msg[I]=='\n' && (I==0 || Msg[I-1]!='\r'))
-      *(OutPos++)='\r';
-    *(OutPos++)=Msg[I];
-  }
-  *OutPos=0;
-  strcpy(Msg,OutMsg);
-#endif
 #if defined(_UNIX) || defined(_EMX)
   char OutMsg[MaxMsgSize],*OutPos=OutMsg;
   for (int I=0;Msg[I]!=0;I++)
@@ -110,25 +97,7 @@ void Alarm()
 #ifndef GUI
 void GetPasswordText(char *Str,int MaxLength)
 {
-#ifdef _WIN_32
-  HANDLE hConIn=GetStdHandle(STD_INPUT_HANDLE);
-  HANDLE hConOut=GetStdHandle(STD_OUTPUT_HANDLE);
-  DWORD ConInMode,ConOutMode;
-  DWORD Read=0;
-  GetConsoleMode(hConIn,&ConInMode);
-  GetConsoleMode(hConOut,&ConOutMode);
-  SetConsoleMode(hConIn,ENABLE_LINE_INPUT);
-  SetConsoleMode(hConOut,ENABLE_PROCESSED_OUTPUT|ENABLE_WRAP_AT_EOL_OUTPUT);
-  ReadConsole(hConIn,Str,MaxLength-1,&Read,NULL);
-  Str[Read]=0;
-  OemToChar(Str,Str);
-  SetConsoleMode(hConIn,ConInMode);
-  SetConsoleMode(hConOut,ConOutMode);
-#elif defined(_EMX) || defined(_BEOS) || defined(__sparc) || defined(sparc) || defined (__VMS)
   fgets(Str,MaxLength-1,stdin);
-#else
-  strncpyz(Str,getpass(""),MaxLength);
-#endif
   Str[MaxLength-1]=0;
   RemoveLF(Str);
 }
@@ -242,9 +211,7 @@ int Ask(const char *AskStr)
   }
   eprintf(" ");
   int Ch=GetKey();
-#if defined(_WIN_32)
-  OemToCharBuff((LPCSTR)&Ch,(LPTSTR)&Ch,1);
-#endif
+
   Ch=loctoupper(Ch);
   for (int I=0;I<NumItems;I++)
     if (Ch==Item[I][ItemKeyPos[I]])
