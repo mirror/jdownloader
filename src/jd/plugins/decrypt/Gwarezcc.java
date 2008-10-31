@@ -158,7 +158,7 @@ public class Gwarezcc extends PluginForDecrypt {
         replace.put("\\|NDH\\|", "e");
         replace.put("\\|YKI\\|", "f");
         replace.put("\\|ZBJ\\|", "g");
-        replace.put("\\|FJK\\|", "h");
+        replace.put("\\|bFJK\\|", "h");
         replace.put("\\|FKL\\|", "i");
         replace.put("\\|ZDM\\|", "j");
         replace.put("\\|ZSN\\|", "k");
@@ -169,7 +169,7 @@ public class Gwarezcc extends PluginForDecrypt {
         replace.put("\\|SUS\\|", "p");
         replace.put("\\|POT\\|", "q");
         replace.put("\\|OPU\\|", "r");
-        replace.put("\\|YXV\\|", "s");
+        replace.put("\\|qYXV\\|", "s");
         replace.put("\\|SXW\\|", "t");
         replace.put("\\|UYX\\|", "u");
         replace.put("\\|UMY\\|", "v");
