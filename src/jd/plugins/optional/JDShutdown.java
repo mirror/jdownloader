@@ -23,7 +23,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
+import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
@@ -36,6 +39,8 @@ import jd.utils.JDUtilities;
 public class JDShutdown extends PluginOptional {
 
     private static final int count = 60;
+    private static final String CONFIG_STANDBY = "STANDBY";
+    private static final String CONFIG_FORCESHUTDOWN = "FORCE";
 
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -45,6 +50,7 @@ public class JDShutdown extends PluginOptional {
 
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
+        initConfig();
     }
 
     @Override
@@ -107,6 +113,32 @@ public class JDShutdown extends PluginOptional {
 
     @Override
     public void onExit() {
+        JDUtilities.getController().removeControlListener(this);
+    }
+
+    private void shutDownWin() {
+
+        if (!getPluginConfig().getBooleanProperty(CONFIG_STANDBY, false)) {
+            if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
+                try {
+                    JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
+                    JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
+                } catch (Exception e) {
+                }
+            } else {
+                try {
+                    JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
+                    JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
+                } catch (Exception e) {
+                }
+            }
+        } else {
+            try {
+                JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+                JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+            } catch (Exception e) {
+            }
+        }
     }
 
     public void shutDown() {
@@ -115,15 +147,9 @@ public class JDShutdown extends PluginOptional {
         if (shutDownMessage.result) {
             String OS = System.getProperty("os.name").toLowerCase();
             if (OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1) {
-                try {
-                    JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
-                } catch (Exception e) {
-                }
+                shutDownWin();
             } else if (OS.indexOf("windows 2000") > -1 || OS.indexOf("nt") > -1) {
-                try {
-                    JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
-                } catch (Exception e) {
-                }
+                shutDownWin();
                 try {
                     FileWriter fw = null;
                     BufferedWriter bw = null;
@@ -170,6 +196,17 @@ public class JDShutdown extends PluginOptional {
                 }
             }
         }
+
+    }
+
+    public void initConfig() {
+
+        SubConfiguration subConfig = getPluginConfig();
+        ConfigEntry ce;
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_STANDBY, JDLocale.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)")));
+        ce.setDefaultValue(false);
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Shutdown erzwingen (Nur einige OS)")));
+        ce.setDefaultValue(false);
 
     }
 
