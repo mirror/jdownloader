@@ -33,7 +33,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.Map.Entry;
@@ -625,7 +624,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         for (int i = 0; i < tableModel.getRowCount(); ++i) {
             if (tableModel.getValueAt(i, 0).equalsIgnoreCase(key)) {
-                logger.info(key + " == " + row + " == " + i);
                 return i;
             }
         }
@@ -646,11 +644,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private void saveLanguageFile(File file) {
         StringBuilder sb = new StringBuilder();
 
-        Collections.sort(data, new Comparator<KeyInfo>() {
-            public int compare(KeyInfo a, KeyInfo b) {
-                return a.getKey().compareToIgnoreCase(b.getKey());
-            }
-        });
+        Collections.sort(data);
 
         for (KeyInfo entry : data) {
             if (!entry.isMissing()) sb.append(entry.getKey() + " = " + entry.getLanguage() + "\n");
@@ -725,11 +719,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         }
 
-        Collections.sort(data, new Comparator<KeyInfo>() {
-            public int compare(KeyInfo a, KeyInfo b) {
-                return a.getKey().compareToIgnoreCase(b.getKey());
-            }
-        });
+        Collections.sort(data);
 
         tableModel.fireTableRowsInserted(0, data.size() - 1);
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
@@ -862,7 +852,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     public void mouseReleased(MouseEvent e) {
     }
 
-    private class KeyInfo {
+    private class KeyInfo implements Comparable<KeyInfo> {
 
         private String key;
 
@@ -902,6 +892,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         public boolean isOld() {
             return this.getSource().equals("");
+        }
+
+        public int compareTo(KeyInfo o) {
+            return this.getKey().compareToIgnoreCase(o.getKey());
         }
 
     }
@@ -957,7 +951,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
 
         public boolean isCellEditable(int row, int col) {
-            return (col == 0 || col == 2);
+            return true;
         }
 
         public void setValueAt(Object value, int row, int col) {
