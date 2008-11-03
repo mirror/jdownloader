@@ -168,41 +168,8 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
     public void controlEvent(ControlEvent event) {
 
-        switch (event.getID()) {
-
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
-            if (!(event.getSource() instanceof PluginForHost)) { return; }
+        if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
             removeDownloadLinkFromActiveList(((SingleDownloadController) event.getParameter()).getDownloadLink());
-            // Wenn ein Download beendet wurde wird überprüft ob gerade ein
-            // Download in der Warteschleife steckt. Wenn ja wird ein
-            // Reconnectversuch gemacht. Die handleInteraction - funktion
-            // blockiert den Aufruf wenn es noch weitere Downloads gibt die
-            // gerade laufen
-
-            // one: for (Iterator<FilePackage> it =
-            // controller.getPackages().iterator(); it.hasNext();) {
-            // for (Iterator<DownloadLink> it2 =
-            // it.next().getDownloadLinks().iterator(); it2.hasNext();) {
-            //
-            // if (it2.next().isWaitingForReconnect()) {
-            //
-            // controller.requestReconnect();
-            //
-            // break one;
-            //
-            // }
-            //
-            // }
-            // }
-
-            break;
-
-        case ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED:
-
-            break;
-        case ControlEvent.CONTROL_DISTRIBUTE_FINISHED:
-            break;
-
         }
 
     }
@@ -216,30 +183,6 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         controller.fireControlEvent(controlEvent);
 
     }
-
-    // /**
-    // * Entfernt
-    // */
-    // private void cleanActiveVector() {
-    // int statusD;
-    // logger.info("Clean Activevector");
-    // for (int i = this.activeLinks.size() - 1; i >= 0; i--) {
-    // statusD = this.activeLinks.get(i).getDownloadLink().getStatus();
-    //
-    // if (statusD == LinkStatus.FINISHED ||
-    // (this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep()
-    // != null &&
-    // this.activeLinks.get(i).getDownloadLink().getPlugin().getCurrentStep().
-    // getStatus()
-    // == PluginStep.STATUS_ERROR)) {
-    // activeLinks.remove(i);
-    // }
-    //
-    // }
-    //
-    // logger.info("Clean ünrig_ " + activeLinks.size());
-    //
-    // }
 
     public Vector<SingleDownloadController> getActiveDownloadControllers() {
         return activeDownloadControllers;
@@ -323,32 +266,6 @@ public class DownloadWatchDog extends Thread implements ControlListener {
         return null;
     }
 
-    // /**
-    // * Liefert die Anzahl der gerade laufenden Downloads. (nur downloads die
-    // * sich wirklich in der downloadpahse befinden
-    // *
-    // * @return Anzahld er laufenden Downloadsl Sollte eventl mal umgeschrieben
-    // * werden. ohne iteration
-    // */
-    // public int getRunningDownloadNum() {
-    // int ret = 0;
-    // DownloadLink nextDownloadLink;
-    // for (FilePackage filePackage : controller.getPackages()) {
-    // for (Iterator<DownloadLink> it2 =
-    // filePackage.getDownloadLinks().iterator(); it2.hasNext();) {
-    //
-    // nextDownloadLink = it2.next();
-    // if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.
-    // DOWNLOADINTERFACE_IN_PROGRESS)) {
-    // ret++;
-    // }
-    //
-    // }
-    // }
-    //
-    // return ret;
-    // }
-
     /**
      * Gibt die Configeinstellung zurück, wieviele simultane Downloads der user
      * erlaubt hat
@@ -403,7 +320,6 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
     @Override
     public void run() {
-        // int started;
         Vector<DownloadLink> links;
         ArrayList<DownloadLink> updates = new ArrayList<DownloadLink>();
         Vector<FilePackage> fps;
@@ -423,16 +339,12 @@ public class DownloadWatchDog extends Thread implements ControlListener {
             hasInProgressLinks = false;
             hasTempDisabledLinks = false;
 
-            // deligateFireControlEvent(new ControlEvent(this,
-            // ControlEvent.CONTROL_DOWNLOADLINK_DATA_CHANGED, null));
             fps = controller.getPackages();
             currentTotalSpeed = 0;
             inProgress = 0;
             updates.clear();
-            // boolean rr = false;
             try {
 
-                // logger.info("I-"+0);
                 for (FilePackage filePackage : fps) {
                     links = filePackage.getDownloadLinks();
 
@@ -455,9 +367,6 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                         }
 
-                        // if (!link.isEnabled()) {
-                        // continue;
-                        // }
                         // Link mit Wartezeit in der queue
                         if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.ERROR_IP_BLOCKED) && !linkStatus.hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                             if (linkStatus.getRemainingWaittime() == 0) {
@@ -471,25 +380,14 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                         if (linkStatus.getRemainingWaittime() > 0) {
                             hasWaittimeLinks = true;
                             updates.add(link);
-
                         }
                         if (link.isEnabled() && linkStatus.isPluginActive()) {
-                            // // logger.info("Ip: "+link);
                             hasInProgressLinks = true;
-
                         }
                         if (link.isEnabled() && linkStatus.hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
                             inProgress++;
                             currentTotalSpeed += link.getDownloadSpeed();
                         }
-
-                        // if (!rr&&link.isWaitingForReconnect()) {
-                        //
-                        // controller.requestReconnect();
-                        //
-                        // rr=true;
-                        //
-                        // }
 
                     }
                 }
@@ -498,7 +396,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     removes.clear();
                     JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this);
                 }
-                // logger.info("I-"+1);
+
                 Reconnecter.doReconnectIfRequested();
                 if (inProgress > 0) {
                     fps = controller.getPackages();
@@ -511,9 +409,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                             maxspeed = Integer.MAX_VALUE;
                         }
                         int overhead = maxspeed - currentTotalSpeed;
-                        // logger.info("cu speed= " + currentTotalSpeed + "
-                        // overhead
-                        // :;" + overhead);
+
                         totalSpeed = currentTotalSpeed;
 
                         DownloadLink element;
@@ -531,16 +427,11 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 }
                 if (updates.size() > 0) {
                     deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, updates));
-
                 }
                 int ret = 0;
-                // logger.info("I-"+2);
                 if (Interaction.getInteractionsRunning() == 0 && activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
-
                     ret = setDownloadActive();
-
                 }
-                // logger.info("I-"+3);
                 if (ret == 0) {
 
                     if (pause && !hasInProgressLinks || !hasTempDisabledLinks && !hasInProgressLinks && !hasWaittimeLinks && getNextDownloadLink() == null && activeDownloadControllers != null && activeDownloadControllers.size() == 0) {

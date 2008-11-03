@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -54,9 +53,6 @@ public class Captcha extends PixelGrid {
 
     private static Logger logger = UTILITIES.getLogger();
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     /**
@@ -1704,11 +1700,5 @@ public class Captcha extends PixelGrid {
         grid = newgrid;
 
     }
-
-  
-
-
-
-   
 
 }

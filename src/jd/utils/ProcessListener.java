@@ -17,27 +17,20 @@
 package jd.utils;
 
 abstract public class ProcessListener {
+
     /**
      * 
      * @param exec
      *            Source Object
-     * @param latest
+     * @param latestLine
      *            Die zuletzte gelesene zeile. \b chars werden als new line char
      *            angesehen
-     * @param sb
+     * @param totalBuffer
      *            Der complette BUffer (exec.getInputStringBuffer()|
      *            exec.getErrorStringBuffer())
      */
-//    public boolean handle_onProcess = true;
-//    public boolean handle_onBufferChanged = true;
-//    public int interruptafter = -1; 
-//    public boolean debug = false;
+    abstract public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer);
 
-   abstract  public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer);
-    abstract public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer,int latestReadNum);
-
-//    public void debugmsg(String message) {
-//        if (debug == true) JDUtilities.getLogger().finest(message);
-//    }
+    abstract public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum);
 
 }

@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
