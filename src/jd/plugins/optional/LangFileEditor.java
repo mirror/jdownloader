@@ -67,7 +67,6 @@ import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
@@ -108,8 +107,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private ChartAPI_PIE keyChart;
     private ChartAPI_Entity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuKey, mnuEntries;
-    private JMenuItem mnuDownloadSource, mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
-    private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuClearAll, mnuContinueSearch, mnuDelete, mnuSearch, mnuTranslate, mnuTranslateMissing;
+    private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
+    private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuContinueSearch, mnuDelete, mnuSearch, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
     private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
@@ -160,21 +159,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         table.setAutoStartEditOnKeyStroke(false);
         table.addHighlighter(HighlighterFactory.createAlternateStriping());
         table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
-        // table.getColumnExt(0).setComparator(new Comparator<KeyInfo>() {
-        // public int compare(KeyInfo a, KeyInfo b) {
-        // return a.getKey().compareToIgnoreCase(b.getKey());
-        // }
-        // });
-        // table.getColumnExt(1).setComparator(new Comparator<KeyInfo>() {
-        // public int compare(KeyInfo a, KeyInfo b) {
-        // return a.getSource().compareToIgnoreCase(b.getSource());
-        // }
-        // });
-        // table.getColumnExt(2).setComparator(new Comparator<KeyInfo>() {
-        // public int compare(KeyInfo a, KeyInfo b) {
-        // return a.getLanguage().compareToIgnoreCase(b.getLanguage());
-        // }
-        // });
+
         if (colorizeMissing) table.addHighlighter(missingHighlighter);
         if (colorizeOld) table.addHighlighter(oldHighlighter);
 
@@ -273,15 +258,12 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuFile.addSeparator();
         mnuFile.add(mnuReload = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.reload", "Reload")));
         mnuFile.addSeparator();
-        mnuFile.add(mnuDownloadSource = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.download", "Download SourceCode")));
-        mnuFile.addSeparator();
         mnuFile.add(mnuClose = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.close", "Close")));
 
         mnuNew.addActionListener(this);
         mnuSave.addActionListener(this);
         mnuSaveAs.addActionListener(this);
         mnuReload.addActionListener(this);
-        mnuDownloadSource.addActionListener(this);
         mnuClose.addActionListener(this);
 
         mnuSave.setEnabled(false);
@@ -297,9 +279,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuKey.setEnabled(false);
 
         mnuKey.add(mnuDelete = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.deleteKeys", "Delete Key(s)")));
-        mnuKey.addSeparator();
         mnuKey.add(mnuClear = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearValues", "Clear Value(s)")));
-        mnuKey.add(mnuClearAll = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.clearAllValues", "Clear All Values")));
         mnuKey.addSeparator();
         mnuKey.add(mnuAdopt = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults", "Adopt Default(s)")));
         mnuKey.add(mnuAdoptMissing = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.adoptDefaults.missing", "Adopt Defaults of Missing Entries")));
@@ -309,7 +289,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         mnuDelete.addActionListener(this);
         mnuClear.addActionListener(this);
-        mnuClearAll.addActionListener(this);
         mnuAdopt.addActionListener(this);
         mnuAdoptMissing.addActionListener(this);
         mnuTranslate.addActionListener(this);
@@ -400,8 +379,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 topFolder.add(cmboSource[index]);
 
                 sourceFile = cmboSource[index].getCurrentPath();
-                getSourceEntries();
-                initLocaleData();
+                initLocaleDataComplete();
             }
 
         } else if (e.getSource() == cmboSource[0] || e.getSource() == cmboSource[1]) {
@@ -409,8 +387,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             File sourceFile = cmboSource[cmboSelectSource.getSelectedIndex()].getCurrentPath();
             if (sourceFile != this.sourceFile && sourceFile != null) {
                 this.sourceFile = sourceFile;
-                getSourceEntries();
-                initLocaleData();
+                initLocaleDataComplete();
             }
 
         } else if (e.getSource() == cmboFile) {
@@ -458,6 +435,16 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             deleteSelectedKeys();
 
+        } else if (e.getSource() == mnuReload) {
+
+            initLocaleDataComplete();
+
+        } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
+
+            for (int row : getSelectedRows()) {
+                tableModel.setValueAt(tableModel.getValueAt(row, 1), row, 2);
+            }
+
         } else if (e.getSource() == mnuAdoptMissing) {
 
             for (int i = 0; i < tableModel.getRowCount(); ++i) {
@@ -468,30 +455,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             }
 
-        } else if (e.getSource() == mnuReload) {
-
-            getSourceEntries();
-            initLocaleData();
-
-        } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
-
-            for (int row : getSelectedRows()) {
-                String def = tableModel.getValueAt(row, 1);
-                if (!def.equals("")) tableModel.setValueAt(def, row, 2);
-            }
-
         } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
 
             for (int row : getSelectedRows()) {
                 tableModel.setValueAt("", row, 2);
-            }
-
-            setInfoLabels();
-
-        } else if (e.getSource() == mnuClearAll) {
-
-            for (int i = 0; i < table.getRowCount(); ++i) {
-                tableModel.setValueAt("", i, 2);
             }
 
         } else if (e.getSource() == mnuColorizeMissing) {
@@ -548,6 +515,15 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             new DupeDialog(frame, dupes);
 
+        } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
+
+            if (getLanguageKey() == null) return;
+
+            int[] rows = getSelectedRows();
+            for (int i = rows.length - 1; i >= 0; --i) {
+                translateRow(rows[i]);
+            }
+
         } else if (e.getSource() == mnuTranslateMissing) {
 
             if (getLanguageKey() == null) return;
@@ -558,30 +534,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 }
             }
 
-        } else if (e.getSource() == mnuTranslate || e.getSource() == mnuContextTranslate) {
-
-            if (getLanguageKey() == null) return;
-
-            int[] rows = getSelectedRows();
-            for (int i = rows.length - 1; i >= 0; --i) {
-                translateRow(rows[i]);
-            }
-
         } else if (e.getSource() == mnuClose) {
 
             frame.setVisible(false);
             frame.dispose();
-
-        } else if (e.getSource() == mnuDownloadSource) {
-
-            String svnUrl = "https://www.syncom.org/svn/jdownloader/";
-            if (JOptionPane.showConfirmDialog(frame, JDLocale.LF("plugins.optional.langfileeditor.downloadSource", "The SourceCode can be obtained via SVN.\nThe SVN repository is located at %s\nPress OK to open the repository!", svnUrl), null, JOptionPane.OK_CANCEL_OPTION) == JOptionPane.OK_OPTION) {
-                try {
-                    JLinkButton.openURL(svnUrl);
-                } catch (Exception e1) {
-                    e1.printStackTrace();
-                }
-            }
 
         } else if (e.getSource() == mnuSearch) {
 
@@ -638,7 +594,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         Object[] obj = dupes.values().toArray();
         Vector<String> values;
         for (int i = len; i >= 0; --i) {
-            String temp = tableModel.getValueAt(rows[i], 0);
+            String temp = data.remove(rows[i]).getKey();
             data.remove(temp);
             for (int j = obj.length - 1; j >= 0; --j) {
                 values = (Vector<String>) obj[j];
@@ -668,7 +624,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         String key = table.getValueAt(row, 0).toString();
 
         for (int i = 0; i < tableModel.getRowCount(); ++i) {
-            if (tableModel.getValueAt(i, 0).equalsIgnoreCase(key)) return i;
+            if (tableModel.getValueAt(i, 0).equalsIgnoreCase(key)) {
+                logger.info(key + " == " + row + " == " + i);
+                return i;
+            }
         }
 
         return -1;
@@ -708,6 +667,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
         JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void initLocaleDataComplete() {
+        getSourceEntries();
+        initLocaleData();
     }
 
     private void initLocaleData() {
