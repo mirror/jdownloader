@@ -1053,6 +1053,12 @@ public class UTILITIES {
         return hsbvals;
     }
 
+    public static float[] rgb2hsb(int pixelValue) {
+        int[] rgbA = UTILITIES.hexToRgb(pixelValue);
+        return rgb2hsb(rgbA[0], rgbA[1], rgbA[2]);
+
+    }
+
     /**
      * Rechnet RGB werte in den LAB Farbraum um. Der LAB Farbraum wird vor allem
      * zu Farbabstandsberechnungen verwendet Wert für L* enthält die
@@ -1544,4 +1550,5 @@ public class UTILITIES {
         return true;
 
     }
+
 }

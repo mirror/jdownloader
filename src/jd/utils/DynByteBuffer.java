@@ -77,9 +77,7 @@ public class DynByteBuffer {
 
     public byte[] getLast(int num) {
         int posi = buffer.position();
-
         num = Math.min(posi, num);
-
         buffer.position(posi - num);
         byte[] b = new byte[num];
         buffer.get(b);

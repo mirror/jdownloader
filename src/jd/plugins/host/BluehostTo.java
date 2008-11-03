@@ -17,12 +17,16 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.parser.XPath;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -42,13 +46,45 @@ public class BluehostTo extends PluginForHost {
         downloadLink.setUrlDownload(url);
     }
 
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        Browser br = new Browser();
+        br.setCookiesExclusive(true);
+        br.clearCookies(getHost());
+        br.setDebug(true);
+        // br.setFollowRedirects(true);
+        br.getPage("http://bluehost.to/v2a/index.php");
+
+        Form login = br.getForm(0);
+
+        login.setVariable(0, account.getUser());
+        login.setVariable(1, account.getPass());
+
+        br.submitForm(login);
+
+        if (!br.getRedirectLocation().contains("interface.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+
+        br.getPage((String) null);
+        String trafficLeft = br.getXPathElement("/html/body/div[2]/div/ul[2]/div/div").trim();
+        XPath path = new XPath(br.toString(), "/html/body/div[2]/div/ul[2]/div[4]/center");
+        double traffic = Double.parseDouble(trafficLeft) * 1000 * 1024 * 1024;
+        ai.setTrafficLeft((long) traffic);
+        ArrayList<String> matches = path.getMatches();
+        ai.setPremiumPoints(JDUtilities.filterInt(matches.get(1)));
+        ai.setAccountBalance(JDUtilities.filterInt(matches.get(2)) * 100);
+        ai.setExpired(false);
+        ai.setValidUntil(System.currentTimeMillis() + 60 * 60 * 1000);
+
+        return ai;
+    }
+
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage("http://bluehost.to");
         br.postPage("http://bluehost.to/setcookie.php", "loginname=" + account.getUser() + "&loginpass=" + account.getPass() + "&gobutton.x=&gobutton.y=");
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), false, 1);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Beta Error");

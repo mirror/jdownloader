@@ -462,7 +462,34 @@ public class PixelGrid extends Property {
         return true;
 
     }
+    public void cleanByHSBValue(Comparator<float[]> comparator) {  
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {              
+                if(comparator.compare(null,UTILITIES.rgb2hsb(this.getPixelValue(x, y)))==1){
+                    this.setPixelValue(x, y, getMaxPixelValue());
+                }                 
 
+            }
+        }
+    }
+    
+    
+    /**
+     * enbtfernt eine farbe... die tolleranz gibt die farbdistanz an die njoch entfernt wird
+     * @param i vergleichsfarbe
+     * @param d  tolleranz
+     */
+    public void cleanByColor(int i, double d) {
+        for (int x = 0; x < getWidth(); x++) {
+            for (int y = 0; y < getHeight(); y++) {
+                if(UTILITIES.getColorDifference(i, this.getPixelValue(x, y))<d){
+                    this.setPixelValue(x, y, getMaxPixelValue());
+                }              
+
+            }
+        }
+        // grid = newgrid;
+    }
     /**
      * Entfernt Alle Pixel die über getBackgroundSampleCleanContrast an avg
      * liegen

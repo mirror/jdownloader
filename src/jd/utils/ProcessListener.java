@@ -16,7 +16,7 @@
 
 package jd.utils;
 
-public class ProcessListener {
+abstract public class ProcessListener {
     /**
      * 
      * @param exec
@@ -28,19 +28,16 @@ public class ProcessListener {
      *            Der complette BUffer (exec.getInputStringBuffer()|
      *            exec.getErrorStringBuffer())
      */
-    public boolean handle_onProcess = true;
-    public boolean handle_onBufferChanged = true;
-    public int interruptafter = -1;
-    public boolean debug = false;
+//    public boolean handle_onProcess = true;
+//    public boolean handle_onBufferChanged = true;
+//    public int interruptafter = -1; 
+//    public boolean debug = false;
 
-    public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
-    };
+   abstract  public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer);
+    abstract public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer,int latestReadNum);
 
-    public void onBufferChanged(Executer exec, DynByteBuffer sb, DynByteBuffer origin) {
-    };
-
-    public void debugmsg(String message) {
-        if (debug == true) JDUtilities.getLogger().finest(message);
-    }
+//    public void debugmsg(String message) {
+//        if (debug == true) JDUtilities.getLogger().finest(message);
+//    }
 
 }

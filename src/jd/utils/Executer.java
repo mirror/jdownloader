@@ -28,14 +28,16 @@ public class Executer extends Thread {
     class StreamObserver extends Thread {
 
         private BufferedInputStream reader;
-        private DynByteBuffer sb;
+        
         private DynByteBuffer dynbuf;
         private boolean started;
+        private boolean interruptRequestet = false;
+        private boolean eof = false;
 
-        public StreamObserver(InputStream stream, DynByteBuffer errorStreamBuffer) {
+        public StreamObserver(InputStream stream, DynByteBuffer buffer) {
             reader = new BufferedInputStream(stream);
-            this.sb = errorStreamBuffer;
-            dynbuf = new DynByteBuffer(1024);
+           
+            dynbuf = buffer;
         }
 
         @Override
@@ -43,19 +45,29 @@ public class Executer extends Thread {
             this.started = true;
             int num;
             try {
-                while ((num = readLine()) > 0) {
-                    String line = new String(sb.getLast(num)).trim();
-                    if (line.length() > 0) {
-                        fireEvent(line, sb);
-                        dynbuf.clear();
+                fireEvent(dynbuf,0,this==Executer.this.sbeObserver?Executer.LISTENER_ERRORSTREAM:Executer.LISTENER_STDSTREAM);
+                while (!eof) {
+                    num = readLine();
+                    if (!interruptRequestet) eof = false;
+                    if (num <= 0) {
+                        Thread.sleep(50);
+                    } else {
+                        String line = new String(dynbuf.getLast(num)).trim();
+
+                        if (line.length() > 0) {
+                            System.out.println(this + ": " + line);
+                            // System.out.println(">"+line);
+                            fireEvent(line, dynbuf,this==Executer.this.sbeObserver?Executer.LISTENER_ERRORSTREAM:Executer.LISTENER_STDSTREAM);
+                           // dynbuf.clear();
+                        }
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                // e.printStackTrace();
+//                e.printStackTrace();
             }
+           
         }
 
         private int readLine() throws IOException, InterruptedException {
@@ -68,15 +80,17 @@ public class Executer extends Thread {
                 throw new InterruptedException(); }
                 int read = 0;
                 if ((read = reader.read(buffer)) < 0) {
-
-                return i; }
+                    this.eof = true;
+                    return i;
+                }
                 i += read;
-                sb.put(buffer, read);
+              
                 dynbuf.put(buffer, read);
+
                 if (buffer[0] == '\b' || buffer[0] == '\r' || buffer[0] == '\n') {
 
                 return i; }
-                fireEvent(dynbuf, sb);
+                fireEvent(dynbuf,read,this==Executer.this.sbeObserver?Executer.LISTENER_ERRORSTREAM:Executer.LISTENER_STDSTREAM);
             }
 
         }
@@ -85,7 +99,15 @@ public class Executer extends Thread {
             return started;
         }
 
+        public void requestInterrupt() {
+            this.interruptRequestet = true;
+
+        }
+
     }
+
+    public static int LISTENER_ERRORSTREAM = 1;
+    public static int LISTENER_STDSTREAM = 1 << 1;
 
     private String command;
     private Logger logger = JDUtilities.getLogger();
@@ -94,13 +116,16 @@ public class Executer extends Thread {
     private DynByteBuffer inputStreamBuffer;
     private DynByteBuffer errorStreamBuffer;
     private ArrayList<ProcessListener> listener = new ArrayList<ProcessListener>();
+    private ArrayList<ProcessListener> elistener = new ArrayList<ProcessListener>();
+
     private int waitTimeout = 60;
     private int exitValue = -1;
 
     private Process process;
     private StreamObserver sbeObserver;
     private StreamObserver sboObserver;
-    private OutputStream outputStream = null;
+    private OutputStream outputStream=null;
+   
 
     public Executer(String command) {
         this.command = command;
@@ -181,41 +206,47 @@ public class Executer extends Thread {
         try {
 
             process = pb.start();
-
+           
             if (waitTimeout == 0) { return; }
             outputStream = process.getOutputStream();
             sbeObserver = new StreamObserver(process.getErrorStream(), errorStreamBuffer);
+            sbeObserver.setName(this.getName()+" ERRstreamobserver");
             sboObserver = new StreamObserver(process.getInputStream(), inputStreamBuffer);
+            sbeObserver.setName(this.getName()+" STDstreamobserver");
             sbeObserver.start();
             sboObserver.start();
 
-            long waiter = System.currentTimeMillis() + waitTimeout * 1000;
-            if (waitTimeout < 0) waiter = Long.MAX_VALUE;
-            while ((!sboObserver.isStarted() || !sbeObserver.isStarted()) || (waiter > System.currentTimeMillis() && (sbeObserver.isAlive() || sboObserver.isAlive()))) {
+            if (waitTimeout > 0) {
+                Thread timeoutThread = new Thread() {
+                    public void run() {
+                        try {
+                            Thread.sleep(waitTimeout * 1000);
+                        } catch (InterruptedException e) {
+                            return;
+                        }
 
-                try {
-                    Thread.sleep(50);
-                } catch (InterruptedException e) {
-                    // e.printStackTrace();
-                }
-
+                        try {
+                            process.destroy();
+                        } catch (Exception e) {
+                        }
+                    }
+                };
+                timeoutThread.start();
             }
-            if (sboObserver.isAlive()) {
-                logger.severe("Timeout " + waitTimeout + " kill observerthread(input)");
-                sboObserver.interrupt();
-            }
-            if (sbeObserver.isAlive()) {
-                logger.severe("Timeout " + waitTimeout + " kill observerthread(error)");
-                sbeObserver.interrupt();
-            }
-            logger.finer("Destroy Subprocesses if still running.");
+            if (waitTimeout == 0) return;
             try {
+                process.waitFor();
+            } catch (InterruptedException e1) {
                 process.destroy();
-
-            } catch (Exception e) {
-                e.printStackTrace();
+                e1.printStackTrace();
             }
             exitValue = process.exitValue();
+            if (sboObserver.isAlive()) {
+                sboObserver.requestInterrupt();
+            }
+            if (sbeObserver.isAlive()) {
+                sbeObserver.requestInterrupt();
+            }
 
         } catch (IOException e1) {
 
@@ -239,11 +270,14 @@ public class Executer extends Thread {
         return inputStreamBuffer;
     }
 
+ 
+
     public void writetoOutputStream(String data) {
-        if (data == null || data.length() == 0) return;
+        if (data == null || data.length() == 0) data="";
         data = data.trim() + "\n";
         try {
             outputStream.write(data.getBytes());
+            System.out.println("Out>"+data);
             outputStream.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block
@@ -272,7 +306,7 @@ public class Executer extends Thread {
     }
 
     public void waitTimeout() {
-        while (isAlive()) {
+        while (isAlive() || this.sbeObserver.isAlive() || this.sboObserver.isAlive()) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {
@@ -287,26 +321,40 @@ public class Executer extends Thread {
         return exitValue;
     }
 
-    public void addProcessListener(ProcessListener listener) {
-        this.removeProcessListener(listener);
-        this.listener.add(listener);
+    public void addProcessListener(ProcessListener listener, int flag) {
+        this.removeProcessListener(listener, flag);
+
+        if ((flag & Executer.LISTENER_STDSTREAM) > 0) this.listener.add(listener);
+        if ((flag & Executer.LISTENER_ERRORSTREAM) > 0) this.elistener.add(listener);
 
     }
 
-    private void fireEvent(String line, DynByteBuffer sb) {
+    private void fireEvent(String line, DynByteBuffer sb,int flag) {
+        if ((flag & Executer.LISTENER_STDSTREAM) > 0)
         for (ProcessListener listener : this.listener) {
-            if (listener.handle_onProcess) listener.onProcess(this, line, sb);
+            listener.onProcess(this, line, sb);
+        }
+        if ((flag & Executer.LISTENER_ERRORSTREAM) > 0)
+        for (ProcessListener elistener : this.elistener) {
+            elistener.onProcess(this, line, sb);
         }
     }
 
-    private void fireEvent(DynByteBuffer sb, DynByteBuffer origin) {
+    private void fireEvent(DynByteBuffer buffer,int read,int flag) {
+        if ((flag & Executer.LISTENER_STDSTREAM) > 0)
         for (ProcessListener listener : this.listener) {
-            if (listener.handle_onBufferChanged) listener.onBufferChanged(this, sb, origin);
+            listener.onBufferChanged(this, buffer,read);
+        }
+        if ((flag & Executer.LISTENER_ERRORSTREAM) > 0)
+        for (ProcessListener elistener : this.elistener) {
+            elistener.onBufferChanged(this,buffer,read);
         }
     }
 
-    private void removeProcessListener(ProcessListener listener) {
-        this.listener.remove(listener);
+    public void removeProcessListener(ProcessListener listener, int flag) {
+        if ((flag & Executer.LISTENER_STDSTREAM) > 0) this.listener.remove(listener);
+        if ((flag & Executer.LISTENER_ERRORSTREAM) > 0) this.elistener.remove(listener);
+
     }
 
 }

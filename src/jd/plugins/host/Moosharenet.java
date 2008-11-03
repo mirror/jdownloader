@@ -67,12 +67,19 @@ public class Moosharenet extends PluginForHost {
 
         /* DownloadLink holen */
         String url = br.getRegex("popup\\('(.*?)',").getMatch(0);
+        if(url==null){
+            //edit by coa
+            br.getFormbyName("Download");
+            
+            
+        }else{
         br.openGetConnection(url);
 
         /* Datei herunterladen */
 
         dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);
         dl.startDownload();
+        }
     }
 
     public int getMaxSimultanFreeDownloadNum() {

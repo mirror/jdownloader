@@ -60,6 +60,15 @@ public class UnrarWrapper extends Thread {
 
     private int totalSize;
     private ArchivFile currentlyWorkingOn;
+
+    public ArchivFile getCurrentlyWorkingOn() {
+        return currentlyWorkingOn;
+    }
+
+    public void setCurrentlyWorkingOn(ArchivFile currentlyWorkingOn) {
+        this.currentlyWorkingOn = currentlyWorkingOn;
+    }
+
     private String latestStatus;
     private int currentVolume;
     private long startTime;
@@ -217,11 +226,9 @@ public class UnrarWrapper extends Thread {
         fireEvent(JDUnrarConstants.WRAPPER_START_EXTRACTION);
         Executer exec = new Executer(unrarCommand);
         exec.addParameter("x");
-        if (password == null || password.length() == 0) {
-            exec.addParameter("-p-");
-        } else {
-            exec.addParameter("-p");
-        }
+
+        exec.addParameter("-p");
+
         if (overwriteFiles) {
             exec.addParameter("-o+");
         } else {
@@ -238,8 +245,8 @@ public class UnrarWrapper extends Thread {
             exec.setRunin(file.getParentFile().getAbsolutePath());
         }
         exec.setWaitTimeout(-1);
-        UnrarProcessListener uw = new UnrarProcessListener(this, password);
-        exec.addProcessListener(uw);
+        exec.addProcessListener(new ExtractListener(), Executer.LISTENER_STDSTREAM);
+        exec.addProcessListener(new PasswordListener(password), Executer.LISTENER_ERRORSTREAM);
         this.status = STARTED;
         exec.start();
         this.startTime = System.currentTimeMillis();
@@ -310,21 +317,24 @@ public class UnrarWrapper extends Thread {
                 }
             }
         }
+
+        File fileFile = JDUtilities.getResourceFile("tmp/unrar/" + System.currentTimeMillis() + ".unrartmp");
+        JDUtilities.writeLocalFile(fileFile, file.getFilepath());
+
         if (file.getSize() < 2097152) {
 
             for (String pass : this.passwordList) {
                 pass = escapePassword(pass);
                 Executer exec = new Executer(unrarCommand);
                 exec.addParameter("t");
-                exec.addParameter("-p");
-                exec.addParameter("-n" + file.getFilepath());
+                // exec.addParameter("-p");
+                exec.addParameter("-n@" + fileFile.getAbsolutePath());
                 exec.addParameter("-c-");
                 exec.addParameter(this.file.getName());
                 exec.setRunin(this.file.getParentFile().getAbsolutePath());
                 exec.setWaitTimeout(-1);
-                UnrarProcessListener uw = new UnrarProcessListener(this, pass);
-                uw.handle_onProcess = false;
-                exec.addProcessListener(uw);
+
+                exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
                 exec.start();
                 exec.waitTimeout();
                 String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
@@ -341,21 +351,42 @@ public class UnrarWrapper extends Thread {
             for (String pass : this.passwordList) {
                 Executer exec = new Executer(unrarCommand);
                 exec.addParameter("p");
-                exec.addParameter("-p");
-                exec.addParameter("-n" + file.getFilepath());
+                // exec.addParameter("-p");
+                exec.addParameter("-n@" + fileFile.getAbsolutePath());
+
                 exec.addParameter("-c-");
                 exec.addParameter("-ierr");
                 exec.addParameter(this.file.getName());
                 exec.setRunin(this.file.getParentFile().getAbsolutePath());
                 exec.setWaitTimeout(-1);
-                UnrarProcessListener uw = new UnrarProcessListener(this, pass);
-                uw.handle_onProcess = false;
-                uw.interruptafter = 30;
-                exec.addProcessListener(uw);
+                exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
+
+                exec.addProcessListener(new ProcessListener() {
+
+                    @Override
+                    public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
+                        if (buffer.position() >= 50) {
+                            exec.interrupt();
+                            System.out.println("loaded enough.... interrupt");
+
+                        }
+
+                    }
+
+                    @Override
+                    public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
+                        // TODO Auto-generated method stub
+
+                    }
+
+                }, Executer.LISTENER_STDSTREAM);
                 exec.start();
                 // Wartet bis der process fertig ist,oder bis er abgebrochen
                 // wurde
                 exec.waitTimeout();
+                if (new Regex(exec.getErrorStream(), "(CRC failed|Total errors: )").matches()) {
+                    continue;
+                }
                 String sig = "";
                 DynByteBuffer buff = exec.getInputStreamBuffer();
                 buff.flip();
@@ -395,7 +426,7 @@ public class UnrarWrapper extends Thread {
 
     }
 
-    private void fireEvent(int status2) {
+    void fireEvent(int status2) {
         for (UnrarListener listener : this.listener) {
             listener.onUnrarEvent(status2, this);
         }
@@ -419,17 +450,12 @@ public class UnrarWrapper extends Thread {
                     return;
                 }
                 pass = this.passwordList[i - 1];
-            }            
+            }
             i++;
             exec.addParameter("v");
-            if (pass == null || pass.length() == 0) {
-                exec.addParameter("-p-");
-            } else {
-                exec.addParameter("-p");
-            }
-            UnrarProcessListener uw = new UnrarProcessListener(this, pass);
-            uw.handle_onProcess = false;
-            exec.addProcessListener(uw);
+            exec.addParameter("-p");
+
+            exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
             exec.addParameter("-v");
             exec.addParameter("-c-");
             exec.addParameter(file.getName());
@@ -534,91 +560,99 @@ public class UnrarWrapper extends Thread {
 
     }
 
-    class UnrarProcessListener extends ProcessListener {
-
-        private UnrarWrapper uw;
-        private String password = null;
-
-        public UnrarProcessListener(UnrarWrapper uw, String password) {
-            this.uw = uw;
-            this.password = password;
-            this.interruptafter = -1;
-        }
-
-        public UnrarProcessListener(UnrarWrapper uw) {
-            this.uw = uw;
-            this.password = null;
-            this.interruptafter = -1;
-        }
-
-        @Override
-        public void onBufferChanged(Executer exec, DynByteBuffer buffer, DynByteBuffer origin) {
-            if (new Regex(buffer.toString(), ".*?password.*: ").matches()) {
-                debugmsg(buffer.toString());
-                exec.writetoOutputStream(this.password);
-            } else if (new Regex(buffer.toString(), ".*?current.*?password.*?ll ").matches()) {
-                debugmsg(buffer.toString());
-                exec.writetoOutputStream("A");
-            } else if (interruptafter > 0 && origin == exec.getInputStreamBuffer()) {
-                if (origin.position() >= interruptafter) {
-                    exec.interrupt();
-                }
-            }
-        }
-
-        @Override
-        public void onProcess(Executer exec, String latestLine, DynByteBuffer buffer) {
-            debugmsg(latestLine);
-            String match = null;
-            if (latestLine.length() > 0) {
-                // Neue Datei wurde angefangen
-                if ((match = new Regex(latestLine, "Extracting  (.*)").getMatch(0)) != null) {
-                    String currentWorkingFile = match.trim();
-                    uw.currentlyWorkingOn = getArchivFile(currentWorkingFile);
-                    uw.fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_NEW_SINGLE_FILE_STARTED);
-                }
-                if ((match = new Regex(latestLine, "Extracting from(.*)").getMatch(0)) != null) {
-                    archiveParts.add(match.trim());
-                }
-                if ((match = new Regex(latestLine, "Extracting from.*part(\\d+)\\.").getMatch(0)) != null) {
-                    uw.currentVolume = Integer.parseInt(match.trim());
-                    long ext = uw.totalSize / uw.volumeNum * (currentVolume - 1);
-                    if (ext == 0) { return; }
-                    try {
-                        uw.speed = ext / ((System.currentTimeMillis() - uw.startTime) / 1000);
-                    } catch (Exception e) {
-                    }
-                }
-                // ruft die prozentangaben der aktuellen datei
-                if ((match = new Regex(latestLine, "(\\d+)\\%").getMatch(0)) != null) {
-                    uw.exactProgress = true;
-                    currentlyWorkingOn.setPercent(Integer.parseInt(match));
-                    uw.fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
-                }
-
-                // datei ok
-                if ((match = new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
-                    currentlyWorkingOn.setPercent(100);
-                    uw.fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
-                    uw.fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED);
-                }
-
-                if ((match = new Regex(latestLine, "Bad archive (.*)").getMatch(0)) != null) {
-                    uw.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
-                    debugmsg("Bad archive. Prop. CRC error in " + match);
-                    exec.interrupt();
-                }
-
-                if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
-                    uw.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
-                    exec.interrupt();
-                }
-
-            }
-
-        }
-
-    }
+    // class UnrarProcessListener extends ProcessListener {
+    //
+    // private UnrarWrapper uw;
+    // private String password = null;
+    //
+    // public UnrarProcessListener(UnrarWrapper uw, String password) {
+    // this.uw = uw;
+    // this.password = password;
+    // this.interruptafter = -1;
+    // }
+    //
+    // public UnrarProcessListener(UnrarWrapper uw) {
+    // this.uw = uw;
+    // this.password = null;
+    // this.interruptafter = -1;
+    // }
+    //
+    // @Override
+    // public void onBufferChanged(Executer exec, DynByteBuffer buffer,
+    // DynByteBuffer origin) {
+    // if (new Regex(buffer.toString(), ".*?password.*: ").matches()) {
+    // debugmsg(buffer.toString());
+    // exec.writetoOutputStream(this.password);
+    // } else if (new Regex(buffer.toString(),
+    // ".*?current.*?password.*?ll ").matches()) {
+    // debugmsg(buffer.toString());
+    // exec.writetoOutputStream("A");
+    // } else if (interruptafter > 0 && origin == exec.getInputStreamBuffer()) {
+    // if (origin.position() >= interruptafter) {
+    // exec.interrupt();
+    // }
+    // }
+    // }
+    //
+    // @Override
+    // public void onProcess(Executer exec, String latestLine, DynByteBuffer
+    // buffer) {
+    // debugmsg(latestLine);
+    // String match = null;
+    // if (latestLine.length() > 0) {
+    // // Neue Datei wurde angefangen
+    // if ((match = new Regex(latestLine, "Extracting  (.*)").getMatch(0)) !=
+    // null) {
+    // String currentWorkingFile = match.trim();
+    // uw.currentlyWorkingOn = getArchivFile(currentWorkingFile);
+    // uw.fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_NEW_SINGLE_FILE_STARTED);
+    // }
+    // if ((match = new Regex(latestLine, "Extracting from(.*)").getMatch(0)) !=
+    // null) {
+    // archiveParts.add(match.trim());
+    // }
+    // if ((match = new Regex(latestLine,
+    // "Extracting from.*part(\\d+)\\.").getMatch(0)) != null) {
+    // uw.currentVolume = Integer.parseInt(match.trim());
+    // long ext = uw.totalSize / uw.volumeNum * (currentVolume - 1);
+    // if (ext == 0) { return; }
+    // try {
+    // uw.speed = ext / ((System.currentTimeMillis() - uw.startTime) / 1000);
+    // } catch (Exception e) {
+    // }
+    // }
+    // // ruft die prozentangaben der aktuellen datei
+    // if ((match = new Regex(latestLine, "(\\d+)\\%").getMatch(0)) != null) {
+    // uw.exactProgress = true;
+    // currentlyWorkingOn.setPercent(Integer.parseInt(match));
+    // uw.fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+    // }
+    //
+    // // datei ok
+    // if ((match = new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
+    // currentlyWorkingOn.setPercent(100);
+    // uw.fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+    // uw.fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED);
+    // }
+    //
+    // if ((match = new Regex(latestLine, "Bad archive (.*)").getMatch(0)) !=
+    // null) {
+    // uw.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+    // debugmsg("Bad archive. Prop. CRC error in " + match);
+    // exec.interrupt();
+    // }
+    //
+    // if ((match = new Regex(latestLine,
+    // "CRC failed in (.*?) \\(").getMatch(0)) != null) {
+    // uw.status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+    // exec.interrupt();
+    // }
+    //
+    // }
+    //
+    // }
+    //
+    // }
 
     public int getCurrentVolume() {
         return currentVolume;
@@ -636,7 +670,13 @@ public class UnrarWrapper extends Thread {
         return size;
     }
 
-    private ArchivFile getArchivFile(String currentWorkingFile) {
+    /**
+     * Gibt das ArchiveFile zum lokalen Pfad currentWorkingFile zurück
+     * 
+     * @param currentWorkingFile
+     * @return
+     */
+    ArchivFile getArchivFile(String currentWorkingFile) {
         for (ArchivFile af : files) {
             if (af.getFilepath().equals(currentWorkingFile)) { return af; }
         }
@@ -688,4 +728,64 @@ public class UnrarWrapper extends Thread {
 
     }
 
+    public class ExtractListener extends ProcessListener {
+
+        @Override
+        public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
+
+            String match = null;
+            if (latestLine.length() > 0) {
+                // Neue Datei wurde angefangen
+                if ((match = new Regex(latestLine, "Extracting  (.*)").getMatch(0)) != null) {
+                    String currentWorkingFile = match.trim();
+                    currentlyWorkingOn = getArchivFile(currentWorkingFile);
+                    fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_NEW_SINGLE_FILE_STARTED);
+                }
+                if ((match = new Regex(latestLine, "Extracting from(.*)").getMatch(0)) != null) {
+                    archiveParts.add(match.trim());
+                }
+                if ((match = new Regex(latestLine, "Extracting from.*part(\\d+)\\.").getMatch(0)) != null) {
+                    currentVolume = Integer.parseInt(match.trim());
+                    long ext = totalSize / volumeNum * (currentVolume - 1);
+                    if (ext == 0) { return; }
+                    try {
+                        speed = ext / ((System.currentTimeMillis() - startTime) / 1000);
+                    } catch (Exception e) {
+                    }
+                }
+                // ruft die prozentangaben der aktuellen datei
+                if ((match = new Regex(latestLine, "(\\d+)\\%").getMatch(0)) != null) {
+                    exactProgress = true;
+                    currentlyWorkingOn.setPercent(Integer.parseInt(match));
+                    fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+                }
+
+                // datei ok
+                if ((match = new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
+                    currentlyWorkingOn.setPercent(100);
+                    fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+                    fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED);
+                }
+
+                if ((match = new Regex(latestLine, "Bad archive (.*)").getMatch(0)) != null) {
+                    status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+
+                    exec.interrupt();
+                }
+
+                if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
+                    status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                    exec.interrupt();
+                }
+
+            }
+        }
+
+    }
 }
