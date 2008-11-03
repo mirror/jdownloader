@@ -1147,5 +1147,5 @@ plugins.container.dlc.showdialogoncreatedlc = Yaratmadan sonra onay dialogların
 plugins.container.dlc.uploadername = Karşıya yükleyenin adını dahil et
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Bu dosyada yasal olmayan içerik var gibi ve kitlenmiş.Bu dosyayı indirmek Rapidshare tarafından yasaklanmıştır.
 sys.dlc.error_version = DLC şifreleme başarısız.Lütfen doğru JD sürmünü kullandığınızdan emin olun.
-plugins.host.rapidshare.errors.32012e683d4eed2399b17c1ef0f3dde0 = Bedava kullanıcı indirme limitine ulaşıldı.Daha fazlasını mı istiyorsunuz?
+
 
