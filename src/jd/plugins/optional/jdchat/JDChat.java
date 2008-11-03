@@ -875,16 +875,11 @@ public class JDChat extends PluginOptional implements ControlListener {
         }
 
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_NATIVELANGUAGE, ar.toArray(new String[] {}), JDLocale.L("interaction.jdchat.native", "to: ")));
-
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
-        // config.addEntry(cfg = new
-        // ConfigEntry(ConfigContainer.TYPE_RADIOFIELD,
-        // JDUtilities.getConfiguration(), "VARS", keys,
-        // JDLocale.L("interaction.infoFileWriter.variables","Available
-        // variables")));
-        lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLATSELF, JDLocale.L("plugins.optional.jdchat.doautotranslateself", "Translate everything I say")));
-        cfg.setDefaultValue(false);
-        conditionEntry = cfg;
+
+        lngse.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PARAM_DOAUTOTRANSLATSELF, JDLocale.L("plugins.optional.jdchat.doautotranslateself", "Translate everything I say")));
+        conditionEntry.setDefaultValue(false);
+
         lngse.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, PARAM_DESLANGUAGE, ar.toArray(new String[] {}), JDLocale.L("interaction.jdchat.deslanguage", "to: ")));
         cfg.setEnabledCondidtion(conditionEntry, "==", true);
 

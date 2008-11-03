@@ -46,8 +46,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
     private static final long serialVersionUID = 7680205811276541375L;
 
-    public static final String VERSION = "$Revision$";
-
     public static int getAddonInterfaceVersion() {
         return 2;
     }
@@ -62,12 +60,9 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
-        DownloadLink lastDownloadFinished;
-        switch (event.getID()) {
-        case ControlEvent.CONTROL_PLUGIN_INACTIVE:
+        if (event.getID() == ControlEvent.CONTROL_PLUGIN_INACTIVE && event.getSource() instanceof PluginForHost) {
             // Nur Hostpluginevents auswerten
-            if (!(event.getSource() instanceof PluginForHost)) { return; }
-            lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+            DownloadLink lastDownloadFinished = ((SingleDownloadController) event.getParameter()).getDownloadLink();
             if (lastDownloadFinished.getFilePackage().getRemainingLinks() == 0) {
                 write(lastDownloadFinished);
             }
@@ -107,10 +102,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         for (int i = 0; i < Replacer.KEYS.length; i++) {
             keys[i] = "%" + Replacer.KEYS[i][0] + "%" + "   (" + Replacer.KEYS[i][1] + ")";
         }
-        // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // subConfig, "INFOFILEWRITER_ENABLED",
-        // JDLocale.L("plugins.optional.infoFileWriter.disable", "Infofilewriter
-        // aktivieren")).setDefaultValue(false));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, "VARS", keys, JDLocale.L("plugins.optional.infoFileWriter.variables", "Available variables")));
 

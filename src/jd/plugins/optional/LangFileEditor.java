@@ -765,12 +765,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             match = new Regex(line, "^(.*?)[\\s]*?=[\\s]*?(.*?)$").getRow(0);
             if (match == null) continue;
 
-            match[0] = match[0].trim().toLowerCase();
-            match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
+            match[0] = Encoding.UTF8Decode(match[0].trim().toLowerCase());
+            match[1] = Encoding.UTF8Decode(match[1].trim() + ((match[1].endsWith(" ")) ? " " : ""));
             if (!data.containsKey(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
-                match[0] = Encoding.UTF8Decode(match[0]);
-                match[1] = Encoding.UTF8Decode(match[1]);
                 data.put(match[0], match[1]);
 
             }
@@ -808,12 +806,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             for (String[] match : matches) {
 
-                match[0] = match[0].trim().toLowerCase();
+                match[0] = Encoding.UTF8Decode(match[0].trim().toLowerCase());
                 if (sourceEntries.containsKey(match[0])) continue;
 
                 if (match[0].indexOf("\"") == -1) {
 
-                    match[0] = Encoding.UTF8Decode(match[0]);
                     match[1] = Encoding.UTF8Decode(match[1].substring(1, match[1].length() - 1));
                     sourceEntries.put(match[0], match[1]);
 
@@ -1104,6 +1101,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.langfileeditor.show_gui", "Show GUI"), 0).setActionListener(this));
 
         return menu;
+    }
+
+    @Override
+    public String getCoder() {
+        return "Greeny";
     }
 
     @Override

@@ -270,11 +270,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                 d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
             }
 
-            // String selected = (String) JOptionPane.showInputDialog(this,
-            // JDLocale.L("gui.config.liveHeader.dialog.selectRouter", "Bitte
-            // wähle deinen Router aus"),
-            // JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router
-            // importieren"), JOptionPane.INFORMATION_MESSAGE, null, d, null);
             JPanel panel = new JPanel(new BorderLayout(10, 10));
             final DefaultListModel defaultListModel = new DefaultListModel();
             final String text = "Search Router Model";
@@ -458,11 +453,9 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
             public void setMaximum(int value) {
                 progress.setMaximum(value);
-
             }
 
             public void setMessage(String txt) {
-
             }
 
             public void setMinimum(int value) {
@@ -470,9 +463,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             }
 
             public void setString(String txt) {
-
                 progress.setString(txt);
-
             }
 
             public void setStringPainted(boolean v) {
@@ -480,7 +471,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             }
 
             public void setThread(Thread th) {
-
             }
 
             public void setValue(int value) {
@@ -510,8 +500,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
     private static final String DEBUG = "";
 
-    // private static final String DEBUG = "debug, ";
-
     private JPanel getPanel() {
         panel = new JPanel(new MigLayout(DEBUG + "ins 20", "[right, pref!]0[grow,fill]0[]"));
         routerIp = config.getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
@@ -533,8 +521,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         addComponents(panel, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis"), downloadDirectory, GAPLEFT + GAPRIGHT + ", spanx" + WRAP_BETWEEN_ROWS);
         addComponents(panel, JDLocale.L("gui.config.gui.language", "Sprache"), languages, GAPLEFT + GAPRIGHT + ", w pref!, wrap " + PUSHGAP);
 
-        // premium = new JButton(JDLocale.L("gui.menu.plugins.phost",
-        // "Premium Hoster"));
         btnPremium = new JButton("Einstellungen");
         btnPremium.addActionListener(this);
 

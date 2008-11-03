@@ -110,15 +110,13 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     private JMenuItem menEditAddRequest;
 
-    private JMenuItem menEditAddVariable;
+    // private JMenuItem menEditAddVariable;
 
     private JMenuItem menEditAddWait;
 
     private JMenuItem menEditValidate;
 
     private JMenuItem menExit;
-
-    // private JMenuItem menEditTest;
 
     private JMenuItem menImportFile;
 
@@ -241,7 +239,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         String[] forbiddenHeaders = new String[] { "accept", "user-agent", "If-Modified-Since", "Cache-Control" };
 
         ArrayList<String> ips = new ArrayList<String>();
-        // ArrayList<String> vars = new ArrayList<String>();
         String[] requests = script.split("----------------------------------------------------------");
         StringBuffer sb = new StringBuffer();
         for (String request : requests) {
@@ -388,11 +385,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
         }
 
-        // String selected = (String) JOptionPane.showInputDialog(this,
-        // JDLocale.L("gui.config.liveHeader.dialog.selectRouter", "Bitte
-        // wähle deinen Router aus"),
-        // JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router
-        // importieren"), JOptionPane.INFORMATION_MESSAGE, null, d, null);
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         final DefaultListModel defaultListModel = new DefaultListModel();
         final String text = "Search Router Model";
@@ -489,15 +481,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         dialog.pack();
         dialog.setLocationRelativeTo(null);
         dialog.setVisible(true);
-        int answer = ((Integer) op.getValue()).intValue(); // JOptionPane.
-        // showConfirmDialog
-        // (this,
-        // panel,
-        // JDLocale.L("gui.config.liveHeader.dialog.importRouter",
-        // "Router
-        // importieren"),
-        // JOptionPane.OK_CANCEL_OPTION,
-        // JOptionPane.INFORMATION_MESSAGE);
+        int answer = ((Integer) op.getValue()).intValue();
         if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
             String selected = (String) list.getSelectedValue();
             int id = Integer.parseInt(selected.split("\\.")[0]);
@@ -507,13 +491,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             }
 
             textArea.setText(data[2]);
-            // routerScript.setData(data[2]);
-            // String username = (String) user.getText();
-            // if (username == null || username.matches("[\\s]*"))
-            // user.setData(data[4]);
-            // String pw = (String) pass.getText();
-            // if (pw == null || pw.matches("[\\s]*")) pass.setData(data[5]);
-
         }
 
     }
@@ -582,35 +559,29 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         // EditMenu
         menEditValidate = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.validate", "Validate current script"));
-        // this.menEditTest = new
-        // JMenuItem(JDLocale.L(
-        // "plugins.optional.httpliveheaderscripter.gui.menu.edit.test",
-        // "Test current script"));
         menEditAddRequest = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addrequest", "Add request tag"));
         menEditAddDefine = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.adddefine", "Add define tag"));
         menEditAddWait = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addwait", "Add wait tag"));
-        menEditAddVariable = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable", "Add variable"));
+        // menEditAddVariable = new
+        // JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.edit.addvariable",
+        // "Add variable"));
 
         menEditValidate.addActionListener(this);
-        // menEditTest.addActionListener(this);
         menEditAddRequest.addActionListener(this);
         menEditAddDefine.addActionListener(this);
         menEditAddWait.addActionListener(this);
-        menEditAddVariable.addActionListener(this);
+        // menEditAddVariable.addActionListener(this);
 
         // HelpMenu
         menHelpWiki = new JMenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.menu.help.wiki", "Howto"));
         menHelpWiki.addActionListener(this);
+
         menHelp.add(menHelpWiki);
         menEdit.add(menEditValidate);
-
-        // menEdit.add(menEditTest);
         menEdit.add(new JSeparator());
         menEdit.add(menEditAddRequest);
         menEdit.add(menEditAddDefine);
-
         menEdit.add(menEditAddWait);
-        // menEdit.add(menEditAddVariable);
 
     }
 
