@@ -59,7 +59,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         super(wrapper);
     }
 
-    class Serverhandler extends Handler {
+    class Serverhandler implements Handler {
 
         public void handle(Request request, Response response) {
             response.setReturnType("text/html");

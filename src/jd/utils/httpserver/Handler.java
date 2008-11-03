@@ -16,6 +16,6 @@
 
 package jd.utils.httpserver;
 
-public abstract class Handler {
-    public abstract void handle(Request request, Response response);
+public interface Handler {
+    public void handle(Request request, Response response);
 }
