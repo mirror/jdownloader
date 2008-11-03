@@ -113,7 +113,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     private MiniBar miniBar;
 
-    private JProgressBar progress;
+    private JDProgressBar progress;
 
     private DownloadTreeTable table;
 
@@ -146,7 +146,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         label = new JLabel();
         label.setOpaque(false);
         miniBar = new MiniBar();
-        progress = new JProgressBar();
+        progress = new JDProgressBar();
         Dimension dim = progress.getPreferredSize();
         dim.width = Math.max(dim.width, 300);
         progress.setPreferredSize(dim);
@@ -196,20 +196,20 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     ui.setSelectionBackground(DONE_COLOR_FONT_B);
                 }
                 progress.setString(dLink.getPluginProgress().getPercent() + " %");
-                progress.setMaximum((int) dLink.getPluginProgress().getTotal());
-                progress.setValue((int) dLink.getPluginProgress().getCurrent());
+                progress.setMaximum(dLink.getPluginProgress().getTotal());
+                progress.setValue( dLink.getPluginProgress().getCurrent());
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
-                progress.setMaximum((int) dLink.getLinkStatus().getTotalWaitTime());
+                progress.setMaximum( dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
                     ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
                     ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 }
-                progress.setValue((int) dLink.getLinkStatus().getRemainingWaittime());
+                progress.setValue( dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
                 return progress;
-            } else if ((int) dLink.getDownloadCurrent() > 0) {
+            } else if ( dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         progress.setForeground(DONE_COLOR);

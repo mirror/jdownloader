@@ -58,7 +58,7 @@ public class UnrarWrapper extends Thread {
 
     private boolean overwriteFiles = false;
 
-    private int totalSize;
+    private long totalSize;
     private ArchivFile currentlyWorkingOn;
 
     public ArchivFile getCurrentlyWorkingOn() {
@@ -245,7 +245,7 @@ public class UnrarWrapper extends Thread {
             exec.setRunin(file.getParentFile().getAbsolutePath());
         }
         exec.setWaitTimeout(-1);
-        exec.addProcessListener(new ExtractListener(), Executer.LISTENER_STDSTREAM);
+        exec.addProcessListener(new ExtractListener(), Executer.LISTENER_ERRORSTREAM|Executer.LISTENER_ERRORSTREAM);
         exec.addProcessListener(new PasswordListener(password), Executer.LISTENER_ERRORSTREAM);
         this.status = STARTED;
         exec.start();

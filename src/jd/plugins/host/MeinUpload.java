@@ -16,15 +16,18 @@
 
 package jd.plugins.host;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -54,14 +57,23 @@ public class MeinUpload extends PluginForHost {
             br.submitForm(form);
 
             Form captcha = br.getForms()[1];
-            String captchaCode = getCaptchaCode("http://meinupload.com/captcha.php", downloadLink);
+            
+            File captchaFile = this.getLocalCaptchaFile(this);
+            try {
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://meinupload.com/captcha.php"));
+            } catch (Exception e) {
+           
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+           
             captcha.put("captchacode", captchaCode);
             br.submitForm(captcha);
         }
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
 
-        dl = new RAFDownload(this, downloadLink, br.createRequest(url));
-        dl.connect(br);
+        br.openDownload(downloadLink, url);
+   
 
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();

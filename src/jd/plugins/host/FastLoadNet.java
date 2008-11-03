@@ -148,7 +148,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 20;
     }
 
     @Override
