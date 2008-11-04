@@ -43,7 +43,6 @@ import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
 import jd.unrar.UnrarPassword;
 import jd.utils.Executer;
-import jd.utils.GetExplorer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Jobber;
@@ -552,10 +551,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             if (link == null) { return; }
             String path = link.getStringProperty("EXTRACTEDPATH");
 
-            try {
-                new GetExplorer().openExplorer(new File(path));
-            } catch (Exception ec) {
-            }
+            JDUtilities.openExplorer(new File(path));
 
             break;
         case 5:

@@ -1761,6 +1761,15 @@ public class JDUtilities {
         return dateFormat.format(new Date(time)).substring(0, 29);
     }
 
+    public static boolean openExplorer(File path) {
+        try {
+            return new GetExplorer().openExplorer(path);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public static String[] passwordStringToArray(String password) {
         if (password == null || password.matches("[\\s]*")) { return new String[] {}; }
         if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {

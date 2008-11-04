@@ -72,7 +72,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
-import jd.utils.GetExplorer;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDUtilities;
@@ -230,19 +229,18 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
 
-                    try {
-                        JLinkButton.openURL(link.getBrowserUrl());
-                    } catch (BrowserLaunchingInitializingException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    } catch (UnsupportedOperatingSystemException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    } catch (IOException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-              
+                try {
+                    JLinkButton.openURL(link.getBrowserUrl());
+                } catch (BrowserLaunchingInitializingException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                } catch (UnsupportedOperatingSystemException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                } catch (IOException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
 
             }
 
@@ -250,10 +248,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         case TreeTableAction.DOWNLOAD_DOWNLOAD_DIR:
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
-            try {
-                new GetExplorer().openExplorer(new File(link.getFileOutput()).getParentFile());
-            } catch (Exception ec) {
-            }
+            JDUtilities.openExplorer(new File(link.getFileOutput()).getParentFile());
             break;
 
         case TreeTableAction.DOWNLOAD_DELETE:
@@ -401,10 +396,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
         case TreeTableAction.PACKAGE_DOWNLOAD_DIR:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
-            try {
-                new GetExplorer().openExplorer(new File(fp.getDownloadDirectory()));
-            } catch (Exception ec) {
-            }
+            JDUtilities.openExplorer(new File(fp.getDownloadDirectory()));
             break;
 
         case TreeTableAction.PACKAGE_DELETE:

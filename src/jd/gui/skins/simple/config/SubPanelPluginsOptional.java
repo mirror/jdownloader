@@ -40,7 +40,6 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
-import jd.utils.GetExplorer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -143,10 +142,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             }
             ((SimpleGUI) JDUtilities.getGUI()).createOptionalPluginsMenuEntries();
         } else if (e.getSource() == openPluginDir) {
-            try {
-                new GetExplorer().openExplorer(JDUtilities.getResourceFile("plugins"));
-            } catch (Exception ec) {
-            }
+            JDUtilities.openExplorer(JDUtilities.getResourceFile("plugins"));
         }
     }
 
