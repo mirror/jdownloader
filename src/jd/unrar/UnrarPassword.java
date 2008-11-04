@@ -46,16 +46,12 @@ public class UnrarPassword {
     public static LinkedList<String> getPasswordList() {
         UnrarPassword.loadPasswordlist();
         return passwordlist;
-
     }
 
     @SuppressWarnings("unchecked")
     public static void loadPasswordlist() {
-        if (passwordlist != null) { return; }
-        passwordlist = (LinkedList<String>) configPasswords.getProperty(PROPERTY_PASSWORDLIST, null);
-        if (passwordlist == null) {
-            passwordlist = new LinkedList<String>();
-        }
+        if (passwordlist != null) return;
+        passwordlist = (LinkedList<String>) configPasswords.getProperty(PROPERTY_PASSWORDLIST, new LinkedList<String>());
     }
 
     public static String[] returnPasswords() {
