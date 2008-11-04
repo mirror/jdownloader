@@ -39,7 +39,7 @@ public class QshareCom extends PluginForHost {
     public QshareCom(PluginWrapper wrapper) {
         super(wrapper);
 
-        // this.enablePremium();
+         this.enablePremium();
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -76,7 +76,12 @@ public class QshareCom extends PluginForHost {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss", Locale.UK);
         if (expire == null) {
-            ai.setStatus("Account expired or logins not valid");
+            if(br.containsHTML("Flatrate")){
+                ai.setStatus("Account expired");
+            }else{
+                ai.setStatus("Logins not valid");
+            }
+            
             ai.setValid(false);
             return ai;
         }
