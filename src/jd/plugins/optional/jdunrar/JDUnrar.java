@@ -41,6 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
+import jd.unrar.UnrarPassword;
 import jd.utils.Executer;
 import jd.utils.GetExplorer;
 import jd.utils.JDLocale;
@@ -60,6 +61,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * Wird als reihe für anstehende extracthjobs verwendet
      */
     private Jobber queue;
+
+    // private ConfigEntry pwField;
 
     public JDUnrar(PluginWrapper wrapper) {
         super(wrapper);
@@ -381,12 +384,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.jdunrar.menu.toggle", "Activate"), 1).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty("ACTIVATED", true));
 
-        menu.add(m = new MenuItem(MenuItem.SEPARATOR));
+        menu.add(new MenuItem(MenuItem.SEPARATOR));
 
-        m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21);
-        m.setActionListener(this);
-        menu.add(m);
-        //
+        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.extract.singlefils", "Extract archive(s)"), 21).setActionListener(this));
+
         // MenuItem queue;
         // queue = new MenuItem(MenuItem.CONTAINER,
         // JDLocale.L("plugins.optional.jdunrar.menu.queue", "Current Queue"),
@@ -416,9 +417,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         // }
         // menu.add(queue);
 
-        menu.add(m = new MenuItem(MenuItem.SEPARATOR));
+        menu.add(new MenuItem(MenuItem.SEPARATOR));
 
-        menu.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.config", "Settings"), 4).setActionListener(this));
+        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.config.passwordlist.import", "Import old passwordlist"), 5).setActionListener(this));
+
+        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.config", "Settings"), 4).setActionListener(this));
 
         return menu;
     }
@@ -555,6 +558,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             }
 
             break;
+        case 5:
+
+            if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("plugins.optional.jdunrar.config.passwordlist.import.message", "Do you really want to import the old password list?"))) {
+                String[] pws = UnrarPassword.returnPasswords();
+                String pwList = "";
+                for (String pw : pws) {
+                    pwList += pw + System.getProperty("line.separator");
+                }
+                // pwField.setDefaultValue(pwList);
+                JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST).setProperty("LIST", pwList);
+            }
+
+            break;
         }
 
     }
@@ -594,9 +610,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
 
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDLocale.L("gui.config.unrar.use_extractto", "Use customized extract path")));
-        ce.setDefaultValue(false);
-        conditionEntry = ce;
+        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDLocale.L("gui.config.unrar.use_extractto", "Use customized extract path")));
+        conditionEntry.setDefaultValue(false);
+
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARPATH, JDLocale.L("gui.config.unrar.path", "Extract to")));
         ce.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());
         ce.setEnabledCondidtion(conditionEntry, "==", true);
@@ -612,9 +628,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
 
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, JDLocale.L("gui.config.unrar.use_subpath", "Use subpath")));
-        ce.setDefaultValue(false);
-        conditionEntry = ce;
+        ext.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, JDLocale.L("gui.config.unrar.use_subpath", "Use subpath")));
+        conditionEntry.setDefaultValue(false);
+
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH, JDLocale.L("gui.config.unrar.subpath", "Subpath")));
         ce.setDefaultValue("/%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, "==", true);

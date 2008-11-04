@@ -21,7 +21,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
-import java.net.MalformedURLException;
 
 import javax.swing.AbstractAction;
 import javax.swing.JFrame;
@@ -57,20 +56,20 @@ public class JDAboutDialog {
         }
 
         public void actionPerformed(ActionEvent e) {
-            
-                try {
-                    JLinkButton.openURL(url);
-                } catch (BrowserLaunchingInitializingException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
-          
+
+            try {
+                JLinkButton.openURL(url);
+            } catch (BrowserLaunchingInitializingException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (UnsupportedOperatingSystemException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+
         }
     }
 
@@ -92,17 +91,8 @@ public class JDAboutDialog {
         // space. This improves the way the entries look in the table
         // (without fiddleing with the tablecellrenderer)
 
-        String[][] devs = new String[][] {
-                { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" },
-                { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." },
-                { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" },
-                { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" },
-                { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" },
-                { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" },
-                { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" },
-                { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
-                { " Execute", " ---", " hoster, decrypter, addons, ..." },
-                { " gocsp", " ---", " Mac Integration" },
+        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" }, { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" }, { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" }, { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
+                { " Execute", " ---", " hoster, decrypter, addons, ..." }, { " gocsp", " ---", " Mac Integration" },
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
 

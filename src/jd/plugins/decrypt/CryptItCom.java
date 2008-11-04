@@ -40,6 +40,8 @@ import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
+@SuppressWarnings("deprecation")
+// FIXME: Auf Browser umbauen (Viel Spaß =) )
 public class CryptItCom extends PluginForDecrypt {
 
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";

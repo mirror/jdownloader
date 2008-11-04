@@ -33,7 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.optional.webinterface.template.Template;
-import jd.unrar.UnrarPassword;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -153,15 +152,15 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         t.setParam("pakete", v);
     }
 
-    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
-        // TODO: abändern (entfernen?)
-        String[] pws = UnrarPassword.returnPasswords();
-        String pwlist = "";
-        for (String element : pws) {
-            pwlist = pwlist + System.getProperty("line.separator") + element;
-        }
-        t.setParam("password_list", pwlist);
-    }
+//    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
+//        // TODO: abändern
+//        String[] pws = UnrarPassword.returnPasswords();
+//        String pwlist = "";
+//        for (String element : pws) {
+//            pwlist = pwlist + System.getProperty("line.separator") + element;
+//        }
+//        t.setParam("password_list", pwlist);
+//    }
 
     private void add_single_info(Template t, HashMap<String, String> requestParameter) {
 
@@ -402,9 +401,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (url.startsWith("index.tmpl") == true) {
                 add_status_page(t, requestParameter);
             }
-            if (url.startsWith("passwd.tmpl") == true) {
-                add_password_list(t, requestParameter);
-            }
+//            if (url.startsWith("passwd.tmpl") == true) {
+//                add_password_list(t, requestParameter);
+//            }
             if (url.startsWith("link_adder.tmpl") == true) {
                 add_linkadder_page(t, requestParameter);
             }

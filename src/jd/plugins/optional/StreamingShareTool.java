@@ -21,7 +21,6 @@ import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -34,9 +33,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTextArea;
-
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 import jd.JDFileFilter;
 import jd.PluginWrapper;
@@ -53,6 +49,8 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class StreamingShareTool extends PluginOptional {
     public StreamingShareTool(PluginWrapper wrapper) {
@@ -134,20 +132,20 @@ public class StreamingShareTool extends PluginOptional {
             return;
         }
         if (e.getSource() == menHelpHelp) {
-       
-                try {
-                    JLinkButton.openURL(JDLocale.L("plugins.optional.streamsharingtool.wikiurl", "http://wiki.jdownloader.org/index.php?title=StreamingShare"));
-                } catch (BrowserLaunchingInitializingException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
-       
+
+            try {
+                JLinkButton.openURL(JDLocale.L("plugins.optional.streamsharingtool.wikiurl", "http://wiki.jdownloader.org/index.php?title=StreamingShare"));
+            } catch (BrowserLaunchingInitializingException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (UnsupportedOperatingSystemException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+
             return;
         }
 

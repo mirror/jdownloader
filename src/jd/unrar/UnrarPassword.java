@@ -33,10 +33,9 @@ public class UnrarPassword {
                 passwordlist.add(passwords[i]);
             }
         }
-        // JUnrar.makePasswordListUnique();
         UnrarPassword.savePasswordList();
     }
-    
+
     private static void savePasswordList() {
         if (passwordlist != null && passwordlist.size() > 0) {
             configPasswords.setProperty(PROPERTY_PASSWORDLIST, passwordlist);
@@ -44,17 +43,8 @@ public class UnrarPassword {
         }
     }
 
-    public static String[] getPasswordArray(String password) {
-        if (password == null || password.matches("[\\s]*")) { return new String[] {}; }
-        if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
-            password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
-            return password.split("\"[\\s]*\\,[\\s]*\"");
-        }
-        return new String[] { password };
-    }
-
     public static LinkedList<String> getPasswordList() {
-    	UnrarPassword.loadPasswordlist();
+        UnrarPassword.loadPasswordlist();
         return passwordlist;
 
     }
@@ -68,55 +58,30 @@ public class UnrarPassword {
         }
     }
 
-    public static String passwordArrayToString(String[] passwords) {
-        LinkedList<String> pws = new LinkedList<String>();
-        for (int i = 0; i < passwords.length; i++) {
-            if (!passwords[i].matches("[\\s]*") && !pws.contains(passwords[i])) {
-                pws.add(passwords[i]);
-            }
-        }
-        passwords = pws.toArray(new String[pws.size()]);
-        if (passwords.length == 0) { return ""; }
-        if (passwords.length == 1) { return passwords[0]; }
-
-        int l = passwords.length - 1;
-
-        String ret = "{\"";
-        for (int i = 0; i < passwords.length; i++) {
-            if (!passwords[i].matches("[\\s]*")) {
-                ret += passwords[i] + (i == l ? "\"}" : "\",\"");
-            }
-        }
-        return ret;
-
-    }
-
     public static String[] returnPasswords() {
-    	UnrarPassword.loadPasswordlist();
+        UnrarPassword.loadPasswordlist();
         return passwordlist.toArray(new String[passwordlist.size()]);
     }
 
-
     public static void addToPasswordlist(String password) {
         if (passwordlist == null || passwordlist.size() < 1) {
-        	UnrarPassword.loadPasswordlist();
+            UnrarPassword.loadPasswordlist();
         }
-        String[] passwords = UnrarPassword.getPasswordArray(password);
+        String[] passwords = JDUtilities.passwordStringToArray(password);
         for (int i = 0; i < passwords.length; i++) {
             passwords[i] = passwords[i].trim();
             if (passwords[i] != null && !passwords[i].matches("[\\s]*") && !passwordlist.contains(passwords[i])) {
                 passwordlist.add(passwords[i]);
             }
         }
-        // JUnrar.makePasswordListUnique();
         UnrarPassword.savePasswordList();
     }
 
     public static void pushPasswordToTop(String password) {
         if (passwordlist == null || passwordlist.size() < 1) {
-        	UnrarPassword.loadPasswordlist();
+            UnrarPassword.loadPasswordlist();
         }
-        String[] passwords = UnrarPassword.getPasswordArray(password);
+        String[] passwords = JDUtilities.passwordStringToArray(password);
         for (int i = 0; i < passwords.length; i++) {
             passwords[i] = passwords[i].trim();
             if (passwords[i] != null && !passwords[i].matches("[\\s]*")) {

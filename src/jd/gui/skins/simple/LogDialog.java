@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -44,9 +43,6 @@ import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
@@ -56,6 +52,8 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.LogFormatter;
 import jd.utils.Upload;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann.
@@ -206,20 +204,20 @@ public class LogDialog extends JFrame implements ActionListener {
                 res = JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url);
 
                 if (res != null) {
-                  
-                        try {
-                            JLinkButton.openURL(url);
-                        } catch (BrowserLaunchingInitializingException e1) {
-                            // TODO Auto-generated catch block
-                            e1.printStackTrace();
-                        } catch (UnsupportedOperatingSystemException e1) {
-                            // TODO Auto-generated catch block
-                            e1.printStackTrace();
-                        } catch (IOException e1) {
-                            // TODO Auto-generated catch block
-                            e1.printStackTrace();
-                        }
-                   
+
+                    try {
+                        JLinkButton.openURL(url);
+                    } catch (BrowserLaunchingInitializingException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    } catch (UnsupportedOperatingSystemException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    } catch (IOException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+
                 }
 
             } else {

@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.awt.event.ActionEvent;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
@@ -91,7 +90,7 @@ public class FastLoadNet extends PluginForHost {
             JLinkButton.openURL("http://www.fast-load.net/getdownload.php?fid=" + id + "&jid=" + uui);
         } catch (Exception e1) {
             e1.printStackTrace();
-            throw new PluginException(LinkStatus.ERROR_FATAL,JDLocale.L("plugins.host.fastload.errors","Browserlauncher missconfigured"));
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.fastload.errors", "Browserlauncher missconfigured"));
         }
         Thread.sleep(5000);
         int i = 30;
@@ -255,7 +254,7 @@ public class FastLoadNet extends PluginForHost {
                         continue;
                     } catch (Exception e) {
                         e.printStackTrace();
-                        
+
                     }
                     progress.increase(1l);
                     link.getLinkStatus().setStatusText(null);

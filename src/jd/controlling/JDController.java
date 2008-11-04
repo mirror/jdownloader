@@ -31,7 +31,7 @@ import jd.CPluginWrapper;
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.Interaction; //import jd.controlling.interaction.Unrar;
+import jd.controlling.interaction.Interaction;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;

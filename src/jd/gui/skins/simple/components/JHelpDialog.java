@@ -37,12 +37,11 @@ import javax.swing.JLabel;
 import javax.swing.JTextPane;
 import javax.swing.WindowConstants;
 
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class JHelpDialog extends JDialog implements ActionListener {
 

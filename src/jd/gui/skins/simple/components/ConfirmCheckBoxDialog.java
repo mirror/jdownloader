@@ -33,11 +33,10 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 /**
  * Dieser Dialog wird angezeigt, wenn ein Download mit einem Plugin getätigt
@@ -58,6 +57,7 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
 
     public boolean isChecked = false;
     public boolean isOk = false;
+
     /**
      * Zeigt einen Dialog, in dem man die Hoster AGB akzeptieren kann
      * 
@@ -67,12 +67,12 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
     public ConfirmCheckBoxDialog(String title, String text, String checkBoxText) {
         this(title, text, checkBoxText, false);
     }
+
     public ConfirmCheckBoxDialog(String title, String text, String checkBoxText, boolean html) {
 
         super();
         JPanel panel = new JPanel();
         setContentPane(panel);
-
 
         setModal(true);
         setLayout(new GridBagLayout());
@@ -81,10 +81,9 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
         setTitle(title);
 
         JTextPane labelInfo = new JTextPane();
-   
+
         labelInfo.setEditable(false);
-        if(html)
-        {
+        if (html) {
             labelInfo.setContentType("text/html");
             labelInfo.requestFocusInWindow();
             labelInfo.addHyperlinkListener(new HyperlinkListener() {
@@ -104,14 +103,13 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
                             e1.printStackTrace();
                         }
                     }
-                    
-                }}); 
 
+                }
+            });
+
+        } else {
+            labelInfo.setForeground(Color.red);
         }
-        else
-        {
-        labelInfo.setForeground(Color.red);
-        }        
         labelInfo.setText(text);
         checkBox = new JCheckBox(checkBoxText);
         checkBox.addActionListener(this);
@@ -141,12 +139,11 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnOK) {
-           if(checkBox.isSelected())
-        	   isChecked=true;
-           	   isOk=true;
+            if (checkBox.isSelected()) isChecked = true;
+            isOk = true;
             dispose();
         } else if (e.getSource() == btnCancel) {
-        dispose();
-    }
+            dispose();
+        }
     }
 }

@@ -31,13 +31,11 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
@@ -488,17 +486,17 @@ public class JDSimpleWebserverRequestHandler {
                 }
             }
         }
-        /* passwortliste verändern */
-        if (requestParameter.containsKey("passwd")) {
-            if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
-                if (requestParameter.containsKey("password_list")) {
-                    String password_list = Encoding.htmlDecode(requestParameter.get("password_list"));
-                    // JUnrar unrar = new JUnrar(false);
-                    // TODO: abändern (entfernen?)
-                    UnrarPassword.editPasswordlist(Regex.getLines(password_list));
-                }
-            }
-        }
+//        /* passwortliste verändern */
+//        if (requestParameter.containsKey("passwd")) {
+//            if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
+//                if (requestParameter.containsKey("password_list")) {
+//                    String password_list = Encoding.htmlDecode(requestParameter.get("password_list"));
+//                    // JUnrar unrar = new JUnrar(false);
+//                    // TODO: abändern
+//                    UnrarPassword.editPasswordlist(Regex.getLines(password_list));
+//                }
+//            }
+//        }
 
         File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
         if (!fileToRead.isFile()) {

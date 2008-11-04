@@ -32,11 +32,10 @@ import javax.swing.JTextPane;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
@@ -111,7 +110,8 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
             success = true;
         }
         dispose();
-    }    
+    }
+
     public void hyperlinkUpdate(HyperlinkEvent e) {
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {

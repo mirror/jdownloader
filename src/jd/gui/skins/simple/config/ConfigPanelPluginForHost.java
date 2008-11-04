@@ -28,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -116,7 +115,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
 
                     }
 
-                }); 
+                });
             case 5:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
             case 6:

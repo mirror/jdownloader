@@ -327,6 +327,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuColorizeMissing.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         mnuColorizeOld.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0));
         mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
+        // mnuSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+        // KeyEvent.CTRL_DOWN_MASK));
         mnuSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
         mnuContinueSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0));
 
@@ -620,12 +622,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private int getOriginalIndex(int row) {
-        String key = table.getValueAt(row, 0).toString();
+        String key = table.getStringAt(row, 0);
 
         for (int i = 0; i < tableModel.getRowCount(); ++i) {
-            if (tableModel.getValueAt(i, 0).equalsIgnoreCase(key)) {
-                return i;
-            }
+            if (tableModel.getValueAt(i, 0).equalsIgnoreCase(key)) return i;
         }
 
         return -1;
@@ -647,7 +647,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         Collections.sort(data);
 
         for (KeyInfo entry : data) {
-            if (!entry.isMissing()) sb.append(entry.getKey() + " = " + entry.getLanguage() + "\n");
+            if (!entry.isMissing()) sb.append(entry.toString() + "\n");
         }
 
         try {
@@ -743,10 +743,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             match = new Regex(line, "^(.*?)[\\s]*?=[\\s]*?(.*?)$").getRow(0);
             if (match == null) continue;
 
-            match[0] = Encoding.UTF8Decode(match[0].trim().toLowerCase());
-            match[1] = Encoding.UTF8Decode(match[1].trim() + ((match[1].endsWith(" ")) ? " " : ""));
+            match[0] = Encoding.UTF8Decode(match[0]).trim().toLowerCase();
             if (!data.containsKey(match[0]) && !match[0].equals("") && !match[1].equals("")) {
 
+                match[1] = Encoding.UTF8Decode(match[1]);
+                match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
                 data.put(match[0], match[1]);
 
             }
@@ -784,12 +785,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             for (String[] match : matches) {
 
-                match[0] = Encoding.UTF8Decode(match[0].trim().toLowerCase());
+                match[0] = Encoding.UTF8Decode(match[0]).trim().toLowerCase();
                 if (sourceEntries.containsKey(match[0])) continue;
 
                 if (match[0].indexOf("\"") == -1) {
 
-                    match[1] = Encoding.UTF8Decode(match[1].substring(1, match[1].length() - 1));
+                    match[1] = Encoding.UTF8Decode(match[1]);
+                    match[1] = match[1].substring(1, match[1].length() - 1);
                     sourceEntries.put(match[0], match[1]);
 
                 } else {
@@ -896,6 +898,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         public int compareTo(KeyInfo o) {
             return this.getKey().compareToIgnoreCase(o.getKey());
+        }
+
+        @Override
+        public String toString() {
+            return this.getKey() + " = " + this.getLanguage();
         }
 
     }

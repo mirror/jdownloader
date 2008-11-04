@@ -34,10 +34,9 @@ import javax.swing.JWindow;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
+import jd.utils.JDTheme;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
-import jd.utils.JDTheme;
 
 public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkListener {
 
