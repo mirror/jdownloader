@@ -28,7 +28,7 @@ import javax.swing.JOptionPane;
 
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.parser.Regex;
-import jd.unrar.zip.Zip;
+import jd.utils.zip.Zip;
 
 public class PackageCreaterRS {
     public static void main(String[] args) {
@@ -105,14 +105,14 @@ public class PackageCreaterRS {
 
                         String tot = "<url>(.*?" + name + ".*?v\\d+?\\.jdu)</url>";
                         String all = "<packages>\r\n";
-                  
+
                         for (int ii = 0; ii < matches.length; ii++) {
                             boolean entries = new Regex(matches[ii][0], tot).matches();
                             if (entries) {
-                              
+
                                 String v = new Regex(matches[ii][0], "<version>(.*?)</version>").getMatch(0).trim();
 
-                                int versionid = (true||JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION) ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
+                                int versionid = (true || JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION) ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
 
                                 matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
                                 matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
@@ -121,7 +121,7 @@ public class PackageCreaterRS {
                             all += matches[ii][0] + "\r\n";
 
                         }
-                      
+
                         all += "</packages>";
                         list = all;
                         // sb.append("<package>");
@@ -129,7 +129,7 @@ public class PackageCreaterRS {
                         // "Kategorie für: " + name)+"</category>");
                         // sb.append("<name>"+JOptionPane.showInputDialog(frame,
                         // "Name für: " + name)+"</name>");
-                        //sb.append("<version>"+JOptionPane.showInputDialog(frame
+                        // sb.append("<version>"+JOptionPane.showInputDialog(frame
                         // ,
                         // "Version für: " + name)+"</version>");
                         // sb.append("<url>"+url+"</url>");
@@ -167,13 +167,13 @@ public class PackageCreaterRS {
 
                         String tot = "<url>(.*?" + name + ".*?LIGHT\\_\\.jdu)</url>";
                         String all = "<packages>\r\n";
-                  
+
                         for (int ii = 0; ii < matches.length; ii++) {
                             boolean entries = new Regex(matches[ii][0], tot).matches();
                             if (entries) {
                                 String v = new Regex(matches[ii][0], "<version>(.*?)</version>").getMatch(0).trim();
 
-                                int versionid = (true||JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION)  ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
+                                int versionid = (true || JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION) ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
                                 matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
                                 matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
                                 System.out.println(matches[ii][0]);
@@ -181,7 +181,7 @@ public class PackageCreaterRS {
                             all += matches[ii][0] + "\r\n";
 
                         }
-                     
+
                         all += "</packages>";
                         list = all;
 
@@ -196,8 +196,7 @@ public class PackageCreaterRS {
         sb.append("</packages>");
 
         System.out.println(list + "");
-        if(listphp!=null)
-        JDUtilities.writeLocalFile(new File(listphp.getParentFile(), "list2.php"), list + "");
+        if (listphp != null) JDUtilities.writeLocalFile(new File(listphp.getParentFile(), "list2.php"), list + "");
 
     }
 }
