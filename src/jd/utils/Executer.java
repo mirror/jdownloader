@@ -125,6 +125,7 @@ public class Executer extends Thread {
     private StreamObserver sbeObserver;
     private StreamObserver sboObserver;
     private OutputStream outputStream=null;
+    private IOException exception;
    
 
     public Executer(String command) {
@@ -249,10 +250,16 @@ public class Executer extends Thread {
             }
 
         } catch (IOException e1) {
-
+        
             e1.printStackTrace();
+      
+            this.exception=e1;
             return;
         }
+    }
+
+    public IOException getException() {
+        return exception;
     }
 
     public Process getProcess() {
@@ -306,7 +313,7 @@ public class Executer extends Thread {
     }
 
     public void waitTimeout() {
-        while (isAlive() || this.sbeObserver.isAlive() || this.sboObserver.isAlive()) {
+        while (isAlive() || (sbeObserver!=null&&this.sbeObserver.isAlive()) || (sboObserver!=null&&this.sboObserver.isAlive())) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {

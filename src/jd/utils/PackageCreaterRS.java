@@ -196,6 +196,7 @@ public class PackageCreaterRS {
         sb.append("</packages>");
 
         System.out.println(list + "");
+        if(listphp!=null)
         JDUtilities.writeLocalFile(new File(listphp.getParentFile(), "list2.php"), list + "");
 
     }

@@ -162,9 +162,12 @@ public class ConfigPanelGUI extends ConfigPanel {
             public void actionPerformed(ActionEvent arg0) {
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.config.gui.testbrowser.message", "JDownloader now tries to open http://jdownloader.org in your browser."))) {
                     try {
-                        JLinkButton.openURL("http://jdownloader.org");
-                    } catch (MalformedURLException e) {
+                        save();
+                        JLinkButton.openURL("http://jdownloader.org");                   
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
                         e.printStackTrace();
+                        SimpleGUI.CURRENTGUI.showMessageDialog(JDLocale.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s",e.getLocalizedMessage()));
                     }
                 }
 

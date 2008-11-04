@@ -44,6 +44,9 @@ import javax.swing.JTextArea;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
+
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
@@ -203,12 +206,20 @@ public class LogDialog extends JFrame implements ActionListener {
                 res = JOptionPane.showInputDialog(this, JDLocale.L("gui.logDialog.logLink", "Log-Link (click ok to open)"), url);
 
                 if (res != null) {
-                    try {
-                        JLinkButton.openURL(url);
-                    } catch (MalformedURLException e1) {
-
-                        e1.printStackTrace();
-                    }
+                  
+                        try {
+                            JLinkButton.openURL(url);
+                        } catch (BrowserLaunchingInitializingException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
+                        } catch (UnsupportedOperatingSystemException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
+                        } catch (IOException e1) {
+                            // TODO Auto-generated catch block
+                            e1.printStackTrace();
+                        }
+                   
                 }
 
             } else {

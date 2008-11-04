@@ -110,13 +110,13 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                     public void actionPerformed(ActionEvent e) {
                         try {
                             JLinkButton.openURL(pluginsForHost.get(rowIndex).getPlugin().getAGBLink());
-                        } catch (MalformedURLException e1) {
+                        } catch (Exception e1) {
                             e1.printStackTrace();
                         }
 
                     }
 
-                });
+                }); 
             case 5:
                 return pluginsForHost.get(rowIndex).isAGBChecked();
             case 6:

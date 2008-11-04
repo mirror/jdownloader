@@ -503,14 +503,15 @@ public class Browser {
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
             String path = request.getHttpConnection().getURL().getPath();
+            if(string.startsWith("/")||string.startsWith("\\"))return "http://"+request.getHttpConnection().getURL().getHost()+string;
             int id;
-            if ((id = path.lastIndexOf("/")) > 0) {
+            if ((id = path.lastIndexOf("/")) >= 0) {
                 path = path.substring(0, id);
             }
             if (path.trim().length() == 0) path = "/";
 
             // path.substring(path.lastIndexOf("/"))
-            string = "http://" + request.getHttpConnection().getURL().getHost() + (string.charAt(0) == '/' ? string : path + "/" + string);
+            string = "http://" + request.getHttpConnection().getURL().getHost() +  path + "/" + string;
         }
         return string;
     }

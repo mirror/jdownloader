@@ -41,6 +41,9 @@ import jd.utils.JDLocale;
 import org.jdesktop.swingx.JXHyperlink;
 import org.jdesktop.swingx.JXTitledSeparator;
 
+import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
+import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
+
 public class JDAboutDialog {
 
     private final static class LinkAction extends AbstractAction {
@@ -54,11 +57,20 @@ public class JDAboutDialog {
         }
 
         public void actionPerformed(ActionEvent e) {
-            try {
-                JLinkButton.openURL(url);
-            } catch (MalformedURLException e1) {
-                e1.printStackTrace();
-            }
+            
+                try {
+                    JLinkButton.openURL(url);
+                } catch (BrowserLaunchingInitializingException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                } catch (UnsupportedOperatingSystemException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                } catch (IOException e1) {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+          
         }
     }
 
