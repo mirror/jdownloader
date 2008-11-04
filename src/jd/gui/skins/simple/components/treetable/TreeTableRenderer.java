@@ -25,7 +25,6 @@ import java.awt.Graphics2D;
 import java.text.DecimalFormat;
 
 import javax.swing.JLabel;
-import javax.swing.JProgressBar;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
@@ -69,7 +68,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
     private static Color ACTIVE_PROGRESS_COLOR_FONT_B;
 
     private static Color DONE_COLOR;
-    
+
     private static Color DONE_COLOR_Package;
 
     private static Color DONE_COLOR_FONT_A;
@@ -140,7 +139,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
         ERROR_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_error_font_b", "555555");
         DONE_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_done_font_b", "555555");
         INACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_inactive_font_b", "555555");
-        ACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_active_font_b", "555555");       
+        ACTIVE_PROGRESS_COLOR_FONT_B = JDTheme.C("gui.color.downloadlist.progress_active_font_b", "555555");
 
         table = downloadTreeTable;
         label = new JLabel();
@@ -197,19 +196,19 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                 }
                 progress.setString(dLink.getPluginProgress().getPercent() + " %");
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
-                progress.setValue( dLink.getPluginProgress().getCurrent());
+                progress.setValue(dLink.getPluginProgress().getCurrent());
                 return progress;
             } else if ((dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED) && dLink.getPlugin().getRemainingHosterWaittime() > 0) || (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) && dLink.getLinkStatus().getRemainingWaittime() > 0)) {
-                progress.setMaximum( dLink.getLinkStatus().getTotalWaitTime());
+                progress.setMaximum(dLink.getLinkStatus().getTotalWaitTime());
                 progress.setForeground(ERROR_PROGRESS_COLOR);
                 if (ui != null) {
                     ui.setSelectionForeground(ERROR_PROGRESS_COLOR_FONT_A);
                     ui.setSelectionBackground(ERROR_PROGRESS_COLOR_FONT_B);
                 }
-                progress.setValue( dLink.getLinkStatus().getRemainingWaittime());
+                progress.setValue(dLink.getLinkStatus().getRemainingWaittime());
                 progress.setString(c.format(10000 * progress.getPercentComplete() / 100.0) + "% (" + progress.getValue() / 1000 + "/" + progress.getMaximum() / 1000 + " sek)");
                 return progress;
-            } else if ( dLink.getDownloadCurrent() > 0) {
+            } else if (dLink.getDownloadCurrent() > 0) {
                 if (!dLink.getLinkStatus().isPluginActive()) {
                     if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                         progress.setForeground(DONE_COLOR);

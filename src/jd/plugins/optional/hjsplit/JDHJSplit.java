@@ -16,12 +16,10 @@
 
 package jd.plugins.optional.hjsplit;
 
-import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
 import jd.PluginWrapper;
@@ -35,8 +33,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
-import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -188,25 +184,19 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
                 @Override
                 public String getDescription() {
-                    return "HJSPLIT-Startvolumes";
+                    return JDLocale.L("plugins.optional.hjsplit.filefilter", "HJSPLIT-Startvolumes");
                 }
 
             };
             fc.setFileFilter((javax.swing.filechooser.FileFilter) ff);
-            fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
-            File[] list = fc.getSelectedFiles();
-            if (list == null) return;
-            addFileList(list);
+            if (fc.showOpenDialog(SimpleGUI.CURRENTGUI.getFrame()) == JDFileChooser.APPROVE_OPTION) {
+                File[] list = fc.getSelectedFiles();
+                if (list == null) return;
+                addFileList(list);
+            }
             break;
         case 4:
-            ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config);
-
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.add(new JPanel(), BorderLayout.NORTH);
-            panel.add(cpanel, BorderLayout.CENTER);
-            ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel);
-            pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
-            pop.setVisible(true);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), config);
             break;
 
         case 1000:

@@ -10,8 +10,8 @@ import jd.utils.ProcessListener;
 public class PasswordListener extends ProcessListener {
 
     private String password;
- 
-    private int lastLinePosition=0;
+
+    private int lastLinePosition = 0;
 
     public PasswordListener(String pass) {
         this.password = pass;
@@ -19,10 +19,10 @@ public class PasswordListener extends ProcessListener {
 
     @Override
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
-      
-       String lastLine = new String(buffer.getLast(buffer.position()-lastLinePosition));
+
+        String lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
-          
+
             exec.writetoOutputStream(this.password);
         }
         // else if (new Regex(buffer.toString(),
@@ -39,7 +39,7 @@ public class PasswordListener extends ProcessListener {
 
     @Override
     public void onProcess(Executer exec, String latestLine, DynByteBuffer sb) {
-this.lastLinePosition=sb.position();
+        this.lastLinePosition = sb.position();
     }
 
 }

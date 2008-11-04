@@ -16,13 +16,11 @@
 
 package jd.plugins.optional.jdunrar;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import javax.swing.JPanel;
 import javax.swing.filechooser.FileFilter;
 
 import jd.PluginWrapper;
@@ -37,8 +35,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.config.ConfigEntriesPanel;
-import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -438,6 +434,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     private void menuitemActionPerformed(ActionEvent e, MenuItem source) {
         SubConfiguration cfg = this.getPluginConfig();
+        DownloadLink link;
         switch (source.getActionID()) {
         case 1:
             boolean newValue;
@@ -462,51 +459,42 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
                 @Override
                 public String getDescription() {
-                    // TODO Auto-generated method stub
-                    return "Rar-Startvolumes";
+                    return JDLocale.L("plugins.optional.jdunrar.filefilter", "Rar-Startvolumes");
                 }
 
             };
-            fc.setFileFilter((javax.swing.filechooser.FileFilter) ff);
-            fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
-            File[] list = fc.getSelectedFiles();
-            if (list == null) return;
-            DownloadLink link;
-            for (File archiveStartFile : list) {
-                link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile);
+            fc.setFileFilter(ff);
+            if (fc.showOpenDialog(SimpleGUI.CURRENTGUI.getFrame()) == JDFileChooser.APPROVE_OPTION) {
+                File[] list = fc.getSelectedFiles();
+                if (list == null) return;
+                for (File archiveStartFile : list) {
+                    link = JDUtilities.getController().getDownloadLinkByFileOutput(archiveStartFile);
 
-                if (link == null) {
-                    link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
-                    link.setDownloadSize(archiveStartFile.length());
-                    FilePackage fp = new FilePackage();
-                    fp.setDownloadDirectory(archiveStartFile.getParent());
-                    link.setFilePackage(fp);
-                }
-                link = this.findStartLink(link);
-                if (link == null) {
-                    continue;
-                }
-                final DownloadLink finalLink = link;
-                System.out.print("queued to extract: " + archiveStartFile);
-                new Thread() {
-                    public void run() {
-
-                        addToQueue(finalLink);
+                    if (link == null) {
+                        link = new DownloadLink(null, archiveStartFile.getName(), DUMMY_HOSTER, "", true);
+                        link.setDownloadSize(archiveStartFile.length());
+                        FilePackage fp = new FilePackage();
+                        fp.setDownloadDirectory(archiveStartFile.getParent());
+                        link.setFilePackage(fp);
                     }
-                }.start();
+                    link = this.findStartLink(link);
+                    if (link == null) {
+                        continue;
+                    }
+                    final DownloadLink finalLink = link;
+                    System.out.print("queued to extract: " + archiveStartFile);
+                    new Thread() {
+                        public void run() {
 
+                            addToQueue(finalLink);
+                        }
+                    }.start();
+                }
             }
             break;
 
         case 4:
-            ConfigEntriesPanel cpanel = new ConfigEntriesPanel(config);
-
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.add(new JPanel(), BorderLayout.NORTH);
-            panel.add(cpanel, BorderLayout.CENTER);
-            ConfigurationPopup pop = new ConfigurationPopup(SimpleGUI.CURRENTGUI.getFrame(), cpanel, panel);
-            pop.setLocation(JDUtilities.getCenterOfComponent(SimpleGUI.CURRENTGUI.getFrame(), pop));
-            pop.setVisible(true);
+            SimpleGUI.showConfigDialog(SimpleGUI.CURRENTGUI.getFrame(), config);
             break;
 
         case 1000:
