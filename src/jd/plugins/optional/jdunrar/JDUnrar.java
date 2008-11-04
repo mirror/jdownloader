@@ -146,7 +146,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             for (DownloadLink l : list) {
                 if (l.getFilePackage() == old) continue;
                 old = l.getFilePackage();
-                String[] pws = PasswordList.passwordStringtoArray(l.getFilePackage().getPassword());
+                String[] pws = JDUtilities.passwordStringToArray(l.getFilePackage().getPassword());
                 for (String pw : pws) {
                     PasswordList.addPassword(pw);
                 }

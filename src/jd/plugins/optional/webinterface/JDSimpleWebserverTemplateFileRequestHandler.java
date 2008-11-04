@@ -154,6 +154,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     }
 
     private void add_password_list(Template t, HashMap<String, String> requestParameter) {
+        // TODO: abändern (entfernen?)
         String[] pws = UnrarPassword.returnPasswords();
         String pwlist = "";
         for (String element : pws) {

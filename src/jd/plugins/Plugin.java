@@ -46,7 +46,6 @@ import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
-import jd.unrar.UnrarPassword;
 import jd.utils.JDUtilities;
 
 /**
@@ -79,7 +78,7 @@ public abstract class Plugin implements ActionListener {
      */
     public static String findPassword(String data) {
         Vector<String> passwords = HTMLParser.findPasswords(data);
-        return UnrarPassword.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
+        return JDUtilities.passwordArrayToString(passwords.toArray(new String[passwords.size()]));
     }
 
     /**

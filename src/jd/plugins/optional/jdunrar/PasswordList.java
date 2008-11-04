@@ -34,38 +34,6 @@ public class PasswordList {
         return CONFIG;
     }
 
-    public static String[] passwordStringtoArray(String password) {
-        if (password == null || password.matches("[\\s]*")) { return new String[] {}; }
-        if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
-            password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
-            return password.split("\"[\\s]*\\,[\\s]*\"");
-        }
-        return new String[] { password };
-    }
-
-    public static String passwordArrayToString(String[] passwords) {
-        LinkedList<String> pws = new LinkedList<String>();
-        for (int i = 0; i < passwords.length; i++) {
-            if (!passwords[i].matches("[\\s]*") && !pws.contains(passwords[i])) {
-                pws.add(passwords[i]);
-            }
-        }
-        passwords = pws.toArray(new String[pws.size()]);
-        if (passwords.length == 0) { return ""; }
-        if (passwords.length == 1) { return passwords[0]; }
-
-        int l = passwords.length - 1;
-
-        String ret = "{\"";
-        for (int i = 0; i < passwords.length; i++) {
-            if (!passwords[i].matches("[\\s]*")) {
-                ret += passwords[i] + (i == l ? "\"}" : "\",\"");
-            }
-        }
-        return ret;
-
-    }
-
     public static void addPassword(String pw) {
         ArrayList<String> list = getPasswordList();
         list.remove(pw);

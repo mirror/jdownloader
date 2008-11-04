@@ -494,6 +494,7 @@ public class JDSimpleWebserverRequestHandler {
                 if (requestParameter.containsKey("password_list")) {
                     String password_list = Encoding.htmlDecode(requestParameter.get("password_list"));
                     // JUnrar unrar = new JUnrar(false);
+                    // TODO: abändern (entfernen?)
                     UnrarPassword.editPasswordlist(Regex.getLines(password_list));
                 }
             }

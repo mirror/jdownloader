@@ -88,7 +88,6 @@ import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
-import jd.unrar.UnrarPassword;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
@@ -316,7 +315,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             String password = getPassword();
             String comment = getComment();
 
-            String[] pws = UnrarPassword.getPasswordArray(password);
+            String[] pws = JDUtilities.passwordStringToArray(password);
             Vector<String> pwList = new Vector<String>();
             for (String element : pws) {
                 pwList.add(element);
@@ -326,7 +325,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 linkList.add(element);
 
-                pws = UnrarPassword.getPasswordArray(element.getSourcePluginPassword());
+                pws = JDUtilities.passwordStringToArray(element.getSourcePluginPassword());
                 for (String element2 : pws) {
                     if (pwList.indexOf(element2) < 0) {
                         pwList.add(element2);
@@ -343,7 +342,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 comment = comment.substring(1);
             }
 
-            String pw = UnrarPassword.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
+            String pw = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
 
             if (!txtComment.hasFocus()) {
                 txtComment.setText(comment);
@@ -958,7 +957,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             for (PackageTab tab : tabList) {
                 newList.addAll(tab.getLinkList());
                 pwTmp1 = pwNew;
-                pwTmp2 = UnrarPassword.getPasswordArray(tab.getPassword());
+                pwTmp2 = JDUtilities.passwordStringToArray(tab.getPassword());
                 pwNew = new String[pwTmp1.length + pwTmp2.length];
                 for (i = 0; i < pwTmp1.length; ++i) {
                     pwNew[i] = pwTmp1[i];
@@ -975,7 +974,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 totalLinkList.addAll(newList);
                 tabList.get(0).setPackageName(name);
                 tabList.get(0).setLinkList(newList);
-                tabList.get(0).setPassword(UnrarPassword.passwordArrayToString(pwNew));
+                tabList.get(0).setPassword(JDUtilities.passwordArrayToString(pwNew));
                 onPackageNameChanged(tabList.get(0));
             }
         } else if (e.getSource() == mSplitByHost) {
@@ -997,7 +996,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                             // Passwort/Kommentar vom Package holen
                             DownloadLink link = curTab.removeLinkAt(j);
                             link.setSourcePluginComment(curTab.getComment());
-                            String[] pws = UnrarPassword.getPasswordArray(curTab.getPassword());
+                            String[] pws = JDUtilities.passwordStringToArray(curTab.getPassword());
                             for (int k = 0; k < pws.length; ++k) {
                                 link.addSourcePluginPassword(pws[k]);
                             }
@@ -1321,8 +1320,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setComment(tab.getComment());
         fp.setPassword(tab.getPassword());
         fp.setExtractAfterDownload(tab.isExtract());
-        UnrarPassword.addToPasswordlist(tab.getPassword());
-        UnrarPassword.pushPasswordToTop(tab.getPassword());
+        // UnrarPassword.addToPasswordlist(tab.getPassword());
+        // UnrarPassword.pushPasswordToTop(tab.getPassword());
         addToDownloadDirs(tab.getDownloadDirectory(), tab.getPackageName());
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {

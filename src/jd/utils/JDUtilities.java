@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.SimpleTimeZone;
 import java.util.Vector;
@@ -113,7 +114,7 @@ public class JDUtilities {
     public static final String CONFIG_PATH = "jDownloader.config";
 
     /**
-     * Die Konfiguration 
+     * Die Konfiguration
      */
     private static Configuration configuration = new Configuration();
 
@@ -622,7 +623,7 @@ public class JDUtilities {
             try {
                 mediaTracker.waitForID(0);
             } catch (InterruptedException e) {
-                return null; 
+                return null;
             }
             mediaTracker.removeImage(captchaImage);
             JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
@@ -1758,6 +1759,38 @@ public class JDUtilities {
      */
     public static String formatTime(long time) {
         return dateFormat.format(new Date(time)).substring(0, 29);
+    }
+
+    public static String[] passwordStringToArray(String password) {
+        if (password == null || password.matches("[\\s]*")) { return new String[] {}; }
+        if (password.matches("[\\s]*\\{[\\s]*\".*\"[\\s]*\\}[\\s]*$")) {
+            password = password.replaceFirst("[\\s]*\\{[\\s]*\"", "").replaceFirst("\"[\\s]*\\}[\\s]*$", "");
+            return password.split("\"[\\s]*\\,[\\s]*\"");
+        }
+        return new String[] { password };
+    }
+
+    public static String passwordArrayToString(String[] passwords) {
+        LinkedList<String> pws = new LinkedList<String>();
+        for (int i = 0; i < passwords.length; i++) {
+            if (!passwords[i].matches("[\\s]*") && !pws.contains(passwords[i])) {
+                pws.add(passwords[i]);
+            }
+        }
+        passwords = pws.toArray(new String[pws.size()]);
+        if (passwords.length == 0) { return ""; }
+        if (passwords.length == 1) { return passwords[0]; }
+
+        int l = passwords.length - 1;
+
+        String ret = "{\"";
+        for (int i = 0; i < passwords.length; i++) {
+            if (!passwords[i].matches("[\\s]*")) {
+                ret += passwords[i] + (i == l ? "\"}" : "\",\"");
+            }
+        }
+        return ret;
+
     }
 
 }
