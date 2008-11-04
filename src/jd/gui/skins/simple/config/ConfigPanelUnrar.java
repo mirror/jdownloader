@@ -40,6 +40,7 @@ import jd.utils.JDUtilities;
  * 
  */
 
+@Deprecated
 public class ConfigPanelUnrar extends ConfigPanel implements ActionListener {
 
     private static final long serialVersionUID = -1543456288909278519L;

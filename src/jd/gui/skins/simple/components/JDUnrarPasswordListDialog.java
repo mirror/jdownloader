@@ -40,6 +40,7 @@ import jd.utils.JDUtilities;
  * 
  * @author DwD
  */
+@Deprecated
 public class JDUnrarPasswordListDialog extends JDialog implements ActionListener {
 
     private static final long serialVersionUID = 1L;

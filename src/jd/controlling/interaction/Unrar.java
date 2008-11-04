@@ -30,6 +30,7 @@ import jd.unrar.hjsplitt.Merge;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
+@Deprecated
 class mergeFile extends File {
 
     private static final long serialVersionUID = 1L;
@@ -59,6 +60,7 @@ class mergeFile extends File {
  * 
  * @author DwD
  */
+@Deprecated
 public class Unrar extends Interaction implements Serializable {
     /**
      * soll nicht mitserialisiert werden fals sich die instanz aufhängt

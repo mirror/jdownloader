@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.utils;
 
 import java.util.ArrayList;
@@ -11,101 +27,47 @@ public class Jobber {
     private ArrayList<WorkerListener> listener;
     private int currentlyRunningWorker;
     private boolean killWorkerAfterQueueFinished = true;
-    private boolean running=false;
-/**
- * Jobber.class 
- * Diese Klasse ermöglichtda s paralelle ausführen mehrere Jobs.
- * Es ist möglich während der Ausführung neue Jobs hinzuzufügen.
- * @param i: Anzahl der paralellen Jobs
- */
+    private boolean running = false;
+
+    /**
+     * Jobber.class Diese Klasse ermöglichtda s paralelle ausführen mehrere
+     * Jobs. Es ist möglich während der Ausführung neue Jobs hinzuzufügen.
+     * 
+     * @param i
+     *            Anzahl der paralellen Jobs
+     */
     public Jobber(int i) {
         this.paralellWorkerNum = i;
         this.currentlyRunningWorker = 0;
         this.jobList = new LinkedList<Runnable>();
         this.listener = new ArrayList<WorkerListener>();
-
     }
 
-//    /**
-//     * @param args
-//     */
-//    public static void main(String[] args) {
-//        // TODO Auto-generated method stub
-//        Jobber w = new Jobber(2);
-//        w.add(new Runnable() {
-//            public void run() {
-//                for (int i = 0; i < 20; i++) {
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        // TODO Auto-generated catch block
-//                        e.printStackTrace();
-//                    }
-//                    System.out.println(this + " is working");
-//                }
-//
-//            }
-//
-//        });
-//        w.start();
-//        w.add(new Runnable() {
-//            public void run() {
-//                for (int i = 0; i < 20; i++) {
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        // TODO Auto-generated catch block
-//                        e.printStackTrace();
-//                    }
-//                    System.out.println(this + " is working");
-//                }
-//
-//            }
-//
-//        });
-//        w.add(new Runnable() {
-//            public void run() {
-//                for (int i = 0; i < 20; i++) {
-//                    try {
-//                        Thread.sleep(1000);
-//                    } catch (InterruptedException e) {
-//                        // TODO Auto-generated catch block
-//                        e.printStackTrace();
-//                    }
-//                    System.out.println(this + " is working");
-//                }
-//
-//            }
-//
-//        });
-//
-//    }
     /**
-     * Gibt zurück ob der JObber noch am leben ist. Falls nicht kann er mit start() neu gestartet werden.
-     * Jobber ist kein Thread, und kann auch wieder neu gestartet werden wenn er mal tot ist.
+     * Gibt zurück ob der JObber noch am leben ist. Falls nicht kann er mit
+     * start() neu gestartet werden. Jobber ist kein Thread, und kann auch
+     * wieder neu gestartet werden wenn er mal tot ist.
      */
-public boolean isAlive(){
-    return running;
-}
-    public void start() {
-        if(running)return;
-        this.running=true;
-        this.createWorker();
+    public boolean isAlive() {
+        return running;
+    }
 
+    public void start() {
+        if (running) return;
+        this.running = true;
+        this.createWorker();
     }
 
     private void createWorker() {
         this.workerList = new Worker[paralellWorkerNum];
-     
+
         currentlyRunningWorker = 0;
         for (int i = 0; i < paralellWorkerNum; i++) {
             increaseWorkingWorkers();
             workerList[i] = new Worker(i);
         }
         System.out.println("created " + paralellWorkerNum + " worker");
-
     }
-
 
     private synchronized int increaseWorkingWorkers() {
         currentlyRunningWorker++;
@@ -126,15 +88,18 @@ public boolean isAlive(){
 
         return currentlyRunningWorker;
     }
-/**
- * Bringt den Jobber um. Alle Workerthreads werden geschlossen. Es kann nicht granatiert werden, dass laufende Jobs zuendegebracht werden.
- * Die Jobqueue geht nicht verloren. Der jobber kann mit start() neu gestartet werden.
- */
-    public void stop() {this.running=false;
+
+    /**
+     * Bringt den Jobber um. Alle Workerthreads werden geschlossen. Es kann
+     * nicht granatiert werden, dass laufende Jobs zuendegebracht werden. Die
+     * Jobqueue geht nicht verloren. Der jobber kann mit start() neu gestartet
+     * werden.
+     */
+    public void stop() {
+        this.running = false;
         for (Worker w : workerList) {
             w.interrupt();
         }
-
     }
 
     private Runnable getNextRunnable() {
@@ -143,10 +108,12 @@ public boolean isAlive(){
             return jobList.removeFirst();
         }
     }
-/**
- * WorkingLIstener werden über den start und stop einzellner jobs informiert
- * @param wl
- */
+
+    /**
+     * WorkingLIstener werden über den start und stop einzellner jobs informiert
+     * 
+     * @param wl
+     */
     public void addWorkerListener(WorkerListener wl) {
         synchronized (listener) {
             listener.add(wl);
@@ -164,7 +131,6 @@ public boolean isAlive(){
             for (WorkerListener wl : listener)
                 wl.onJobFinished(job);
         }
-
     }
 
     private void fireJobStarted(Runnable job) {
@@ -172,13 +138,16 @@ public boolean isAlive(){
             for (WorkerListener wl : listener)
                 wl.onJobStarted(job);
         }
-
     }
-/**
- * Fügt neue Jobs hinzu. Jobs können jedereit hinzugefügt werden. ein anschließender jobber.start garantiert, dass der Job auch irgendwann mla abgearbeitet wird.
- * @param runnable
- * @return
- */
+
+    /**
+     * Fügt neue Jobs hinzu. Jobs können jedereit hinzugefügt werden. ein
+     * anschließender jobber.start garantiert, dass der Job auch irgendwann mla
+     * abgearbeitet wird.
+     * 
+     * @param runnable
+     * @return
+     */
     public int add(Runnable runnable) {
         synchronized (jobList) {
             jobList.add(runnable);
@@ -213,11 +182,11 @@ public boolean isAlive(){
         return killWorkerAfterQueueFinished;
     }
 
-    
     /**
      * Ein Worker arbeitet sequentiell jobs ab
+     * 
      * @author coalado
-     *
+     * 
      */
     public class Worker extends Thread {
 
@@ -276,6 +245,7 @@ public boolean isAlive(){
         public abstract void onJobListFinished();
 
         public abstract void onJobStarted(Runnable job);
+
     }
 
 }

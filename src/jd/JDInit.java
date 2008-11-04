@@ -38,7 +38,6 @@ import jd.controlling.JDController;
 import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
-import jd.controlling.interaction.Unrar;
 import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
@@ -521,12 +520,12 @@ public class JDInit {
 
     }
 
-    public void loadModules() {
-        logger.finer("create Module: Unrar");
-        JDUtilities.getController().setUnrarModule(Unrar.getInstance());
-        logger.finer("create Module: InfoFileWriter");
-
-    }
+    // public void loadModules() {
+    // logger.finer("create Module: Unrar");
+    // JDUtilities.getController().setUnrarModule(Unrar.getInstance());
+    // logger.finer("create Module: InfoFileWriter");
+    //
+    // }
 
     public void loadCPlugins() {
 

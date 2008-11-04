@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
-import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.plugins.DownloadLink;
@@ -274,9 +273,11 @@ public class SingleDownloadController extends Thread {
                 controller.loadContainerFile(new File(downloadLink.getFileOutput()));
             }
         }
-        if (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED, true)) {
-            controller.getUnrarModule().interact(downloadLink);
-        }
+        // if
+        // (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED,
+        // true)) {
+        // controller.getUnrarModule().interact(downloadLink);
+        // }
 
     }
 

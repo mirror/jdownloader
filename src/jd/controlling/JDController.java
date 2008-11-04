@@ -31,8 +31,7 @@ import jd.CPluginWrapper;
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.Interaction;
-import jd.controlling.interaction.Unrar;
+import jd.controlling.interaction.Interaction; //import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
@@ -213,7 +212,7 @@ public class JDController implements ControlListener, UIListener {
      */
     private UIInterface uiInterface;
 
-    private Unrar unrarModule;
+    // private Unrar unrarModule;
 
     private Vector<Vector<String>> waitingUpdates = new Vector<Vector<String>>();
 
@@ -1012,9 +1011,9 @@ public class JDController implements ControlListener, UIListener {
         return uiInterface;
     }
 
-    public Unrar getUnrarModule() {
-        return unrarModule;
-    }
+    // public Unrar getUnrarModule() {
+    // return unrarModule;
+    // }
 
     public Vector<Vector<String>> getWaitingUpdates() {
         return waitingUpdates;
@@ -1680,10 +1679,10 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-    public void setUnrarModule(Unrar instance) {
-        unrarModule = instance;
-
-    }
+    // public void setUnrarModule(Unrar instance) {
+    // unrarModule = instance;
+    //
+    // }
 
     public void setWaitingUpdates(Vector<Vector<String>> files) {
         waitingUpdates = files;

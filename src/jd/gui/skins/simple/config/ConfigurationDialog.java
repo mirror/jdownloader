@@ -138,7 +138,9 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
         addConfigPanel(ConfigPanelDownload.class, JDTheme.V("gui.images.config.network_local"), JDLocale.L("gui.config.tabLables.download", "Download/Network settings"));
         addConfigPanel(ConfigPanelGUI.class, JDTheme.V("gui.images.config.gui"), JDLocale.L("gui.config.tabLables.gui", "Benutzeroberfläche"));
         addConfigPanel(ConfigPanelReconnect.class, JDTheme.V("gui.images.config.reconnect"), JDLocale.L("gui.config.tabLables.reconnect", "Reconnect settings"));
-        addConfigPanel(ConfigPanelUnrar.class, JDTheme.V("gui.images.config.unrar"), JDLocale.L("gui.config.tabLables.unrar", "Archiv extract settings"));
+        // addConfigPanel(ConfigPanelUnrar.class,
+        // JDTheme.V("gui.images.config.unrar"),
+        // JDLocale.L("gui.config.tabLables.unrar", "Archiv extract settings"));
         addConfigPanel(ConfigPanelCaptcha.class, JDTheme.V("gui.images.config.ocr"), JDLocale.L("gui.config.tabLables.jac", "OCR Captcha settings"));
         addConfigPanel(ConfigPanelPluginForHost.class, JDTheme.V("gui.images.config.host"), JDLocale.L("gui.config.tabLables.hostPlugin", "Host Plugin settings"));
         addConfigPanel(ConfigPanelPluginForDecrypt.class, JDTheme.V("gui.images.config.decrypt"), JDLocale.L("gui.config.tabLables.decryptPlugin", "Decrypter Plugin settings"));

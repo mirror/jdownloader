@@ -169,35 +169,37 @@ public class Main {
         Boolean newInstance = false;
         boolean showSplash = true;
         boolean stop = false;
-        boolean extractSwitch = false;
-        long extractTime = 0;
-        Vector<String> paths = new Vector<String>();
+        // boolean extractSwitch = false;
+        // long extractTime = 0;
+        // Vector<String> paths = new Vector<String>();
         boolean enoughtMemory = !(Runtime.getRuntime().maxMemory() < 100000000);
         if (!enoughtMemory) {
             showSplash = false;
         }
         // pre start parameters //
         for (int i = 0; i < args.length; i++) {
-            if (extractSwitch) {
-                if (args[i].equals("--rotate") || args[i].equals("-r")) {
-
-                    extractTime = -1;
-
-                } else if (extractTime == -1) {
-
-                    if (args[i].matches("[\\d]+")) {
-                        extractTime = Integer.parseInt(args[i]);
-                    } else {
-                        extractTime = 0;
-                    }
-
-                } else if (!args[i].matches("[\\s]*")) {
-
-                    paths.add(args[i]);
-
-                }
-
-            } else if (args[i].equals("--new-instance") || args[i].equals("-n")) {
+            // if (extractSwitch) {
+            // if (args[i].equals("--rotate") || args[i].equals("-r")) {
+            //
+            // extractTime = -1;
+            //
+            // } else if (extractTime == -1) {
+            //
+            // if (args[i].matches("[\\d]+")) {
+            // extractTime = Integer.parseInt(args[i]);
+            // } else {
+            // extractTime = 0;
+            // }
+            //
+            // } else if (!args[i].matches("[\\s]*")) {
+            //
+            // paths.add(args[i]);
+            //
+            // }
+            //
+            // } else if (args[i].equals("--new-instance") ||
+            // args[i].equals("-n")) {
+            if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 
                 if (!enoughtMemory) {
                     JDUtilities.restartJD(args);
@@ -228,20 +230,21 @@ public class Main {
 
                 }
 
-            } else if (args[i].equals("--extract") || args[i].equals("-e")) {
-                extractSwitch = true;
-                stop = true;
-                showSplash = false;
+                // } else if (args[i].equals("--extract") ||
+                // args[i].equals("-e")) {
+                // extractSwitch = true;
+                // stop = true;
+                // showSplash = false;
             } else if (args[i].equals("--show") || args[i].equals("-s")) {
 
                 JACController.showDialog(false);
-                extractSwitch = false;
+                // extractSwitch = false;
                 stop = true;
 
             } else if (args[i].equals("--train") || args[i].equals("-t")) {
 
                 JACController.showDialog(true);
-                extractSwitch = false;
+                // extractSwitch = false;
                 stop = true;
 
             } else if (showSplash && args[i].matches("(--add-.*|--start-download|-[dDmfHr]|--stop-download|--minimize|--focus|--hide|--reconnect)")) {
@@ -282,12 +285,13 @@ public class Main {
 
         } else {
 
-            if (extractSwitch) {
-
-                logger.info("Extract: [" + paths.toString() + " | " + extractTime + "]");
-                Server.extract(paths, extractTime, true);
-
-            }
+            // if (extractSwitch) {
+            //
+            // logger.info("Extract: [" + paths.toString() + " | " + extractTime
+            // + "]");
+            // Server.extract(paths, extractTime, true);
+            //
+            // }
 
             if (!stop && !enoughtMemory) {
                 JDUtilities.restartJD(args);
@@ -427,8 +431,9 @@ public class Main {
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
         init.loadDownloadQueue();
 
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
-        init.loadModules();
+        // Main.setSplashStatus(splashScreen, 10,
+        // JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
+        // init.loadModules();
 
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 

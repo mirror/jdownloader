@@ -30,7 +30,6 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.SingleDownloadController;
-import jd.controlling.interaction.Unrar;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
@@ -578,8 +577,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     @Override
     public boolean initAddon() {
         if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-            JDUtilities.getConfiguration().setProperty(Unrar.PROPERTY_ENABLED, false);
-
+            // JDUtilities.getConfiguration().setProperty(Unrar.PROPERTY_ENABLED,
+            // false);
             JDUtilities.getController().addControlListener(this);
         }
         return true;
