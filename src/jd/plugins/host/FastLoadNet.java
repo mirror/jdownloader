@@ -36,9 +36,9 @@ import jd.utils.JDUtilities;
 
 public class FastLoadNet extends PluginForHost {
 
-    private static Semaphore userio_sem = new Semaphore(1);
-    private static boolean Refresh_ALL = false;
-    private static Refresh_Tickets refresh_thread = null;
+    private static Semaphore USERIO_SEMAPHORE = new Semaphore(1);
+    private static boolean REFRESH_ALL_FLAG = false;
+    private static TicketRefresher REFRESH_THREAD = null;
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -86,14 +86,19 @@ public class FastLoadNet extends PluginForHost {
         if (downloadLink.getProperty("ONEWAYLINK", null) != null) { return; }
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.fastload.prepare", "Wait for linkconfirmation"));
         downloadLink.requestGuiUpdate();
-        if (use_semaphore) acquireUserIO_Semaphore();
+        if (use_semaphore) acquireUserIO();
         try {
             JLinkButton.openURL("http://www.fast-load.net/getdownload.php?fid=" + id + "&jid=" + uui);
-        } catch (MalformedURLException e1) {
+        } catch (Exception e1) {
             e1.printStackTrace();
+            throw new PluginException(LinkStatus.ERROR_FATAL,JDLocale.L("plugins.host.fastload.errors","Browserlauncher missconfigured"));
         }
+        Thread.sleep(5000);
         int i = 30;
+        // http://www.fast-load.net/getdownload.php?fid=
+        // 174eebac7bd433c09e348cb8ab7d8410&jid=ffe52e498265a32e53e1986750f944b6
         boolean confirmed = false;
+        br.setDebug(true);
         while (i-- > 0) {
             Thread.sleep(1000);
             downloadLink.getLinkStatus().setStatusText("Waiting for Ticket: " + i + " secs");
@@ -102,7 +107,7 @@ public class FastLoadNet extends PluginForHost {
 
             if (br.containsHTML("wrong link")) {
                 downloadLink.getLinkStatus().setStatusText(null);
-                if (use_semaphore) releaseUserIO_Semaphore();
+                if (use_semaphore) releaseUserIO();
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
 
@@ -117,11 +122,11 @@ public class FastLoadNet extends PluginForHost {
         if (!confirmed) {
             logger.warning("Kein Ticket geholt");
             downloadLink.setProperty("ONEWAYLINK", null);
-            if (use_semaphore) releaseUserIO_Semaphore();
+            if (use_semaphore) releaseUserIO();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         downloadLink.getLinkStatus().setStatusText(null);
-        if (use_semaphore) releaseUserIO_Semaphore();
+        if (use_semaphore) releaseUserIO();
     }
 
     @Override
@@ -159,25 +164,25 @@ public class FastLoadNet extends PluginForHost {
     public void resetPluginGlobals() {
     }
 
-    public static void acquireUserIO_Semaphore() throws InterruptedException {
+    public static void acquireUserIO() throws InterruptedException {
         try {
-            userio_sem.acquire();
+            USERIO_SEMAPHORE.acquire();
         } catch (InterruptedException e) {
-            userio_sem.drainPermits();
-            userio_sem.release(1);
+            USERIO_SEMAPHORE.drainPermits();
+            USERIO_SEMAPHORE.release(1);
             throw e;
         }
     }
 
-    public static void releaseUserIO_Semaphore() {
-        userio_sem.release();
+    public static void releaseUserIO() {
+        USERIO_SEMAPHORE.release();
     }
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_refresh", "Refresh all Tickets"), 0).setActionListener(this));
-        m.setSelected(Refresh_ALL);
+        m.setSelected(REFRESH_ALL_FLAG);
         m.setActionListener(this);
         return menu;
     }
@@ -186,21 +191,21 @@ public class FastLoadNet extends PluginForHost {
         if (e.getSource() instanceof MenuItem) {
             switch (((MenuItem) e.getSource()).getActionID()) {
             case 0:
-                Refresh_ALL = !Refresh_ALL;
-                if (Refresh_ALL == true) {
+                REFRESH_ALL_FLAG = !REFRESH_ALL_FLAG;
+                if (REFRESH_ALL_FLAG == true) {
                     ArrayList<DownloadLink> links = JDUtilities.getController().getDownloadLinks(this);
-                    if (refresh_thread != null) {
-                        refresh_thread.stop_running();
-                        if (refresh_thread.isAlive()) refresh_thread.interrupt();
-                        refresh_thread = null;
+                    if (REFRESH_THREAD != null) {
+                        REFRESH_THREAD.stop_running();
+                        if (REFRESH_THREAD.isAlive()) REFRESH_THREAD.interrupt();
+                        REFRESH_THREAD = null;
                     }
-                    refresh_thread = new Refresh_Tickets(links);
-                    refresh_thread.start();
+                    REFRESH_THREAD = new TicketRefresher(links);
+                    REFRESH_THREAD.start();
                 } else {
-                    if (refresh_thread != null) {
-                        refresh_thread.stop_running();
-                        if (refresh_thread.isAlive()) refresh_thread.interrupt();
-                        refresh_thread = null;
+                    if (REFRESH_THREAD != null) {
+                        REFRESH_THREAD.stop_running();
+                        if (REFRESH_THREAD.isAlive()) REFRESH_THREAD.interrupt();
+                        REFRESH_THREAD = null;
                     }
                 }
                 break;
@@ -210,12 +215,12 @@ public class FastLoadNet extends PluginForHost {
         }
     }
 
-    public class Refresh_Tickets extends Thread {
+    public class TicketRefresher extends Thread {
         private ArrayList<DownloadLink> links;
         private boolean running = false;
         ProgressController progress;
 
-        public Refresh_Tickets(ArrayList<DownloadLink> links) {
+        public TicketRefresher(ArrayList<DownloadLink> links) {
             this.links = links;
             running = true;
             this.setName("FastLoad_Refresh_all_Tickets");
@@ -236,21 +241,28 @@ public class FastLoadNet extends PluginForHost {
             Iterator<DownloadLink> iter = links.iterator();
             while (running && iter.hasNext()) {
                 DownloadLink link = iter.next();
-                if (link.isEnabled()) {
+                if (link.isEnabled() && !link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
                     try {
                         prepare(link, false);
                     } catch (InterruptedException e) {
+                        e.printStackTrace();
                         progress.finalize();
-                        Refresh_ALL = false;
+                        REFRESH_ALL_FLAG = false;
                         break;
+                    } catch (PluginException e) {
+                        link.getLinkStatus().setStatusText(e.getErrorMessage());
+                        link.requestGuiUpdate();
+                        continue;
                     } catch (Exception e) {
+                        e.printStackTrace();
+                        
                     }
                     progress.increase(1l);
                     link.getLinkStatus().setStatusText(null);
                     link.requestGuiUpdate();
                 }
             }
-            Refresh_ALL = false;
+            REFRESH_ALL_FLAG = false;
             progress.finalize();
         }
     }
