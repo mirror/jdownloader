@@ -648,7 +648,7 @@ interaction.batchreconnect.terminal = Yorumlayıcı
 interaction.batchreconnect.toString = Batch Yeniden bağlan parametreleri
 interaction.batchreconnect.waitForIp = IP zamanlayıcı   [san]
 interaction.batchreconnect.waitForTermination = Komut sonlandırma için bukadar bekle [san]
-interaction.batchreconnect.waitTimeToFirstIPCheck = İlk IP kontrolü için bekleme süresi  [san]
+interaction.batchreconnect.waitTimeToFirstIPCheck = İlk IP kontrolü için bekleme süresi [san]
 interaction.externExecute.cmd = Komut (salt dizin yolları kullan)
 interaction.externExecute.disable = olayı devere dışı bırak
 interaction.externExecute.executeIn = Burda başla (uygulama klasörü)
@@ -679,7 +679,7 @@ interaction.liveHeader.progress.1_retry = HTTP LiveHeader #1
 interaction.liveHeader.progress.2_ip = (IP) HTTP LiveHeader :
 interaction.liveHeader.progress.3_step = (Adım) HTTP LiveHeader :
 interaction.liveHeader.progress.4_step = (%s) HTTP LiveHeader
-interaction.liveHeader.progress.5_ipcheck = (IP kontolü)HTTP LiveHeader %s / %s
+interaction.liveHeader.progress.5_ipcheck = (IP kontrolü)HTTP LiveHeader %s / %s
 interaction.liveHeader.progress.5_ipcheck_emergency = (ACİL IPKONTROLÜ)HTTPLiveHeader %s / %s
 interaction.liveHeader.progress.5_wait = (Bekleyin) HTTP LiveHeader
 interaction.packagemanager.name = Paket Güncelleme
@@ -1045,8 +1045,8 @@ plugins.optional.streamsharingtool.gui.menu.open.list = Listeyi Aç
 plugins.optional.streamsharingtool.gui.menu.save.dlc = DLCyi Kaydet
 plugins.optional.streamsharingtool.gui.menu.save.list = Listeyi Kaydet
 plugins.optional.streamsharingtool.gui.menu.validate = geçerliliğini denetle
-plugins.optional.streamsharingtool.gui.openfile = Open List
-plugins.optional.streamsharingtool.gui.savefile = Save List
+plugins.optional.streamsharingtool.gui.openfile = Listeyi Aç
+plugins.optional.streamsharingtool.gui.savefile = Listeyi Kaydet
 plugins.optional.streamsharingtool.gui.title = StreamShare Link Yaratıcı
 plugins.optional.streamsharingtool.name = StreamingShare Link-Üretici
 plugins.optional.streamsharingtool.textarea.inittext = Linklerinizi buraya yerleştirin
@@ -1147,5 +1147,6 @@ plugins.container.dlc.showdialogoncreatedlc = Yaratmadan sonra onay dialogların
 plugins.container.dlc.uploadername = Karşıya yükleyenin adını dahil et
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Bu dosyada yasal olmayan içerik var gibi ve kitlenmiş.Bu dosyayı indirmek Rapidshare tarafından yasaklanmıştır.
 sys.dlc.error_version = DLC şifreleme başarısız.Lütfen doğru JD sürmünü kullandığınızdan emin olun.
+
 
 
