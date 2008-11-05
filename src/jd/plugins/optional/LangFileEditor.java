@@ -153,6 +153,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         table = new JXTable(tableModel);
         table.getTableHeader().addMouseListener(this);
         table.getTableHeader().setReorderingAllowed(false);
+        table.getColumn(0).setMinWidth(200);
+        table.getColumn(0).setPreferredWidth(200);
         table.addMouseListener(this);
         table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setAutoStartEditOnKeyStroke(false);
@@ -722,6 +724,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         Collections.sort(data);
 
         tableModel.fireTableRowsInserted(0, data.size() - 1);
+        table.packAll();
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
 
         setInfoLabels();
