@@ -688,23 +688,23 @@ public class JDController implements ControlListener, UIListener {
      * Beendet das Programm
      */
     public void exit() {
+        prepare_shutdown();
+        System.exit(0);
+    }
+
+    public void prepare_shutdown() {
         stopDownloads();
         saveDownloadLinks();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
         Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
         JDUtilities.getDatabaseConnector().shutdownDatabase();
-        System.exit(0);
     }
 
     /**
      * Startet das Programm neu
      */
     public void restart() {
-        stopDownloads();
-        saveDownloadLinks();
-        fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
-        Interaction.handleInteraction(Interaction.INTERACTION_EXIT, null);
-        JDUtilities.getDatabaseConnector().shutdownDatabase();
+        prepare_shutdown();
         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }

@@ -1449,14 +1449,14 @@ public class JDUtilities {
     }
 
     public static void restartJD() {
-        JDUtilities.getDatabaseConnector().shutdownDatabase();
+        JDUtilities.getController().prepare_shutdown();
         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
 
     }
 
     public static void restartJD(String[] jdArgs) {
-        JDUtilities.getDatabaseConnector().shutdownDatabase();
+        JDUtilities.getController().prepare_shutdown();
         String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
         String[] finalArgs = new String[jdArgs.length + javaArgs.length];
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
