@@ -16,15 +16,19 @@
 
 package jd.plugins.decrypt;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class LinkbaseBiz extends PluginForDecrypt {
@@ -108,6 +112,32 @@ public class LinkbaseBiz extends PluginForDecrypt {
         for (int retry = 1; retry <= 10; retry++) {
             try {
                 br.getPage(parameter);
+                if (br.getRegex("Du hast.*?Du musst noch").matches()) {
+                    param.getProgressController().setRange(30);
+                    param.getProgressController().setProgressText("Wrong captcha, please wait 30 secs!");
+                    for (int i = 0; i < 30; i++) {
+                        Thread.sleep(1000);
+                        param.getProgressController().increase(1);
+                    }
+                    param.getProgressController().setProgressText(null);
+                    continue;
+                }
+                String captchaurl = br.getRegex("<img src='(.*?captcha.*?)'").getMatch(0);
+                if (captchaurl != null) {
+                    Form form = br.getForm(0);
+                    File captchaFile = this.getLocalCaptchaFile(this);
+                    try {
+                        Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://linkbase.biz/" + captchaurl));
+                    } catch (Exception e) {
+                        throw new DecrypterException(DecrypterException.CAPTCHA);
+                    }
+                    String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
+                    form.put("captcha", captchaCode);
+                    br.submitForm(form);
+                    if (br.containsHTML("Das war leider Falsch")) {
+                        continue;
+                    }
+                }
                 String links[] = br.getRegex("window.open\\('\\?go=(.*?)','.*?'\\)").getColumn(0);
                 progress.setRange(links.length);
                 LinkbaseBiz_Linkgrabber LinkbaseBiz_Linkgrabbers[] = new LinkbaseBiz_Linkgrabber[links.length];
@@ -132,6 +162,9 @@ public class LinkbaseBiz extends PluginForDecrypt {
                 }
                 progress.finalize();
                 return decryptedLinks;
+            } catch (DecrypterException e2) {
+                logger.severe("LinkBaseBiz: Captcha Error");
+                throw e2;
             } catch (Exception e) {
                 logger.finest("LinkbaseBiz: GetRequest-Error, try again!");
             }
