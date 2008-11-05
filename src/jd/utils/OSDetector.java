@@ -22,6 +22,7 @@ public class OSDetector {
     public static final byte OS_LINUX_OTHER = 6;
     public static final byte OS_MAC_OTHER = 5;
     public static final byte OS_WINDOWS_2000 = 2;
+    public static final byte OS_WINDOWS_2003 = 7;
     public static final byte OS_WINDOWS_NT = 3;
     public static final byte OS_WINDOWS_OTHER = 4;
     public static final byte OS_WINDOWS_VISTA = 1;
@@ -35,6 +36,8 @@ public class OSDetector {
             OS_ID = OS_WINDOWS_VISTA;
         } else if (OS.indexOf("windows 2000") > -1) {
             OS_ID = OS_WINDOWS_2000;
+        } else if (OS.indexOf("windows 2003") > -1) {
+            OS_ID = OS_WINDOWS_2003;
         } else if (OS.indexOf("nt") > -1) {
             OS_ID = OS_WINDOWS_NT;
 
@@ -85,6 +88,7 @@ public class OSDetector {
         case OS_WINDOWS_XP:
         case OS_WINDOWS_VISTA:
         case OS_WINDOWS_2000:
+        case OS_WINDOWS_2003:
         case OS_WINDOWS_NT:
         case OS_WINDOWS_OTHER:
             return true;
