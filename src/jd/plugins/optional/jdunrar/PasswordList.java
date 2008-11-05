@@ -40,8 +40,19 @@ public class PasswordList {
         list.add(0, pw);
     }
 
+    @SuppressWarnings("unchecked")
     public static ArrayList<String> getPasswordList() {
         if (LIST != null) return LIST;
+
+        LinkedList<String> oldList = (LinkedList<String>) JDUtilities.getSubConfig("unrarPasswords").getProperty("PASSWORDLIST");
+
+        if (oldList != null) {
+            JDUtilities.getSubConfig("unrarPasswords").setProperty("PASSWORDLIST", null);
+            addPasswords(oldList);
+
+            JDUtilities.getSubConfig("unrarPasswords").save();
+            save();
+        }
         ArrayList<String> list = new ArrayList<String>();
         String[] spl = Regex.getLines(getConfig().getStringProperty("LIST", ""));
         for (String pw : spl)
@@ -50,13 +61,34 @@ public class PasswordList {
         return list;
     }
 
+    private static void addPasswords(LinkedList<String> list) {
+        for (String pw : list) {
+            addPassword(pw);
+        }
+
+    }
+
+    public static void cleanList() {
+        ArrayList<String> list = getPasswordList();
+        ArrayList<String> newList = new ArrayList<String>();
+        for (String pw : list) {
+            if (newList.indexOf(pw) < 0) newList.add(pw);
+        }
+        LIST = newList;
+        StringBuffer sb = new StringBuffer();
+        for (String pw : getPasswordList()) {
+            sb.append(pw + "\r\n");
+        }
+        getConfig().setProperty("LIST", sb.toString().trim());
+    }
+
     public static void save() {
+
         StringBuffer sb = new StringBuffer();
         for (String pw : getPasswordList()) {
             sb.append(pw + "\r\n");
         }
         getConfig().setProperty("LIST", sb.substring(0, sb.length() - 2));
-
         getConfig().save();
 
     }

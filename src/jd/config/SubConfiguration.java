@@ -16,8 +16,8 @@
 
 package jd.config;
 
-
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import jd.utils.JDUtilities;
@@ -26,23 +26,57 @@ public class SubConfiguration extends Property implements Serializable {
 
     private static final long serialVersionUID = 7803718581558607222L;
     protected String name;
+    transient private ArrayList<ConfigurationListener> listener = null;
+
+    public void addConfigurationListener(ConfigurationListener listener) {
+        if (this.listener == null) {
+            this.listener = new ArrayList<ConfigurationListener>();
+        }
+        this.removeConfigurationListener(listener);
+        this.listener.add(listener);
+
+    }
+
+    private void fireEventPreSave() {
+        if (listener == null) { return; }
+        for (ConfigurationListener listener : this.listener) {
+            listener.onPreSave(this);
+        }
+
+    }
+
+    private void fireEventPostSave() {
+        if (listener == null) { return; }
+        for (ConfigurationListener listener : this.listener) {
+            listener.onPostSave(this);
+        }
+
+    }
+
+    public void removeConfigurationListener(ConfigurationListener listener) {
+        if (listener == null) { return; }
+        this.listener.remove(listener);
+
+    }
 
     public SubConfiguration() {
-    
+
     }
 
     @SuppressWarnings("unchecked")
     public SubConfiguration(String name) {
-       
-            this.name = name;
-            Object props = JDUtilities.getDatabaseConnector().getData(name);
-            if (props != null) {
-                this.setProperties((HashMap<String, Object>) props);
-            }
-        
+
+        this.name = name;
+        Object props = JDUtilities.getDatabaseConnector().getData(name);
+        if (props != null) {
+            this.setProperties((HashMap<String, Object>) props);
+        }
+
     }
 
     public void save() {
+        this.fireEventPreSave();
         JDUtilities.getDatabaseConnector().saveConfiguration(name, this.getProperties());
+        this.fireEventPostSave();
     }
 }

@@ -26,6 +26,7 @@ import javax.swing.filechooser.FileFilter;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.ConfigurationListener;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -589,7 +590,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     @Override
     public boolean initAddon() {
         if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-            // JDUtilities.getConfiguration().setProperty(Unrar.PROPERTY_ENABLED,
+            //JDUtilities.getConfiguration().setProperty(Unrar.PROPERTY_ENABLED,
             // false);
             JDUtilities.getController().addControlListener(this);
         }
@@ -599,13 +600,19 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
+
         ConfigEntry ce;
         ConfigEntry conditionEntry;
+        if (OSDetector.isWindows()) {
+            subConfig.setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath());
+            subConfig.save();
+        }
         if (this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null) == null || this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, "").trim().length() == 0) {
             checkUnrarCommand();
         }
+        if (!OSDetector.isWindows())
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
-
+  
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDLocale.L("gui.config.unrar.use_extractto", "Use customized extract path")));
         conditionEntry.setDefaultValue(false);
 
@@ -619,7 +626,21 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         ConfigContainer pws = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.passwordtab", "List of passwords"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, pws));
-        pws.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.L("plugins.optional.jdunrar.config.passwordlist", "List of all passwords. Each line one password")));
+        JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST).addConfigurationListener(new ConfigurationListener() {
+
+            @Override
+            public void onPostSave(SubConfiguration subConfiguration) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onPreSave(SubConfiguration subConfiguration) {
+                PasswordList.cleanList();
+            }
+
+        });
+        pws.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", Regex.getLines(JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST).getStringProperty("LIST", "")).length + "")));
 
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
