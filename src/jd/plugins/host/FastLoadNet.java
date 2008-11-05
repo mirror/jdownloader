@@ -49,10 +49,8 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
-
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
 
         String id = getModifiedID(downloadLink);
         br.getPage("http://www.fast-load.net/system/jd.php?fid=" + id);
@@ -89,21 +87,33 @@ public class FastLoadNet extends PluginForHost {
         try {
             JLinkButton.openURL("http://www.fast-load.net/getdownload.php?fid=" + id + "&jid=" + uui);
         } catch (Exception e1) {
-            e1.printStackTrace();
+            if (use_semaphore) releaseUserIO();
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.fastload.errors", "Browserlauncher missconfigured"));
         }
-        Thread.sleep(5000);
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            if (use_semaphore) releaseUserIO();
+            throw e;
+        }
         int i = 30;
-        // http://www.fast-load.net/getdownload.php?fid=
-        // 174eebac7bd433c09e348cb8ab7d8410&jid=ffe52e498265a32e53e1986750f944b6
         boolean confirmed = false;
         br.setDebug(true);
         while (i-- > 0) {
-            Thread.sleep(1000);
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                if (use_semaphore) releaseUserIO();
+                throw e;
+            }
             downloadLink.getLinkStatus().setStatusText("Waiting for Ticket: " + i + " secs");
             downloadLink.requestGuiUpdate();
-            br.getPage("http://www.fast-load.net/system/checkconfirmation.php?fid=" + id + "&jid=" + uui);
-
+            try {
+                br.getPage("http://www.fast-load.net/system/checkconfirmation.php?fid=" + id + "&jid=" + uui);
+            } catch (Exception e) {
+                if (use_semaphore) releaseUserIO();
+                throw e;
+            }
             if (br.containsHTML("wrong link")) {
                 downloadLink.getLinkStatus().setStatusText(null);
                 if (use_semaphore) releaseUserIO();
@@ -148,7 +158,6 @@ public class FastLoadNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         }
         dl.startDownload();
-
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -174,7 +183,8 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public static void releaseUserIO() {
-        USERIO_SEMAPHORE.release();
+        USERIO_SEMAPHORE.drainPermits();
+        USERIO_SEMAPHORE.release(1);
     }
 
     public ArrayList<MenuItem> createMenuitems() {

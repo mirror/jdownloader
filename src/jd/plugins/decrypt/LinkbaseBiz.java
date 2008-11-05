@@ -120,6 +120,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
                         param.getProgressController().increase(1);
                     }
                     param.getProgressController().setProgressText(null);
+                    param.getProgressController().setStatus(0);
                     continue;
                 }
                 String captchaurl = br.getRegex("<img src='(.*?captcha.*?)'").getMatch(0);
