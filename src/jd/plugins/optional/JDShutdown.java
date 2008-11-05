@@ -117,17 +117,22 @@ public class JDShutdown extends PluginOptional {
     }
 
     private void shutDownWin() {
-
         if (!getPluginConfig().getBooleanProperty(CONFIG_STANDBY, false)) {
             if (getPluginConfig().getBooleanProperty(CONFIG_FORCESHUTDOWN, false)) {
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
+                } catch (Exception e) {
+                }
+                try {
                     JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-f", "-t", "01" }, null, 0);
                 } catch (Exception e) {
                 }
             } else {
                 try {
                     JDUtilities.runCommand("shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
+                } catch (Exception e) {
+                }
+                try {
                     JDUtilities.runCommand("%windir%\\system32\\shutdown.exe", new String[] { "-s", "-t", "01" }, null, 0);
                 } catch (Exception e) {
                 }
@@ -135,6 +140,9 @@ public class JDShutdown extends PluginOptional {
         } else {
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+            } catch (Exception e) {
+            }
+            try {
                 JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
             } catch (Exception e) {
             }
@@ -147,7 +155,7 @@ public class JDShutdown extends PluginOptional {
         if (shutDownMessage.result) {
             JDUtilities.getController().prepare_shutdown();
             String OS = System.getProperty("os.name").toLowerCase();
-            if (OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1) {
+            if (OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1 || OS.indexOf("windows 2003") > -1) {
                 shutDownWin();
             } else if (OS.indexOf("windows 2000") > -1 || OS.indexOf("nt") > -1) {
                 shutDownWin();
@@ -170,7 +178,6 @@ public class JDShutdown extends PluginOptional {
                 } catch (Exception e) {
                 }
             } else if (OS.indexOf("windows") > -1) {
-
                 try {
                     JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "user,ExitWindows" }, null, 0);
                 } catch (Exception e) {
@@ -179,7 +186,6 @@ public class JDShutdown extends PluginOptional {
                     JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "Shell32,SHExitWindowsEx", "1" }, null, 0);
                 } catch (Exception e) {
                 }
-
             } else if (OS.indexOf("mac") >= 0) {
                 JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
             } else {
