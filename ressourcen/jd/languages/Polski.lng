@@ -1153,6 +1153,7 @@ plugins.host.premium.password = Hasło
 plugins.host.premium.useaccount = Użyj Konta Premium
 plugins.host.premium.user = Użytkownik
 plugins.host.rapidshare.errors.0b37866ecbc00ce1857fa40852df6fef = Sesja pobierania wygasła. Spróbuj ponownie.
+plugins.host.rapidshare.errors.32012e683d4eed2399b17c1ef0f3dde0 = Limit pobierania dla darmowego użytkownika osiągnięty. Chcesz pobrać więcej?
 plugins.host.rapidshare.errors.33f66fa600e57edd85714127295c7bcc = Nie odnaleziono pliku. Sprawdź poprawność linku pobierania.
 plugins.host.rapidshare.errors.811d7f115500de90d1495ef963040930 = Serwer, na którym znajduje się plik jest nieczynny. Spróbuj później.
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Plik prawdopodobnie nielegalny i został zablokowany. Rapidshare nie pozwala na pobranie tego pliku.
