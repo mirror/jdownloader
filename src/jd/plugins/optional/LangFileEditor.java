@@ -736,6 +736,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         data.clear();
 
+        if (!file.exists()) {
+            logger.info("File " + file + " doesn't exist; skip loading language file entries");
+            return;
+        }
+
         String[] lines = Regex.getLines(JDUtilities.getLocalFile(file));
         String[] match;
 
