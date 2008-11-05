@@ -204,7 +204,8 @@ public class JDUtilities {
     }
 
     public static void releaseUserIO_Semaphore() {
-        userio_sem.release();
+        userio_sem.drainPermits();
+        userio_sem.release(1);
     }
 
     /**
