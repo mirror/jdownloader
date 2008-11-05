@@ -98,6 +98,8 @@ abstract public class DownloadInterface {
 
         private long totalPartBytes = 0;
 
+        private DownloadInterface dl;
+
         /**
          * die connection wird entsprechend der start und endbytes neu
          * aufgebaut.
@@ -106,10 +108,11 @@ abstract public class DownloadInterface {
          * @param endByte
          * @param connection
          */
-        public Chunk(long startByte, long endByte, HTTPConnection connection) {
+        public Chunk(long startByte, long endByte, HTTPConnection connection, DownloadInterface dl) {
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;
+            this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
             MAX_BUFFERSIZE = (long) JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
 
@@ -741,13 +744,13 @@ abstract public class DownloadInterface {
                     }
                 }
             }
-            if (connection!=null&&allConnected) {
+            if (connection != null && allConnected) {
 
                 this.connection.disconnect();
 
             }
 
-            if (connection!=null&&this.isExternalyAborted()) {
+            if (connection != null && this.isExternalyAborted()) {
 
                 this.connection.disconnect();
 
@@ -814,16 +817,57 @@ abstract public class DownloadInterface {
                 }
 
                 if (range == null && chunkNum > 1) {
-                    if (connection.getContentLength() == startByte) {
-                        // schon fertig
+                    if (dl.fakeContentRangeHeader()) {
+                        String[][] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getMatches();
+
+                        long gotSB = JDUtilities.filterLong(fixrange[0][0]);
+                        long gotEB;
+                        if (fixrange[0][1] == null) {
+                            gotEB = JDUtilities.filterLong(fixrange[0][0]) + connection.getContentLength() - 1;
+                        } else {
+                            gotEB = JDUtilities.filterLong(fixrange[0][1]);
+                        }
+                        if (gotSB != startByte) {
+                            logger.severe("Range Conflict " + gotSB + " - " + gotEB + " wished start: " + 0);
+                        }
+
+                        if (endByte <= 0) {
+                            endByte = gotEB;
+                        } else {
+                            if (gotEB == endByte) {
+                                logger.finer("ServerType: RETURN Rangeend-1");
+                            } else if (gotEB == endByte + 1) {
+                                logger.finer("ServerType: RETURN exact rangeend");
+                            }
+                            if (gotEB < endByte) {
+                                logger.severe("Range Conflict");
+                            }
+                            if (gotEB > endByte + 1) {
+                                logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
+                            }
+                            endByte = Math.min(endByte, gotEB);
+
+                        }
+                        if (gotSB == gotEB) {
+                            // schon fertig
+                            return;
+                        }
+
+                        if (speedDebug) {
+                            logger.finer("Resulting Range" + startByte + " - " + endByte);
+                        }
+                    } else {
+                        if (connection.getContentLength() == startByte) {
+                            // schon fertig
+                            return;
+                        }
+
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
+
+                        logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
+
                         return;
                     }
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
-
-                    logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
-
-                    return;
-
                 } else if (range != null) {
                     long gotSB = JDUtilities.filterLong(range[0][0]);
                     long gotEB = JDUtilities.filterLong(range[0][1]);
@@ -972,6 +1016,8 @@ abstract public class DownloadInterface {
 
     private boolean doFileSizeCheck = true;
 
+    private boolean fakeContentRangeHeader_flag = false;
+
     private Request request = null;
 
     private boolean fileSizeVerified = false;
@@ -1011,7 +1057,7 @@ abstract public class DownloadInterface {
     }
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
-        this(plugin, downloadLink);        
+        this(plugin, downloadLink);
         this.request = request;
 
     }
@@ -1089,6 +1135,14 @@ abstract public class DownloadInterface {
         return fileSizeVerified;
     }
 
+    public boolean fakeContentRangeHeader() {
+        return fakeContentRangeHeader_flag;
+    }
+
+    public void fakeContentRangeHeader(boolean b) {
+        this.fakeContentRangeHeader_flag = b;
+    }
+
     /**
      * darf NUR dann auf true gesetzt werden, wenn die dateigröße 100% richtig
      * ist!
@@ -1098,7 +1152,7 @@ abstract public class DownloadInterface {
      */
     public void setFileSizeVerified(boolean fileSizeVerified) throws PluginException {
         this.fileSizeVerified = fileSizeVerified;
-        if (fileSize == 0 && fileSizeVerified) {
+        if (fileSize <= 0 && fileSizeVerified) {
             logger.severe("Downloadsize==0");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
 
@@ -1138,7 +1192,7 @@ abstract public class DownloadInterface {
     }
 
     public HTTPConnection connect(Browser br) throws Exception {
-        br.setRequest(request);        
+        br.setRequest(request);
         HTTPConnection ret = connect();
 
         return ret;
@@ -1170,7 +1224,7 @@ abstract public class DownloadInterface {
             }
 
         }
-        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());        
+        if (this.plugin.getBrowser().isDebug()) logger.finest(request.printHeaders());
         if (request.getLocation() != null) { throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, DownloadInterface.ERROR_REDIRECTED); }
         connection = request.getHttpConnection();
         if (connection.getRange() != null) {

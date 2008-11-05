@@ -16,6 +16,8 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -23,7 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class ShragleCom extends PluginForHost {
 
@@ -37,31 +38,25 @@ public class ShragleCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        try {
-            setBrowserExclusive();
-            
-            br.getPage(downloadLink.getDownloadURL());
+    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
 
-            // File not found
-            if (br.containsHTML("Die von Ihnen gewählte Datei wurde nicht gefunden.")) {
-                logger.warning("File not found");
-                return false;
-            }
-
-            // Filesize
-            String size = br.getRegex("« \\((.*?)\\) runterladen").getMatch(0);
-            downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
-
-            // Filename
-            String name = br.getRegex("»(.*?)«").getMatch(0).trim();
-            downloadLink.setName(name);
-
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
+        setBrowserExclusive();
+        br.getPage(downloadLink.getDownloadURL());
+        // File not found
+        if (br.containsHTML("Die von Ihnen gewählte Datei wurde nicht gefunden.")) {
+            logger.warning("File not found");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        return false;
+        // Filesize
+        String size = br.getRegex("« \\((.*?)\\) runterladen").getMatch(0);
+        downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
+
+        // Filename
+        String name = br.getRegex("»(.*?)«").getMatch(0).trim();
+        downloadLink.setName(name);
+        if (name == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        return true;
+
     }
 
     @Override
@@ -71,19 +66,18 @@ public class ShragleCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        
-        // TODO: submitForm("download"); Erzeugt aktuell aber nullpointer
+        getFileInformation(downloadLink);
         Form form = br.getForm(0);
+        sleep(10000l, downloadLink);
         br.submitForm(form);
-
-        dl = RAFDownload.download(downloadLink, br.createRequest(br.getRedirectLocation()));
+        String dlLink = br.getRedirectLocation();
+        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l); }
+        dl = br.openDownload(downloadLink, dlLink, true, 0);
         dl.startDownload();
     }
 
-    public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert nachprüfen */
-        return 1;
+    public int getMaxSimultanFreeDownloadNum() {        
+        return 20;
     }
 
     @Override

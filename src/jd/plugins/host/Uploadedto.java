@@ -21,17 +21,15 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
-import jd.http.Browser;
 import jd.http.HTTPConnection;
-import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class Uploadedto extends PluginForHost {
@@ -40,12 +38,9 @@ public class Uploadedto extends PluginForHost {
 
     public Uploadedto(PluginWrapper wrapper) {
         super(wrapper);
-
         this.enablePremium("http://uploaded.to/ref?id=70683&r");
         setMaxConnections(20);
-
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), "PREMIUMCHUNKS", JDLocale.L("plugins.hoster.uploadedto.chunks", "Premium connections # (>1 causes higher traffic)"), 1, 20).setDefaultValue(1).setStep(1));
-
     }
 
     /**
@@ -68,15 +63,12 @@ public class Uploadedto extends PluginForHost {
     }
 
     public int getTimegapBetweenConnections() {
-        return 300;
+        return 800;
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        Browser br = new Browser();
-
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("http://uploaded.to/login");
@@ -116,18 +108,14 @@ public class Uploadedto extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
-
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        correctURL(downloadLink);
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        // br.setDebug(true);
+        getFileInformation(downloadLink);
+        this.setBrowserExclusive();
+        br.setDebug(true);
         br.setCookie("http://uploaded.to/", "lang", "de");
 
         String user = account.getUser();
@@ -181,49 +169,38 @@ public class Uploadedto extends PluginForHost {
         }
 
         if (br.getRedirectLocation() == null) {
-
+            logger.info("InDirect Downloads active");
             Form form = br.getFormbyValue("Download");
-
-            br.openFormConnection(form);
-
+            HTTPConnection con = br.openFormConnection(form);
             if (br.getRedirectLocation() == null) {
-
+                con.disconnect();
                 logger.severe("Endlink not found");
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage("Indirect Link Error");
-
                 return;
-
             }
         } else {
             logger.info("Direct Downloads active");
-
         }
-        Request request = br.createGetRequest(null);
-        dl = new RAFDownload(this, downloadLink, request);
-        dl.setChunkNum(this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
-        dl.setResume(true);
-
-        HTTPConnection con = dl.connect();
-        if (con.getContentLength() == 0) {
+        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
+        dl.fakeContentRangeHeader(true);
+        dl.setFileSizeVerified(true);
+        if (dl.getConnection().getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);
             return;
         }
-
         dl.startDownload();
-
     }
 
     public String getAGBLink() {
         return AGB_LINK;
     }
 
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
 
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        this.setBrowserExclusive();
         correctURL(downloadLink);
 
         br.setFollowRedirects(true);
@@ -231,15 +208,20 @@ public class Uploadedto extends PluginForHost {
 
         br.getPage("http://uploaded.to/api/file?id=" + id);
         String[] lines = Regex.getLines(br + "");
+        try {
+            String fileName = lines[0].trim();
 
-        String fileName = lines[0].trim();
+            long fileSize = Long.parseLong(lines[1].trim());
+            downloadLink.setName(fileName);
 
-        long fileSize = Long.parseLong(lines[1].trim());
-        downloadLink.setName(fileName);
-
-        downloadLink.setDownloadSize(fileSize);
-        downloadLink.setSha1Hash(lines[2].trim());
-
+            downloadLink.setDownloadSize(fileSize);
+            downloadLink.setSha1Hash(lines[2].trim());
+        } catch (Exception e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("error_fileremoved")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         return true;
     }
 
@@ -253,14 +235,11 @@ public class Uploadedto extends PluginForHost {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
-        // br.setDebug(true);
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        getFileInformation(downloadLink);
+        this.setBrowserExclusive();
         br.setCookie("http://uploaded.to/", "lang", "de");
-        correctURL(downloadLink);
-
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
 
@@ -290,48 +269,13 @@ public class Uploadedto extends PluginForHost {
         form.put("download_submit", "Download");
         sleep(10000l, downloadLink);
 
-        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
-        // 2));
-        // dl.setResume(true);
-
-        dl = br.openDownload(downloadLink, form);
-        // try {
-        // dl.connect();
-        // } catch (Exception e) {
-        // error = new Regex(request.getLocation(),
-        // "http://uploaded.to/\\?view=(.*?)").getMatch(0);
-        // if (error == null) {
-        // error = new Regex(request.getLocation(),
-        // "\\?view=(.*?)&id\\_a").getMatch(0);
-        // }
-        // if (error != null) {
-        // String message = JDLocale.L("plugins.errors.uploadedto." + error,
-        // error.replaceAll("_", " "));
-        //
-        // throw new PluginException(LinkStatus.ERROR_FATAL, message);
-        //
-        // }
-        //
-        // if (request.getLocation() != null) {
-        // br.setRequest(request);
-        // request.getHttpConnection().disconnect();
-        // request = br.createGetRequest(null);
-        // dl = new RAFDownload(this, downloadLink, request);
-        // //
-        // dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS,
-        // 2));
-        // // dl.setResume(true);
-        // dl.connect();
-        // }
-        // }
-        // if (request.getHttpConnection().getContentLength() == 0) { throw new
-        // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 *
-        // 1000l);
-        //
-        // }
-
+        dl = br.openDownload(downloadLink, form, false, 1);
+        if (dl.getConnection().getContentLength() == 0) {
+            linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+            linkStatus.setValue(20 * 60 * 1000l);
+            return;
+        }
         dl.startDownload();
-
     }
 
     public int getMaxSimultanFreeDownloadNum() {
