@@ -90,8 +90,10 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
 public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
+    private static final String PROPERTY_COLORIZE_DONE = "PROPERTY_COLORIZE_DONE";
     private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
     private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
+    private static final String PROPERTY_DONE_COLOR = "PROPERTY_DONE_COLOR";
     private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
     private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
     private static final String PROPERTY_SOURCE = "PROPERTY_SOURCE";
@@ -108,8 +110,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private JMenu mnuFile, mnuKey, mnuEntries;
     private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
     private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuContinueSearch, mnuDelete, mnuSearch, mnuTranslate, mnuTranslateMissing;
-    private JMenuItem mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
-    private JCheckBoxMenuItem mnuColorizeMissing, mnuColorizeOld;
+    private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
+    private JCheckBoxMenuItem mnuColorizeDone, mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
     private JMenuItem mnuContextAdopt, mnuContextClear, mnuContextDelete, mnuContextTranslate;
 
@@ -121,9 +123,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private String lngKey = null;
     private String searchFor = "";
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
-    private boolean colorizeMissing, colorizeOld;
-    private Color colorMissing, colorOld;
-    private ColorHighlighter missingHighlighter, oldHighlighter;
+    private boolean colorizeDone, colorizeMissing, colorizeOld;
+    private Color colorDone, colorMissing, colorOld;
+    private ColorHighlighter doneHighlighter, missingHighlighter, oldHighlighter;
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
@@ -140,12 +142,15 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         frame.setName("LANGFILEEDIT");
         frame.addWindowListener(new LocationListener());
 
+        colorizeDone = subConfig.getBooleanProperty(PROPERTY_COLORIZE_DONE, false);
         colorizeMissing = subConfig.getBooleanProperty(PROPERTY_COLORIZE_MISSING, true);
         colorizeOld = subConfig.getBooleanProperty(PROPERTY_COLORIZE_OLD, false);
 
+        colorDone = (Color) subConfig.getProperty(PROPERTY_DONE_COLOR, Color.GREEN);
         colorMissing = (Color) subConfig.getProperty(PROPERTY_MISSING_COLOR, Color.RED);
         colorOld = (Color) subConfig.getProperty(PROPERTY_OLD_COLOR, Color.ORANGE);
 
+        doneHighlighter = new ColorHighlighter(new DonePredicate(), colorDone, null);
         missingHighlighter = new ColorHighlighter(new MissingPredicate(), colorMissing, null);
         oldHighlighter = new ColorHighlighter(new OldPredicate(), colorOld, null);
 
@@ -161,6 +166,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         table.addHighlighter(HighlighterFactory.createAlternateStriping());
         table.addHighlighter(new ColorHighlighter(HighlightPredicate.ROLLOVER_ROW, null, Color.BLUE));
 
+        if (colorizeDone) table.addHighlighter(doneHighlighter);
         if (colorizeMissing) table.addHighlighter(missingHighlighter);
         if (colorizeOld) table.addHighlighter(oldHighlighter);
 
@@ -193,7 +199,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         topFile.add(cmboFile);
 
         keyChart = new ChartAPI_PIE(JDLocale.L("plugins.optional.langfileeditor.keychart", "KeyChart"), 250, 60, frame.getBackground());
-        keyChart.addEntity(entDone = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, Color.GREEN));
+        keyChart.addEntity(entDone = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.done", "Done"), 0, colorDone));
         keyChart.addEntity(entMissing = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.missing", "Missing"), 0, colorMissing));
         keyChart.addEntity(entOld = new ChartAPI_Entity(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old"), 0, colorOld));
 
@@ -307,6 +313,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuEntries.add(mnuColorizeOld = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeOld", "Colorize Old Entries")));
         mnuEntries.add(mnuPickOldColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickOldColor", "Pick Color for Old Entries")));
         mnuEntries.addSeparator();
+        mnuEntries.add(mnuColorizeDone = new JCheckBoxMenuItem(JDLocale.L("plugins.optional.langfileeditor.colorizeDone", "Colorize Done Entries")));
+        mnuEntries.add(mnuPickDoneColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickDoneColor", "Pick Color for Done Entries")));
+        mnuEntries.addSeparator();
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuSearch = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.search", "Search")));
@@ -314,20 +323,25 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         mnuColorizeMissing.setSelected(colorizeMissing);
         mnuColorizeOld.setSelected(colorizeOld);
+        mnuColorizeDone.setSelected(colorizeDone);
 
         mnuColorizeMissing.setIcon(JDTheme.II((mnuColorizeMissing.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
         mnuColorizeOld.setIcon(JDTheme.II((mnuColorizeOld.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
+        mnuColorizeDone.setIcon(JDTheme.II((mnuColorizeDone.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
 
         mnuColorizeMissing.addActionListener(this);
         mnuPickMissingColor.addActionListener(this);
         mnuColorizeOld.addActionListener(this);
         mnuPickOldColor.addActionListener(this);
+        mnuColorizeDone.addActionListener(this);
+        mnuPickDoneColor.addActionListener(this);
         mnuShowDupes.addActionListener(this);
         mnuSearch.addActionListener(this);
         mnuContinueSearch.addActionListener(this);
 
         mnuColorizeMissing.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         mnuColorizeOld.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0));
+        mnuColorizeDone.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0));
         mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
         // mnuSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
         // KeyEvent.CTRL_DOWN_MASK));
@@ -490,6 +504,19 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             }
             tableModel.fireTableDataChanged();
 
+        } else if (e.getSource() == mnuColorizeDone) {
+
+            colorizeDone = mnuColorizeDone.isSelected();
+            subConfig.setProperty(PROPERTY_COLORIZE_DONE, colorizeDone);
+            subConfig.save();
+            mnuColorizeDone.setIcon(JDTheme.II((mnuColorizeDone.isSelected()) ? "gui.images.selected" : "gui.images.unselected"));
+            if (colorizeDone) {
+                table.addHighlighter(doneHighlighter);
+            } else {
+                table.removeHighlighter(doneHighlighter);
+            }
+            tableModel.fireTableDataChanged();
+
         } else if (e.getSource() == mnuPickMissingColor) {
 
             Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickMissingColor", "Pick Color for Missing Entries"), colorMissing);
@@ -499,6 +526,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 subConfig.save();
                 tableModel.fireTableDataChanged();
                 entMissing.setColor(colorMissing);
+                missingHighlighter.setBackground(colorMissing);
                 keyChart.fetchImage();
             }
 
@@ -511,6 +539,20 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 subConfig.save();
                 tableModel.fireTableDataChanged();
                 entOld.setColor(colorOld);
+                oldHighlighter.setBackground(colorOld);
+                keyChart.fetchImage();
+            }
+
+        } else if (e.getSource() == mnuPickDoneColor) {
+
+            Color newColor = JColorChooser.showDialog(frame, JDLocale.L("plugins.optional.langfileeditor.pickDoneColor", "Pick Color for Done Entries"), colorDone);
+            if (newColor != null) {
+                colorDone = newColor;
+                subConfig.setProperty(PROPERTY_DONE_COLOR, colorDone);
+                subConfig.save();
+                tableModel.fireTableDataChanged();
+                entDone.setColor(colorDone);
+                doneHighlighter.setBackground(colorDone);
                 keyChart.fetchImage();
             }
 
@@ -911,6 +953,14 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         @Override
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
+        }
+
+    }
+
+    private class DonePredicate implements HighlightPredicate {
+
+        public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
+            return (!table.getValueAt(arg1.row, 1).equals("") && !table.getValueAt(arg1.row, 2).equals(""));
         }
 
     }

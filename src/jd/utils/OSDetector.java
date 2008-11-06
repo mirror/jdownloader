@@ -40,11 +40,9 @@ public class OSDetector {
             OS_ID = OS_WINDOWS_2003;
         } else if (OS.indexOf("nt") > -1) {
             OS_ID = OS_WINDOWS_NT;
-
         } else if (OS.indexOf("windows") > -1) {
             OS_ID = OS_WINDOWS_OTHER;
-
-        } else if (OS.indexOf("mac") >= 0) {
+        } else if (OS.indexOf("mac") > -1) {
             OS_ID = OS_MAC_OTHER;
         } else {
             OS_ID = OS_LINUX_OTHER;
@@ -64,9 +62,7 @@ public class OSDetector {
         byte id = OSDetector.getOSID();
         switch (id) {
         case OS_LINUX_OTHER:
-
             return true;
-
         }
         return false;
     }
@@ -75,9 +71,7 @@ public class OSDetector {
         byte id = OSDetector.getOSID();
         switch (id) {
         case OS_MAC_OTHER:
-
             return true;
-
         }
         return false;
     }
@@ -92,7 +86,6 @@ public class OSDetector {
         case OS_WINDOWS_NT:
         case OS_WINDOWS_OTHER:
             return true;
-
         }
         return false;
     }
