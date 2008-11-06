@@ -122,6 +122,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private HashMap<String, Vector<String>> dupes = new HashMap<String, Vector<String>>();
     private String lngKey = null;
     private String searchFor = "";
+    private boolean changed = false;
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
     private boolean colorizeDone, colorizeMissing, colorizeOld;
     private Color colorDone, colorMissing, colorOld;
@@ -387,6 +388,19 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else if (e.getSource() == cmboSelectSource) {
 
             int index = cmboSelectSource.getSelectedIndex();
+            if (index == subConfig.getIntegerProperty(PROPERTY_SOURCE, 0)) return;
+
+            if (changed) {
+                int res = JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.CANCEL_OPTION) {
+                    cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 0));
+                    return;
+                } else if (res == JOptionPane.YES_OPTION) {
+                    saveLanguageFile(languageFile);
+                } else {
+                    changed = false;
+                }
+            }
 
             if (index != subConfig.getIntegerProperty(PROPERTY_SOURCE, 0)) {
                 subConfig.setProperty(PROPERTY_SOURCE, index);
@@ -402,6 +416,20 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else if (e.getSource() == cmboSource[0] || e.getSource() == cmboSource[1]) {
 
             File sourceFile = cmboSource[cmboSelectSource.getSelectedIndex()].getCurrentPath();
+            if (sourceFile == this.sourceFile) return;
+
+            if (changed) {
+                int res = JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.CANCEL_OPTION) {
+                    cmboSource[cmboSelectSource.getSelectedIndex()].setCurrentPath(this.sourceFile);
+                    return;
+                } else if (res == JOptionPane.YES_OPTION) {
+                    saveLanguageFile(languageFile);
+                } else {
+                    changed = false;
+                }
+            }
+
             if (sourceFile != this.sourceFile && sourceFile != null) {
                 this.sourceFile = sourceFile;
                 initLocaleDataComplete();
@@ -410,12 +438,38 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else if (e.getSource() == cmboFile) {
 
             File languageFile = cmboFile.getCurrentPath();
+            if (languageFile == this.languageFile) return;
+
+            if (changed) {
+                int res = JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.CANCEL_OPTION) {
+                    cmboFile.setCurrentPath(this.languageFile);
+                    return;
+                } else if (res == JOptionPane.YES_OPTION) {
+                    saveLanguageFile(this.languageFile);
+                    cmboFile.setCurrentPath(languageFile);
+                } else {
+                    changed = false;
+                }
+            }
+
             if (languageFile != this.languageFile && languageFile != null) {
                 this.languageFile = languageFile;
                 initLocaleData();
             }
 
         } else if (e.getSource() == mnuNew) {
+
+            if (changed) {
+                int res = JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.CANCEL_OPTION) {
+                    return;
+                } else if (res == JOptionPane.YES_OPTION) {
+                    saveLanguageFile(languageFile);
+                } else {
+                    changed = false;
+                }
+            }
 
             JDFileChooser chooser = new JDFileChooser("LANGFILEEDITOR_FILE");
             chooser.setFileFilter(fileFilter);
@@ -453,6 +507,17 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             deleteSelectedKeys();
 
         } else if (e.getSource() == mnuReload) {
+
+            if (changed) {
+                int res = JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
+                if (res == JOptionPane.CANCEL_OPTION) {
+                    return;
+                } else if (res == JOptionPane.YES_OPTION) {
+                    saveLanguageFile(languageFile);
+                } else {
+                    changed = false;
+                }
+            }
 
             initLocaleDataComplete();
 
@@ -652,6 +717,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         table.getSelectionModel().setSelectionInterval(newRow, newRow);
 
         setInfoLabels();
+        changed(true);
     }
 
     private int[] getSelectedRows() {
@@ -685,6 +751,15 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         return false;
     }
 
+    private void changed(boolean b) {
+        if (b) {
+            frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [ * " + languageFile.getAbsolutePath() + "]");
+        } else {
+            frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
+        }
+        changed = b;
+    }
+
     private void saveLanguageFile(File file) {
         StringBuilder sb = new StringBuilder();
 
@@ -704,6 +779,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
 
         if (languageFile.getAbsolutePath() != cmboFile.getText()) cmboFile.setCurrentPath(languageFile);
+        changed(false);
         JOptionPane.showMessageDialog(frame, JDLocale.L("plugins.optional.langfileeditor.save.success.message", "LanguageFile saved successfully!"), JDLocale.L("plugins.optional.langfileeditor.save.success.title", "Save successful!"), JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -767,6 +843,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         tableModel.fireTableRowsInserted(0, data.size() - 1);
         table.packAll();
+        changed = false;
         if (languageFile != null) frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
 
         setInfoLabels();
@@ -1024,6 +1101,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 data.get(row).setLanguage((String) value);
                 this.fireTableRowsUpdated(row, row);
                 setInfoLabels();
+                changed(true);
             }
         }
 
