@@ -48,10 +48,8 @@ public class Rapidlayerin extends PluginForDecrypt {
         String fun = "function f(){ " + all + "\nreturn " + fun_id + "(" + dec + ")} f()";
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
         String link = Encoding.htmlDecode(Context.toString(result));
-        if (link == null) {
-            Context.exit();
-            return null;
-        }
+        Context.exit();
+        if (link == null) { return null; }
         decryptedLinks.add(createDownloadlink(link));
 
         return decryptedLinks;
