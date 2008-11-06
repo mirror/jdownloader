@@ -68,7 +68,7 @@ public class JDShutdown extends PluginOptional {
     @Override
     public void controlEvent(ControlEvent event) {
         super.controlEvent(event);
-        if (menuItem.isSelected()) {
+        if (menuItem != null && menuItem.isSelected()) {
             if (event.getID() == ControlEvent.CONTROL_INTERACTION_CALL) {
                 if ((InteractionTrigger) event.getSource() == Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS) {
                     shutDown();
