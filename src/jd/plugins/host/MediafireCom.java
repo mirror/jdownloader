@@ -16,23 +16,21 @@
 
 package jd.plugins.host;
 
+import java.io.IOException;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
 
-    private String url;
-
     public MediafireCom(PluginWrapper wrapper) {
         super(wrapper);
-        // steps.add(new PluginStep(PluginStep.STEP_PAGE, null));
-        // steps.add(new PluginStep(PluginStep.STEP_DOWNLOAD, null));
     }
 
     @Override
@@ -41,52 +39,30 @@ public class MediafireCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-
-        try {
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
-            String url = downloadLink.getDownloadURL();
-            br.getPage(url);
-
-            if (br.getRegex(offlinelink).matches()) { return false; }
-
-            downloadLink.setName(br.getRegex("<title>(.*?)<\\/title>").getMatch(0).trim());
-            return true;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return false;
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        String url = downloadLink.getDownloadURL();
+        br.getPage(url);
+        if (br.getRegex(offlinelink).matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String filename = br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
+        String filesize = br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        return true;
     }
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        getFileInformation(downloadLink);
 
-        // switch (step.getStep()) {
-        // case PluginStep.STEP_PAGE:
-        url = downloadLink.getDownloadURL();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.getPage(url);
-        if (br.getRegex(offlinelink).matches()) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
-            return;
-        }
-
-        // case PluginStep.STEP_DOWNLOAD:
         String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
-        if (para.length == 0 || para[0].length == 0) {
-            linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            return;
-        }
+        if (para.length == 0 || para[0].length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
         String url = br.getRegex("http\\:\\/\\/\"(.*?)'\"").getMatch(0);
         url = "http://" + url.replaceAll("'(.*?)'", "$1");
@@ -98,8 +74,7 @@ public class MediafireCom extends PluginForHost {
             url = url.replaceAll("\\+ ?" + var + " ?\\+", value);
 
         }
-
-        dl = RAFDownload.download(downloadLink, br.createRequest(url));
+        dl = br.openDownload(downloadLink, url, true, 0);
         dl.startDownload();
     }
 
