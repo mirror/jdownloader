@@ -270,6 +270,8 @@ public class Uploadedto extends PluginForHost {
         sleep(10000l, downloadLink);
 
         dl = br.openDownload(downloadLink, form, false, 1);
+        dl.fakeContentRangeHeader(false);
+        dl.setFileSizeVerified(true);
         if (dl.getConnection().getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);

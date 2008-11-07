@@ -1,12 +1,10 @@
 import java.io.UnsupportedEncodingException;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
-import java.util.TimeZone;
 
 import jd.parser.Regex;
 import jd.plugins.Plugin;
+
 import com.sun.xml.internal.messaging.saaj.packaging.mime.internet.ParseException;
 
 public class header {
