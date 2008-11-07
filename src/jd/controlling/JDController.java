@@ -195,8 +195,6 @@ public class JDController implements ControlListener, UIListener {
 
     private Vector<DownloadLink> finishedLinks = new Vector<DownloadLink>();
 
-    private FilePackage fp;
-
     private int initStatus = -1;
 
     private DownloadLink lastDownloadFinished;
@@ -227,9 +225,6 @@ public class JDController implements ControlListener, UIListener {
 
         downloadStatus = DOWNLOAD_NOT_RUNNING;
         eventSender = getEventSender();
-
-        fp = new FilePackage();
-        fp.setName(JDLocale.L("controller.packages.defaultname", "various"));
 
         JDUtilities.setController(this);
         initInteractions();
@@ -263,9 +258,7 @@ public class JDController implements ControlListener, UIListener {
 
     public void addLink(DownloadLink link) {
         int index;
-        if (link.getFilePackage() == null) {
-            link.setFilePackage(fp);
-        }
+     
         synchronized (packages) {
             if ((index = packages.indexOf(link.getFilePackage())) >= 0) {
 
@@ -768,10 +761,6 @@ public class JDController implements ControlListener, UIListener {
     public String getCaptchaCodeFromUser(Plugin plugin, File captchaAddress, String def) {
         String captchaCode = uiInterface.getCaptchaCodeFromUser(plugin, captchaAddress, def);
         return captchaCode;
-    }
-
-    public FilePackage getDefaultFilePackage() {
-        return fp;
     }
 
     public DownloadLink getDownloadLinkAfter(DownloadLink lastElement) {
@@ -1872,7 +1861,7 @@ public class JDController implements ControlListener, UIListener {
 
     }
 
-    public ArrayList<DownloadLink> getMatchingLinks(String matcher) {
+    public ArrayList<DownloadLink> getDownloadLinksByNamePattern(String matcher) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
@@ -1884,6 +1873,29 @@ public class JDController implements ControlListener, UIListener {
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
                     if (new File(nextDownloadLink.getFileOutput()).getName().matches(matcher)) {
+                        ret.add(nextDownloadLink);
+                    }
+
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
+    
+    public ArrayList<DownloadLink> getDownloadLinksByPathPattern(String matcher) {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        try {
+            Iterator<FilePackage> iterator = packages.iterator();
+            FilePackage fp = null;
+            DownloadLink nextDownloadLink;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
+                while (it2.hasNext()) {
+                    nextDownloadLink = it2.next();
+                    if (nextDownloadLink.getFileOutput().matches(matcher)) {
                         ret.add(nextDownloadLink);
                     }
 

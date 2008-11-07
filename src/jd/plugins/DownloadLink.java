@@ -55,6 +55,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public static final String UNKNOWN_FILE_NAME = "unknownFileName.file";
 
+    public static final String STATIC_OUTPUTFILE = "STATIC_OUTPUTFILE";
+
     private transient Boolean available = null;
 
     private long[] chunksProgress = null;
@@ -357,6 +359,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getFileOutput0() {
+        String sfo = this.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, null);
+        if (getFilePackage() == FilePackage.getDefaultFilePackage() && sfo != null && new File(sfo).exists()) { return sfo;
+
+        }
         if (subdirectory != null) {
             if (getFilePackage() != null && getFilePackage().getDownloadDirectory() != null && getFilePackage().getDownloadDirectory().length() > 0) {
                 return new File(new File(getFilePackage().getDownloadDirectory(), File.separator + subdirectory), getName()).getAbsolutePath();
@@ -381,7 +387,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public FilePackage getFilePackage() {
         if (filePackage == null) {
-            setFilePackage(JDUtilities.getController().getDefaultFilePackage());
+            setFilePackage(FilePackage.getDefaultFilePackage());
         }
         return filePackage;
     }
@@ -795,6 +801,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             if (!filePackage.contains(this)) {
                 filePackage.add(this);
             }
+
             return;
         }
         if (this.filePackage != null) {
@@ -993,8 +1000,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public void setSha1Hash(String hash) {
-      this.sha1Hash=hash;
-        
+        this.sha1Hash = hash;
+
     }
 
     public String getSha1Hash() {

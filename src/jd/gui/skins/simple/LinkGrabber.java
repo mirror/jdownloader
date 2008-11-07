@@ -1112,7 +1112,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private void attachLinkToPackage(DownloadLink link) {
         String packageName;
         boolean autoPackage = false;
-        if (link.getFilePackage() != JDUtilities.getController().getDefaultFilePackage()) {
+        if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
             packageName = link.getFilePackage().getName();
         } else {
             autoPackage = true;

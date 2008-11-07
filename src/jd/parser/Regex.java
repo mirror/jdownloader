@@ -332,5 +332,29 @@ public class Regex {
         return Integer.parseInt(hours) * 60 * 60 * 1000 + Integer.parseInt(minutes) * 60 * 1000 + Integer.parseInt(seconds) * 1000;
 
     }
+/**
+ * Setzt vor alle steurzeichen ein \
+ * @param pattern
+ * @return
+ */
+    public static String escape(String pattern) {
+        char[] specials = new char[] { '(', '[', '{', '\\', '^', '-', '$', '|', ']', '}', ')', '?', '*', '+', '.' };
+        StringBuffer sb = new StringBuffer();
+        sb.setLength(pattern.length());
+        char act;
+        for (int i = 0; i < pattern.length(); i++) {
+            act = pattern.charAt(i);
+            for (char s : specials) {
+                if (act == s) {
+                    sb.append('\\');
+                    break;
+                }
+                
+            }
+            sb.append(act);
+        }
+        return sb.toString().trim();
+
+    }
 
 }

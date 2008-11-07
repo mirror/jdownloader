@@ -69,6 +69,7 @@ public class PasswordList {
     }
 
     public static void cleanList() {
+        LIST=null;
         ArrayList<String> list = getPasswordList();
         ArrayList<String> newList = new ArrayList<String>();
         for (String pw : list) {

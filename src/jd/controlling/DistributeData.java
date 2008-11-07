@@ -29,6 +29,7 @@ import jd.http.Browser;
 import jd.parser.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -210,7 +211,7 @@ public class DistributeData extends ControlBroadcaster {
             for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
                 try {
                     if (pHost.usePlugin() && pHost.canHandle(decrypted.getDownloadURL())) {
-                        Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != JDUtilities.getController().getDefaultFilePackage() ? decrypted.getFilePackage() : null);
+                        Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
 
                         for (int c = 0; c < dLinks.size(); c++) {
 

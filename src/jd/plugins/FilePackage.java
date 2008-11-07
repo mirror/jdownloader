@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import jd.config.Property;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
@@ -47,6 +48,12 @@ public class FilePackage extends Property implements Serializable {
     private String downloadDirectory;
 
     private Vector<DownloadLink> downloadLinks;
+    private transient static FilePackage FP = null;
+
+    public static FilePackage getDefaultFilePackage() {
+        if (FP == null) FP = new FilePackage(JDLocale.L("controller.packages.defaultname", "various"));
+        return FP;
+    }
 
     /**
      * Eindeutige PaketID
@@ -83,6 +90,11 @@ public class FilePackage extends Property implements Serializable {
         counter++;
         id = System.currentTimeMillis() + "_" + counter;
         downloadLinks = new Vector<DownloadLink>();
+    }
+
+    public FilePackage(String name) {
+        this();
+        this.setName(name);
     }
 
     /**

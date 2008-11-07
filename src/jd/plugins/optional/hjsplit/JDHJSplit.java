@@ -389,7 +389,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      */
     private ArrayList<File> validateNormalType(File file) {
         final String matcher = file.getName().replaceFirst("\\.[\\d]+($|\\..*)", "\\\\.[\\\\d]+$1");
-        ArrayList<DownloadLink> missing = JDUtilities.getController().getMatchingLinks(matcher);
+        ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
         for (DownloadLink miss : missing) {
             File par1 = new File(miss.getFileOutput()).getParentFile();
             File par2 = file.getParentFile();
@@ -432,7 +432,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     private ArrayList<File> validateUnixType(File file) {
 
         final String matcher = file.getName().replaceFirst("\\.a.($|\\..*)", "\\\\.a.$1");
-        ArrayList<DownloadLink> missing = JDUtilities.getController().getMatchingLinks(matcher);
+        ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
         for (DownloadLink miss : missing) {
             if (new File(miss.getFileOutput()).exists() && new File(miss.getFileOutput()).getParentFile().equals(file.getParentFile())) continue;
             return null;

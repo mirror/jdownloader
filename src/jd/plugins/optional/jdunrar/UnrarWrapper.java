@@ -51,7 +51,7 @@ public class UnrarWrapper extends Thread {
     private String unrarCommand;
     private String[] passwordList;
     private File file;
-    private int status;
+    private int statusid;
     private String password;
     private boolean isProtected = false;
     private ArrayList<ArchivFile> files;
@@ -81,6 +81,7 @@ public class UnrarWrapper extends Thread {
     private boolean removeAfterExtraction;
 
     private ArrayList<String> archiveParts;
+    private int crackProgress;
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
@@ -113,9 +114,9 @@ public class UnrarWrapper extends Thread {
     public void run() {
         try {
             fireEvent(JDUnrarConstants.WRAPPER_STARTED);
-            this.status = (STARTED);
-            open();
-            if (this.status == OPENED_SUCCESSFULL) {
+
+            ;
+            if (open()) {
                 if (this.files.size() == 0) {
                     this.fireEvent(NO_FILES_FOUND);
                 }
@@ -143,7 +144,7 @@ public class UnrarWrapper extends Thread {
                         }
 
                         if (password == null) {
-                            this.status = FAILED;
+
                             fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                             return;
                         }
@@ -152,21 +153,29 @@ public class UnrarWrapper extends Thread {
                         fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
                     }
                 }
+                fireEvent(JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS);
 
-                this.extract();
-
-                if (this.status == STARTED && this.checkSizes()) {
+                if (extract() && this.checkSizes()) {
                     if (removeAfterExtraction) {
                         removeArchiveFiles();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                 } else {
-                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    if (statusid == JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC) {
+                        fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
+                    } else {
+                        fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    }
+
                 }
 
             } else {
-                this.fireEvent(this.status);
-                fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                if (statusid == JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC) {
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
+                } else {
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                }
+
                 return;
             }
         } catch (Exception e) {
@@ -216,10 +225,10 @@ public class UnrarWrapper extends Thread {
     }
 
     public int getStatus() {
-        return status;
+        return statusid;
     }
 
-    private void extract() {
+    private boolean extract() {
 
         fireEvent(JDUnrarConstants.WRAPPER_START_EXTRACTION);
         Executer exec = new Executer(unrarCommand);
@@ -245,7 +254,7 @@ public class UnrarWrapper extends Thread {
         exec.setWaitTimeout(-1);
         exec.addProcessListener(new ExtractListener(), Executer.LISTENER_ERRORSTREAM | Executer.LISTENER_ERRORSTREAM);
         exec.addProcessListener(new PasswordListener(password), Executer.LISTENER_ERRORSTREAM);
-        this.status = STARTED;
+
         exec.start();
         this.startTime = System.currentTimeMillis();
         Thread inter = new Thread() {
@@ -279,12 +288,14 @@ public class UnrarWrapper extends Thread {
                 }
             }
         };
+        statusid = -1;
         inter.start();
-
         exec.waitTimeout();
         inter.interrupt();
         config.setProperty("SPEED", speed);
         config.save();
+        if (statusid > 0) return false;
+        return true;
     }
 
     private String escapePassword(String password) {
@@ -304,6 +315,8 @@ public class UnrarWrapper extends Thread {
 
     private void crackPassword() {
         ArchivFile file = null;
+        this.crackProgress = 0;
+        fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
         // suche kleines passwortgeschützte Datei
         for (ArchivFile f : files) {
             if (f.isProtected()) {
@@ -316,17 +329,19 @@ public class UnrarWrapper extends Thread {
             }
         }
 
-        File fileFile = JDUtilities.getResourceFile("tmp/unrar/" + System.currentTimeMillis() + ".unrartmp");
+        File fileFile = new File(this.getExtractTo(), System.currentTimeMillis() + ".unrartmp");
         JDUtilities.writeLocalFile(fileFile, file.getFilepath());
 
         if (file.getSize() < 2097152) {
-
+            int c = 0;
             for (String pass : this.passwordList) {
+                crackProgress = ((c++) * 100) / passwordList.length;
+                fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 pass = escapePassword(pass);
                 Executer exec = new Executer(unrarCommand);
                 exec.addParameter("t");
                 // exec.addParameter("-p");
-                exec.addParameter("-n@" + fileFile.getAbsolutePath());
+                exec.addParameter("-n@" + fileFile.getName());
                 exec.addParameter("-c-");
                 exec.addParameter(this.file.getName());
                 exec.setRunin(this.file.getParentFile().getAbsolutePath());
@@ -336,21 +351,27 @@ public class UnrarWrapper extends Thread {
                 exec.start();
                 exec.waitTimeout();
                 String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                if (res.indexOf(" (password incorrect ?)") != -1) {
+                if (res.indexOf(" (password incorrect ?)") != -1 || res.contains("the file header is corrupt")) {
                     continue;
                 } else if (res.matches("(?s).*[\\s]+All OK[\\s].*")) {
                     this.password = pass;
+                    crackProgress = 100;
+                    fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                     return;
                 } else {
                     continue;
                 }
             }
         } else {
+            int c = 0;
             for (String pass : this.passwordList) {
+                crackProgress = ((c++) * 100) / passwordList.length;
+
+                fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
                 exec.addParameter("p");
                 // exec.addParameter("-p");
-                exec.addParameter("-n@" + fileFile.getAbsolutePath());
+                exec.addParameter("-n@" + fileFile.getName());
 
                 exec.addParameter("-c-");
                 exec.addParameter("-ierr");
@@ -378,7 +399,8 @@ public class UnrarWrapper extends Thread {
                 // Wartet bis der process fertig ist,oder bis er abgebrochen
                 // wurde
                 exec.waitTimeout();
-                if (new Regex(exec.getErrorStream(), "(CRC failed|Total errors: )").matches()) {
+                String res = exec.getErrorStream();
+                if (new Regex(res, "(CRC failed|Total errors: )").matches() || res.contains("the file header is corrupt")) {
                     continue;
                 }
                 String sig = "";
@@ -400,6 +422,8 @@ public class UnrarWrapper extends Thread {
                     if (signature.getExtension().matcher(file.getFilepath()).matches()) {
                         // signatur passt zur extension
                         this.password = pass;
+                        crackProgress = 100;
+                        fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                         return;
                     } else {
                         // signatur passt nicht zur extension.... Es wird
@@ -417,7 +441,13 @@ public class UnrarWrapper extends Thread {
             }
 
         }
+        crackProgress = 100;
+        fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
 
+    }
+
+    public int getCrackProgress() {
+        return crackProgress;
     }
 
     void fireEvent(int status2) {
@@ -432,19 +462,25 @@ public class UnrarWrapper extends Thread {
      * 
      * @throws UnrarException
      */
-    private void open() throws UnrarException {
+    private boolean open() throws UnrarException {
         String pass = null;
         int i = 0;
         fireEvent(JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE);
+        int c = 0;
         while (true) {
             Executer exec = new Executer(unrarCommand);
             if (i > 0) {
                 if (passwordList.length < i) {
-                    this.status = COULD_NOT_FIND_PASSWORD;
-                    return;
-                }
+
+                return false; }
                 pass = this.passwordList[i - 1];
             }
+
+            if (c > 0) {
+                crackProgress = ((c) * 100) / passwordList.length;
+                fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
+            }
+            c++;
             i++;
             exec.addParameter("v");
             exec.addParameter("-p");
@@ -459,13 +495,20 @@ public class UnrarWrapper extends Thread {
             exec.waitTimeout();
             String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
             JDUtilities.getLogger().finest(res);
+            String match;
+            if ((match = new Regex(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
+                statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                match = new Regex(match, "\\.part(\\d+)\\.").getMatch(0);
+                currentVolume = Integer.parseInt(match.trim());
+
+                return false;
+            }
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
-            if (res.indexOf(" (password incorrect ?)") != -1) {
+            if (res.indexOf(" (password incorrect ?)") != -1 || res.contains("the file header is corrupt")) {
                 JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
-                this.status = OPENED_SUCCESSFULL;
-                fireEvent(JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS);
+
                 String[] volumes = Pattern.compile("Volume (.*?)Pathname/Comment", Pattern.DOTALL).split(res);
                 ArchivFile tmp = null;
                 String namen = "";
@@ -529,11 +572,12 @@ public class UnrarWrapper extends Thread {
                     }
 
                 }
+                //
                 if (res.indexOf("Cannot find volume") != -1) {
-                    this.status = CANNOT_FIND_VOLUME;
-                    return;
-                }
-                return;
+
+                return false; }
+                return true;
+
             }
 
         }
@@ -655,6 +699,7 @@ public class UnrarWrapper extends Thread {
                     exactProgress = true;
                     currentlyWorkingOn.setPercent(Integer.parseInt(match));
                     fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+                    return;
                 }
 
                 // datei ok
@@ -664,14 +709,18 @@ public class UnrarWrapper extends Thread {
                     fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED);
                 }
 
-                if ((match = new Regex(latestLine, "Bad archive (.*)").getMatch(0)) != null) {
-                    status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                if ((match = new Regex(latestLine, "Bad archive (.{5,})").getMatch(0)) != null) {
+                    statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                    String currentWorkingFile = match.trim();
+                    currentlyWorkingOn = getArchivFile(currentWorkingFile);
+                    match = new Regex(latestLine, "\\.part(\\d+)\\.").getMatch(0);
+                    currentVolume = Integer.parseInt(match.trim());
 
                     exec.interrupt();
                 }
 
                 if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
-                    status = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                    statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                     exec.interrupt();
                 }
 

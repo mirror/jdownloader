@@ -480,4 +480,9 @@ public class LinkStatus implements Serializable {
         return errorMessage;
     }
 
+    public int getStatus() {
+        // TODO Auto-generated method stub
+        return status;
+    }
+
 }

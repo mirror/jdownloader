@@ -260,7 +260,7 @@ public class SingleDownloadController extends Thread {
     }
 
     private void onDownloadFinishedSuccessFull(DownloadLink downloadLink) {
-
+        downloadLink.setProperty(DownloadLink.STATIC_OUTPUTFILE, downloadLink.getFileOutput());
         if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
             new PackageManager().onDownloadedPackage(downloadLink);
         }

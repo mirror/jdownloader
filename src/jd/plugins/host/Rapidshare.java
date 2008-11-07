@@ -506,7 +506,7 @@ public class Rapidshare extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("IP"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else if (Regex.matches(error, Pattern.compile("(gefunden|Your Premium Account has not been found)"))) {
+                } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FATAL, error);
@@ -526,13 +526,13 @@ public class Rapidshare extends PluginForHost {
         String error = null;
         error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE).getMatch(0);
 
-        if (error == null || error.length() == 0) {
+        if (error == null || error.trim().length() == 0) {
             error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_3).getMatch(0);
         }
-        if (error == null || error.length() == 0) {
+        if (error == null || error.trim().length() == 0) {
             error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_2).getMatch(0);
         }
-        if (error == null || error.length() == 0) {
+        if (error == null || error.trim().length() == 0) {
             error = new Regex(string, PATTERN_FIND_ERROR_MESSAGE_1).getMatch(0);
         }
 

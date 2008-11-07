@@ -55,7 +55,7 @@ public class Executer extends Thread {
                         String line = new String(dynbuf.getLast(num)).trim();
 
                         if (line.length() > 0) {
-                            System.out.println(this + ": " + line+":");
+                            logger.finest(this + ": " + line+"");
                             // System.out.println(">"+line);
                             fireEvent(line, dynbuf,this==Executer.this.sbeObserver?Executer.LISTENER_ERRORSTREAM:Executer.LISTENER_STDSTREAM);
                            // dynbuf.clear();
@@ -284,7 +284,7 @@ public class Executer extends Thread {
         data = data.trim() + "\n";
         try {
             outputStream.write(data.getBytes());
-            System.out.println("Out>"+data);
+            logger.finest("Out>"+data);
             outputStream.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block
