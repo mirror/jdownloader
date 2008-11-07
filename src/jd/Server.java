@@ -177,7 +177,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         try {
             Properties p = System.getProperties();
             p.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "100");
-            Naming.rebind("jDownloader", new Server());
+            Naming.rebind("//127.0.0.1/jDownloader", new Server());
         } catch (MalformedURLException ex) {
             System.out.println(ex.getMessage());
         } catch (RemoteException ex) {
