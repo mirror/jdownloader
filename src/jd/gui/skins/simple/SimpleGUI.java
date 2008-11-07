@@ -105,6 +105,7 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
+import jd.gui.skins.simple.config.ConfigPanelAddons;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
@@ -119,7 +120,6 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDTwitter;
 import jd.utils.JDUtilities;
-import jd.utils.zip.UnZip;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTitledSeparator;
@@ -385,7 +385,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             return new JMenuItem(new JDMenuAction(mi));
         case MenuItem.TOGGLE:
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(new JDMenuAction(mi));
-            JDUtilities.getLogger().info("SELECTED: " + mi.isSelected());
+
             if (mi.isSelected()) {
                 m2.setIcon(JDTheme.II("gui.images.selected"));
             } else {
@@ -572,8 +572,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionHelp;
 
-    private JDAction actionInstallJDU;
-
+    // private JDAction actionInstallJDU;
+    private JDAction actionOptionalConfig;
     // private JDAction actionExpandAll;
 
     // private JDAction actionCollapseAll;
@@ -781,6 +781,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public void actionPerformed(ActionEvent e) {
         JDSounds.PT("sound.gui.clickToolbar");
+        ConfigPanelAddons config;
         switch (e.getID()) {
         case JDAction.ITEMS_MOVE_UP:
         case JDAction.ITEMS_MOVE_DOWN:
@@ -860,42 +861,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
             break;
-        case JDAction.APP_INSTALL_JDU:
-            fc = new JDFileChooser("_INSTALLJDU");
-            fc.setFileFilter(new JDFileFilter(JDLocale.L("gui.menu.action.install.filefilter", "JD Addons"), ".jdu", true));
-            if (fc.showOpenDialog(frame) == JDFileChooser.APPROVE_OPTION) {
-                ret = fc.getSelectedFile();
-                if (ret != null) {
-                    UnZip u = new UnZip(ret, JDUtilities.getResourceFile("."));
-                    File[] files;
-                    try {
-                        files = u.extract();
-                        if (files != null) {
-                            boolean c = false;
-                            for (File element : files) {
-                                if (element.getAbsolutePath().endsWith("readme.html")) {
 
-                                    String html = JDUtilities.getLocalFile(element);
-                                    if (Regex.matches(html, "src\\=\"(.*?)\"")) {
-                                        html = new Regex(html, "src\\=\"(.*?)\"").getMatch(0);
-                                        html = JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + ret.getName() + "</b><hr><a href='" + html + "'>" + JDLocale.L("modules.packagemanager.loadednewpackage.more", "More Information & Installnotes") + "</a>";
-                                    }
-
-                                    JDUtilities.getGUI().showCountdownConfirmDialog(html, 30);
-                                    c = true;
-                                }
-                            }
-                            if (!c) {
-                                JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("modules.packagemanager.loadednewpackage.title", "Paket Update installiert") + "<hr><b>" + ret.getName() + "</b>", 15);
-                            }
-
-                        }
-                    } catch (Exception e3) {
-                        e3.printStackTrace();
-                    }
-                }
-            }
-            break;
         case JDAction.APP_EXIT:
             frame.setVisible(false);
             frame.dispose();
@@ -930,6 +896,19 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             } else {
                 linkListPane.removeSelectedLinks();
             }
+            break;
+        case JDAction.APP_OPEN_OPT_CONFIG:
+
+            config = new ConfigPanelAddons(JDUtilities.getConfiguration());
+            JPanel panel = new JPanel(new BorderLayout());
+            panel.add(new JPanel(), BorderLayout.NORTH);
+            panel.add(config, BorderLayout.CENTER);
+
+            ConfigurationPopup pop = new ConfigurationPopup(frame, config, panel);
+            pop.setModal(true);
+            pop.setAlwaysOnTop(true);
+            pop.setLocation(JDUtilities.getCenterOfComponent(frame, pop));
+            pop.setVisible(true);
             break;
         case JDAction.ITEMS_REMOVE_PACKAGES:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
@@ -1375,7 +1354,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
-        actionInstallJDU = new JDAction(this, JDTheme.V("gui.load"), "action.install", JDAction.APP_INSTALL_JDU);
+        // actionInstallJDU = new JDAction(this, JDTheme.V("gui.load"),
+        // "action.install", JDAction.APP_INSTALL_JDU);
+        this.actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
@@ -1492,7 +1473,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void createOptionalPluginsMenuEntries() {
-        Component temp = (menAddons.getComponentCount() != 0) ? menAddons.getComponent(0) : SimpleGUI.createMenuItem(actionInstallJDU);
+        Component temp = (menAddons.getComponentCount() != 0) ? menAddons.getComponent(0) : SimpleGUI.createMenuItem(this.actionOptionalConfig);
         menAddons.removeAll();
         menAddons.add(temp);
         menAddons.addSeparator();

@@ -41,7 +41,7 @@ public class JDLocale {
 
     private static HashMap<String, String> defaultData = new HashMap<String, String>();
 
-    private static HashMap<String, String> missingData = new HashMap<String, String>();
+//    private static HashMap<String, String> missingData = new HashMap<String, String>();
 
     private static final String DEFAULTLANGUAGE = "english";
 
@@ -94,10 +94,10 @@ public class JDLocale {
             def = defaultData.get(key);
         }
         data.put(key, Encoding.UTF8Encode(def));
-        missingData.put(key, Encoding.UTF8Encode(def));
+//        missingData.put(key, Encoding.UTF8Encode(def));
 
-        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
-        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
+//        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
+//        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
         return def;
 
     }
@@ -130,7 +130,7 @@ public class JDLocale {
         }
         String str = JDUtilities.getLocalFile(file);
         String[] lines = Regex.getLines(str);
-        boolean dupes = false;
+       
         for (String element : lines) {
             int split = element.indexOf("=");
             if (split <= 0 || element.startsWith("#")) {
@@ -143,16 +143,16 @@ public class JDLocale {
             if (dat.containsKey(key)) {
                 System.out.println("Dupe found: " + key);
                 dat.put(key, value);
-                dupes = true;
+               
             } else {
                 dat.put(key, value);
             }
 
         }
-        if (dupes) {
-            System.out.println("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
-            JDLocale.saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
-        }
+//        if (dupes) {
+//            System.out.println("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
+//            JDLocale.saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
+//        }
         return dat;
     }
 
@@ -196,7 +196,7 @@ public class JDLocale {
         } else {
             System.out.println("Could not load the default languagefile: " + defaultFile);
         }
-        missingData = JDLocale.parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
+//        missingData = JDLocale.parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
 
     }
 

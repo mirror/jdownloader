@@ -43,7 +43,7 @@ public class JDAction extends AbstractAction {
     public static final int APP_CONFIGURATION = 18;
     public static final int APP_EXIT = 16;
     public static final int APP_RESTART = 161;
-    public static final int APP_INSTALL_JDU = 34;
+//    public static final int APP_INSTALL_JDU = 34;
     public static final int APP_LOAD_CONTAINER = 15;
     public static final int APP_LOAD_DLC = 23;
     public static final int APP_LOG = 17;
@@ -78,11 +78,12 @@ public class JDAction extends AbstractAction {
     public static final int WIKI = 33;
 
     public static final int CHANGES = 35;
-
+    public static final int APP_OPEN_OPT_CONFIG = 36;
     /**
      * serialVersionUID
      */
     private static final long serialVersionUID = 7393495345332708426L;
+    
 
     private KeyStroke accelerator;
     private int actionID;

@@ -390,7 +390,7 @@ public class JDInit {
         for (OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!plg.isLoaded()) continue;
             try {
-                if (JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false) && !plg.getPlugin().initAddon()) {
+                if (plg.isEnabled() && !plg.getPlugin().initAddon()) {
                     logger.severe("Error loading Optional Plugin: FALSE");
                 }
             } catch (Throwable e) {
@@ -765,7 +765,7 @@ public class JDInit {
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
         new OptionalPluginWrapper("StreamingShareTool", 1.5);
         new OptionalPluginWrapper("LangFileEditor", 1.5);
-        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
+        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5,OptionalPluginWrapper.FLAG_ALWAYS_ENABLED);
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5);
         new OptionalPluginWrapper("JDPremiumCollector", 1.5);
         new OptionalPluginWrapper("JDGrowlNotification", 1.5);

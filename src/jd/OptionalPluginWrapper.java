@@ -25,18 +25,41 @@ import jd.utils.JDUtilities;
 
 public class OptionalPluginWrapper extends PluginWrapper {
     private static final ArrayList<OptionalPluginWrapper> OPTIONAL_WRAPPER = new ArrayList<OptionalPluginWrapper>();
+    public static final int FLAG_ALWAYS_ENABLED = 1<<0;
 
     public static ArrayList<OptionalPluginWrapper> getOptionalWrapper() {
         return OPTIONAL_WRAPPER;
     }
 
     private double version;
+    private int flag;
 
     public OptionalPluginWrapper(String string, double d) {
         super(string, "jd.plugins.optional." + string, null, 0);
+     
         this.version = d;
 
-        if (loadPlugin() != null) OPTIONAL_WRAPPER.add(this);
+        if (loadPlugin() != null){
+            //aktiviert neue addons automatisch.
+            if (JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), false) != JDUtilities.getConfiguration().getBooleanProperty(getConfigParamKey(), true)) {
+                JDUtilities.getConfiguration().setProperty(getConfigParamKey(), true);       
+            }
+            
+            OPTIONAL_WRAPPER.add(this);
+        }
+    }
+
+    public OptionalPluginWrapper(String string, double d, int flag) {
+        this(string,d);
+        this.flag=flag;
+    }
+
+    public int getFlag() {
+        return flag;
+    }
+
+    public void setFlag(int flag) {
+        this.flag = flag;
     }
 
     @Override
@@ -96,5 +119,9 @@ public class OptionalPluginWrapper extends PluginWrapper {
     @Override
     public int compareTo(PluginWrapper plg) {
         return getPlugin().getHost().toLowerCase().compareTo(plg.getPlugin().getHost().toLowerCase());
+    }
+
+    public boolean isEnabled() {
+        return JDUtilities.getConfiguration().getBooleanProperty(this.getConfigParamKey(), false)||(this.flag&FLAG_ALWAYS_ENABLED)>0;
     }
 }

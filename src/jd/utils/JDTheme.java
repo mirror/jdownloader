@@ -73,11 +73,11 @@ public class JDTheme {
         }
 
         if (data.containsKey(key)) { return Encoding.UTF8Decode(data.get(key)); }
-        logger.info("Key not found: " + key + " (" + def + ")");
+//        logger.info("Key not found: " + key + " (" + def + ")");
 
         if (defaultData.containsKey(key)) {
             def = Encoding.UTF8Decode(defaultData.get(key));
-            logger.finer("Use default Value: " + def);
+//            logger.finer("Use default Value: " + def);
         }
         if (def == null) {
             def = key;

@@ -86,7 +86,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return configuration.getBooleanProperty(pluginsOptional.get(rowIndex).getConfigParamKey(), false) ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
+                return pluginsOptional.get(rowIndex).isEnabled() ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
             case 1:
                 return pluginsOptional.get(rowIndex).getPlugin().getHost();
             case 2:
@@ -131,6 +131,10 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         } else if (e.getSource() == enableDisable) {
             int rowIndex = table.getSelectedRow();
             OptionalPluginWrapper plgWrapper = pluginsOptional.get(rowIndex);
+            if((plgWrapper.getFlag()&OptionalPluginWrapper.FLAG_ALWAYS_ENABLED)>0){
+                JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive","The addon %s cannot be disabled.",plgWrapper.getClassName()));
+                return;
+            }
             boolean b = configuration.getBooleanProperty(plgWrapper.getConfigParamKey(), false);
             configuration.setProperty(plgWrapper.getConfigParamKey(), !b);
             tableModel.fireTableRowsUpdated(rowIndex, rowIndex);
