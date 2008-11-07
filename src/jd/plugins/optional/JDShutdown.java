@@ -153,7 +153,7 @@ public class JDShutdown extends PluginOptional {
 
         CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>"), count, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
         if (shutDownMessage.result) {
-            JDUtilities.getController().prepare_shutdown();
+            JDUtilities.getController().prepareShutdown();
             String OS = System.getProperty("os.name").toLowerCase();
             if (OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1 || OS.indexOf("windows 2003") > -1) {
                 shutDownWin();

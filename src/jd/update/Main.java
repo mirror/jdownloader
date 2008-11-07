@@ -278,22 +278,10 @@ public class Main {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-        boolean restart = false;
-        int runtype = 1;
+    
         for (int i = 0; i < args.length; i++) {
 
-            if (args[i].trim().equalsIgnoreCase("/restart")) {
-                restart = true;
-            }
-            if (args[i].trim().equalsIgnoreCase("/rt0")) {
-                runtype = 0;
-            }
-            if (args[i].trim().equalsIgnoreCase("/rt1")) {
-                runtype = 1;
-            }
-            if (args[i].trim().equalsIgnoreCase("/rt2")) {
-                runtype = 2;
-            }
+           
             if (args[i].trim().equalsIgnoreCase("/nofilter")) {
                 OSFilter = false;
             }
@@ -321,27 +309,20 @@ public class Main {
             String str;
             if (JOptionPane.showConfirmDialog(frame, str = utils.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
                 Main.log(log, "Abort due to warnings " + str);
-                if (restart) {
+               
                     new File("updatewarnings.html").delete();
                     new File("updatewarnings.html").deleteOnExit();
                     if (new File("webcheck.tmp").exists()) {
                         new File("webcheck.tmp").delete();
                     }
                     Main.log(log, "Local: " + new File("").getAbsolutePath());
-                    if (runtype == 2) {
-                        Main.log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
-                        Main.runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+                    Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
+                    
+                        Main.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
                         // }
-                    } else if (runtype == 1 && new File("jd/Main.class").exists()) {
-                        Main.log(log, "java Main.class in " + new File("jd/").getAbsolutePath());
-                        Main.runCommand("java", new String[] { "Main.class" }, new File("jd/").getAbsolutePath(), 0);
-                    } else {
-                        Main.log(log, "Start jDownloader.jnlp in " + new File("").getAbsolutePath());
-                        Main.runCommand("javaws", new String[] { "jDownloader.jnlp" }, new File("").getAbsolutePath(), 0);
+                    
 
-                    }
-
-                }
+               
                 logWindow.setText(log.toString());
                 Main.writeLocalFile(new File("updateLog.txt"), log.toString());
                 try {
@@ -446,25 +427,17 @@ public class Main {
         logWindow.setText(log.toString());
         Main.trace(new File("updateLog.txt").getAbsoluteFile());
 
-        if (restart) {
+   
             if (new File("webcheck.tmp").exists()) {
                 new File("webcheck.tmp").delete();
             }
             Main.log(log, "Local: " + new File("").getAbsolutePath());
-            if (runtype == 2) {
-                Main.log(log, "Start java -jar JDownloader.jar in " + new File("").getAbsolutePath());
-                Main.runCommand("java", new String[] { "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
-                // }
-            } else if (runtype == 1 && new File("jd/Main.class").exists()) {
-                Main.log(log, "java Main.class in " + new File("jd/").getAbsolutePath());
-                Main.runCommand("java", new String[] { "Main.class" }, new File("jd/").getAbsolutePath(), 0);
-            } else {
-                Main.log(log, "Start jDownloader.jnlp in " + new File("").getAbsolutePath());
-                Main.runCommand("javaws", new String[] { "jDownloader.jnlp" }, new File("").getAbsolutePath(), 0);
+         
+            Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
+              Main.runCommand("java", new String[] { "-jar","-Xmx512m","JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+         
 
-            }
-
-        }
+        
         logWindow.setText(log.toString());
         Main.writeLocalFile(new File("updateLog.txt"), log.toString());
         try {
@@ -500,7 +473,7 @@ public class Main {
                 tmp.add(element.trim());
             }
         }
-
+       
         params = tmp.toArray(new String[] {});
         ProcessBuilder pb = new ProcessBuilder(params);
 
