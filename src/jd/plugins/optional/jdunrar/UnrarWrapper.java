@@ -22,6 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.utils.DynByteBuffer;
@@ -155,15 +156,22 @@ public class UnrarWrapper extends Thread {
                 }
                 fireEvent(JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS);
 
-                if (extract() && this.checkSizes()) {
+                boolean ex=extract();
+                boolean sc=this.checkSizes();
+                if (ex && sc) {
                     if (removeAfterExtraction) {
                         removeArchiveFiles();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                 } else {
+                    
                     if (statusid == JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC) {
                         fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
-                    } else {
+                    } else if(!sc&&ex){
+                        
+                        fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                        
+                    }else{
                         fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     }
 
@@ -189,8 +197,10 @@ public class UnrarWrapper extends Thread {
     private boolean checkSizes() {
         boolean c = true;
         for (ArchivFile f : files) {
+            System.err.println("Sizecheck: "+f.getFilepath()+"("+f.getSize()+") = "+f.getFile().length());
             if (f.getSize() != f.getFile().length()) {
                 if (!f.getFile().isDirectory()) {
+                   System.err.println("^ERROR^^");
                     c = false;
                 } else {
                     f.setPercent(100);
@@ -527,6 +537,7 @@ public class UnrarWrapper extends Thread {
                     while (matchervolumes.find()) {
 
                         String name = matchervolumes.group(1);
+                       name= Encoding.UTF8Encode(name);
                         if (name.matches("\\*.*")) {
                             name = name.replaceFirst(".", "");
                             long size = Long.parseLong(matchervolumes.group(2));
@@ -647,6 +658,8 @@ public class UnrarWrapper extends Thread {
 
     public void setExtractTo(File dl) {
         this.extractTo = dl;
+        if(files!=null)
+        for(ArchivFile af: files)af.setPath(dl);
     }
 
     public File getExtractTo() {

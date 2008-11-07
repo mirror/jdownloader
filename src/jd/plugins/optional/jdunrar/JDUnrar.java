@@ -847,6 +847,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             // progress.get(wrapper).setColor(Color.GREEN);
             wrapper.getDownloadLink().getLinkStatus().setStatusText("Password found");
             wrapper.getDownloadLink().requestGuiUpdate();
+            wrapper.getDownloadLink().setPluginProgress(null);
+            
             // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
             // ": " + "Password found " + wrapper.getPassword());
             break;
