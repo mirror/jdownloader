@@ -681,11 +681,11 @@ public class JDController implements ControlListener, UIListener {
      * Beendet das Programm
      */
     public void exit() {
-        prepare_shutdown();
+        prepareShutdown();
         System.exit(0);
     }
 
-    public void prepare_shutdown() {
+    public void prepareShutdown() {
         stopDownloads();
         saveDownloadLinks();
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SYSTEM_EXIT, this));
@@ -697,7 +697,7 @@ public class JDController implements ControlListener, UIListener {
      * Startet das Programm neu
      */
     public void restart() {
-        prepare_shutdown();
+        prepareShutdown();
         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
