@@ -44,9 +44,9 @@ public class BackupLink implements Serializable {
     private int containerIndex = -1;
     private String containerType;
     private int linkType;
-    /**
-     * Von hier soll de Download stattfinden
-     */
+    
+    // Von hier soll de Download stattfinden
+     
     private String urlDownload;
 
     public BackupLink(File containerfile, int id, String containerType) {

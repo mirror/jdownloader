@@ -24,8 +24,6 @@ import jd.utils.JDUtilities;
 /**
  * Jac Training
  * 
- * 
- * 
  * @author JD-Team
  */
 public class JACTrain {

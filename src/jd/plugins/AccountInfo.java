@@ -49,7 +49,7 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Gibt zurück wieviel (in Cent) geld gerade auf diesem Account ist
+     * Gibt zurück wieviel (in Cent) Geld gerade auf diesem Account ist
      * 
      * @return
      */
@@ -75,7 +75,7 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * GIbt an wieviel PremiumPunkte der Account hat
+     * Gibt an wieviele PremiumPunkte der Account hat
      * 
      * @return
      */
@@ -101,8 +101,8 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * gibt zurück wieviel TRafficshareonch übrig ist (in bytes). TRafficshare
-     * ist Traffic, den man über einen premiumaccount Freeusern zur verfügung
+     * Gibt zurück wieviel Trafficshareonch übrig ist (in bytes). Trafficshare
+     * ist Traffic, den man über einen PremiumAccount den Freeusern zur verfügung
      * stellen kann. -1: Feature ist nicht unterstützt
      * 
      * @return
@@ -112,7 +112,7 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Gibt zurück wieviel PLatz (bytes) die uploads auf diesem account belegen
+     * Gibt zurück wieviel PLatz (bytes) die uploads auf diesem Account belegen
      * 
      * @return
      */
@@ -131,7 +131,7 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Gibt zurück ob der accoun abgelaufen ist
+     * Gibt zurück ob der Account abgelaufen ist
      * 
      * @return
      */

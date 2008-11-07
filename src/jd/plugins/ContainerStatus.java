@@ -40,7 +40,7 @@ public class ContainerStatus {
     }
 
     /**
-     * Fügt einen LinkStatus.* Status hinzu.Der alte status wird dabei nicht
+     * Fügt einen LinkStatus.* Status hinzu.Der alte Status wird dabei nicht
      * gelöscht.
      * 
      * @param status
@@ -58,7 +58,7 @@ public class ContainerStatus {
 
 
     /**
-     * Gibt zurück ob der zugehörige Link einen bestimmten status hat.
+     * Gibt zurück ob der zugehörige Link einen bestimmten Status hat.
      * 
      * @param status
      * @return
@@ -78,7 +78,7 @@ public class ContainerStatus {
     }
 
     /**
-     * Setzt den Linkstatus. Es dürfen nur LInkStatus.*STATUS ids verwendet
+     * Setzt den Linkstatus. Es dürfen nur LinkStatus.*STATUS ids verwendet
      * werden
      * 
      * @param status

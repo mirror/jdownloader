@@ -24,7 +24,7 @@ import jd.utils.JDUtilities;
 
 public class LinkStatus implements Serializable {
     /**
-     * Controlling Zeigt an dass der Link gerade heruntergeladen wird
+     * Controlling Zeigt an, dass der Link gerade heruntergeladen wird
      */
     public static final int DOWNLOADINTERFACE_IN_PROGRESS = 1 << 10;
     /**
@@ -32,7 +32,7 @@ public class LinkStatus implements Serializable {
      */
     public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
     /**
-     * Controlling,Downloadinterface Zeigt an dass die Datei auf der festplatte
+     * Controlling,Downloadinterface Zeigt an, dass die Datei auf der Festplatte
      * schon existiert
      */
     public static final int ERROR_ALREADYEXISTS = 1 << 13;

@@ -19,8 +19,8 @@ import java.io.File;
 import java.io.FileFilter;
 
 /**
- * Mit dieser Klasse kann man sowohl bestimmte Dateien aus einem Verzeichnis
- * auflisten als auch einen FileFilter in einem JDFileChooser nutzen
+ * Mit dieser Klasse kann man, sowohl bestimmte Dateien aus einem Verzeichnis
+ * auflisten, als auch einen FileFilter in einem JDFileChooser nutzen
  * 
  * @author astaldo
  */
@@ -66,9 +66,8 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
         return false;
     }
 
-    /**
-     * Gibt die Filefilter beschreibung zurück
-     */
+    //Gibt die Filefilter Beschreibung zurück
+     
     @Override
     public String getDescription() {
         return this.description;

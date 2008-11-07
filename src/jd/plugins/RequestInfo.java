@@ -136,9 +136,9 @@ public class RequestInfo {
     }
 
     /**
-     * Gibt anhand des Rückgabecodes zurück, ob der Aufrufr erfolgreich war oder
+     * Gibt anhand des Rückgabecodes zurück, ob der Aufruf erfolgreich war oder
      * nicht. HTTP Codes zwischen -2 und 499 gelten als erfolgreich Negative
-     * Codes beudeuten dass der Server ( wie es z.B. machne Router HTTP Server
+     * Codes beudeuten, dass der Server ( wie es z.B. manche Router HTTP Server
      * machen) keinen responseCode zurückgegeben hat). In diesem Fall wird
      * trotzdem true zurückgegeben
      * 
@@ -158,7 +158,7 @@ public class RequestInfo {
     }
 
     /**
-     * Setzt den htmlCode kann z.B. bei der Form zum Einsatz kommen wenn ein
+     * Setzt den htmlCode kann z.B. bei der Form zum Einsatz kommen, wenn ein
      * JavaScript die Form verändert
      * 
      * @param htmlCode

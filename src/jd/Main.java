@@ -395,7 +395,7 @@ public class Main {
 
         /*
          * Übergangsfix. Die Interactions wurden in eine subconfig verlegt.
-         * dieser teil kopiert bestehende events in die neue configfile
+         * Dieser Teil kopiert bestehende Events in die neue Configfile
          */
 
         if (JDUtilities.getConfiguration().getInteractions().size() > 0 && JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, null) == null) {

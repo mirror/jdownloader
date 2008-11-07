@@ -384,15 +384,13 @@ abstract public class DownloadInterface {
                         }
                         break;
                     }
-
-                    /*
-                     * War der download des buffers zu schnell, wird heir eine
-                     * pause eingelegt
-                     */
+                    
+                    // War der Download des Buffers zu schnell, wird hier eine Pause eingelegt
+                     
                     tempBuff = getBufferSize(getMaximalSpeed());
                     // Falls der Server bei den Ranges schlampt und als endByte
-                    // immer das dateiende angibt wird hier der buffer
-                    // korrigiert um overhead zu vermeiden
+                    // immer das Dateiende angibt wird hier der Buffer
+                    // korrigiert um overhead zu vermeiden.
                     if (tempBuff > endByte - getCurrentBytesPosition() + 1 && endByte > 0) {
                         tempBuff = (int) (endByte - getCurrentBytesPosition()) + 1;
                     }
@@ -549,7 +547,7 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Gibt die aktuelle downloadgeschwindigkeit des chunks zurück
+         * Gibt die aktuelle Downloadgeschwindigkeit des chunks zurück
          * 
          * @return
          */
@@ -626,10 +624,10 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Über buffersize und timeinterval wird die dwonloadgeschwindigkeit
-         * eingestellt. Eine zu hohe INtervalzeit sorgt für stark
+         * Über buffersize und timeinterval wird die Downloadgeschwindigkeit
+         * eingestellt. Eine zu hohe Intervalzeit sorgt für stark
          * intervalartiges laden und unregelmäsige gui aktualisierungen. Der
-         * Download "ruckelt". Zu kleine INtervalzeiten belasten die Festplatte
+         * Download "ruckelt". Zu kleine Intervalzeiten belasten die Festplatte
          * sehr
          * 
          * @return

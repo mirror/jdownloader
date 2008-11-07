@@ -74,7 +74,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Diese Klasse stellt alle public Methoden zur captcha erkennung zur Verfügung.
+ * Diese Klasse stellt alle public Methoden zur captcha Erkennung zur Verfügung.
  * Sie verküpft Letter und captcha Klassen. Gleichzeitig dient sie als
  * Parameter-Dump.
  * 
@@ -127,7 +127,7 @@ public class JAntiCaptcha {
 
     /**
      * @param path
-     * @return Gibt die Pfade zu allen methoden zurück
+     * @return Gibt die Pfade zu allen Methoden zurück
      */
     public static File[] getMethods(String path) {
         File dir = JDUtilities.getResourceFile(path);
@@ -181,7 +181,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Testet die Angegebene Methode. dabei werden analysebilder erstellt.
+     * Testet die Angegebene Methode. Dabei werden analysebilder erstellt.
      * 
      * @param file
      */
@@ -284,7 +284,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Führt einen testlauf mit den übergebenen methoden durch
+     * Führt einen Testlauf mit den übergebenen Methoden durch
      * 
      * @param methods
      */
@@ -296,7 +296,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * fenster die eigentlich nur zur entwicklung sind um Basic GUI Elemente zu
+     * Fenster die eigentlich nur zur Entwicklung sind um Basic GUI Elemente zu
      * haben
      */
     // private BasicWindow bw1;
@@ -310,8 +310,8 @@ public class JAntiCaptcha {
     private JFrame f;
 
     /**
-     * Bildtyp. Falls dieser von jpg unterschiedlich ist muss zuerst konvertiert
-     * werden
+     * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst konvertiert
+     * werden.
      */
 
     private String imageType;
@@ -386,16 +386,16 @@ public class JAntiCaptcha {
     }
 
     /**
-     * prüft den übergebenen Captcha und gibtd en Code als String zurück das
-     * lettersarray des Catchas wird dabei bearbeitet. es werden decoedvalue,
+     * prüft den übergebenen Captcha und gibt den Code als String zurück. Das
+     * lettersarray des Catchas wird dabei bearbeitet. Es werden decoedvalue,
      * avlityvalue und parent gesetzt WICHTIG: Nach dem Decoden eines Captcha
-     * herrscht verwirrung. Es stehen unterschiedliche methoden zur verfügung um
+     * herrscht Verwirrung. Es stehen unterschiedliche Methoden zur Verfügung um
      * an bestimmte Informationen zu kommen: captcha.getDecodedLetters() gibt
      * Die letter aus der datenbank zurück. Deren werte sind nicht fest. Auf den
      * Wert von getvalityvalue und getValityPercent kann man sich absolut nicht
      * verlassen. Einzig getDecodedValue() lässt sich zuverlässig auslesen
      * captcha.getLetters() gibt die Wirklichen Letter des captchas zurück. Hier
-     * lassen sich alle wichtigen infos abfragen. z.B. ValityValue,
+     * lassen sich alle wichtigen Infos abfragen. z.B. ValityValue,
      * ValityPercent, Decodedvalue, etc. Wer immer das hier liest sollte auf
      * keinen fall den fehler machen und sich auf Wert aus dem getdecodedLetters
      * array verlassen
@@ -750,7 +750,7 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Zeigt die Momentane Library an. buchstaben können gelöscht werden
+     * Zeigt die Momentane Library an. Buchstaben können gelöscht werden
      */
     public void displayLibrary() {
         Letter tmp;
@@ -969,10 +969,10 @@ public class JAntiCaptcha {
     }
 
     /**
-     * Vergleicht a und b und gibt eine vergleichszahl zurück. a und b werden
-     * gegeneinander verschoben und b wird über die parameter gedreht. Praktisch
-     * heißt das, dass derjenige TReffer als gut eingestuft wird, bei dem der
-     * Datenbank datensatz möglichst optimal überdeckt wird.
+     * Vergleicht a und b und gibt eine Vergleichszahl zurück. a und b werden
+     * gegeneinander verschoben und b wird über die Parameter gedreht. Praktisch
+     * heißt das, dass derjenige Treffer als gut eingestuft wird, bei dem der
+     * Datenbank Datensatz möglichst optimal überdeckt wird.
      * 
      * @param a
      *            Original Letter

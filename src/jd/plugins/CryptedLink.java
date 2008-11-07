@@ -61,14 +61,14 @@ public class CryptedLink extends Property {
     }
 
     /**
-     * gibt die cryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+     * gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
     public String getCryptedUrl() {
         return this.cryptedUrl;
     }
 
     /**
-     * setzt die cryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+     * setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
     public void setCryptedUrl(String url) {
         this.cryptedUrl = url;
@@ -83,7 +83,7 @@ public class CryptedLink extends Property {
     }
 
     /**
-     * setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
+     * Setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
      * FolderPassword)
      */
     public void setDecrypterPassword(String pw) {
@@ -91,7 +91,7 @@ public class CryptedLink extends Property {
     }
 
     /**
-     * gibt die cryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+     * Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
      */
     @Override
     public String toString() {
