@@ -748,6 +748,7 @@ public class JDInit {
         new HostPluginWrapper("sendspace.pl", "SendSpacePl", "http://[\\w\\.]*?sendspace.pl/file/[a-zA-Z0-9]+/?");
         new HostPluginWrapper("dl.free.fr", "DlFreeFr", "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[a-zA-Z0-9]+|[a-zA-Z0-9]+/?)");
         new HostPluginWrapper("dosyakaydet.com", "DosyakaydetCom", "http://[\\w\\.]*?dosyakaydet\\.com/(download/[a-zA-Z0-9]+/?|index/p_download/hash_[a-zA-Z0-9]+/)");
+        new HostPluginWrapper("egoshare.com", "EgoshareCom", "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[a-zA-Z0-9]+");
     }
 
     public void loadPluginOptional() {
@@ -766,7 +767,7 @@ public class JDInit {
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
         new OptionalPluginWrapper("StreamingShareTool", 1.5);
         new OptionalPluginWrapper("LangFileEditor", 1.5);
-        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5,OptionalPluginWrapper.FLAG_ALWAYS_ENABLED);
+        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, OptionalPluginWrapper.FLAG_ALWAYS_ENABLED);
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5);
         new OptionalPluginWrapper("JDPremiumCollector", 1.5);
         new OptionalPluginWrapper("JDGrowlNotification", 1.5);
