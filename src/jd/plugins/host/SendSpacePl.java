@@ -40,14 +40,13 @@ public class SendSpacePl extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
-        br.setDebug(true);
+        getFileInformation(downloadLink);        
         String dlLink = br.getRegex("<div class=\"downloadFileAds\".*?<a href=\"(.*?)\"><img src=\"http://www.sendspace.pl/templates/img/button/download_file.gif\" alt=\"pobierz plik!\"").getMatch(0);
         if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         dl = br.openDownload(downloadLink, dlLink, false, 1);
-        if (!dl.connect(br).isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }

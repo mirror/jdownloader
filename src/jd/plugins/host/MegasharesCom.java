@@ -93,7 +93,7 @@ public class MegasharesCom extends PluginForHost {
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         dl = br.openDownload(downloadLink, dlLink, true, 0);
-        if (!dl.connect(br).isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
@@ -161,7 +161,7 @@ public class MegasharesCom extends PluginForHost {
         br.setDebug(true);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url, true, 1);
-        if (!dl.connect(br).isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }

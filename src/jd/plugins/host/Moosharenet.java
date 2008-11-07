@@ -105,7 +105,7 @@ public class Moosharenet extends PluginForHost {
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, dlLink, false, 1);
-        if (!dl.connect(br).isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
@@ -164,7 +164,7 @@ public class Moosharenet extends PluginForHost {
         }
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, dlLink, false, 1);
-        if (!dl.connect(br).isContentDisposition()) {
+        if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
