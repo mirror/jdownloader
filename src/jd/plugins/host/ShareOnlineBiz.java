@@ -21,12 +21,12 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 import org.mozilla.javascript.Context;
@@ -34,8 +34,7 @@ import org.mozilla.javascript.Scriptable;
 
 public class ShareOnlineBiz extends PluginForHost {
     private String captchaCode;
-    private File captchaFile;
-    private String passCode;
+    private String passCode = null;
     private String url;
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
@@ -50,6 +49,7 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         url = downloadLink.getDownloadURL();
+        this.setBrowserExclusive();
         for (int i = 1; i < 3; i++) {
             try {
                 Thread.sleep(1000);/*
@@ -61,8 +61,8 @@ public class ShareOnlineBiz extends PluginForHost {
                     String sizev = br.getRegex(Pattern.compile("<br>You have requested <font color=.*?>.*?</font> \\((.*?)\\) .</b>", Pattern.CASE_INSENSITIVE)).getMatch(0);
 
                     if (filename == null || sizev == null) return false;
-                    downloadLink.setDownloadSize(Regex.getSize(sizev));
-                    downloadLink.setName(filename);
+                    downloadLink.setDownloadSize(Regex.getSize(sizev.trim()));
+                    downloadLink.setName(filename.trim());
                     return true;
                 }
             } catch (Exception e) {
@@ -74,7 +74,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -89,16 +89,12 @@ public class ShareOnlineBiz extends PluginForHost {
             return;
         }
 
-        /* Captcha File holen */
-        captchaFile = getLocalCaptchaFile(this);
-        HTTPConnection captcha_con = br.cloneBrowser().openGetConnection("http://www.share-online.biz/captcha.php");
-        if (captcha_con.getContentType().contains("text")) {
-            /* Fehler beim Captcha */
-            logger.severe("Captcha Download fehlgeschlagen!");
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
+        File captchaFile = this.getLocalCaptchaFile(this);
+        try {
+            Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.share-online.biz/captcha.php"));
+        } catch (Exception e) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        Browser.download(captchaFile, captcha_con);
         /* CaptchaCode holen */
         captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
         Form form = br.getForm(1);
@@ -145,7 +141,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
         /* 15 seks warten */
         sleep(15000, downloadLink);
-
+        br.setFollowRedirects(true);
         /* Datei herunterladen */
         br.openDownload(downloadLink, url).startDownload();
 
