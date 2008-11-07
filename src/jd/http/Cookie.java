@@ -19,11 +19,11 @@ package jd.http;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
 
 public class Cookie {
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.ENGLISH);
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
     private Date expires = null;
+    private String formatedexpires = null;
     private String path;
     private String host;
     private String value;
@@ -52,20 +52,23 @@ public class Cookie {
 
     public void setExpires(String expires) {
         if (expires == null) {
-
             this.expires = null;
+            this.formatedexpires = null;
             return;
         }
         try {
             this.expires = DATE_FORMAT.parse(expires);
         } catch (ParseException e) {
             try {
-                this.expires = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.ENGLISH).parse(expires);
+                this.expires = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z").parse(expires);
             } catch (ParseException e2) {
                 e2.printStackTrace();
+                this.expires = null;
+                this.formatedexpires = null;
+                return;
             }
         }
-
+        this.formatedexpires = DATE_FORMAT.format(this.expires);
     }
 
     public void setValue(String value) {
@@ -83,9 +86,15 @@ public class Cookie {
     }
 
     public boolean isExpired() {
-        if (expires == null) return false;
-        return new Date().compareTo(expires) > 0;
-
+        if (expires == null || formatedexpires == null) return false;
+        String Current = DATE_FORMAT.format(new Date());
+        try {
+            return DATE_FORMAT.parse(Current).after(DATE_FORMAT.parse(formatedexpires));
+        } catch (ParseException e1) {
+            // TODO Auto-generated catch block
+            e1.printStackTrace();
+            return false;
+        }
     }
 
     public Date getExpires() {
@@ -94,6 +103,11 @@ public class Cookie {
 
     public void setExpires(Date expires) {
         this.expires = expires;
+        if (expires != null) {
+            formatedexpires = DATE_FORMAT.format(expires);
+        } else {
+            formatedexpires = null;
+        }
     }
 
     public String getPath() {

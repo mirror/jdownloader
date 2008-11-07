@@ -1,4 +1,9 @@
 import java.io.UnsupportedEncodingException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import jd.parser.Regex;
 import jd.plugins.Plugin;
@@ -10,14 +15,32 @@ public class header {
      * @param args
      * @throws ParseException
      * @throws UnsupportedEncodingException
+     * @throws java.text.ParseException
      */
-    public static void main(String[] args) throws ParseException, UnsupportedEncodingException {
+    public static void main(String[] args) throws ParseException, UnsupportedEncodingException, java.text.ParseException {
         // TODO Auto-generated method stub
+        
 
-        if (true) {            
-            String runtimeVersion = "1.4.2_0-b12".toLowerCase();            
+        if (true) {
+
+            Date dt = new Date();
+            // Festlegung des Formats:
+            SimpleDateFormat df = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
+            // df.setTimeZone( TimeZone.getDefault() ); // nicht mehr unbedingt
+            // notwendig seit JDK 1.2
+            // Formatierung zu String:
+            System.out.println("Date = " + df.format(dt)); // z.B. '2001-01-26
+                                                           // 19:03:56.731'
+            // Ausgabe für andere Zeitzone:
+            dt = df.parse("Fri, 07-Nov-2008 12:54:19 GMT");
+            System.out.println("parse = " + df.format(dt)); // z.B. '2001-02-03
+                                                            // 04:05:06.7'
+
+        }
+        if (false) {
+            String runtimeVersion = "1.4.2_0-b12".toLowerCase();
             if (!new Regex(runtimeVersion, "1\\.(5|6)").matches()) {
-                
+
                 System.out.println("Wrong Java Version");
 
             } else {
