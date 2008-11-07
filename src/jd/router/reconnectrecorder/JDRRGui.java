@@ -64,7 +64,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
     private String ip_after;
     public String RouterIP = null;
     private JButton btnStop;
-    private JDRRInfoPopup infopopup;
     public String methode = null, user = null, pass = null;
     private static long check_intervall = 3000;
     private static long reconnect_duration = 0;
@@ -148,22 +147,23 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             if (routerip.getText() != null && !routerip.getText().matches("\\s*")) JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, routerip.getText().trim());
             ip_before = JDUtilities.getIPAddress();
             JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
-      
-                try {
-                    JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
-                } catch (BrowserLaunchingInitializingException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (IOException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
-         
-            infopopup = new JDRRInfoPopup(ip_before);
-            infopopup.start_check();
+
+            try {
+                JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
+            } catch (BrowserLaunchingInitializingException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (UnsupportedOperatingSystemException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            } catch (IOException e1) {
+                // TODO Auto-generated catch block
+                e1.printStackTrace();
+            }
+
+            JDRRInfoPopup popup = new JDRRInfoPopup(ip_before);
+            popup.start_check();
+            popup.setVisible(true);
             return;
         }
         dispose();
@@ -181,7 +181,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             setLayout(new GridBagLayout());
             JPanel p = new JPanel(new GridBagLayout());
             btnStop = new JButton(JDLocale.L("gui.btn_stop", "Stop"));
-            btnStop.addActionListener(this);            
+            btnStop.addActionListener(this);
             statusicon = new RRStatus();
             JDUtilities.addToGridBag(p, statusicon, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
             JDUtilities.addToGridBag(p, btnStop, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
@@ -194,7 +194,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             setLocation(20, 20);
             setAlwaysOnTop(true);
             pack();
-            setVisible(true);
         }
 
         public void start_check() {
@@ -214,7 +213,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                         }
                         if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                             statusicon.setStatus(1);
-                            closePopup();
+                            if (JDRR.running == true) closePopup();
                             return;
                         }
                     }
@@ -268,6 +267,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
         }
 
         public void closePopup() {
+            JDRR.stopServer();
             btnStop.setEnabled(false);
             ip_after = JDUtilities.getIPAddress();
             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
@@ -284,7 +284,6 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             } else {
                 statusicon.setStatus(-1);
             }
-            JDRR.stopServer();
             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                 save();
             } else {

@@ -33,10 +33,10 @@ public class JDRR {
     static public void startServer(String serverip) {
         steps = new Vector<String>();
         auth = null;
+        running = true;
         steps.add("[[[HSRC]]]");
         try {
             Server_Socket = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
-            running = true;
             new JDRRServer(Server_Socket, serverip).start();
         } catch (Exception e) {
             e.printStackTrace();
