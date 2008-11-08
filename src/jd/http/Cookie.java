@@ -19,9 +19,10 @@ package jd.http;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class Cookie {
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK);
     private Date expires = null;
     private String formatedexpires = null;
     private String path;
@@ -59,8 +60,9 @@ public class Cookie {
         try {
             this.expires = DATE_FORMAT.parse(expires);
         } catch (ParseException e) {
+            e.printStackTrace();
             try {
-                this.expires = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z").parse(expires);
+                this.expires = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.UK).parse(expires);
             } catch (ParseException e2) {
                 e2.printStackTrace();
                 this.expires = null;
