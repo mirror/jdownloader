@@ -82,11 +82,8 @@ public class DistributeData extends ControlBroadcaster {
         this.data = data;
         try {
             this.data = URLDecoder.decode(this.data, "UTF-8");
-            /*
-             * Leerzeichen werden bei URLDecoder rausgefilter, müssen aber
-             * erhalten bleiben!)
-             */
             this.data = this.data.replaceAll(" ", "%20");
+            this.data = this.data.replaceAll("%20http", " http");
         } catch (Exception e) {
             logger.warning("text not url decodeable");
         }
