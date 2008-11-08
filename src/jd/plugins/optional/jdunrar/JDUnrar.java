@@ -264,6 +264,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         switch (type) {
         case JDUnrarConstants.MULTIPART_START_PART:
         case JDUnrarConstants.SINGLE_PART_ARCHIVE:
+            break;
         case JDUnrarConstants.NO_RAR_ARCHIVE:
             return null;
         }
