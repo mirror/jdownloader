@@ -32,13 +32,13 @@ import jd.utils.JDUtilities;
 public class UnZip {
     public boolean autoDelete = false;
 
-    /** The buffer for reading/writing the ZipFile data */
+    // The buffer for reading/writing the ZipFile data //
     protected byte[] b;
 
     protected SortedSet<String> dirsMade;
-    /**
-     * Der Ziehpfand in dem entpackt werden soll
-     */
+    
+    //Der Zielpfad in dem entpackt werden soll
+     
     private File targetPath = null;
 
     protected boolean warnedMkDir = false;

@@ -121,7 +121,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     }
 
     /**
-     * list ist immer ein ArrayList<Account> mit daten aus der config
+     * List ist immer eine ArrayList<Account> mit Daten aus der config
      * 
      * @param list
      */

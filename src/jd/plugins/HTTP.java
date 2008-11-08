@@ -280,7 +280,6 @@ public class HTTP {
     }
 
     /**
-     * 
      * Schickt ein PostRequest an eine Adresse
      * 
      * @param string
@@ -300,7 +299,6 @@ public class HTTP {
      */
     public static RequestInfo postRequest(URL string, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect) throws IOException {
         return HTTP.postRequest(string, cookie, referrer, requestProperties, parameter, redirect, HTTP.getReadTimeoutFromConfiguration(), HTTP.getConnectTimeoutFromConfiguration());
-
     }
 
     public static RequestInfo postRequest(URL url, String cookie, String referrer, HashMap<String, String> requestProperties, String parameter, boolean redirect, int readTimeout, int requestTimeout) throws IOException {
@@ -449,5 +447,4 @@ public class HTTP {
     public static void setReadTimeout(int value) {
         JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, value);
     }
-
 }

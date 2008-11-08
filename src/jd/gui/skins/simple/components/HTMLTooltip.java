@@ -40,9 +40,6 @@ import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkListener {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     public static HTMLTooltip show(String htmlText, Point loc) {

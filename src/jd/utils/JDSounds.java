@@ -77,7 +77,7 @@ public class JDSounds {
     }
 
     /**
-     * Spielt einen Sound ab und blockiert bis der Sound fertig gespirlt wurde
+     * Spielt einen Sound ab und blockiert bis der Sound fertig gespielt wurde
      * 
      * @param key
      * @return

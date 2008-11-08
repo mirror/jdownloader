@@ -48,15 +48,11 @@ import jd.utils.Sniffy;
 public class Browser {
     public class BrowserException extends IOException {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = 1509988898224037320L;
 
         public BrowserException(String string) {
             super(string);
         }
-
     }
 
     private static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
@@ -966,7 +962,7 @@ public class Browser {
     }
 
     /**
-     * Lädt über eine URLConnection eine datei ehrunter. Zieldatei ist file.
+     * Lädt über eine URLConnection eine Datei herunter. Zieldatei ist file.
      * 
      * @param file
      * @param con

@@ -29,15 +29,13 @@ public class CryptedLink extends Property {
     private static final long serialVersionUID = 6493927031856751251L;
 
     /**
-     * enthält die Url welche an das Decrypter-Plugin übergeben wird
+     * enthält die Url, welche an das Decrypter-Plugin übergeben wird
      */
     private String cryptedUrl;
 
     private ProgressController progress;
 
-    /**
-     * Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
-     */
+    // Password welches dem Decrypter-Plugin übergeben wird (zb FolderPassword)
     private String decrypterPassword;
 
     public CryptedLink(String cryptedUrl) {
@@ -60,22 +58,19 @@ public class CryptedLink extends Property {
         return this.progress;
     }
 
-    /**
-     * gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
-     */
+    // Gibt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
     public String getCryptedUrl() {
         return this.cryptedUrl;
     }
 
-    /**
-     * setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
-     */
+    // Setzt die CryptedUrl zurück, welche vom Decrypter-Plugin verarbeitet wird
+    
     public void setCryptedUrl(String url) {
         this.cryptedUrl = url;
     }
 
     /**
-     * gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
+     * Gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
      * kann (zb. FolderPassword)
      */
     public String getDecrypterPassword() {

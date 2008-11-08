@@ -23,51 +23,43 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class LinkStatus implements Serializable {
-    /**
-     * Controlling Zeigt an, dass der Link gerade heruntergeladen wird
-     */
+    // Controlling Zeigt an, dass der Link gerade heruntergeladen wird
     public static final int DOWNLOADINTERFACE_IN_PROGRESS = 1 << 10;
-    /**
-     * Controlling Die AGB wurde noch nicht unterzeichnet.
-     */
+ 
+    // Controlling Die AGB wurde noch nicht unterzeichnet.
     public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
     /**
      * Controlling,Downloadinterface Zeigt an, dass die Datei auf der Festplatte
      * schon existiert
      */
     public static final int ERROR_ALREADYEXISTS = 1 << 13;
-    /**
-     * PLugins: Captcha Text war falsch
-     */
+    
+    // PLugins: Captcha Text war falsch
     public final static int ERROR_CAPTCHA = 1 << 3;
     /**
      * Downloadinterface Zeigt an dass der Eigentliche Download im
      * Downloadinterface fehlgeschlagen ist. z.B. Misslungender Chunkload
      */
     public static final int ERROR_DOWNLOAD_FAILED = 1 << 14;
-    /**
-     * Downloadinterface Zeigt an dass der Link nicht vollständig geladen wurde
-     */
+   
+    // Downloadinterface Zeigt an dass der Link nicht vollständig geladen wurde
     public static final int ERROR_DOWNLOAD_INCOMPLETE = 1 << 9;
     /**
      * Plugins & Downloadinterface Schwerwiegender fehler. Der Download wird
      * sofort abgebrochen. Es werden keine weiteren versuche mehr gestartet
      */
     public static final int ERROR_FATAL = 1 << 17;
-    /**
-     * Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
-     */
+    
+    // Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
     public final static int ERROR_FILE_NOT_FOUND = 1 << 5;
-    /**
-     * Plugins: Download Limit wurde erreicht
-     */
+    
+    // Plugins: Download Limit wurde erreicht
     public final static int ERROR_IP_BLOCKED = 1 << 4;
     /**
      * Conttrolling, Downloadinterface, Plugins Zeigt an, dass gerade ein
      * anderes Plugin an der Lokalen Datei arbeitet. Wird eingesetzt um dem
      * Controller mitzuteilen, dass bereits ein Mirror dieser Datei geladen
      * wird.
-     * 
      */
     public static final int ERROR_LINK_IN_PROGRESS = 1 << 19;
 
@@ -127,9 +119,8 @@ public class LinkStatus implements Serializable {
     public static final int WAITING_USERIO = 1 << 23;
     public static final int ERROR_POST_PROCESS = 1 << 24;
     private static final long serialVersionUID = 3885661829491436448L;
-    /**
-     * Controlling: Link muß noch bearbeitet werden.
-     */
+    
+    // Controlling: Link muß noch bearbeitet werden.
     public final static int TODO = 1 << 0;
     public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static final int VALUE_ID_PREMIUM_DISABLE = 1;
@@ -196,7 +187,6 @@ public class LinkStatus implements Serializable {
             return JDLocale.L("downloadlink.status.waitinguserio", "Waiting for user input");
         }
         return null;
-
     }
 
     public String getLongErrorMessage() {
@@ -237,9 +227,7 @@ public class LinkStatus implements Serializable {
                 ret += JDLocale.L("gui.downloadlink.errorpostprocess2", "[convert failed]");
             }
             return ret;
-
         }
-
         if (hasStatus(LinkStatus.FINISHED)) {
 
         return JDLocale.L("gui.downloadlink.finished", "[finished]") + (this.getStatusText() != null ? "> " + this.getStatusText() : ""); }
@@ -249,15 +237,12 @@ public class LinkStatus implements Serializable {
                 ret += JDLocale.L("gui.downloadlink.aborted", "[interrupted]");
             } else {
                 ret += JDLocale.L("gui.downloadlink.disabled", "[deaktiviert]");
-
             }
-
             if (errorMessage != null) {
 
                 ret += ": " + errorMessage;
             }
             return ret;
-
         }
 
         if (isFailed()) { return getLongErrorMessage(); }
@@ -271,7 +256,6 @@ public class LinkStatus implements Serializable {
             }
             return ret;
         }
-
         if (downloadLink.getPlugin() != null && downloadLink.getPlugin().getRemainingHosterWaittime() > 0) { return JDLocale.L("gui.downloadlink.hosterwaittime", "[wait for new ip]"); }
 
         if (downloadLink.getDownloadInstance() == null && hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS)) {
@@ -289,7 +273,6 @@ public class LinkStatus implements Serializable {
                     long remainingBytes = downloadLink.getDownloadSize() - downloadLink.getDownloadCurrent();
                     long eta = remainingBytes / speed;
                     return "ETA " + JDUtilities.formatSeconds((int) eta) + " @ " + JDUtilities.formatKbReadable(speed / 1024) + "/s " + chunkString;
-
                 }
             } else {
                 return JDLocale.L("gui.download.create_connection", "Connecting...") + chunkString;
@@ -300,7 +283,6 @@ public class LinkStatus implements Serializable {
         if (this.errorMessage != null) return errorMessage;
         if (statusText != null) { return statusText; }
         return "";
-
     }
 
     public long getTotalWaitTime() {
@@ -331,7 +313,6 @@ public class LinkStatus implements Serializable {
 
     public boolean isPluginActive() {
         return hasStatus(PLUGIN_IN_PROGRESS);
-
     }
 
     public boolean isStatus(int status) {
@@ -413,9 +394,7 @@ public class LinkStatus implements Serializable {
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
-
             }
-
         }
         return null;
     }
@@ -447,9 +426,7 @@ public class LinkStatus implements Serializable {
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
-
             }
-
         }
 
         String ret = latest + sb;
@@ -483,5 +460,4 @@ public class LinkStatus implements Serializable {
         // TODO Auto-generated method stub
         return status;
     }
-
 }

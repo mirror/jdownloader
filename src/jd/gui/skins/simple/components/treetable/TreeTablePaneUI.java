@@ -43,9 +43,6 @@ public class TreeTablePaneUI extends BasicTableUI {
 
     class OpaqueRenderPane extends CellRendererPane {
 
-        /**
-         * 
-         */
         private static final long serialVersionUID = 1L;
 
         @Override

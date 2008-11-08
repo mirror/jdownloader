@@ -31,9 +31,8 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class BrowseFile extends JPanel implements ActionListener {
-    /**
-     * 
-     */
+ 
+    
     private static final long serialVersionUID = 1L;
 
     private String approveButtonText = "OK";

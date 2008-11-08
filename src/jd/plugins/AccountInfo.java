@@ -102,7 +102,7 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel Trafficshareonch übrig ist (in bytes). Trafficshare
-     * ist Traffic, den man über einen PremiumAccount den Freeusern zur verfügung
+     * ist Traffic, den man über einen PremiumAccount den Freeusern zur Verfügung
      * stellen kann. -1: Feature ist nicht unterstützt
      * 
      * @return
@@ -112,7 +112,7 @@ public class AccountInfo extends Property {
     }
 
     /**
-     * Gibt zurück wieviel PLatz (bytes) die uploads auf diesem Account belegen
+     * Gibt zurück wieviel Platz (bytes) die Oploads auf diesem Account belegen
      * 
      * @return
      */
@@ -227,5 +227,4 @@ public class AccountInfo extends Property {
         this.validUntil = validUntil;
         if (validUntil != -1 && validUntil < new Date().getTime()) this.setExpired(true);
     }
-
 }

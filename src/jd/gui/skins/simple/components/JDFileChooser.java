@@ -43,7 +43,7 @@ public class JDFileChooser extends JFileChooser {
 
     /**
      * Über die id kann eine ID für den filechooser ausgewählt werden . JD
-     * Fielchooser merkt sich für diese id den zuletzt verwendeten pfad
+     * Fielchooser merkt sich für diese id den zuletzt verwendeten Pfad
      * 
      * @param id
      */

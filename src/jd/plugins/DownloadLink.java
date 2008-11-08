@@ -46,9 +46,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public static final int LINKTYPE_NORMAL = 0;
 
-    /**
-     * Logger für Meldungen
-     */
+    // Logger für Meldungen
     private static Logger logger = JDUtilities.getLogger();
 
     private static final long serialVersionUID = 1981079856214268373L;
@@ -61,33 +59,23 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private long[] chunksProgress = null;
 
-    /**
-     * Containername
-     */
+    // Containername
     private String container;
 
-    /**
-     * Dateiname des Containers
-     */
+    // Dateiname des Containers
     private String containerFile;
 
-    /**
-     * Index dieses DownloadLinks innerhalb der Containerdatei
-     */
+    // Index dieses DownloadLinks innerhalb der Containerdatei
     private int containerIndex = -1;
 
-    /**
-     * Aktuell heruntergeladene Bytes der Datei
-     */
+    // Aktuell heruntergeladene Bytes der Datei
     private long downloadCurrent;
 
     private transient DownloadInterface downloadInstance;
 
     private transient SingleDownloadController downloadLinkController;
 
-    /**
-     * Maximum der heruntergeladenen Datei (Dateilänge)
-     */
+    // Maximum der heruntergeladenen Datei (Dateilänge)
     private long downloadMax;
 
     private String subdirectory = null;
@@ -96,21 +84,15 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private FilePackage filePackage;
 
-    /**
-     * Hoster des Downloads
-     */
+    // Hoster des Downloads
     private String host;
 
-    /**
-     * Zeigt an, ob dieser Downloadlink aktiviert ist
-     */
+    // Zeigt an, ob dieser Downloadlink aktiviert ist
     private boolean isEnabled;
 
     private boolean isMirror = false;
 
-    /**
-     * Lokaler Pfad zum letzten captchafile
-     */
+    // Lokaler Pfad zum letzten captchafile
     private File latestCaptchaFile = null;
 
     private LinkStatus linkStatus;
@@ -120,16 +102,12 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private int globalSpeedLimit = -1;
     private int localSpeedLimit = -1;
 
-    /**
-     * Beschreibung des Downloads
-     */
+    // Beschreibung des Downloads
     private String name;
 
     private int partID = -1;
 
-    /**
-     * Das Plugin, das für diesen Download zuständig ist
-     */
+    // Das Plugin, das für diesen Download zuständig ist
     private transient PluginForHost plugin;
 
     /**
@@ -142,9 +120,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private Vector<String> sourcePluginPasswords = null;
 
-    /**
-     * Speedmeter zum berechnen des downloadspeeds
-     */
+    // Speedmeter zum berechnen des Downloadspeeds
     private transient SpeedMeter speedMeter;
 
     /**
@@ -155,9 +131,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient String tempUrlDownload;
 
-    /**
-     * Von hier soll de Download stattfinden
-     */
+    // Von hier soll de Download stattfinden
     private String urlDownload;
 
     /**
@@ -174,7 +148,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Erzeugt einen neuen DownloadLink
-     * 
      * @param plugin
      *            Das Plugins, das für diesen Download zuständig ist
      * @param name
@@ -240,7 +213,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Gibt ein arry mit den Chunkfortschritten zurück. Dieses Array wird von
-     * der downlaodinstanz zu resumezwecken verwendet
+     * der Downlaodinstanz zu resumezwecken verwendet
      * 
      * @return
      */
@@ -345,7 +318,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getFileInfomationString() {
 
         return getPlugin().getFileInformationString(this);
-
     }
 
     /**
@@ -355,7 +327,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public String getFileOutput() {
         return JDUtilities.validatePath(getFileOutput0());
-
     }
 
     public String getFileOutput0() {
@@ -490,7 +461,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         return getFinalFileName();
-
     }
 
     public int getPartByName() {
@@ -557,7 +527,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * @return true falls der download abgebrochen wurde
+     * @return true falls der Download abgebrochen wurde
      */
     public boolean isAborted() {
         if (getDownloadLinkController() == null) { return false;
@@ -576,7 +546,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public boolean isAvailabilityChecked() {
         return available != null;
-
     }
 
     /**
@@ -625,12 +594,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void requestGuiUpdate() {
         JDUtilities.getController().fireControlEvent(ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, this);
-
     }
 
-    /**
-     * Setzt alle DownloadWErte zurück
-     */
+    // Setzt alle DownloadWErte zurück
     public void reset() {
         if (getLinkStatus().isPluginActive()) {
             setAborted(true);
@@ -666,8 +632,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * kann mit setAborted(true) den Download abbrechen
-     * 
+     * Kann mit setAborted(true) den Download abbrechen
      * @param aborted
      */
     public void setAborted(boolean aborted) {
@@ -682,7 +647,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
         }
         getDownloadLinkController().abortDownload();
-
     }
 
     public void setAvailable(boolean available) {
@@ -691,13 +655,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks
-     * ablegen. Damit können downloads resumed werden
-     * 
+     * ablegen. Damit können downloads resumed werden 
      * @param is
      */
     public void setChunksProgress(long[] is) {
         chunksProgress = is;
-
     }
 
     public void setContainerFile(String containerFile) {
@@ -721,7 +683,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setDownloadInstance(DownloadInterface downloadInterface) {
         downloadInstance = downloadInterface;
-
     }
 
     public void setDownloadLinkController(SingleDownloadController downloadLinkController) {
@@ -791,7 +752,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Setzt das FilePackage für diesen download
+     * Setzt das FilePackage für diesen Download
      * 
      * @param FilePackage
      */
@@ -821,7 +782,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setLatestCaptchaFile(File dest) {
         latestCaptchaFile = dest;
-
     }
 
     public void setLinkType(int linktypeContainer) {
@@ -835,7 +795,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             urlDownload = null;
         }
         linkType = linktypeContainer;
-
     }
 
     /**
@@ -888,7 +847,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * geben unabhängig von den Plugins einen Downloadnamen festzulegen.
      * userinputs>automatische erkenung Plugins solten setName(String) verwenden
      * um den Speichernamen anzugeben.
-     * 
      */
     public void setFinalFileName(String newfinalFileName) {
         if (newfinalFileName != null && newfinalFileName.length() > 0) {
@@ -919,12 +877,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         } else {
             this.urlDownload = null;
         }
-
     }
 
     /**
-     * Diese methhode Frag das eigene Plugin welche Informationen über die File
-     * bereit gestellt werden. Der String eignet Sich zur darstellung in der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen über die File
+     * bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
      * 
      * @return STring
      */
@@ -950,14 +907,11 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 break;
             } catch (Exception e) {
             }
-
         }
-
     }
 
     /**
-     * Gibt Fortschritt in % an (10000 entspricht 100%))
-     * 
+     * Gibt Fortschritt in % an (10000 entspricht 100%)) 
      * @return
      */
     public int getPercent() {
@@ -966,7 +920,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
+     * Gibt das Password zurück, welches vom Decrypter-Plugin genutzt werden
      * kann (zb. FolderPassword)
      */
     public String getDecrypterPassword() {
@@ -974,7 +928,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
+     * Setzt das Password, welches vom Decrypter-Plugin genutzt werden kann (zb.
      * FolderPassword)
      */
     public void setDecrypterPassword(String pw) {
@@ -983,7 +937,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setMD5Hash(String string) {
         this.mD5Hash = string;
-
     }
 
     public String getMD5Hash() {
@@ -992,7 +945,6 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setPluginProgress(PluginProgress progress) {
         this.pluginProgress = progress;
-
     }
 
     public PluginProgress getPluginProgress() {
@@ -1001,11 +953,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setSha1Hash(String hash) {
         this.sha1Hash = hash;
-
     }
 
     public String getSha1Hash() {
         return sha1Hash;
     }
-
 }

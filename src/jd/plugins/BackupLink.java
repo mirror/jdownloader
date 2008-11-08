@@ -23,29 +23,23 @@ public class BackupLink implements Serializable {
 
     public static final int LINKTYPE_CONTAINER = 1;
     public static final int LINKTYPE_NORMAL = 0;
-    /**
-     * 
-     */
+    
     private static final long serialVersionUID = 1L;
 
-    /**
-     * Containername
-     */
+    // Containername
     private String container;
 
-    /**
-     * Dateiname des Containers
-     */
+    // Dateiname des Containers
+    
     private String containerFile;
 
-    /**
-     * Index dieses DownloadLinks innerhalb der Containerdatei
-     */
+    // Index dieses DownloadLinks innerhalb der Containerdatei
+     
     private int containerIndex = -1;
     private String containerType;
     private int linkType;
     
-    // Von hier soll de Download stattfinden
+    // Von hier soll der Download stattfinden
      
     private String urlDownload;
 
@@ -54,13 +48,11 @@ public class BackupLink implements Serializable {
         containerIndex = id;
         this.containerType = containerType;
         linkType = LINKTYPE_CONTAINER;
-
     }
 
     public BackupLink(String urlDownload) {
         linkType = LINKTYPE_NORMAL;
         this.urlDownload = urlDownload;
-
     }
 
     public String getContainer() {
@@ -91,5 +83,4 @@ public class BackupLink implements Serializable {
     public String toString() {
         return " containerType :" + containerType + " linkType :" + linkType + " containerIndex :" + containerIndex + " container :" + container + " urlDownload :" + urlDownload;
     }
-
 }

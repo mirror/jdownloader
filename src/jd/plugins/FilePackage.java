@@ -34,9 +34,7 @@ import jd.utils.JDUtilities;
  */
 public class FilePackage extends Property implements Serializable {
 
-    /**
-     * Zählt die instanzierungen durch um eine ID zu erstellen
-     */
+    // Zählt die instanzierungen durch um eine ID zu erstellen
     private static int counter = 0;
 
     private static final long serialVersionUID = -8859842964299890820L;
@@ -55,9 +53,7 @@ public class FilePackage extends Property implements Serializable {
         return FP;
     }
 
-    /**
-     * Eindeutige PaketID
-     */
+    // Eindeutige PaketID
     private String id;
 
     private boolean lastSort = false;
@@ -135,7 +131,6 @@ public class FilePackage extends Property implements Serializable {
         for (int i = 0; i < links.size(); i++) {
             add(index + i, links.get(i));
         }
-
     }
 
     public boolean contains(DownloadLink link) {
@@ -147,7 +142,6 @@ public class FilePackage extends Property implements Serializable {
     }
 
     /**
-     * 
      * @return Gibt den Kommentar ab den der user im Linkgrabber zu diesem Paket
      *         abgegeben hat
      */
@@ -156,16 +150,14 @@ public class FilePackage extends Property implements Serializable {
     }
 
     /**
-     * 
      * @return Gibt den Downloadpfad zurück den der user für dieses paket
-     *         festgelegt hta
+     *         festgelegt hat
      */
     public String getDownloadDirectory() {
         return downloadDirectory == null ? JDUtilities.getConfiguration().getDefaultDownloadDirectory() : downloadDirectory;
     }
 
     /**
-     * 
      * @return Gibt nur den namen des Downloadverzeichnisses zurück. ACHTUNG! es
      *         wird nur der Directory-NAME zurückgegeben, nicht der ganze Pfad
      */
@@ -181,7 +173,6 @@ public class FilePackage extends Property implements Serializable {
     /**
      * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket
      * zurück
-     * 
      * @return
      */
     public int getETA() {
@@ -190,7 +181,6 @@ public class FilePackage extends Property implements Serializable {
         }
         if (totalDownloadSpeed / 1024 == 0) { return -1; }
         return (Math.max(totalBytesLoaded, totalEstimatedPackageSize) - totalBytesLoaded) / (totalDownloadSpeed / 1024);
-
     }
 
     public String getId() {
@@ -219,7 +209,6 @@ public class FilePackage extends Property implements Serializable {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-
         return linksFinished;
     }
 
@@ -232,7 +221,6 @@ public class FilePackage extends Property implements Serializable {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-
         return linksInProgress;
     }
 
@@ -300,9 +288,7 @@ public class FilePackage extends Property implements Serializable {
 
     }
 
-    /*
-     * Gibt die erste gefundene sfv datei im Paket zurück
-     */
+    // Gibt die erste gefundene sfv datei im Paket zurück
     public DownloadLink getSFV() {
         DownloadLink next;
         synchronized (downloadLinks) {
@@ -315,7 +301,7 @@ public class FilePackage extends Property implements Serializable {
     }
 
     /**
-     * Gibt die aktuelle Downloadgeschwinigkeit des pakets zurück
+     * Gibt die aktuelle Downloadgeschwinigkeit des Pakets zurück
      * 
      * @return
      */
@@ -329,14 +315,12 @@ public class FilePackage extends Property implements Serializable {
 
     /**
      * Gibt die geschätzte Gesamtgröße des Pakets zurück
-     * 
      * @return
      */
     public int getTotalEstimatedPackageSize() {
         if (System.currentTimeMillis() - updateTime > UPDATE_INTERVAL) {
             updateCollectives();
         }
-
         return Math.max(totalBytesLoaded, totalEstimatedPackageSize);
     }
 
@@ -361,15 +345,13 @@ public class FilePackage extends Property implements Serializable {
     }
 
     /**
-     * 
-     * @return True/false, je nach dem ob ein downloadirectory festgelegt wurde
+     * @return True/false, je nach dem ob ein Downloadirectory festgelegt wurde
      */
     public boolean hasDownloadDirectory() {
         return downloadDirectory != null && downloadDirectory.length() > 0;
     }
 
     /**
-     * 
      * @return true/false, je nachdem ob ein Passwort festgelegt wurde
      *         (archivpasswort)
      */
@@ -444,7 +426,6 @@ public class FilePackage extends Property implements Serializable {
                 }
             });
         }
-
     }
 
     /**
@@ -497,7 +478,6 @@ public class FilePackage extends Property implements Serializable {
                             // =+"+totalEstimatedPackageSize);
                         }
                     }
-
                 }
 
                 totalDownloadSpeed += Math.max(0, next.getDownloadSpeed());
@@ -510,9 +490,7 @@ public class FilePackage extends Property implements Serializable {
                     linksFailed++;
                 }
             }
-
         }
         updateTime = System.currentTimeMillis();
     }
-
 }

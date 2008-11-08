@@ -48,14 +48,11 @@ public class ContainerStatus {
     public void addStatus(int status) {
        latestStatus = status;
         this.status |= status;
-
     }
 
     public File getContainer() {
         return container;
     }
-
-
 
     /**
      * Gibt zurück ob der zugehörige Link einen bestimmten Status hat.
@@ -72,7 +69,7 @@ public class ContainerStatus {
         return this.status == status;
     }
 
-    /** Entfernt eine Statusid */
+    // Entfernt eine Statusid
     public void removeStatus(int status) {
         this.status ^= status;
     }
@@ -120,9 +117,7 @@ public class ContainerStatus {
                 } catch (IllegalAccessException e) {
                     e.printStackTrace();
                 }
-
             }
-
         }
 
         String ret = latest + sb;
@@ -130,7 +125,6 @@ public class ContainerStatus {
         if (statusText != null) {
             ret += "StatusText: " + statusText + "\r\n";
         }
-      
         return ret;
     }
 }

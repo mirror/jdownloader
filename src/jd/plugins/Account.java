@@ -73,5 +73,4 @@ public class Account extends Property {
     public void setUser(String user) {
         this.user = user;
     }
-
 }

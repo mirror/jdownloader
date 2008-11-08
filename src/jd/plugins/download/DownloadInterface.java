@@ -49,7 +49,7 @@ import jd.utils.JDUtilities;
 abstract public class DownloadInterface {
 
     /**
-     * Chunk Klasse verwaltet eine einzellne Downloadverbindung.
+     * Chunk Klasse verwaltet eine einzelne Downloadverbindung.
      * 
      * @author coalado
      * 
@@ -57,10 +57,9 @@ abstract public class DownloadInterface {
     public class Chunk extends Thread {
         private static final long MIN_BUFFERSIZE = 1024;
 
-        // Wird durch die speedbegrenzung ein chunk uter diesen wert geregelt,
-        // so wird er weggelassen.
-        // sehr niedrig geregelte chunks haben einen kleinen buffer und eine
-        // sehr hohe intervalzeit.
+        // Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt,
+        // so wird er weggelassen. Sehr niedrig geregelte chunks haben einen 
+        // kleinen Buffer und eine sehr hohe Intervalzeit.
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
         public static final long MIN_CHUNKSIZE = 1 * 1024 * 1024;
 
@@ -101,7 +100,7 @@ abstract public class DownloadInterface {
         private DownloadInterface dl;
 
         /**
-         * die connection wird entsprechend der start und endbytes neu
+         * Die Connection wird entsprechend der start und endbytes neu
          * aufgebaut.
          * 
          * @param startByte
@@ -174,8 +173,8 @@ abstract public class DownloadInterface {
         }
 
         /**
-         * Kopiert die verbindung. Es wird bis auf die Range und timeouts exakt
-         * die selbe verbindung nochmals aufgebaut
+         * Kopiert die Verbindung. Es wird bis auf die Range und timeouts exakt
+         * die selbe Verbindung nochmals aufgebaut.
          * 
          * @param connection
          * @return
@@ -256,9 +255,7 @@ abstract public class DownloadInterface {
             return null;
         }
 
-        /**
-         * Die eigentliche downloadfunktion
-         */
+        // Die eigentliche Downloadfunktion
 
         private void download() {
             long bufferSize = 1;

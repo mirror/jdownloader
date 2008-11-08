@@ -39,14 +39,13 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 /**
- * Diese Komponente ist ein Droptarget. und nimmt gedroppte STrings auf
+ * Diese Komponente ist ein Droptarget. und nimmt gedroppte Strings auf
  * 
  * @author JD-Team
  */
 public class DragNDrop extends JComponent implements DropTargetListener {
-    /**
-     * 
-     */
+  
+    
     private static final long serialVersionUID = -3280613281656283625L;
 
     private boolean filled = false;
@@ -55,9 +54,6 @@ public class DragNDrop extends JComponent implements DropTargetListener {
 
     private Image imageFilled;
 
-    /**
-     * 
-     */
     private Logger logger = JDUtilities.getLogger();
 
     /**
@@ -67,9 +63,8 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      */
     public Vector<UIListener> uiListener = null;
 
-    /**
-     * Erzeugt ein neues Drag&Drop Objekt
-     */
+     // Erzeugt ein neues Drag&Drop Objekt
+   
     public DragNDrop() {
         new DropTarget(this, this);
         uiListener = new Vector<UIListener>();
