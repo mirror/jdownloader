@@ -28,6 +28,7 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
@@ -114,7 +115,6 @@ public class Uploadedto extends PluginForHost {
             return;
         }
         getFileInformation(downloadLink);
-        this.setBrowserExclusive();
         br.setDebug(true);
         br.setCookie("http://uploaded.to/", "lang", "de");
 
@@ -148,7 +148,7 @@ public class Uploadedto extends PluginForHost {
         }
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-
+        checkPasswort(downloadLink);
         String error = new Regex(br.getRedirectLocation(), "http://uploaded.to/\\?view=(.*)").getMatch(0);
         if (error == null) {
             error = new Regex(br.getRedirectLocation(), "\\?view=(.*?)&id\\_a").getMatch(0);
@@ -182,7 +182,7 @@ public class Uploadedto extends PluginForHost {
         } else {
             logger.info("Direct Downloads active");
         }
-        //this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1)
+        // this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1)
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
         dl.fakeContentRangeHeader(true);
         dl.setFileSizeVerified(true);
@@ -230,6 +230,30 @@ public class Uploadedto extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    public void checkPasswort(DownloadLink downloadLink) throws PluginException, InterruptedException, IOException {
+        Form form = br.getForm(0);
+        String passCode = null;
+        if (form != null && form.getVars().containsKey("file_key")) {
+            logger.info("pw protected link");
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput(null, downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            form.put("file_key", passCode);
+            br.setFollowRedirects(false);
+            br.submitForm(form);
+            form = br.getForm(0);
+            if (form != null && form.getVars().containsKey("file_key")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else {
+                downloadLink.setProperty("pass", passCode);
+            }
+        }
+    }
+
     public void handleFree(DownloadLink downloadLink) throws Exception {
 
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
@@ -239,11 +263,10 @@ public class Uploadedto extends PluginForHost {
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
-        this.setBrowserExclusive();
         br.setCookie("http://uploaded.to/", "lang", "de");
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-
+        checkPasswort(downloadLink);
         if (br.containsHTML("ist aufgebraucht")) {
             long wait = Regex.getMilliSeconds(br.getRegex("\\(Oder warten Sie (.*?)\\!\\)").getMatch(0));
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -266,11 +289,15 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
 
         Form form = br.getFormbyValue("Download");
-
-        form.put("download_submit", "Download");
-        sleep(10000l, downloadLink);
-
-        dl = br.openDownload(downloadLink, form, false, 1);
+        if (form != null) {
+            form.put("download_submit", "Download");
+            sleep(10000l, downloadLink);
+            dl = br.openDownload(downloadLink, form, false, 1);
+        } else {
+            String dlLink = br.getRedirectLocation();
+            if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            dl = br.openDownload(downloadLink, dlLink, false, 1);
+        }
         dl.fakeContentRangeHeader(false);
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getContentLength() == 0) {
