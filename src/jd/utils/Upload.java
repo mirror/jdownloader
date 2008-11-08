@@ -42,7 +42,7 @@ public class Upload {
         Browser br = new Browser();
         br.setFollowRedirects(false);
         try {
-            br.postPage("http://jd_" + JDUtilities.getMD5(str) + ".pastebin.com/pastebin.php", "parent_pid=&format=text&code2=" + URLEncoder.encode(str, "UTF-8") + "&poster=" + URLEncoder.encode(name, "UTF-8") + "&paste=Send&expiry=f&email=");
+            br.postPage("http://jd_" + JDHash.getMD5(str) + ".pastebin.com/pastebin.php", "parent_pid=&format=text&code2=" + URLEncoder.encode(str, "UTF-8") + "&poster=" + URLEncoder.encode(name, "UTF-8") + "&paste=Send&expiry=f&email=");
             if (br.getHttpConnection().isOK()) return br.getRedirectLocation();
         } catch (IOException e) {
             e.printStackTrace();

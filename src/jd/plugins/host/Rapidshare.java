@@ -47,6 +47,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
+import jd.update.HTMLEntities;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.SnifferException;
@@ -300,7 +302,7 @@ public class Rapidshare extends PluginForHost {
         // Fehlerbehandlung auf der ersten Seite
         if (freeOrPremiumSelectPostURL == null) {
             String error = null;
-            if ((error = findError(br + "")) != null) { throw new PluginException(LinkStatus.ERROR_FATAL, error); }
+            if ((error = findError(br + "")) != null) { throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error)); }
             reportUnknownError(br, 1);
             logger.warning("could not get newURL");
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -332,7 +334,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL, error);
+            throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
         }
 
         // Fehlersuche
@@ -344,7 +346,7 @@ public class Rapidshare extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 120 * 1000l);
         } else if ((error = findError(br + "")) != null) {
             reportUnknownError(br, 2);
-            throw new PluginException(LinkStatus.ERROR_FATAL, error);
+            throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
         }
         // Ticketwartezeit wird gesucht
         String ticketTime = new Regex(br, PATTERN_FIND_TICKET_WAITTIME).getMatch(0);
@@ -417,7 +419,7 @@ public class Rapidshare extends PluginForHost {
                     downloadLink.getLinkStatus().setStatusText("Download error(>log)");
                     logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
                     new File(downloadLink.getFileOutput()).delete();
-                    throw new PluginException(LinkStatus.ERROR_FATAL, error);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
                 }
 
             }
@@ -496,20 +498,23 @@ public class Rapidshare extends PluginForHost {
             br.followConnection();
 
             // Fehlerbehanldung
+            /*
+             * Achtung! keine Parsing arbeiten an diesem String!!!
+             */
             String error;
             if ((error = findError(br.toString())) != null) {
                 logger.warning(error);
                 if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) {
-     
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("IP"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, error, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, error);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
                 }
             } else {
                 reportUnknownError(br.toString(), 6);
@@ -540,12 +545,18 @@ public class Rapidshare extends PluginForHost {
         String[] er = Regex.getLines(error);
 
         if (er == null || er.length == 0) { return null; }
-        error = JDLocale.L("plugins.host.rapidshare.errors." + JDUtilities.getMD5(er[0]) + "", er[0]);
-        if (error.equals(er[0])) {
-            logger.warning("NO TRANSLATIONKEY FOUND FOR: " + er[0] + "(" + JDUtilities.getMD5(er[0]) + ")");
-        }
-        return error;
+        er[0] = HTMLEntities.unhtmlentities(er[0]);
 
+        return er[0];
+
+    }
+
+    private String dynTranslate(String error) {
+        String error2 = JDLocale.L("plugins.host.rapidshare.errors." + JDHash.getMD5(error) + "", error);
+        if (error.equals(error2)) {
+            logger.warning("NO TRANSLATIONKEY FOUND FOR: " + error + "(" + JDHash.getMD5(error) + ")");
+        }
+        return error2;
     }
 
     public String getAGBLink() {

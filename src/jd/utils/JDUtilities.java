@@ -41,7 +41,6 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -50,8 +49,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1052,40 +1049,6 @@ public class JDUtilities {
         return "";
     }
 
-    /**
-     * public static String getLocalHash(File f) Gibt einen MD% Hash der file
-     * zurück
-     * 
-     * @author JD-Team
-     * @param f
-     * @return Hashstring Md5
-     */
-    public static String getLocalHash(File f) {
-        try {
-            if (!f.exists()) { return null; }
-            MessageDigest md;
-            md = MessageDigest.getInstance("md5");
-            byte[] b = new byte[1024];
-            InputStream in = new FileInputStream(f);
-            for (int n = 0; (n = in.read(b)) > -1;) {
-                md.update(b, 0, n);
-            }
-            byte[] digest = md.digest();
-            String ret = "";
-            for (byte element : digest) {
-                String tmp = Integer.toHexString(element & 0xFF);
-                if (tmp.length() < 2) {
-                    tmp = "0" + tmp;
-                }
-                ret += tmp;
-            }
-            in.close();
-            return ret;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
@@ -1145,28 +1108,7 @@ public class JDUtilities {
         return logger;
     }
 
-    /**
-     * Gibt den MD5 hash eines Strings zurück
-     * 
-     * @param arg
-     * @return MD% hash von arg
-     */
-    public static String getMD5(String arg) {
-        if (arg == null) { return arg; }
-        try {
-            MessageDigest md = MessageDigest.getInstance("md5");
-            byte[] digest = md.digest(arg.getBytes());
-            String ret = "";
-            String tmp;
-            for (byte d : digest) {
-                tmp = Integer.toHexString(d & 0xFF);
-                ret += tmp.length() < 2 ? "0" + tmp : tmp;
-            }
-            return ret;
-        } catch (NoSuchAlgorithmException e) {
-        }
-        return "";
-    }
+
 
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
@@ -1554,7 +1496,7 @@ public class JDUtilities {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            String hashPost = JDUtilities.getLocalHash(fileOutput);
+            String hashPost = JDHash.getMD5(fileOutput);
             if (hashPost == null) {
                 logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             }
@@ -1802,5 +1744,6 @@ public class JDUtilities {
         return ret;
 
     }
+
 
 }

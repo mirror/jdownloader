@@ -34,6 +34,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.plugins.Plugin;
 import jd.update.WebUpdater;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -111,7 +112,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 for (Vector<String> entry : filelist) {
                     String plg = entry.get(0).split("\\?")[0];
                     File path = JDUtilities.getResourceFile(plg);
-                    String hash = JDUtilities.getLocalHash(path);
+                    String hash = JDHash.getMD5(path);
                     if (hash == null || !hash.equalsIgnoreCase(entry.get(1))) {
                         new WebUpdater().updateFile(entry);
                         logger.info("UPdated plugin: " + plg);

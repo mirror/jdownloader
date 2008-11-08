@@ -807,6 +807,8 @@ plugins.host.rapidshare.errors.33f66fa600e57edd85714127295c7bcc = File not found
 plugins.host.rapidshare.errors.811d7f115500de90d1495ef963040930 = The server, the file is stored on, is offline. Try again later.
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = This file seems to be illegal and is locked. Downloading this file is prohibited by Rapidshare.
 plugins.host.rapidshare.errors.d11f499020a3607ffdf987ce3968c692 = 10 GB limit reached.
+plugins.host.rapidshare.errors.8da4051e59062d67a39a7e10cc026831 = You have reached your limit for today.
+
 plugins.host.server.unavailable = Servererror
 plugins.host.sharebaseto.servererror = Service not available
 plugins.host.xup = Password wrong

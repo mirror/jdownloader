@@ -29,8 +29,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
 
 public class ShareBaseTo extends PluginForHost {
 
@@ -64,7 +64,7 @@ public class ShareBaseTo extends PluginForHost {
         Browser br = new Browser();
         br.setDebug(true);
         br.setCookie("http://" + getHost(), "memm", account.getUser());
-        br.setCookie("http://" + getHost(), "memp", JDUtilities.getMD5(account.getPass()));
+        br.setCookie("http://" + getHost(), "memp", JDHash.getMD5(account.getPass()));
 
         br.getPage("http://sharebase.to/members/");
 
@@ -83,7 +83,7 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -91,7 +91,7 @@ public class ShareBaseTo extends PluginForHost {
         this.setBrowserExclusive();
         br.setDebug(true);
         br.setCookie("http://" + getHost(), "memm", account.getUser());
-        br.setCookie("http://" + getHost(), "memp", JDUtilities.getMD5(account.getPass()));
+        br.setCookie("http://" + getHost(), "memp", JDHash.getMD5(account.getPass()));
 
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
@@ -105,9 +105,9 @@ public class ShareBaseTo extends PluginForHost {
 
         if (!br.containsHTML("favorite")) {
             logger.severe("ShareBaseTo Error: Premium account expired");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
-        
+
         Form[] form = br.getForms();
         form[1].setVariable(0, "Download+Now+%21");
         dl = br.openDownload(downloadLink, form[1]);

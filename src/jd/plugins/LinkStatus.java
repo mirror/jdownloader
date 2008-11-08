@@ -125,7 +125,7 @@ public class LinkStatus implements Serializable {
      * Zeigt an, das auf User-Eingaben gewartet wird
      */
     public static final int WAITING_USERIO = 1 << 23;
-    public static final int ERROR_POST_PROCESS = 1<<24;
+    public static final int ERROR_POST_PROCESS = 1 << 24;
     private static final long serialVersionUID = 3885661829491436448L;
     /**
      * Controlling: Link muß noch bearbeitet werden.
@@ -133,7 +133,7 @@ public class LinkStatus implements Serializable {
     public final static int TODO = 1 << 0;
     public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static final int VALUE_ID_PREMIUM_DISABLE = 1;
- 
+
     private DownloadLink downloadLink;
     private String errorMessage;
 
@@ -229,18 +229,17 @@ public class LinkStatus implements Serializable {
     public String getStatusString() {
         String ret = "";
         if (hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
-            if(getErrorMessage()!=null){
-            ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s",getErrorMessage()); 
-            } if(getStatusText()!=null){
-                ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s",getStatusText());   
-            }else{
-                ret += JDLocale.L("gui.downloadlink.errorpostprocess2", "[convert failed]");   
+            if (getErrorMessage() != null) {
+                ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s", getErrorMessage());
+            }else if (getStatusText() != null) {
+                ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s", getStatusText());
+            } else {
+                ret += JDLocale.L("gui.downloadlink.errorpostprocess2", "[convert failed]");
             }
             return ret;
-            
+
         }
-        
-        
+
         if (hasStatus(LinkStatus.FINISHED)) {
 
         return JDLocale.L("gui.downloadlink.finished", "[finished]") + (this.getStatusText() != null ? "> " + this.getStatusText() : ""); }

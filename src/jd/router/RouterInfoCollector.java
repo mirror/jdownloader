@@ -238,8 +238,8 @@ public class RouterInfoCollector {
 
     public void sendToServer() {
         if (!isValidReconnect()) return;
-        // String md5 = JDUtilities.getMD5("jdsecred" +
-        // JDUtilities.getMD5(xmlString));
+        // String md5 = JDHash.getMD5("jdsecred" +
+        // JDHash.getMD5(xmlString));
         // HashMap<String, String> post = new HashMap<String, String>();
         // post.put("routerinfo", URLEncoder.encode(xmlString));
         // post.put("key", md5);

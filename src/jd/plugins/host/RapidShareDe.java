@@ -33,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -160,7 +161,7 @@ public class RapidShareDe extends PluginForHost {
         String error = new Regex(page, "alert\\(\"(.*)\"\\)<\\/script>").getMatch(0);
         if (error != null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDUtilities.getMD5(error), error));
+            linkStatus.setErrorMessage(JDLocale.L("plugins.host.rapidshareDE.errors." + JDHash.getMD5(error), error));
             return;
 
         }

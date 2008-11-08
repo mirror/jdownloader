@@ -47,6 +47,7 @@ public class UnrarWrapper extends Thread {
     private static final int FAILED = 1 << 5;
     @SuppressWarnings("unused")
     private static final int FAILED_CRC = 1 << 6;
+    private static final boolean DEBUG = true;
     private ArrayList<UnrarListener> listener = new ArrayList<UnrarListener>();
     private DownloadLink link;
     private String unrarCommand;
@@ -168,8 +169,8 @@ public class UnrarWrapper extends Thread {
                     if (statusid == JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC) {
                         fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
                     } else if(!sc&&ex){
-                        
-                        fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                        System.err.print("Extract WARNING: exctraction my have failed");
+                        fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                         
                     }else{
                         fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
@@ -242,6 +243,7 @@ public class UnrarWrapper extends Thread {
 
         fireEvent(JDUnrarConstants.WRAPPER_START_EXTRACTION);
         Executer exec = new Executer(unrarCommand);
+        exec.setDebug(DEBUG);
         exec.addParameter("x");
 
         exec.addParameter("-p");
@@ -339,7 +341,7 @@ public class UnrarWrapper extends Thread {
             }
         }
 
-        File fileFile = new File(this.getExtractTo(), System.currentTimeMillis() + ".unrartmp");
+        File fileFile = new File(this.file.getParentFile(), System.currentTimeMillis() + ".unrartmp");
         JDUtilities.writeLocalFile(fileFile, file.getFilepath());
 
         if (file.getSize() < 2097152) {
@@ -349,6 +351,7 @@ public class UnrarWrapper extends Thread {
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 pass = escapePassword(pass);
                 Executer exec = new Executer(unrarCommand);
+                exec.setDebug(DEBUG);
                 exec.addParameter("t");
                 // exec.addParameter("-p");
                 exec.addParameter("-n@" + fileFile.getName());
@@ -379,6 +382,7 @@ public class UnrarWrapper extends Thread {
 
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
+                exec.setDebug(DEBUG);
                 exec.addParameter("p");
                 // exec.addParameter("-p");
                 exec.addParameter("-n@" + fileFile.getName());
@@ -479,6 +483,7 @@ public class UnrarWrapper extends Thread {
         int c = 0;
         while (true) {
             Executer exec = new Executer(unrarCommand);
+            exec.setDebug(DEBUG);
             if (i > 0) {
                 if (passwordList.length < i) {
 
@@ -731,7 +736,12 @@ public class UnrarWrapper extends Thread {
 
                     exec.interrupt();
                 }
-
+            
+                    
+                    if ((match = new Regex(latestLine, " Total errors:").getMatch(0)) != null) {
+                        statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED;
+                        exec.interrupt();
+                    }
                 if ((match = new Regex(latestLine, "CRC failed in (.*?) \\(").getMatch(0)) != null) {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                     exec.interrupt();

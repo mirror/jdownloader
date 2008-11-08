@@ -40,6 +40,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.CLRLoader;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -812,7 +813,7 @@ public class HTTPLiveHeader extends Interaction {
             } else if (fnc.equalsIgnoreCase("UTF8ENCODE")) {
                 ret = Encoding.UTF8Encode(ret);
             } else if (fnc.equalsIgnoreCase("MD5")) {
-                ret = JDUtilities.getMD5(ret);
+                ret = JDHash.getMD5(ret);
             } else if (fnc.equalsIgnoreCase("BASE64")) {
                 ret = new BASE64Encoder().encode(ret.getBytes());
             }

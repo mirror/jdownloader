@@ -2036,7 +2036,7 @@ public class JAntiCaptcha {
         }
         // captcha erstellen
         Captcha captcha = createCaptcha(captchaImage);
-
+if(captcha==null)return -1;
         String code = null;
         String guess = "";
         // Zeige das OriginalBild

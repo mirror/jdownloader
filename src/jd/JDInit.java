@@ -49,6 +49,7 @@ import jd.plugins.DownloadLink;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
 import jd.utils.HTMLEntities;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -177,7 +178,7 @@ public class JDInit {
         String hash = "";
 
         if (JDUtilities.getResourceFile("updatemessage.html").exists()) {
-            hash = JDUtilities.getLocalHash(JDUtilities.getResourceFile("updatemessage.html"));
+            hash = JDHash.getMD5(JDUtilities.getResourceFile("updatemessage.html"));
         }
 
         JDUtilities.getRunType();
@@ -341,7 +342,7 @@ public class JDInit {
 
     public void checkMessage() {
         File res = JDUtilities.getResourceFile("message.html");
-        String hash = JDUtilities.getLocalHash(res);
+        String hash = JDHash.getMD5(res);
 
         try {
             Browser.download(JDUtilities.getResourceFile("message.html"), "http://78.143.20.68/messages/message.html");
@@ -349,7 +350,7 @@ public class JDInit {
 
             return;
         }
-        String hash2 = JDUtilities.getLocalHash(res);
+        String hash2 = JDHash.getMD5(res);
 
         if ((hash2 != null && !hash2.equals(hash))) {
             String message = JDUtilities.getLocalFile(res);

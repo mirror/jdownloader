@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -78,7 +79,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public void prepare(DownloadLink downloadLink, boolean use_semaphore) throws Exception {
-        String uui = JDUtilities.getMD5(System.currentTimeMillis() + "_" + (Math.random() * Integer.MAX_VALUE));
+        String uui = JDHash.getMD5(System.currentTimeMillis() + "_" + (Math.random() * Integer.MAX_VALUE));
         String id = this.getModifiedID(downloadLink);
         if (downloadLink.getProperty("ONEWAYLINK", null) != null) { return; }
         downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.fastload.prepare", "Wait for linkconfirmation"));
@@ -144,6 +145,8 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public void handleFree(final DownloadLink downloadLink) throws Exception {
+
+        checkFirstDownload(downloadLink);
         getFileInformation(downloadLink);
         br.setDebug(true);
         prepare(downloadLink, true);
@@ -158,6 +161,23 @@ public class FastLoadNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         }
         dl.startDownload();
+    }
+
+    private void checkFirstDownload(DownloadLink downloadLink) {
+        if (!this.getPluginConfig().getBooleanProperty("FIRST_INFO_SHOWN", false)) {
+            this.getPluginConfig().setProperty("FIRST_INFO_SHOWN", true);
+
+            this.getPluginConfig().save();
+
+            JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.host.fastload.info", "You try to download for the very first time from fast-load.net.\r\nThis plugin has some specials: To download you have to enter a captcha in browser.\r\nJD will now open an info URL"));
+            try {
+                JLinkButton.openURL(JDLocale.L("plugins.host.fastload.infourl", "http://wiki.jdownloader.org?title=Fast-load.net"));
+
+            } catch (Exception e) {
+                JDUtilities.getGUI().showTextAreaDialog("Fast-Load.net Info", JDLocale.L("plugins.host.fastload.browsererror", "Could not open the Link in Browser"), JDLocale.L("plugins.host.fastload.infourl", "http://wiki.jdownloader.org?title=Fast-load.net"));
+            }
+        }
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {

@@ -25,12 +25,22 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
+    private boolean debug=false;;
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
     class StreamObserver extends Thread {
 
         private BufferedInputStream reader;
         
         private DynByteBuffer dynbuf;
         private boolean started;
+       
+
         private boolean interruptRequestet = false;
         private boolean eof = false;
 
@@ -55,7 +65,7 @@ public class Executer extends Thread {
                         String line = new String(dynbuf.getLast(num)).trim();
 
                         if (line.length() > 0) {
-                            logger.finest(this + ": " + line+"");
+                            if(isDebug())logger.finest(this + ": " + line+"");
                             // System.out.println(">"+line);
                             fireEvent(line, dynbuf,this==Executer.this.sbeObserver?Executer.LISTENER_ERRORSTREAM:Executer.LISTENER_STDSTREAM);
                            // dynbuf.clear();
@@ -176,7 +186,7 @@ public class Executer extends Thread {
     @Override
     public void run() {
         if (command == null || command.trim().length() == 0) {
-            logger.severe("Execute Parameter error: No Command");
+          logger.severe("Execute Parameter error: No Command");
             return;
         }
 
@@ -188,7 +198,7 @@ public class Executer extends Thread {
         for (String p : params) {
             out += p + " ";
         }
-        logger.finest("Execute: " + out);
+        if(isDebug())logger.finest("Execute: " + out +" in "+runIn);
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -284,7 +294,7 @@ public class Executer extends Thread {
         data = data.trim() + "\n";
         try {
             outputStream.write(data.getBytes());
-            logger.finest("Out>"+data);
+           if( isDebug())logger.finest("Out>"+data);
             outputStream.flush();
         } catch (IOException e) {
             // TODO Auto-generated catch block

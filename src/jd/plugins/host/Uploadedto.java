@@ -182,8 +182,9 @@ public class Uploadedto extends PluginForHost {
         } else {
             logger.info("Direct Downloads active");
         }
-        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
-        dl.fakeContentRangeHeader(true);
+        //this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1)
+        dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+//        dl.fakeContentRangeHeader(true);
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

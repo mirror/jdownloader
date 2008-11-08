@@ -31,6 +31,7 @@ import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.parser.Regex;
+import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -167,7 +168,7 @@ public abstract class PluginsC extends Plugin {
         }
         File f = new File(file);
         if (md5 == null) {
-            md5 = JDUtilities.getLocalHash(f);
+            md5 = JDHash.getMD5(f);
         }
 
         String extension = JDUtilities.getFileExtension(f);

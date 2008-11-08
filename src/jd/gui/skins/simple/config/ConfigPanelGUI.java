@@ -18,6 +18,7 @@ package jd.gui.skins.simple.config;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
@@ -34,6 +35,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.OSDetector;
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
 import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
@@ -182,12 +184,58 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         browser.addEntry(conditionEntry);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFILE, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER, JDLocale.L("gui.config.gui.custom_browser", "Browserpath")));
-        ce.setDefaultValue("C:\\Programme\\Mozilla Firefox\\firefox.exe");
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER, JDLocale.L("gui.config.gui.custom_browser", "Browserpath")));
+        String parameter = null;
+        String path = null;
+
+        if (OSDetector.isWindows()) {
+            
+            if (new File("C:\\Program Files\\Mozilla Firefox\\firefox.exe").exists()) {
+                parameter = "-new-tab\r\n%url";
+                path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
+
+            } else if (new File("C:\\Programme\\Mozilla Firefox\\firefox.exe").exists()) {
+                parameter = "-new-tab\r\n%url";
+                path = "C:\\Programme\\Mozilla Firefox\\firefox.exe";
+
+            } else if (new File("C:\\Program Files\\Internet Explorer\\iexplore.exe").exists()) {
+                parameter = "%url";
+                path = "C:\\Program Files\\Internet Explorer\\iexplore.exe";
+
+            } else  {
+                parameter = "%url";
+                path = "C:\\Programme\\Internet Explorer\\iexplore.exe";
+
+            }
+
+        }
+
+        if (OSDetector.isMac()) {
+
+            if (new File("/Applications/Firefox.app").exists()) {
+                parameter = "/Applications/Firefox.app\r\n-new-tab\r\n%url";
+                path = "open";
+
+            } else {
+
+                parameter = "/Applications/Safari.app\r\n-new-tab\r\n%url";
+                path = "open";
+
+            }
+
+        }
+        if (OSDetector.isLinux()) {
+
+            /**TODO:
+             * das ganze für linux
+             */
+
+        }
+        ce.setDefaultValue(path);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
-        ce.setDefaultValue("-new-tab\r\n%url");
+        ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
         this.add(cep = new ConfigEntriesPanel(container));

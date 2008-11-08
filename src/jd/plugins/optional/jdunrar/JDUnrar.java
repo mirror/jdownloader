@@ -265,7 +265,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.MULTIPART_START_PART:
         case JDUnrarConstants.SINGLE_PART_ARCHIVE:
         case JDUnrarConstants.NO_RAR_ARCHIVE:
-            return link;
+            return null;
         }
         String filename = new Regex(link.getFileOutput(), "(.*)\\.part[0-9]+.rar$").getMatch(0);
 
@@ -368,10 +368,23 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH, "/%PACKAGENAME%");
 
         try {
+            if (link.getFilePackage().getName() != null) {
+                path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
+            } else {
+                path = path.replace("%PACKAGENAME%", "");
+                logger.severe("link.getFilePackage().getName() ==null");
+            }
+            if (getArchiveName(link) != null) {
+                path = path.replace("%ARCHIVENAME%", getArchiveName(link));
+            } else {
+                logger.severe("getArchiveName(link) ==null");
+            }
+            if (link.getHost() != null) {
+                path = path.replace("%HOSTER%", link.getHost());
 
-            path = path.replace("%PACKAGENAME%", link.getFilePackage().getName());
-            path = path.replace("%ARCHIVENAME%", getArchiveName(link));
-            path = path.replace("%HOSTER%", link.getHost());
+            } else {
+                logger.severe("link.getFilePackage().getName() ==null");
+            }
 
             String dif = new File(JDUtilities.getConfiguration().getDefaultDownloadDirectory()).getAbsolutePath().replace(new File(link.getFileOutput()).getParent(), "");
             if (new File(dif).isAbsolute()) {
@@ -848,7 +861,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             wrapper.getDownloadLink().getLinkStatus().setStatusText("Password found");
             wrapper.getDownloadLink().requestGuiUpdate();
             wrapper.getDownloadLink().setPluginProgress(null);
-            
+
             // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
             // ": " + "Password found " + wrapper.getPassword());
             break;

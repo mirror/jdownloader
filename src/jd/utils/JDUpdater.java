@@ -78,9 +78,9 @@ public class JDUpdater {
         ftp.cwdAdd(cw);
         if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
         File testFile = new File(((cw.length() > 0) ? (cw + "/") : "") + file.getName());
-        String serverhash = JDUtilities.getLocalHash(testFile);
+        String serverhash = JDHash.getMD5(testFile);
         String filename = file.getName() + ".tmp";
-        String hash = JDUtilities.getLocalHash(file);
+        String hash = JDHash.getMD5(file);
 
         if (serverhash != null && serverhash.equalsIgnoreCase(hash)) {
             ftp.cwd(def);
@@ -92,7 +92,7 @@ public class JDUpdater {
         // testFile = new File(cw);
         if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
         Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" + filename);
-        String hash2 = JDUtilities.getLocalHash(testFile);
+        String hash2 = JDHash.getMD5(testFile);
         ftp.remove(file.getName());
         ftp.rename(ftp.getDir() + filename, ftp.getDir() + file.getName());
         ftp.cwd(def);
@@ -251,7 +251,7 @@ public class JDUpdater {
             String sub = file.toString().substring(new File(wd).toString().length() + 1).replaceAll("\\\\", "/");
             if (sub.startsWith("config")) continue;
 
-            sb.append("$" + sub + "?" + webRoot + sub + "=\"" + JDUtilities.getLocalHash(file) + "\";\r\n");
+            sb.append("$" + sub + "?" + webRoot + sub + "=\"" + JDHash.getMD5(file) + "\";\r\n");
         }
         logger.info(sb + "");
         upload(sb + "");
