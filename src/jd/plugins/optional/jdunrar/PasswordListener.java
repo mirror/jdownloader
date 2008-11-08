@@ -35,7 +35,6 @@ public class PasswordListener extends ProcessListener {
 
     @Override
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
-
         String lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.writetoOutputStream(this.password);
@@ -43,15 +42,8 @@ public class PasswordListener extends ProcessListener {
         if (new Regex(lastLine, Pattern.compile(".*?password incorrect", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.interrupt();
         } else if (new Regex(buffer.toString(), ".*?current.*?password.*?ll ").matches()) {
-
             exec.writetoOutputStream("A");
         }
-        // else if (interruptafter > 0 && origin ==
-        // exec.getInputStreamBuffer()) {
-        // if (origin.position() >= interruptafter) {
-        // exec.interrupt();
-        // }
-        // }
     }
 
     @Override

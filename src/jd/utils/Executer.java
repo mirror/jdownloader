@@ -137,8 +137,10 @@ public class Executer extends Thread {
     private StreamObserver sboObserver;
     private OutputStream outputStream = null;
     private IOException exception;
+    private boolean processgotinterrupted = false;
 
     public Executer(String command) {
+        processgotinterrupted = false;
         this.command = command;
         parameter = new ArrayList<String>();
 
@@ -233,19 +235,18 @@ public class Executer extends Thread {
                         try {
                             Thread.sleep(waitTimeout * 1000);
                         } catch (InterruptedException e) {
-                            return;
                         }
-
                         try {
                             process.destroy();
                         } catch (Exception e) {
+                            processgotinterrupted = true;
                         }
                     }
                 };
                 timeoutThread.start();
             }
             if (waitTimeout == 0) return;
-            boolean processgotinterrupted = false;
+
             try {
                 process.waitFor();
             } catch (InterruptedException e1) {
@@ -266,9 +267,7 @@ public class Executer extends Thread {
             }
 
         } catch (IOException e1) {
-
             e1.printStackTrace();
-
             this.exception = e1;
             return;
         }
