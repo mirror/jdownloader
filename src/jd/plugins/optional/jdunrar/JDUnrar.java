@@ -743,10 +743,10 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             exec.waitTimeout();
             String ret = exec.getErrorStream() + " " + exec.getOutputStream();
 
-            if (new Regex(ret, "RAR.*?freeware").matches()) {
-
+            if (new Regex(ret, "RAR.*?Alexander").matches()) {
                 return true;
-
+            } else if (new Regex(ret, "RAR.*?3\\.").matches()) {
+                return true;
             } else {
                 System.err.println("Wrong unrar: " + Regex.getLines(exec.getErrorStream())[0]);
                 return false;
@@ -1188,7 +1188,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     private void onFinished(UnrarWrapper wrapper) {
         // progress.get(wrapper).finalize(3000l);
-//        wrapper.getDownloadLink().getLinkStatus().setStatusText(null);
+        // wrapper.getDownloadLink().getLinkStatus().setStatusText(null);
         wrapper.getDownloadLink().setPluginProgress(null);
         if (wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER") != null) {
             ((ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER")).finalize(2000);
