@@ -262,9 +262,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private DownloadLink findStartLink(DownloadLink link) {
         int type = getArchivePartType(link);
         switch (type) {
-        case JDUnrarConstants.MULTIPART_START_PART:
+//        case JDUnrarConstants.MULTIPART_START_PART:
         case JDUnrarConstants.SINGLE_PART_ARCHIVE:
-            break;
+
+            return link;
+
         case JDUnrarConstants.NO_RAR_ARCHIVE:
             return null;
         }
