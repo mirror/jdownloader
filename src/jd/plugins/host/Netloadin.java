@@ -64,7 +64,7 @@ public class Netloadin extends PluginForHost {
 
     private String fileStatusText;
 
-    private int gap=0;
+    private int gap = 0;
 
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
@@ -249,14 +249,15 @@ public class Netloadin extends PluginForHost {
 
         return ai;
     }
+
     public int getTimegapBetweenConnections() {
         return gap;
     }
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
-
             return;
         }
         getFileInformation(downloadLink);
@@ -264,18 +265,14 @@ public class Netloadin extends PluginForHost {
         checkMirrorsInProgress(downloadLink);
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
-//        br.setDebug(true);
-        br.setAuth("netload.in", account.getUser(), account.getPass());
+        br.setDebug(true);
+        br.postPage("http://" + getHost() + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=");
+        if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.openGetConnection(downloadLink.getDownloadURL());
         Request con;
-        String user = br.getCookie("http://netload.in", "cookie_user");
-        if (user == null) {
-            logger.severe("Account Infos invalid");
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-        }
-        gap=0;
+        gap = 0;
         if (br.getRedirectLocation() == null) {
-            gap=100;
+            gap = 100;
             Thread.sleep(1000);
             br.followConnection();
             checkPassword(downloadLink, linkStatus);
@@ -287,7 +284,7 @@ public class Netloadin extends PluginForHost {
             con = br.createRequest(url);
 
             dl = RAFDownload.download(downloadLink, con, true, 0);
-//            dl.headFake(null);
+            // dl.headFake(null);
             dl.setFirstChunkRangeless(true);
             HTTPConnection connection = dl.connect(br);
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
@@ -308,7 +305,7 @@ public class Netloadin extends PluginForHost {
             con = br.createGetRequest(null);
 
             dl = RAFDownload.download(downloadLink, con, true, 0);
-//            dl.headFake(null);
+            // dl.headFake(null);
             dl.setFirstChunkRangeless(true);
             dl.connect(br);
         }
@@ -349,9 +346,8 @@ public class Netloadin extends PluginForHost {
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            br.setCookiesExclusive(true);
-            br.clearCookies(getHost());
-br.setDebug(true);
+            this.setBrowserExclusive();
+            br.setDebug(true);
             br.setConnectTimeout(15000);
 
             String id = Netloadin.getID(downloadLink.getDownloadURL());
@@ -376,13 +372,13 @@ br.setDebug(true);
 
             String[] entries = br.getRegex("(.*?);(.*?);(.*?);(.*?);(.*)").getRow(0);
 
-            if(entries==null){
-            entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
-            if (entries == null || entries.length < 3) { return false; }
-            downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
-            downloadLink.setName(entries[0]);
-            fileStatusText="Might be offline";
-            return true;
+            if (entries == null) {
+                entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
+                if (entries == null || entries.length < 3) { return false; }
+                downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
+                downloadLink.setName(entries[0]);
+                fileStatusText = "Might be offline";
+                return true;
             }
 
             if (entries == null || entries.length < 3) { return false; }
@@ -409,7 +405,7 @@ br.setDebug(true);
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
