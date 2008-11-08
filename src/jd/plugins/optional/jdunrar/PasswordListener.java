@@ -42,12 +42,11 @@ public class PasswordListener extends ProcessListener {
         }
         if (new Regex(lastLine, Pattern.compile(".*?password incorrect", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.interrupt();
+        } else if (new Regex(buffer.toString(), ".*?current.*?password.*?ll ").matches()) {
+
+            exec.writetoOutputStream("A");
         }
-        // else if (new Regex(buffer.toString(),
-        // ".*?current.*?password.*?ll ").matches()) {
-        // debugmsg(buffer.toString());
-        // exec.writetoOutputStream("A");
-        // } else if (interruptafter > 0 && origin ==
+        // else if (interruptafter > 0 && origin ==
         // exec.getInputStreamBuffer()) {
         // if (origin.position() >= interruptafter) {
         // exec.interrupt();
