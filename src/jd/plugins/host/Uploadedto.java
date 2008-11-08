@@ -184,7 +184,7 @@ public class Uploadedto extends PluginForHost {
         }
         //this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1)
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
-//        dl.fakeContentRangeHeader(true);
+        dl.fakeContentRangeHeader(true);
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

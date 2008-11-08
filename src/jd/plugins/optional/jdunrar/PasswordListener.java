@@ -41,7 +41,7 @@ public class PasswordListener extends ProcessListener {
         }
         if (new Regex(lastLine, Pattern.compile(".*?password incorrect", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.interrupt();
-        } else if (new Regex(buffer.toString(), ".*?current.*?password.*?ll ").matches()) {
+        } else if (new Regex(lastLine, ".*?current.*?password.*?ll ").matches()) {
             exec.writetoOutputStream("A");
         }
     }

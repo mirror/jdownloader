@@ -72,7 +72,7 @@ public class UnrarWrapper extends Thread {
     }
 
     private String latestStatus;
-    private int currentVolume;
+    private int currentVolume=1;
     private long startTime;
     private SubConfiguration config = JDUtilities.getSubConfig(JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
     private long speed = config.getIntegerProperty("SPEED", 10000000);
@@ -519,7 +519,7 @@ public class UnrarWrapper extends Thread {
                 return false;
             }
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
-            if (res.indexOf(" (password incorrect ?)") != -1 || res.contains("the file header is corrupt")) {
+            if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
                 JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
