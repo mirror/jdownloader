@@ -103,9 +103,13 @@ public class EgoshareCom extends PluginForHost {
         /* 15 seks warten */
         sleep(15000, downloadLink);
         br.setFollowRedirects(true);
-        br.setDebug(true);
         /* Datei herunterladen */
-        br.openDownload(downloadLink, url).startDownload();
+        dl = br.openDownload(downloadLink, url);
+        if (!dl.getConnection().isContentDisposition()) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+        }
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

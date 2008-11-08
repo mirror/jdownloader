@@ -143,8 +143,8 @@ public class ShareOnlineBiz extends PluginForHost {
         sleep(15000, downloadLink);
         br.setFollowRedirects(true);
         /* Datei herunterladen */
-        br.openDownload(downloadLink, url).startDownload();
-
+        dl = br.openDownload(downloadLink, url);
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

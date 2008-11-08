@@ -46,7 +46,6 @@ public class DosyakaydetCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
-        br.setDebug(true);
         String captchaUrl = br.getRegex("<img class=\"captchapict\" src=\"(.*?)\"").getMatch(0);
         File captchaFile = this.getLocalCaptchaFile(this);
         try {

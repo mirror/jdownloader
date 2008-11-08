@@ -51,7 +51,6 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
-        br.setDebug(true);
         if (!br.getRegex("File size:(.*?)\\.").matches()) {
             String wait = br.getRegex(Pattern.compile("<script type=\"text/javascript\">.*?u='.*?';.*?w='(.*?)';.*?setTimeout", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             long waitfor = new Long(wait) * 1000;
