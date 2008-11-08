@@ -68,7 +68,7 @@ public class RelinkUs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        br.setFollowRedirects(true);
         String page = br.getPage(parameter);
         progress.setRange(0);
         add_relinkus_links(page, decryptedLinks);
