@@ -26,7 +26,6 @@ public class JDGrowlNotification extends PluginOptional {
 
     public JDGrowlNotification(PluginWrapper wrapper) {
         super(wrapper);
-
     }
 
     private static final String PROPERTY_ENABLED = "PROPERTY_ENABLED";
@@ -95,14 +94,10 @@ public class JDGrowlNotification extends PluginOptional {
             case ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE:
                 growlNotification("Download abgebrochen", "", "Download abgebrochen");
                 break;
-
             default:
-
                 break;
             }
-
         }
-
     }
 
     public void growlNotification(String headline, String message, String title) {
@@ -120,12 +115,10 @@ public class JDGrowlNotification extends PluginOptional {
     @Override
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
-
     }
 
     public String getDateAndTime() {
         DateFormat dfmt = new SimpleDateFormat("'Am 'EEEE.', den' dd.MM.yy 'um' hh:mm:ss");
         return dfmt.format(new Date());
     }
-
 }

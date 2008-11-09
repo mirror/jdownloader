@@ -78,9 +78,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 subConfig.setProperty(PROPERTY_MINIMIZE_TO_TRAY, !subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, false));
                 subConfig.save();
             }
-
         }
-
     }
 
     @Override
@@ -147,7 +145,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             return;
         }
         super.controlEvent(event);
-
     }
 
     private void initGUI() {
@@ -191,9 +188,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     trayIconPopup.setVisible(true);
                 }
             }
-
         }
-
     }
 
     public void mouseReleased(MouseEvent e) {
@@ -203,7 +198,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void mouseMoved(MouseEvent e) {
-
         if (trayIconPopup != null && trayIconPopup.isVisible()) return;
         trayIcon.setToolTip(createInfoString());
     }
@@ -240,7 +234,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                         window.setLocation(p.x - window.getWidth(), p.y - window.getHeight());
                     }
                 }
-
             }
         });
     }
@@ -254,7 +247,6 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         } else {
             creater.append(JDLocale.L("plugins.optional.trayIcon.downloads", "Downloads:") + " " + downloads + " @ " + JDUtilities.formatKbReadable(JDUtilities.getController().getSpeedMeter() / 1024) + "/s");
         }
-
         return creater.toString();
     }
 

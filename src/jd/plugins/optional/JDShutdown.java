@@ -108,7 +108,6 @@ public class JDShutdown extends PluginOptional {
         JDUtilities.getController().addControlListener(this);
         logger.info("Shutdown OK");
         return true;
-
     }
 
     @Override
@@ -203,7 +202,6 @@ public class JDShutdown extends PluginOptional {
                 }
             }
         }
-
     }
 
     public void initConfig() {
@@ -214,7 +212,5 @@ public class JDShutdown extends PluginOptional {
         ce.setDefaultValue(false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Shutdown erzwingen (Nur einige OS)")));
         ce.setDefaultValue(false);
-
     }
-
 }

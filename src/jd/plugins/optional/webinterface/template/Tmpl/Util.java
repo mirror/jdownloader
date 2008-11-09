@@ -54,12 +54,10 @@ public class Util {
                 if (pos < 0) {
                     break;
                 }
-
                 s = s.substring(0, pos) + repls[i] + s.substring(pos + 1);
                 pos++;
             } while (pos >= 0);
         }
-
         return s;
     }
 
@@ -74,12 +72,10 @@ public class Util {
                 if (pos < 0) {
                     break;
                 }
-
                 s = s.substring(0, pos) + repls[i] + s.substring(pos + 1);
                 pos++;
             } while (pos >= 0);
         }
-
         return s;
     }
 
@@ -100,7 +96,6 @@ public class Util {
                 s.append(c);
             }
         }
-
         return s.toString();
     }
 

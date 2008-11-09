@@ -189,5 +189,4 @@ public class JDPremiumCollector extends PluginOptional {
     public static int getAddonInterfaceVersion() {
         return 2;
     }
-
 }

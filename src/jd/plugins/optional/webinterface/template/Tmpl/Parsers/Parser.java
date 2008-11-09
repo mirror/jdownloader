@@ -205,7 +205,6 @@ public class Parser {
                 if (key.equals("escape")) {
                     value = value.toLowerCase();
                 }
-
                 p.put(key, value);
             }
         }
@@ -222,7 +221,6 @@ public class Parser {
         // code. this is so that people can reference __FIRST__,
         // etc
         }
-
         return p;
     }
 
@@ -352,11 +350,9 @@ public class Parser {
                 } else {
                     Util.debug_print("no name");
                 }
-
                 parts.addElement(tag_props);
             }
         }
-
         if (temp.length() > 0) {
             parts.addElement(temp.toString());
         }

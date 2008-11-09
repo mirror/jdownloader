@@ -54,7 +54,6 @@ public class ConvertRouterData {
         // RouterParser parser = new RouterParser();
         // parser.routerDatToXML(JDUtilities.getResourceFile("jd/Routers.dat"),
         // JDUtilities.getResourceFile("jd/Routers.xml"));
-
     }
 
     private String cookie = null;
@@ -71,7 +70,6 @@ public class ConvertRouterData {
             if (type == 2) { return ""; }
             address = "";
             if (post == null || post.matches("[\\s]*")) { return ""; }
-
         }
         String bakip = ip;
         String cookiebak = cookie;
@@ -118,7 +116,6 @@ public class ConvertRouterData {
         } else {
             return "GET ";
         }
-
     }
 
     private String[] getUserPass(String routername) {
@@ -152,7 +149,6 @@ public class ConvertRouterData {
                     return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
                 }
             });
-
         }
         JDUtilities.saveObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), list, file, null, null, true);
     } /*
@@ -205,7 +201,5 @@ public class ConvertRouterData {
             regexp = pass[0];
         }
         return new String[] { name.replaceFirst(" .*", ""), name, script, regexp, pass[1], pass[2] };
-
     }
-
 }

@@ -45,7 +45,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
     /**
      * Create a new handler that serves files from a base directory
-     * 
      * @param base
      *            directory
      */
@@ -103,7 +102,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 v_info.addElement(h_info);
             }
             t.setParam("all_infos", v_info);
-
         }
     }
 
@@ -132,7 +130,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 dLink = filePackage.getDownloadLinks().get(Download_ID);
 
                 /* Download Infos */
-
                 h2 = new Hashtable<Object, Object>();
 
                 h2.put("package_id", Package_ID.toString());
@@ -142,7 +139,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h2.put("download_hoster", dLink.getHost());
 
                 v2.addElement(h2);
-
             }
             h.put("downloads", v2);
             v.addElement(h);
@@ -250,13 +246,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                                                       */
                     v_info.addElement(h_info);
                 }
-
             }
             t.setParam("single_infos", v_info);
         }
         ;
     }
-
     /*
      * private void addEntryandPercent(String var, String value, double percent)
      * { Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
@@ -302,8 +296,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             for (Download_ID = 0; Download_ID < filePackage.getDownloadLinks().size(); Download_ID++) {
                 dLink = filePackage.getDownloadLinks().get(Download_ID);
 
-                /* Download Infos */
-
+                // Download Infos
                 percent = (double) (dLink.getDownloadCurrent() * 100.0 / Math.max(1, dLink.getDownloadSize()));
 
                 h2 = new Hashtable<Object, Object>();
@@ -339,7 +332,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
                 h2.put("download_status_text", f.format(percent) + "% " + dLink.getLinkStatus().getStatusString());
                 v2.addElement(h2);
-
             }
 
             if (status[3] == 1 && status[2] == 0 && status[1] == 0 && status[0] == 0) {
@@ -421,5 +413,4 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             e.printStackTrace();
         }
     }
-
 }

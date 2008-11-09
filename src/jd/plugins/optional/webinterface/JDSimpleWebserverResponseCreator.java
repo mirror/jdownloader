@@ -20,35 +20,27 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public class JDSimpleWebserverResponseCreator {
-    /**
-     * The body
-     */
+    
+    // The body
     private StringBuilder body;
 
-    /**
-     * Binary body
-     */
+    // Binary body
     private byte[] bytes;
 
     private String contentType;
 
-    /**
-     * The headers
-     */
+    // The headers
     private StringBuilder headers;
 
-    /**
-     * Create new response
-     */
+    // Create new response
     public JDSimpleWebserverResponseCreator() {
         headers = new StringBuilder();
         body = new StringBuilder();
         contentType = "text/html";
     }
 
-    /**
-     * Append the given string to the body so far
-     * 
+    /*
+     * Append the given string to the body so far 
      * @param content
      *            content
      */
@@ -67,8 +59,7 @@ public class JDSimpleWebserverResponseCreator {
     }
 
     /**
-     * Set binary content
-     * 
+     * Set binary content 
      * @param bytes
      */
     public void setBinaryContent(byte[] bytes) {
@@ -101,7 +92,6 @@ public class JDSimpleWebserverResponseCreator {
 
     /**
      * Set a 404 not found
-     * 
      * @param url
      *            url
      */
@@ -133,12 +123,10 @@ public class JDSimpleWebserverResponseCreator {
             headers.append("\r\n");
         } catch (Exception e) {
         }
-
     }
 
     /**
      * Set a redirect
-     * 
      * @param url
      *            url to redirect to
      */

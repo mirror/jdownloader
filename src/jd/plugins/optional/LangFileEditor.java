@@ -243,7 +243,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             } else if (entry.isMissing()) {
                 numMissing++;
             }
-
         }
 
         entDone.setData(data.size() - numMissing - numOld);
@@ -518,7 +517,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                     changed = false;
                 }
             }
-
             initLocaleDataComplete();
 
         } else if (e.getSource() == mnuAdopt || e.getSource() == mnuContextAdopt) {
@@ -534,7 +532,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 if (tableModel.getValueAt(i, 2).equals("")) {
                     tableModel.setValueAt(tableModel.getValueAt(i, 1), i, 2);
                 }
-
             }
 
         } else if (e.getSource() == mnuClear || e.getSource() == mnuContextClear) {
@@ -657,9 +654,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else if (e.getSource() == mnuContinueSearch) {
 
             search();
-
         }
-
     }
 
     private void search() {
@@ -692,7 +687,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             String res = JDLocale.translate(lngKey, def);
             if (res != null) tableModel.setValueAt(res, row, 2);
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -818,9 +812,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                     values.add(key);
                 }
                 dupeHelp.put(language, key);
-
             }
-
         }
 
         for (Entry<String, String> entry : fileEntries.entrySet()) {
@@ -834,9 +826,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                     break;
                 }
             }
-
             data.add(new KeyInfo(key, value, entry.getValue()));
-
         }
 
         Collections.sort(data);
@@ -876,11 +866,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 match[1] = Encoding.UTF8Decode(match[1]);
                 match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
                 data.put(match[0], match[1]);
-
             }
-
         }
-
     }
 
     private void getSourceEntries() {
@@ -890,14 +877,12 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else {
             getSourceEntriesFromFile();
         }
-
     }
 
     private void getSourceEntriesFromFile() {
 
         sourcePatterns.clear();
         getLanguageFileEntries(sourceFile, sourceEntries);
-
     }
 
     private void getSourceEntriesFromFolder() {
@@ -927,13 +912,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                     match[0] = match[0].replaceAll("\\.", "\\\\.");
                     match[0] = match[0].replaceAll("\"(.*?)[\",]", "(.*?)");
                     sourcePatterns.add(match[0]);
-
                 }
-
             }
-
         }
-
     }
 
     private Vector<File> getSourceFiles(File directory) {
@@ -949,13 +930,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             } else if (entry.isFile()) {
 
                 if (JDUtilities.getFileExtension(entry).equals("java")) fileContents.add(entry);
-
             }
-
         }
-
         return fileContents;
-
     }
 
     public void mouseClicked(MouseEvent e) {
@@ -1031,7 +1008,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
         }
-
     }
 
     private class DonePredicate implements HighlightPredicate {
@@ -1039,7 +1015,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (!table.getValueAt(arg1.row, 1).equals("") && !table.getValueAt(arg1.row, 2).equals(""));
         }
-
     }
 
     private class MissingPredicate implements HighlightPredicate {
@@ -1047,7 +1022,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (table.getValueAt(arg1.row, 2).equals(""));
         }
-
     }
 
     private class OldPredicate implements HighlightPredicate {
@@ -1055,7 +1029,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (table.getValueAt(arg1.row, 1).equals(""));
         }
-
     }
 
     private class MyTableModel extends AbstractTableModel {
@@ -1104,7 +1077,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 changed(true);
             }
         }
-
     }
 
     private class DupeDialog extends JDialog implements ActionListener {
@@ -1144,13 +1116,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             pack();
             setLocation(JDUtilities.getCenterOfComponent(owner, this));
             setVisible(true);
-
         }
 
         public void actionPerformed(ActionEvent e) {
 
             dispose();
-
         }
 
         class MyDupeTableModel extends AbstractTableModel {
@@ -1207,9 +1177,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             public boolean isCellEditable(int row, int col) {
                 return (col == 1);
             }
-
         }
-
     }
 
     @Override
@@ -1253,5 +1221,4 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     public static int getAddonInterfaceVersion() {
         return 2;
     }
-
 }

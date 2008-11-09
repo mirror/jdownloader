@@ -85,7 +85,6 @@ import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
         super(wrapper);
-
     }
 
     public static int getAddonInterfaceVersion() {
@@ -104,7 +103,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         Document doc = factory.newDocumentBuilder().parse(inSource);
 
         return doc;
-
     }
 
     private JFrame frame;
@@ -114,7 +112,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
     private JMenuItem menEditAddRequest;
 
     // private JMenuItem menEditAddVariable;
-
     private JMenuItem menEditAddWait;
 
     private JMenuItem menEditValidate;
@@ -196,7 +193,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         } else if (e.getSource() == menEditValidate) {
             if (validate()) {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.ok", "Script is Valid."));
-
             }
         } else if (e.getSource() == menEditAddRequest) {
 
@@ -303,11 +299,9 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                     }
                     sb.append(lines[i].trim() + "\r\n");
                 }
-
             }
             sb.append("          [[[/REQUEST]]]" + "\r\n");
             sb.append("     [[[/STEP]]]" + "\r\n");
-
         }
 
         int i = 0;
@@ -327,7 +321,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
             sc = sc.replaceAll(ip, "%%%ip" + i + "%%%");
             i++;
-
         }
         sb.append("/]]]" + "\r\n");
         sb.append("     [[[/STEP]]]" + "\r\n");
@@ -348,7 +341,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.action.start", "Start Scripter"), 0).setActionListener(this));
         } else {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.action.end", "Exit Scripter"), 0).setActionListener(this));
-
         }
         return menu;
     }
@@ -501,14 +493,11 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             if (data[2].toLowerCase().indexOf("curl") >= 0) {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
             }
-
             textArea.setText(data[2]);
         }
-
     }
 
     public boolean initAddon() {
-
         return true;
     }
 
@@ -594,11 +583,9 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         menEdit.add(menEditAddRequest);
         menEdit.add(menEditAddDefine);
         menEdit.add(menEditAddWait);
-
     }
 
     public void onExit() {
-
     }
 
     private boolean validate() {
@@ -608,7 +595,6 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid"));
             return false;
         }
-
         // script = script.replaceAll("\\<", "&lt;");
         // script = script.replaceAll("\\>", "&gt;");
         script = script.replaceAll("\\[\\[\\[", "<");
@@ -645,18 +631,14 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
                     return false;
                 }
                 // NodeList toDos = current.getChildNodes();
-
             }
 
         } catch (Exception e) {
             String error = e.getMessage();
             JDUtilities.getGUI().showMessageDialog(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.validate.error", "Script not valid:") + error);
             return false;
-
         }
 
         return true;
-
     }
-
 }

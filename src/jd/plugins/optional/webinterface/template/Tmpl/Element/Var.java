@@ -55,7 +55,6 @@ public class Var extends Element {
         type = "var";
         this.name = name;
         this.escape = escape;
-
     }
 
     public Var(String name, int escape, Object default_value) throws IllegalArgumentException {
@@ -125,5 +124,4 @@ public class Var extends Element {
     public String typeOfParam(String param) throws NoSuchElementException {
         throw new NoSuchElementException(param);
     }
-
 }

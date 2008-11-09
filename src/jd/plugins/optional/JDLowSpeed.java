@@ -73,7 +73,6 @@ public class JDLowSpeed extends PluginOptional {
             subConfig.setProperty(PROPERTY_ENABLED, false);
             stopPlugin();
             subConfig.save();
-
         }
     }
 
@@ -89,7 +88,6 @@ public class JDLowSpeed extends PluginOptional {
                 stopPlugin();
             }
         }
-
     }
 
     private void controllDownload(final DownloadLink downloadLink, final ArrayList<DownloadLink> other, final int minspeed, final int maxspeed) {
@@ -128,9 +126,7 @@ public class JDLowSpeed extends PluginOptional {
                     downloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
                     downloadLink.getLinkStatus().setStatusText("");
                     downloadLink.reset();
-
                 }
-
             }).start();
         }
     }
@@ -200,7 +196,6 @@ public class JDLowSpeed extends PluginOptional {
                                     dls.add(dl);
                                     if (!rsOnly || dl.getPlugin().getHost().equals("rapidshare.com")) {
                                         dlsToCheck.add(dl);
-
                                     }
                                 }
                             }
@@ -215,7 +210,6 @@ public class JDLowSpeed extends PluginOptional {
                                         other.add(downloadLink);
                                     }
                                 }
-
                                 controllDownload(downloadLink, other, minspeed, maxspeed);
                             }
                         }
@@ -226,7 +220,6 @@ public class JDLowSpeed extends PluginOptional {
                             e.printStackTrace();
                         }
                     }
-
                 }
             });
             pluginThread.start();
@@ -235,13 +228,10 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public void onExit() {
-
     }
 
     private void stopPlugin() {
         logger.info("stop");
         isRunning = false;
-
     }
-
 }

@@ -85,7 +85,6 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-
         return null;
     }
 
@@ -128,6 +127,5 @@ public class JDWebinterface extends PluginOptional {
 
     @Override
     public void onExit() {
-
     }
 }

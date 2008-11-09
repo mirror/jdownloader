@@ -109,7 +109,6 @@ public class Conditional extends Element {
                 output.append(((Element) e).parse(params));
             }
         }
-
         return output.toString();
     }
 

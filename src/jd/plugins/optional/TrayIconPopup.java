@@ -128,7 +128,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         initBottomPanel();
         setVisible(false);
         pack();
-
     }
 
     private void addDisabledMenuEntry(ImageIcon i, String l) {
@@ -149,7 +148,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         b.setForeground(Color.GRAY);
         icon.setEnabled(false);
         b.setEnabled(false);
-
     }
 
     private void addMenuEntry(Integer id, ImageIcon i, String l) {
@@ -166,16 +164,15 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         icon.setOpaque(false);
         b.setPreferredSize(new Dimension(MENUENTRY_LABEL_WIDTH, MENUENTRY_HEIGHT));
         icon.setPreferredSize(new Dimension(MENUENTRY_ICON_WIDTH, MENUENTRY_HEIGHT));
-
     }
 
+    // Checken ob es ein neues Update verfügbar ist
     private boolean checkUpdate(Point p) {
         if (mouseOverRow != getRow(p)) {
             mouseOverRow = getRow(p);
             paint();
             return true;
         }
-
         return false;
     }
 
@@ -340,7 +337,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             break;
         }
         dispose();
-
     }
 
     private void paint() {
@@ -363,9 +359,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
                 g.setColor(BACKGROUNDCOLOR);
             }
             g.drawRect(2, y, getWidth() - 4, rightPanel.getHeight() / midPanelCounter - 1);
-
         }
-
     }
 
     public void stateChanged(ChangeEvent e) {
@@ -378,7 +372,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, value);
                 JDUtilities.getSubConfig("DOWNLOAD").save();
             }
-
         }
         if (e.getSource() == spMaxDls) {
             int value = (Integer) spMaxDls.getValue();
@@ -387,9 +380,6 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
                 JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, value);
                 JDUtilities.getSubConfig("DOWNLOAD").save();
             }
-
         }
-
     }
-
 }

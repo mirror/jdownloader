@@ -177,9 +177,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
         }
     }
 
-    /**
-     * Compute the proper position for a popup
-     */
+    // Compute the proper position for a popup
     private Point computeDisplayPoint(int x, int y, Dimension dim) {
         if (x - dim.width > 0) {
             x -= dim.width;
@@ -241,7 +239,6 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
             e.printStackTrace();
             return false;
         }
-
     }
 
     public void controlEvent(ControlEvent event) {
@@ -403,7 +400,6 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
                     counter = 2;
                     return;
                 }
-
                 counter = 2;
 
                 trayInfo = new TrayInfo(e.getPoint());

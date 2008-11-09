@@ -55,9 +55,8 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     private static final int ARCHIVE_TYPE_UNIX = 1;
     private static final int ARCHIVE_TYPE_7Z = 2;
     private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
-    /**
-     * Wird als reihe für anstehende extracthjobs verwendet
-     */
+    
+    // Wird als reihe für anstehende extracthjobs verwendet
     private Jobber queue;
 
     public static int getAddonInterfaceVersion() {
@@ -71,7 +70,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     /**
-     * das controllevent fängt heruntergeladene file ab und wertet sie aus.
+     * Das controllevent fängt heruntergeladene file ab und wertet sie aus.
      * CONTROL_PLUGIN_INACTIVE: Wertet die frisch fertig gewordenen Downloads
      * aus. CONTROL_ON_FILEOUTPUT: wertet frisch fertig verarbeitete files aus,
      * z.B. frisch entpackte CONTROL_LINKLIST_CONTEXT_MENU: wird verwendet um
@@ -96,7 +95,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                     if (this.validateArchive(file)) {
                         addFileList(new File[] { file });
                     }
-
                 }
             }
             break;
@@ -122,13 +120,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 FilePackage fp = (FilePackage) event.getSource();
                 items.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdhjsplit.linkmenu.package.merge", "Merge package"), 1001).setActionListener(this));
                 m.setProperty("PACKAGE", fp);
-
             }
-
             break;
-
         }
-
     }
 
     @Override
@@ -155,7 +149,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         if (e.getSource() instanceof MenuItem) {
             menuitemActionPerformed(e, (MenuItem) e.getSource());
         }
-
     }
 
     private void menuitemActionPerformed(ActionEvent e, MenuItem source) {
@@ -222,13 +215,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             break;
 
         }
-
     }
 
     /**
-     * Fügt lokale files der mergqueue hinzu. es muss sich bereits zum
+     * Fügt lokale files der mergqueue hinzu. Es muss sich bereits zum
      * startarchive handeln.
-     * 
      * @param list
      */
     private void addFileList(File[] list) {
@@ -246,14 +237,10 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             final DownloadLink finalLink = link;
 
             addToQueue(finalLink);
-
         }
-
     }
 
-    /**
-     * Startet das abwarbeiten der extractqueue
-     */
+    // Startet das Abwarbeiten der extractqueue
     private void addToQueue(final DownloadLink link) {
 
         queue.add(new Runnable() {
@@ -279,14 +266,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                         } catch (Exception e) {
                             // TODO: handle exception
                         }
-
                     }
                 });
 
                 if (getPluginConfig().getBooleanProperty(CONFIG_KEY_OVERWRITE, false)) {
 
                     if (output.exists()) output.delete();
-
                 }
                 join.run();
                 if (getPluginConfig().getBooleanProperty(CONFIG_KEY_REMOVE_MERGED, false)) {
@@ -299,15 +284,12 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
                 progress.finalize();
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ON_FILEOUTPUT, new File[] { output }));
             }
-
         });
         queue.start();
-
     }
 
     /**
      * Gibt die zu entpackende Datei zurück.
-     * 
      * @param file
      * @return
      */
@@ -328,11 +310,11 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     /**
-     * Validiert ein archiv. Archive haben zwei formen: unix: *.aa..*.ab..*.ac .
+     * Validiert ein Archiv. Archive haben zwei formen: unix: *.aa..*.ab..*.ac .
      * das zweite a wird hochgezählt normal: *.001...*.002
      * 
-     * Die Funktion versucht zu prüfen ob das archiv komplett heruntergeladen
-     * wurde und ob es ein gültoges archiv ist.
+     * Die Funktion versucht zu prüfen ob das Archiv komplett heruntergeladen
+     * wurde und ob es ein gültoges Archiv ist.
      * 
      * @param file
      * @return
@@ -356,7 +338,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     /**
-     * Gibt alle files die zum archiv von file gehören zurück
+     * Gibt alle files die zum Archiv von file gehören zurück
      * 
      * @param file
      * @return
@@ -378,7 +360,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         default:
             return null;
         }
-
     }
 
     /**
@@ -397,7 +378,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
                 if (!new File(miss.getFileOutput()).exists()) { return null; }
             }
-
         }
         File[] files = file.getParentFile().listFiles(new java.io.FileFilter() {
             public boolean accept(File pathname) {
@@ -459,7 +439,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     /**
-     * SUcht den dateinamen und den pfad der des startvolumes heraus
+     * Sucht den Dateinamen und den Pfad der des Startvolumes heraus
      * 
      * @param file
      * @return
@@ -480,7 +460,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     /**
-     * gibt zurück ob es sich beid er datei um ein hjsplit startvolume handelt.
+     * Gibt zurück ob es sich bei der Datei um ein hjsplit Startvolume handelt.
      * 
      * @param file
      * @return
@@ -493,7 +473,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         if (file.getName().matches(".*\\.001($|\\..*)")) return true;
 
         return false;
-
     }
 
     /**
@@ -530,7 +509,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         fp.setDownloadDirectory(archiveStartFile.getParent());
         link.setFilePackage(fp);
         return link;
-
     }
 
     @Override
@@ -554,7 +532,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             JDUtilities.getController().addControlListener(this);
         }
         return true;
-
     }
 
     public void initConfig() {
@@ -571,5 +548,4 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     public void onExit() {
         JDUtilities.getController().removeControlListener(this);
     }
-
 }

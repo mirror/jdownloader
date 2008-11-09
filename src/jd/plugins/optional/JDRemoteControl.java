@@ -290,10 +290,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             output = output + " > ";// Close File
                         }
                     }
-
                     output = output + "</package> ";// Close Package
                 }
-
                 response.addContent(output);
             }
 
@@ -354,10 +352,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                         output.append(" file_speed=\"" + dLink.getDownloadSpeed() + "\"");
                         output.append(" > ");// Close File
                     }
-
                     output.append("</package> ");// Close Package
                 }
-
                 response.addContent(output.toString());
             }
 
@@ -425,10 +421,8 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                             output.append(" > ");// Close File
                         }
                     }
-
                     output.append("</package> ");// Close Package
                 }
-
                 response.addContent(output.toString());
             }
 
@@ -475,7 +469,6 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
             }
 
             // Do Make Webupdate
-
             else if (request.getRequestUrl().matches("[\\s\\S]*?/action/update/force[01]{1}/[\\s\\S]*")) {
 
                 Integer force = Integer.parseInt(new Regex(request.getRequestUrl(), "[\\s\\S]*?/action/update/force([01]{1})/[\\s\\S]*").getMatch(0));
@@ -758,5 +751,4 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
     public void onExit() {
 
     }
-
 }

@@ -119,7 +119,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             pack();
             setLocation(JDUtilities.getCenterOfComponent(owner, this));
             setVisible(true);
-
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -141,11 +140,8 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
                 dispose();
                 owner.setVisible(true);
-
             }
-
         }
-
     }
 
     private class AddFeedDialog extends JDialog implements ActionListener {
@@ -202,7 +198,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             pack();
             setLocation(JDUtilities.getCenterOfComponent(owner, this));
             setVisible(true);
-
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -220,11 +215,8 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 url = null;
                 dispose();
                 owner.setVisible(true);
-
             }
-
         }
-
     }
 
     private static final String PROPERTY_ABOS = "PROPERTY_ABOS";
@@ -283,7 +275,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 for (String link : specialFeedWorkarounds(entriesManageFeeds.get(index))) {
                     links.add(link);
                 }
-
             }
 
             String linksString = "";
@@ -312,7 +303,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 setFeedList();
                 feedList.setSelectedIndex(feeds.size() - 1);
                 saveFeeds();
-
             }
 
         } else if (e.getSource().equals(btnDeleteFeed)) {
@@ -339,7 +329,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 setAboList();
                 aboList.setSelectedIndex(abos.size() - 1);
                 saveAbos();
-
             }
 
         } else if (e.getSource().equals(btnDeleteAbo)) {
@@ -366,7 +355,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 for (String link : specialFeedWorkarounds(entriesGetSubscribed.get(index))) {
                     links.add(link);
                 }
-
             }
 
             String linksString = "";
@@ -374,13 +362,10 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             for (String link : links) {
                 linksString += link + "\n";
             }
-
             DistributeData distributeData = new DistributeData(linksString);
             distributeData.addControlListener(JDUtilities.getController());
             distributeData.start();
-
         }
-
     }
 
     public ArrayList<MenuItem> createMenuitems() {
@@ -392,11 +377,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.manageFeeds", "Manage Feeds"), 0).setActionListener(this));
             menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.manageDownloadSubscriptions", "Manage Download Subscriptions"), 1).setActionListener(this));
             menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.newsfeeds.getLatestSubscribedDownloads", "Get latest subscribed Downloads"), 2).setActionListener(this));
-
         }
 
         return menu;
-
     }
 
     private Vector<String[]> getEntries(final String url, final String filter) {
@@ -425,7 +408,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                 patEntry = "<item>(.*?)</item>";
                 patTitle = "<title>(.*?)</title>";
                 patLink = "<link>(.*?)</link>";
-
             }
 
             String[] matches = br.getRegex(patEntry).getColumn(0);
@@ -444,9 +426,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                     if (temp[0].toLowerCase().contains(filter.toLowerCase())) {
                         vector.add(temp);
                     }
-
                 }
-
             }
 
             logger.info("finished!");
@@ -456,17 +436,13 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         }
 
         return vector;
-
     }
 
     public String getHost() {
         return JDLocale.L("plugins.optional.newsfeeds.pluginTitle", "Newsfeed Check");
     }
 
-    /*
-     * GUIs
-     */
-
+    // GUIs
     public String getRequirements() {
         return "JRE 1.5+";
     }
@@ -492,7 +468,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             for (String match[] : regex.getMatches()) {
 
                 abos.add(new String[] { match[0], match[1], match[2] });
-
             }
             saveAbos();
         } else {
@@ -501,9 +476,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             if (abos == null) {
                 abos = new Vector<String[]>();
             }
-
         }
-
     }
 
     @SuppressWarnings("unchecked")
@@ -518,7 +491,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             for (String match[] : regex.getMatches()) {
 
                 feeds.add(new String[] { match[0], match[1] });
-
             }
             saveFeeds();
         } else {
@@ -527,19 +499,14 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             if (feeds == null) {
                 feeds = new Vector<String[]>();
             }
-
         }
         setFeedList();
         if (feeds.size() > 0) {
             feedList.setSelectedIndex(0);
         }
-
     }
 
-    /*
-     * List setters
-     */
-
+    // List setters
     public void onExit() {
     }
 
@@ -547,17 +514,13 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
         subConfig.setProperty(PROPERTY_ABOS, abos);
         subConfig.save();
-
     }
 
-    /*
-     * Load/Save
-     */
+    // Load/Save
     private void saveFeeds() {
 
         subConfig.setProperty(PROPERTY_FEEDS, feeds);
         subConfig.save();
-
     }
 
     private void setAboList() {
@@ -573,10 +536,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
     }
 
-    /*
-     * RSS/ATOM
-     */
-
+    // RSS/ATOM
     private void setEntryList(final String filter) {
 
         if (feedList.getSelectedIndex() != -1) {
@@ -598,14 +558,10 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
                     list.setListData(titles);
                     statusLabelManageFeeds.setText("");
-
                 }
             });
-
             thread.start();
-
         }
-
     }
 
     private void setFeedList() {
@@ -616,11 +572,8 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         for (String[] feed : feeds) {
 
             titles.add(feed[1]);
-
         }
-
         feedList.setListData(titles);
-
     }
 
     private void setSubscribedList() {
@@ -643,13 +596,11 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                         entriesGetSubscribed.clear();
                         entriesGetSubscribed = getEntries(abo[0], abo[2]);
                         newEntries.addAll(entriesGetSubscribed);
-
                     }
 
                     for (String[] entry : newEntries) {
 
                         titles.add(entry[0]);
-
                     }
 
                     entriesGetSubscribed = newEntries;
@@ -660,14 +611,11 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                     } else {
                         statusLabelGetSubscribed.setText(JDLocale.L("plugins.optional.newsfeeds.nowSubscribedFound", "No subscribed Downloads were found."));
                     }
-
                 }
             });
 
             thread.start();
-
         }
-
     }
 
     private void showGetLatestSubscribedDownloadsGui() {
@@ -714,7 +662,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.pack();
         SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
-
     }
 
     private void showManageDownloadSubscriptionsGui() {
@@ -761,7 +708,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.pack();
         SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
-
     }
 
     private void showManageFeedsGui() {
@@ -844,13 +790,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
         frame.pack();
         SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
-
     }
 
-    /*
-     * Dialogs
-     */
-
+    // Dialogs
     public Vector<String> specialFeedWorkarounds(String[] parameter) {
 
         Vector<String> links = new Vector<String>();
@@ -900,13 +842,9 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
                             for (String link : new Regex(match2[1], Pattern.compile("href=\"(http://download\\.serienjunkies\\.org/.*?\\.html)\"")).getColumn(-1)) {
                                 links.add(link);
                             }
-
                             break;
-
                         }
-
                     }
-
                 }
 
                 if (!found) {
@@ -920,13 +858,10 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             }
 
         } else {
-
             links.add(parameter[1]);
-
         }
 
         return links;
-
     }
 
     public void valueChanged(ListSelectionEvent e) {
@@ -935,9 +870,6 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
             feedListSelectedIndex = feedList.getSelectedIndex();
             setEntryList(filterText.getText());
-
         }
-
     }
-
 }

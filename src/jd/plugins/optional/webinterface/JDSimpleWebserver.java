@@ -74,7 +74,6 @@ public class JDSimpleWebserver extends Thread {
             addToCurrentClientCounter(1);
             run0();
             addToCurrentClientCounter(-1);
-
         }
 
         public void run0() {

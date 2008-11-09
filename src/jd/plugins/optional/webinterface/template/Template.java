@@ -227,7 +227,6 @@ public class Template {
 
             parseParam(key, value);
         }
-
         init();
     }
 
@@ -408,7 +407,6 @@ public class Template {
         for (int i = 0; i < args.length; i += 2) {
             parseParam((String) args[i], args[i + 1]);
         }
-
         init();
     }
 
@@ -656,7 +654,6 @@ public class Template {
         } else {
             throw new IllegalArgumentException((String) key);
         }
-
     }
 
     /**
@@ -714,7 +711,6 @@ public class Template {
 
         br.close();
         br = null;
-
     }
 
     private void read_line(String lines) throws FileNotFoundException, IllegalStateException, IOException, EmptyStackException {
@@ -958,7 +954,6 @@ public class Template {
         if (count > 0) {
             Util.debug_print("Now dirty: set params");
         }
-
         return count;
     }
 }

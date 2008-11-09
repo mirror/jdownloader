@@ -67,7 +67,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
                 write(lastDownloadFinished);
             }
         }
-
     }
 
     @Override
@@ -94,7 +93,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
     public boolean initAddon() {
         JDUtilities.getController().addControlListener(this);
         return true;
-
     }
 
     public void initConfig() {
@@ -108,7 +106,6 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PARAM_FILENAME, JDLocale.L("plugins.optional.infoFileWriter.filename", "Filename:")).setDefaultValue(FILENAME_DEFAULT));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, PARAM_INFO_STRING, JDLocale.L("plugins.optional.infoFileWriter.content", "Content:")).setDefaultValue(INFO_STRING_DEFAULT));
-
     }
 
     @Override
@@ -141,7 +138,5 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
             logger.severe("Can not write2 to: " + dest.getAbsolutePath());
             return false;
         }
-
     }
-
 }

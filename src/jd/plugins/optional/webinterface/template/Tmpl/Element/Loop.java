@@ -133,7 +133,6 @@ public class Loop extends Element {
             first = false;
             odd = !odd;
         }
-
         return output.toString();
     }
 
@@ -149,7 +148,6 @@ public class Loop extends Element {
         } else {
             throw new IllegalArgumentException("Unrecognised type");
         }
-
         return control_val;
     }
 
@@ -167,5 +165,4 @@ public class Loop extends Element {
         }
         throw new NoSuchElementException(param);
     }
-
 }

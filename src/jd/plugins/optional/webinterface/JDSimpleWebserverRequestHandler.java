@@ -133,7 +133,6 @@ public class JDSimpleWebserverRequestHandler {
                 c++;
             }
         }
-
         if (Math.min(a.length(), b.length()) == 0) { return 0; }
         return c * 100 / b.length();
     }
@@ -184,7 +183,6 @@ public class JDSimpleWebserverRequestHandler {
                         requestParameter.put(key + "_counter", keycounter.toString());
                         requestParameter.put(key + "_" + keycounter.toString(), value);
                     }
-
                 } else {
                     requestParameter.put(key, value);
                 }
@@ -309,8 +307,7 @@ public class JDSimpleWebserverRequestHandler {
                                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
                             }
-                            /* leere packages aus der add liste entfernen */
-                            /*
+                            /* leere packages aus der add liste entfernen
                              * von oben nach unten, damit keine fehler
                              * entstehen, falls mittendrin was gelöscht wird
                              */
@@ -320,12 +317,12 @@ public class JDSimpleWebserverRequestHandler {
                                 }
                             }
                         }
-
                     }
                 }
 
                 if (requestParameter.containsKey("package_single_download_counter")) {
-                    /* aktionen in der download-liste ausführen */
+                    
+                    // Aktionen in der Download-liste ausführen
                     Integer download_id = 0;
                     Integer package_id = 0;
                     String[] ids;
@@ -374,32 +371,27 @@ public class JDSimpleWebserverRequestHandler {
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                         }
                         if (dowhat.compareToIgnoreCase("remove") == 0) {
-                            /*
-                             * entfernen
-                             */
+                            
+                            //entfernen
                             JDUtilities.getController().removeDownloadLinks(links);
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
                         }
                         if (dowhat.compareToIgnoreCase("abort") == 0) {
-                            /*
-                             * abbrechen
-                             */
+                            
+                            // abbrechen
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                 link = it.next();
                                 link.setAborted(true);
                             }
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                         }
-
                     }
-
                 }
 
             } else if (requestParameter.get("do").compareToIgnoreCase("reconnect") == 0) {
                 class JDReconnect implements Runnable {
-                    /*
-                     * zeitverzögertes neustarten
-                     */
+                    
+                    / Zeitverzögertes neustarten
                     JDReconnect() {
                         new Thread(this).start();
                     }
@@ -437,7 +429,6 @@ public class JDSimpleWebserverRequestHandler {
                         try {
                             Thread.sleep(2000);
                         } catch (InterruptedException e) {
-
                             e.printStackTrace();
                         }
                         JDUtilities.getController().exit();
@@ -452,9 +443,8 @@ public class JDSimpleWebserverRequestHandler {
                 JDUtilities.getController().stopDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
                 class JDRestart implements Runnable {
-                    /*
-                     * zeitverzögertes neustarten
-                     */
+                    
+                    // Zeitverzögertes neustarten
                     JDRestart() {
                         new Thread(this).start();
                     }
@@ -510,7 +500,6 @@ public class JDSimpleWebserverRequestHandler {
                 url = tempurl;
                 fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
             }
-
         }
 
         if (!fileToRead.exists()) {
@@ -525,9 +514,7 @@ public class JDSimpleWebserverRequestHandler {
                 filerequest = new JDSimpleWebserverStaticFileRequestHandler(response);
                 filerequest.handleRequest(url, requestParameter);
             }
-
         }
-
     }
 
     private Vector<DownloadLink> loadContainerFile(final File file) {
@@ -570,6 +557,5 @@ public class JDSimpleWebserverRequestHandler {
 
         if (a.equals(ret)) { return ret; }
         return ret;
-
     }
 }

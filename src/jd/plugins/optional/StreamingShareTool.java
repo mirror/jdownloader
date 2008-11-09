@@ -76,7 +76,6 @@ public class StreamingShareTool extends PluginOptional {
     private JMenuItem menExit;
 
     // TODO: Add your Service here:
-
     private Pattern DecryptOnlyThese = Pattern.compile("^youtube.com$");
 
     private JTextArea textArea;
@@ -99,7 +98,6 @@ public class StreamingShareTool extends PluginOptional {
             } catch (Exception e2) {
                 textArea.setText(JDUtilities.getLocalFile(ret));
             }
-
             return;
         }
         if (e.getSource() == menSaveList) {
@@ -162,7 +160,6 @@ public class StreamingShareTool extends PluginOptional {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.streamsharingtool.action.start", "Start"), 0).setActionListener(this));
         } else {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.streamsharingtool.action.end", "Exit"), 0).setActionListener(this));
-
         }
         return menu;
     }
@@ -214,7 +211,6 @@ public class StreamingShareTool extends PluginOptional {
                 // logger.info(links.get(i).getBrowserUrl());
                 // logger.info(links.get(i).getSourcePluginComment());
                 // logger.info(links.get(i).getProperty("convertto").toString());
-
             }
         }
 
@@ -230,7 +226,6 @@ public class StreamingShareTool extends PluginOptional {
 
         JDUtilities.getController().saveDLC(ret, toSave);
         JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("plugins.optional.streamsharingtool.action.save.dlc.finished", "StreamingShare DLC ready 2 use!"), 45);
-
     }
 
     private void initGUI() {
@@ -299,7 +294,6 @@ public class StreamingShareTool extends PluginOptional {
     }
 
     public void onExit() {
-
     }
 
     private Vector<DownloadLink> GetValid(String text, boolean showcount) {
@@ -335,7 +329,6 @@ public class StreamingShareTool extends PluginOptional {
                 // logger.info(links.get(i).getDownloadURL()+
                 // " isn't a valid Link");
             }
-
         }
 
         ConvertDialog.setKeepformat(false);
@@ -344,7 +337,5 @@ public class StreamingShareTool extends PluginOptional {
             JDUtilities.getGUI().showCountdownConfirmDialog(String.valueOf(links.size()) + " " + JDLocale.L("plugins.optional.streamsharingtool.action.validate.linksfound", "Link(s) gefunden!"), 60);
         }
         return toReturn;
-
     }
-
 }

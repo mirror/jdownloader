@@ -176,6 +176,5 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
 
     @Override
     public void onExit() {
-
     }
 }
