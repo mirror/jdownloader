@@ -551,59 +551,28 @@ public class UnrarWrapper extends Thread {
 
     private boolean open() throws UnrarException {
         String pass = null;
-
+        int i = 0;
         fireEvent(JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE);
-        Jobber queue = new Jobber(2);
-        queue.addWorkerListener(queue.new WorkerListener() {
-
-            @Override
-            public void onJobFinished(Jobber jobber, Runnable job) {
-                crackProgress = (jobber.getJobsFinished() * 100) / jobber.getJobsAdded();
-                fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                Executer exec = (Executer) job;
-                String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-                String match;
-                if ((match = new Regex(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
-                    statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
-                    match = new Regex(match, "\\.part(\\d+)\\.").getMatch(0);
-                    currentVolume = Integer.parseInt(match.trim());
-
-                    jobber.stop();
-                }
-                if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) {
-                    jobber.stop();
-                    // throw new UnrarException("File not found " +
-                    // file.getAbsolutePath());
-                }
-                if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
-                    JDUtilities.getLogger().finest("Password incorrect: " + exec);
-
-                } else {
-                    jobber.stop();
-                    parseOpenOutput(res);
-                }
-
-            }
-
-            @Override
-            public void onJobListFinished(Jobber jobber) {
-                // TODO Auto-generated method stub
-
-            }
-
-            @Override
-            public void onJobStarted(Jobber jobber, Runnable job) {
-                // TODO Auto-generated method stub
-
-            }
-
-        });
-        for (int i = 0; i < passwordList.length; i++) {
-            pass = this.passwordList[i];
+        int c = 0;
+        while (true) {
             Executer exec = new Executer(unrarCommand);
             exec.setDebug(DEBUG);
+            if (i > 0) {
+                if (passwordList.length < i) {
+
+                return false; }
+                pass = this.passwordList[i - 1];
+            }
+
+            if (c > 0) {
+                crackProgress = ((c) * 100) / passwordList.length;
+                fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
+            }
+            c++;
+            i++;
             exec.addParameter("v");
             exec.addParameter("-p");
+
             exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
             exec.addParameter("-v");
             exec.addParameter("-c-");
@@ -611,27 +580,98 @@ public class UnrarWrapper extends Thread {
             exec.setRunin(file.getParentFile().getAbsolutePath());
             exec.setWaitTimeout(-1);
             exec.start();
-            queue.add(exec);
+            exec.waitTimeout();
+            String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
+            JDUtilities.getLogger().finest(res);
+            String match;
+            if ((match = new Regex(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
+                statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                match = new Regex(match, "\\.part(\\d+)\\.").getMatch(0);
+                currentVolume = Integer.parseInt(match.trim());
+
+                return false;
+            }
+            if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
+            if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
+                JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
+                continue;
+            } else {
+
+                String[] volumes = Pattern.compile("Volume (.*?)Pathname/Comment", Pattern.DOTALL).split(res);
+                ArchivFile tmp = null;
+                String namen = "";
+                this.files = new ArrayList<ArchivFile>();
+                this.totalSize = 0;
+                for (String volume : volumes) {
+                    res = volume;
+
+                    Pattern patternvolumes = Pattern.compile("(.+)\\s*?([\\d]+).*?[\\d]+\\-[\\d]+\\-[\\d]+.*?[\\d]+:[\\d]+.*?(.{1})(.{1})(.{1})", Pattern.CASE_INSENSITIVE);
+                    Matcher matchervolumes = patternvolumes.matcher(res);
+
+                    String vol = new Regex(res, "       volume (\\d+)").getMatch(0);
+                    if (vol != null) {
+                        volumeNum = Integer.parseInt(vol.trim());
+                    }
+                    while (matchervolumes.find()) {
+
+                        String name = matchervolumes.group(1);
+                       name= Encoding.UTF8Encode(name);
+                        if (name.matches("\\*.*")) {
+                            name = name.replaceFirst(".", "");
+                            long size = Long.parseLong(matchervolumes.group(2));
+                            this.isProtected = true;
+                            if (pass != null && password != pass) {
+
+                                this.password = pass;
+                                fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
+                            }
+                            if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
+                                tmp = new ArchivFile(name);
+                                tmp.setSize(size);
+                                tmp.setPath(this.getExtractTo());
+                                tmp.setProtected(true);
+                                tmp.addVolume(vol);
+                                files.add(tmp);
+                                namen = name;
+                                totalSize += size;
+
+                            } else if (name.equals(namen)) {
+                                tmp.addVolume(vol);
+                            }
+
+                        } else {
+                            name = name.replaceFirst(".", "");
+                            if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
+
+                                tmp = new ArchivFile(name);
+                                tmp.setPath(this.getExtractTo());
+                                long size;
+                                tmp.setSize(size = Long.parseLong(matchervolumes.group(2)));
+                                totalSize += size;
+                                tmp.setProtected(false);
+                                tmp.addVolume(vol);
+                                files.add(tmp);
+                                namen = name;
+
+                            } else if (name.equals(namen)) {
+                                tmp.addVolume(vol);
+                            }
+
+                        }
+                    }
+
+                }
+                //
+                if (res.indexOf("Cannot find volume") != -1) {
+
+                return false; }
+                return true;
+
+            }
 
         }
-queue.start();
-
-while(queue.isAlive()){
-    try {
-        Thread.sleep(50);
-    } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
     }
-    
-}
-        // //
-        // if (res.indexOf("Cannot find volume") != -1) {
-        //
-        // return false; }
-        return true;
-
-    }
+      
 
     /**
      * Setzt den Pfad zur unrar.exe
