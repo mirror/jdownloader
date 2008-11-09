@@ -137,15 +137,8 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         } else if (e.getSource() == menHelpWiki) {
             try {
                 JLinkButton.openURL(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.wikilink", "http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
-            } catch (MalformedURLException e1) {
-                e1.printStackTrace();
-            } catch (BrowserLaunchingInitializingException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (UnsupportedOperatingSystemException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (IOException e1) {
+         
+            } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
             }

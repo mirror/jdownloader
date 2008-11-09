@@ -175,11 +175,11 @@ public class JLinkButton extends JButton {
         return new JLinkButtonRenderer();
     }
 
-    public static void openURL(String url) throws BrowserLaunchingInitializingException, UnsupportedOperatingSystemException, IOException {
+    public static void openURL(String url) throws Exception {
         JLinkButton.openURL(new URL(url));
     }
 
-    public static void openURL(URL url) throws BrowserLaunchingInitializingException, UnsupportedOperatingSystemException, IOException {
+    public static void openURL(URL url) throws Exception {
         SubConfiguration cfg = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         if (cfg.getBooleanProperty(SimpleGUI.PARAM_CUSTOM_BROWSER_USE, false)) {
 
@@ -317,13 +317,8 @@ public class JLinkButton extends JButton {
             public void actionPerformed(ActionEvent e) {
                 try {
                     JLinkButton.openURL(getLinkURL());
-                } catch (BrowserLaunchingInitializingException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (IOException e1) {
+             
+                } catch (Exception e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
@@ -380,13 +375,8 @@ public class JLinkButton extends JButton {
             public void actionPerformed(ActionEvent e) {
                 try {
                     JLinkButton.openURL(getLinkURL());
-                } catch (BrowserLaunchingInitializingException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e1) {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                } catch (IOException e1) {
+             
+                } catch (Exception e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
@@ -457,18 +447,13 @@ public class JLinkButton extends JButton {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     try {
                         openURL(e.getURL());
-                    } catch (BrowserLaunchingInitializingException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    } catch (UnsupportedOperatingSystemException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    } catch (IOException e1) {
+                
+                    } catch (Exception e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                 }
-
+ 
             }
         };
     }

@@ -136,7 +136,7 @@ public class Executer extends Thread {
     private StreamObserver sbeObserver;
     private StreamObserver sboObserver;
     private OutputStream outputStream = null;
-    private IOException exception;
+    private Exception exception;
     private boolean processgotinterrupted = false;
 
     public Executer(String command) {
@@ -201,6 +201,7 @@ public class Executer extends Thread {
             out += p + " ";
         }
         if (isDebug()) logger.finest("Execute: " + out + " in " + runIn);
+       
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -265,15 +266,23 @@ public class Executer extends Thread {
             if (sbeObserver.isAlive()) {
                 sbeObserver.requestInterrupt();
             }
+            
+          
+            while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
+                Thread.sleep(50);
+            }
 
         } catch (IOException e1) {
             e1.printStackTrace();
             this.exception = e1;
             return;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            this.exception = e;
         }
     }
 
-    public IOException getException() {
+    public Exception getException() {
         return exception;
     }
 
@@ -326,7 +335,7 @@ public class Executer extends Thread {
     }
 
     public void waitTimeout() {
-        while (isAlive() || (sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
+        while (isAlive()) {
             try {
                 Thread.sleep(50);
             } catch (InterruptedException e) {

@@ -133,13 +133,8 @@ public class StreamingShareTool extends PluginOptional {
 
             try {
                 JLinkButton.openURL(JDLocale.L("plugins.optional.streamsharingtool.wikiurl", "http://wiki.jdownloader.org/index.php?title=StreamingShare"));
-            } catch (BrowserLaunchingInitializingException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (UnsupportedOperatingSystemException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (IOException e1) {
+
+            } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
             }

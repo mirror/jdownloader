@@ -253,13 +253,8 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {
                 JLinkButton.openURL(e.getURL());
-            } catch (BrowserLaunchingInitializingException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (UnsupportedOperatingSystemException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (IOException e1) {
+           
+            } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
             }

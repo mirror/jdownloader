@@ -77,13 +77,8 @@ public class JHelpDialog extends JDialog implements ActionListener {
             public boolean doAction() {
                 try {
                     JLinkButton.openURL(url);
-                } catch (BrowserLaunchingInitializingException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (UnsupportedOperatingSystemException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } catch (IOException e) {
+          
+                } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }

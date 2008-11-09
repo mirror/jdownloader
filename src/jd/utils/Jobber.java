@@ -28,6 +28,23 @@ public class Jobber {
     private int currentlyRunningWorker;
     private boolean killWorkerAfterQueueFinished = true;
     private boolean running = false;
+    private int jobsAdded = 0;
+
+    public int getJobsAdded() {
+        return jobsAdded;
+    }
+
+    private int jobsFinished = 0;
+
+    public int getJobsFinished() {
+        return jobsFinished;
+    }
+
+    private int jobsStarted = 0;
+
+    public int getJobsStarted() {
+        return jobsStarted;
+    }
 
     /**
      * Jobber.class Diese Klasse ermöglichtda s paralelle ausführen mehrere
@@ -79,7 +96,7 @@ public class Jobber {
         if (currentlyRunningWorker <= 0) {
             synchronized (listener) {
                 for (WorkerListener wl : listener)
-                    wl.onJobListFinished();
+                    wl.onJobListFinished(this);
             }
             if (killWorkerAfterQueueFinished) {
                 stop();
@@ -129,14 +146,14 @@ public class Jobber {
     private void fireJobFinished(Runnable job) {
         synchronized (listener) {
             for (WorkerListener wl : listener)
-                wl.onJobFinished(job);
+                wl.onJobFinished(this, job);
         }
     }
 
     private void fireJobStarted(Runnable job) {
         synchronized (listener) {
             for (WorkerListener wl : listener)
-                wl.onJobStarted(job);
+                wl.onJobStarted(this, job);
         }
     }
 
@@ -151,6 +168,7 @@ public class Jobber {
     public int add(Runnable runnable) {
         synchronized (jobList) {
             jobList.add(runnable);
+            this.jobsAdded++;
             System.out.println(this + " RINGRING!!!!");
             // if a worker sleeps.... this should wake him up
 
@@ -230,8 +248,10 @@ public class Jobber {
                     System.out.println(this + ": I'm up");
                     continue;
                 }
+                jobsStarted++;
                 fireJobStarted(this);
                 ra.run();
+                jobsFinished++;
                 fireJobFinished(this);
             }
         }
@@ -240,11 +260,11 @@ public class Jobber {
 
     public abstract class WorkerListener {
 
-        public abstract void onJobFinished(Runnable job);
+        public abstract void onJobFinished(Jobber jobber, Runnable job);
 
-        public abstract void onJobListFinished();
+        public abstract void onJobListFinished(Jobber jobber);
 
-        public abstract void onJobStarted(Runnable job);
+        public abstract void onJobStarted(Jobber jobber, Runnable job);
 
     }
 

@@ -770,7 +770,7 @@ public class JDInit {
         new OptionalPluginWrapper("JDInfoFileWriter", 1.5);
         new OptionalPluginWrapper("StreamingShareTool", 1.5);
         new OptionalPluginWrapper("LangFileEditor", 1.5);
-        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5, OptionalPluginWrapper.FLAG_ALWAYS_ENABLED);
+        new OptionalPluginWrapper("jdunrar.JDUnrar", 1.5);
         new OptionalPluginWrapper("hjsplit.JDHJSplit", 1.5);
         new OptionalPluginWrapper("JDPremiumCollector", 1.5);
         new OptionalPluginWrapper("JDGrowlNotification", 1.5);

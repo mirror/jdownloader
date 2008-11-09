@@ -151,13 +151,8 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
             try {
                 JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
-            } catch (BrowserLaunchingInitializingException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (UnsupportedOperatingSystemException e1) {
-                // TODO Auto-generated catch block
-                e1.printStackTrace();
-            } catch (IOException e1) {
+            
+            } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
             }

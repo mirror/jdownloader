@@ -162,6 +162,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             } else {
                 JDUtilities.getController().removeControlListener(this);
             }
+            cfg.save();
             break;
         case 21:
             JDFileChooser fc = new JDFileChooser("_JDHJSPLIT_");

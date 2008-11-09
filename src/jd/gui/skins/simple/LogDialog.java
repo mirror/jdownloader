@@ -207,13 +207,8 @@ public class LogDialog extends JFrame implements ActionListener {
 
                     try {
                         JLinkButton.openURL(url);
-                    } catch (BrowserLaunchingInitializingException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    } catch (UnsupportedOperatingSystemException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    } catch (IOException e1) {
+                  
+                    } catch (Exception e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
