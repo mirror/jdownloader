@@ -61,7 +61,7 @@ public class Rapidshare extends PluginForHost {
 
     private static long LAST_FILE_CHECK = 0;
 
-    private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Please wait until the download is completed)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERM_MATCHER_ALREADY_LOADING = Pattern.compile("(Warten Sie bitte, bis der Download abgeschlossen ist)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
@@ -334,6 +334,7 @@ public class Rapidshare extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
             }
+            
             throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
         }
 
@@ -546,7 +547,7 @@ public class Rapidshare extends PluginForHost {
 
         if (er == null || er.length == 0) { return null; }
         er[0] = HTMLEntities.unhtmlentities(er[0]);
-
+if(er[0].trim().length()==0)return null;
         return er[0];
 
     }
