@@ -344,6 +344,7 @@ public class UnrarWrapper extends Thread {
         }
 
         File fileFile = new File(this.file.getParentFile(), System.currentTimeMillis() + ".unrartmp");
+        fileFile.deleteOnExit();
         JDUtilities.writeLocalFile(fileFile, file.getFilepath());
 
         if (file.getSize() < 2097152) {
