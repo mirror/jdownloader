@@ -391,6 +391,7 @@ public class JDSimpleWebserverRequestHandler {
             } else if (requestParameter.get("do").compareToIgnoreCase("reconnect") == 0) {
                 class JDReconnect implements Runnable {
                     
+                    // Zeitverzögertes neustarten
                     JDReconnect() {
                         new Thread(this).start();
                     }

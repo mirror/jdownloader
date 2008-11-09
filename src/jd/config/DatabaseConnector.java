@@ -55,7 +55,7 @@ public class DatabaseConnector implements Serializable {
     public DatabaseConnector() {
         try {
             logger.info("Loading database");
-
+            new Exception().printStackTrace();
             con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
             con.setAutoCommit(true);
             con.createStatement().executeUpdate("SET LOGSIZE 1");
@@ -97,8 +97,18 @@ public class DatabaseConnector implements Serializable {
             }
 
             ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config");
+            String str;
+            Object obj;
             while (rs.next()) {
-                dbdata.put(rs.getString(1), rs.getObject(2));
+                try {
+                    str = rs.getString(1);
+                    obj = rs.getObject(2);
+
+                    dbdata.put(str, obj);
+                    System.out.println(str);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
         } catch (Exception e) {

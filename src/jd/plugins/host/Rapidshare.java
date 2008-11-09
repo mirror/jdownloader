@@ -334,7 +334,6 @@ public class Rapidshare extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
             }
-            
             throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
         }
 
@@ -547,7 +546,7 @@ public class Rapidshare extends PluginForHost {
 
         if (er == null || er.length == 0) { return null; }
         er[0] = HTMLEntities.unhtmlentities(er[0]);
-if(er[0].trim().length()==0)return null;
+
         return er[0];
 
     }
