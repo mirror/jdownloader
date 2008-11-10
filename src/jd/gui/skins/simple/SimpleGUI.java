@@ -784,12 +784,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.ITEMS_MOVE_BOTTOM:
             linkListPane.moveSelectedItems(e.getID());
             break;
-        case JDAction.COLLAPSE_ALL:
-            linkListPane.collapseAll();
-            break;
-        case JDAction.EXPAND_ALL:
-            linkListPane.expandAll();
-            break;
+        // case JDAction.COLLAPSE_ALL:
+        // linkListPane.collapseAll();
+        // break;
+        // case JDAction.EXPAND_ALL:
+        // linkListPane.expandAll();
+        // break;
         case JDAction.APP_ALLOW_RECONNECT:
             logger.finer("Allow Reconnect");
             boolean checked = !JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false);

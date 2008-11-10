@@ -43,7 +43,6 @@ public class JDAction extends AbstractAction {
     public static final int APP_CONFIGURATION = 18;
     public static final int APP_EXIT = 16;
     public static final int APP_RESTART = 161;
-    // public static final int APP_INSTALL_JDU = 34;
     public static final int APP_LOAD_CONTAINER = 15;
     public static final int APP_LOAD_DLC = 23;
     public static final int APP_LOG = 17;
@@ -59,8 +58,8 @@ public class JDAction extends AbstractAction {
     public static final int ITEMS_DISABLE = 5;
     public static final int ITEMS_DND = 9;
     public static final int ITEMS_ENABLE = 6;
-    public static final int EXPAND_ALL = 13;
-    public static final int COLLAPSE_ALL = 14;
+    // public static final int EXPAND_ALL = 13;
+    // public static final int COLLAPSE_ALL = 14;
     public static final int ITEMS_MOVE_BOTTOM = 4;
     public static final int ITEMS_MOVE_DOWN = 2;
     public static final int ITEMS_MOVE_TOP = 3;
