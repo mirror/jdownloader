@@ -34,6 +34,7 @@ public class LinkBucks extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
+        br.setFollowRedirects(true);
         br.getPage(parameter);
         String link = br.getRegex(Pattern.compile("initLink.*?\\(.*'(.*?)'\\)</script>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (link == null) {
