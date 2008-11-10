@@ -273,11 +273,6 @@ public class SingleDownloadController extends Thread {
                 controller.loadContainerFile(new File(downloadLink.getFileOutput()));
             }
         }
-        // if
-        // (JDUtilities.getConfiguration().getBooleanProperty(Unrar.PROPERTY_ENABLED,
-        // true)) {
-        // controller.getUnrarModule().interact(downloadLink);
-        // }
 
     }
 

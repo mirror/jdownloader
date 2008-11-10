@@ -24,7 +24,6 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.net.URL;
 import java.util.logging.Logger;
 
@@ -40,8 +39,6 @@ import javax.swing.WindowConstants;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class JHelpDialog extends JDialog implements ActionListener {
 
@@ -77,7 +74,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
             public boolean doAction() {
                 try {
                     JLinkButton.openURL(url);
-          
+
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

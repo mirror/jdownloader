@@ -25,7 +25,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.IOException;
 import java.util.logging.Logger;
 
 import javax.swing.JButton;
@@ -40,8 +39,6 @@ import javax.swing.event.HyperlinkListener;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class CountdownConfirmDialog extends JDialog implements ActionListener, HyperlinkListener {
 
@@ -253,7 +250,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {
                 JLinkButton.openURL(e.getURL());
-           
+
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();

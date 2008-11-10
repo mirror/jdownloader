@@ -30,7 +30,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -78,9 +77,6 @@ import jd.utils.JDUtilities;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.tree.TreeModelSupport;
-
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class DownloadTreeTable extends JXTreeTable implements WindowFocusListener, TreeExpansionListener, TreeSelectionListener, MouseListener, ActionListener, MouseMotionListener, KeyListener {
 
@@ -231,7 +227,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
                 try {
                     JLinkButton.openURL(link.getBrowserUrl());
-             
+
                 } catch (Exception e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();

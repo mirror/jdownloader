@@ -600,8 +600,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionLog;
 
-    // private JDAction actionPasswordlist;
-
     private JDAction actionPause;
 
     private JDAction actionReconnect;
@@ -609,8 +607,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JDAction actionSaveDLC;
 
     private JDAction actionStartStopDownload;
-
-    // private JDAction actionUnrar;
 
     private JDAction actionUpdate;
 
@@ -820,17 +816,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, btnPause.isSelected()));
             btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
             break;
-        // case JDAction.APP_UNRAR:
-        // logger.finer("Unrar");
-        // JDUtilities.getController().getUnrarModule().interact(null);
-        // break;
         case JDAction.APP_CLIPBOARD:
             logger.finer("Clipboard");
             ClipboardHandler.getClipboard().toggleActivation();
             break;
-        // case JDAction.APP_PASSWORDLIST:
-        // new JDUnrarPasswordListDialog(frame).setVisible(true);
-        // break;
         case JDAction.APP_START_STOP_DOWNLOADS:
             logger.finer("Start Stop Downloads");
             startStopDownloads();
@@ -1274,15 +1263,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public String getCaptchaCodeFromUser(final Plugin plugin, final File captchaAddress, final String def) {
-
-        // SwingUtilities.invokeLater(new Runnable() {
-        // public void run() {
         CaptchaDialog captchaDialog = new CaptchaDialog(frame, plugin, captchaAddress, def);
 
         logger.info("Returned: " + captchaDialog.getCaptchaText());
         return captchaDialog.getCaptchaText();
-        // }});
-        // return "";
     }
 
     private String getClipBoardImage() {
@@ -1291,7 +1275,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         } else {
             return JDTheme.V("gui.images.clipboardoff");
         }
-
     }
 
     private String getDoReconnectImage() {
@@ -1316,7 +1299,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         } else {
             return JDTheme.V("gui.images.stop_after");
         }
-
     }
 
     private String getStartStopDownloadImage() {
@@ -1339,7 +1321,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         if (progressBar.getControllers().size() > 0) {
             splitpane.setDividerLocation(0.8);
-
         }
     }
 
@@ -1362,12 +1343,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionRestart = new JDAction(this, JDTheme.V("gui.images.exit"), "action.restart", JDAction.APP_RESTART);
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
-        // actionUnrar = new JDAction(this,
-        // JDTheme.V("gui.images.config.unrar"), "action.unrar",
-        // JDAction.APP_UNRAR);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
-        // actionPasswordlist = new JDAction(this, null, "action.passwordlist",
-        // JDAction.APP_PASSWORDLIST);
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
         actionUpdate = new JDAction(this, JDTheme.V("gui.images.update_manager"), "action.update", JDAction.APP_UPDATE);
@@ -1425,9 +1401,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         menExtra.add(SimpleGUI.createMenuItem(actionConfig));
         menExtra.addSeparator();
-        // menExtra.add(SimpleGUI.createMenuItem(actionUnrar));
-        // menExtra.add(SimpleGUI.createMenuItem(actionPasswordlist));
-        // menExtra.addSeparator();
         menExtra.add(SimpleGUI.createMenuItem(actionDnD));
 
         menHelp.add(menViewLog);

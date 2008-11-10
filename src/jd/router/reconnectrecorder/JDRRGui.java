@@ -27,7 +27,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.io.IOException;
 
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -47,8 +46,6 @@ import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
@@ -151,7 +148,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
             try {
                 JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
-            
+
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();

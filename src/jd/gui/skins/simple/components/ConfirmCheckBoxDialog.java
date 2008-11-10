@@ -22,7 +22,6 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -35,8 +34,6 @@ import javax.swing.event.HyperlinkListener;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 /**
  * Dieser Dialog wird angezeigt, wenn ein Download mit einem Plugin getätigt
@@ -92,7 +89,7 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
                     if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                         try {
                             JLinkButton.openURL(e.getURL());
-                    
+
                         } catch (Exception e1) {
                             // TODO Auto-generated catch block
                             e1.printStackTrace();

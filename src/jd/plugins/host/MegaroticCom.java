@@ -65,11 +65,7 @@ public class MegaroticCom extends PluginForHost {
 
     public MegaroticCom(PluginWrapper wrapper) {
         super(wrapper);
- 
     }
-
-
- 
 
     public String getAGBLink() {
         return "http://www.megarotic.com/terms/";
@@ -93,14 +89,14 @@ public class MegaroticCom extends PluginForHost {
     }
 
     public String getVersion() {
-        return getVersion("$Revision: 3544 $");
+        return getVersion("$Revision$");
     }
 
     public void handleFree(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         getFileInformation(parameter);
         DownloadLink downloadLink = (DownloadLink) parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");        
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         br.setFollowRedirects(true);
 
         br.setCookie(parameter.getDownloadURL(), "l", "de");

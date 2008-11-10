@@ -26,7 +26,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.io.IOException;
 import java.util.logging.Logger;
 
 import javax.swing.ImageIcon;
@@ -41,8 +40,6 @@ import javax.swing.event.HyperlinkListener;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class ClickPositionDialog extends JDialog implements ActionListener, HyperlinkListener, MouseListener {
 
@@ -173,7 +170,7 @@ public class ClickPositionDialog extends JDialog implements ActionListener, Hype
 
             try {
                 JLinkButton.openURL(e.getURL());
-       
+
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();

@@ -52,8 +52,6 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.LogFormatter;
 import jd.utils.Upload;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann.
@@ -207,7 +205,7 @@ public class LogDialog extends JFrame implements ActionListener {
 
                     try {
                         JLinkButton.openURL(url);
-                  
+
                     } catch (Exception e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();

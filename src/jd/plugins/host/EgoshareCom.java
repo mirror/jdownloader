@@ -4,9 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
@@ -16,6 +13,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 public class EgoshareCom extends PluginForHost {
 
@@ -46,7 +46,7 @@ public class EgoshareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3397 $");
+        return getVersion("$Revision$");
     }
 
     @Override

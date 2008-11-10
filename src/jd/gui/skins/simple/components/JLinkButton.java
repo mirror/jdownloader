@@ -24,7 +24,6 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.EventObject;
@@ -317,7 +316,7 @@ public class JLinkButton extends JButton {
             public void actionPerformed(ActionEvent e) {
                 try {
                     JLinkButton.openURL(getLinkURL());
-             
+
                 } catch (Exception e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
@@ -375,7 +374,7 @@ public class JLinkButton extends JButton {
             public void actionPerformed(ActionEvent e) {
                 try {
                     JLinkButton.openURL(getLinkURL());
-             
+
                 } catch (Exception e1) {
                     // TODO Auto-generated catch block
                     e1.printStackTrace();
@@ -447,13 +446,13 @@ public class JLinkButton extends JButton {
                 if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
                     try {
                         openURL(e.getURL());
-                
+
                     } catch (Exception e1) {
                         // TODO Auto-generated catch block
                         e1.printStackTrace();
                     }
                 }
- 
+
             }
         };
     }

@@ -1049,7 +1049,6 @@ public class JDUtilities {
         return "";
     }
 
-
     /**
      * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
@@ -1107,8 +1106,6 @@ public class JDUtilities {
         }
         return logger;
     }
-
-
 
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
@@ -1670,7 +1667,7 @@ public class JDUtilities {
             f.close();
             return true;
         } catch (Exception e) {
-            // e.printStackTrace();
+            e.printStackTrace();
             return false;
         }
     }
@@ -1721,7 +1718,7 @@ public class JDUtilities {
         }
         return new String[] { password };
     }
- 
+
     public static String passwordArrayToString(String[] passwords) {
         LinkedList<String> pws = new LinkedList<String>();
         for (int i = 0; i < passwords.length; i++) {
@@ -1744,6 +1741,5 @@ public class JDUtilities {
         return ret;
 
     }
-
 
 }

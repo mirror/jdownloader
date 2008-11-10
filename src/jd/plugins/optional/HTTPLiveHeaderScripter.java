@@ -27,7 +27,6 @@ import java.awt.event.FocusEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -78,9 +77,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class HTTPLiveHeaderScripter extends PluginOptional {
     public HTTPLiveHeaderScripter(PluginWrapper wrapper) {
@@ -137,7 +133,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         } else if (e.getSource() == menHelpWiki) {
             try {
                 JLinkButton.openURL(JDLocale.L("plugins.optional.httpliveheaderscripter.gui.wikilink", "http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen"));
-         
+
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();

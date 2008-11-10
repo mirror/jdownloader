@@ -210,8 +210,6 @@ public class JDController implements ControlListener, UIListener {
      */
     private UIInterface uiInterface;
 
-    // private Unrar unrarModule;
-
     private Vector<Vector<String>> waitingUpdates = new Vector<Vector<String>>();
 
     /**
@@ -258,7 +256,7 @@ public class JDController implements ControlListener, UIListener {
 
     public void addLink(DownloadLink link) {
         int index;
-     
+
         synchronized (packages) {
             if ((index = packages.indexOf(link.getFilePackage())) >= 0) {
 
@@ -1000,10 +998,6 @@ public class JDController implements ControlListener, UIListener {
         return uiInterface;
     }
 
-    // public Unrar getUnrarModule() {
-    // return unrarModule;
-    // }
-
     public Vector<Vector<String>> getWaitingUpdates() {
         return waitingUpdates;
 
@@ -1651,7 +1645,6 @@ public class JDController implements ControlListener, UIListener {
 
     public void setLogFileWriter(BufferedWriter bufferedWriter) {
         fileLogger = bufferedWriter;
-
     }
 
     /**
@@ -1665,17 +1658,10 @@ public class JDController implements ControlListener, UIListener {
         }
         this.uiInterface = uiInterface;
         uiInterface.addUIListener(this);
-
     }
-
-    // public void setUnrarModule(Unrar instance) {
-    // unrarModule = instance;
-    //
-    // }
 
     public void setWaitingUpdates(Vector<Vector<String>> files) {
         waitingUpdates = files;
-
     }
 
     /**
@@ -1883,7 +1869,7 @@ public class JDController implements ControlListener, UIListener {
         }
         return ret;
     }
-    
+
     public ArrayList<DownloadLink> getDownloadLinksByPathPattern(String matcher) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         try {

@@ -746,10 +746,12 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private void changed(boolean b) {
-        if (b) {
-            frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [ * " + languageFile.getAbsolutePath() + "]");
-        } else {
-            frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
+        if (b != changed) {
+            if (b) {
+                frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [ * " + languageFile.getAbsolutePath() + "]");
+            } else {
+                frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor") + " [" + languageFile.getAbsolutePath() + "]");
+            }
         }
         changed = b;
     }

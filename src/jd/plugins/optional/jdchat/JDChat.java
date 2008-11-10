@@ -64,9 +64,6 @@ import jd.utils.JDUtilities;
 import org.schwering.irc.lib.IRCConnection;
 import org.schwering.irc.lib.IRCUser;
 
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
-
 public class JDChat extends PluginOptional implements ControlListener {
     protected static final long AWAY_TIMEOUT = 15 * 60 * 1000;
     private static final String CHANNEL = "#jDownloader";;
@@ -914,7 +911,7 @@ public class JDChat extends PluginOptional implements ControlListener {
                     } else {
                         try {
                             JLinkButton.openURL(e.getURL());
-                     
+
                         } catch (Exception e1) {
                             // TODO Auto-generated catch block
                             e1.printStackTrace();
@@ -1128,8 +1125,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void onExit() {
-        if(conn!=null)
-        conn.close();
+        if (conn != null) conn.close();
     }
 
     public void onMode(IRCUser u, char op, char mod, String arg) {

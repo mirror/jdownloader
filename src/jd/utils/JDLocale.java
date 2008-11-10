@@ -18,10 +18,8 @@ package jd.utils;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.Map.Entry;
 
 import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
@@ -156,26 +154,26 @@ public class JDLocale {
         return dat;
     }
 
-    private static void saveData(File lc, HashMap<String, String> dat) {
-
-        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) return;
-
-        if (lc == null) lc = localeFile;
-        if (dat == null) dat = data;
-
-        Vector<String> ret = new Vector<String>();
-        for (Entry<String, String> i : dat.entrySet()) {
-            ret.add(i.getKey() + " = " + i.getValue().replace("\r", "\\r").replace("\n", "\\n"));
-        }
-        Collections.sort(ret);
-
-        String str = "";
-        for (int x = 0; x < ret.size(); x++) {
-            str += ret.get(x) + System.getProperty("line.separator");
-        }
-        JDUtilities.writeLocalFile(lc, str);
-
-    }
+//    private static void saveData(File lc, HashMap<String, String> dat) {
+//
+//        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) return;
+//
+//        if (lc == null) lc = localeFile;
+//        if (dat == null) dat = data;
+//
+//        Vector<String> ret = new Vector<String>();
+//        for (Entry<String, String> i : dat.entrySet()) {
+//            ret.add(i.getKey() + " = " + i.getValue().replace("\r", "\\r").replace("\n", "\\n"));
+//        }
+//        Collections.sort(ret);
+//
+//        String str = "";
+//        for (int x = 0; x < ret.size(); x++) {
+//            str += ret.get(x) + System.getProperty("line.separator");
+//        }
+//        JDUtilities.writeLocalFile(lc, str);
+//
+//    }
 
     public static void setLocale(String lID) {
         if (data != null && localeFile != null) return;

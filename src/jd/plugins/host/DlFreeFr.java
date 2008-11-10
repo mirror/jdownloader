@@ -46,7 +46,7 @@ public class DlFreeFr extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3397 $");
+        return getVersion("$Revision$");
     }
 
     @Override

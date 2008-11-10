@@ -21,7 +21,6 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -34,8 +33,6 @@ import javax.swing.event.HyperlinkListener;
 
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 /**
  * Diese Klasse ist wie die Optionspane mit textfeld nur mit textarea
@@ -116,7 +113,7 @@ public class HTMLDialog extends JDialog implements ActionListener, HyperlinkList
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {
                 JLinkButton.openURL(e.getURL());
-        
+
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();

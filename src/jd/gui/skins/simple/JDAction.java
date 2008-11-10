@@ -43,18 +43,16 @@ public class JDAction extends AbstractAction {
     public static final int APP_CONFIGURATION = 18;
     public static final int APP_EXIT = 16;
     public static final int APP_RESTART = 161;
-//    public static final int APP_INSTALL_JDU = 34;
+    // public static final int APP_INSTALL_JDU = 34;
     public static final int APP_LOAD_CONTAINER = 15;
     public static final int APP_LOAD_DLC = 23;
     public static final int APP_LOG = 17;
-    // public static final int APP_PASSWORDLIST = 27;
     public static final int APP_PAUSE_DOWNLOADS = 22;
     public static final int APP_RECONNECT = 19;
     public static final int APP_SAVE_DLC = 24;
     public static final int APP_SHOW_LOG = 11;
     public static final int APP_START_STOP_DOWNLOADS = 10;
     public static final int APP_STOP_DOWNLOADS = 12;
-    // public static final int APP_UNRAR = 26;
     public static final int APP_UPDATE = 20;
 
     public static final int ITEMS_ADD = 7;
@@ -83,7 +81,6 @@ public class JDAction extends AbstractAction {
      * serialVersionUID
      */
     private static final long serialVersionUID = 7393495345332708426L;
-    
 
     private KeyStroke accelerator;
     private int actionID;

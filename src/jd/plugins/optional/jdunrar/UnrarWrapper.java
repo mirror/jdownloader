@@ -29,9 +29,7 @@ import jd.utils.DynByteBuffer;
 import jd.utils.Executer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Jobber;
 import jd.utils.ProcessListener;
-import jd.utils.Jobber.WorkerListener;
 
 /**
  * Die klasse dient zum verpacken der Unrar binary.
@@ -47,7 +45,6 @@ public class UnrarWrapper extends Thread {
     private static final int STARTED = 1 << 3;
     private static final int NO_FILES_FOUND = 1 << 4;
     private static final int FAILED = 1 << 5;
-    @SuppressWarnings("unused")
     private static final int FAILED_CRC = 1 << 6;
     private static final boolean DEBUG = true;
     private ArrayList<UnrarListener> listener = new ArrayList<UnrarListener>();
@@ -345,7 +342,7 @@ public class UnrarWrapper extends Thread {
 
         File fileFile = new File(this.file.getParentFile(), System.currentTimeMillis() + ".unrartmp");
         JDUtilities.writeLocalFile(fileFile, file.getFilepath());
-        fileFile.deleteOnExit(); 
+        fileFile.deleteOnExit();
 
         if (file.getSize() < 2097152) {
             int c = 0;
@@ -506,11 +503,11 @@ public class UnrarWrapper extends Thread {
                     name = name.replaceFirst(".", "");
                     long size = Long.parseLong(matchervolumes.group(2));
                     this.isProtected = true;
-//                    if (pass != null && password != pass) {
-//
-//                        this.password = pass;
-//                        fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
-//                    }
+                    // if (pass != null && password != pass) {
+                    //
+                    // this.password = pass;
+                    // fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
+                    // }
                     if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
                         tmp = new ArchivFile(name);
                         tmp.setSize(size);
@@ -615,7 +612,7 @@ public class UnrarWrapper extends Thread {
                     while (matchervolumes.find()) {
 
                         String name = matchervolumes.group(1);
-                       name= Encoding.UTF8Encode(name);
+                        name = Encoding.UTF8Encode(name);
                         if (name.matches("\\*.*")) {
                             name = name.replaceFirst(".", "");
                             long size = Long.parseLong(matchervolumes.group(2));
@@ -671,7 +668,6 @@ public class UnrarWrapper extends Thread {
 
         }
     }
-      
 
     /**
      * Setzt den Pfad zur unrar.exe

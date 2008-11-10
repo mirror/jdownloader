@@ -23,7 +23,6 @@ import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map.Entry;
@@ -35,8 +34,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import jd.utils.JDTheme;
-import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;
-import edu.stanford.ejalbert.exception.UnsupportedOperatingSystemException;
 
 public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkListener {
 
@@ -146,7 +143,7 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {
                 JLinkButton.openURL(e.getURL());
-          
+
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
                 e1.printStackTrace();
