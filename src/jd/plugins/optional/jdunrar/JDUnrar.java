@@ -582,7 +582,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         case 1002:
 
-            link = this.findStartLink((DownloadLink) source.getProperty("LINK"));
+            link = (DownloadLink) source.getProperty("LINK");
             if (link == null) { return; }
             String path = link.getStringProperty("EXTRACTEDPATH");
 
@@ -862,6 +862,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     File dl = this.getExtractToPath(wrapper.getDownloadLink());
                     wrapper.setExtractTo(dl);
                     this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, usesub);
+                    
+                    ArrayList<DownloadLink> linkList = this.getArchiveList(wrapper.getDownloadLink());
+                    for (DownloadLink l : linkList) {
+                        if (l == null) continue;
+                        l.setProperty("EXTRACTEDPATH", dl.getAbsolutePath());
+                    }
 
                 }
             }
