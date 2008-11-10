@@ -24,11 +24,9 @@ import jd.event.ControlListener;
 
 public abstract class PluginOptional extends Plugin implements ControlListener {
 
- 
-
     public PluginOptional(PluginWrapper wrapper) {
         super(wrapper);
-     
+
     }
 
     public static final int ADDON_INTERFACE_VERSION = 2;
@@ -47,13 +45,10 @@ public abstract class PluginOptional extends Plugin implements ControlListener {
 
     }
 
- 
     @Override
     public String getLinkName() {
         return null;
     }
-
- 
 
     public abstract String getRequirements();
 

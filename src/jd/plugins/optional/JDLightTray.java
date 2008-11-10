@@ -22,7 +22,6 @@ import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
 import java.awt.TrayIcon;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -36,6 +35,8 @@ import javax.swing.SwingUtilities;
 
 import jd.Main;
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
@@ -46,15 +47,19 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
 public class JDLightTray extends PluginOptional implements MouseListener, MouseMotionListener, WindowListener {
+
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLIGHTTRAY");
 
     private static final String PROPERTY_START_MINIMIZED = "PROPERTY_START_MINIMIZED";
 
     private static final String PROPERTY_MINIMIZE_TO_TRAY = "PROPERTY_MINIMIZE_TO_TRAY";
 
+    private static final String PROPERTY_SINGLE_CLICK = "PROPERTY_SINGLE_CLICK";
+
     private TrayIconPopup trayIconPopup;
 
     private TrayIcon trayIcon;
+
     private JFrame guiFrame;
 
     public static int getAddonInterfaceVersion() {
@@ -63,36 +68,12 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     public JDLightTray(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() instanceof MenuItem) {
-
-            switch (((MenuItem) e.getSource()).getActionID()) {
-            case 0:
-                subConfig.setProperty(PROPERTY_START_MINIMIZED, !subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false));
-                subConfig.save();
-                break;
-            case 1:
-                subConfig.setProperty(PROPERTY_MINIMIZE_TO_TRAY, !subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, false));
-                subConfig.save();
-            }
-        }
+        initConfig();
     }
 
     @Override
     public ArrayList<MenuItem> createMenuitems() {
-        ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        MenuItem m;
-
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized"), 0).setActionListener(this));
-        m.setSelected(subConfig.getBooleanProperty(PROPERTY_START_MINIMIZED, false));
-
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.optional.JDLightTray.minimizetotray", "Minimize to tray"), 1).setActionListener(this));
-        m.setSelected(subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true));
-
-        return menu;
+        return null;
     }
 
     @Override
@@ -132,6 +113,13 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             return false;
         }
         return true;
+    }
+
+    public void initConfig() {
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_MINIMIZE_TO_TRAY, JDLocale.L("plugins.optional.JDLightTray.minimizetotray", "Minimize to tray")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_START_MINIMIZED, JDLocale.L("plugins.optional.JDLightTray.startMinimized", "Start minimized")).setDefaultValue(false));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SINGLE_CLICK, JDLocale.L("plugins.optional.JDLightTray.singleClick", "Toggle window status with single click")).setDefaultValue(false));
     }
 
     public void controlEvent(ControlEvent event) {
@@ -175,7 +163,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
 
-            if (e.getClickCount() > 1 && !SwingUtilities.isRightMouseButton(e)) {
+            if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
                 guiFrame.setVisible(!guiFrame.isVisible());
                 if (guiFrame.isVisible()) guiFrame.setState(JFrame.NORMAL);
             } else {
