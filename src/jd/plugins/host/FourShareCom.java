@@ -54,7 +54,7 @@ public class FourShareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -68,7 +68,6 @@ public class FourShareCom extends PluginForHost {
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
         try {
-
             handleFree0(downloadLink);
             decreaseCounter();
         } catch (Exception e) {
@@ -80,7 +79,7 @@ public class FourShareCom extends PluginForHost {
 
     public void handleFree0(DownloadLink downloadLink) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\"dbtn\" tabindex=\"1\">").getMatch(0);
+        String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
 
         br.getPage(url);
         this.sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
@@ -92,8 +91,6 @@ public class FourShareCom extends PluginForHost {
             Thread.sleep(100);
         }
         increaseCounter();
-
-        ;
         dl = RAFDownload.download(downloadLink, br.createGetRequest(url), false, 1);
 
         String error = new Regex(dl.connect().getURL(), "\\?error(.*)").getMatch(0);
