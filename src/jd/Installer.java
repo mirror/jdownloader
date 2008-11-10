@@ -43,7 +43,7 @@ public class Installer {
 
         configContainer = new ConfigContainer(this, "Language");
         configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME), SimpleGUI.PARAM_LOCALE, JDLocale.getLocaleIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.language", "Sprache")).setDefaultValue(Locale.getDefault()));
-        SimpleGUI.showConfigDialog(null, configContainer, true);
+        SimpleGUI.showConfigDialog(null, configContainer);
         if (JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE) == null) {
             JDUtilities.getLogger().severe("language not set");
             this.aborted = true;
@@ -53,7 +53,7 @@ public class Installer {
 
         configContainer = new ConfigContainer(this, "Download");
         configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath()));
-        SimpleGUI.showConfigDialog(null, configContainer, true);
+        SimpleGUI.showConfigDialog(null, configContainer);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
             JDUtilities.getLogger().severe("downloaddir not set");
             this.aborted = true;

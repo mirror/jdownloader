@@ -131,8 +131,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         } else if (e.getSource() == enableDisable) {
             int rowIndex = table.getSelectedRow();
             OptionalPluginWrapper plgWrapper = pluginsOptional.get(rowIndex);
-            if((plgWrapper.getFlag()&OptionalPluginWrapper.FLAG_ALWAYS_ENABLED)>0){
-                JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive","The addon %s cannot be disabled.",plgWrapper.getClassName()));
+            if ((plgWrapper.getFlag() & OptionalPluginWrapper.FLAG_ALWAYS_ENABLED) > 0) {
+                JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive", "The addon %s cannot be disabled.", plgWrapper.getClassName()));
                 return;
             }
             boolean b = configuration.getBooleanProperty(plgWrapper.getConfigParamKey(), false);

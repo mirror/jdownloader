@@ -55,7 +55,7 @@ public class DatabaseConnector implements Serializable {
     public DatabaseConnector() {
         try {
             logger.info("Loading database");
-            new Exception().printStackTrace();
+            // new Exception().printStackTrace();
             con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
             con.setAutoCommit(true);
             con.createStatement().executeUpdate("SET LOGSIZE 1");

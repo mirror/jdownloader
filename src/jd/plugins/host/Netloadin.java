@@ -233,7 +233,7 @@ public class Netloadin extends PluginForHost {
         br.getPage("http://netload.in/index.php?id=2");
 
         // String login =
-        //ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
+        // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
         // 1).trim();
         String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
 
@@ -244,7 +244,7 @@ public class Netloadin extends PluginForHost {
         if (hours != null) res += Long.parseLong(hours.trim()) * 60 * 60 * 1000;
         res += new Date().getTime();
 
-        logger.info(new Date(res) + "");
+        // logger.info(new Date(res) + "");
         ai.setValidUntil(res);
 
         return ai;

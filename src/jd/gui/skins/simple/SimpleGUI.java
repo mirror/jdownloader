@@ -777,7 +777,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public void actionPerformed(ActionEvent e) {
         JDSounds.PT("sound.gui.clickToolbar");
-        ConfigPanelAddons config;
         switch (e.getID()) {
         case JDAction.ITEMS_MOVE_UP:
         case JDAction.ITEMS_MOVE_DOWN:
@@ -887,17 +886,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
             break;
         case JDAction.APP_OPEN_OPT_CONFIG:
-
-            config = new ConfigPanelAddons(JDUtilities.getConfiguration());
-            JPanel panel = new JPanel(new BorderLayout());
-            panel.add(new JPanel(), BorderLayout.NORTH);
-            panel.add(config, BorderLayout.CENTER);
-
-            ConfigurationPopup pop = new ConfigurationPopup(frame, config, panel);
-            pop.setModal(true);
-            pop.setAlwaysOnTop(true);
-            pop.setLocation(JDUtilities.getCenterOfComponent(frame, pop));
-            pop.setVisible(true);
+            SimpleGUI.showConfigDialog(frame, new ConfigPanelAddons(JDUtilities.getConfiguration()));
+            // SimpleGUI.showConfigDialog(frame, new
+            // SubPanelPluginsOptional(JDUtilities.getConfiguration()));
             break;
         case JDAction.ITEMS_REMOVE_PACKAGES:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
@@ -1660,20 +1651,18 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static void showConfigDialog(Frame parent, ConfigContainer container) {
-        showConfigDialog(parent, container, false);
+        showConfigDialog(parent, new ConfigEntriesPanel(container));
     }
 
-    public static void showConfigDialog(Frame parent, ConfigContainer container, boolean alwaysOnTop) {
+    public static void showConfigDialog(Frame parent, ConfigPanel config) {
         // logger.info("ConfigDialog");
-        ConfigPanel config = new ConfigEntriesPanel(container);
-
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JPanel(), BorderLayout.NORTH);
         panel.add(config, BorderLayout.CENTER);
 
         ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
         pop.setModal(true);
-        pop.setAlwaysOnTop(alwaysOnTop);
+        pop.setAlwaysOnTop(true);
         pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
         pop.setVisible(true);
     }
