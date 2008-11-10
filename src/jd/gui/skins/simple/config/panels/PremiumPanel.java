@@ -17,6 +17,11 @@
 package jd.gui.skins.simple.config.panels;
 
 import java.awt.Color;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.ClipboardOwner;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
@@ -86,7 +91,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
     private JCheckBox[] enables;
     private JTextField[] usernames;
-    private JPasswordField[] passwords;
+    private JDPasswordField[] passwords;
     private JTextField[] stati;
     private ArrayList<Account> accounts;
     private JLabel[] usernamesLabels;
@@ -163,7 +168,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         int accountNum = configEntry.getEnd();
         enables = new JCheckBox[accountNum];
         usernames = new JTextField[accountNum];
-        passwords = new JPasswordField[accountNum];
+        passwords = new JDPasswordField[accountNum];
         usernamesLabels = new JLabel[accountNum];
         passwordsLabels = new JLabel[accountNum];
         stati = new JTextField[accountNum];
@@ -213,9 +218,9 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             usernames[i].addFocusListener(this);
 
             add(passwordsLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-            add(passwords[i] = new JPasswordField(""), "span, gapbottom 10:10:push");
+            add(passwords[i] = new JDPasswordField(), "span, gapbottom 10:10:push");
             passwords[i].addFocusListener(this);
-
+            
             for (JCheckBox e : enables) {
                 if (e != null) e.setSelected(false);
             }
@@ -223,6 +228,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         }
         if (premiumurl != null) add(buybutton, "span, alignright");
         add(freeTrafficChart, "spanx, spany");
+        
     }
 
     public void stateChanged(ChangeEvent e) {
@@ -261,4 +267,43 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     public void focusLost(FocusEvent e) {
         createDataset();
     }
+    
+    private class JDPasswordField extends JPasswordField implements ClipboardOwner {
+    	
+		private static final long serialVersionUID = -7981118302661369727L;
+
+		public JDPasswordField() {
+    		super();
+    	}
+    	
+    	public void cut() {
+    		
+    		StringSelection stringSelection = new StringSelection( String.valueOf(this.getSelectedText()) );
+    	    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+    	    clipboard.setContents( stringSelection, this);
+    	    
+    	    String text = String.valueOf(this.getPassword());
+    	    int position = this.getSelectionStart();
+    	    String s1 = text.substring(0, position);
+    	    String s2 = text.substring(this.getSelectionEnd(), text.length());
+    	    this.setText(s1+s2);
+
+    	    this.setSelectionStart(position);
+    	    this.setSelectionEnd(position);
+
+    	}
+    	
+    	public void copy() {
+    		
+    		StringSelection stringSelection = new StringSelection( String.valueOf(this.getSelectedText()) );
+    	    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+    	    clipboard.setContents( stringSelection, this);
+
+    	}
+
+		public void lostOwnership(Clipboard arg0, Transferable arg1) {
+		}
+		
+    }
+    
 }
