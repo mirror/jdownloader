@@ -226,7 +226,7 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         }
 
         JScrollPane scrollpane = new JScrollPane(table);
-        scrollpane.setPreferredSize(new Dimension(400, 200));
+        scrollpane.setPreferredSize(new Dimension(600, 300));
 
         btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
         btnReset.addActionListener(this);
