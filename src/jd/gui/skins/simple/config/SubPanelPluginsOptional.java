@@ -108,8 +108,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
     private JButton enableDisable;
 
-    private JButton openPluginDir;
-
     private ArrayList<OptionalPluginWrapper> pluginsOptional;
 
     private JTable table;
@@ -145,8 +143,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                 plgWrapper.getPlugin().onExit();
             }
             ((SimpleGUI) JDUtilities.getGUI()).createOptionalPluginsMenuEntries();
-        } else if (e.getSource() == openPluginDir) {
-            JDUtilities.openExplorer(JDUtilities.getResourceFile("plugins"));
         }
     }
 
@@ -193,13 +189,9 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus", "An/Aus"));
         enableDisable.addActionListener(this);
 
-        openPluginDir = new JButton(JDLocale.L("gui.config.plugin.optional.btn_openDir", "Addon Ordner öffnen"));
-        openPluginDir.addActionListener(this);
-
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         bpanel.add(btnEdit);
         bpanel.add(enableDisable);
-        bpanel.add(openPluginDir);
         bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
 
         this.add(scrollpane);
