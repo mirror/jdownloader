@@ -95,9 +95,6 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
 
     private static Color PACKAGE_PROGRESS_COLOR_FONT_B;
 
-    /**
-     * serialVersionUID
-     */
     private static final long serialVersionUID = -3912572910439565199L;
 
     private DecimalFormat c = new DecimalFormat("0.00");
@@ -194,7 +191,7 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     ui.setSelectionForeground(DONE_COLOR_FONT_A);
                     ui.setSelectionBackground(DONE_COLOR_FONT_B);
                 }
-                progress.setString(dLink.getPluginProgress().getPercent() + " %");
+                progress.setString(dLink.getPluginProgress().getPercent() + "%");
                 progress.setMaximum(dLink.getPluginProgress().getTotal());
                 progress.setValue(dLink.getPluginProgress().getCurrent());
                 return progress;
@@ -245,7 +242,6 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
             return label;
         } else if (column == DownloadTreeTableModel.COL_PROGRESS && value instanceof FilePackage) {
             fp = (FilePackage) value;
-
             if (fp.isFinished()) {
                 progress.setForeground(DONE_COLOR_Package);
                 progress.setMaximum(100);
@@ -258,13 +254,8 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     ui.setSelectionForeground(PACKAGE_PROGRESS_COLOR_FONT_A);
                     ui.setSelectionBackground(PACKAGE_PROGRESS_COLOR_FONT_B);
                 }
-                if (fp.getPercent() == 0.0) {
-                    progress.setValue(0);
-                    progress.setString("- 0% -");
-                } else {
-                    progress.setValue(fp.getTotalKBLoaded());
-                    progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
-                }
+                progress.setValue(fp.getTotalKBLoaded());
+                progress.setString(c.format(fp.getPercent()) + "% (" + JDUtilities.formatKbReadable(progress.getValue()) + "/" + JDUtilities.formatKbReadable(Math.max(1, fp.getTotalEstimatedPackageSize())) + ")");
             }
             return progress;
         }

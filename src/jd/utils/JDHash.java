@@ -20,80 +20,86 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * @author astaldo/JD-Team
  */
 public class JDHash {
+
     public static String HASH_TYPE_MD5 = "md5";
+
     public static String HASH_TYPE_SHA1 = "SHA-1";
 
     /**
-     * public static String getLocalHash(File f) Gibt einen MD% Hash der file
-     * zurück
+     * Gibt einen Hash vom File zurück
      * 
      * @author JD-Team
-     * @param f
-     * @return Hashstring Md5
+     * @param arg
+     * @param type
+     * @return Hashstring
      */
-    public static String getFileHash(File f, String type) {
+    public static String getFileHash(File arg, String type) {
+        if (!arg.exists()) return null;
         try {
-            if (!f.exists()) { return null; }
-            MessageDigest md;
-            md = MessageDigest.getInstance(type);
+            MessageDigest md = MessageDigest.getInstance(type);
             byte[] b = new byte[1024];
-            InputStream in = new FileInputStream(f);
+            InputStream in = new FileInputStream(arg);
             for (int n = 0; (n = in.read(b)) > -1;) {
                 md.update(b, 0, n);
             }
-            byte[] digest = md.digest();
-            String ret = "";
-            for (byte element : digest) {
-                String tmp = Integer.toHexString(element & 0xFF);
-                if (tmp.length() < 2) {
-                    tmp = "0" + tmp;
-                }
-                ret += tmp;
-            }
             in.close();
-            return ret;
+            byte[] digest = md.digest();
+            return byteArrayToHex(digest);
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
-        return null;
     }
 
     /**
-     * Gibt den MD5 hash eines Strings zurück
+     * Gibt einen Hash vom String zurück
      * 
+     * @author JD-Team
      * @param arg
-     * @return MD% hash von arg
+     * @param type
+     * @return Hashstring
      */
     public static String getStringHash(String arg, String type) {
-        if (arg == null) { return arg; }
+        if (arg == null) return null;
         try {
             MessageDigest md = MessageDigest.getInstance(type);
             byte[] digest = md.digest(arg.getBytes());
-            String ret = "";
-            String tmp;
-            for (byte d : digest) {
-                tmp = Integer.toHexString(d & 0xFF);
-                ret += tmp.length() < 2 ? "0" + tmp : tmp;
-            }
-            return ret;
-        } catch (NoSuchAlgorithmException e) {
+            return byteArrayToHex(digest);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
         }
-        return "";
+    }
+
+    private static String byteArrayToHex(byte[] digest) {
+        String ret = "";
+        String tmp;
+        for (byte d : digest) {
+            tmp = Integer.toHexString(d & 0xFF);
+            ret += tmp.length() < 2 ? "0" + tmp : tmp;
+        }
+        return ret;
     }
 
     public static String getMD5(String arg) {
         return getStringHash(arg, HASH_TYPE_MD5);
-
     }
 
-    public static String getMD5(File res) {
-        return getFileHash(res, HASH_TYPE_MD5);
+    public static String getMD5(File arg) {
+        return getFileHash(arg, HASH_TYPE_MD5);
+    }
+
+    public static String getSHA1(String arg) {
+        return getStringHash(arg, HASH_TYPE_SHA1);
+    }
+
+    public static String getSHA1(File arg) {
+        return getFileHash(arg, HASH_TYPE_SHA1);
     }
 
 }

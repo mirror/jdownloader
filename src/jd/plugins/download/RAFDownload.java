@@ -241,13 +241,13 @@ public class RAFDownload extends DownloadInterface {
                 String hashType = null;
 
                 if (downloadLink.getMD5Hash() != null) {
-                    localHash = JDHash.getFileHash(new File(downloadLink.getFileOutput()), JDHash.HASH_TYPE_MD5);
+                    localHash = JDHash.getMD5(new File(downloadLink.getFileOutput()));
                     linkHash = downloadLink.getMD5Hash();
                     hashType = "MD5";
 
                 }
                 if (downloadLink.getSha1Hash() != null) {
-                    localHash = JDHash.getFileHash(new File(downloadLink.getFileOutput()), JDHash.HASH_TYPE_SHA1);
+                    localHash = JDHash.getSHA1(new File(downloadLink.getFileOutput()));
                     linkHash = downloadLink.getSha1Hash();
                     hashType = "SHA1";
                 }
