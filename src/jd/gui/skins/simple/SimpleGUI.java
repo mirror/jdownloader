@@ -893,7 +893,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
             break;
         case JDAction.APP_OPEN_OPT_CONFIG:
-            SimpleGUI.showConfigDialog(frame, new ConfigPanelAddons(JDUtilities.getConfiguration()));
+            SimpleGUI.showConfigDialog(frame, new ConfigPanelAddons(JDUtilities.getConfiguration()), false);
             // SimpleGUI.showConfigDialog(frame, new
             // SubPanelPluginsOptional(JDUtilities.getConfiguration()));
             break;
@@ -1659,10 +1659,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static void showConfigDialog(Frame parent, ConfigContainer container) {
-        showConfigDialog(parent, new ConfigEntriesPanel(container));
+        showConfigDialog(parent, container, false);
     }
 
-    public static void showConfigDialog(Frame parent, ConfigPanel config) {
+    public static void showConfigDialog(Frame parent, ConfigContainer container, boolean alwaysOnTop) {
+        showConfigDialog(parent, new ConfigEntriesPanel(container), alwaysOnTop);
+    }
+
+    public static void showConfigDialog(Frame parent, ConfigPanel config, boolean alwaysOnTop) {
         // logger.info("ConfigDialog");
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(new JPanel(), BorderLayout.NORTH);
@@ -1670,7 +1674,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         ConfigurationPopup pop = new ConfigurationPopup(parent, config, panel);
         pop.setModal(true);
-        pop.setAlwaysOnTop(true);
+        pop.setAlwaysOnTop(alwaysOnTop);
         pop.setLocation(JDUtilities.getCenterOfComponent(parent, pop));
         pop.setVisible(true);
     }

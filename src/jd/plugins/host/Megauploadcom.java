@@ -73,7 +73,7 @@ public class Megauploadcom extends PluginForHost {
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        this.setBrowserExclusive();        
+        this.setBrowserExclusive();
         br.setAcceptLanguage("en, en-gb;q=0.8");
 
         br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
@@ -98,10 +98,10 @@ public class Megauploadcom extends PluginForHost {
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");        
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         br.postPage("http://megaupload.com/de/", "login=" + account.getUser() + "&password=" + account.getPass());
         String cookie = br.getCookie("http://megaupload.com", "user");
-        if (cookie == null) { throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account Invalid", LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account Invalid", LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         String id = Request.parseQuery(link).get("d");
         br.setFollowRedirects(false);
         String dlUrl = "http://megaupload.com/de/?d=" + id;
@@ -148,21 +148,15 @@ public class Megauploadcom extends PluginForHost {
         LinkStatus linkStatus = parameter.getLinkStatus();
         getFileInformation(parameter);
         DownloadLink downloadLink = (DownloadLink) parameter;
-        String link = downloadLink.getDownloadURL().replaceAll("/de", "");        
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         br.setFollowRedirects(true);
 
         br.setCookie(parameter.getDownloadURL(), "l", "de");
         br.setCookie(parameter.getDownloadURL(), "v", "1");
         br.setCookie(parameter.getDownloadURL(), "ve_view", "1");
         br.getPage(link);
-        if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) {
-
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-
-        }
-        if (br.containsHTML(ERROR_FILENOTFOUND)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
-        }
+        if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        if (br.containsHTML(ERROR_FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         captchaURL = "http://" + new URL(link).getHost() + "/capgen.php" + br.getRegex(SIMPLEPATTERN_CAPTCHA_URl).getMatch(0);
         fields = HTMLParser.getInputHiddenFields(br + "", "checkverificationform", "passwordhtml");
@@ -181,33 +175,16 @@ public class Megauploadcom extends PluginForHost {
         String code = Plugin.getCaptchaCode(file, this, downloadLink);
 
         br.postPage(captchaPost, Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code);
-        if (br.getRegex(SIMPLEPATTERN_CAPTCHA_URl).getMatch(0) != null) {
-
-            linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
-            return;
-        }
+        if (br.containsHTML(SIMPLEPATTERN_CAPTCHA_URl)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
 
         String pwdata = HTMLParser.getFormInputHidden(br + "", "passwordbox", "passwordcountdown");
         if (pwdata != null && pwdata.indexOf("passkey") > 0) {
             logger.info("Password protected");
             String pass = Plugin.getUserInput(null, parameter);
-            if (pass == null) {
-
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
-
-                return;
-            }
 
             br.postPage("http://" + new URL(link).getHost() + "/de/", pwdata + "&pass=" + pass);
 
-            if (br.containsHTML(PATTERN_PASSWORD_WRONG)) {
-                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
-
-                return;
-            }
-
+            if (br.containsHTML(PATTERN_PASSWORD_WRONG)) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
         }
         sleep(PENDING_WAITTIME, downloadLink);
 
