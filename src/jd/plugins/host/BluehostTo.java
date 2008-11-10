@@ -61,8 +61,8 @@ public class BluehostTo extends PluginForHost {
 
         br.submitForm(login);
 
-        if (!br.getRedirectLocation().contains("interface.php")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
-
+        if (!br.getRedirectLocation().contains("interface")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
+br.setFollowRedirects(true);
         br.getPage((String) null);
         String trafficLeft = br.getXPathElement("/html/body/div[2]/div/ul[2]/div/div").trim();
         XPath path = new XPath(br.toString(), "/html/body/div[2]/div/ul[2]/div[4]/center");
