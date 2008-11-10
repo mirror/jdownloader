@@ -30,6 +30,12 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDragEvent;
+import java.awt.dnd.DropTargetDropEvent;
+import java.awt.dnd.DropTargetEvent;
+import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -43,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -126,7 +133,7 @@ import org.jdesktop.swingx.JXTitledSeparator;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
-public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener {
+public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener, DropTargetListener {
 
     public static String WAITING_USER_IO = JDLocale.L("gui.linkgrabber.waitinguserio", "Waiting for user input");
 
@@ -572,8 +579,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionHelp;
 
-    // private JDAction actionInstallJDU;
     private JDAction actionOptionalConfig;
+
     // private JDAction actionExpandAll;
 
     // private JDAction actionCollapseAll;
@@ -1010,6 +1017,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         btnReconnect.setSelected(false);
         btnClipBoard = createMenuButton(actionClipBoard);
         btnClipBoard.setSelected(false);
+        new DropTarget(btnClipBoard, this);
 
         toolBar.setFloatable(false);
         toolBar.setRollover(true);
@@ -1830,6 +1838,40 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public void setStatusBarText(String text) {
         statusBar.setText(text);
+    }
+
+    public void dragEnter(DropTargetDragEvent dtde) {
+    }
+
+    public void dragExit(DropTargetEvent dte) {
+    }
+
+    public void dragOver(DropTargetDragEvent dtde) {
+    }
+
+    @SuppressWarnings("unchecked")
+    public void drop(DropTargetDropEvent dtde) {
+        logger.info("Drag: DROP " + dtde.getDropAction() + " : " + dtde.getSourceActions() + " - " + dtde.getSource());
+        try {
+            Transferable tr = dtde.getTransferable();
+            dtde.acceptDrop(dtde.getDropAction());
+            if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
+                String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
+                fireUIEvent(new UIEvent(this, UIEvent.UI_LINKS_TO_PROCESS, files));
+            } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+                List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
+                for (int t = 0; t < list.size(); t++) {
+                    fireUIEvent(new UIEvent(this, UIEvent.UI_LOAD_LINKS, list.get(t)));
+                }
+            } else {
+                logger.info("Unsupported Drop-Type");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void dropActionChanged(DropTargetDragEvent dtde) {
     }
 
 }

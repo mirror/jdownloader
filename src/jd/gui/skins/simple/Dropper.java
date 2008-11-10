@@ -23,7 +23,6 @@ import java.awt.event.WindowListener;
 
 import javax.swing.JDialog;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
 import javax.swing.WindowConstants;
 
 import jd.event.UIListener;
@@ -49,13 +48,11 @@ public class Dropper extends JDialog implements WindowListener {
         super();
         setModal(false);
         setLayout(new GridBagLayout());
-        JPanel p = new JPanel(new GridBagLayout());
         addWindowListener(this);
         target = new DragNDrop();
         label = new JLabel(JDLocale.L("gui.droptarget.label", "Ziehe Links auf mich!"));
-        JDUtilities.addToGridBag(p, target, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
-        JDUtilities.addToGridBag(p, label, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
-        JDUtilities.addToGridBag(this, p, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.BOTH, GridBagConstraints.CENTER);
+        JDUtilities.addToGridBag(this, target, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
+        JDUtilities.addToGridBag(this, label, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 0, 0, null, GridBagConstraints.NONE, GridBagConstraints.SOUTH);
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         setSize(50, 70);
         setResizable(false);
@@ -99,28 +96,22 @@ public class Dropper extends JDialog implements WindowListener {
     public void windowActivated(WindowEvent e) {
     }
 
-  
     public void windowClosed(WindowEvent e) {
     }
 
-  
     public void windowClosing(WindowEvent e) {
         setVisible(false);
     }
 
-
     public void windowDeactivated(WindowEvent e) {
     }
 
-   
     public void windowDeiconified(WindowEvent e) {
     }
-
 
     public void windowIconified(WindowEvent e) {
     }
 
-   
     public void windowOpened(WindowEvent e) {
     }
 }

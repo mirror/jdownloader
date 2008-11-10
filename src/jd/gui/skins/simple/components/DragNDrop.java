@@ -26,7 +26,6 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -44,15 +43,10 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class DragNDrop extends JComponent implements DropTargetListener {
-  
-    
+
     private static final long serialVersionUID = -3280613281656283625L;
 
-    private boolean filled = false;
-
-    private Image imageEmpty;
-
-    private Image imageFilled;
+    private Image image;
 
     private Logger logger = JDUtilities.getLogger();
 
@@ -63,15 +57,12 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      */
     public Vector<UIListener> uiListener = null;
 
-     // Erzeugt ein neues Drag&Drop Objekt
-   
     public DragNDrop() {
         new DropTarget(this, this);
         uiListener = new Vector<UIListener>();
-        imageEmpty = JDUtilities.getImage(JDTheme.V("gui.images.clipboard"));
-        imageFilled = JDUtilities.getImage(JDTheme.V("gui.images.clipboard"));
-        if (imageEmpty != null) {
-            setPreferredSize(new Dimension(imageEmpty.getWidth(null), imageEmpty.getHeight(null)));
+        image = JDUtilities.getImage(JDTheme.V("gui.images.clipboard"));
+        if (image != null) {
+            setPreferredSize(new Dimension(image.getWidth(null), image.getHeight(null)));
         }
     }
 
@@ -86,13 +77,13 @@ public class DragNDrop extends JComponent implements DropTargetListener {
         }
     }
 
-    public void dragEnter(DropTargetDragEvent arg0) {
+    public void dragEnter(DropTargetDragEvent dtde) {
     }
 
-    public void dragExit(DropTargetEvent arg0) {
+    public void dragExit(DropTargetEvent dte) {
     }
 
-    public void dragOver(DropTargetDragEvent arg0) {
+    public void dragOver(DropTargetDragEvent dtde) {
     }
 
     /**
@@ -100,36 +91,24 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      * des Drops aus und benachrichtigt die Listener
      */
     @SuppressWarnings("unchecked")
-    public void drop(DropTargetDropEvent e) {
-        logger.info("Drag: DROP " + e.getDropAction() + " : " + e.getSourceActions() + " - " + e.getSource() + " - ");
-        filled = true;
+    public void drop(DropTargetDropEvent dtde) {
+        logger.info("Drag: DROP " + dtde.getDropAction() + " : " + dtde.getSourceActions() + " - " + dtde.getSource());
         try {
-            Transferable tr = e.getTransferable();
-            e.acceptDrop(e.getDropAction());
-            if (e.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-
+            Transferable tr = dtde.getTransferable();
+            dtde.acceptDrop(dtde.getDropAction());
+            if (dtde.isDataFlavorSupported(DataFlavor.stringFlavor)) {
                 String files = (String) tr.getTransferData(DataFlavor.stringFlavor);
-
                 fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, files));
-
-            } else if (e.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
-
+            } else if (dtde.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
                 List list = (List) tr.getTransferData(DataFlavor.javaFileListFlavor);
-
                 for (int t = 0; t < list.size(); t++) {
-                    // JDUtilities.getController().loadContainerFile((File)
-                    // list.get(t));
                     fireUIEvent(new UIEvent(this, UIEvent.UI_DRAG_AND_DROP, list.get(t)));
-
                 }
-
             } else {
-                logger.info("UU");
+                logger.info("Unsupported Drop-Type");
             }
-            // e.dropComplete(true);
-        } catch (Exception exc) {
-            // e.rejectDrop();
-            exc.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         repaint();
     }
@@ -144,31 +123,10 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      */
     public void fireUIEvent(UIEvent uiEvent) {
         synchronized (uiListener) {
-            Iterator<UIListener> recIt = uiListener.iterator();
-
-            while (recIt.hasNext()) {
-                recIt.next().uiEvent(uiEvent);
+            for (UIListener lstn : uiListener) {
+                lstn.uiEvent(uiEvent);
             }
         }
-    }
-
-    /**
-     * Liefert die Höhe des Bildes zurück
-     * 
-     * @return Höhe des Bildes
-     */
-    public int getImageHeight() {
-        return imageEmpty.getHeight(this);
-
-    }
-
-    /**
-     * Liefert die Breite des Bildes zurück
-     * 
-     * @return Breite des Bildes
-     */
-    public int getImageWidth() {
-        return imageEmpty.getWidth(this);
     }
 
     /**
@@ -179,11 +137,7 @@ public class DragNDrop extends JComponent implements DropTargetListener {
      */
     @Override
     public void paintComponent(Graphics g) {
-        if (filled) {
-            g.drawImage(imageFilled, 0, 0, null);
-        } else {
-            g.drawImage(imageEmpty, 0, 0, null);
-        }
+        g.drawImage(image, 0, 0, null);
     }
 
     /**
