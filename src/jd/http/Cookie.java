@@ -16,10 +16,11 @@
 
 package jd.http;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import jd.utils.JDUtilities;
 
 public class Cookie {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK);
@@ -59,11 +60,11 @@ public class Cookie {
         }
         try {
             this.expires = DATE_FORMAT.parse(expires);
-        } catch (ParseException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
             try {
                 this.expires = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.UK).parse(expires);
-            } catch (ParseException e2) {
+            } catch (Exception e2) {
+                JDUtilities.getLogger().severe("CookieParser failed: " + expires);
                 e2.printStackTrace();
                 this.expires = null;
                 this.formatedexpires = null;
@@ -92,8 +93,8 @@ public class Cookie {
         String Current = DATE_FORMAT.format(new Date());
         try {
             return DATE_FORMAT.parse(Current).after(DATE_FORMAT.parse(formatedexpires));
-        } catch (ParseException e1) {
-            // TODO Auto-generated catch block
+        } catch (Exception e1) {
+            JDUtilities.getLogger().severe("CookieParser failed: " + expires);
             e1.printStackTrace();
             return false;
         }
@@ -106,7 +107,13 @@ public class Cookie {
     public void setExpires(Date expires) {
         this.expires = expires;
         if (expires != null) {
-            formatedexpires = DATE_FORMAT.format(expires);
+            try {
+                formatedexpires = DATE_FORMAT.format(expires);
+            } catch (Exception e1) {
+                JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                e1.printStackTrace();
+                formatedexpires = null;
+            }
         } else {
             formatedexpires = null;
         }
@@ -133,7 +140,6 @@ public class Cookie {
     }
 
     public String toString() {
-
         return key + "=" + value + " @" + host;
     }
 
