@@ -237,7 +237,11 @@ public class ConfigPanelGUI extends ConfigPanel {
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
-
+        // Extended Tab
+        ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
+        ce.setDefaultValue(5);
         this.add(cep = new ConfigEntriesPanel(container));
     }
 

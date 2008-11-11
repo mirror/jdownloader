@@ -187,17 +187,17 @@ public abstract class PluginForHost extends Plugin {
     public abstract String getAGBLink();
 
     protected void enablePremium(String url) {
-        this.enablePremium(5, url);
+        this.enablePremium(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, 5), url);
     }
 
     protected void enablePremium() {
-        this.enablePremium(5, null);
+        this.enablePremium(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getIntegerProperty(SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, 5), null);
     }
 
     protected void enablePremium(int size, String url) {
         if (size <= 0) return;
         this.premiumurl = url;
-        if (size > 5) size = 5;
+       
         enablePremium = true;
         ConfigEntry cfg;
 

@@ -354,6 +354,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_CUSTOM_BROWSER_PARAM = "PARAM_CUSTOM_ROWSER_PARAM";
 
+    public static final String PARAM_NUM_PREMIUM_CONFIG_FIELDS = "PARAM_NUM_PREMIUM_CONFIG_FIELDS";
+
     private static boolean uiInitated = false;
 
     /**
