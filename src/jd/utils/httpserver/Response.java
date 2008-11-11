@@ -21,6 +21,8 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import jd.utils.Executer;
+
 public class Response {
     private StringBuilder data = new StringBuilder();
 

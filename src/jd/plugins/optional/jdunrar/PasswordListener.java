@@ -16,7 +16,6 @@
 
 package jd.plugins.optional.jdunrar;
 
-import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
