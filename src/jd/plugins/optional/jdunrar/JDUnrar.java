@@ -168,7 +168,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
                 container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.linkmenu.extract", "Extract"), 1000).setActionListener(this));
                 m.setEnabled(false);
-                boolean isLocalyAvailable = ( new File(link.getFileOutput()).exists() || new File(link.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, link.getFileOutput())).exists());
+                boolean isLocalyAvailable = (new File(link.getFileOutput()).exists() || new File(link.getStringProperty(DownloadLink.STATIC_OUTPUTFILE, link.getFileOutput())).exists());
                 if (isLocalyAvailable && link.getName().matches(".*rar$")) m.setEnabled(true);
                 m.setProperty("LINK", link);
 
@@ -734,32 +734,25 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         if (path == null || !isUnrarCommandValid(path)) {
             if (OSDetector.isWindows()) {
-
                 path = JDUtilities.getResourceFile("tools\\Windows\\unrarw32\\unrar.exe").getAbsolutePath();
                 this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                 this.getPluginConfig().save();
                 return;
             } else {
-                
-                if(OSDetector.isLinux()){
-                 
-                   if(isUnrarCommandValid(JDUtilities.getResourceFile("tools\\Linux\\unrar\\unrar").getAbsolutePath())){
-                       
-                       path = JDUtilities.getResourceFile("tools\\Linux\\unrar\\unrar").getAbsolutePath();
-                       this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
-                       this.getPluginConfig().save();   
-                       return;
-                   }
+                if (OSDetector.isLinux()) {
+                    if (isUnrarCommandValid(JDUtilities.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath())) {
+                        path = JDUtilities.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath();
+                        this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
+                        this.getPluginConfig().save();
+                        return;
+                    }
                 }
-                
-                
                 if (isUnrarCommandValid("unrar")) {
                     path = "unrar";
                     this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                     this.getPluginConfig().save();
                     return;
                 }
-
                 if (isUnrarCommandValid("rar")) {
                     path = "rar";
                     this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
@@ -785,14 +778,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                     }
                 } catch (Throwable e) {
                 }
-
                 path = "please install unrar";
                 this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                 this.getPluginConfig().save();
             }
-
         }
-
     }
 
     /**
@@ -1236,7 +1226,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private ArrayList<DownloadLink> getArchiveList(DownloadLink downloadLink) {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-       
+
         File file;
 
         switch (this.getArchivePartType(downloadLink)) {
@@ -1244,9 +1234,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.MULTIPART_START_PART:
             String name = this.getArchiveName(downloadLink);
             int i = 1;
-            int nums =new Regex(downloadLink.getFileOutput(), "part(\\d*?)\\.").getMatch(0).length();
+            int nums = new Regex(downloadLink.getFileOutput(), "part(\\d*?)\\.").getMatch(0).length();
             while ((file = new File(new File(downloadLink.getFileOutput()).getParentFile(), name + ".part" + JDUtilities.fillString(i + "", "0", "", nums) + ".rar")).exists() || JDUtilities.getController().getDownloadLinkByFileOutput(file) != null) {
-               
+
                 ret.add(JDUtilities.getController().getDownloadLinkByFileOutput(file));
                 i++;
             }
