@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.jdunrar;
 
+import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
@@ -35,7 +36,7 @@ public class PasswordListener extends ProcessListener {
 
     @Override
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
-        String lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),Executer.CODEPAGE);
+        String lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),Charset.forName(Executer.CODEPAGE));
        
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.writetoOutputStream(this.password);
