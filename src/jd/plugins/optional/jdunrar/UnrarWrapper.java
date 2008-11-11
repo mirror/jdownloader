@@ -569,13 +569,14 @@ public class UnrarWrapper extends Thread {
             i++;
             exec.addParameter("v");
             exec.addParameter("-p");
-
+          
             exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
             exec.addParameter("-v");
             exec.addParameter("-c-");
             exec.addParameter(file.getName());
             exec.setRunin(file.getParentFile().getAbsolutePath());
             exec.setWaitTimeout(-1);
+            exec.setDebug(true);
             exec.start();
             exec.waitTimeout();
             String res = exec.getOutputStream() + " \r\n " + exec.getErrorStream();

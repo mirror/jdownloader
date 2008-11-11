@@ -50,5 +50,7 @@ public class JDUnrarConstants {
     public static final String CONFIG_KEY_REMOVE_INFO_FILE = "REMOVE_INFO_FILE";
     public static final String CONFIG_KEY_SUBPATH_MINNUM = "KEY_SUBPATH_MINNUM";
     public static final int WRAPPER_PASSWORT_CRACKING = 18;
+    public static final String DOWNLOADLINK_KEY_EXTRACTTOPATH = "EXTRAXT_TO_PATH";
+    public static final String DOWNLOADLINK_KEY_EXTRACTEDPATH = "EXTRACTEDPATH";
   
 }

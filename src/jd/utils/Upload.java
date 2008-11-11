@@ -64,12 +64,9 @@ public class Upload {
             up.sendFile(file.getAbsolutePath(), file.getName());
             up.sendVariable("freeaccountid", userid);
             up.sendVariable("password", pass);
-
             up.close();
             String code = up.read();
-
             String[] lines = Regex.getLines(code);
-
             return lines[1];
         } catch (Exception e) {
             e.printStackTrace();

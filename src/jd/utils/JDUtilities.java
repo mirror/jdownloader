@@ -1672,7 +1672,7 @@ public class JDUtilities {
         }
     }
 
-    public static DatabaseConnector getDatabaseConnector() {
+    public synchronized static DatabaseConnector getDatabaseConnector() {
         if (dbconnect == null) {
             dbconnect = new DatabaseConnector();
         }

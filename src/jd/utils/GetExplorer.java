@@ -27,10 +27,10 @@ public class GetExplorer {
      * @return
      */
     private static Object[] autoGetExplorerCommand() {
-        String OS = System.getProperty("os.name").toLowerCase();
-        if (OS.indexOf("nt") > -1 || OS.indexOf("windows") > -1) {
+    
+        if (OSDetector.isWindows()) {
             return new Object[] { "Explorer", "explorer", new String[] { "%%path%%" } };
-        } else if (OS.indexOf("mac") >= 0) {
+        } else if (OSDetector.isMac()) {
             return new Object[] { "Open", "open", new String[] { "'%%path%%'" } };
         } else {
             Object[][] programms = new Object[][] { { "dolphin", new String[] { "%%path%%" } }, { "konqueror", new String[] { "%%path%%" } }, { "nautilus", new String[] { "--browser", "--no-desktop", "%%path%%" } } };
@@ -77,8 +77,8 @@ public class GetExplorer {
 
     public boolean openExplorer(File path) {
         getExplorerCommand();
-
-        if (path.isDirectory() && explorer != null) {
+while(!path.isDirectory())path=path.getParentFile();
+        if (path!=null && explorer != null) {
 
             String spath = path.getAbsolutePath();
             String[] paramsArray = (String[]) explorer[2];

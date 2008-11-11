@@ -21,18 +21,19 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
-    private boolean debug = false;;
+    private boolean debug = true;;
 
     public boolean isDebug() {
         return debug;
     }
 
     public void setDebug(boolean debug) {
-        this.debug = debug;
+ this.debug=debug;
     }
 
     class StreamObserver extends Thread {
@@ -63,7 +64,7 @@ public class Executer extends Thread {
                     if (num <= 0) {
                         Thread.sleep(50);
                     } else {
-                        String line = new String(dynbuf.getLast(num)).trim();
+                        String line = new String(dynbuf.getLast(num),Charset.forName("ISO-8859-1")).trim();
 
                         if (line.length() > 0) {
                             if (isDebug()) logger.finest(this + ": " + line + "");

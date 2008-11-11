@@ -18,6 +18,7 @@ package jd.utils;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 
 public class DynByteBuffer {
 
@@ -37,7 +38,7 @@ public class DynByteBuffer {
     }
 
     public String toString() {
-        return new String(this.getLast(buffer.position()));
+        return new String(this.getLast(buffer.position()),Charset.forName("ISO-8859-1"));
     }
 
     public int capacity() {
