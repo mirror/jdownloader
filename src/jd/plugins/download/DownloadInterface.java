@@ -58,7 +58,7 @@ abstract public class DownloadInterface {
         private static final long MIN_BUFFERSIZE = 1024;
 
         // Wird durch die Speedbegrenzung ein chunk uter diesen Wert geregelt,
-        // so wird er weggelassen. Sehr niedrig geregelte chunks haben einen 
+        // so wird er weggelassen. Sehr niedrig geregelte chunks haben einen
         // kleinen Buffer und eine sehr hohe Intervalzeit.
         // Das führt zu verstärkt intervalartigem laden und ist ungewünscht
         public static final long MIN_CHUNKSIZE = 1 * 1024 * 1024;
@@ -114,7 +114,6 @@ abstract public class DownloadInterface {
             this.dl = dl;
             setPriority(Thread.MIN_PRIORITY);
             MAX_BUFFERSIZE = (long) JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("MAX_BUFFER_SIZE", 4) * 1024 * 1024l;
-
         }
 
         private void addChunkBytesLoaded(long limit) {
@@ -152,9 +151,7 @@ abstract public class DownloadInterface {
             // }
             if (isExternalyAborted()) {
                 logger.severe("INTERRUPT");
-
                 interrupt();
-
             }
             if (timer <= 0) { return; }
             long dif = System.currentTimeMillis() - timer;
@@ -162,14 +159,12 @@ abstract public class DownloadInterface {
             if (dif >= timeout) {
                 logger.severe("Timeout or termination detected: interrupt: " + timeout + " - " + dif + " - " + timer);
                 interrupt();
-
             } else if (dif >= 5000) {
                 downloadLink.getLinkStatus().setStatusText(JDLocale.L("download.connection.idle", "Idle"));
                 downloadLink.requestGuiUpdate();
             } else {
                 downloadLink.getLinkStatus().setStatusText(null);
             }
-
         }
 
         /**
@@ -221,11 +216,9 @@ abstract public class DownloadInterface {
                 HTTPConnection con;
                 if (connection.getHTTPURLConnection().getDoOutput()) {
                     con = br.openPostConnection(connection.getURL() + "", connection.getPostData());
-
                 } else {
                     con = br.openGetConnection(connection.getURL() + "");
                 }
-
                 if (!con.isOK()) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getHTTPURLConnection().getResponseMessage());
                     return null;
@@ -233,7 +226,6 @@ abstract public class DownloadInterface {
                 if (con.getHeaderField("Location") != null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: Redirect");
                     return null;
-
                 }
                 if (speedDebug) {
                     // logger.finer("Org request headers " + this.getID() + ":"
@@ -248,10 +240,8 @@ abstract public class DownloadInterface {
             } catch (Exception e) {
                 addException(e);
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
-
                 e.printStackTrace();
             }
-
             return null;
         }
 
@@ -381,9 +371,10 @@ abstract public class DownloadInterface {
                         }
                         break;
                     }
-                    
-                    // War der Download des Buffers zu schnell, wird hier eine Pause eingelegt
-                     
+
+                    // War der Download des Buffers zu schnell, wird hier eine
+                    // Pause eingelegt
+
                     tempBuff = getBufferSize(getMaximalSpeed());
                     // Falls der Server bei den Ranges schlampt und als endByte
                     // immer das Dateiende angibt wird hier der Buffer
@@ -452,36 +443,28 @@ abstract public class DownloadInterface {
                 error(LinkStatus.ERROR_FILE_NOT_FOUND, null);
             } catch (SecurityException e) {
                 logger.severe("not enough rights to write the file. " + e.getLocalizedMessage());
-
                 error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
-
             } catch (UnknownHostException e) {
                 linkStatus.setValue(10 * 60000l);
                 error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
-
             } catch (IOException e) {
                 if (e.getMessage() != null && e.getMessage().indexOf("timed out") >= 0) {
                     error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
                     e.printStackTrace();
-                    ;
-
                 } else {
                     e.printStackTrace();
                     if (e.getLocalizedMessage().contains("503")) {
                         linkStatus.setValue(10 * 60000l);
                         error(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("download.error.message.unavailable", "Service temp. unavailable"));
-
                     } else {
                         logger.severe("error occurred while writing to file. " + e.getMessage());
                         error(LinkStatus.ERROR_LOCAL_IO, JDLocale.L("download.error.message.iopermissions", "No permissions to write to harddisk"));
                     }
                 }
             } catch (Exception e) {
-
                 e.printStackTrace();
                 error(LinkStatus.ERROR_RETRY, JDUtilities.convertExceptionReadable(e));
                 addException(e);
-
             }
 
             try {
@@ -740,15 +723,11 @@ abstract public class DownloadInterface {
                 }
             }
             if (connection != null && allConnected) {
-
                 this.connection.disconnect();
-
             }
 
             if (connection != null && this.isExternalyAborted()) {
-
                 this.connection.disconnect();
-
             }
             onChunkFinished();
         }
@@ -757,11 +736,9 @@ abstract public class DownloadInterface {
 
             logger.finer("Start Chunk " + getID() + " : " + startByte + " - " + endByte);
             if (startByte >= endByte && endByte > 0 || startByte >= getFileSize() && endByte > 0) {
-
                 // Korrektur Byte
                 // logger.severe("correct -1 byte");
                 // addToTotalLinkBytesLoaded(-1);
-
                 return;
             }
 
@@ -777,9 +754,7 @@ abstract public class DownloadInterface {
 
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
-
                     logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
-
                     return;
                 }
 
@@ -788,17 +763,14 @@ abstract public class DownloadInterface {
 
                 if (connection == null) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.connectioncopyerror", "Could not clone the connection"));
-
                     logger.severe("ERROR Chunk (connection copy failed) " + chunks.indexOf(this));
-
                     return;
                 }
 
                 if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaders", "Server does not support chunkload"));
-
+                    connection.toString();
                     logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
-
                     return;
 
                 }
@@ -813,6 +785,8 @@ abstract public class DownloadInterface {
 
                 if (range == null && chunkNum > 1) {
                     if (dl.fakeContentRangeHeader()) {
+                        logger.severe("Using fakeContentRangeHeader");
+                        connection.toString();
                         String[][] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getMatches();
 
                         long gotSB = JDUtilities.filterLong(fixrange[0][0]);
@@ -856,11 +830,9 @@ abstract public class DownloadInterface {
                             // schon fertig
                             return;
                         }
-
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
-
+                        connection.toString();
                         logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
-
                         return;
                     }
                 } else if (range != null) {
@@ -885,14 +857,12 @@ abstract public class DownloadInterface {
                             logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
                         }
                         endByte = Math.min(endByte, gotEB);
-
                     }
 
                     if (speedDebug) {
                         logger.finer("Resulting Range" + startByte + " - " + endByte);
                     }
                 } else {
-
                     endByte = connection.getContentLength() - 1;
                     if (speedDebug) {
                         logger.finer("Endbyte set to " + endByte);
@@ -900,7 +870,6 @@ abstract public class DownloadInterface {
                 }
             }
             if (endByte <= 0) {
-
                 endByte = connection.getContentLength() - 1;
                 if (speedDebug) {
                     logger.finer("Endbyte set to " + endByte);
@@ -908,13 +877,7 @@ abstract public class DownloadInterface {
             }
 
             if (isInterrupted() || downloadLink.isAborted()) {
-                // error(ERROR_ABORTED_BY_USER);
                 logger.severe("ABBORTED BY USER");
-                // error(LinkStatus.ERROR_DOWNLOAD_FAILED,JDLocale.L(
-                // "download.error.message.rangeheaderparseerror","Unexpected
-                // rangeheader
-                // format:")+connection.getHeaderField("Content-Range"));
-
             }
             addChunksDownloading(+1);
 
