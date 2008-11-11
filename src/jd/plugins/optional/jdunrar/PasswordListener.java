@@ -34,10 +34,10 @@ public class PasswordListener extends ProcessListener {
         this.password = pass;
     }
 
-    @Override
+    @Override 
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
         String lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),Charset.forName(Executer.CODEPAGE));
-       
+        
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.writetoOutputStream(this.password);
         }

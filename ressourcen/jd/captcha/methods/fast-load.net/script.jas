@@ -14,12 +14,12 @@ param.borderVarianceY=5;
 param.scanVariancex=5;
 param.scanVarianceY=5;
 ##Farbraum
-param.colorType = RGB;
+param.colorType = BBB;
 ##Trainiert nur Captchs die noch nicht in der DB sind
 param.trainOnlyUnknown=true;
 
 ##Objekt erkennungsparameter
-param.useObjectDetection = false;
+param.useObjectDetection = true;
 param.useColorObjectDetection=false;
 param.multiplePartMergeMinSize=10;
 param.objectColorContrast = 0.4;
@@ -32,9 +32,9 @@ param.splitPixelObjectsOverlap=0;
 
 ##Alternative Zeichentrennungsmethoden
 param.splitGapsOverlap=0;
-param.useAverageGapDetection=false;
-param.usePeakGapdetection=false;
-param.gaps={40,80,120};
+param.useAverageGapDetection=true;
+param.usePeakGapdetection=true;
+
 
 param.divider=11;
 
@@ -85,9 +85,10 @@ param.preScanFaktor=3;
 
 ##################Prepare captcha Funktionen
 
-captcha.prepare.cleanWithDetailMask(bg_mask.png,30);
-captcha.prepare.toBlackAndWhite(1.1);
-captcha.prepare.removeSmallObjects(0.6,0.8,30);
+
+captcha.prepare.invert();
+#captcha.prepare.normalize();
+#captcha.prepare.toBlackAndWhite();
 #captcha.prepare.blurIt(2);
 
 #################Letter Prepare Funktionen

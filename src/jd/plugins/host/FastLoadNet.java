@@ -16,18 +16,34 @@
 
 package jd.plugins.host;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
+import java.awt.geom.Area;
+import java.awt.geom.GeneralPath;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
 
+import javax.imageio.ImageIO;
+
 import jd.PluginWrapper;
+import jd.captcha.gui.BasicWindow;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDHash;
@@ -42,6 +58,13 @@ public class FastLoadNet extends PluginForHost {
 
     public FastLoadNet(PluginWrapper wrapper) {
         super(wrapper);
+        this.initConfig();
+    }
+
+    private void initConfig() {
+
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "BYPASS_API", JDLocale.L("plugins.hoster.fastload.bypassapi", "API Bypass")).setDefaultValue(false));
+
     }
 
     @Override
@@ -145,7 +168,10 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-
+        if (this.getPluginConfig().getBooleanProperty("BYPASS_API", false)) {
+            this.handleFreeBypass(downloadLink);
+            return;
+        }
         checkFirstDownload(downloadLink);
         getFileInformation(downloadLink);
         br.setDebug(true);
@@ -161,6 +187,78 @@ public class FastLoadNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000l);
         }
         dl.startDownload();
+    }
+
+    private void handleFreeBypass(DownloadLink downloadLink) throws Exception {
+        getFileInformation(downloadLink);
+        String code;
+        File file=null;
+        for(int i=0; i<500;i++){
+        br.setDebug(true);
+        br.getPage(downloadLink.getDownloadURL());
+        String js = br.getRegex("src=\"(/includes.*?)\"><\\/script>").getMatch(0);
+       code= br.cloneBrowser().getPage(js);
+       
+        BufferedImage image = paintImage(code);
+       
+        ImageIO.write(image,"png",file=getLocalCaptchaFile(this));
+        
+        }
+       code=getCaptchaCode(file, this,downloadLink);
+    Form download = br.getForm(0);
+    download.put("captcha", code);
+    br.openDownload(downloadLink, download).startDownload();
+  
+    }
+
+    private BufferedImage paintImage(String code) {
+
+        int width = 120;
+        int height = 50;
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        
+        Graphics2D g2 = image.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setStroke(new BasicStroke(1));
+       
+        String[][] matches = new Regex(code,"(x\\..*?;)").getMatches();
+        g2.setColor(Color.BLUE.brighter());
+        GeneralPath p = new GeneralPath();
+        Area a = null;
+        for (String[] fnc : matches) {
+            String[] row = new Regex(fnc[0], "x\\.(.*?)\\((.*?)\\)").getRow(0);
+            if (row != null) {
+                String[] params = row[1].split("[ ]*,[ ]*");
+                int[] ints = new int[params.length];
+                System.out.println(row[0]+"("+row[1]+");");
+                for (int i = 0; i < params.length; i++) {
+                    if (params[i].trim().length() > 0) ints[i] = Integer.parseInt(params[i].trim());
+                }
+                if (row[0].equals("lineTo")) {
+                    p.lineTo(ints[0], ints[1]);                  
+                }
+                if (row[0].equals("moveTo")) {
+                    p.moveTo(ints[0], ints[1]);
+                }            
+                if (row[0].equals("bezierCurveTo")) {
+                    p.curveTo(ints[0], ints[1], ints[2], ints[3], ints[4], ints[5]);
+                }
+                if (row[0].equals("closePath")) {
+                    p.closePath();
+                    if (a == null) {
+                        a = new Area(p);
+                    } else {
+                        a.exclusiveOr(new Area(p));
+                    }
+                    p = new GeneralPath();
+                }
+
+            }
+
+        }
+        g2.draw(a);
+        g2.fill(a);
+     return image;
     }
 
     private void checkFirstDownload(DownloadLink downloadLink) {
