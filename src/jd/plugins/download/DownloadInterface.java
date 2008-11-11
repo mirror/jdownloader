@@ -1251,7 +1251,6 @@ abstract public class DownloadInterface {
             request.getHeaders().put("Range", "bytes=" + start + "-" + end);
         }
         request.connect();
-
     }
 
     /**
@@ -1676,16 +1675,17 @@ abstract public class DownloadInterface {
         }
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
         downloadLink.getLinkStatus().setStatusText(null);
-        if (connection == null || !connection.isOK()) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
+        if (connection == null || !connection.isOK()) {
+            if (connection != null) connection.toString();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
         if (connection.getHeaderField("Location") != null) {
-
             error(LinkStatus.ERROR_PLUGIN_DEFEKT, "Sent a redirect to Downloadinterface");
             return false;
         }
         if (block != null) {
             logger.severe("File already is in progress. " + downloadLink.getFileOutput());
             // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-
             error(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), block.getPlugin().getHost()));
             if (!handleErrors()) { return false; }
         }
@@ -1697,36 +1697,28 @@ abstract public class DownloadInterface {
         if (!fileOutput.getParentFile().exists()) {
             fileOutput.getParentFile().mkdirs();
         }
-
         loop: if (fileOutput.exists()) {
-
             logger.severe("File already exists. " + fileOutput);
             if (this.downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");
                     break loop;
                 } else {
-
                     error(LinkStatus.ERROR_FATAL, JDLocale.L("system.download.errors.couldnotoverwritejdu", "Update Download Error"));
                     if (!handleErrors()) { return false; }
                 }
             }
             if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
-
                 if (new File(downloadLink.getFileOutput()).delete()) {
                     logger.severe("--->Overwritten");
                 } else {
-
                     error(LinkStatus.ERROR_ALREADYEXISTS, JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
                     if (!handleErrors()) { return false; }
                 }
-
             } else {
-
                 error(LinkStatus.ERROR_ALREADYEXISTS, null);
                 if (!handleErrors()) { return false; }
             }
-
         }
 
         // if (this.maxBytes > 0) {
@@ -1738,14 +1730,11 @@ abstract public class DownloadInterface {
             linkStatus.addStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             setupChunks();
             waitForChunks();
-
             onChunksReady();
             linkStatus.removeStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS);
             if (!handleErrors()) {
-
                 return false;
             } else {
-
                 return true;
             }
         }
@@ -1779,15 +1768,11 @@ abstract public class DownloadInterface {
      * @param id
      */
     private void terminate(int id) {
-
         logger.severe("A critical Downloaderror occured. Terminate...");
-
         Iterator<Chunk> it = chunks.iterator();
         while (it.hasNext()) {
             it.next().interrupt();
-
         }
-
     }
 
     /**
@@ -1801,7 +1786,6 @@ abstract public class DownloadInterface {
                 speed += it.next().bytesPerSecond;
             }
         }
-
         downloadLink.addSpeedValue(speed);
 
     }
@@ -1817,17 +1801,14 @@ abstract public class DownloadInterface {
         int interval = 150;
         while (chunksInProgress > 0) {
             synchronized (this) {
-
                 if (waitFlag) {
                     try {
                         this.wait(interval);
                     } catch (Exception e) {
                         // e.printStackTrace();
-
                         Iterator<Chunk> it = chunks.iterator();
                         while (it.hasNext()) {
                             it.next().interrupt();
-
                         }
                         return;
                     }
@@ -1839,9 +1820,7 @@ abstract public class DownloadInterface {
             downloadLink.setDownloadCurrent(totaleLinkBytesLoaded);
             downloadLink.requestGuiUpdate();
             if (i == 1000 / interval) {
-
                 assignChunkSpeeds();
-
                 i = 0;
             }
 
@@ -1850,9 +1829,7 @@ abstract public class DownloadInterface {
     }
 
     protected synchronized void writeBytes(Chunk chunk) {
-
         if (writeChunkBytes(chunk)) {
-
             // if (maxBytes > 0 && getChunkNum() == 1 &&
             // this.totaleLinkBytesLoaded >= maxBytes) {
             // error(ERROR_NIBBLE_LIMIT_REACHED);
@@ -1873,7 +1850,6 @@ abstract public class DownloadInterface {
 
     public void setFilesizeCheck(boolean b) {
         this.doFileSizeCheck = b;
-
     }
 
     public HTTPConnection getConnection() {
@@ -1894,7 +1870,6 @@ abstract public class DownloadInterface {
      */
     public void setFirstChunkRangeless(boolean b) {
         firstChunkRangeless = b;
-
     }
 
     public boolean isFirstChunkRangeless() {
