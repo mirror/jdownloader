@@ -59,7 +59,7 @@ public class Response {
         help.append("Connection: close\r\n");
         help.append("Server: jDownloader HTTP Server\r\n");
         help.append("Content-Type: " + returnType + "\r\n");
-        help.append("Content-Length: " + data.toString().getBytes("iso-8859-1").length + "\r\n");
+        help.append("Content-Length: " + data.toString().getBytes(Executer.CODEPAGE).length + "\r\n");
 
         Iterator<String> it = headers.keySet().iterator();
         while (it.hasNext()) {
@@ -69,7 +69,7 @@ public class Response {
 
         help.append("\r\n");
 
-        out.write(help.toString().getBytes("iso-8859-1"));
-        out.write(data.toString().getBytes("iso-8859-1"));
+        out.write(help.toString().getBytes(Executer.CODEPAGE));
+        out.write(data.toString().getBytes(Executer.CODEPAGE));
     }
 }

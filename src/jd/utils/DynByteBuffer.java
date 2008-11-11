@@ -38,7 +38,7 @@ public class DynByteBuffer {
     }
 
     public String toString() {
-        return new String(this.getLast(buffer.position()),Charset.forName("ISO-8859-1"));
+        return new String(this.getLast(buffer.position()),Charset.forName(Executer.CODEPAGE));
     }
 
     public int capacity() {

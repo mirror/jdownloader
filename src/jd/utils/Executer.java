@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
-    private boolean debug = true;;
+    public static final String CODEPAGE = OSDetector.isWindows()?"ISO-8859-1":"UTF-8";
+    private boolean debug = true;
 
     public boolean isDebug() {
         return debug;
@@ -64,7 +65,7 @@ public class Executer extends Thread {
                     if (num <= 0) {
                         Thread.sleep(50);
                     } else {
-                        String line = new String(dynbuf.getLast(num),Charset.forName("ISO-8859-1")).trim();
+                        String line = new String(dynbuf.getLast(num),Charset.forName(Executer.CODEPAGE)).trim();
 
                         if (line.length() > 0) {
                             if (isDebug()) logger.finest(this + ": " + line + "");

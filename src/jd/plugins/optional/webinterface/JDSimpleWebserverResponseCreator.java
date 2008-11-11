@@ -118,7 +118,7 @@ public class JDSimpleWebserverResponseCreator {
             if (bytes != null) {
                 headers.append(bytes.length);
             } else {
-                headers.append(body.toString().getBytes("iso-8859-1").length);
+                headers.append(body.toString().getBytes(Executer.CODEPAGE).length);
             }
             headers.append("\r\n");
         } catch (Exception e) {
@@ -145,11 +145,11 @@ public class JDSimpleWebserverResponseCreator {
      */
     public void writeToStream(OutputStream outputStream) throws IOException {
         headers.append("\r\n");
-        outputStream.write(headers.toString().getBytes("iso-8859-1"));
+        outputStream.write(headers.toString().getBytes(Executer.CODEPAGE));
         if (bytes != null) {
             outputStream.write(bytes);
         } else {
-            outputStream.write(body.toString().getBytes("iso-8859-1"));
+            outputStream.write(body.toString().getBytes(Executer.CODEPAGE));
         }
     }
 }
