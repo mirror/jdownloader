@@ -1,4 +1,4 @@
-//    jDownloader - Downloadmanager
+﻿//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -119,7 +119,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public FengShuiConfigPanel() {
         super();
         this.setName("FENGSHUICONFIG");
-        this.setTitle("Feng Shui Config");
+        this.setTitle(JDLocale.L("gui.config.fengshui.title", "Feng Shui Config"));
         this.addWindowListener(new LocationListener());
 
         JPanel panel = getPanel();
@@ -519,9 +519,9 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         downloadDirectory.setText(getDownloadDirectory());
 
         addComponents(panel, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis"), downloadDirectory, GAPLEFT + GAPRIGHT + ", spanx" + WRAP_BETWEEN_ROWS);
-        addComponents(panel, JDLocale.L("gui.config.gui.language", "Sprache"), languages, GAPLEFT + GAPRIGHT + ", w pref!, wrap " + PUSHGAP);
+        addComponents(panel, JDLocale.L("gui.config.gui.language", "Language"), languages, GAPLEFT + GAPRIGHT + ", w pref!, wrap " + PUSHGAP);
 
-        btnPremium = new JButton("Einstellungen");
+        btnPremium = new JButton(JDLocale.L("gui.config.fengshui.settings", "Settings"));
         btnPremium.addActionListener(this);
 
         addSeparator(panel, JDLocale.L("gui.config.plugin.host.name", "Host Plugins"), JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.next"), 32, 32), JDLocale.L("gui.fengshuiconfig.plugin.host.tooltip", "<html>If you have a Premium Account for a hoster you can enter you login<br> password here and JD will use them automatically henceforth<br> if you download files with that hoster"));
@@ -552,14 +552,14 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
         btnTestReconnect = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test reconnect"));
         btnRR = new JButton(JDLocale.L("modules.reconnect.rr", "Record Reconnect"));
-        btnAutoConfig = new JButton("Automatisch");
-        btnSelectRouter = new JButton("Manuell");
+        btnAutoConfig = new JButton(JDLocale.L("gui.config.fengshui.rdautomatic", "Automatic"));
+        btnSelectRouter = new JButton(JDLocale.L("gui.config.fengshui.rdmanual", "Manual"));
 
         btnAutoConfig.addActionListener(this);
         btnSelectRouter.addActionListener(this);
         btnTestReconnect.addActionListener(this);
         btnRR.addActionListener(this);
-        addComponents(panel, "Router erkennen", btnAutoConfig, GAPLEFT + ", w pref!, split 3");
+        addComponents(panel, JDLocale.L("gui.config.fengshui.rdname", "Router detection"), btnAutoConfig, GAPLEFT + ", w pref!, split 3");
         panel.add(btnSelectRouter);
         panel.add(btnRR, GAPLEFT + GAPRIGHT + ", w pref!" + WRAP_BETWEEN_ROWS);
         int n = 10;
