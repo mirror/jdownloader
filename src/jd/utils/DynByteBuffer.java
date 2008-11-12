@@ -16,6 +16,7 @@
 
 package jd.utils;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -38,7 +39,13 @@ public class DynByteBuffer {
     }
 
     public String toString() {
-        return new String(this.getLast(buffer.position()),Charset.forName(Executer.CODEPAGE));
+        
+        try {
+            return new String(this.getLast(buffer.position()),Executer.CODEPAGE);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            return new String(this.getLast(buffer.position()));
+        }
     }
 
     public int capacity() {

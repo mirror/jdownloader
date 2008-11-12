@@ -706,8 +706,9 @@ public class UnrarWrapper extends Thread {
      * @return
      */
     ArchivFile getArchivFile(String currentWorkingFile) {
+        currentWorkingFile=Encoding.filterString(currentWorkingFile);
         for (ArchivFile af : files) {
-            if (af.getFilepath().equals(currentWorkingFile)) { return af; }
+            if (Encoding.filterString(af.getFilepath()).equals(currentWorkingFile)) { return af; }
         }
         return null;
     }

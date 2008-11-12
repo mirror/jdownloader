@@ -191,7 +191,7 @@ public class Encoding {
      * @return
      */
     public static String filterString(String str) {
-        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm;:,._-&$%(){}#~+ 1234567890<>='\"/";
+        String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnmöäü;:,._-&$%(){}#~+ 1234567890<>='\"/";
         return Encoding.filterString(str, allowed);
     }
 

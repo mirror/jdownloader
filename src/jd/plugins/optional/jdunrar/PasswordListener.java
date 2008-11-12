@@ -16,6 +16,7 @@
 
 package jd.plugins.optional.jdunrar;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 
@@ -36,7 +37,14 @@ public class PasswordListener extends ProcessListener {
 
     @Override 
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
-        String lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),Charset.forName(Executer.CODEPAGE));
+        String lastLine;
+        try {
+            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),Executer.CODEPAGE);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
+            
+        }
         
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.writetoOutputStream(this.password);

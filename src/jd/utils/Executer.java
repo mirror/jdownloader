@@ -21,12 +21,12 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
-    public static final String CODEPAGE = OSDetector.isWindows()?"ISO-8859-1":"UTF-8";
+    public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
     private boolean debug = true;
 
     public boolean isDebug() {
@@ -34,7 +34,7 @@ public class Executer extends Thread {
     }
 
     public void setDebug(boolean debug) {
- this.debug=debug;
+        this.debug = debug;
     }
 
     class StreamObserver extends Thread {
@@ -65,8 +65,15 @@ public class Executer extends Thread {
                     if (num <= 0) {
                         Thread.sleep(50);
                     } else {
-                        String line = new String(dynbuf.getLast(num),Charset.forName(Executer.CODEPAGE)).trim();
+                        String line;
 
+                        try {
+                            line = new String(dynbuf.getLast(num), Executer.CODEPAGE).trim();
+                        } catch (UnsupportedEncodingException e) {
+                            e.printStackTrace();
+                            line = new String(dynbuf.getLast(num)).trim();
+
+                        }
                         if (line.length() > 0) {
                             if (isDebug()) logger.finest(this + ": " + line + "");
                             // System.out.println(">"+line);
@@ -203,7 +210,7 @@ public class Executer extends Thread {
             out += p + " ";
         }
         if (isDebug()) logger.finest("Execute: " + out + " in " + runIn);
-       
+
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
@@ -268,8 +275,7 @@ public class Executer extends Thread {
             if (sbeObserver.isAlive()) {
                 sbeObserver.requestInterrupt();
             }
-            
-          
+
             while ((sbeObserver != null && this.sbeObserver.isAlive()) || (sboObserver != null && this.sboObserver.isAlive())) {
                 Thread.sleep(50);
             }
