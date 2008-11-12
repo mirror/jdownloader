@@ -145,7 +145,7 @@ public class Serienjunkies extends PluginForHost {
             Form[] forms = br.getForms();
             Vector<Thread> threads = new Vector<Thread>();
             for (int i = 0; i < forms.length; i++) {
-                if (!forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
+                if (forms[i].action.contains("download.serienjunkies.org") && !forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
                     try {
                         final String action = forms[i].action;
                         
