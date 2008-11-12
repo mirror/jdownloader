@@ -1,4 +1,4 @@
-﻿$translater$ = Tamer Ray Frost
+$translater$ = Tamer Ray Frost
 $version$ = $Revision$
 addons.jdgrowlnotification.menu.enable = Mesajları etkinleştir
 addons.jdlowspeed.statusmessage.disabled = Devredışı bırak
@@ -118,7 +118,7 @@ gui.config.captcha.train.show_timeout = Captcha penceresi geri sayım (san)
 gui.config.clr.script = CLR Script
 gui.config.download.autoresume = Tekrar bağlan sürdürebilen indirmeleri kesebilsin
 gui.config.download.buffersize = Mak. ArabellekBoyutu[MB]
-gui.config.download.chunks = Dosya / bağlantı sayısı (parçayükleme)
+gui.config.download.chunks = Dosya / bağlantı sayısı (Parçayükleme)
 gui.config.download.connectionlost.wait = Bağlantı kaybında bekleme süresi [san]
 gui.config.download.crc = SFV/CRC mümkün olduğunda kontrol et
 gui.config.download.download.tab = İndirme Ayarları
@@ -211,8 +211,8 @@ gui.config.liveHeader.routerIP = RouterIP (->%%%routerip%%%)
 gui.config.liveHeader.script = HTTP Script (betik yazı ile)
 gui.config.liveHeader.selectRouter = Router Seç
 gui.config.liveHeader.user = Kullanıcı Adı
-gui.config.liveHeader.waitForIP = IP zamanlayıcı (san)
-gui.config.liveHeader.waitTimeForIPCheck = İlk IP kontrolü için bekleme süresi (san)
+gui.config.liveHeader.waitForIP = IP zamanlayıcı [san]
+gui.config.liveHeader.waitTimeForIPCheck = İlk IP kontrolü için bekleme süresi [san]
 gui.config.liveHeader.warning.noCURLConvert = JD CURL scriptini çeviremedi. Lütfen destek için JD-Destek-Takımına başvurunuz!
 gui.config.liveHeader.warning.notFound = jDownloader router ayarlarınızı algılayamadı.
 gui.config.liveHeader.warning.wizard = Ayarları oluşturmak biraz zaman alabilir.Lütfen router giriş bilgilerinizi giriniz. şimdi yürüt?
@@ -646,7 +646,7 @@ interaction.batchreconnect.progress.3_ipcheck = Batch Tekrar Bağlan Yeni IP: %s
 interaction.batchreconnect.retries = Mak. deneme (-1 = Limitsiz)
 interaction.batchreconnect.terminal = Yorumlayıcı
 interaction.batchreconnect.toString = Batch Tekrar bağlan parametreleri
-interaction.batchreconnect.waitForIp = IP zamanlayıcı   [san]
+interaction.batchreconnect.waitForIp = IP zamanlayıcı [san]
 interaction.batchreconnect.waitForTermination = Komut sonlandırma için bukadar bekle [san]
 interaction.batchreconnect.waitTimeToFirstIPCheck = İlk IP kontrolü için bekleme süresi [san]
 interaction.externExecute.cmd = Komut (salt dizin yolları kullan)
@@ -657,7 +657,7 @@ interaction.externExecute.parameter = Parametre (1 parameter per line)
 interaction.externExecute.test = Uygulama çalistir
 interaction.externExecute.toString = Harici uygulama çalıştır
 interaction.externExecute.variables = Mevcut değişkenler
-interaction.externExecute.waitForTermination = Komut sonlandırma için bekleme süresi  [san]
+interaction.externExecute.waitForTermination = Komut sonlandırma için bekleme süresi [san]
 interaction.externreconnect.command = Komut (salt dizin yolları kullan)
 interaction.externreconnect.name = Harici Tekrar bağlan
 interaction.externreconnect.parameter = Parametre (her parametre için 1 satır)
@@ -667,8 +667,8 @@ interaction.externreconnect.progress.2_oldIP = Harici-Tekrar Bağlan Eski IP:
 interaction.externreconnect.progress.3_ipcheck = Harici-Tekrar Bağlan Yeni IP: %s / %s
 interaction.externreconnect.retries = Mak. deneme (-1 = limitsiz)
 interaction.externreconnect.toString = Harici Tekrar Bağlantı uygulaması çalıştır
-interaction.externreconnect.waitForIp = IP için bekle  [saniye]
-interaction.externreconnect.waitForTermination = cmd sonlandırma süresi  [san]
+interaction.externreconnect.waitForIp = IP zamanlayıcı  [san]
+interaction.externreconnect.waitForTermination = cmd sonlandırma süresi [san]
 interaction.externreconnect.waitTimeToFirstIPCheck = İlk IP kontrolü için bekleme süresi  [san]
 interaction.jdchat.deslanguage = buna:
 interaction.jdchat.native = buna:
@@ -924,8 +924,8 @@ plugins.optional.jdrr.port = Port
 plugins.optional.jdshutdown.name = JD-Sistem Kapatma
 plugins.optional.jdunrar.askForPassword = %s için Parola?
 plugins.optional.jdunrar.config.advanced = Gelişmiş Ayarlar
-plugins.optional.jdunrar.config.passwordlist = Tüm parola listesi. Her satır bir parola
-plugins.optional.jdunrar.config.passwordtab = Parola listesi
+plugins.optional.jdunrar.config.passwordlist = Tüm parola listesi. Her satır için tek parola
+plugins.optional.jdunrar.config.passwordtab = Parola Listesi
 plugins.optional.jdunrar.linkmenu.extract = Çıkart
 plugins.optional.jdunrar.linkmenu.openextract = Dizini aç
 plugins.optional.jdunrar.linkmenu.package.extract = Paketi Çıkart
@@ -1017,7 +1017,7 @@ plugins.optional.newsfeeds.pluginTitle = Haberbesleme Denetimi
 plugins.optional.premiumcollector.accountsFound = Hesaplar bulundu!
 plugins.optional.premiumcollector.accountsFound.message = %s Hesap ; %s takmabirimi için bulundu!Eski kayıtlı hesaplar yenilerle değiştirilsin mi?
 plugins.optional.premiumcollector.apiurl = API-URL
-plugins.optional.premiumcollector.autoFetch = Heseapları başlangıçla beraber otomatik bul
+plugins.optional.premiumcollector.autoFetch = Hesapları başlangıçla beraber otomatik bul
 plugins.optional.premiumcollector.error = Hata!
 plugins.optional.premiumcollector.error.url = Muhtemelen yanlış URL! detay için günlüğe bakın
 plugins.optional.premiumcollector.error.userpass = Yanlış kullanıcı Adı/parola
@@ -1147,14 +1147,14 @@ plugins.container.dlc.showdialogoncreatedlc = Yaratmadan sonra onay dialogların
 plugins.container.dlc.uploadername = Karşıya yükleyenin adını dahil et
 plugins.host.rapidshare.errors.bcfe246b0634299062224a73ae50f17e = Bu dosyada yasal olmayan içerik var gibi ve kitlenmiş.Bu dosyayı indirmek Rapidshare tarafından yasaklanmıştır.
 sys.dlc.error_version = DLC şifreleme başarısız.Lütfen doğru JD sürmünü kullandığınızdan emin olun.
-gui.config.plugin.optional.forcedactive = %s eklentisi devredışı bırakılamadı
+gui.config.plugin.optional.forcedactive = %s eklentisi devre dışı bırakılamadı !
 gui.config.unrar.subpath_minnum = Alt-dizin sadece arşiv x dosyadan fazla olduğunda kullanılsın (0=etkisiz)
 gui.config.gui.testbrowser.error = Tarayıcı başlatılamadı: %s
 plugins.decrypt.cryptitcom.password = Klasör parola korumalı.Parolayı Girin:
 plugins.host.fastload.browsererror = Bu Link , tarayıcıda açılamadı.
 plugins.host.fastload.info = fast-load.net'den ilk defa indiriyorsunuz.\r\nBu takmabirim farklı çalışır:\r\nBurdan indirmek için captcha'yı tarayıcınızda girmelisiniz.\r\nJD şimdi info URL açacak.
 plugins.optional.hjsplit.filefilter = HJSPLIT-Ciltlerini başlat
-plugins.optional.jdunrar.config.passwordlist2 = Tüm parola listesi.Her satır için tek parola!.Varolan parola sayısı: %s
+plugins.optional.jdunrar.config.passwordlist2 = Tüm parola listesi. Her satır için tek parola!.Varolan parola sayısı: %s
 plugins.optional.jdunrar.crcerrorin = Çıkartma:Başarısız(%s içinde CRC)
 plugins.optional.jdunrar.filefilter = RAR-Ciltlerini başlat
 plugins.optional.langfileeditor.changed.message = Dil dosyası değiştirildi!Değişiklikler kaydedilsin mi?
@@ -1168,11 +1168,8 @@ gui.dialogs.helpdialog.defaulttitle = Anında Yardım
 routerinfocollector.dialog.msg = Otomatik <b> router algılamayı geliştirmek için router bilgileri topluyoruz </ b> <br> Sunucumuza yükleme yapmak isterseniz TAMAMA tıklayın!
 gui.config.jdshutdown.standby = Beklemede (her sistem için değil)
 plugins.decrypt.brazil-series.com1 = İndirme-formatı: Sadece Altyazısız AVI
-plugins.optional.jdunrar.menu.pwlist = Parola listesi
+plugins.optional.jdunrar.menu.pwlist = Parola Listesi
 plugins.optional.jdlighttray.singleclick = Pencere durumuna tek tıklamalı geçiş
-
-
-
 
 
 
