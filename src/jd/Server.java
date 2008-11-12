@@ -223,7 +223,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
 
-            } else if (currentArg.equals("--add-containers") || currentArg.equals("--add-container") || currentArg.equals("-c")) {
+            } else if (currentArg.equals("--add-containers") || currentArg.equals("--add-container") || currentArg.equals("-co")) {
 
                 addContainersSwitch = true;
                 addLinksSwitch = false;
