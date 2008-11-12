@@ -22,11 +22,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 public class Executer extends Thread {
-    public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
+    public static final String CODEPAGE = OSDetector.isWindows() ?  "ISO-8859-1" : "UTF-8";
     private boolean debug = true;
 
     public boolean isDebug() {
@@ -35,6 +38,15 @@ public class Executer extends Thread {
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+    private String codepage=CODEPAGE;
+
+    public String getCodepage() {
+        return codepage;
+    }
+
+    public void setCodepage(String codepage) {
+        this.codepage = codepage;
     }
 
     class StreamObserver extends Thread {
@@ -46,6 +58,8 @@ public class Executer extends Thread {
 
         private boolean interruptRequestet = false;
         private boolean eof = false;
+
+    
 
         public StreamObserver(InputStream stream, DynByteBuffer buffer) {
             reader = new BufferedInputStream(stream);
@@ -68,14 +82,21 @@ public class Executer extends Thread {
                         String line;
 
                         try {
-                            line = new String(dynbuf.getLast(num), Executer.CODEPAGE).trim();
+                            line = new String(dynbuf.getLast(num), codepage).trim();
                         } catch (UnsupportedEncodingException e) {
                             e.printStackTrace();
                             line = new String(dynbuf.getLast(num)).trim();
 
                         }
                         if (line.length() > 0) {
-                            if (isDebug()) logger.finest(this + ": " + line + "");
+                            if (isDebug()){
+                                
+                                logger.finest(this + ": " + line + "");
+//                                logger.finest(this + ": " + JDHexUtils.getHexString(dynbuf.getLast(num)) + "");
+                                
+                                
+                                
+                            }
                             // System.out.println(">"+line);
                             fireEvent(line, dynbuf, this == Executer.this.sbeObserver ? Executer.LISTENER_ERRORSTREAM : Executer.LISTENER_STDSTREAM);
                             // dynbuf.clear();
@@ -175,7 +196,7 @@ public class Executer extends Thread {
     }
 
     public String getErrorStream() {
-        return errorStreamBuffer.toString();
+        return errorStreamBuffer.toString(this.codepage);
     }
 
     public ArrayList<String> getParameter() {
@@ -187,7 +208,7 @@ public class Executer extends Thread {
     }
 
     public String getOutputStream() {
-        return inputStreamBuffer.toString();
+        return inputStreamBuffer.toString(this.codepage);
     }
 
     public int getWaitTimeout() {

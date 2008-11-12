@@ -169,6 +169,7 @@ public class UnrarWrapper extends Thread {
                         fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
                     } else if (!sc && ex) {
                         System.err.print("Extract WARNING: exctraction my have failed");
+                       
                         fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
 
                     } else {
@@ -197,10 +198,13 @@ public class UnrarWrapper extends Thread {
     private boolean checkSizes() {
         boolean c = true;
         for (ArchivFile f : files) {
+//            System.out.println(f.getFilepath());
+//            System.out.println(f.getFile().getAbsolutePath());
             System.err.println("Sizecheck: " + f.getFilepath() + "(" + f.getSize() + ") = " + f.getFile().length());
             if (f.getSize() != f.getFile().length()) {
                 if (!f.getFile().isDirectory()) {
                     System.err.println("^ERROR^^");
+
                     c = false;
                 } else {
                     f.setPercent(100);
@@ -242,6 +246,7 @@ public class UnrarWrapper extends Thread {
 
         fireEvent(JDUnrarConstants.WRAPPER_START_EXTRACTION);
         Executer exec = new Executer(unrarCommand);
+        exec.setCodepage(JDUnrar.CODEPAGE);
         exec.setDebug(DEBUG);
         exec.addParameter("x");
 
@@ -351,6 +356,7 @@ public class UnrarWrapper extends Thread {
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 pass = escapePassword(pass);
                 Executer exec = new Executer(unrarCommand);
+                exec.setCodepage(JDUnrar.CODEPAGE);
                 exec.setDebug(DEBUG);
                 exec.addParameter("t");
                 // exec.addParameter("-p");
@@ -382,6 +388,7 @@ public class UnrarWrapper extends Thread {
 
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
                 Executer exec = new Executer(unrarCommand);
+                exec.setCodepage(JDUnrar.CODEPAGE);
                 exec.setDebug(DEBUG);
                 exec.addParameter("p");
                 // exec.addParameter("-p");
@@ -471,80 +478,7 @@ public class UnrarWrapper extends Thread {
 
     }
 
-    /**
-     * Öffnet das rararchiv und liest die files ein
-     * 
-     * @throws UnrarException
-     */
-    private void parseOpenOutput(String res) {
-
-        JDUtilities.getLogger().finest(res);
-
-        String[] volumes = Pattern.compile("Volume (.*?)Pathname/Comment", Pattern.DOTALL).split(res);
-        ArchivFile tmp = null;
-        String namen = "";
-        this.files = new ArrayList<ArchivFile>();
-        this.totalSize = 0;
-        for (String volume : volumes) {
-            res = volume;
-
-            Pattern patternvolumes = Pattern.compile("(.+)\\s*?([\\d]+).*?[\\d]+\\-[\\d]+\\-[\\d]+.*?[\\d]+:[\\d]+.*?(.{1})(.{1})(.{1})", Pattern.CASE_INSENSITIVE);
-            Matcher matchervolumes = patternvolumes.matcher(res);
-
-            String vol = new Regex(res, "       volume (\\d+)").getMatch(0);
-            if (vol != null) {
-                volumeNum = Integer.parseInt(vol.trim());
-            }
-            while (matchervolumes.find()) {
-
-                String name = matchervolumes.group(1);
-                name = Encoding.UTF8Encode(name);
-                if (name.matches("\\*.*")) {
-                    name = name.replaceFirst(".", "");
-                    long size = Long.parseLong(matchervolumes.group(2));
-                    this.isProtected = true;
-                    // if (pass != null && password != pass) {
-                    //
-                    // this.password = pass;
-                    // fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_FOUND);
-                    // }
-                    if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
-                        tmp = new ArchivFile(name);
-                        tmp.setSize(size);
-                        tmp.setPath(this.getExtractTo());
-                        tmp.setProtected(true);
-                        tmp.addVolume(vol);
-                        files.add(tmp);
-                        namen = name;
-                        totalSize += size;
-
-                    } else if (name.equals(namen)) {
-                        tmp.addVolume(vol);
-                    }
-
-                } else {
-                    name = name.replaceFirst(".", "");
-                    if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
-
-                        tmp = new ArchivFile(name);
-                        tmp.setPath(this.getExtractTo());
-                        long size;
-                        tmp.setSize(size = Long.parseLong(matchervolumes.group(2)));
-                        totalSize += size;
-                        tmp.setProtected(false);
-                        tmp.addVolume(vol);
-                        files.add(tmp);
-                        namen = name;
-
-                    } else if (name.equals(namen)) {
-                        tmp.addVolume(vol);
-                    }
-
-                }
-            }
-
-        }
-    }
+   
 
     private boolean open() throws UnrarException {
         String pass = null;
@@ -553,6 +487,7 @@ public class UnrarWrapper extends Thread {
         int c = 0;
         while (true) {
             Executer exec = new Executer(unrarCommand);
+            exec.setCodepage(JDUnrar.CODEPAGE);
             exec.setDebug(DEBUG);
             if (i > 0) {
                 if (passwordList.length < i) {
@@ -569,7 +504,7 @@ public class UnrarWrapper extends Thread {
             i++;
             exec.addParameter("v");
             exec.addParameter("-p");
-          
+
             exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
             exec.addParameter("-v");
             exec.addParameter("-c-");
@@ -613,9 +548,10 @@ public class UnrarWrapper extends Thread {
                     while (matchervolumes.find()) {
 
                         String name = matchervolumes.group(1);
-                        name = Encoding.UTF8Encode(name);
+
                         if (name.matches("\\*.*")) {
                             name = name.replaceFirst(".", "");
+                     
                             long size = Long.parseLong(matchervolumes.group(2));
                             this.isProtected = true;
                             if (pass != null && password != pass) {
@@ -640,8 +576,9 @@ public class UnrarWrapper extends Thread {
                         } else {
                             name = name.replaceFirst(".", "");
                             if (!name.equals(namen) && !matchervolumes.group(4).equals("D")) {
-
+                                
                                 tmp = new ArchivFile(name);
+                                
                                 tmp.setPath(this.getExtractTo());
                                 long size;
                                 tmp.setSize(size = Long.parseLong(matchervolumes.group(2)));
@@ -650,6 +587,7 @@ public class UnrarWrapper extends Thread {
                                 tmp.addVolume(vol);
                                 files.add(tmp);
                                 namen = name;
+                               
 
                             } else if (name.equals(namen)) {
                                 tmp.addVolume(vol);
@@ -700,17 +638,28 @@ public class UnrarWrapper extends Thread {
     }
 
     /**
-     * Gibt das ArchiveFile zum lokalen Pfad currentWorkingFile zurück
+     * Gibt das ArchiveFile zum lokalen Pfad currentWorkingFile zurück. Falls sonderzeichen den namensmatch unmöglich machen, Wird über levensthein veruscht den besten Trefer zu finden
      * 
      * @param currentWorkingFile
      * @return
      */
     ArchivFile getArchivFile(String currentWorkingFile) {
-        currentWorkingFile=Encoding.filterString(currentWorkingFile);
+
         for (ArchivFile af : files) {
-            if (Encoding.filterString(af.getFilepath()).equals(currentWorkingFile)) { return af; }
+            if (af.getFilepath().equals(currentWorkingFile)) { return af; }
         }
-        return null;
+        ArchivFile best = null;
+        int value = Integer.MAX_VALUE;
+        int cur;
+        for (ArchivFile af : files) {
+            cur = JDUtilities.getLevenshteinDistance(best.getFilepath(), currentWorkingFile);
+            if (cur < value){
+                value=cur;
+                best = af;
+            }
+        }
+
+        return best;
     }
 
     public String getPassword() {
@@ -786,17 +735,22 @@ public class UnrarWrapper extends Thread {
                 }
                 // ruft die prozentangaben der aktuellen datei
                 if ((match = new Regex(latestLine, "(\\d+)\\%").getMatch(0)) != null) {
-                    exactProgress = true;
-                    currentlyWorkingOn.setPercent(Integer.parseInt(match));
-                    fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+                    if (currentlyWorkingOn != null) {
+                        exactProgress = true;
+                        currentlyWorkingOn.setPercent(Integer.parseInt(match));
+                        fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+
+                    }
                     return;
                 }
 
                 // datei ok
                 if ((match = new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
-                    currentlyWorkingOn.setPercent(100);
-                    fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
-                    fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED);
+                    if (currentlyWorkingOn != null) {
+                        currentlyWorkingOn.setPercent(100);
+                        fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
+                        fireEvent(JDUnrarConstants.WRAPPER_PROGRESS_SINGLE_FILE_FINISHED);
+                    }
                 }
 
                 if ((match = new Regex(latestLine, "Bad archive (.{5,})").getMatch(0)) != null) {

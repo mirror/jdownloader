@@ -254,8 +254,8 @@ public class DepositFiles extends PluginForHost {
         link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
 
         if (link == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
+            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        
         }
 
         dl = RAFDownload.download(downloadLink, br.createGetRequest(link), true, 0);

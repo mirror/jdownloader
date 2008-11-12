@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.parser.Regex;
 import jd.utils.DynByteBuffer;
 import jd.utils.Executer;
+import jd.utils.JDHexUtils;
 import jd.utils.ProcessListener;
 
 public class PasswordListener extends ProcessListener {
@@ -38,7 +39,7 @@ public class PasswordListener extends ProcessListener {
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
         String lastLine;
         try {
-            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),Executer.CODEPAGE);
+            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),JDUnrar.CODEPAGE);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
@@ -53,6 +54,8 @@ public class PasswordListener extends ProcessListener {
         } else if (new Regex(lastLine, ".*?current.*?password.*?ll ").matches()) {
             exec.writetoOutputStream("A");
         }
+        
+       
     }
 
     @Override

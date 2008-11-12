@@ -39,15 +39,24 @@ public class DynByteBuffer {
 
     public String toString() {
         
+     
+            return new String(this.getLast(buffer.position()));
+        
+    }
+    public byte[] toByteArray(){
+        return this.getLast(buffer.position());
+    }
+    public String toString(String codepage) {
+        
         try {
-            return new String(this.getLast(buffer.position()),Executer.CODEPAGE);
+            return new String(this.getLast(buffer.position()),codepage);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             return new String(this.getLast(buffer.position()));
         }
     }
-
     public int capacity() {
+       
         return this.buffer.capacity();
     }
 
@@ -92,5 +101,13 @@ public class DynByteBuffer {
         return b;
 
     }
+    public byte[] getSub(int start,int end) {
+        int posi = buffer.position();       
+        buffer.position(start);
+        byte[] b = new byte[end-start];
+        buffer.get(b);
+        buffer.position(posi);
+        return b;
 
+    }
 }

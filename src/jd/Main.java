@@ -143,7 +143,7 @@ public class Main {
     }
 
     public static void main(String args[]) {
-
+   
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
             logger.info("apple.laf.useScreenMenuBar=true");
