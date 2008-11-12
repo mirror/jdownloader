@@ -852,8 +852,13 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben"), TreeTableAction.DOWNLOAD_NEW_PACKAGE, new Property("downloadlinks", getSelectedDownloadLinks()))));
 
-                popup.add(new JSeparator());
-                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.check", "Check Availability"), TreeTableAction.DOWNLOAD_CHECK_AVAILABILITY, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                // TODO: Vorerst auskommentiert, muss überarbeitet werden
+                // popup.add(new JSeparator());
+                // popup.add(new JMenuItem(new TreeTableAction(this,
+                // JDLocale.L("gui.table.contextmenu.check",
+                // "Check Availability"),
+                // TreeTableAction.DOWNLOAD_CHECK_AVAILABILITY, new
+                // Property("downloadlinks", getSelectedDownloadLinks()))));
 
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyPassword", "Copy Password"), TreeTableAction.DOWNLOAD_COPY_PASSWORD, new Property("downloadlink", obj))));
@@ -908,8 +913,12 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren"), TreeTableAction.PACKAGE_DISABLE, new Property("packages", fps))));
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen"), TreeTableAction.PACKAGE_RESET, new Property("packages", fps))));
 
-        res.add(new JSeparator());
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.check", "Check Availability"), TreeTableAction.PACKAGE_CHECK_AVAILABILITY, new Property("package", fp))));
+        // TODO: Vorerst auskommentiert, muss überarbeitet werden
+        // res.add(new JSeparator());
+        // res.add(new JMenuItem(new TreeTableAction(this,
+        // JDLocale.L("gui.table.contextmenu.check", "Check Availability"),
+        // TreeTableAction.PACKAGE_CHECK_AVAILABILITY, new Property("package",
+        // fp))));
 
         res.add(new JSeparator());
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyPassword", "Copy Password"), TreeTableAction.PACKAGE_COPY_PASSWORD, new Property("package", fp))));
