@@ -73,9 +73,9 @@ public class JDAboutDialog {
         JPanel p = new JPanel(new BorderLayout(30, 30));
         p.setBorder(new EmptyBorder(n, n, n, n));
         dialog.setContentPane(p);
-        JXTitledSeparator titledSeparator = new JXTitledSeparator("JDownloader Developer Team");
+        JXTitledSeparator titledSeparator = new JXTitledSeparator(JDLocale.L("gui.dialog.about.jddevteam", "JDownloader Developer Team"));
         titledSeparator.setForeground(Color.BLUE);
-        JXTitledSeparator titledSeparator2 = new JXTitledSeparator("What is JDownloader?");
+        JXTitledSeparator titledSeparator2 = new JXTitledSeparator(JDLocale.L("gui.dialog.about.whatisjd", "What is jDownloader?"));
         titledSeparator2.setForeground(Color.BLUE);
 
         // See how I added myself above. Every string starts with a single white
@@ -89,17 +89,17 @@ public class JDAboutDialog {
 
         };
 
-        JTable table = new JTable(devs, new String[] { "Entwickler", "Email", "Ressort" });
+        JTable table = new JTable(devs, new String[] { JDLocale.L("gui.dialog.about.member", "Member"), JDLocale.L("gui.dialog.about.email", "Email"), JDLocale.L("gui.dialog.about.section", "Section") });
         table.setEnabled(false);
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(0), 80);
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel();
-        links.add(new JXHyperlink(new LinkAction("Homepage", "http://jdownloader.net/index_en.php")));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), "http://jdownloader.net/index_en.php")));
         links.add(new JSeparator());
-        links.add(new JXHyperlink(new LinkAction("Supportboard", "http://jdownloader.net/support_en.php")));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), "http://jdownloader.net/support_en.php")));
         links.add(new JSeparator());
-        links.add(new JXHyperlink(new LinkAction("Chat", "http://jdownloader.net/chat_en.php")));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), "http://jdownloader.net/chat_en.php")));
 
         JPanel s = new JPanel(new BorderLayout(n, n));
         s.add(new JScrollPane(table), BorderLayout.CENTER);
