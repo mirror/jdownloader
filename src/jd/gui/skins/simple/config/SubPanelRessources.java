@@ -43,6 +43,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.PackageManager;
+import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
@@ -228,14 +229,19 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         JScrollPane scrollpane = new JScrollPane(table);
         scrollpane.setPreferredSize(new Dimension(600, 300));
 
-        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Versionsinformationen zurücksetzen"));
+        btnReset = new JButton(JDLocale.L("gui.config.packagemanager.reset", "Addons neu herunterladen"));
         btnReset.addActionListener(this);
 
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         bpanel.add(btnReset);
 
         ConfigContainer container = new ConfigContainer(this);
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CFGConfig.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true).setInstantHelp(JDLocale.L("gui.config.packagemanager.supportJD.instanthelp", "http://wiki.jdownloader.org/index.php?title=Addon-Manager")));
+        
+        if(!SimpleGUI.CURRENTGUI.getGuiConfig().getBooleanProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, true)){
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CFGConfig.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons"))
+                .setDefaultValue(true)
+                .setInstantHelp(JDLocale.L("gui.config.packagemanager.supportJD.instanthelp", "http://wiki.jdownloader.org/index.php?title=Addon-Manager")));
+        }
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         cep.addPropertyChangeListener(this);
         this.add(scrollpane);

@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
-import jd.parser.XPath;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;

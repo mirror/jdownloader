@@ -225,8 +225,8 @@ gui.config.packagemanager.column_installedversion = Inst. Version
 gui.config.packagemanager.column_latestversion = Akt. Version
 gui.config.packagemanager.column_name = Paket
 gui.config.packagemanager.column_select = Auswählen
-gui.config.packagemanager.reset = Versionsinformationen zurücksetzen
-gui.config.packagemanager.supportjd = Unterstützte JD durch Herunterladen von aufgepumpten Addons
+gui.config.packagemanager.reset = Addons neu herunterladen
+gui.config.packagemanager.supportjd = Unterstützte JD durch das Herunterladen von aufgepumpten Addons
 gui.config.packagemanager.supportjd.instanthelp = http://wiki.jdownloader.org/index.php?title=Addon-Manager
 gui.config.packagemanager.table.info = Info
 gui.config.plugin.abg_confirm = Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden

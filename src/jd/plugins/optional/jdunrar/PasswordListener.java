@@ -17,7 +17,6 @@
 package jd.plugins.optional.jdunrar;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
 import java.util.regex.Pattern;
 
 import jd.parser.Regex;
