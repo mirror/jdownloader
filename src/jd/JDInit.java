@@ -672,6 +672,7 @@ public class JDInit {
         new DecryptPluginWrapper("yourlayer.com", "YourLayercom", "http://[\\w\\.]*?yourlayer\\.com/go\\.php\\?uid=[a-zA-Z0-9]+(&part=\\d+)?");
         new DecryptPluginWrapper("yourfiles.biz", "YourFilesBizFolder", "http://[\\w\\.]*?yourfiles\\.biz/.*/folders/[0-9]+/.+\\.html");
         new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" brurl=\".*?\" convertto=\".*?\" comment=\".*?\" \\>");
+        new DecryptPluginWrapper("megaupload.com folder", "MegauploadComFolder", "http://[\\w\\.]*?megaupload\\.com/\\?f=[a-zA-Z0-9]+");
 
     }
 
