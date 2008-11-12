@@ -110,7 +110,7 @@ public class JDUtilities {
      */
     public static final String CONFIG_PATH = "jDownloader.config";
 
-    /**
+    /**  
      * Die Konfiguration
      */
     private static Configuration configuration = new Configuration();
