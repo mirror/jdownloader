@@ -23,7 +23,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-//http://www.megaupload.com/?f=R8G62AN1
 public class MegauploadComFolder extends PluginForDecrypt {
 
     public MegauploadComFolder(PluginWrapper wrapper) {
@@ -32,20 +31,20 @@ public class MegauploadComFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
-    	String parameter = param.getCryptedUrl().replace("?f=", "xml/folderfiles.php?folderid=");    	
+        String parameter = param.getCryptedUrl().replace("?f=", "xml/folderfiles.php?folderid=");
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
         br.getPage(parameter);
-        String[][] files = br.getRegex("url=\"(.*?)\"").getMatches();
-        for(int i=0; i < files.length; i++) {
-        	decryptedLinks.add(createDownloadlink(files[i][0]));
+        String[] files = br.getRegex("url=\"(.*?)\"").getColumn(0);
+        for (String file : files) {
+            decryptedLinks.add(createDownloadlink(file));
         }
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3567 $");
+        return getVersion("$Revision$");
     }
 
 }

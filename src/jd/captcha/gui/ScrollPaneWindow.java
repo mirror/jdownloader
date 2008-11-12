@@ -31,9 +31,9 @@ import javax.swing.SwingUtilities;
  * 
  * @author JD-Team
  */
-@SuppressWarnings("serial")
 public class ScrollPaneWindow extends BasicWindow {
 
+    private static final long serialVersionUID = 4174011156785741071L;
     private JPanel panel;
     public JScrollPane scrollPane;
 

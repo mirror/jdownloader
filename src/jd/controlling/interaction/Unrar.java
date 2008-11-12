@@ -23,9 +23,7 @@ public class Unrar extends Interaction implements Serializable {
     private static final long serialVersionUID = 2467582501274722811L;
 
     public static Unrar getInstance() {
-
         return null;
-
     }
 
     private Unrar() {
@@ -34,9 +32,7 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
-
         return true;
-
     }
 
     @Override
@@ -51,7 +47,6 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public void initConfig() {
-
     }
 
     @Override
@@ -60,7 +55,6 @@ public class Unrar extends Interaction implements Serializable {
 
     @Override
     public void run() {
-
     }
 
     @Override

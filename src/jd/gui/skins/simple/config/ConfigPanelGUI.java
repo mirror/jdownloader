@@ -189,7 +189,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         String path = null;
 
         if (OSDetector.isWindows()) {
-            
+
             if (new File("C:\\Program Files\\Mozilla Firefox\\firefox.exe").exists()) {
                 parameter = "-new-tab\r\n%url";
                 path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
@@ -202,7 +202,7 @@ public class ConfigPanelGUI extends ConfigPanel {
                 parameter = "%url";
                 path = "C:\\Program Files\\Internet Explorer\\iexplore.exe";
 
-            } else  {
+            } else {
                 parameter = "%url";
                 path = "C:\\Programme\\Internet Explorer\\iexplore.exe";
 
@@ -226,8 +226,8 @@ public class ConfigPanelGUI extends ConfigPanel {
         }
         if (OSDetector.isLinux()) {
 
-            /**TODO:
-             * das ganze für linux
+            /**
+             * TODO: das ganze für linux
              */
 
         }

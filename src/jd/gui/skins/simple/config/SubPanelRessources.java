@@ -236,11 +236,9 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         bpanel.add(btnReset);
 
         ConfigContainer container = new ConfigContainer(this);
-        
-        if(!SimpleGUI.CURRENTGUI.getGuiConfig().getBooleanProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, true)){
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CFGConfig.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons"))
-                .setDefaultValue(true)
-                .setInstantHelp(JDLocale.L("gui.config.packagemanager.supportJD.instanthelp", "http://wiki.jdownloader.org/index.php?title=Addon-Manager")));
+
+        if (!SimpleGUI.CURRENTGUI.getGuiConfig().getBooleanProperty(SimpleGUI.PARAM_SHOW_FENGSHUI, true)) {
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, CFGConfig.getConfig("JDU"), "SUPPORT_JD", JDLocale.L("gui.config.packagemanager.supportJD", "Support JD by downloading pumped-up-addons")).setDefaultValue(true).setInstantHelp(JDLocale.L("gui.config.packagemanager.supportJD.instanthelp", "http://wiki.jdownloader.org/index.php?title=Addon-Manager")));
         }
         this.add(cep = new ConfigEntriesPanel(container), BorderLayout.NORTH);
         cep.addPropertyChangeListener(this);
