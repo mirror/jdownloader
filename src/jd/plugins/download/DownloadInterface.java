@@ -769,8 +769,8 @@ abstract public class DownloadInterface {
 
                 if (startByte > 0 && (connection.getHeaderField("Content-Range") == null || connection.getHeaderField("Content-Range").length() == 0)) {
                     error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaders", "Server does not support chunkload"));
-                    connection.toString();
                     logger.severe("ERROR Chunk (no range header response)" + chunks.indexOf(this));
+                    logger.finest(connection.toString());
                     return;
 
                 }
@@ -786,7 +786,7 @@ abstract public class DownloadInterface {
                 if (range == null && chunkNum > 1) {
                     if (dl.fakeContentRangeHeader()) {
                         logger.severe("Using fakeContentRangeHeader");
-                        connection.toString();
+                        logger.finest(connection.toString());
                         String[][] fixrange = new Regex(connection.getRequestProperty("Range"), ".*?(\\d+).*?-.*?(\\d+)?").getMatches();
 
                         long gotSB = JDUtilities.filterLong(fixrange[0][0]);
@@ -830,9 +830,9 @@ abstract public class DownloadInterface {
                             // schon fertig
                             return;
                         }
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
-                        connection.toString();
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));                        
                         logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
+                        logger.finest(connection.toString());
                         return;
                     }
                 } else if (range != null) {
@@ -840,6 +840,7 @@ abstract public class DownloadInterface {
                     long gotEB = JDUtilities.filterLong(range[0][1]);
                     if (gotSB != startByte) {
                         logger.severe("Range Conflict " + range[0][0] + " - " + range[0][1] + " wished start: " + 0);
+                        logger.finest(connection.toString());
                     }
 
                     if (endByte <= 0) {
@@ -852,9 +853,11 @@ abstract public class DownloadInterface {
                         }
                         if (gotEB < endByte) {
                             logger.severe("Range Conflict " + range[0] + " - " + range[1] + " wishedend: " + endByte);
+                            logger.finest(connection.toString());
                         }
                         if (gotEB > endByte + 1) {
                             logger.warning("Possible RangeConflict or Servermisconfiguration. wished endByte: " + endByte + " got: " + gotEB);
+                            logger.finest(connection.toString());
                         }
                         endByte = Math.min(endByte, gotEB);
                     }
@@ -1676,7 +1679,7 @@ abstract public class DownloadInterface {
         DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
         downloadLink.getLinkStatus().setStatusText(null);
         if (connection == null || !connection.isOK()) {
-            if (connection != null) connection.toString();
+            if (connection != null) logger.finest(connection.toString());
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
         if (connection.getHeaderField("Location") != null) {
