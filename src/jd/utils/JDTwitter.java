@@ -17,11 +17,14 @@
 package jd.utils;
 
 import java.io.IOException;
+import java.util.logging.Logger;
 
 import jd.http.Browser;
 
 public class JDTwitter {
-
+    
+    private static Logger logger = JDUtilities.getLogger();
+    
     public static String RefreshTwitterMessage() {
 
         long onedayback = System.currentTimeMillis() - 1000 * 60 * 60 * 24;
@@ -30,10 +33,10 @@ public class JDTwitter {
         try {
             br.getPage(JDLocale.L("main.twitter.url", "http://twitter.com/statuses/user_timeline/jdownloader.xml") + "?count=1&since=" + JDUtilities.formatTime(onedayback));
             status = br.getRegex("<status>[\\s\\S]*?<text>(.*?)</text>[\\s\\S]*?</status>").getMatch(0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
+        } catch (IOException e) {
+                logger.warning("twitter.com unreachable. This doesnt affect your Downloads, though it could be a clue that your internet connection is down.");
+        }
      
 
         if ((status == null) || (status == "")) {
