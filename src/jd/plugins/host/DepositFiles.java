@@ -124,9 +124,9 @@ public class DepositFiles extends PluginForHost {
         }
 
         form = br.getFormbyValue("Die Datei downloaden");
-        Request r = br.createFormRequest(form);
-        dl = RAFDownload.download(downloadLink, r, false, 1);
-        HTTPConnection con = dl.connect(br);
+        dl=br.openDownload(downloadLink, form);
+        HTTPConnection con=dl.getConnection();
+      
 
         if (con == null) {
             if (br.containsHTML("IP-Addresse werden schoneinige Files")) {

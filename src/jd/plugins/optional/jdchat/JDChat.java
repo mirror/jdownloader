@@ -137,7 +137,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         COMMANDS.add("/mode ");
         COMMANDS.add("/join");
         COMMANDS.add("/translate ");
-
+        initConfigEntries();
         COMMANDS.add("/translate artoda ");
         COMMANDS.add("/translate artode ");
         COMMANDS.add("/translate artofi ");
@@ -824,7 +824,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
         sb = new StringBuffer();
-        initConfigEntries();
+    
         return true;
     }
 

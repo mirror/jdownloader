@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -39,8 +40,15 @@ public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.share-online.biz/service.php");
     }
-
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        String user = account.getUser();
+        String pass = account.getPass();
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+        
+        
+    }
     @Override
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
