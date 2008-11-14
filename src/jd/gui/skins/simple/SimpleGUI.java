@@ -898,6 +898,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             SimpleGUI.showConfigDialog(frame, new ConfigPanelAddons(JDUtilities.getConfiguration()), false);
             // SimpleGUI.showConfigDialog(frame, new
             // SubPanelPluginsOptional(JDUtilities.getConfiguration()));
+            JDUtilities.saveConfig();
             break;
         case JDAction.ITEMS_REMOVE_PACKAGES:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
