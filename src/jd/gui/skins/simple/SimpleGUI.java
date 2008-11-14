@@ -113,6 +113,7 @@ import jd.gui.skins.simple.components.TwoTextFieldDialog;
 import jd.gui.skins.simple.config.ConfigEntriesPanel;
 import jd.gui.skins.simple.config.ConfigPanel;
 import jd.gui.skins.simple.config.ConfigPanelAddons;
+import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
@@ -306,7 +307,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             } else if (e.getSource() == chbPremium) {
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) != chbPremium.isSelected()) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, chbPremium.isSelected());
-                    JDUtilities.saveConfig();
+                    JDUtilities.getConfiguration().save();
                 }
             }
 
@@ -583,6 +584,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionOptionalConfig;
 
+    private JDAction actionHostConfig;
+
     // private JDAction actionExpandAll;
 
     // private JDAction actionCollapseAll;
@@ -807,8 +810,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
 
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, checked);
-
-            JDUtilities.saveConfig();
+            JDUtilities.getConfiguration().save();
 
             /*
              * Steht hier, weil diese Funktion(toggleReconnect) direkt vom
@@ -896,9 +898,11 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             break;
         case JDAction.APP_OPEN_OPT_CONFIG:
             SimpleGUI.showConfigDialog(frame, new ConfigPanelAddons(JDUtilities.getConfiguration()), false);
-            // SimpleGUI.showConfigDialog(frame, new
-            // SubPanelPluginsOptional(JDUtilities.getConfiguration()));
-            JDUtilities.saveConfig();
+            JDUtilities.getConfiguration().save();
+            break;
+        case JDAction.APP_OPEN_HOST_CONFIG:
+            SimpleGUI.showConfigDialog(frame, new ConfigPanelPluginForHost(JDUtilities.getConfiguration()), false);
+            JDUtilities.getConfiguration().save();
             break;
         case JDAction.ITEMS_REMOVE_PACKAGES:
             if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
@@ -1337,9 +1341,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionRemoveLinks = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.links", JDAction.ITEMS_REMOVE_LINKS);
         actionRemovePackages = new JDAction(this, JDTheme.V("gui.images.delete"), "action.remove.packages", JDAction.ITEMS_REMOVE_PACKAGES);
         actionDnD = new JDAction(this, JDTheme.V("gui.images.clipboard"), "action.dnd", JDAction.ITEMS_DND);
-        // actionInstallJDU = new JDAction(this, JDTheme.V("gui.load"),
-        // "action.install", JDAction.APP_INSTALL_JDU);
-        this.actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
+        actionOptionalConfig = new JDAction(this, JDTheme.V("gui.images.config.packagemanager"), "action.optconfig", JDAction.APP_OPEN_OPT_CONFIG);
+        actionHostConfig = new JDAction(this, JDTheme.V("gui.images.config.host"), "action.hostconfig", JDAction.APP_OPEN_HOST_CONFIG);
         actionLoadDLC = new JDAction(this, JDTheme.V("gui.images.load"), "action.load", JDAction.APP_LOAD_DLC);
         actionSaveDLC = new JDAction(this, JDTheme.V("gui.images.save"), "action.save", JDAction.APP_SAVE_DLC);
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
@@ -1499,11 +1502,14 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void createHostPluginsMenuEntries() {
+        Component temp = (menHosts.getComponentCount() != 0) ? menHosts.getComponent(0) : SimpleGUI.createMenuItem(this.actionHostConfig);
         menHosts.removeAll();
+        menHosts.add(temp);
+        menHosts.addSeparator();
 
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
             if (wrapper.isLoaded()) {
-                final Plugin helpPlugin = wrapper.getPlugin();
+                final PluginForHost helpPlugin = wrapper.getPlugin();
                 if (helpPlugin.createMenuitems() != null) {
                     JMenuItem mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
                     if (mi != null) {

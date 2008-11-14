@@ -308,11 +308,11 @@ public class GetRouterInfo {
                 data[5] = password;
             }
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
-            JDUtilities.saveConfig();
+            JDUtilities.getConfiguration().save();
             if (Reconnecter.waitForNewIP(1)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
-                JDUtilities.saveConfig();
+                JDUtilities.getConfiguration().save();
                 setProgress(100);
                 return data;
             }

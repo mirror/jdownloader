@@ -148,7 +148,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_CONFIGURATION, null));
         } else if (e.getSource() == reconnect) {
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-            JDUtilities.saveConfig();
+            JDUtilities.getConfiguration().save();
         } else if (e.getSource() == speed1) {
             int speed = getPluginConfig().getIntegerProperty("SPEED1", 100);
             JDUtilities.getSubConfig("DOWNLOAD").setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, speed);

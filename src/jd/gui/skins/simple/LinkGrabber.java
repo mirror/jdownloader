@@ -1036,15 +1036,15 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             addTab();
         } else if (e.getSource() == insertAtPosition) {
             guiConfig.setProperty(PROPERTY_POSITION, insertAtPosition.getSelectedIndex());
-            JDUtilities.saveConfig();
+            guiConfig.save();
             return;
         } else if (e.getSource() == mHostSelectionRemove) {
             guiConfig.setProperty(PROPERTY_HOSTSELECTIONREMOVE, mHostSelectionRemove.isSelected());
-            JDUtilities.saveConfig();
+            guiConfig.save();
             return;
         } else if (e.getSource() == mHostSelectionPackageOnly) {
             guiConfig.setProperty(PROPERTY_HOSTSELECTIONPACKAGEONLY, mHostSelectionPackageOnly.isSelected());
-            JDUtilities.saveConfig();
+            guiConfig.save();
             return;
         } else {
             for (int i = 0; i < JDUtilities.getPluginsForHost().size(); ++i) {

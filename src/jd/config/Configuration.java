@@ -230,8 +230,6 @@ public class Configuration extends Property implements Serializable {
         return routerData;
     }
 
-    // public HashMap<Integer, Vector<Interaction>> getInteractionMap() { return
-    // interactionMap; }
     /**
      * @return Gibt das Routeradmin Passwort zurück
      */
@@ -253,6 +251,10 @@ public class Configuration extends Property implements Serializable {
      */
     public int getWaitForIPCheck() {
         return waitForIPCheck;
+    }
+
+    public void save() {
+        JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", this);
     }
 
     /**

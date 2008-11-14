@@ -135,7 +135,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             }
             configuration.setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, (reconnect_duration / 1000) * 2);
             configuration.setProperty(Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, (reconnect_duration / 1000) / 2);
-            JDUtilities.saveConfig();
+            configuration.save();
             saved = true;
         }
     }

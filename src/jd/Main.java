@@ -402,7 +402,7 @@ public class Main {
 
             JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).setProperty(Configuration.PARAM_INTERACTIONS, JDUtilities.getConfiguration().getInteractions());
             JDUtilities.getConfiguration().setInteractions(new Vector<Interaction>());
-            JDUtilities.saveConfig();
+            JDUtilities.getConfiguration().save();
 
         }
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.initcontroller", "Starte Controller"));

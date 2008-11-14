@@ -689,7 +689,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             config.setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, routername.getText());
             saveit = true;
         }
-        if (saveit) JDUtilities.saveConfig();
+        if (saveit) JDUtilities.getConfiguration().save();
         if (restart) JDUtilities.restartJD();
 
     }

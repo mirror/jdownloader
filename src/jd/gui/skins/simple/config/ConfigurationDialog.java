@@ -213,19 +213,17 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
                     configPanels.elementAt(i).save();
                 }
             }
+            configuration.save();
             JDUtilities.setConfiguration(configuration);
-            JDUtilities.saveConfig();
             JDUtilities.restartJD();
-
         } else if (e.getSource() == btnSave || e.getSource() == btnFengShuiConfig) {
             for (int i = 0; i < configPanels.size(); i++) {
                 if (configPanels.elementAt(i) != null) {
                     configPanels.elementAt(i).save();
                 }
             }
+            configuration.save();
             JDUtilities.setConfiguration(configuration);
-            JDUtilities.saveConfig();
-
         }
 
         setVisible(false);

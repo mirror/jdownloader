@@ -657,8 +657,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 logger.fine("RemoteControl - Set ReConnect: " + disprc);
                 if (!JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false) == newrc) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, newrc);
-
-                    JDUtilities.saveConfig();
+                    JDUtilities.getConfiguration().save();
 
                     response.addContent("reconnect=" + disprc + " (CHANGED=true)");
                 } else {
@@ -672,7 +671,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
                 logger.fine("RemoteControl - Set Premium: " + newuseprem);
                 if (newuseprem ^ JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem)) {
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, newuseprem);
-                    JDUtilities.saveConfig();
+                    JDUtilities.getConfiguration().save();
                     response.addContent("newprem=" + newuseprem + " (CHANGED=true)");
                 } else {
                     response.addContent("newprem=" + newuseprem + " (CHANGED=false)");

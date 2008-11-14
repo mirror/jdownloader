@@ -144,7 +144,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
     private void setEnabled(boolean enabled2) {
         enabled = enabled2;
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE, enabled2);
-        JDUtilities.saveConfig();
+        JDUtilities.getConfiguration().save();
 
         if (enabled && !isAlive()) {
             new ClipboardHandler();

@@ -60,7 +60,7 @@ public class Installer {
             return;
         }
 
-        JDUtilities.saveConfig();
+        JDUtilities.getConfiguration().save();
     }
 
     public boolean isAborted() {

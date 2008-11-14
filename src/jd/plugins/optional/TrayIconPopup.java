@@ -166,7 +166,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
         icon.setPreferredSize(new Dimension(MENUENTRY_ICON_WIDTH, MENUENTRY_HEIGHT));
     }
 
-    // Checken ob es ein neues Update verfügbar ist
+    // Checken ob es ein neues Update verfï¿½gbar ist
     private boolean checkUpdate(Point p) {
         if (mouseOverRow != getRow(p)) {
             mouseOverRow = getRow(p);
@@ -327,7 +327,7 @@ public class TrayIconPopup extends JWindow implements MouseListener, MouseMotion
             break;
         case TrayIconPopup.ACTION_TOGGLE_RECONNECT:
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, false));
-            JDUtilities.saveConfig();
+            JDUtilities.getConfiguration().save();
             break;
         case TrayIconPopup.ACTION_UPDATE:
             simplegui.actionPerformed(new ActionEvent(this, JDAction.APP_UPDATE, null));

@@ -110,7 +110,7 @@ public class JDUtilities {
      */
     public static final String CONFIG_PATH = "jDownloader.config";
 
-    /**  
+    /**
      * Die Konfiguration
      */
     private static Configuration configuration = new Configuration();
@@ -1426,7 +1426,7 @@ public class JDUtilities {
     }
 
     public static void saveConfig() {
-        JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", JDUtilities.getConfiguration());
+        JDUtilities.getConfiguration().save();
     }
 
     /**
@@ -1571,7 +1571,7 @@ public class JDUtilities {
     public static void setCurrentWorkingDirectory(File f, String id) {
         if (id == null) id = "";
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_CURRENT_BROWSE_PATH + id, f.getAbsolutePath());
-        JDUtilities.saveConfig();
+        JDUtilities.getConfiguration().save();
     }
 
     public static void setLocale(Locale locale) {

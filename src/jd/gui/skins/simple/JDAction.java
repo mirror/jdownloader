@@ -75,10 +75,11 @@ public class JDAction extends AbstractAction {
     public static final int WIKI = 33;
 
     public static final int CHANGES = 35;
+
     public static final int APP_OPEN_OPT_CONFIG = 36;
-    /**
-     * serialVersionUID
-     */
+
+    public static final int APP_OPEN_HOST_CONFIG = 37;
+
     private static final long serialVersionUID = 7393495345332708426L;
 
     private KeyStroke accelerator;
