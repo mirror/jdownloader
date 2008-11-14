@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 import jd.parser.Regex;
 import jd.utils.DynByteBuffer;
 import jd.utils.Executer;
-import jd.utils.JDHexUtils;
 import jd.utils.ProcessListener;
 
 public class PasswordListener extends ProcessListener {
@@ -35,17 +34,17 @@ public class PasswordListener extends ProcessListener {
         this.password = pass;
     }
 
-    @Override 
+    @Override
     public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestNum) {
         String lastLine;
         try {
-            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition),JDUnrar.CODEPAGE);
+            lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
             lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
-            
+
         }
-        
+
         if (new Regex(lastLine, Pattern.compile(".*?password.{0,200}: $", Pattern.CASE_INSENSITIVE)).matches()) {
             exec.writetoOutputStream(this.password);
         }
@@ -54,8 +53,7 @@ public class PasswordListener extends ProcessListener {
         } else if (new Regex(lastLine, ".*?current.*?password.*?ll ").matches()) {
             exec.writetoOutputStream("A");
         }
-        
-       
+
     }
 
     @Override

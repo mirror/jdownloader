@@ -206,7 +206,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         FilePackage fp;
         Vector<DownloadLink> links;
         Vector<FilePackage> fps;
-        boolean[] res;
+        // boolean[] res;
 
         switch (e.getID()) {
 
@@ -332,17 +332,18 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(link.getFilePackage().getPassword()), null);
             break;
-        case TreeTableAction.DOWNLOAD_CHECK_AVAILABILITY:
-            links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
-            for (DownloadLink dLink : links) {
-                res = dLink.getPlugin().checkLinks(new DownloadLink[] { dLink });
-                if (res == null) continue;
-                if (!res[0]) {
-                    dLink.setAvailable(false);
-                    dLink.requestGuiUpdate();
-                }
-            }
-            break;
+        // case TreeTableAction.DOWNLOAD_CHECK_AVAILABILITY:
+        // links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem)
+        // e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
+        // for (DownloadLink dLink : links) {
+        // res = dLink.getPlugin().checkLinks(new DownloadLink[] { dLink });
+        // if (res == null) continue;
+        // if (!res[0]) {
+        // dLink.setAvailable(false);
+        // dLink.requestGuiUpdate();
+        // }
+        // }
+        // break;
         case TreeTableAction.PACKAGE_INFO:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
             new PackageInfo(SimpleGUI.CURRENTGUI.getFrame(), fp);
@@ -475,17 +476,18 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fp.sort(null);
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
             break;
-        case TreeTableAction.PACKAGE_CHECK_AVAILABILITY:
-            fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
-            for (DownloadLink dLink : fp.getDownloadLinks()) {
-                res = dLink.getPlugin().checkLinks(new DownloadLink[] { dLink });
-                if (res == null) continue;
-                if (!res[0]) {
-                    dLink.setAvailable(false);
-                    dLink.requestGuiUpdate();
-                }
-            }
-            break;
+        // case TreeTableAction.PACKAGE_CHECK_AVAILABILITY:
+        // fp = (FilePackage) ((TreeTableAction) ((JMenuItem)
+        // e.getSource()).getAction()).getProperty().getProperty("package");
+        // for (DownloadLink dLink : fp.getDownloadLinks()) {
+        // res = dLink.getPlugin().checkLinks(new DownloadLink[] { dLink });
+        // if (res == null) continue;
+        // if (!res[0]) {
+        // dLink.setAvailable(false);
+        // dLink.requestGuiUpdate();
+        // }
+        // }
+        // break;
         case TreeTableAction.PACKAGE_COPY_PASSWORD:
             fp = (FilePackage) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("package");
             Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(fp.getPassword()), null);

@@ -38,7 +38,6 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -66,7 +65,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private Jobber queue;
     private ConfigContainer passwordConfig;
-    static String CODEPAGE=OSDetector.isWindows() ?  "ISO-8859-1" : "UTF-8";
+    static String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";
 
     // private ConfigEntry pwField;
 
@@ -325,10 +324,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         if (!new File(link.getFileOutput()).exists()) {
 
         return; }
-        
-   
-        
-        System.out.println("Start link " + link+"(CODEPAGE: "+CODEPAGE+")");
+
+        System.out.println("Start link " + link + "(CODEPAGE: " + CODEPAGE + ")");
         link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
         link.getLinkStatus().setErrorMessage(null);
         File dl = this.getExtractToPath(link);
@@ -734,10 +731,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, JDLocale.L("gui.config.unrar.remove_infofile", "Delete Infofile after extraction")));
         ce.setDefaultValue(false);
     }
-/**
- * Diese Funktion wird momentan nicht benötigt. sie sucht nach dem Richtigen Encoding.
- * @return
- */
+
+    /**
+     * Diese Funktion wird momentan nicht benötigt. sie sucht nach dem Richtigen
+     * Encoding.
+     * 
+     * @return
+     */
     private String getCodepage() {
         Executer exec = new Executer(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         exec.addParameter("v");
@@ -755,17 +755,18 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             Entry<String, Charset> n = it.next();
             try {
                 if (new String(b, n.getKey()).contains("Øaeäoeöueü")) {
-                    System.err.println(n.getKey()+" -->"+new String(b, n.getKey()));
+                    System.err.println(n.getKey() + " -->" + new String(b, n.getKey()));
                     if (found == null) found = n.getKey();
-                }else{
-//                    System.out.println(n.getKey()+" : "+new String(b, n.getKey()));
+                } else {
+                    // System.out.println(n.getKey()+" : "+new String(b,
+                    // n.getKey()));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        
-         exec = new Executer(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
+
+        exec = new Executer(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         exec.addParameter("v");
         exec.setCodepage(found);
         exec.addParameter("-v");
