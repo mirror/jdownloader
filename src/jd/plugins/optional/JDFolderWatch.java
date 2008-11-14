@@ -130,9 +130,9 @@ public class JDFolderWatch extends PluginOptional implements ControlListener {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Start/Stop", 0).setActionListener(this));
-        menu.add(new MenuItem("Check", 0).setActionListener(this));
-        menu.add(new MenuItem("Reset", 0).setActionListener(this));
+        menu.add(new MenuItem(JDLocale.L("plugins.optional.folderwatch.menu.startstop", "Start/Stop"), 0).setActionListener(this));
+        menu.add(new MenuItem(JDLocale.L("plugins.optional.folderwatch.menu.check", "Check"), 0).setActionListener(this));
+        menu.add(new MenuItem(JDLocale.L("plugins.optional.folderwatch.menu.reset", "Reset"), , 0).setActionListener(this));
         return menu;
     }
 

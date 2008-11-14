@@ -1,4 +1,4 @@
-//    jDownloader - Downloadmanager
+﻿//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -698,11 +698,11 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         try {
             if (server.isStarted()) {
                 server.stop();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " stopped");
+                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.stopped","stopped."));
             } else {
                 server = new HttpServer(getPluginConfig().getIntegerProperty("PORT", 10025), new Serverhandler());
                 server.start();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " started on port " + getPluginConfig().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + "/help for Developer Information.");
+                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.startedonport", "started on port") + " " + getPluginConfig().getIntegerProperty("PORT", 10025) + "\n http://127.0.0.1:" + getPluginConfig().getIntegerProperty("PORT", 10025) + JDLocale.L("plugins.optional.remotecontrol.help", "/help for Developer Information."));
             }
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -711,12 +711,12 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem("Toggle Start/Stop", 0).setActionListener(this));
+        menu.add(new MenuItem(JDLocale.L("plugins.optional.remotecontrol.toggle", "Toggle Start/Stop"), 0).setActionListener(this));
         return menu;
     }
 
     public String getHost() {
-        return JDLocale.L("plugins.optional.RemoteControl.name", "RemoteControl");
+        return JDLocale.L("plugins.optional.remotecontrol.name", "RemoteControl");
     }
 
     public String getRequirements() {
