@@ -143,7 +143,7 @@ public class Main {
     }
 
     public static void main(String args[]) {
-   
+
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
             logger.info("apple.laf.useScreenMenuBar=true");
@@ -412,10 +412,11 @@ public class Main {
         if (debug || JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
             try {
                 File log = JDUtilities.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
-
+                if (!log.getParentFile().exists()) {
+                    log.getParentFile().mkdir();
+                }
                 controller.setLogFileWriter(new BufferedWriter(new FileWriter(log)));
             } catch (IOException e) {
-
                 e.printStackTrace();
             }
         }
@@ -430,12 +431,6 @@ public class Main {
 
         Main.setSplashStatus(splashScreen, 20, JDLocale.L("gui.splash.text.loaddownloadqueue", "Lade Downloadliste"));
         init.loadDownloadQueue();
-
-        // Main.setSplashStatus(splashScreen, 10,
-        // JDLocale.L("gui.splash.text.loadmodules", "Lade Module und Addons"));
-        // init.loadModules();
-
-        Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.update", "Prüfe auf Updates"));
 
         Main.setSplashStatus(splashScreen, 100, JDLocale.L("gui.splash.text.finished", "Fertig"));
 
