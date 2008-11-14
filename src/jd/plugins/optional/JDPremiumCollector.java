@@ -89,7 +89,11 @@ public class JDPremiumCollector extends PluginOptional {
                             if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
                                 try {
                                     AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
-                                    if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) accounts.add(account);
+                                    if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) {
+                                        accounts.add(account);
+                                    } else {
+                                        logger.finer(plg.getHost() + " : account " + account.getUser() + " is not valid; not added to list");
+                                    }
                                 } catch (Exception e1) {
                                     e1.printStackTrace();
                                 }
@@ -105,7 +109,7 @@ public class JDPremiumCollector extends PluginOptional {
                     }
 
                     plg.getPlugin().setPremiumAccounts(accounts);
-                    logger.info(plg.getHost() + " : " + accounts.size() + " accounts inserted");
+                    logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
                     accountsFound += accounts.size();
                 }
 
@@ -173,7 +177,7 @@ public class JDPremiumCollector extends PluginOptional {
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.premiumcollector.fetchAccounts", "Fetch Accounts"), 0).setActionListener(this));
         menu.add(new MenuItem(MenuItem.SEPARATOR));
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("gui.btn_settings", "Einstellungen"), 1).setActionListener(this));
-        
+
         return menu;
     }
 

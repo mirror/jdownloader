@@ -17,7 +17,6 @@
 package jd.utils;
 
 import java.io.File;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import jd.plugins.DownloadLink;
@@ -28,34 +27,20 @@ public class SpaceManager {
         return SpaceManager.checkPath(new File(downloadLink.getFilePackage().getDownloadDirectory()), downloadLink.getDownloadSize());
     }
 
-    public static boolean checkPath(File Path, long size) {
+    public static boolean checkPath(File path, long size) {
         if (size > 0) {
-            long space = SpaceManager.getUsableSpace(Path);
-            if (space != -1 && space - size < 1) { return false; }
+            long space = SpaceManager.getUsableSpace(path);
+            if (space != -1 && space - size < 1) return false;
         }
         return true;
     }
 
     public static long getUsableSpace(File f) {
-        Method reflectOnUsableSpace;
-
         try {
-            reflectOnUsableSpace = File.class.getMethod("getUsableSpace", (Class[]) null);
-        } catch (NoSuchMethodException e) {
-        	  return -1;
-        }
-        try {
-        	Long ret = ((Long) reflectOnUsableSpace.invoke(f));
-        	if(ret!=null && ret.longValue()>0)
-            return ret.longValue();
-        } catch (IllegalArgumentException e) {
-
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-
+            Method reflectOnUsableSpace = File.class.getMethod("getUsableSpace", (Class[]) null);
+            Long ret = (Long) reflectOnUsableSpace.invoke(f);
+            if (ret != null && ret.longValue() > 0) return ret.longValue();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return -1;
