@@ -742,8 +742,9 @@ public class Rapidshare extends PluginForHost {
         Browser br = new Browser();
         br.setAcceptLanguage("en, en-gb;q=0.8");
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
+        String cookie = br.getCookie("http://rapidshare.com", "user");
 
-        if (account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches()) {
+        if (cookie == null || account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
             ai.setValid(false);
             return ai;
         }
