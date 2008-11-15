@@ -51,12 +51,13 @@ public class Serienjunkies extends PluginForHost {
     private Pattern patternCaptcha = null;
     private String subdomain = "download.";
     private DownloadLink downloadLink;
-
+    private static Vector<String> passwords = new Vector<String>();
     private static int active = 0;
 
     public Serienjunkies(PluginWrapper wrapper) {
         super(wrapper);
-
+        passwords.add("serienjunkies.dl.am");
+        passwords.add("serienjunkies.org");
     }
 
     public boolean collectCaptchas() {
@@ -148,7 +149,7 @@ public class Serienjunkies extends PluginForHost {
                 if (forms[i].action.contains("download.serienjunkies.org") && !forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
                     try {
                         final String action = forms[i].action;
-                        
+
                         Thread t = new Thread(new Runnable() {
                             public void run() {
                                 for (int j = 0; j < 4; j++) {
@@ -181,8 +182,7 @@ public class Serienjunkies extends PluginForHost {
                     } catch (Exception e) {
                     }
                     for (Thread t : threads) {
-                        while(t.isAlive())
-                        {
+                        while (t.isAlive()) {
                             try {
                                 Thread.sleep(10);
                             } catch (InterruptedException e) {
@@ -539,6 +539,10 @@ public class Serienjunkies extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
             return null;
+        }
+        Iterator<DownloadLink> fpi = fp.iterator();
+        while (fpi.hasNext()) {
+            fpi.next().addSourcePluginPasswords(passwords);
         }
         return fp;
     }
