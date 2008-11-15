@@ -83,7 +83,6 @@ public class DistributeData extends ControlBroadcaster {
         try {
             this.data = URLDecoder.decode(this.data, "UTF-8");
             this.data = this.data.replaceAll(" ", "%20");
-            this.data = this.data.replaceAll("%20http", " http");
         } catch (Exception e) {
             logger.warning("text not url decodeable");
         }
@@ -124,57 +123,99 @@ public class DistributeData extends ControlBroadcaster {
      * @param decryptedLinks
      * @return
      */
-    private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
+    private boolean deepDecrypt(final ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
         boolean hasDecryptedLinks = false;
+        class DThread {
+            Thread thread;
 
-        for (int i = decryptedLinks.size() - 1; i >= 0; i--) {
-            DownloadLink link = decryptedLinks.get(i);
-            String url = link.getDownloadURL();
+            public Thread getThread() {
+                return thread;
+            }
 
-            if (url != null) {
-                url = HTMLParser.getHttpLinkList(url);
-
-                try {
-                    url = URLDecoder.decode(url, "UTF-8");
-                } catch (Exception e) {
-                    logger.warning("text not url decodeable");
-                }
+            public void setThread(Thread thread) {
+                this.thread = thread;
             }
 
             boolean canDecrypt = false;
-            for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-                if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
-                    try {
-                        PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
-                        CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
-                        url = plg.cutMatches(url);
-                        // Reicht die Decrypter Passwörter weiter
-                        for (CryptedLink cLink : decryptableLinks) {
-                            cLink.setDecrypterPassword(link.getDecrypterPassword());
+            public boolean canDecrypt() {
+                return canDecrypt;
+
+            }
+
+            public void setCanDecrypt(boolean bool) {
+                canDecrypt = bool;
+            }
+        }
+        ArrayList<DThread> decryptThread = new ArrayList<DThread>();
+        for (int b = decryptedLinks.size() - 1; b >= 0; b--) {
+            final int i = b;
+            final DThread dThread = new DThread();
+            dThread.setThread(new Thread(new Runnable() {
+
+                public void run() {
+                    DownloadLink link = decryptedLinks.get(i);
+                    String url = link.getDownloadURL();
+
+                    if (url != null) {
+                        url = HTMLParser.getHttpLinkList(url);
+
+                        try {
+                            url = URLDecoder.decode(url, "UTF-8");
+                        } catch (Exception e) {
+                            logger.warning("text not url decodeable");
                         }
-
-                        ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
-                        // Reicht die Passwörter weiter
-                        for (DownloadLink dLink : dLinks) {
-                            dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
-                        }
-
-                        decryptedLinks.addAll(dLinks);
-                        canDecrypt = true;
-                        break;
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
+
+                    dThread.setCanDecrypt(false);
+                    for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+                        if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
+                            try {
+                                PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+
+                                CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
+                                url = plg.cutMatches(url);
+                                // Reicht die Decrypter Passwörter weiter
+                                for (CryptedLink cLink : decryptableLinks) {
+                                    cLink.setDecrypterPassword(link.getDecrypterPassword());
+                                }
+
+                                ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
+                                // Reicht die Passwörter weiter
+                                for (DownloadLink dLink : dLinks) {
+                                    dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
+                                }
+
+                                decryptedLinks.addAll(dLinks);
+                                dThread.setCanDecrypt(false);
+                                break;
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }
+
+                }
+            }));
+            dThread.getThread().start();
+
+            decryptThread.add(dThread);
+        }
+        for (int j = 0; j < decryptThread.size(); j++) {
+            DThread thread = decryptThread.get(j);
+            while (thread.getThread().isAlive()) {
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
             }
-
-            if (canDecrypt) {
-                decryptedLinks.remove(i);
+            if (thread.canDecrypt()) {
+                decryptedLinks.remove(j);
                 hasDecryptedLinks = true;
             }
-
         }
         return hasDecryptedLinks;
     }
@@ -272,29 +313,47 @@ public class DistributeData extends ControlBroadcaster {
 
     private ArrayList<DownloadLink> handleDecryptPlugins() {
 
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<Thread> decryptThreads = new ArrayList<Thread>();
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
 
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
-                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                    final PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
-                    CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
+                    final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
 
                     if (plg.isAcceptOnlyURIs()) {
                         data = plg.cutMatches(data);
                     } else {
                         orgData = plg.cutMatches(orgData);
                     }
+                    Thread thread = new Thread(new Runnable() {
 
-                    decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
+                        public void run() {
+                            decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
 
+                        }
+                    });
+                    thread.start();
+                    decryptThreads.add(thread);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
+        }
+        for (Thread thread : decryptThreads) {
+            while (thread.isAlive()) {
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+
         }
         int i = 1;
         while (deepDecrypt(decryptedLinks)) {

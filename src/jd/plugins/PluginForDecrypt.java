@@ -120,15 +120,34 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        for (CryptedLink element : cryptedLinks) {
-            ArrayList<DownloadLink> links = decryptLink(element);
-            for (DownloadLink link : links) {
-                link.setBrowserUrl(element.getCryptedUrl());
-            }
-            decryptedLinks.addAll(links);
-        }
+        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<Thread> decryptThread = new ArrayList<Thread>();
+        for (final CryptedLink element : cryptedLinks) {
+            Thread thread = new Thread(new Runnable() {
 
+                public void run() {
+                    ArrayList<DownloadLink> links = decryptLink(element);
+                    for (DownloadLink link : links) {
+                        link.setBrowserUrl(element.getCryptedUrl());
+                    }
+                    decryptedLinks.addAll(links);
+                    
+                }});
+            thread.start();
+            decryptThread.add(thread);
+        }
+        for (Thread thread: decryptThread) {
+            while(thread.isAlive())
+            {
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            
+        }
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
 
         return decryptedLinks;

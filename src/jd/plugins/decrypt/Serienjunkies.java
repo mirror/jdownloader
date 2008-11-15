@@ -557,7 +557,6 @@ public class Serienjunkies extends PluginForDecrypt {
                         return name;
                     }
                 }
-                ;
                 addWindowListener(new WindowListener() {
 
                     public void windowActivated(WindowEvent e) {
