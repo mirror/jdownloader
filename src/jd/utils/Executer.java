@@ -278,8 +278,7 @@ public class Executer extends Thread {
                 process.waitFor();
             } catch (InterruptedException e1) {
                 process.destroy();
-                processgotinterrupted = true;
-                e1.printStackTrace();
+                processgotinterrupted = true;                
             }
             if (processgotinterrupted) {
                 exitValue = 0;
@@ -315,8 +314,7 @@ public class Executer extends Thread {
         return process;
     }
 
-    public void interrupt() {
-        new InterruptedException("Debuggerexception").printStackTrace();
+    public void interrupt() {        
         super.interrupt();
         if (sbeObserver != null) this.sbeObserver.interrupt();
         if (sboObserver != null) this.sboObserver.interrupt();
