@@ -132,7 +132,8 @@ gui.config.download.proxy.pass = Password (optional)
 gui.config.download.proxy.port = Port
 gui.config.download.proxy.user = Username (optional)
 gui.config.download.retries = Max. retries from on temporary error
-gui.config.download.simultan_downloads = Max simultaneous downloads
+gui.config.download.simultan_downloads = Maximum of simultaneous downloads
+gui.config.download.simultan_downloads_per_host = Maximum of simultaneous downloads per host (0 = no limit)
 gui.config.download.socks.host = Host/IP
 gui.config.download.socks.port = Port
 gui.config.download.startdownloadsonstartup = Start downloads in program startup

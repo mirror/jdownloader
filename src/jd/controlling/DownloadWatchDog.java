@@ -248,7 +248,11 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                                     if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
 
-                                        if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink)) {
+                                    	int maxPerHost = getSimultanDownloadNumPerHost();
+                                    	if ( maxPerHost == 0 ) maxPerHost = Integer.MAX_VALUE;
+                                    	
+                                        if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink)
+                                        		&& getDownloadNumByHost(nextDownloadLink.getPlugin()) < maxPerHost ) {
 
                                         return nextDownloadLink; }
 
@@ -274,6 +278,16 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      */
     public int getSimultanDownloadNum() {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2);
+    }
+
+    /**
+     * Gibt die Configeinstellung zurück, wieviele simultane Downloads der user
+     * pro Hoster erlaubt hat
+     * 
+     * @return
+     */
+    public int getSimultanDownloadNumPerHost() {
+        return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST, 0);
     }
 
     /**

@@ -55,6 +55,8 @@ public class Configuration extends Property implements Serializable {
 
     public static final String PARAM_DOWNLOAD_MAX_SIMULTAN = "DOWNLOAD_MAX_SIMULTAN";
 
+    public static final String PARAM_DOWNLOAD_MAX_SIMULTAN_PER_HOST = "DOWNLOAD_MAX_SIMULTAN_PER_HOST";
+
     public static final String PARAM_DOWNLOAD_MAX_SPEED = "DOWNLOAD_MAX_SPEED";
 
     public static final String PARAM_DOWNLOAD_READ_TIMEOUT = "DOWNLOAD_READ_TIMEOUT_V2";
