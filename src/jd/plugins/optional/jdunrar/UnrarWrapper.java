@@ -375,6 +375,7 @@ public class UnrarWrapper extends Thread {
                     this.password = pass;
                     crackProgress = 100;
                     fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
+                    fileFile.delete();
                     return;
                 } else {
                     continue;
@@ -444,6 +445,7 @@ public class UnrarWrapper extends Thread {
                         this.password = pass;
                         crackProgress = 100;
                         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
+                        fileFile.delete();
                         return;
                     } else {
                         // signatur passt nicht zur extension.... Es wird
@@ -461,6 +463,7 @@ public class UnrarWrapper extends Thread {
             }
 
         }
+        fileFile.delete();
         crackProgress = 100;
         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
 
