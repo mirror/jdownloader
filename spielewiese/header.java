@@ -17,8 +17,8 @@ public class header {
         // TODO Auto-generated method stub
 
         if (true) {
-            SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z");
-            String expires = "Wed, 13-Nov-2024 15:00:00 GMT";
+            SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy");
+            String expires = "Sat Dec 13 21:27:14 CET 2008";
             try {
                 System.out.println(DATE_FORMAT.parse(expires));
             } catch (ParseException e) {

@@ -64,11 +64,14 @@ public class Cookie {
             try {
                 this.expires = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.UK).parse(expires);
             } catch (Exception e2) {
-                JDUtilities.getLogger().severe("CookieParser failed: " + expires);
-                e2.printStackTrace();
-                this.expires = null;
-                this.formatedexpires = null;
-                return;
+                try {
+                    this.expires = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy", Locale.UK).parse(expires);
+                } catch (Exception e3) {
+                    JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                    this.expires = null;
+                    this.formatedexpires = null;
+                    return;
+                }
             }
         }
         this.formatedexpires = DATE_FORMAT.format(this.expires);
@@ -95,7 +98,6 @@ public class Cookie {
             return DATE_FORMAT.parse(Current).after(DATE_FORMAT.parse(formatedexpires));
         } catch (Exception e1) {
             JDUtilities.getLogger().severe("CookieParser failed: " + expires);
-            e1.printStackTrace();
             return false;
         }
     }
@@ -111,7 +113,6 @@ public class Cookie {
                 formatedexpires = DATE_FORMAT.format(expires);
             } catch (Exception e1) {
                 JDUtilities.getLogger().severe("CookieParser failed: " + expires);
-                e1.printStackTrace();
                 formatedexpires = null;
             }
         } else {
