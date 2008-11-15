@@ -316,6 +316,7 @@ public class Executer extends Thread {
     }
 
     public void interrupt() {
+        new InterruptedException("Debuggerexception").printStackTrace();
         super.interrupt();
         if (sbeObserver != null) this.sbeObserver.interrupt();
         if (sboObserver != null) this.sboObserver.interrupt();
@@ -328,9 +329,10 @@ public class Executer extends Thread {
 
     public void writetoOutputStream(String data) {
         if (data == null || data.length() == 0) data = "";
-        data = data.trim() + "\n";
+    
         try {
             outputStream.write(data.getBytes());
+            outputStream.write("\n".getBytes());
             if (isDebug()) logger.finest("Out>" + data);
             outputStream.flush();
         } catch (IOException e) {

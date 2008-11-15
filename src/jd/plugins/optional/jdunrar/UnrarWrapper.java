@@ -126,7 +126,7 @@ public class UnrarWrapper extends Thread {
                     if (this.isProtected && this.password == null) {
                         crackPassword();
                         if (password == null) {
-                            fireEvent(JDUnrarConstants.WRAPPER_FAILED_PASSWORD);
+                            fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
                             if (password != null) {
                                 String[] tmp = passwordList;
                                 this.passwordList = new String[] { password };
@@ -482,15 +482,24 @@ public class UnrarWrapper extends Thread {
         int i = 0;
         fireEvent(JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE);
         int c = 0;
+     
         while (true) {
             Executer exec = new Executer(unrarCommand);
             exec.setCodepage(JDUnrar.CODEPAGE);
             exec.setDebug(DEBUG);
             if (i > 0) {
                 if (passwordList.length < i) {
+                 
+                        fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
+                      
+                        if (password == null) return false;
+                        pass=password;
+                        password=null;
+                   
 
-                return false; }
-                pass = this.passwordList[i - 1];
+                } else {
+                    pass = this.passwordList[i - 1];
+                }
             }
 
             if (c > 0) {

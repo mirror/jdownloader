@@ -349,7 +349,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             pwList.add(pw);
         }
         pwList.addAll(PasswordList.getPasswordList());
-
+        //Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
+        pwList.add(this.getArchiveName(link));
+        pwList.add(new File(link.getFileOutput()).getName());
         wrapper.setPasswordList(pwList.toArray(new String[] {}));
 
         queue.add(wrapper);
@@ -909,7 +911,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             this.onFinished(wrapper);
 
             break;
-        case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
+        case JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
 
             wrapper.getDownloadLink().requestGuiUpdate();
 
@@ -944,34 +946,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             // ": " + "Start opening archive");
             break;
         case JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
-            // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
-            // ": " + "Archive opened successfull");
-            min = this.getPluginConfig().getIntegerProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
-            if (min > 0) {
-
-                ArrayList<ArchivFile> files = wrapper.getFiles();
-                int i = 0;
-                // get filenum without directories
-                for (ArchivFile af : files) {
-                    if (af.getSize() > 0) i++;
-                }
-
-                if (min <= i) {
-                    // reset extractdirectory to default
-                    Boolean usesub = this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false);
-                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false);
-                    File dl = this.getExtractToPath(wrapper.getDownloadLink());
-                    wrapper.setExtractTo(dl);
-                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, usesub);
-
-                    ArrayList<DownloadLink> linkList = this.getArchiveList(wrapper.getDownloadLink());
-                    for (DownloadLink l : linkList) {
-                        if (l == null) continue;
-                        l.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH, dl.getAbsolutePath());
-                    }
-
-                }
-            }
+            assignRealDownloadDir(wrapper);
             break;
         case JDUnrarConstants.WRAPPER_PASSWORD_FOUND:
             // progress.get(wrapper).setColor(Color.GREEN);
@@ -1094,6 +1069,44 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
     }
 
+    private void assignRealDownloadDir(UnrarWrapper wrapper) {
+        // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
+        // ": " + "Archive opened successfull");
+        if(wrapper.getPassword()!=null){
+            PasswordList.addPassword(wrapper.getPassword());
+            PasswordList.save();            
+        }
+        
+        int min = this.getPluginConfig().getIntegerProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
+        if (min > 0) {
+
+            ArrayList<ArchivFile> files = wrapper.getFiles();
+            int i = 0;
+            // get filenum without directories
+            for (ArchivFile af : files) {
+                if (af.getSize() > 0) i++;
+            }
+            Boolean usesub = this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false);
+            if (min >= i) {
+                // reset extractdirectory to default
+                this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false);
+            } else {
+                this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, true);
+            }
+            File dl = this.getExtractToPath(wrapper.getDownloadLink());
+            wrapper.setExtractTo(dl);
+            this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, usesub);
+
+            ArrayList<DownloadLink> linkList = this.getArchiveList(wrapper.getDownloadLink());
+            for (DownloadLink l : linkList) {
+                if (l == null) continue;
+                l.setProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH, dl.getAbsolutePath());
+            }
+
+        }
+
+    }
+
     /**
      * Als Dummy wird ein downloadlink bezeicnet, der nicht ind er downloadliste
      * war, sondern nur angelegt wurde um als container für ein externes archiv
@@ -1121,7 +1134,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             this.onFinished(wrapper);
 
             break;
-        case JDUnrarConstants.WRAPPER_FAILED_PASSWORD:
+        case JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
 
             pc.setStatusText("Extract failed(password)");
 
@@ -1151,28 +1164,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             break;
         case JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
-            // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
-            // ": " + "Archive opened successfull");
-            min = this.getPluginConfig().getIntegerProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
-            if (min > 0) {
-
-                ArrayList<ArchivFile> files = wrapper.getFiles();
-                int i = 0;
-                // get filenum without directories
-                for (ArchivFile af : files) {
-                    if (af.getSize() > 0) i++;
-                }
-
-                if (i < min) {
-                    // reset extractdirectory to default
-                    Boolean usesub = this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false);
-                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false);
-                    File dl = this.getExtractToPath(wrapper.getDownloadLink());
-                    wrapper.setExtractTo(dl);
-                    this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, usesub);
-
-                }
-            }
+            assignRealDownloadDir(wrapper);
             break;
 
         case JDUnrarConstants.WRAPPER_PASSWORD_FOUND:
