@@ -39,10 +39,23 @@ public class MediafireCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
-        br.getPage(url);
+        for (int i = 0; i < 3; i++) {
+            try {
+                br.getPage(url);
+                break;
+            } catch (IOException e) {
+                if (e.getMessage().contains("code: 500")) {
+                    logger.info("ErrorCode 500! Wait a moment!");
+                    Thread.sleep(200);
+                    continue;
+                } else
+                    return false;
+            }
+
+        }
         if (br.getRegex(offlinelink).matches()) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getRegex("<title>(.*?)<\\/title>").getMatch(0);
         String filesize = br.getRegex("<input type=\"hidden\" id=\"sharedtabsfileinfo1-fs\" value=\"(.*?)\">").getMatch(0);

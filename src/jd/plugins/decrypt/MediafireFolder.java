@@ -36,6 +36,7 @@ public class MediafireFolder extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        Thread.sleep(500);
         String reqlink = br.getRegex(Pattern.compile("script language=\"JavaScript\" src=\"/js/myfiles\\.php/(.*?)\"")).getMatch(0);
         if (reqlink == null) { return null; }
         br.getPage("http://www.mediafire.com/js/myfiles.php/" + reqlink);

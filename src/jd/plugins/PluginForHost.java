@@ -197,7 +197,7 @@ public abstract class PluginForHost extends Plugin {
     protected void enablePremium(int size, String url) {
         if (size <= 0) return;
         this.premiumurl = url;
-       
+
         enablePremium = true;
         ConfigEntry cfg;
 
@@ -214,7 +214,7 @@ public abstract class PluginForHost extends Plugin {
         return JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2);
     }
 
-    public int getCurrentConnections() {
+    public synchronized int getCurrentConnections() {
         return currentConnections;
     }
 
@@ -285,7 +285,7 @@ public abstract class PluginForHost extends Plugin {
         return "";
     }
 
-    public int getFreeConnections() {
+    public synchronized int getFreeConnections() {
         return Math.max(1, this.getMaxConnections() - currentConnections);
     }
 

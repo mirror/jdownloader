@@ -38,6 +38,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -66,6 +68,7 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -98,7 +101,7 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener {
+public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener, WindowListener {
 
     /**
      * 
@@ -305,6 +308,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 confirmPackage(idx);
                 removePackageAt(idx);
                 if (tabList.size() == 0) {
+                    stopGatherer();
                     setVisible(false);
                     dispose();
                 }
@@ -764,6 +768,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     private int currentTab = -1;
 
     private Thread gatherer;
+    private boolean gathererrunning = false;
 
     private SubConfiguration guiConfig;
 
@@ -941,6 +946,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             emptyCheck();
             if (mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
         } else if (e.getSource() == acceptAll) {
+            stopGatherer();
             confirmAll();
             setVisible(false);
             dispose();
@@ -1465,6 +1471,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
      */
     private void emptyCheck() {
         if (tabList.size() == 0) {
+            stopGatherer();
             setVisible(false);
             dispose();
         }
@@ -1535,6 +1542,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         new DropTarget(tabbedPane, this);
 
         setName("LINKGRABBER");
+        this.addWindowListener(this);
+        this.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
 
         int n = 7;
         JPanel panel = new JPanel(new BorderLayout(n, n));
@@ -1711,9 +1720,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         progress.setString(null);
         if (gatherer != null && gatherer.isAlive()) { return; }
         gatherer = new Thread() {
+
             public synchronized void run() {
                 DownloadLink link;
-                while (waitingLinkList.size() > 0) {
+                gathererrunning = true;
+                while (waitingLinkList.size() > 0 && gathererrunning == true) {
 
                     link = waitingLinkList.remove(0);
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
@@ -1750,14 +1761,58 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 }
                 progress.setString(JDLocale.L("gui.linkgrabber.bar.title", "Infosammler"));
-
+                gathererrunning = false;
             }
         };
-
         gatherer.start();
     }
 
     public void stateChanged(ChangeEvent e) {
+    }
+
+    public void windowActivated(WindowEvent arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowClosed(WindowEvent arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void stopGatherer() {
+        if (gatherer != null && gatherer.isAlive()) {
+            gathererrunning = false;
+            gatherer.interrupt();
+            gatherer = null;
+        }
+    }
+
+    public void windowClosing(WindowEvent arg0) {
+        // TODO Auto-generated method stub
+        stopGatherer();
+        setVisible(false);
+        dispose();
+    }
+
+    public void windowDeactivated(WindowEvent arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowDeiconified(WindowEvent arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowIconified(WindowEvent arg0) {
+        // TODO Auto-generated method stub
+
+    }
+
+    public void windowOpened(WindowEvent arg0) {
+        // TODO Auto-generated method stub
+
     }
 
 }

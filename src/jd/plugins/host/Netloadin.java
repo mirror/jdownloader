@@ -346,8 +346,7 @@ public class Netloadin extends PluginForHost {
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            this.setBrowserExclusive();
-            br.setDebug(true);
+            this.setBrowserExclusive();            
             br.setConnectTimeout(15000);
 
             String id = Netloadin.getID(downloadLink.getDownloadURL());
