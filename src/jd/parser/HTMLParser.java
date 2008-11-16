@@ -160,7 +160,7 @@ public class HTMLParser {
                 return new String[] {};
             else if(c==1 && data.length()<100 && data.matches("^("+protocolPattern+"://|www\\.).*") )
             {
-                String link = data.replaceFirst(protocols[0] + "://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>'\"].*", "");
+                String link = data.replaceFirst(protocols[0] + "://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
                 try {
                     if(!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceAll("\\s", "%20")).isOK())
                     {
