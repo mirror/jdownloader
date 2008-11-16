@@ -80,12 +80,6 @@ public class DistributeData extends ControlBroadcaster {
     public DistributeData(String data) {
         super("JD-DistributeData");
         this.data = data;
-        try {
-            this.data = URLDecoder.decode(this.data, "UTF-8");
-            this.data = this.data.replaceAll(" ", "%20");
-        } catch (Exception e) {
-            logger.warning("text not url decodeable");
-        }
     }
 
     public DistributeData(String data, boolean clipboard) {
