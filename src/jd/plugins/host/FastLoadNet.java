@@ -59,8 +59,8 @@ public class FastLoadNet extends PluginForHost {
     }
 
     private void initConfig() {
-if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_ENV)
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "BYPASS_API", JDLocale.L("plugins.hoster.fastload.bypassapi", "API Bypass")).setDefaultValue(false));
+//if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_ENV)
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "BYPASS_API", JDLocale.L("plugins.hoster.fastload.bypassapi", "API Bypass")).setDefaultValue(true));
 
     }
 

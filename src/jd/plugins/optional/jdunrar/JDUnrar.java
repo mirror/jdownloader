@@ -181,9 +181,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.linkmenu.setextract", "Set Extract to..."), 1003).setActionListener(this));
 
                 m.setProperty("LINK", link);
-                container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.linkmenu.openextract2", "Open directory (%s)", this.getExtractToPath(link).getAbsolutePath()), 1002).setActionListener(this));
-                m.setEnabled(link.getStringProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH) != null);
+                File dir = this.getExtractToPath(link);
+                while(dir!=null&&!dir.exists())dir=dir.getParentFile();
+                if(dir!=null){
+                container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.linkmenu.openextract2", "Open directory (%s)", dir.getAbsolutePath()), 1002).setActionListener(this));
+//                m.setEnabled(link.getStringProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH) != null);
                 m.setProperty("LINK", link);
+                }
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
                 container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.linkmenu.package.extract", "Extract package"), 1001).setActionListener(this));
