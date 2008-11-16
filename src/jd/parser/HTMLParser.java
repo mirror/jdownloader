@@ -15,14 +15,11 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.parser;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jd.http.Browser;
 
 import jd.http.Encoding;
 import jd.plugins.Plugin;
