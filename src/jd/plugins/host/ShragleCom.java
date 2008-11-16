@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -39,24 +40,15 @@ public class ShragleCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        // File not found
-        if (br.containsHTML("Die von Ihnen gewählte Datei wurde nicht gefunden.")) {
-            logger.warning("File not found");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // Filesize
+        if (br.containsHTML("Die von Ihnen gewählte Datei wurde nicht gefunden.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String size = br.getRegex("« \\((.*?)\\) runterladen").getMatch(0);
-        downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
-
-        // Filename
         String name = br.getRegex("»(.*?)«").getMatch(0).trim();
-        downloadLink.setName(name);
         if (name == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        downloadLink.setName(name.trim());
+        downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
         return true;
-
     }
 
     @Override
@@ -67,17 +59,28 @@ public class ShragleCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        Form form = br.getForm(0);
+        Form form = br.getFormbyName("download");
         sleep(10000l, downloadLink);
-        br.submitForm(form);
-        String dlLink = br.getRedirectLocation();
-        if (dlLink == null) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l); }
-        dl = br.openDownload(downloadLink, dlLink, true, 0);
+        br.setFollowRedirects(true);
+        /*
+         * zum zeitpunkt der implementation waren nur 3 verbindungen gesamt
+         * erlaubt
+         */
+        dl = br.openDownload(downloadLink, form, true, -3);
+        HTTPConnection con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+        }
         dl.startDownload();
     }
 
-    public int getMaxSimultanFreeDownloadNum() {        
-        return 20;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
+    }
+
+    public int getTimegapBetweenConnections() {
+        return 800;
     }
 
     @Override

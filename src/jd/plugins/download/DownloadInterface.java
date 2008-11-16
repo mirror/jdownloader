@@ -322,6 +322,7 @@ abstract public class DownloadInterface {
                                 logger.severe("Timeout detected");
                                 error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
                             }
+                            logger.finest(connection.toString());
                             e.printStackTrace();
                             miniblock = -1;
                             break;
