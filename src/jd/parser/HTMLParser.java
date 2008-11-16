@@ -221,9 +221,7 @@ public class HTMLParser {
             while (m.find()) {
                 link = Encoding.htmlDecode(m.group(element.group));
                 link = link.replaceAll(protocols[0] + "://", "http://");
-                if (link.length() > 3 && link.matches("^"+protocolPattern+"://.*")) {
-                    ;
-                } else if (link.length() > 0) {
+                if (!(link.length() > 3 && link.matches("^"+protocolPattern+"://.*")) && link.length() > 0) {
                     if (link.length() > 2 && link.substring(0, 3).equals("www")) {
                         link = "http://" + link;
                     }
