@@ -146,20 +146,20 @@ public class HTMLParser {
      */
     public static String[] getHttpLinks(String data, String url) {
         data=data.trim();
-        if(!data.matches(".*<.*>.*"))
-        {
-   
-            int c = new Regex(data, "(http://|www\\.)").count();
-            if(c==0)
-                return new String[] {};
-            else if(c==1 && data.length()<100 && data.matches("^(https?://|www\\.).*") )
-            return new String[] {data.replaceFirst("^www\\.", "http://www.").replaceFirst("[<>'\"].*", "")};
-        }
         String[] protocols = new String[] { "h.{2,3}", "https", "ccf", "dlc", "ftp" };
         String protocolPattern = "(";
         for (int i = 0; i < protocols.length; i++) {
             protocolPattern += protocols[i] + (i + 1 == protocols.length ? ")" : "|");
         }
+        if(!data.matches(".*<.*>.*"))
+        {
+            int c = new Regex(data, "("+protocolPattern+"://|www\\.)").count();
+            if(c==0)
+                return new String[] {};
+            else if(c==1 && data.length()<100 && data.matches("^("+protocolPattern+"://|www\\.).*") )
+            return new String[] {data.replaceFirst(protocols[0] + "://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>'\"].*", "")};
+        }
+
 
         url = url == null ? "" : url;
         Matcher m;
