@@ -479,7 +479,7 @@ public class JDUtilities {
             return 0;
         }
     }
-
+ 
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]
      * 
