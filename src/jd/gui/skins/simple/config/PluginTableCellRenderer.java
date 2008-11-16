@@ -28,23 +28,36 @@ import jd.PluginWrapper;
 public class PluginTableCellRenderer<T extends PluginWrapper> extends DefaultTableCellRenderer {
 
     private static final long serialVersionUID = 412703637249573038L;
-
-    ArrayList<T> plugins;
+    private ArrayList<T> plugins;
+    private Color bgNoConfig;
+    private Color bgSelected = null;
+    private Color bgWithConfig = null;
 
     public PluginTableCellRenderer(ArrayList<T> plugins) {
         this.plugins = plugins;
+        this.bgNoConfig = getBackground();
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
-        if (isSelected) {
-            c.setBackground(Color.LIGHT_GRAY);
-        } else if (plugins.get(row).hasConfig()) {
-            c.setBackground(new Color(230, 230, 230));
+        
+        if ( isSelected ) {
+        	
+        	if ( bgSelected == null ) bgSelected = getBackground();
+        	c.setBackground(bgSelected);
+        	
+	        
         } else {
-            c.setBackground(Color.WHITE);
+        	
+        	if ( bgWithConfig == null ) bgWithConfig = getBackground().darker();
+        	
+	        if ( plugins.get(row).hasConfig() ) {
+	        	c.setBackground(bgWithConfig);
+	        } else {
+	        	c.setBackground(bgNoConfig);
+	        }
+        	
         }
 
         return c;
