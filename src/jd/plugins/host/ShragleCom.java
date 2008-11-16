@@ -43,8 +43,8 @@ public class ShragleCom extends PluginForHost {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Die von Ihnen gewählte Datei wurde nicht gefunden.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String size = br.getRegex("« \\((.*?)\\) runterladen").getMatch(0);
-        String name = br.getRegex("»(.*?)«").getMatch(0).trim();
+        String size = br.getRegex("Sie wollen die Datei...*?..\\((.*?)\\) runterladen").getMatch(0);
+        String name = br.getRegex("Sie wollen die Datei..(.*?)..\\(").getMatch(0).trim();
         if (name == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Regex.getSize(size.replaceAll("Кб", "KB").replaceAll("Mб", "MB")));
