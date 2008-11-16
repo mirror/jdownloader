@@ -314,14 +314,16 @@ public class Browser {
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    stbuffer.append("&");
+                if (entry.getKey() != null) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stbuffer.append("&");
+                    }
+                    stbuffer.append(entry.getKey());
+                    stbuffer.append("=");
+                    stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
                 }
-                stbuffer.append(entry.getKey());
-                stbuffer.append("=");
-                stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
@@ -353,14 +355,16 @@ public class Browser {
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    stbuffer.append("&");
+                if (entry.getKey() != null) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stbuffer.append("&");
+                    }
+                    stbuffer.append(entry.getKey());
+                    stbuffer.append("=");
+                    stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
                 }
-                stbuffer.append(entry.getKey());
-                stbuffer.append("=");
-                stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
             }
             String varString = stbuffer.toString();
             if (varString != null && !varString.matches("[\\s]*")) {
@@ -499,7 +503,7 @@ public class Browser {
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
             String path = request.getHttpConnection().getURL().getPath();
-            if(string.startsWith("/")||string.startsWith("\\"))return "http://"+request.getHttpConnection().getURL().getHost()+string;
+            if (string.startsWith("/") || string.startsWith("\\")) return "http://" + request.getHttpConnection().getURL().getHost() + string;
             int id;
             if ((id = path.lastIndexOf("/")) >= 0) {
                 path = path.substring(0, id);
@@ -507,7 +511,7 @@ public class Browser {
             if (path.trim().length() == 0) path = "/";
 
             // path.substring(path.lastIndexOf("/"))
-            string = "http://" + request.getHttpConnection().getURL().getHost() +  path + "/" + string;
+            string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/" + string;
         }
         return string;
     }
@@ -850,12 +854,12 @@ public class Browser {
             StringBuffer stbuffer = new StringBuffer();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (first) {
-                    first = false;
-                } else {
-                    stbuffer.append("&");
-                }
                 if (entry.getKey() != null) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        stbuffer.append("&");
+                    }
                     stbuffer.append(entry.getKey());
                     stbuffer.append("=");
                     stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));

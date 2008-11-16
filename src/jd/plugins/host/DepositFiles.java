@@ -33,7 +33,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 import com.sun.org.apache.xerces.internal.impl.xpath.regex.ParseException;
@@ -49,9 +48,6 @@ public class DepositFiles extends PluginForHost {
     private Pattern FILE_INFO_NAME = Pattern.compile("(?s)Dateiname: <b title=\"(.*?)\">.*?</b>", Pattern.CASE_INSENSITIVE);
 
     private Pattern FILE_INFO_SIZE = Pattern.compile("Dateigr.*?: <b>(.*?)</b>");
-
-    // Rechtschreibfehler übernommen
-    private String PASSWORD_PROTECTED = "<strong>Bitte Password fuer diesem File eingeben</strong>";
 
     private static int simultanpremium = 1;
 
@@ -80,38 +76,19 @@ public class DepositFiles extends PluginForHost {
         String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait)); }
 
-        if (br.containsHTML(PASSWORD_PROTECTED)) {
-            // TODO: wo bekomm ich pw links her?
-            // MUss wohl noch angepasst werden
-            String password = Plugin.getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), downloadLink);
-            br.postPage(link, "go=1&gateway_result=1&file_password=" + password);
-        }
-
         if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) { throw new PluginException(LinkStatus.ERROR_RETRY); }
 
         form = br.getFormbyValue("Die Datei downloaden");
+        sleep(60 * 1000l, downloadLink);
         if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setDebug(true);
         dl = br.openDownload(downloadLink, form, true, 1);
-        HTTPConnection con = dl.connect(br);
-        if (con == null) {
-            if (br.containsHTML("IP-Addresse werden schoneinige Files")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-            }
-        }
-
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-
+        HTTPConnection con = dl.getConnection();
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (!con.isOK()) {
+        if (!con.isContentDisposition()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
@@ -200,28 +177,16 @@ public class DepositFiles extends PluginForHost {
         }
 
         if (br.containsHTML(DOWNLOAD_NOTALLOWED)) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l); }
-
-        if (br.containsHTML(PASSWORD_PROTECTED)) {
-            String password = Plugin.getUserInput(JDLocale.L("plugins.hoster.general.passwordProtectedInput", "Die Links sind mit einem Passwort gesch\u00fctzt. Bitte geben Sie das Passwort ein:"), downloadLink);
-            br.postPage(link, "go=1&gateway_result=1&file_password=" + password);
-        } else {
-            // logger.info(br + "");
-        }
         link = br.getRegex(PATTERN_PREMIUM_FINALURL).getMatch(0);
         if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setDebug(true);
         dl = br.openDownload(downloadLink, link, true, 0);
-        HTTPConnection con = dl.connect(br);
-        if (br.getRedirectLocation() != null && br.getRedirectLocation().indexOf("error") > 0) {
-            con.disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-
+        HTTPConnection con = dl.getConnection();
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        if (!con.isOK()) {
+        if (!con.isContentDisposition()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
@@ -283,7 +248,7 @@ public class DepositFiles extends PluginForHost {
     @Override
     public void resetPluginGlobals() {
     }
-    
+
     public int getTimegapBetweenConnections() {
         return 800;
     }
