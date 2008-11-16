@@ -82,7 +82,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             case 5:
                 return JDLocale.L("gui.column_agbChecked", "akzeptieren");
             case 6:
-                return JDLocale.L("gui.column_usePlugin", "Plugin benutzen");
+                return JDLocale.L("gui.column_usePlugin", "verwenden");
             }
             return super.getColumnName(column);
         }
@@ -245,6 +245,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         new DropTarget(table, this);
 
         TableColumn column = null;
+        
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
@@ -261,7 +262,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 column.setMinWidth(60);
                 break;
             case 3:
-                column.setPreferredWidth(250);
+                column.setPreferredWidth(200);
                 break;
             case 4:
                 column.setPreferredWidth(70);
@@ -274,6 +275,9 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
                 column.setPreferredWidth(90);
                 column.setMaxWidth(90);
                 column.setMinWidth(90);
+                break;
+            case 6:
+                column.setPreferredWidth(100);
                 break;
             }
         }
