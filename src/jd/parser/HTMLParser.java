@@ -149,7 +149,7 @@ public class HTMLParser {
      */
     public static String[] getHttpLinks(String data, String url) {
         data=data.trim();
-        if(!data.matches("<.*>"))
+        if(!data.matches(".*<.*>.*"))
         {
    
             int c = new Regex(data, "(http://|www\\.)").count();
