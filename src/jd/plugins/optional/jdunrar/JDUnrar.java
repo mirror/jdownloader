@@ -192,6 +192,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             }
 
             break;
+        
+        case ControlEvent.CONTROL_ADD_PASSWORD:
+            String pw = (String) event.getParameter();
+            PasswordList.addPassword(pw);
+            PasswordList.save();
+            break;
 
         }
 
@@ -484,8 +490,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         DownloadLink link;
         switch (source.getActionID()) {
         case 1:
-            boolean newValue;
-            cfg.setProperty("ACTIVATED", newValue = !cfg.getBooleanProperty("ACTIVATED", true));
+            //boolean newValue;
+            cfg.setProperty("ACTIVATED", /*newValue = */!cfg.getBooleanProperty("ACTIVATED", true));
             // if (newValue) {
             // JDUtilities.getController().addControlListener(this);
             // } else {
@@ -887,7 +893,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             onUnrarDummyEvent(id, wrapper);
             return;
         }
-        int min;
+        //int min;
         switch (id) {
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
 
@@ -1117,7 +1123,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private void onUnrarDummyEvent(int id, UnrarWrapper wrapper) {
         ProgressController pc = (ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER");
-        int min;
+        //int min;
         switch (id) {
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
 

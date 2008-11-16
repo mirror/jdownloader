@@ -141,11 +141,9 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     // }
 
     public static void showCmdHelp() {
-
+    	
         String[][] help = new String[][] { { JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" }, { "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-c/--add-container(s)", "Add containers" }, { "-d/--start-download", "Start download" }, { "-D/--stop-download", "Stop download" }, { "-H/--hide\t", "Don't open Linkgrabber when adding Links" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" },
-        /*
-         * { "-p/--add-password(s)" , "Add passwords" } ,
-         */
+        { "-p/--add-password(s)" , "Add passwords" } ,
         /*
          * {
          * "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)"
@@ -190,7 +188,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
         boolean addLinksSwitch = false;
         boolean addContainersSwitch = false;
-        // boolean addPasswordsSwitch = false;
+        boolean addPasswordsSwitch = false;
         // boolean extractSwitch = false;
 
         Vector<String> linksToAdd = new Vector<String>();
@@ -210,7 +208,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
 
                 Server.showCmdHelp();
@@ -219,7 +217,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = true;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
 
@@ -227,7 +225,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addContainersSwitch = true;
                 addLinksSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
 
@@ -235,7 +233,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                // addPasswordsSwitch = true;
+                addPasswordsSwitch = true;
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
 
@@ -253,17 +251,17 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
 
                 logger.info(currentArg + " parameter");
                 startDownload = true;
 
             } else if (currentArg.equals("--stop-download") || currentArg.equals("-D")) {
-
+        		
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
 
                 logger.info(currentArg + " parameter");
@@ -278,7 +276,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
 
                 JACController.showDialog(false);
@@ -287,7 +285,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
 
                 JACController.showDialog(true);
@@ -296,7 +294,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_MINIMIZED);
 
@@ -306,7 +304,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
                 JDUtilities.getGUI().setGUIStatus(UIInterface.WINDOW_STATUS_FOREGROUND);
@@ -315,7 +313,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
                 hideGrabber = true;
@@ -324,7 +322,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addLinksSwitch = false;
                 addContainersSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 logger.info(currentArg + " parameter");
                 Reconnecter.waitForNewIP(1);
@@ -341,13 +339,11 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                     logger.warning("Container does not exist");
                 }
 
-                // } else if (addPasswordsSwitch && !(currentArg.charAt(0) ==
-                // '-')) {
-                //
-                // // JUnrar unrar = new JUnrar(true);
-                // UnrarPassword.addToPasswordlist(currentArg);
-                // logger.info("Add password: " + currentArg);
-
+            } else if (addPasswordsSwitch && !(currentArg.charAt(0) == '-')) {
+            	
+            	controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ADD_PASSWORD, currentArg));
+                logger.info("Add password: " + currentArg);
+                
                 // } else if (extractSwitch && !(currentArg.charAt(0) == '-')) {
                 //
                 // if (currentArg.equals("--rotate") || currentArg.equals("-r"))
@@ -374,7 +370,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 linksToAdd.add(currentArg);
 
@@ -382,7 +378,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
                 containersToAdd.add(currentArg);
 
@@ -390,7 +386,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 addContainersSwitch = false;
                 addLinksSwitch = false;
-                // addPasswordsSwitch = false;
+                addPasswordsSwitch = false;
                 // extractSwitch = false;
 
             }
@@ -405,7 +401,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         }
 
         for (int i = 0; i < containersToAdd.size(); i++) {
-            JDUtilities.getController().loadContainerFile(new File(containersToAdd.get(i)));
+            controller.loadContainerFile(new File(containersToAdd.get(i)));
         }
 
         String linksToAddString = "";
