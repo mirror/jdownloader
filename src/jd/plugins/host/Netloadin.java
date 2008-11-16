@@ -64,11 +64,8 @@ public class Netloadin extends PluginForHost {
 
     private String fileStatusText;
 
-    private int gap = 0;
-
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
-
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 
@@ -233,7 +230,7 @@ public class Netloadin extends PluginForHost {
         br.getPage("http://netload.in/index.php?id=2");
 
         // String login =
-        // ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
+        //ri.getRegexp("<td>Login:</td><td.*?><b>(.*?)</b></td>").getFirstMatch(
         // 1).trim();
         String validUntil = br.getRegex("Verbleibender Zeitraum</div>.*?<div style=.*?><span style=.*?>(.*?)</span></div>").getMatch(0).trim();
 
@@ -251,7 +248,7 @@ public class Netloadin extends PluginForHost {
     }
 
     public int getTimegapBetweenConnections() {
-        return gap;
+        return 800;
     }
 
     @Override
@@ -270,9 +267,7 @@ public class Netloadin extends PluginForHost {
         if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.openGetConnection(downloadLink.getDownloadURL());
         Request con;
-        gap = 0;
         if (br.getRedirectLocation() == null) {
-            gap = 100;
             Thread.sleep(1000);
             br.followConnection();
             checkPassword(downloadLink, linkStatus);
@@ -346,7 +341,7 @@ public class Netloadin extends PluginForHost {
         try {
             LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-            this.setBrowserExclusive();            
+            this.setBrowserExclusive();
             br.setConnectTimeout(15000);
 
             String id = Netloadin.getID(downloadLink.getDownloadURL());
