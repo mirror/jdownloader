@@ -59,7 +59,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     private void initConfig() {
-//if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_ENV)
+        // if(JDUtilities.getRunType()==JDUtilities.RUNTYPE_LOCAL_ENV)
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "BYPASS_API", JDLocale.L("plugins.hoster.fastload.bypassapi", "API Bypass")).setDefaultValue(true));
 
     }
@@ -165,7 +165,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     public void handleFree(final DownloadLink downloadLink) throws Exception {
-        if (this.getPluginConfig().getBooleanProperty("BYPASS_API", false)) {
+        if (this.getPluginConfig().getBooleanProperty("BYPASS_API", true)) {
             this.handleFreeBypass(downloadLink);
             return;
         }
@@ -190,19 +190,15 @@ public class FastLoadNet extends PluginForHost {
         getFileInformation(downloadLink);
         String code;
         File file = null;
-        // for(int i=0; i<500;i++){
-        // br.setDebug(true);
         br.getPage(downloadLink.getDownloadURL());
         String js = br.getRegex("src=\"(/includes.*?)\"><\\/script>").getMatch(0);
         code = br.cloneBrowser().getPage(js);
         BufferedImage image = paintImage(code);
         ImageIO.write(image, "png", file = getLocalCaptchaFile(this));
-        // }
         code = getCaptchaCode(file, this, downloadLink);
         Form download = br.getForm(0);
         download.put("captcha", code);
         br.openDownload(downloadLink, download).startDownload();
-
     }
 
     private BufferedImage paintImage(String code) {
@@ -256,6 +252,7 @@ public class FastLoadNet extends PluginForHost {
     }
 
     private void checkFirstDownload(DownloadLink downloadLink) {
+        if (this.getPluginConfig().getBooleanProperty("BYPASS_API", true)) return;
         if (!this.getPluginConfig().getBooleanProperty("FIRST_INFO_SHOWN", false)) {
             this.getPluginConfig().setProperty("FIRST_INFO_SHOWN", true);
 
@@ -301,6 +298,7 @@ public class FastLoadNet extends PluginForHost {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
+        if (this.getPluginConfig().getBooleanProperty("BYPASS_API", true)) { return menu; }
         MenuItem m;
         menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("plugins.menu.fastload_refresh", "Refresh all Tickets"), 0).setActionListener(this));
         m.setSelected(REFRESH_ALL_FLAG);
