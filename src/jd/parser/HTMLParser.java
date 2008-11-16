@@ -21,6 +21,8 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.http.Browser;
+
 import jd.http.Encoding;
 import jd.plugins.Plugin;
 
@@ -153,11 +155,22 @@ public class HTMLParser {
         }
         if(!data.matches(".*<.*>.*"))
         {
-            int c = new Regex(data, "("+protocolPattern+"://|www\\.)").count();
+            int c = new Regex(data, "("+protocolPattern+"://|(?<!://)www\\.)").count();
             if(c==0)
                 return new String[] {};
             else if(c==1 && data.length()<100 && data.matches("^("+protocolPattern+"://|www\\.).*") )
-            return new String[] {data.replaceFirst(protocols[0] + "://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>'\"].*", "")};
+            {
+                String link = data.replaceFirst(protocols[0] + "://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>'\"].*", "");
+                try {
+                    if(!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceAll("\\s", "%20")).isOK())
+                    {
+                        return new String[] {link.replaceAll("\\s", "%20")};
+                    }
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
         }
 
 
