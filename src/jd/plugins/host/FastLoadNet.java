@@ -192,13 +192,25 @@ public class FastLoadNet extends PluginForHost {
         File file = null;
         br.getPage(downloadLink.getDownloadURL());
         String js = br.getRegex("src=\"(/includes.*?)\"><\\/script>").getMatch(0);
+        if(js==null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         code = br.cloneBrowser().getPage(js);
         BufferedImage image = paintImage(code);
-        ImageIO.write(image, "png", file = getLocalCaptchaFile(this));
+        if(image==null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        file = getLocalCaptchaFile(this);
+        file.mkdirs();
+        ImageIO.write(image, "png", file);
         code = getCaptchaCode(file, this, downloadLink);
         Form download = br.getForm(0);
+      
         download.put("captcha", code);
-        br.openDownload(downloadLink, download).startDownload();
+        br.setDebug(true);
+        br.openDownload(downloadLink, download);
+        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+
+        }
+
+        dl.startDownload();
+
     }
 
     private BufferedImage paintImage(String code) {
