@@ -322,8 +322,6 @@ abstract public class DownloadInterface {
                                 logger.severe("Timeout detected");
                                 error(LinkStatus.ERROR_TIMEOUT_REACHED, null);
                             }
-                            logger.finest(connection.toString());
-                            e.printStackTrace();
                             miniblock = -1;
                             break;
                         }
@@ -831,7 +829,7 @@ abstract public class DownloadInterface {
                             // schon fertig
                             return;
                         }
-                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));                        
+                        error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.L("download.error.message.rangeheaderparseerror", "Unexpected rangeheader format:") + connection.getHeaderField("Content-Range"));
                         logger.severe("ERROR Chunk (range header parse error)" + chunks.indexOf(this) + connection.getHeaderField("Content-Range") + ": " + connection.getHeaderField("Content-Range"));
                         logger.finest(connection.toString());
                         return;
