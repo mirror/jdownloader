@@ -139,7 +139,6 @@ public class Cookie {
             this.timedifference = 0;
             return;
         }       
-        JDUtilities.getLogger().info(this.timedifference + "");
     }
 
     public Date getExpires() {

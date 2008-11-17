@@ -106,7 +106,7 @@ public class Rapidshare extends PluginForHost {
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
 
     public static void correctURL(DownloadLink downloadLink) {
-        downloadLink.setUrlDownload(Rapidshare.getCorrectedURL(downloadLink.getDownloadURL()));
+        downloadLink.setUrlDownload(Rapidshare.getCorrectedURL(downloadLink.getDownloadURL()));        
     }
 
     /**
@@ -119,8 +119,9 @@ public class Rapidshare extends PluginForHost {
         if (link.contains("://ssl.") || !link.startsWith("http://rapidshare.com")) {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }
-
-        return link;
+        String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
+        String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);        
+        return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
     public Rapidshare(PluginWrapper wrapper) {
@@ -201,11 +202,9 @@ public class Rapidshare extends PluginForHost {
                     } else {
                         isRSCom = true;
                         if (!canHandle(urls[i].getDownloadURL())) { return null; }
+                        
+                        urls[i].setUrlDownload(getCorrectedURL(urls[i].getDownloadURL()));
 
-                        if (urls[i].getDownloadURL().contains("://ssl.") || !urls[i].getDownloadURL().startsWith("http://rapidshare.com")) {
-                            urls[i].setUrlDownload("http://rapidshare.com" + urls[i].getDownloadURL().substring(urls[i].getDownloadURL().indexOf("rapidshare.com") + 14));
-
-                        }
                         if ((post + urls[i].getDownloadURL() + "%0a").length() > 10000) {
                             break;
                         }
