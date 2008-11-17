@@ -446,7 +446,7 @@ public class Main {
             logger.finer("" + key + "=" + pr.get(key));
         }
 
-        // logger.info("Revision: " + JDUtilities.getJDTitle());
+        logger.info("Revision: " + JDUtilities.getJDTitle());
         logger.info("Runtype: " + JDUtilities.getRunType());
 
         try {
