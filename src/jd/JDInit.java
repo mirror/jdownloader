@@ -764,7 +764,7 @@ public class JDInit {
         new OptionalPluginWrapper("schedule.Schedule", 1.5);
         new OptionalPluginWrapper("JDFolderWatch", 1.5);
         new OptionalPluginWrapper("JDShutdown", 1.5);
-        new OptionalPluginWrapper("JDRemoteControl", 1.5);
+        new OptionalPluginWrapper("jdremotecontrol.JDRemoteControl", 1.5);
         new OptionalPluginWrapper("JDLowSpeed", 1.5);
         new OptionalPluginWrapper("HTTPLiveHeaderScripter", 1.5);
         new OptionalPluginWrapper("jdchat.JDChat", 1.5);

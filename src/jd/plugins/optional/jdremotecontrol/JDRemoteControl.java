@@ -18,7 +18,7 @@
 //    Alle Ausgaben sollten lediglich eine Zeile lang sein, um die kompatibilität zu erhöhen.
 //
 
-package jd.plugins.optional;
+package jd.plugins.optional.jdremotecontrol;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -47,12 +47,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
+import jd.plugins.optional.jdremotecontrol.httpserver.Handler;
+import jd.plugins.optional.jdremotecontrol.httpserver.HttpServer;
+import jd.plugins.optional.jdremotecontrol.httpserver.Request;
+import jd.plugins.optional.jdremotecontrol.httpserver.Response;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.httpserver.Handler;
-import jd.utils.httpserver.HttpServer;
-import jd.utils.httpserver.Request;
-import jd.utils.httpserver.Response;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
     public JDRemoteControl(PluginWrapper wrapper) {
@@ -697,7 +697,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
         try {
             if (server.isStarted()) {
                 server.stop();
-                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.stopped","stopped."));
+                JDUtilities.getGUI().showMessageDialog(getHost() + " " + JDLocale.L("plugins.optional.remotecontrol.stopped", "stopped."));
             } else {
                 server = new HttpServer(getPluginConfig().getIntegerProperty("PORT", 10025), new Serverhandler());
                 server.start();

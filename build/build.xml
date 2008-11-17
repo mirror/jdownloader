@@ -86,7 +86,7 @@
 	
 		<jar jarfile="${dist}/pluginressourcen/104__JDRemoteControl/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/JDRemoteControl*" />
+				<include name="jd/plugins/optional/jdremotecontrol/**" />
 			</fileset>			
 		</jar>
 
