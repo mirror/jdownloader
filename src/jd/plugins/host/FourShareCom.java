@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -24,7 +25,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class FourShareCom extends PluginForHost {
 
@@ -40,13 +40,14 @@ public class FourShareCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex("<title>4shared\\.com \\- online file sharing and storage \\- download(.*?)</title>").getMatch(0);
-        String size = br.getRegex("<td style=.*?><b>Size:</b></td>.*?<td style=.*?>(.*?)</td>").getMatch(0);
+        String filename = br.getRegex(Pattern.compile("<title>4shared.com.*?download(.*?)</title>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String size = br.getRegex(Pattern.compile("<td style=.*?><b>Size:</b></td>.*?<td style=.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (filename == null || size == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size.replace(",", "")));
         return true;
@@ -54,7 +55,6 @@ public class FourShareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -82,8 +82,9 @@ public class FourShareCom extends PluginForHost {
         String url = br.getRegex("<a href=\"(http://www.4shared.com/get.*?)\" class=\".*?dbtn.*?\" tabindex=\"1\">").getMatch(0);
 
         br.getPage(url);
-        this.sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
         url = br.getRegex("id=\\'divDLStart\\' >.*?<a href=\\'(.*?)\'>Click here to download this file</a>.*?</div>").getMatch(0);
+        if (url.contains("linkerror.jsp")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        this.sleep(Integer.parseInt(br.getRegex(" var c = (\\d+?);").getMatch(0)) * 1000l, downloadLink);
         downloadLink.getLinkStatus().setStatusText("Waiting...");
         downloadLink.requestGuiUpdate();
         // Das wartesystem lässt link b warten während link a lädt
@@ -91,9 +92,10 @@ public class FourShareCom extends PluginForHost {
             Thread.sleep(100);
         }
         increaseCounter();
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(url), false, 1);
+        br.setDebug(true);
+        dl = br.openDownload(downloadLink, url, false, 1);
 
-        String error = new Regex(dl.connect().getURL(), "\\?error(.*)").getMatch(0);
+        String error = new Regex(dl.getConnection().getURL(), "\\?error(.*)").getMatch(0);
         if (error != null) { throw new PluginException(LinkStatus.ERROR_RETRY, error); }
 
         dl.startDownload();
