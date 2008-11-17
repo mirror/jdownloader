@@ -16,6 +16,7 @@
 
 package jd.http;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -31,11 +32,13 @@ public class Cookie {
     private String value;
     private String key;
     private String domain;
+    private long timedifference;
 
     public Cookie(String host, String key, String value) {
         this.host = host;
         this.key = key;
         this.value = value;
+        this.timedifference = 0;
     }
 
     public Cookie() {
@@ -95,11 +98,48 @@ public class Cookie {
         if (expires == null || formatedexpires == null) return false;
         String Current = DATE_FORMAT.format(new Date());
         try {
-            return DATE_FORMAT.parse(Current).after(DATE_FORMAT.parse(formatedexpires));
+            long a = DATE_FORMAT.parse(Current).getTime() - this.timedifference;
+            long b = DATE_FORMAT.parse(formatedexpires).getTime();
+            boolean c = a > b;
+            return c;
         } catch (Exception e1) {
             JDUtilities.getLogger().severe("CookieParser failed: " + expires);
             return false;
         }
+    }
+
+    public void setTimeDifferece(String Date) {
+        if (Date == null) {
+            this.timedifference = 0;
+            return;
+        }
+        String Current = DATE_FORMAT.format(new Date());
+        Date ResponseDate;
+        String ResponseDate2;
+        try {
+            ResponseDate = DATE_FORMAT.parse(Date);
+        } catch (Exception e) {
+            try {
+                ResponseDate = new SimpleDateFormat("EEE, dd MMM yyyy hh:mm:ss z", Locale.UK).parse(Date);
+            } catch (Exception e2) {
+                try {
+                    ResponseDate = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy", Locale.UK).parse(Date);
+                } catch (Exception e3) {
+                    JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                    this.timedifference = 0;
+                    return;
+                }
+            }
+
+        }
+        ResponseDate2 = DATE_FORMAT.format(ResponseDate);
+        try {
+            this.timedifference = DATE_FORMAT.parse(Current).getTime() - DATE_FORMAT.parse(ResponseDate2).getTime();
+        } catch (ParseException e) {
+            this.timedifference = 0;
+            return;
+        }       
+        JDUtilities.getLogger().info(this.timedifference + "");
     }
 
     public Date getExpires() {

@@ -117,8 +117,7 @@ public abstract class Request {
         collectCookiesFromConnection();
     }
 
-    public static ArrayList<Cookie> parseCookies(String cookieString, String host) {
-
+    public static ArrayList<Cookie> parseCookies(String cookieString, String host, String Date) {
         ArrayList<Cookie> cookies = new ArrayList<Cookie>();
 
         String header = cookieString;
@@ -179,6 +178,7 @@ public abstract class Request {
             cookie.setExpires(expires);
             cookie.setValue(next.getValue());
             cookie.setKey(next.getKey());
+            cookie.setTimeDifferece(Date);
         }
 
         return cookies;
@@ -187,6 +187,7 @@ public abstract class Request {
 
     private void collectCookiesFromConnection() {
         List<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
+        String Date = httpConnection.getHeaderField("Date");
         if (cookieHeaders == null) { return; }
         if (cookies == null) {
             cookies = new ArrayList<Cookie>();
@@ -197,8 +198,7 @@ public abstract class Request {
         for (int i = cookieHeaders.size() - 1; i >= 0; i--) {
             String header = cookieHeaders.get(i);
 
-            cookies.addAll(parseCookies(header, host));
-
+            cookies.addAll(parseCookies(header, host, Date));
         }
 
     }

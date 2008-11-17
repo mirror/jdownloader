@@ -212,6 +212,7 @@ public class MegasharesCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+        setBrowserExclusive();
         String link = downloadLink.getDownloadURL();
         br.getPage(link);
 
@@ -226,7 +227,7 @@ public class MegasharesCom extends PluginForHost {
             downloadLink.getLinkStatus().setStatusText("Password protected");
             return true;
         }
-        String[] dat = br.getRegex("<dt>Filename:&nbsp;<strong>(.*?)</strong>&nbsp;&nbsp;&nbsp;(.*?)</dt>").getRow(0);
+        String[] dat = br.getRegex("<dt>Filename:.*?<strong>(.*?)</strong>.*?size:(.*?)</dt>").getRow(0);
         if (dat == null) { return false; }
         downloadLink.setName(dat[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
