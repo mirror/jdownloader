@@ -5,7 +5,7 @@
 	<property name="dist" value="dist" />
 	<property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jDownloader.keystore" />
-	<property name="class-path" value="libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.jar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/servlet-api-2.5-6.1.8.jar libs/jetty-6.1.8.jar libs/jetty-util-6.1.8.jar libs/jl1.0.jar libs/savemytube.jar" />
+	<property name="class-path" value="libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.jar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/jl1.0.jar libs/savemytube.jar" />
 	<target name="compile">
 		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
 	</target>
@@ -27,12 +27,11 @@
 				<include name="jd/plugins/host/HTTPAllgemein*" />
 			</fileset>
 			<fileset dir="${res}">
-				
 				<include name="*.properties" />
 				<exclude name="jd/captcha/methods" />
 			</fileset>
 		</jar>	
-	
+
 	</target>
 	<target name="jarWebupdater">
 		<!--Webupdater-->
@@ -54,49 +53,50 @@
 		<manifest file="Manifest.MF">
 			<attribute name="Created-By" value="JD-Team" />
 		</manifest>
+
 		<jar jarfile="${dist}/pluginressourcen/108__JDTrayLight/plugins/JDLightTray.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDLightTray*" />
 				<include name="jd/plugins/optional/TrayIconPopup*" />
-			</fileset>		
-		</jar>	
+			</fileset>
+		</jar>
+
 		<jar jarfile="${dist}/pluginressourcen/107__JDTrayIcon/plugins/JDTrayIcon.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDTrayIcon*" />
-			</fileset>		
-		</jar>	
+			</fileset>
+		</jar>
+
 		<jar jarfile="${dist}/pluginressourcen/105__JDScheduler/plugins/schedule.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/schedule/**" />
-			</fileset>		
+			</fileset>
 		</jar>
-	
+
 		<jar jarfile="${dist}/pluginressourcen/101__JDwebinterface/plugins/JDWebinterface.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/webinterface/**" />
 			</fileset>
-		
 		</jar>
-	
+
 		<jar jarfile="${dist}/pluginressourcen/100__JDChat/plugins/JDChat.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdchat/**" />
-			</fileset>			
+			</fileset>
 		</jar>
-	
+
 		<jar jarfile="${dist}/pluginressourcen/104__JDRemoteControl/plugins/JDRemoteControl.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
-				<include name="jd/plugins/optional/jdremotecontrol/**" />
-			</fileset>			
+				<include name="jd/plugins/optional/JDRemoteControl*" />
+			</fileset>
 		</jar>
 
 		<jar jarfile="${dist}/pluginressourcen/119__JDNewsfeed/plugins/JDNewsfeeds.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/Newsfeeds*" />
-			</fileset>		
+			</fileset>
 		</jar>
 
-	
 		<jar jarfile="${dist}/pluginressourcen/118__JDLowSpeed/plugins/JDLowSpeed.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDLowSpeed*" />
@@ -114,17 +114,19 @@
 				<include name="jd/plugins/optional/LangFileEditor*" />
 			</fileset>
 		</jar>
-		
+
 		<jar jarfile="${dist}/pluginressourcen/123__JDUnrar/plugins/JDUnrar.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/jdunrar/**" />
 			</fileset>
 		</jar>
+
 		<jar jarfile="${dist}/pluginressourcen/127__JDHJMerge/plugins/JDHJMerge.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/hjsplit/**" />
 			</fileset>
 		</jar>
+
 		<jar jarfile="${dist}/pluginressourcen/122__JDInfoFileWriter/plugins/JDInfoFileWriter.jar" manifest="Manifest.MF">
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDInfoFileWriter*" />
@@ -135,7 +137,6 @@
 			<fileset dir="${cls}">
 				<include name="jd/plugins/optional/JDFolderWatch*" />
 			</fileset>
-
 		</jar>
 
 		<jar jarfile="${dist}/pluginressourcen/106__JDShutdown/plugins/JDShutdown.jar" manifest="Manifest.MF">
@@ -143,14 +144,12 @@
 				<include name="jd/plugins/optional/JDShutdown*" />
 			</fileset>
 		</jar>
-		
 
-		
 		<jar jarfile="${dist}/pluginressourcen/125__JDPremiumCollect/plugins/JDPremiumCollect.jar" manifest="Manifest.MF">
-				<fileset dir="${cls}">
-					<include name="jd/plugins/optional/JDPremiumCollector*" />
-				</fileset>
-			</jar>
+			<fileset dir="${cls}">
+				<include name="jd/plugins/optional/JDPremiumCollector*" />
+			</fileset>
+		</jar>
 	</target>
 
 	<target name="sign">
@@ -169,7 +168,7 @@
 					<field name="serialVersionUID" />
 					<method name="void readObject(java.io.ObjectInputStream)" />
 					<method name="void writeObject(java.io.ObjectOutputStream)" />
-					
+
 					<class implements="java.io.Serializable" classes="private" methods="private" fields="private" />
 
 					<class extends="jd.plugins.Plugin" />
