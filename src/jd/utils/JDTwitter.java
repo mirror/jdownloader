@@ -39,7 +39,7 @@ public class JDTwitter {
             logger.warning("twitter.com unreachable. This doesnt affect your Downloads, though it could be a clue that your internet connection is down.");
         }
 
-        if (status == null || status.matches(".*defaultmessage.*")) {
+        if (status == null || status.equals("") || status.matches(".*defaultmessage.*")) {
             return;
         } else if (status.length() > 70) {
             status = status.substring(0, 70) + "...";
