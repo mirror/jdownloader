@@ -41,23 +41,22 @@ public class PluginTableCellRenderer<T extends PluginWrapper> extends DefaultTab
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
         Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        
-        if ( isSelected ) {
-        	
-        	if ( bgSelected == null ) bgSelected = getBackground();
-        	c.setBackground(bgSelected);
-        	
-	        
+
+        if (isSelected) {
+
+            if (bgSelected == null) bgSelected = getBackground();
+            c.setBackground(bgSelected);
+
         } else {
-        	
-        	if ( bgWithConfig == null ) bgWithConfig = getBackground().darker();
-        	
-	        if ( plugins.get(row).hasConfig() ) {
-	        	c.setBackground(bgWithConfig);
-	        } else {
-	        	c.setBackground(bgNoConfig);
-	        }
-        	
+
+            if (bgWithConfig == null) bgWithConfig = getBackground().darker();
+
+            if (plugins.get(row).hasConfig()) {
+                c.setBackground(bgWithConfig);
+            } else {
+                c.setBackground(bgNoConfig);
+            }
+
         }
 
         return c;

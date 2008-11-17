@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package jd.parser;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Vector;
@@ -22,7 +23,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
-
 import jd.http.Encoding;
 import jd.plugins.Plugin;
 
@@ -147,25 +147,20 @@ public class HTMLParser {
      * @return Linkliste aus data extrahiert
      */
     public static String[] getHttpLinks(String data, String url) {
-        data=data.trim();
+        data = data.trim();
         String[] protocols = new String[] { "h.{2,3}", "https", "ccf", "dlc", "ftp" };
         String protocolPattern = "(";
         for (int i = 0; i < protocols.length; i++) {
             protocolPattern += protocols[i] + (i + 1 == protocols.length ? ")" : "|");
         }
-        if(!data.matches(".*<.*>.*"))
-        {
-            int c = new Regex(data, "("+protocolPattern+"://|(?<!://)www\\.)").count();
-            if(c==0)
+        if (!data.matches(".*<.*>.*")) {
+            int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
+            if (c == 0)
                 return new String[] {};
-            else if(c==1 && data.length()<100 && data.matches("^("+protocolPattern+"://|www\\.).*") )
-            {
+            else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
                 String link = data.replaceFirst(protocols[0] + "://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
                 try {
-                    if(!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceAll("\\s", "%20")).isOK())
-                    {
-                        return new String[] {link.replaceAll("\\s", "%20")};
-                    }
+                    if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
@@ -173,14 +168,13 @@ public class HTMLParser {
             }
         }
 
-
         url = url == null ? "" : url;
         Matcher m;
         String link;
         String basename = "";
         String host = "";
         LinkedList<String> set = new LinkedList<String>();
-        Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE),Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
+        Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?base[^>]*?href=('|\")(.*?)\\1", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?(href)=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
         for (Pattern element : basePattern) {
             m = element.matcher(data);
             if (m.find()) {
@@ -206,22 +200,22 @@ public class HTMLParser {
         } else {
             url = "";
         }
-        final class Httppattern
-        {
+        final class Httppattern {
             public Pattern p;
             public int group;
+
             public Httppattern(Pattern p, int group) {
-                this.p=p;
-                this.group=group;
+                this.p = p;
+                this.group = group;
             }
         }
-        Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE|Pattern.DOTALL), 3),new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE|Pattern.DOTALL), 2),new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE|Pattern.DOTALL), 2) };
+        Httppattern[] linkAndFormPattern = new Httppattern[] { new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)('|\")(.*?)\\2", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 3), new Httppattern(Pattern.compile("(<[ ]?a[^>]*?href=|<[ ]?form[^>]*?action=)([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2), new Httppattern(Pattern.compile("\\[(link|url)\\](.*?)\\[/\\1\\]", Pattern.CASE_INSENSITIVE | Pattern.DOTALL), 2) };
         for (Httppattern element : linkAndFormPattern) {
             m = element.p.matcher(data);
             while (m.find()) {
                 link = Encoding.htmlDecode(m.group(element.group));
                 link = link.replaceAll(protocols[0] + "://", "http://");
-                if (!(link.length() > 3 && link.matches("^"+protocolPattern+"://.*")) && link.length() > 0) {
+                if (!(link.length() > 3 && link.matches("^" + protocolPattern + "://.*")) && link.length() > 0) {
                     if (link.length() > 2 && link.substring(0, 3).equals("www")) {
                         link = "http://" + link;
                     }
@@ -233,7 +227,7 @@ public class HTMLParser {
                         link = basename + link;
                     }
                 }
-                link=link.trim();
+                link = link.trim();
                 if (!set.contains(link)) {
                     set.add(link);
                 }
@@ -241,14 +235,14 @@ public class HTMLParser {
         }
         data = data.replaceAll("(?s)<.*?>", "\r\n");
         data = data.replaceAll("(?s)\\[(url|link)\\].*?\\[/(url|link)\\]", "");
-        m = Pattern.compile("("+protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s"+protocolPattern+"://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
+        m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = m.group(0);
             link = Encoding.htmlDecode(link);
 
             link = link.replaceAll(protocols[0] + "://", "http://");
             link = link.replaceFirst("^www\\.", "http://www\\.");
-            link=link.trim();
+            link = link.trim();
             if (!set.contains(link)) {
                 set.add(link);
             }

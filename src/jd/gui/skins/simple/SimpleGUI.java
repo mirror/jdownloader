@@ -342,6 +342,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_THEME = "THEME";
 
+    public static final String PARAM_USE_TWITTER = "USE_TWITTER";
+
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
 
     /**
@@ -762,16 +764,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         new Thread("twitter") {
             public void run() {
                 while (true) {
-                    final String twitterText = JDTwitter.RefreshTwitterMessage();
-                    EventQueue.invokeLater(new Runnable() {
-                        public void run() {
-                            // System.out.println("trigger");
-                            setStatusBarText(twitterText);
-                        }
-                    });
+                    JDTwitter.refreshTwitterMessage();
                     try {
                         Thread.sleep(300000);
-                        // Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
@@ -1103,11 +1098,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                         logger.info("Interaction zu Ende. Rest status");
                         new Thread("twitterinit") {
                             public void run() {
-                                EventQueue.invokeLater(new Runnable() {
-                                    public void run() {
-                                        setStatusBarText(JDTwitter.RefreshTwitterMessage());
-                                    }
-                                });
+                                JDTwitter.refreshTwitterMessage();
                             }
                         }.start();
                         frame.setTitle(JDUtilities.getJDTitle());
@@ -1849,8 +1840,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         return guiConfig;
     }
 
-    public void setStatusBarText(String text) {
-        statusBar.setText(text);
+    public void setStatusBarText(final String text) {
+        EventQueue.invokeLater(new Runnable() {
+            public void run() {
+                statusBar.setText(text);
+            }
+        });
     }
 
     public void dragEnter(DropTargetDragEvent dtde) {

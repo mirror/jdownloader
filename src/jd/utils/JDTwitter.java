@@ -19,34 +19,33 @@ package jd.utils;
 import java.io.IOException;
 import java.util.logging.Logger;
 
+import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 
 public class JDTwitter {
-    
-    private static Logger logger = JDUtilities.getLogger();
-    
-    public static String RefreshTwitterMessage() {
 
-        long onedayback = System.currentTimeMillis() - 1000 * 60 * 60 * 24;
+    private static Logger logger = JDUtilities.getLogger();
+
+    public static void refreshTwitterMessage() {
+        if (!SimpleGUI.CURRENTGUI.getGuiConfig().getBooleanProperty(SimpleGUI.PARAM_USE_TWITTER, true)) return;
+
+        long oneDayBack = System.currentTimeMillis() - 1000 * 60 * 60 * 24;
         Browser br = new Browser();
         String status = null;
         try {
-            br.getPage(JDLocale.L("main.twitter.url", "http://twitter.com/statuses/user_timeline/jdownloader.xml") + "?count=1&since=" + JDUtilities.formatTime(onedayback));
+            br.getPage(JDLocale.L("main.twitter.url", "http://twitter.com/statuses/user_timeline/jdownloader.xml") + "?count=1&since=" + JDUtilities.formatTime(oneDayBack));
             status = br.getRegex("<status>[\\s\\S]*?<text>(.*?)</text>[\\s\\S]*?</status>").getMatch(0);
-
         } catch (IOException e) {
-                logger.warning("twitter.com unreachable. This doesnt affect your Downloads, though it could be a clue that your internet connection is down.");
-        }
-     
-
-        if ((status == null) || (status == "")) {
-            status = JDLocale.L("sys.message.welcome", "Welcome to JDownloader");
-        } else {
-            if (status.matches(".*defaultmessage.*")) status = "";
-            if (status.length() > 70) status = status.substring(0, 70) + "...";
+            logger.warning("twitter.com unreachable. This doesnt affect your Downloads, though it could be a clue that your internet connection is down.");
         }
 
-        return status;
+        if (status == null || status.matches(".*defaultmessage.*")) {
+            return;
+        } else if (status.length() > 70) {
+            status = status.substring(0, 70) + "...";
+        }
+
+        SimpleGUI.CURRENTGUI.setStatusBarText(status);
     }
 
 }

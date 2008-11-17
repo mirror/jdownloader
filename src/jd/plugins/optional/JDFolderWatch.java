@@ -26,13 +26,12 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.event.ControlListener;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 @SuppressWarnings("unchecked")
-public class JDFolderWatch extends PluginOptional implements ControlListener {
+public class JDFolderWatch extends PluginOptional {
     public class check extends Thread {
         @Override
         public void run() {

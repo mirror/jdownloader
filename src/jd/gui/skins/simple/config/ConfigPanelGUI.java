@@ -102,41 +102,6 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")));
         ce.setDefaultValue(defplaf);
 
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_TREETABLE_TOOLTIPPS, JDLocale.L("gui.config.gui.disabletooltipps", "ToolTipps der DownloadListe abschalten")));
-        ce.setDefaultValue(false);
-
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")));
-        ce.setDefaultValue(false);
-
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")));
-        ce.setDefaultValue(true);
-
-        Object[] BrowserArray = (Object[]) subConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
-        if (BrowserArray == null) {
-            BrowserLauncher launcher;
-            List<?> ar = null;
-            try {
-                launcher = new BrowserLauncher();
-                ar = launcher.getBrowserList();
-            } catch (BrowserLaunchingInitializingException e) {
-                e.printStackTrace();
-            } catch (UnsupportedOperatingSystemException e) {
-                e.printStackTrace();
-            }
-            if (ar == null || ar.size() < 2) {
-                BrowserArray = new Object[] { "JavaBrowser" };
-            } else {
-                BrowserArray = new Object[ar.size() + 1];
-                for (int i = 0; i < BrowserArray.length - 1; i++) {
-                    BrowserArray[i] = ar.get(i);
-                }
-                BrowserArray[BrowserArray.length - 1] = "JavaBrowser";
-            }
-            subConfig.setProperty(SimpleGUI.PARAM_BROWSER_VARS, BrowserArray);
-            subConfig.setProperty(SimpleGUI.PARAM_BROWSER, BrowserArray[0]);
-            subConfig.save();
-        }
-
         // Links Tab
         ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, links));
@@ -155,6 +120,51 @@ public class ConfigPanelGUI extends ConfigPanel {
         ce.setInstantHelp(JDLocale.L("gui.config.showContainerOnLoadInfo.helpurl", "http://jdownloader.org/wiki/index.php?title=Konfiguration_der_Benutzeroberfl%C3%A4che"));
 
         // Extended Tab
+        ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
+        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_SHOW_SPLASH, JDLocale.L("gui.config.gui.showSplash", "Splashscreen beim starten zeigen")));
+        ce.setDefaultValue(true);
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, JDLocale.L("gui.config.gui.disabledialogs", "Bestätigungsdialoge abschalten")));
+        ce.setDefaultValue(false);
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DISABLE_TREETABLE_TOOLTIPPS, JDLocale.L("gui.config.gui.disabletooltipps", "ToolTipps der DownloadListe abschalten")));
+        ce.setDefaultValue(false);
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_USE_TWITTER, JDLocale.L("gui.config.gui.useTwitter", "Twitter-Meldungen laden & anzeigen")));
+        ce.setDefaultValue(true);
+
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
+        ce.setDefaultValue(5);
+
+        // Browser Tab
+        Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
+        if (browserArray == null) {
+            BrowserLauncher launcher;
+            List<?> ar = null;
+            try {
+                launcher = new BrowserLauncher();
+                ar = launcher.getBrowserList();
+            } catch (BrowserLaunchingInitializingException e) {
+                e.printStackTrace();
+            } catch (UnsupportedOperatingSystemException e) {
+                e.printStackTrace();
+            }
+            if (ar == null || ar.size() < 2) {
+                browserArray = new Object[] { "JavaBrowser" };
+            } else {
+                browserArray = new Object[ar.size() + 1];
+                for (int i = 0; i < browserArray.length - 1; i++) {
+                    browserArray[i] = ar.get(i);
+                }
+                browserArray[browserArray.length - 1] = "JavaBrowser";
+            }
+            subConfig.setProperty(SimpleGUI.PARAM_BROWSER_VARS, browserArray);
+            subConfig.setProperty(SimpleGUI.PARAM_BROWSER, browserArray[0]);
+            subConfig.save();
+        }
+
         ConfigContainer browser = new ConfigContainer(this, JDLocale.L("gui.config.gui.Browser", "Browser"));
         container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, browser));
 
@@ -166,7 +176,6 @@ public class ConfigPanelGUI extends ConfigPanel {
                         save();
                         JLinkButton.openURL("http://jdownloader.org");
                     } catch (Exception e) {
-                        // TODO Auto-generated catch block
                         e.printStackTrace();
                         SimpleGUI.CURRENTGUI.showMessageDialog(JDLocale.LF("gui.config.gui.testbrowser.error", "Browser launcher failed: %s", e.getLocalizedMessage()));
                     }
@@ -178,70 +187,55 @@ public class ConfigPanelGUI extends ConfigPanel {
         ConfigEntry conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_USE, JDLocale.L("gui.config.gui.use_custom_browser", "Use custom browser"));
         conditionEntry.setDefaultValue(false);
 
-        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, BrowserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
-        ce.setDefaultValue(BrowserArray[0]);
+        browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_BROWSER, browserArray, JDLocale.L("gui.config.gui.Browser", "Browser")));
+        ce.setDefaultValue(browserArray[0]);
         ce.setEnabledCondidtion(conditionEntry, "==", false);
 
         browser.addEntry(conditionEntry);
 
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER, JDLocale.L("gui.config.gui.custom_browser", "Browserpath")));
+
         String parameter = null;
         String path = null;
-
         if (OSDetector.isWindows()) {
 
             if (new File("C:\\Program Files\\Mozilla Firefox\\firefox.exe").exists()) {
                 parameter = "-new-tab\r\n%url";
                 path = "C:\\Program Files\\Mozilla Firefox\\firefox.exe";
-
             } else if (new File("C:\\Programme\\Mozilla Firefox\\firefox.exe").exists()) {
                 parameter = "-new-tab\r\n%url";
                 path = "C:\\Programme\\Mozilla Firefox\\firefox.exe";
-
             } else if (new File("C:\\Program Files\\Internet Explorer\\iexplore.exe").exists()) {
                 parameter = "%url";
                 path = "C:\\Program Files\\Internet Explorer\\iexplore.exe";
-
             } else {
                 parameter = "%url";
                 path = "C:\\Programme\\Internet Explorer\\iexplore.exe";
-
             }
 
-        }
-
-        if (OSDetector.isMac()) {
+        } else if (OSDetector.isMac()) {
 
             if (new File("/Applications/Firefox.app").exists()) {
                 parameter = "/Applications/Firefox.app\r\n-new-tab\r\n%url";
                 path = "open";
-
             } else {
-
                 parameter = "/Applications/Safari.app\r\n-new-tab\r\n%url";
                 path = "open";
-
             }
 
-        }
-        if (OSDetector.isLinux()) {
+        } else if (OSDetector.isLinux()) {
 
-            /**
-             * TODO: das ganze für linux
-             */
+            // TODO: das ganze für linux
 
         }
+
         ce.setDefaultValue(path);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
 
         browser.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, subConfig, SimpleGUI.PARAM_CUSTOM_BROWSER_PARAM, JDLocale.L("gui.config.gui.custom_browser_param", "Parameter %url (one parameter per line)")));
         ce.setDefaultValue(parameter);
         ce.setEnabledCondidtion(conditionEntry, "==", true);
-        // Extended Tab
-        ConfigContainer ext = new ConfigContainer(this, JDLocale.L("gui.config.gui.ext", "Advanced"));
-        container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
-        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
-        ce.setDefaultValue(5);
+
         this.add(cep = new ConfigEntriesPanel(container));
     }
 
