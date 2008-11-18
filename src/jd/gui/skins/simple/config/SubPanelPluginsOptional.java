@@ -55,7 +55,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         @Override
         public Class<?> getColumnClass(int columnIndex) {
-            return String.class;
+            return getValueAt(0, columnIndex).getClass();
         }
 
         public int getColumnCount() {
@@ -66,7 +66,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         public String getColumnName(int column) {
             switch (column) {
             case 0:
-                return JDLocale.L("gui.column_status", "Status");
+                return JDLocale.L("gui.column_status", "Aktivieren");
             case 1:
                 return JDLocale.L("gui.column_plugin", "Plugin");
             case 2:
@@ -86,7 +86,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         public Object getValueAt(int rowIndex, int columnIndex) {
             switch (columnIndex) {
             case 0:
-                return pluginsOptional.get(rowIndex).isEnabled() ? JDLocale.L("gui.config.plugin.optional.statusActive", "An") : JDLocale.L("gui.config.plugin.optional.statusInactive", "Aus");
+                return pluginsOptional.get(rowIndex).isEnabled();
             case 1:
                 return pluginsOptional.get(rowIndex).getPlugin().getHost();
             case 2:
@@ -98,6 +98,31 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             }
             return null;
         }
+        
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == 0;
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if ( col == 0 ) {
+            	OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
+                if ((Boolean) value) {
+                	configuration.setProperty(plgWrapper.getConfigParamKey(), true);
+                	plgWrapper.getPlugin().initAddon();
+                } else {
+                	if ((plgWrapper.getFlag() & OptionalPluginWrapper.FLAG_ALWAYS_ENABLED) > 0) {
+                        JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive", "The addon %s cannot be disabled.", plgWrapper.getClassName()));
+                    } else {
+                    	configuration.setProperty(plgWrapper.getConfigParamKey(), false);
+                    	plgWrapper.getPlugin().onExit();
+                    }
+                }
+                ((SimpleGUI) JDUtilities.getGUI()).createOptionalPluginsMenuEntries();
+            }
+        }
+        
     }
 
     private static final long serialVersionUID = 5794208138046480006L;
@@ -122,7 +147,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         initPanel();
         load();
     }
-
+    
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry();
@@ -163,8 +188,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                 btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
-        // table.setDefaultRenderer(Object.class, new
-        // PluginTableCellRenderer<OptionalPluginWrapper>(pluginsOptional));
+        table.setDefaultRenderer(Object.class, new
+        PluginTableCellRenderer<OptionalPluginWrapper>(pluginsOptional));
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
