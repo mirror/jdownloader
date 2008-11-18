@@ -119,6 +119,7 @@ public class DistributeData extends ControlBroadcaster {
      */
     private boolean deepDecrypt(final ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
+        final ArrayList<DownloadLink> newdecryptedLinks = new ArrayList<DownloadLink>();
         boolean hasDecryptedLinks = false;
         class DThread {
             Thread thread;
@@ -133,12 +134,12 @@ public class DistributeData extends ControlBroadcaster {
 
             boolean canDecrypt = false;
 
-            public boolean canDecrypt() {
+            public boolean couldDecrypt() {
                 return canDecrypt;
 
             }
 
-            public void setCanDecrypt(boolean bool) {
+            public void setCouldDecrypt(boolean bool) {
                 canDecrypt = bool;
             }
         }
@@ -162,7 +163,7 @@ public class DistributeData extends ControlBroadcaster {
                         }
                     }
 
-                    dThread.setCanDecrypt(false);
+                    dThread.setCouldDecrypt(false);
                     for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                         if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
                             try {
@@ -181,8 +182,8 @@ public class DistributeData extends ControlBroadcaster {
                                     dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
                                 }
 
-                                decryptedLinks.addAll(dLinks);
-                                dThread.setCanDecrypt(false);
+                                newdecryptedLinks.addAll(dLinks);
+                                dThread.setCouldDecrypt(true);
                                 break;
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -196,7 +197,7 @@ public class DistributeData extends ControlBroadcaster {
 
             decryptThread.add(dThread);
         }
-        for (int j = 0; j < decryptThread.size(); j++) {
+        for (int j = decryptThread.size() - 1; j >= 0; j--) {
             DThread thread = decryptThread.get(j);
             while (thread.getThread().isAlive()) {
                 try {
@@ -206,11 +207,12 @@ public class DistributeData extends ControlBroadcaster {
                     e.printStackTrace();
                 }
             }
-            if (thread.canDecrypt()) {
+            if (thread.couldDecrypt()) {
                 decryptedLinks.remove(j);
                 hasDecryptedLinks = true;
             }
         }
+        decryptedLinks.addAll(newdecryptedLinks);
         return hasDecryptedLinks;
     }
 
