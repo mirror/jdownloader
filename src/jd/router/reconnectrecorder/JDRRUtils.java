@@ -105,7 +105,7 @@ public class JDRRUtils {
     }
 
     public static void createStep(HashMap<String, String> headers, String postdata, Vector<String> steps) {
-        if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css|js|swf|xml).*?").matches()) {
+        if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css|js).*?").matches()) {
             StringBuffer hlh = new StringBuffer();
             hlh.append("    [[[STEP]]]" + "\r\n");
             hlh.append("        [[[REQUEST]]]" + "\r\n");
