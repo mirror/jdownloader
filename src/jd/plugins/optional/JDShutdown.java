@@ -40,6 +40,7 @@ public class JDShutdown extends PluginOptional {
 
     private static final int count = 60;
     private static final String CONFIG_STANDBY = "STANDBY";
+    private static final String CONFIG_HIBERNATE = "HIBERNATE";
     private static final String CONFIG_FORCESHUTDOWN = "FORCE";
 
     public static int getAddonInterfaceVersion() {
@@ -47,7 +48,8 @@ public class JDShutdown extends PluginOptional {
     }
 
     private MenuItem menuItem;
-
+    private MenuItem menuItemRun;
+    
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
         initConfig();
@@ -62,6 +64,8 @@ public class JDShutdown extends PluginOptional {
             } else {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
             }
+        } else if(e.getSource() == menuItemRun) {
+            this.shutDown();
         }
     }
 
@@ -83,7 +87,9 @@ public class JDShutdown extends PluginOptional {
 
         if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "System nach dem Downloaden herunterfahren"), 0).setActionListener(this);
         menu.add(menuItem);
-
+        if (menuItemRun == null) menuItemRun = new MenuItem(MenuItem.NORMAL, JDLocale.L("addons.jdshutdown.run", "System jetzt herunterfahren"), 0).setActionListener(this);
+        menu.add(menuItemRun);
+        
         return menu;
     }
 
@@ -137,13 +143,30 @@ public class JDShutdown extends PluginOptional {
                 }
             }
         } else {
+            if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+                try {
+                    JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate on" }, null, 0);
+                } catch (Exception e) {
+                    try {
+                        JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate on" }, null, 0);
+                    } catch (Exception ex) {}
+                }
+            } else {
+                try {
+                    JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate off" }, null, 0);
+                } catch (Exception e) {
+                    try {
+                        JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate off" }, null, 0);
+                    } catch (Exception ex) {}
+                }
+            }
+            
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
             } catch (Exception e) {
-            }
-            try {
-                JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
-            } catch (Exception e) {
+                try {
+                    JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
+                } catch (Exception ex) {}
             }
         }
     }
@@ -209,6 +232,8 @@ public class JDShutdown extends PluginOptional {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_STANDBY, JDLocale.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)")));
+        ce.setDefaultValue(false);
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_HIBERNATE, JDLocale.L("gui.config.jdshutdown.hibernate", "Suspend to Disk (Ruhezustand / Hibernate) [Nur Windows]")));
         ce.setDefaultValue(false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Shutdown erzwingen (Nur einige OS)")));
         ce.setDefaultValue(false);
