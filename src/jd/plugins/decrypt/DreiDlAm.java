@@ -108,7 +108,7 @@ public class DreiDlAm extends PluginForDecrypt {
             String link = decryptFromLink(parameter);
             decryptedLinks.add(createDownloadlink(link));
             progress.increase(1);
-        } else if (new Regex(parameter, PluginPattern.decrypterPattern_DreiDlAm_3).matches()) {
+        } else {
             decryptFromDownload(parameter);
             ArrayList<String> links = decryptFromStart(null);
             progress.setRange(links.size());

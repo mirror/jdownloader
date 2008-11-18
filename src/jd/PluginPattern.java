@@ -83,6 +83,7 @@ public class PluginPattern {
     static public final String decrypterPattern_DreiDlAm_1 = "http://[\\w\\.]*?3dl\\.am/link/[a-zA-Z0-9]+";
     static public final String decrypterPattern_DreiDlAm_2 = "http://[\\w\\.]*?3dl\\.am/download/start/[0-9]+/";
     static public final String decrypterPattern_DreiDlAm_3 = "http://[\\w\\.]*?3dl\\.am/download/[0-9]+/.+\\.html";
-    static public final String decrypterPattern_DreiDlAm_Plugin = decrypterPattern_DreiDlAm_1 + "|" + decrypterPattern_DreiDlAm_2 + "|" + decrypterPattern_DreiDlAm_3;
+    static public final String decrypterPattern_DreiDlAm_4 = "http://[\\w\\.]*?3dl\\.am/index\\.php\\?action=detailansicht&file_id=[0-9]+";
+    static public final String decrypterPattern_DreiDlAm_Plugin = decrypterPattern_DreiDlAm_1 + "|" + decrypterPattern_DreiDlAm_2 + "|" + decrypterPattern_DreiDlAm_3 + "|" + decrypterPattern_DreiDlAm_4;
 
 }
