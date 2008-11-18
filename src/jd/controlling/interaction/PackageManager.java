@@ -115,7 +115,7 @@ public class PackageManager extends Interaction implements Serializable {
                 }
                 Vector<DownloadLink> links = distributeData.findLinks();
                 for (DownloadLink link : links) {
-                    logger.info("Add link " + link + " : " + pkg);
+                    logger.info("Add link " + link /*+ " : " + pkg*/);
                     link.setFilePackage(fp);
                     link.setLinkType(DownloadLink.LINKTYPE_JDU);
                     link.setProperty("JDU", pkg);
