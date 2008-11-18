@@ -27,7 +27,7 @@ public class AccountInfo extends Property {
     private PluginForHost plugin;
     private Account account;
     private boolean valid = true;
-    private long validUntil = 0;
+    private long validUntil = -1;
     private long trafficLeft = -1;
     private long trafficMax = -1;
     private int filesNum = -1;
@@ -102,8 +102,8 @@ public class AccountInfo extends Property {
 
     /**
      * Gibt zurück wieviel Trafficshareonch übrig ist (in bytes). Trafficshare
-     * ist Traffic, den man über einen PremiumAccount den Freeusern zur Verfügung
-     * stellen kann. -1: Feature ist nicht unterstützt
+     * ist Traffic, den man über einen PremiumAccount den Freeusern zur
+     * Verfügung stellen kann. -1: Feature ist nicht unterstützt
      * 
      * @return
      */
