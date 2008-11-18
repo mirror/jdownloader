@@ -228,13 +228,17 @@ public class JDShutdown extends PluginOptional {
     }
 
     public void initConfig() {
-
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_STANDBY, JDLocale.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)")));
         ce.setDefaultValue(false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_HIBERNATE, JDLocale.L("gui.config.jdshutdown.hibernate", "Suspend to Disk (Ruhezustand / Hibernate) [Nur Windows]")));
         ce.setDefaultValue(false);
+        
+        String OS = System.getProperty("os.name").toLowerCase();
+        if (!(OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1 || OS.indexOf("windows 2003") > -1)) { 
+            ce.setEnabled(false);
+        }
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Shutdown erzwingen (Nur einige OS)")));
         ce.setDefaultValue(false);
     }
