@@ -178,17 +178,22 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
         table.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
 
             private static final long serialVersionUID = 1L;
+            private Color bgNormal = null;
+            private Color bgSelected = null;
 
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-
+                
+                if ( bgNormal == null ) bgNormal = getBackground();
+                if ( bgSelected == null && isSelected ) bgSelected = getBackground();
+                
                 PackageData pd = packageData.get(row);
                 if (isSelected) {
-                    c.setBackground(Color.LIGHT_GRAY);
+                    c.setBackground(bgSelected);
                 } else if (column == 0 && (pd.getInstalledVersion() != 0 || pd.isSelected()) && pd.getInstalledVersion() < Integer.valueOf(pd.getStringProperty("version"))) {
                     c.setBackground(Color.GREEN);
                 } else {
-                    c.setBackground(Color.WHITE);
+                    c.setBackground(bgNormal);
                 }
 
                 return c;
