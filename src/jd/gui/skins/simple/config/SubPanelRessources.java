@@ -183,10 +183,10 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
 
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                
-                if ( bgNormal == null ) bgNormal = getBackground();
-                if ( bgSelected == null && isSelected ) bgSelected = getBackground();
-                
+
+                if (bgNormal == null) bgNormal = getBackground();
+                if (bgSelected == null && isSelected) bgSelected = getBackground();
+
                 PackageData pd = packageData.get(row);
                 if (isSelected) {
                     c.setBackground(bgSelected);
@@ -209,24 +209,28 @@ public class SubPanelRessources extends ConfigPanel implements ActionListener, P
                 column.setPreferredWidth(250);
                 break;
             case 1:
-                column.setPreferredWidth(60);
-                column.setMinWidth(60);
+                column.setPreferredWidth(100);
+                column.setMaxWidth(150);
                 break;
             case 2:
-                column.setPreferredWidth(50);
+                column.setPreferredWidth(70);
+                column.setMaxWidth(70);
+                column.setMinWidth(70);
                 column.setCellRenderer(JLinkButton.getJLinkButtonRenderer());
                 column.setCellEditor(JLinkButton.getJLinkButtonEditor());
                 break;
             case 3:
-                column.setPreferredWidth(30);
+                column.setPreferredWidth(80);
+                column.setMaxWidth(100);
                 break;
             case 4:
-                column.setPreferredWidth(30);
+                column.setPreferredWidth(80);
+                column.setMaxWidth(100);
                 break;
             case 5:
-                column.setPreferredWidth(60);
-                column.setMaxWidth(60);
-                column.setMinWidth(60);
+                column.setPreferredWidth(70);
+                column.setMaxWidth(70);
+                column.setMinWidth(70);
                 break;
             }
         }

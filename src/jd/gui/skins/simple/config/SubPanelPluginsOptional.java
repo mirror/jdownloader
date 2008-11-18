@@ -98,7 +98,7 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
             }
             return null;
         }
-        
+
         @Override
         public boolean isCellEditable(int rowIndex, int columnIndex) {
             return columnIndex == 0;
@@ -106,23 +106,23 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if ( col == 0 ) {
-            	OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
+            if (col == 0) {
+                OptionalPluginWrapper plgWrapper = pluginsOptional.get(row);
                 if ((Boolean) value) {
-                	configuration.setProperty(plgWrapper.getConfigParamKey(), true);
-                	plgWrapper.getPlugin().initAddon();
+                    configuration.setProperty(plgWrapper.getConfigParamKey(), true);
+                    plgWrapper.getPlugin().initAddon();
                 } else {
-                	if ((plgWrapper.getFlag() & OptionalPluginWrapper.FLAG_ALWAYS_ENABLED) > 0) {
+                    if ((plgWrapper.getFlag() & OptionalPluginWrapper.FLAG_ALWAYS_ENABLED) > 0) {
                         JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive", "The addon %s cannot be disabled.", plgWrapper.getClassName()));
                     } else {
-                    	configuration.setProperty(plgWrapper.getConfigParamKey(), false);
-                    	plgWrapper.getPlugin().onExit();
+                        configuration.setProperty(plgWrapper.getConfigParamKey(), false);
+                        plgWrapper.getPlugin().onExit();
                     }
                 }
                 ((SimpleGUI) JDUtilities.getGUI()).createOptionalPluginsMenuEntries();
             }
         }
-        
+
     }
 
     private static final long serialVersionUID = 5794208138046480006L;
@@ -130,8 +130,6 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
     private JButton btnEdit;
 
     private Configuration configuration;
-
-    private JButton enableDisable;
 
     private ArrayList<OptionalPluginWrapper> pluginsOptional;
 
@@ -147,27 +145,10 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         initPanel();
         load();
     }
-    
+
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnEdit) {
             editEntry();
-        } else if (e.getSource() == enableDisable) {
-            int rowIndex = table.getSelectedRow();
-            OptionalPluginWrapper plgWrapper = pluginsOptional.get(rowIndex);
-            if ((plgWrapper.getFlag() & OptionalPluginWrapper.FLAG_ALWAYS_ENABLED) > 0) {
-                JDUtilities.getGUI().showMessageDialog(JDLocale.LF("gui.config.plugin.optional.forcedActive", "The addon %s cannot be disabled.", plgWrapper.getClassName()));
-                return;
-            }
-            boolean b = configuration.getBooleanProperty(plgWrapper.getConfigParamKey(), false);
-            configuration.setProperty(plgWrapper.getConfigParamKey(), !b);
-            tableModel.fireTableRowsUpdated(rowIndex, rowIndex);
-            table.getSelectionModel().setSelectionInterval(rowIndex, rowIndex);
-            if (!b) {
-                plgWrapper.getPlugin().initAddon();
-            } else {
-                plgWrapper.getPlugin().onExit();
-            }
-            ((SimpleGUI) JDUtilities.getGUI()).createOptionalPluginsMenuEntries();
         }
     }
 
@@ -188,15 +169,15 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
                 btnEdit.setEnabled((table.getSelectedRow() >= 0) && pluginsOptional.get(table.getSelectedRow()).getPlugin().getConfig().getEntries().size() != 0);
             }
         });
-        table.setDefaultRenderer(Object.class, new
-        PluginTableCellRenderer<OptionalPluginWrapper>(pluginsOptional));
+        table.setDefaultRenderer(Object.class, new PluginTableCellRenderer<OptionalPluginWrapper>(pluginsOptional));
 
         TableColumn column = null;
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {
             case 0:
-                column.setPreferredWidth(70);
+                column.setMaxWidth(80);
+                column.setPreferredWidth(50);
                 break;
             case 1:
                 column.setPreferredWidth(300);
@@ -211,12 +192,8 @@ public class SubPanelPluginsOptional extends ConfigPanel implements ActionListen
         btnEdit.setEnabled(false);
         btnEdit.addActionListener(this);
 
-        enableDisable = new JButton(JDLocale.L("gui.config.plugin.optional.btn_toggleStatus", "An/Aus"));
-        enableDisable.addActionListener(this);
-
         JPanel bpanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
         bpanel.add(btnEdit);
-        bpanel.add(enableDisable);
         bpanel.add(new JLinkButton(JDLocale.L("gui.config.plugin.optional.linktext_help", "Hilfe"), JDLocale.L("gui.config.plugin.optional.link_help", "  http://jdownloader.org/page.php?id=122")));
 
         this.add(scrollpane);

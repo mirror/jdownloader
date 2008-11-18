@@ -89,7 +89,7 @@ public class JDPremiumCollector extends PluginOptional {
                             if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
                                 try {
                                     AccountInfo accInfo = plg.getPlugin().getAccountInformation(account);
-                                    if (accInfo != null && accInfo.isValid() && !accInfo.isExpired()) {
+                                    if (accInfo != null && accInfo.isValid() && !accInfo.isExpired() && accInfo.getTrafficLeft() > 0) {
                                         accounts.add(account);
                                     } else {
                                         logger.finer(plg.getHost() + " : account " + account.getUser() + " is not valid; not added to list");
