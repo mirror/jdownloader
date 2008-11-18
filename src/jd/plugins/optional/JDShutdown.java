@@ -211,35 +211,51 @@ public class JDShutdown extends PluginOptional {
             } else if (OS.indexOf("mac") >= 0) {
                 JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
             } else {
-                try {
-                    JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement.Shutdown" }, null, 0);
-                } catch (Exception e) {
-                }
-                try {
-                    JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
-                } catch (Exception e) {
-                }
-                try {
-                    JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
-                } catch (Exception e) {
-                }
+            	if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+            		try {
+	                	dbusPowerState("Hibernate");
+	                } catch (Exception e) {
+	                }
+            	} else if (getPluginConfig().getBooleanProperty(CONFIG_STANDBY, false)) {
+            		try {
+	                	dbusPowerState("Suspend");
+	                } catch (Exception e) {
+	                }
+            	} else {
+	                try {
+	                	dbusPowerState("Shutdown");
+	                } catch (Exception e) {
+	                }
+	                try {
+	                    JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
+	                } catch (Exception e) {
+	                }
+	                try {
+	                    JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
+	                } catch (Exception e) {
+	                }
+            	}
             }
         }
     }
-
+    
+    private void dbusPowerState(String command) {
+    	JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement."+command }, null, 0);
+    }
+    
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_STANDBY, JDLocale.L("gui.config.jdshutdown.standby", "Standby (Nur einige OS)")));
         ce.setDefaultValue(false);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_HIBERNATE, JDLocale.L("gui.config.jdshutdown.hibernate", "Suspend to Disk (Ruhezustand / Hibernate) [Nur Windows]")));
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_HIBERNATE, JDLocale.L("gui.config.jdshutdown.hibernate", "Ruhezustand/Hibernate (Nur einige OS)")));
         ce.setDefaultValue(false);
         
-        String OS = System.getProperty("os.name").toLowerCase();
+        /*String OS = System.getProperty("os.name").toLowerCase();
         if (!(OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1 || OS.indexOf("windows 2003") > -1)) { 
             ce.setEnabled(false);
-        }
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Shutdown erzwingen (Nur einige OS)")));
+        }*/
+        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")));
         ce.setDefaultValue(false);
     }
 }
