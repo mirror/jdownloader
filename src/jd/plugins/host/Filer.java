@@ -17,7 +17,11 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -26,9 +30,11 @@ import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDUtilities;
@@ -98,33 +104,63 @@ public class Filer extends PluginForHost {
 
     }
 
+    public void login(Account account) throws IOException, PluginException, InterruptedException {
+        br.getPage("http://www.filer.net/");
+        Thread.sleep(500);
+        br.getPage("http://www.filer.net/login");
+        Thread.sleep(500);
+        br.postPage("http://www.filer.net/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&commit=Einloggen");
+        Thread.sleep(500);
+        String cookie = br.getCookie("http://filer.net", "filer_net");
+        if (cookie == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        String trafficleft = br.getRegex(Pattern.compile("<th>Traffic</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String validuntil = br.getRegex(Pattern.compile("<th>Mitglied bis</th>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        ai.setTrafficLeft(trafficleft);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yy");
+
+        try {
+            Date date = dateFormat.parse(validuntil);
+            ai.setValidUntil(date.getTime());
+        } catch (ParseException e) {
+            return null;
+        }
+        ai.setValid(true);
+        return ai;
+    }
+
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String user = account.getUser();
-        String pass = account.getPass();
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        String page = null;
-        br.setCookiesExclusive(true);
-        br.clearCookies("filer.net");
-        br.postPage("http://www.filer.net/login", "username=" + Encoding.urlEncode(user) + "&password=" + Encoding.urlEncode(pass) + "&commit=Einloggen");
-        page = br.getPage(downloadLink.getDownloadURL());
+        setBrowserExclusive();
+        login(account);
+        br.getPage(downloadLink.getDownloadURL());
+        Thread.sleep(500);
         br.setFollowRedirects(false);
-        String id = new Regex(page, "<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getMatch(0);
+        String id = br.getRegex("<a href=\"\\/dl\\/(.*?)\">.*?<\\/a>").getMatch(0);
+        if (id == null) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         br.getPage("http://www.filer.net/dl/" + id);
-
-        dl = RAFDownload.download(downloadLink, br.createGetRequest(null), true, 0);
-        if (!dl.connect(br).isOK()) {
-            linkStatus.addStatus(LinkStatus.ERROR_RETRY);
-            return;
-        }
+        String url = br.getRegex("url=(http.*?)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        dl = br.openDownload(downloadLink, url, true, 0);
+        if (!dl.connect(br).isOK()) { throw new PluginException(LinkStatus.ERROR_RETRY); }
         dl.startDownload();
-
     }
 
     @Override
     public String getAGBLink() {
-
         return "http://www.filer.net/faq";
     }
 
@@ -176,7 +212,6 @@ public class Filer extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
@@ -186,7 +221,10 @@ public class Filer extends PluginForHost {
 
     @Override
     public void reset() {
+    }
 
+    public int getTimegapBetweenConnections() {
+        return 500;
     }
 
     @Override
