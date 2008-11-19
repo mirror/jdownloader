@@ -131,6 +131,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private transient String tempUrlDownload;
 
+    private boolean dupecheckallowed;
+
     // Von hier soll de Download stattfinden
     private String urlDownload;
 
@@ -148,6 +150,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Erzeugt einen neuen DownloadLink
+     * 
      * @param plugin
      *            Das Plugins, das für diesen Download zuständig ist
      * @param name
@@ -161,6 +164,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
+        this.dupecheckallowed = false;
         setName(name);
         sourcePluginPasswords = new Vector<String>();
 
@@ -190,6 +194,14 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             addSourcePluginPassword(sourcePluginPasswords.get(i));
         }
 
+    }
+
+    public boolean isDupeCheckallowed() {
+        return dupecheckallowed;
+    }
+
+    public void setDupeCheckallowed(boolean b) {
+        dupecheckallowed = b;
     }
 
     /**
@@ -628,11 +640,13 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         finalFileName = null;
+        setDupeCheckallowed(false);
         localSpeedLimit = -1;
     }
 
     /**
      * Kann mit setAborted(true) den Download abbrechen
+     * 
      * @param aborted
      */
     public void setAborted(boolean aborted) {
@@ -655,7 +669,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     /**
      * Die Downloadklasse kann hier ein array mit den Fortschritten der chunks
-     * ablegen. Damit können downloads resumed werden 
+     * ablegen. Damit können downloads resumed werden
+     * 
      * @param is
      */
     public void setChunksProgress(long[] is) {
@@ -911,7 +926,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt Fortschritt in % an (10000 entspricht 100%)) 
+     * Gibt Fortschritt in % an (10000 entspricht 100%))
+     * 
      * @return
      */
     public int getPercent() {

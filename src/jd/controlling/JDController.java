@@ -1094,11 +1094,12 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
+                    if (nextDownloadLink != link) {
+                        if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive()) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
+                            logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
+                            return nextDownloadLink;
 
-                    if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-                        logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
-                        return nextDownloadLink;
-
+                        }
                     }
                 }
 

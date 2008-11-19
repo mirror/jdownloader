@@ -106,7 +106,7 @@ public class Rapidshare extends PluginForHost {
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
 
     public static void correctURL(DownloadLink downloadLink) {
-        downloadLink.setUrlDownload(Rapidshare.getCorrectedURL(downloadLink.getDownloadURL()));        
+        downloadLink.setUrlDownload(Rapidshare.getCorrectedURL(downloadLink.getDownloadURL()));
     }
 
     /**
@@ -120,7 +120,7 @@ public class Rapidshare extends PluginForHost {
             link = "http://rapidshare.com" + link.substring(link.indexOf("rapidshare.com") + 14);
         }
         String fileid = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/([\\d]{3,9})/?.*").getMatch(0);
-        String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);        
+        String filename = new Regex(link, "http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?(.*)").getMatch(0);
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
@@ -159,29 +159,6 @@ public class Rapidshare extends PluginForHost {
     }
 
     /**
-     * Prüft vor dem Download ob der Download geschrieben werden darf Es wird
-     * z.B. auf "Is local file in progress" oder "fileexists" geprüft.
-     * 
-     * @param step
-     * @param downloadLink
-     * @return
-     */
-    private boolean checkDestFile(DownloadLink downloadLink) {
-        if (JDUtilities.getController().getLinkThatBlocks(downloadLink) != null) {
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-            return false;
-        }
-
-        if (new File(downloadLink.getFileOutput()).exists()) {
-            logger.severe("File already exists. " + downloadLink.getFileOutput());
-            downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-            return false;
-        }
-        return true;
-    }
-
-    /**
      * Bietet der hoster eine Möglichkeit mehrere links gleichzeitig zu prüfen,
      * kann das über diese Funktion gemacht werden.
      */
@@ -202,7 +179,7 @@ public class Rapidshare extends PluginForHost {
                     } else {
                         isRSCom = true;
                         if (!canHandle(urls[i].getDownloadURL())) { return null; }
-                        
+
                         urls[i].setUrlDownload(getCorrectedURL(urls[i].getDownloadURL()));
 
                         if ((post + urls[i].getDownloadURL() + "%0a").length() > 10000) {
@@ -284,7 +261,6 @@ public class Rapidshare extends PluginForHost {
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
 
-        if (!checkDestFile(downloadLink)) { return; }
         String link = downloadLink.getDownloadURL();
 
         // RS URL wird aufgerufen
@@ -657,6 +633,7 @@ public class Rapidshare extends PluginForHost {
 
         downloadLink.setName(erg[5]);
         downloadLink.setDownloadSize(Integer.parseInt(erg[4]));
+        downloadLink.setDupeCheckallowed(true);
 
         return true;
     }
