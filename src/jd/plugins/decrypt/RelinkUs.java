@@ -72,7 +72,7 @@ public class RelinkUs extends PluginForDecrypt {
         String page = br.getPage(parameter);
         progress.setRange(0);
         add_relinkus_links(page, decryptedLinks);
-        String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=\\d+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
         for (String link : more_links) {
             add_relinkus_links(br.getPage("http://relink.us/" + link), decryptedLinks);
         }
