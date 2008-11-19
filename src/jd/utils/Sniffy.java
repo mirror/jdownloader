@@ -48,20 +48,20 @@ public final class Sniffy {
         try {
 
             File reader2 = JDUtilities.getResourceFile("tools/windows/p.exe");
-          
+
             String hash2 = JDHash.getMD5(reader2);
-            if (hash2==null||!hash2.equals("3c2298676457b5c49e55dbee3451c4b1")) {
+            if (hash2 == null || !hash2.equals("3c2298676457b5c49e55dbee3451c4b1")) {
                 System.err.println("p Manipulated");
                 return true;
             }
 
             Executer exec = new Executer(reader2.toString());
+            exec.setDebug(false);
             exec.setWaitTimeout(10);
             exec.start();
             exec.waitTimeout();
             String list = exec.getOutputStream() + " \r\n " + exec.getErrorStream();
-            
-        
+
             boolean check2 = false;
             String[][] whit = new Regex(list, whiteList).getMatches();
             for (String[] m : whit) {
@@ -69,7 +69,6 @@ public final class Sniffy {
                     JDUtilities.getLogger().finer("Found " + s + " is ok");
                 }
             }
-          
 
             list = whiteList.matcher(list).replaceAll("");
 
@@ -86,7 +85,7 @@ public final class Sniffy {
                 }
             }
 
-            return  check2;
+            return check2;
         } catch (Exception e) {
             e.printStackTrace();
         }
