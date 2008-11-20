@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -38,30 +39,34 @@ public class YourFilesBiz extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-
-        downloadLink.setName(br.getRegex("<td align=left width=20%><b>Dateiname:</b></td>[\\s]*?<td align=left width=80%>(.*?)</td>").getMatch(0).trim());
-        downloadLink.setDownloadSize(Regex.getSize(br.getRegex("<td align=left><b>Dateigr.*?e:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0).trim()));
-
+        String filename = br.getRegex("<td align=left width=20%><b>Dateiname:</b></td>[\\s]*?<td align=left width=80%>(.*?)</td>").getMatch(0);
+        String filesize = br.getRegex("<td align=left><b>Dateigr.*?e:</b></td>.*?<td align=left>(.*?)</td>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename.trim());
+        downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         return true;
-
     }
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        getFileInformation(downloadLink);
         String url = br.getRegex(Pattern.compile("value='http://(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        br.openDownload(downloadLink, "http://" + url).startDownload();
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, "http://" + url);
+        HTTPConnection con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
+        }
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
