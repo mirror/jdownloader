@@ -40,8 +40,9 @@ public class Shareplacecom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
         String url = downloadLink.getDownloadURL();
+        setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(url);
         if (br.getRedirectLocation() == null) {
             downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("File name: </b>(.*?)<b>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
@@ -61,19 +62,17 @@ public class Shareplacecom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setDebug(true);
-        this.setBrowserExclusive();
+        LinkStatus linkStatus = downloadLink.getLinkStatus();       
+        
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            // step.setStatus(PluginStep.STATUS_ERROR);
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);            
             return;
         }
         /* Link holen */
@@ -81,9 +80,7 @@ public class Shareplacecom extends PluginForHost {
 
         /* Zwangswarten, 20seks */
         sleep(20000, downloadLink);
-
         dl = br.openDownload(downloadLink, url);
-
         dl.startDownload();
     }
 
