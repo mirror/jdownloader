@@ -60,7 +60,7 @@ public class DepositFiles extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         setBrowserExclusive();
         getFileInformation(downloadLink);
-        String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
+        String link = downloadLink.getDownloadURL();
         br.getPage(link);
         if (br.getRedirectLocation() != null) {
             link = br.getRedirectLocation().replaceAll("/\\w{2}/files/", "/de/files/");
@@ -168,7 +168,7 @@ public class DepositFiles extends PluginForHost {
                 simultanpremium++;
             }
         }
-        String link = downloadLink.getDownloadURL().replaceAll("/\\w{2}/files/", "/de/files/");
+        String link = downloadLink.getDownloadURL();
         br.getPage(link);
 
         if (br.getRedirectLocation() != null) {
@@ -198,10 +198,14 @@ public class DepositFiles extends PluginForHost {
         return "http://depositfiles.com/en/agreem.html";
     }
 
+    private void correctUrl(DownloadLink downloadLink) {
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("\\.com(/.*?)?/files", ".com/de/files"));
+    }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("\\.com[/..]?/files", ".com/de/files"));
+        correctUrl(downloadLink);
         String link = downloadLink.getDownloadURL();
 
         br.setFollowRedirects(true);
