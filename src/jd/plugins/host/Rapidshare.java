@@ -479,6 +479,7 @@ public class Rapidshare extends PluginForHost {
             String error;
             if ((error = findError(br.toString())) != null) {
                 logger.warning(error);
+                if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
                 if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) {
@@ -521,7 +522,7 @@ public class Rapidshare extends PluginForHost {
 
         if (er == null || er.length == 0) { return null; }
         er[0] = HTMLEntities.unhtmlentities(er[0]);
-
+        if (er[0] == null || er[0].length() == 0) { return null; }
         return er[0];
 
     }
@@ -721,6 +722,14 @@ public class Rapidshare extends PluginForHost {
         String cookie = br.getCookie("http://rapidshare.com", "user");
 
         if (cookie == null || account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
+
+            String error = findError(br + "");
+            if (error.contains("Fraud")) {
+                ai.setStatus(JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."));
+            } else {
+                ai.setStatus(this.dynTranslate(error));
+            }
+
             ai.setValid(false);
             return ai;
         }
