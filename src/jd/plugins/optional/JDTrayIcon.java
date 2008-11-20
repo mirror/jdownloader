@@ -19,6 +19,7 @@ package jd.plugins.optional;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Point;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
@@ -30,6 +31,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
+import java.util.Date;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -129,6 +131,8 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
     private JMenuItem update;
 
     private JFrame guiFrame;
+
+    private long lastDeIconifiedEvent = 0;
 
     public void actionPerformed(ActionEvent e) {
         SimpleGUI simplegui = (SimpleGUI) JDUtilities.getGUI();
@@ -382,7 +386,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
 
                     if (e.getClickCount() > 1) {
                         guiFrame.setVisible(!guiFrame.isVisible());
-                        if (guiFrame.isVisible()) guiFrame.setState(JFrame.NORMAL);
+                        if (guiFrame.isVisible()) guiFrame.setExtendedState(Frame.NORMAL);
                     }
                 } else if (SwingUtilities.isRightMouseButton(e)) {
                     showPopup(e.getPoint());
@@ -477,7 +481,6 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
     }
 
     public void windowActivated(WindowEvent arg0) {
-        guiFrame.setVisible(true);
     }
 
     public void windowClosed(WindowEvent arg0) {
@@ -490,14 +493,18 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
     }
 
     public void windowDeiconified(WindowEvent arg0) {
-        guiFrame.setVisible(true);
+        this.lastDeIconifiedEvent = new Date().getTime();
     }
 
     public void windowIconified(WindowEvent arg0) {
-        guiFrame.setVisible(false);
+        if (new Date().getTime() > this.lastDeIconifiedEvent + 750) {
+            guiFrame.setVisible(false);
+        } else {
+            guiFrame.setExtendedState(Frame.NORMAL);
+            guiFrame.setVisible(true);
+        }
     }
 
     public void windowOpened(WindowEvent arg0) {
-        guiFrame.setVisible(true);
     }
 }
