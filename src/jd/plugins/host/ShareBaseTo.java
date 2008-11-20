@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -47,37 +46,27 @@ public class ShareBaseTo extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         /* damit neue links mit .de als .to in die liste kommen */
+        setBrowserExclusive();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), FILEINFO).getRow(0);
-
+        if (infos.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(infos[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
-
         return true;
-
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        Browser br = new Browser();
-        br.setDebug(true);
+        setBrowserExclusive();
         br.setCookie("http://" + getHost(), "memm", account.getUser());
         br.setCookie("http://" + getHost(), "memp", JDHash.getMD5(account.getPass()));
-
         br.getPage("http://sharebase.to/members/");
-
         String points = br.getMatch("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"(\\d+?) Punkte\"></td>");
-        String traffic = br.getMatch("Traffic left: </span><span class=.*?>(.*?)</span> ");
         String expire = br.getMatch("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>");
-        // 12.10.08 / 10:28
-
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yy / hh:mm", null));
-
-        ai.setTrafficLeft(Regex.getSize(traffic));
         ai.setPremiumPoints(Integer.parseInt(points));
-
         return ai;
     }
 
@@ -88,8 +77,7 @@ public class ShareBaseTo extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        this.setBrowserExclusive();
-        br.setDebug(true);
+        getFileInformation(downloadLink);
         br.setCookie("http://" + getHost(), "memm", account.getUser());
         br.setCookie("http://" + getHost(), "memp", JDHash.getMD5(account.getPass()));
 
@@ -109,7 +97,6 @@ public class ShareBaseTo extends PluginForHost {
         }
 
         Form[] form = br.getForms();
-        form[1].setVariable(0, "Download+Now+%21");
         dl = br.openDownload(downloadLink, form[1]);
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
@@ -120,11 +107,8 @@ public class ShareBaseTo extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        br.setDebug(true);
+        getFileInformation(downloadLink);
         /* für links welche noch mit .de in der liste stehen */
-        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
         if (br.containsHTML("Der Download existiert nicht")) {
@@ -151,16 +135,13 @@ public class ShareBaseTo extends PluginForHost {
             long waitTime = (Integer.parseInt(wait[0]) * 60 + Integer.parseInt(wait[1])) * 1000l;
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
         }
-
+        br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, br.getRedirectLocation());
-
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.sharebaseto.servererror", "Service not available"), 10 * 60 * 1000l);
         }
-
         dl.startDownload();
-
     }
 
     public int getMaxSimultanFreeDownloadNum() {
