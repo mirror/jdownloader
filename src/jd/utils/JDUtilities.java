@@ -491,7 +491,7 @@ public class JDUtilities {
         DecimalFormat c = new DecimalFormat("0.00");
         return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
     }
-
+ 
     public static String formatKbReadable(int value) {
         DecimalFormat c = new DecimalFormat("0.00");
         if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
