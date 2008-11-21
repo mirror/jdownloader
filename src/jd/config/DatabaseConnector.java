@@ -16,7 +16,12 @@
 
 package jd.config;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.FileInputStream;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -55,19 +60,14 @@ public class DatabaseConnector implements Serializable {
     public DatabaseConnector() {
         try {
             logger.info("Loading database");
-            // new Exception().printStackTrace();
+            
+            checkDatabaseHeader();
+            
             con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
             con.setAutoCommit(true);
             con.createStatement().executeUpdate("SET LOGSIZE 1");
-            boolean checktables = true;
-            try {
-                ResultSet rs = con.createStatement().executeQuery("SELECT COUNT(name) FROM config WHERE name = 'dummy'");
-            } catch (Exception e) {
-                logger.warning("Database tables error");
-                e.printStackTrace();
-                checktables = false;
-            }
-            if (!new File(configpath + "database.script").exists() | !checktables) {
+            
+            if (!new File(configpath + "database.script").exists()) {
                 logger.info("No configuration database found. Creating new one.");
 
                 con.createStatement().executeUpdate("CREATE TABLE config (name VARCHAR(256), obj OTHER)");
@@ -97,15 +97,9 @@ public class DatabaseConnector implements Serializable {
             }
 
             ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config");
-            String str;
-            Object obj;
             while (rs.next()) {
                 try {
-                    str = rs.getString(1);
-                    obj = rs.getObject(2);
-
-                    dbdata.put(str, obj);
-                    System.out.println(str);
+                    dbdata.put(rs.getString(1), rs.getObject(2));
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -114,6 +108,115 @@ public class DatabaseConnector implements Serializable {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Checks the database of inconsistency
+     */
+    private void checkDatabaseHeader() {
+    	logger.info("Checking database");
+    	File f = new File(configpath + "database.script");
+    	
+    	try {
+			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+			String line = "";
+			int counter = 0;
+			
+			while(counter < 7) {
+				line = in.readLine();
+				
+				switch(counter) {
+					case 0:
+						if(!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
+							revertDatabase();
+							return;
+						}
+						break;
+					case 1:
+						if(!line.equals("CREATE MEMORY TABLE CONFIG(NAME VARCHAR(256),OBJ OBJECT)")) {
+							revertDatabase();
+							return;
+						}
+						break;
+					case 2:
+						if(!line.equals("CREATE MEMORY TABLE LINKS(NAME VARCHAR(256),OBJ OBJECT)")) {
+							revertDatabase();
+							return;
+						}
+						break;
+					case 3:
+						if(!line.equals("CREATE USER SA PASSWORD \"\"")) {
+							revertDatabase();
+							return;
+						}
+						break;
+					case 4:
+						if(!line.equals("GRANT DBA TO SA")) {
+							revertDatabase();
+							return;
+						}
+						break;
+					case 5:
+						if(!line.equals("SET WRITE_DELAY 10")) {
+							revertDatabase();
+							return;
+						}
+						break;
+					case 6:
+						if(!line.equals("SET SCHEMA PUBLIC")) {
+							revertDatabase();
+							return;
+						}
+						break;
+				}
+				
+				counter++;
+			}
+			
+			while(((line = in.readLine()) != null)) {
+				if(!line.matches("INSERT INTO .*? VALUES\\('.*?','.*?'\\)")) {
+					revertDatabase();
+					return;
+				}
+			}
+			
+			backupDatabase();
+			in.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+    }
+    
+    /**
+     * Makes a backup of the database
+     */
+    private void backupDatabase() {
+    	logger.info("Backup Database");
+    	
+    	File script = new File(configpath + "database.script");
+    	File scriptbackup = new File(configpath + "database.script.backup");
+    	
+    	if(script.exists()) {
+    		scriptbackup.delete();
+    		JDUtilities.copyFile(script, scriptbackup);
+    	}
+    }
+    
+    /**
+     * Reverts the database to the last checkpoint
+     */
+    private void revertDatabase() {
+    	logger.info("Error in database. Reverting database zu last checkpoint.");
+    	
+    	File script = new File(configpath + "database.script");
+    	File scriptbackup = new File(configpath + "database.script.backup");
+    	
+    	if(scriptbackup.exists()) {
+    		script.delete();
+    		JDUtilities.copyFile(scriptbackup, script);
+    	}
     }
 
     /**
