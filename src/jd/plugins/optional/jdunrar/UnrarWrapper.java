@@ -662,7 +662,7 @@ public class UnrarWrapper extends Thread {
         int value = Integer.MAX_VALUE;
         int cur;
         for (ArchivFile af : files) {
-            cur = JDUtilities.getLevenshteinDistance(best.getFilepath(), currentWorkingFile);
+            cur = JDUtilities.getLevenshteinDistance(af.getFilepath(), currentWorkingFile);
             if (cur < value) {
                 value = cur;
                 best = af;
