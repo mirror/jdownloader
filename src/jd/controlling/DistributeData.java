@@ -119,97 +119,101 @@ public class DistributeData extends ControlBroadcaster {
      */
     private boolean deepDecrypt(final ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
-        final ArrayList<DownloadLink> newdecryptedLinks = new ArrayList<DownloadLink>();
         boolean hasDecryptedLinks = false;
-        class DThread {
-            Thread thread;
 
-            public Thread getThread() {
-                return thread;
-            }
-
-            public void setThread(Thread thread) {
-                this.thread = thread;
-            }
-
+        class DThread extends Thread {
+            private int number = 0;
+            private DownloadLink link = null;
+            private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
             boolean canDecrypt = false;
+
+            public DThread(int i, DownloadLink link) {
+                this.link = link;
+                this.number = i;
+            }
+
+            public Vector<DownloadLink> getDecryptedLinks() {
+                return this.decryptedLinks;
+            }
 
             public boolean couldDecrypt() {
                 return canDecrypt;
+            }
 
+            public int getNumber() {
+                return number;
             }
 
             public void setCouldDecrypt(boolean bool) {
                 canDecrypt = bool;
             }
+
+            public void run() {
+                String url = link.getDownloadURL();
+
+                if (url != null) {
+                    url = HTMLParser.getHttpLinkList(url);
+
+                    try {
+                        url = URLDecoder.decode(url, "UTF-8");
+                    } catch (Exception e) {
+                        logger.warning("text not url decodeable");
+                    }
+                }
+
+                for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+                    if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
+                        try {
+                            PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+
+                            CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
+                            url = plg.cutMatches(url);
+                            // Reicht die Decrypter Passwörter weiter
+                            for (CryptedLink cLink : decryptableLinks) {
+                                cLink.setDecrypterPassword(link.getDecrypterPassword());
+                            }
+
+                            ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
+                            // Reicht die Passwörter weiter
+                            for (DownloadLink dLink : dLinks) {
+                                dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
+                            }
+                            /* Das Plugin konnte arbeiten */
+                            setCouldDecrypt(true);
+                            if (dLinks != null && dLinks.size() > 0) {
+                                decryptedLinks.addAll(dLinks);
+                            }
+                            break;
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
         }
+
         ArrayList<DThread> decryptThread = new ArrayList<DThread>();
         for (int b = decryptedLinks.size() - 1; b >= 0; b--) {
-            final int i = b;
-            final DThread dThread = new DThread();
-            dThread.setThread(new Thread(new Runnable() {
-
-                public void run() {
-                    DownloadLink link = decryptedLinks.get(i);
-                    String url = link.getDownloadURL();
-
-                    if (url != null) {
-                        url = HTMLParser.getHttpLinkList(url);
-
-                        try {
-                            url = URLDecoder.decode(url, "UTF-8");
-                        } catch (Exception e) {
-                            logger.warning("text not url decodeable");
-                        }
-                    }
-
-                    dThread.setCouldDecrypt(false);
-                    for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
-                        if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
-                            try {
-                                PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
-
-                                CryptedLink[] decryptableLinks = plg.getDecryptableLinks(url);
-                                url = plg.cutMatches(url);
-                                // Reicht die Decrypter Passwörter weiter
-                                for (CryptedLink cLink : decryptableLinks) {
-                                    cLink.setDecrypterPassword(link.getDecrypterPassword());
-                                }
-
-                                ArrayList<DownloadLink> dLinks = plg.decryptLinks(decryptableLinks);
-                                // Reicht die Passwörter weiter
-                                for (DownloadLink dLink : dLinks) {
-                                    dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
-                                }
-
-                                newdecryptedLinks.addAll(dLinks);
-                                dThread.setCouldDecrypt(true);
-                                break;
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-
-                }
-            }));
-            dThread.getThread().start();
-
-            decryptThread.add(dThread);
+            DThread dthread = new DThread(b, decryptedLinks.get(b));
+            dthread.start();
+            decryptThread.add(dthread);
         }
+
+        Vector<DownloadLink> newdecryptedLinks = new Vector<DownloadLink>();
         for (int j = decryptThread.size() - 1; j >= 0; j--) {
             DThread thread = decryptThread.get(j);
-            while (thread.getThread().isAlive()) {
+            while (thread.isAlive()) {
                 try {
                     Thread.sleep(2);
                 } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
                 }
-            }
-            if (thread.couldDecrypt()) {
-                decryptedLinks.remove(j);
-                hasDecryptedLinks = true;
+                if (thread.couldDecrypt()) {
+                    decryptedLinks.remove(thread.getNumber());
+                    if (thread.getDecryptedLinks().size() > 0) {
+                        newdecryptedLinks.addAll(thread.getDecryptedLinks());
+                        hasDecryptedLinks = true;
+                    }
+                }
             }
         }
         decryptedLinks.addAll(newdecryptedLinks);

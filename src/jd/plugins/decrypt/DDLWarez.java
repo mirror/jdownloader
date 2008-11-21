@@ -21,6 +21,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.plugins.CryptedLink;
@@ -35,17 +36,17 @@ public class DDLWarez extends PluginForDecrypt {
         private String downloadlink;
         private Form form;
         private boolean gotjob;
-
+        protected ProgressController progress;
         private int Worker_ID;
         private Browser br;
 
-        public DDLWarez_Linkgrabber(int id, Browser br) {
+        public DDLWarez_Linkgrabber(ProgressController progress, int id, Browser br) {
             downloadlink = null;
             gotjob = false;
             _status = THREADFAIL;
             Worker_ID = id;
             this.br = br;
-
+            this.progress = progress;
         }
 
         public String getlink() {
@@ -81,11 +82,13 @@ public class DDLWarez extends PluginForDecrypt {
                 } else {
                     logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " finished! (NO DOWNLOAD FORM!)");
                     _status = THREADFAIL;
+                    progress.increase(1);
                     return;
                 }
             }
             logger.finest("DDLWarez_Linkgrabber: id=" + new Integer(Worker_ID) + " finished!");
             _status = THREADPASS;
+            progress.increase(1);
         }
 
         public void setjob(Form form) {
@@ -132,7 +135,7 @@ public class DDLWarez extends PluginForDecrypt {
                     synchronized (Worker_Delay) {
                         Thread.sleep(Worker_Delay);
                     }
-                    DDLWarez_Linkgrabbers[i] = new DDLWarez_Linkgrabber(i, br.cloneBrowser());
+                    DDLWarez_Linkgrabbers[i] = new DDLWarez_Linkgrabber(progress, i, br.cloneBrowser());
                     DDLWarez_Linkgrabbers[i].setjob(forms[i]);
                     DDLWarez_Linkgrabbers[i].start();
                 }
@@ -144,7 +147,6 @@ public class DDLWarez extends PluginForDecrypt {
                             link.setSourcePluginPasswords(passwords);
                             decryptedLinks.add(link);
                         }
-                        progress.increase(1);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
