@@ -85,10 +85,10 @@ public class JDShutdown extends PluginOptional {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
-        if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "System nach dem Downloaden herunterfahren"), 0).setActionListener(this);
+        if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
         menu.add(menuItem);
-        if (menuItemRun == null) menuItemRun = new MenuItem(MenuItem.NORMAL, JDLocale.L("addons.jdshutdown.run", "System jetzt herunterfahren"), 0).setActionListener(this);
-        menu.add(menuItemRun);
+        // if (menuItemRun == null) menuItemRun = new MenuItem(MenuItem.NORMAL, JDLocale.L("addons.jdshutdown.run", "System jetzt herunterfahren"), 0).setActionListener(this);
+        // menu.add(menuItemRun);
         
         return menu;
     }

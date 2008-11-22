@@ -47,7 +47,7 @@ public class Schedule extends PluginOptional implements ControlListener {
     @Override
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem(JDLocale.L("gui.btn_settings", "Settings"), 0).setActionListener(this));
+        menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }
 

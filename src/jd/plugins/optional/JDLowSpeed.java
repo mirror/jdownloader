@@ -135,13 +135,12 @@ public class JDLowSpeed extends PluginOptional {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
-
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, getHost(), 0).setActionListener(this));
         if (!subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
-
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.enabled", "Low Speederkennung einschalten"), 0).setActionListener(this));
+            //menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.enabled", "Low Speederkennung einschalten"), 0).setActionListener(this));
             m.setSelected(false);
         } else {
-            menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.disabled", "Low Speederkennung ausschalten"), 1).setActionListener(this));
+            //menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.disabled", "Low Speederkennung ausschalten"), 1).setActionListener(this));
             m.setSelected(true);
         }
         return menu;
@@ -149,7 +148,7 @@ public class JDLowSpeed extends PluginOptional {
 
     @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.jdlowspeed.name", "LowSpeed Detection");
+        return JDLocale.L("plugins.optional.jdlowspeed.name", "Low-Speed Detection");
     }
 
     @Override

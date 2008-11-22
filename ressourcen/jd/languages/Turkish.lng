@@ -1,6 +1,6 @@
 $translater$ = Tamer Ray Frost
 $version$ = $Revision$
-addons.jdgrowlnotification.menu.enable = Mesajları etkinleştir
+addons.jdgrowlnotification.menu = Growl Mesajları
 addons.jdlowspeed.statusmessage.disabled = Devredışı bırak
 addons.jdlowspeed.statusmessage.enabled = Etkinleştir
 addons.jdshutdown.menu = İndirmeden sonra sistemi kapat
@@ -1197,5 +1197,5 @@ plugins.optional.jdunrar.linkmenu.setextract = Buraya çıkart...
 plugins.optional.remotecontrol.help = /help for Developer Information.
 plugins.optional.remotecontrol.startedonport = Bu Port'da başladı
 plugins.optional.remotecontrol.stopped = Durduruldu.
-plugins.optional.remotecontrol.toggle = Başlat/Durdur
+plugins.optional.remotecontrol.toggle = Başlat/Durdur RemoteControl
 gui.config.download.simultan_downloads_per_host = Barındırıcı başına aynı anda Mak.İndirme sayısı [0=Limitsiz]

@@ -148,11 +148,12 @@ public class StreamingShareTool extends PluginOptional {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        if (frame == null || !frame.isVisible()) {
+        /*if (frame == null || !frame.isVisible()) {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.streamsharingtool.action.start", "Start"), 0).setActionListener(this));
         } else {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.streamsharingtool.action.end", "Exit"), 0).setActionListener(this));
-        }
+        }*/
+        menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }
 

@@ -1446,47 +1446,67 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menAddons.removeAll();
         menAddons.add(temp);
         menAddons.addSeparator();
+        
+        ArrayList<JMenuItem> itemsWithSubmenu = new ArrayList<JMenuItem>();
+        ArrayList<JMenuItem> itemsToggle = new ArrayList<JMenuItem>();
+        ArrayList<JMenuItem> itemsPress = new ArrayList<JMenuItem>();
 
         for (final OptionalPluginWrapper plg : OptionalPluginWrapper.getOptionalWrapper()) {
             if (!plg.isLoaded()) continue;
             if (plg.getPlugin().createMenuitems() != null && JDUtilities.getConfiguration().getBooleanProperty(plg.getConfigParamKey(), false)) {
-
-                MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPlugin().getHost(), 0);
-                m.setItems(plg.getPlugin().createMenuitems());
-                JMenuItem mi = SimpleGUI.getJMenuItem(m);
-                if (mi != null) {
-                    menAddons.add(mi);
-
-                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                    ((JMenu) mi).addMenuListener(new MenuListener() {
-                        public void menuCanceled(MenuEvent e) {
-                        }
-
-                        public void menuDeselected(MenuEvent e) {
-                        }
-
-                        public void menuSelected(MenuEvent e) {
-                            JMenu m = (JMenu) e.getSource();
-
-                            m.removeAll();
-                            for (MenuItem menuItem : plg.getPlugin().createMenuitems()) {
-                                JMenuItem c = SimpleGUI.getJMenuItem(menuItem);
-
-                                if (c == null) {
-                                    m.addSeparator();
-                                } else {
-                                    m.add(c);
-                                }
-                            }
-                        }
-
-                    });
-                } else {
-                    menAddons.addSeparator();
-                }
+                if (plg.getPlugin().createMenuitems().size() > 1) {
+                	
+                	MenuItem m = new MenuItem(MenuItem.CONTAINER, plg.getPlugin().getHost(), 0);
+                    m.setItems(plg.getPlugin().createMenuitems());
+                    JMenuItem mi = SimpleGUI.getJMenuItem(m);
+                
+                    if (mi != null) {
+                    	itemsWithSubmenu.add(mi);
+	
+	                    ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+	                    ((JMenu) mi).addMenuListener(new MenuListener() {
+	                        public void menuCanceled(MenuEvent e) {
+	                        }
+	
+	                        public void menuDeselected(MenuEvent e) {
+	                        }
+	
+	                        public void menuSelected(MenuEvent e) {
+	                            JMenu m = (JMenu) e.getSource();
+	
+	                            m.removeAll();
+	                            for (MenuItem menuItem : plg.getPlugin().createMenuitems()) {
+	                                JMenuItem c = SimpleGUI.getJMenuItem(menuItem);
+	
+	                                if (c == null) {
+	                                    m.addSeparator();
+	                                } else {
+	                                    m.add(c);
+	                                }
+	                            }
+	                        }
+	
+	                    });
+	                } else {
+	                    menAddons.addSeparator();
+	                }
+	            } else {
+	            	for (MenuItem mi : plg.getPlugin().createMenuitems()) {
+	            		JMenuItem c = SimpleGUI.getJMenuItem(mi);
+	            		c.setDisabledIcon(null);
+	            		c.setIcon(null);
+	            		c.setSelectedIcon(null);
+	            		c.setDisabledSelectedIcon(null);
+	            		if (mi.getID() == MenuItem.TOGGLE) itemsToggle.add(c);
+	            		else itemsPress.add(c);
+	            		break;
+	            	}
+	            }
+                for (JMenuItem jmi : itemsWithSubmenu) menAddons.add(jmi);
+                for (JMenuItem jmi : itemsPress) menAddons.add(jmi);
+                for (JMenuItem jmi : itemsToggle) menAddons.add(jmi);
             }
         }
-
         if (menAddons.getItem(menAddons.getItemCount() - 1) == null) {
             menAddons.remove(menAddons.getItemCount() - 1);
         }

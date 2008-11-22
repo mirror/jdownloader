@@ -1200,7 +1200,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
 
-        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.langfileeditor.show_gui", "Show GUI"), 0).setActionListener(this));
+        //menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.langfileeditor.show_gui", "Show GUI"), 0).setActionListener(this));
+        menu.add(new MenuItem(MenuItem.NORMAL, getHost(), 0).setActionListener(this));
 
         return menu;
     }
@@ -1212,7 +1213,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     @Override
     public String getHost() {
-        return JDLocale.L("plugins.optional.langfileeditor.name", "JDLangFileEditor");
+        return JDLocale.L("plugins.optional.langfileeditor.name", "Language File Editor");
     }
 
     @Override

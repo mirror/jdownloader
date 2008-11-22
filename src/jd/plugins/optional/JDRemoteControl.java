@@ -710,7 +710,7 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        menu.add(new MenuItem(JDLocale.L("plugins.optional.remotecontrol.toggle", "Toggle Start/Stop"), 0).setActionListener(this));
+        menu.add(new MenuItem(JDLocale.L("plugins.optional.remotecontrol.toggle", "Start/Stop RemoteControl"), 0).setActionListener(this));
         return menu;
     }
 

@@ -326,11 +326,12 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        if (frame == null || !frame.isVisible()) {
+        /*if (frame == null || !frame.isVisible()) {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.action.start", "Start Scripter"), 0).setActionListener(this));
         } else {
             menu.add(new MenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.action.end", "Exit Scripter"), 0).setActionListener(this));
-        }
+        }*/
+        menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }
 

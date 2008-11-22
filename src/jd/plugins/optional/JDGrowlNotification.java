@@ -66,7 +66,7 @@ public class JDGrowlNotification extends PluginOptional {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
         MenuItem m;
 
-        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdgrowlnotification.menu.enable", "Meldungen aktivieren"), 0).setActionListener(this));
+        menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdgrowlnotification.menu", "Growl Messages"), 0).setActionListener(this));
         m.setSelected(this.getPluginConfig().getBooleanProperty(PROPERTY_ENABLED, false));
 
         return menu;
