@@ -64,7 +64,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private JFrame guiFrame;
 
-    private long lastDeIconifiedEvent = 0;
+    private long lastDeIconifiedEvent = System.currentTimeMillis()-1000;
 
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -166,8 +166,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
             if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
-                guiFrame.setVisible(!guiFrame.isVisible());
-                if (guiFrame.isVisible()) guiFrame.setExtendedState(Frame.NORMAL);
+                miniIt();
             } else {
                 if (trayIconPopup != null && trayIconPopup.isShowing()) {
                     trayIconPopup.dispose();
@@ -227,7 +226,31 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             }
         });
     }
+    private void miniIt() {
+        if(System.currentTimeMillis() > this.lastDeIconifiedEvent + 750)
+        {
+            this.lastDeIconifiedEvent=System.currentTimeMillis();
+        if (guiFrame.isVisible()) {
+            guiFrame.setVisible(false);
+        } else {
+            guiFrame.setState(JFrame.NORMAL);
+            guiFrame.setVisible(true);
+            guiFrame.toFront();
+            guiFrame.setState(JFrame.ICONIFIED);
+            guiFrame.setVisible(false);
+            guiFrame.setVisible(true);
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            guiFrame.setState(JFrame.NORMAL);
+        }
+        
+        }
 
+    }
     private String createInfoString() {
         StringBuilder creater = new StringBuilder();
         creater.append(JDUtilities.getJDTitle() + "\n");
@@ -253,17 +276,12 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     }
 
     public void windowDeiconified(WindowEvent arg0) {
-        this.lastDeIconifiedEvent = new Date().getTime();
+        windowIconified(arg0);
     }
 
     public void windowIconified(WindowEvent arg0) {
         if (subConfig.getBooleanProperty(PROPERTY_MINIMIZE_TO_TRAY, true)) {
-            if (new Date().getTime() > this.lastDeIconifiedEvent + 750) {
-                guiFrame.setVisible(false);
-            } else {
-                guiFrame.setExtendedState(Frame.NORMAL);
-                guiFrame.setVisible(true);
-            }
+            miniIt();
         }
     }
 
