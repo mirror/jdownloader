@@ -27,11 +27,11 @@ import java.awt.TrayIcon;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
-import java.util.Date;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
@@ -59,7 +59,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 
-public class JDTrayIcon extends PluginOptional implements WindowListener {
+public class JDTrayIcon extends PluginOptional implements WindowListener, MouseListener {
     public JDTrayIcon(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -479,7 +479,24 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
             }
         });
     }
+    private void miniIt() {
+        if(System.currentTimeMillis() > this.lastDeIconifiedEvent + 750)
+        {
+            this.lastDeIconifiedEvent=System.currentTimeMillis();
+        if (guiFrame.isVisible()) {
+            guiFrame.setVisible(false);
+        } else {
+            guiFrame.setState(JFrame.NORMAL);
+            guiFrame.setVisible(true);
+            guiFrame.setState(JFrame.ICONIFIED);
+            guiFrame.setVisible(false);
+            guiFrame.setState(JFrame.NORMAL);
+            guiFrame.setVisible(true);
+        }
+        
+        }
 
+    }
     public void windowActivated(WindowEvent arg0) {
     }
 
@@ -493,18 +510,42 @@ public class JDTrayIcon extends PluginOptional implements WindowListener {
     }
 
     public void windowDeiconified(WindowEvent arg0) {
-        this.lastDeIconifiedEvent = new Date().getTime();
+        windowIconified(arg0);
     }
 
     public void windowIconified(WindowEvent arg0) {
-        if (new Date().getTime() > this.lastDeIconifiedEvent + 750) {
-            guiFrame.setVisible(false);
-        } else {
-            guiFrame.setExtendedState(Frame.NORMAL);
-            guiFrame.setVisible(true);
-        }
+            miniIt();
     }
 
     public void windowOpened(WindowEvent arg0) {
+    }
+
+    public void mouseClicked(MouseEvent arg0) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void mouseEntered(MouseEvent arg0) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void mouseExited(MouseEvent arg0) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void mousePressed(MouseEvent arg0) {
+        if (arg0.getSource() instanceof JDTrayIcon) {
+            if (arg0.getClickCount() >= 2 && !SwingUtilities.isRightMouseButton(arg0)) {
+                miniIt();
+            }
+        }
+        
+    }
+
+    public void mouseReleased(MouseEvent arg0) {
+        // TODO Auto-generated method stub
+        
     }
 }
