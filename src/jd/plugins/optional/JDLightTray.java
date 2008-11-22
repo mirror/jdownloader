@@ -233,17 +233,10 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
         } else {
             guiFrame.setState(JFrame.NORMAL);
             guiFrame.setVisible(true);
-            guiFrame.toFront();
             guiFrame.setState(JFrame.ICONIFIED);
             guiFrame.setVisible(false);
-            guiFrame.setVisible(true);
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
             guiFrame.setState(JFrame.NORMAL);
+            guiFrame.setVisible(true);
         }
         
         }
