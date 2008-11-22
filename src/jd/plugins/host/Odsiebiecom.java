@@ -16,10 +16,14 @@
 
 package jd.plugins.host;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
+
 import jd.PluginWrapper;
+import jd.captcha.specials.icaptcha.ICaptcha;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -96,6 +100,7 @@ public class Odsiebiecom extends PluginForHost {
             /* kein Link gefunden */
             if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         } else {
+            br.setDebug(true);
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
             br.getPage(downloadurl);
@@ -104,50 +109,32 @@ public class Odsiebiecom extends PluginForHost {
                 downloadurl = br.getRedirectLocation();
                 br.getPage(downloadurl);
             }
-            Form capform = br.getFormbyName("wer");
-            if (capform != null) {
+           
+            if (br.containsHTML("http://odsiebie.com/icaptcha.swf")) {
+                br.getPage("http://odsiebie.com/icaptcha.swf");
+                String v =   br.getPage("http://odsiebie.com/weryfikacja/icaptcha.php").substring(2);
+                
+             
+                BufferedImage image = ICaptcha.paintImage(v, 250, 100);
                 /* Captcha File holen */
-
-                String[] captchaurls = capform.getRegex("<img(.*?src=\".*?\".*?)/>").getColumn(0);
-                String captchaurl = null;
-
-                for (String url : captchaurls) {
-                    if (!url.contains("style")) {
-                        captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
-                        break;
-                    }
-                    if (url.contains("style")) {
-                        if (!new Regex(url, "display:none[ ]*?\"").matches()) {
-                            captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
-                            break;
-                        } else {
-                            String[] captchacodes = capform.getRegex("<font(.*?style=\".*?\".*?.*?>.*?<)").getColumn(0);
-                            for (String tmp : captchacodes) {
-                                if (!new Regex(url, "display:none[ ]*?\"").matches()) {
-                                    captchaCode = new Regex(tmp, ">(.*?)<").getMatch(0).trim();
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (captchaurl == null && captchaCode == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                if (captchaCode == null) {
-                    captchaFile = getLocalCaptchaFile(this);
-                    Browser cap_br = br.cloneBrowser();
-                    HTTPConnection captcha_con = cap_br.openGetConnection(captchaurl);
-                    if (captcha_con.getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                    Browser.download(captchaFile, captcha_con);
-                    /* CaptchaCode holen */
-                    captchaCode = Plugin.getCaptchaCode(this, "none", captchaFile, false, downloadLink);
-                }
-
-                capform.setVariable(0, captchaCode);
-                /* Überprüfen(Captcha,Password) */
-                downloadurl = "http://odsiebie.com/pobierz/" + steplink + "?captcha=" + captchaCode;
-                br.getPage(downloadurl);
+         
+              if(image==null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+              File file = getLocalCaptchaFile(this);
+              file.mkdirs();
+              ImageIO.write(image, "png", file);
+              String code = getCaptchaCode(file, this, downloadLink);
+              
+              br.getPage(downloadurl.replace(".html","")+"?code="+code);
+                
+             
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("html?err")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+           
+            if(br.getRedirectLocation() != null){
+                br.setFollowRedirects(true);
+                br.getPage(br.getRedirectLocation());
+                br.setFollowRedirects(false);
+            }
+            
             }
             /* DownloadLink suchen */
             steplink = br.getRegex("<a href=\"/download/(.*?)\"").getMatch(0);
