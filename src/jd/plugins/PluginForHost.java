@@ -358,7 +358,11 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(DownloadLink downloadLink) throws Exception {
-        while (waitForNextStartAllowed(downloadLink)) {
+        try {
+            while (waitForNextStartAllowed(downloadLink)) {
+            }
+        } catch (InterruptedException e) {
+            return;
         }
         synchronized (LAST_STARTED_TIME) {
             LAST_STARTED_TIME = System.currentTimeMillis();
