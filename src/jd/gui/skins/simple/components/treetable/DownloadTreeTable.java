@@ -311,18 +311,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 if (SimpleGUI.CURRENTGUI.showConfirmDialog(JDLocale.L("gui.downloadlist.reset", "Reset selected downloads?"))) {
                     for (int i = 0; i < links.size(); i++) {
                         // if (!links.elementAt(i).isPluginActive()) {
-                        links.elementAt(i).getLinkStatus().reset();
-                        links.elementAt(i).reset();
-                        links.elementAt(i).getPlugin().resetHosterWaitTime();
+                        links.elementAt(i).reset();                        
                     }
                     JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                 }
             } else {
                 for (int i = 0; i < links.size(); i++) {
                     // if (!links.elementAt(i).isPluginActive()) {
-                    links.elementAt(i).getLinkStatus().reset();
-                    links.elementAt(i).reset();
-                    links.elementAt(i).getPlugin().resetHosterWaitTime();
+                    links.elementAt(i).reset();                    
                 }
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
             }

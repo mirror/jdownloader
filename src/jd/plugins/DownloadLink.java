@@ -642,6 +642,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         finalFileName = null;
         setDupeCheckallowed(false);
         localSpeedLimit = -1;
+        getPlugin().resetHosterWaitTime();
     }
 
     /**

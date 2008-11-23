@@ -62,6 +62,8 @@ public abstract class PluginForHost extends Plugin {
 
     public static final String PROPERTY_PREMIUM = "PREMIUM";
     private static Long LAST_CONNECTION_TIME = 0L;
+    private static Long LAST_STARTED_TIME = 0L;
+    private static Long WAIT_BETWEEN_STARTS = 0L;
 
     private boolean enablePremium = false;
 
@@ -356,6 +358,11 @@ public abstract class PluginForHost extends Plugin {
     public abstract void handleFree(DownloadLink link) throws Exception;
 
     public void handle(DownloadLink downloadLink) throws Exception {
+        while (waitForNextStartAllowed(downloadLink)) {
+        }
+        synchronized (LAST_STARTED_TIME) {
+            LAST_STARTED_TIME = System.currentTimeMillis();
+        }
         if (!isAGBChecked()) {
             logger.severe("AGB not signed : " + getPluginID());
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
@@ -572,6 +579,29 @@ public abstract class PluginForHost extends Plugin {
 
     public int getTimegapBetweenConnections() {
         return 0;
+    }
+
+    public void setStartIntervall(long interval) {
+        WAIT_BETWEEN_STARTS = interval;
+    }
+
+    public boolean waitForNextStartAllowed(DownloadLink downloadLink) throws InterruptedException {
+        long time = 0l;
+        synchronized (LAST_STARTED_TIME) {
+            time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - LAST_STARTED_TIME));
+        }
+        if (time > 0) {
+            try {
+                this.sleep(time, downloadLink);
+            } catch (InterruptedException e) {
+                downloadLink.getLinkStatus().setStatusText(null);
+                throw e;
+            }
+            return true;
+        } else {
+            downloadLink.getLinkStatus().setStatusText(null);
+            return false;
+        }
     }
 
     public void waitForNextConnectionAllowed() throws InterruptedException {

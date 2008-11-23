@@ -509,9 +509,7 @@ public class SingleDownloadController extends Thread {
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_ACTIVE, this));
         linkStatus.setInProgress(true);
         // plugin.resetPlugin();
-
         handlePlugin();
-
         linkStatus.setInProgress(false);
 
         fireControlEvent(new ControlEvent(currentPlugin, ControlEvent.CONTROL_PLUGIN_INACTIVE, this));

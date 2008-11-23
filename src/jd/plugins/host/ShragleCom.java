@@ -17,11 +17,19 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -31,6 +39,8 @@ public class ShragleCom extends PluginForHost {
 
     public ShragleCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.shragle.com/index.php?p=accounts");
+        setStartIntervall(5000l);
     }
 
     @Override
@@ -38,9 +48,97 @@ public class ShragleCom extends PluginForHost {
         return "http://www.shragle.com/index.php?cat=about&p=faq";
     }
 
+    private void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("http://www.shragle.com/index.php?p=login");
+        br.postPage("http://www.shragle.com/index.php?p=login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&cookie=1&submit=Login");
+        String Cookie = br.getCookie("http://www.shragle.com", "userID");
+        if (Cookie == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+        Cookie = br.getCookie("http://www.shragle.com", "username");
+        if (Cookie == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+        Cookie = br.getCookie("http://www.shragle.com", "password");
+        if (Cookie == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+        br.getPage("http://www.shragle.com/?cat=user");
+        if (br.containsHTML(">Premium-Upgrade<")) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        br.getPage("http://www.shragle.com/?cat=user");
+        if (br.containsHTML(">Premium-Upgrade<")) {
+            ai.setStatus("This is no Premium Account!");
+            ai.setValid(false);
+            return ai;
+        }
+        String premPoints = br.getRegex(Pattern.compile("<td>Premium-Punkte:</td>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (premPoints != null) ai.setPremiumPoints(premPoints);
+
+        String expires = br.getRegex(Pattern.compile("<b>Ihr Premium-Account ist gültig bis zum (.*?) Uhr</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (expires == null) {
+            ai.setValid(false);
+            return ai;
+        }
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy  hh:mm", Locale.UK);
+        try {
+            Date date = dateFormat.parse(expires.replaceAll("um", ""));
+            ai.setValidUntil(date.getTime());
+        } catch (ParseException e) {
+        }
+        return ai;
+    }
+
+    public void correctUrl(DownloadLink link) {
+        link.setUrlDownload(link.getDownloadURL().replaceAll("\\.de/", "\\.com/"));
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        getFileInformation(downloadLink);
+        login(account);
+        Thread.sleep(500);/* sonst kommen serverfehler */
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        Thread.sleep(500);/* sonst kommen serverfehler */
+        br.setDebug(true);
+        if (br.getRedirectLocation() != null) {
+            br.setFollowRedirects(true);
+            dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+        } else {
+            Form form = br.getFormbyName("download");
+            br.setFollowRedirects(true);
+            dl = br.openDownload(downloadLink, form, true, 0);
+        }
+        HTTPConnection con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
+        }
+        dl.startDownload();
+    }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
+        correctUrl(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Die von Ihnen gewählte Datei wurde nicht gefunden.")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String size = br.getRegex("Sie wollen die Datei...*?..\\((.*?)\\) runterladen").getMatch(0);
@@ -80,7 +178,7 @@ public class ShragleCom extends PluginForHost {
     }
 
     public int getTimegapBetweenConnections() {
-        return 800;
+        return 1000;
     }
 
     @Override
