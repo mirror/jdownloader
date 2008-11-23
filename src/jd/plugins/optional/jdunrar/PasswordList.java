@@ -83,6 +83,12 @@ public class PasswordList {
         getConfig().setProperty("LIST", sb.toString().trim());
     }
 
+    public static void clearList() {
+        LIST=null;
+        getConfig().setProperty("LIST", "");
+    }
+
+
     public static void save() {
 
         StringBuffer sb = new StringBuffer();

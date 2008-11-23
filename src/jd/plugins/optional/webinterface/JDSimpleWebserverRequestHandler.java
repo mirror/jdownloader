@@ -24,6 +24,7 @@ import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.CPluginWrapper;
+import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
@@ -31,6 +32,7 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -476,17 +478,27 @@ public class JDSimpleWebserverRequestHandler {
                 }
             }
         }
-//        /* passwortliste verändern */
-//        if (requestParameter.containsKey("passwd")) {
-//            if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
-//                if (requestParameter.containsKey("password_list")) {
-//                    String password_list = Encoding.htmlDecode(requestParameter.get("password_list"));
-//                    // JUnrar unrar = new JUnrar(false);
-//                    // TODO: abändern
-//                    UnrarPassword.editPasswordlist(Regex.getLines(password_list));
-//                }
-//            }
-//        }
+        /* passwortliste verändern */
+        if (requestParameter.containsKey("passwd")) {
+            if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
+                if (requestParameter.containsKey("password_list")) {
+                	
+                    String passwordList = Encoding.htmlDecode(requestParameter.get("password_list"));
+                    for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+                        if (wrapper.isLoaded() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+                        	ArrayList<String> pws = new ArrayList<String>();
+                        	for (String pw : Regex.getLines(passwordList)) {
+                        		pws.add(0, pw);
+                            }
+                    		Object obj = wrapper.getPlugin().interact("setPasswordList", pws);
+                    		if (obj == null) logger.warning("Couldn't set password list");
+                    		break;
+                        }
+                	}
+                    
+                }
+            }
+        }
 
         File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
         if (!fileToRead.isFile()) {

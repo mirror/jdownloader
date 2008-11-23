@@ -20,13 +20,17 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Vector;
 
+import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -147,16 +151,28 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         // t.setParam("message", "great work");
         t.setParam("pakete", v);
     }
-
-//    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
-//        // TODO: abändern
-//        String[] pws = UnrarPassword.returnPasswords();
-//        String pwlist = "";
-//        for (String element : pws) {
-//            pwlist = pwlist + System.getProperty("line.separator") + element;
-//        }
-//        t.setParam("password_list", pwlist);
-//    }
+    
+	private void add_password_list(Template t, HashMap<String, String> requestParameter) {
+        String pwlist = "";
+        
+    	for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (wrapper.isLoaded() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+            	Object obj = wrapper.getPlugin().interact("getPasswordList", null);
+            	if ( obj != null && obj instanceof ArrayList) {
+            		ArrayList<String> arrayList = new ArrayList<String>();
+            		arrayList.addAll((Collection<? extends String>) obj);
+            		for (String pw : arrayList) {
+            			if (!pw.trim().equals("")) {
+            				pwlist += System.getProperty("line.separator") + pw;
+            			}
+            		}
+            	}
+            	break;
+            }
+    	}
+    	
+        t.setParam("password_list", pwlist);
+    }
 
     private void add_single_info(Template t, HashMap<String, String> requestParameter) {
 
@@ -393,9 +409,9 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
             if (url.startsWith("index.tmpl") == true) {
                 add_status_page(t, requestParameter);
             }
-//            if (url.startsWith("passwd.tmpl") == true) {
-//                add_password_list(t, requestParameter);
-//            }
+            if (url.startsWith("passwd.tmpl") == true) {
+                add_password_list(t, requestParameter);
+            }
             if (url.startsWith("link_adder.tmpl") == true) {
                 add_linkadder_page(t, requestParameter);
             }

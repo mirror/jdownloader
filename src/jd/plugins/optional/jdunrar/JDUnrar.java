@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -195,12 +196,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             }
 
-            break;
-        
-        case ControlEvent.CONTROL_ADD_PASSWORD:
-            String pw = (String) event.getParameter();
-            PasswordList.addPassword(pw);
-            PasswordList.save();
             break;
 
         }
@@ -1314,6 +1309,34 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             ((ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER")).finalize(2000);
         }
 
+    }
+    
+    @Override
+    public Object interact(String command, Object parameter) {
+    	
+    	if (command == "getPasswordList") {
+    		return PasswordList.getPasswordList();
+    	} else if (command == "addPassword" && parameter instanceof String && parameter != "") {
+    		PasswordList.addPassword((String) parameter);
+    		PasswordList.save();
+    		PasswordList.cleanList();
+    		PasswordList.save();
+    		return true;
+    	} else if (command == "setPasswordList" && parameter instanceof ArrayList) {
+    		PasswordList.clearList();
+    		ArrayList<String> arrayList = new ArrayList<String>();
+    		arrayList.addAll((Collection<? extends String>) parameter);
+			for (String pw : arrayList) {
+    			PasswordList.addPassword(pw);
+        	}
+    		PasswordList.save();
+    		PasswordList.cleanList();
+    		PasswordList.save();
+    		return true;
+    	} else {
+    		return null;
+    	}
+    	
     }
 
 }

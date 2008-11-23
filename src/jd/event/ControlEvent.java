@@ -149,12 +149,6 @@ public class ControlEvent extends AWTEvent {
 	 * Die files werden als File[] parameter übergeben
 	 */
 	public static final int CONTROL_ON_FILEOUTPUT = 33;
-	/**
-	 * Wird verschickt, wenn z.B. über die CMD ein Password übergeben wurde
-	 * Kann vom JD-Unrar Plugin verwendet werden
-	 * Parameter: String
-	 */
-	public static final int CONTROL_ADD_PASSWORD = 34;
 
     /**
      * Die ID des Ereignisses

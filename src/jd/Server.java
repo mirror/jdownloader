@@ -340,9 +340,16 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 }
 
             } else if (addPasswordsSwitch && !(currentArg.charAt(0) == '-')) {
-            	
-            	controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ADD_PASSWORD, currentArg));
+
                 logger.info("Add password: " + currentArg);
+                
+            	for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+                    if (wrapper.isLoaded() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+                    	Object obj = wrapper.getPlugin().interact("addPassword", currentArg);
+                    	if (obj == null) logger.warning("Couldn't add password");
+                    	break;
+                    }
+            	}
                 
                 // } else if (extractSwitch && !(currentArg.charAt(0) == '-')) {
                 //
