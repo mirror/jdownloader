@@ -17,11 +17,18 @@
 package jd.plugins.optional.jdunrar;
 
 import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
+import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.utils.DynByteBuffer;
@@ -167,8 +174,10 @@ public class UnrarWrapper extends Thread {
                     if (statusid == JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC) {
                         fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
                     } else if (!sc && ex) {
-                        System.err.print("Extract WARNING: exctraction my have failed");
-
+                        System.err.print("Extract WARNING: detected filesizecheck error. This might be caused through special chars. ");
+                        if (removeAfterExtraction) {
+                            removeArchiveFiles();
+                        }
                         fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
 
                     } else {
@@ -329,26 +338,55 @@ public class UnrarWrapper extends Thread {
     }
 
     private void crackPassword() {
-        ArchivFile file = null;
+        ArchivFile smallestFile = null;
+        ArchivFile biggestFile = null;
         this.crackProgress = 0;
         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
         // suche kleines passwortgeschützte Datei
         for (ArchivFile f : files) {
             if (f.isProtected()) {
-                if (file == null) {
-                    file = f;
-                    continue;
-                } else if (f.getSize() < file.getSize()) {
-                    file = f;
+                if (smallestFile == null) {
+                    smallestFile = f;
+                  
+                } else if (f.getSize() < smallestFile.getSize()) {
+                    smallestFile = f;
+                }
+                if (biggestFile == null) {
+                    biggestFile = f;
+                   
+                } else if (f.getSize() > biggestFile.getSize()) {
+                    biggestFile = f;
                 }
             }
         }
 
-        File fileFile = new File(this.file.getParentFile(), System.currentTimeMillis() + ".unrartmp");
-        JDUtilities.writeLocalFile(fileFile, file.getFilepath());
-        fileFile.deleteOnExit();
+//        File fileFile = new File(this.file.getParentFile(), System.currentTimeMillis() + ".unrartmp");
+//       String str=file.getFilepath();
+//
+//     
+//       CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+//       CharsetDecoder decoder = Charset.forName("ISO-8859-1").newDecoder();
+//       
+//       try {
+//           // Convert a string to ISO-LATIN-1 bytes in a ByteBuffer
+//           // The new ByteBuffer is ready to be read.
+//           ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(str));
+//       
+//           // Convert ISO-LATIN-1 bytes in a ByteBuffer to a character ByteBuffer and then to a string.
+//           // The new ByteBuffer is ready to be read.
+//           CharBuffer cbuf = decoder.decode(bbuf);
+//           str = cbuf.toString();
+//       } catch (CharacterCodingException e) {
+//           e.printStackTrace();
+//       }
+//
+//        JDUtilities.writeLocalFile(fileFile,str);
+//        
+//       
+//        
+//        fileFile.deleteOnExit();
 
-        if (file.getSize() < 2097152) {
+        if (smallestFile.getSize() < 2097152) {
             int c = 0;
             for (String pass : this.passwordList) {
                 crackProgress = ((c++) * 100) / passwordList.length;
@@ -359,12 +397,32 @@ public class UnrarWrapper extends Thread {
                 exec.setDebug(DEBUG);
                 exec.addParameter("t");
                 // exec.addParameter("-p");
-                exec.addParameter("-n@" + fileFile.getName());
+                exec.addParameter("-sl" + (smallestFile.getSize()+1));
+                exec.addParameter("-sm" + (smallestFile.getSize()-1));
                 exec.addParameter("-c-");
                 exec.addParameter(this.file.getName());
                 exec.setRunin(this.file.getParentFile().getAbsolutePath());
                 exec.setWaitTimeout(-1);
+                
+                exec.addProcessListener(new ProcessListener(){
 
+                    @Override
+                    public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum) {
+ 
+                    }
+
+                    @Override
+                    public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
+                        if ((new Regex(latestLine, "^\\s*?(OK)").getMatch(0)) != null) {
+                            exec.interrupt();
+                            System.out.println("loaded enough.... one file is enough");
+                            totalBuffer.put("All OK".getBytes(), 6);
+                        }
+                        
+                    }
+                    
+                    
+                }, Executer.LISTENER_STDSTREAM);
                 exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
                 exec.start();
                 exec.waitTimeout();
@@ -375,7 +433,7 @@ public class UnrarWrapper extends Thread {
                     this.password = pass;
                     crackProgress = 100;
                     fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                    fileFile.delete();
+                
                     return;
                 } else {
                     continue;
@@ -392,7 +450,7 @@ public class UnrarWrapper extends Thread {
                 exec.setDebug(DEBUG);
                 exec.addParameter("p");
                 // exec.addParameter("-p");
-                exec.addParameter("-n@" + fileFile.getName());
+                exec.addParameter("-sm"+(biggestFile.getSize()-1));
 
                 exec.addParameter("-c-");
                 exec.addParameter("-ierr");
@@ -440,12 +498,12 @@ public class UnrarWrapper extends Thread {
                 Signature signature = FileSignatures.getSignature(sig);
 
                 if (signature != null) {
-                    if (signature.getExtension().matcher(file.getFilepath()).matches()) {
+                    if (signature.getExtension().matcher(smallestFile.getFilepath()).matches()) {
                         // signatur passt zur extension
                         this.password = pass;
                         crackProgress = 100;
                         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                        fileFile.delete();
+                        
                         return;
                     } else {
                         // signatur passt nicht zur extension.... Es wird
@@ -463,7 +521,7 @@ public class UnrarWrapper extends Thread {
             }
 
         }
-        fileFile.delete();
+     
         crackProgress = 100;
         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
 
