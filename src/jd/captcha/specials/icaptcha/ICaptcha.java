@@ -48,10 +48,12 @@ public class ICaptcha {
     }
 
     public static BufferedImage paintImage(String code, int width, int height) {
-        width += DIST * 5;
+      
         int z = 30;
         int length = code.length();
         int l = length / 12;
+        
+       if(l==40) width += DIST * 5;
         int f = 0;
         int g = 0;
 
@@ -100,8 +102,8 @@ public class ICaptcha {
         int div = list.size() / 5;
         for (int i = 0; i < list.size(); i++) {
             if (i % div == 0) {
-                offset += DIST;
-                g2.setColor(cols[letter]);
+                if(l==40)offset += DIST;
+                if(l==40) g2.setColor(cols[letter]);
                 letter++;
             }
             Curve curve = list.get(i);

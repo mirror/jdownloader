@@ -24,13 +24,8 @@ import javax.imageio.ImageIO;
 
 import jd.PluginWrapper;
 import jd.captcha.specials.icaptcha.ICaptcha;
-import jd.http.Browser;
-import jd.http.HTTPConnection;
-import jd.parser.Form;
-import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -51,6 +46,8 @@ public class Odsiebiecom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
+            this.setBrowserExclusive();
+            br.setDebug(true);
             br.getPage(downloadLink.getDownloadURL());
             if (br.getRedirectLocation() == null) {
                 String filename = br.getRegex(Pattern.compile("<dt>Nazwa pliku:</dt>.*?<dd>(.*?)</dd>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -100,7 +97,7 @@ public class Odsiebiecom extends PluginForHost {
             /* kein Link gefunden */
             if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         } else {
-            br.setDebug(true);
+
             /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
             br.getPage(downloadurl);
@@ -109,40 +106,47 @@ public class Odsiebiecom extends PluginForHost {
                 downloadurl = br.getRedirectLocation();
                 br.getPage(downloadurl);
             }
-           
+
             if (br.containsHTML("http://odsiebie.com/icaptcha.swf")) {
-                br.getPage("http://odsiebie.com/icaptcha.swf");
-                String v =   br.getPage("http://odsiebie.com/weryfikacja/icaptcha.php").substring(2);
-                
-             
-                BufferedImage image = ICaptcha.paintImage(v, 250, 100);
+                String validate = br.getRegex("<form name=\"validate\" method=\"get\" action=\"(.*?)\">").getMatch(0);
+
+                String v=null;
+                for (int i = 0; i < 10; i++) {
+                    v = br.cloneBrowser().getPage("http://odsiebie.com/weryfikacja/icaptcha.php?dx").trim().substring(2);
+
+                    if (v.length() == 480) break;
+                }
+                BufferedImage image = ICaptcha.paintImage(v, 250, 70);
                 /* Captcha File holen */
-         
-              if(image==null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-              File file = getLocalCaptchaFile(this);
-              file.mkdirs();
-              ImageIO.write(image, "png", file);
-              String code = getCaptchaCode(file, this, downloadLink);
-              
-              br.getPage(downloadurl.replace(".html","")+"?code="+code);
-                
-             
-                if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("html?err")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-           
-            if(br.getRedirectLocation() != null){
+
+                if (image == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+                File file = getLocalCaptchaFile(this);
+                file.mkdirs();
+                ImageIO.write(image, "png", file);
+                String code = getCaptchaCode(file, this, downloadLink);
                 br.setFollowRedirects(true);
-                br.getPage(br.getRedirectLocation());
-                br.setFollowRedirects(false);
-            }
-            
+                br.getPage(validate + "?captcha=" + code);
+
+                // if (br.getRedirectLocation() != null &&
+                // br.getRedirectLocation().contains("html?err")) { throw new
+                // PluginException(LinkStatus.ERROR_CAPTCHA); }
+
+                if (br.getRedirectLocation() != null) {
+
+                    br.getPage(br.getRedirectLocation());
+                    br.setFollowRedirects(false);
+                }
+
             }
             /* DownloadLink suchen */
             steplink = br.getRegex("<a href=\"/download/(.*?)\"").getMatch(0);
             if (steplink == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
             downloadurl = "http://odsiebie.com/download/" + steplink;
-            br.getPage(downloadurl);
-            if (br.getRedirectLocation() == null || br.getRedirectLocation().contains("upload")) { throw new PluginException(LinkStatus.ERROR_RETRY); }
-            downloadurl = br.getRedirectLocation();
+            // br.getPage(downloadurl);
+            // if (br.getRedirectLocation() == null ||
+            // br.getRedirectLocation().contains("upload")) { throw new
+            // PluginException(LinkStatus.ERROR_RETRY); }
+            // downloadurl = br.getRedirectLocation();
             if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
         }
         /*
