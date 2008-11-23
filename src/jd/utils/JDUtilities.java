@@ -622,7 +622,7 @@ public class JDUtilities {
                 mediaTracker.waitForID(0);
             } catch (InterruptedException e) {
                 return null;
-            }
+            }  
             mediaTracker.removeImage(captchaImage);
             JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
