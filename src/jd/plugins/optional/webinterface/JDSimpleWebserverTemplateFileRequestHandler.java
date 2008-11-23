@@ -30,7 +30,6 @@ import java.util.Vector;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.event.ControlEvent;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -156,7 +155,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         String pwlist = "";
         
     	for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-            if (wrapper.isLoaded() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+            if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
             	Object obj = wrapper.getPlugin().interact("getPasswordList", null);
             	if ( obj != null && obj instanceof ArrayList) {
             		ArrayList<String> arrayList = new ArrayList<String>();
@@ -400,6 +399,16 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
             t.setParam("page_refresh", JDWebinterface.getRefreshRate());
+            
+            boolean hasUnrar = false;
+            for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+                if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+                	hasUnrar = true;
+                	break;
+                }
+        	}
+            t.setParam("unrar_available", hasUnrar ? "unrarAvailable" : "unrarUnavailable");
+            
             if (url.startsWith("single_info.tmpl") == true) {
                 add_single_info(t, requestParameter);
             }

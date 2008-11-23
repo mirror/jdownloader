@@ -457,3 +457,13 @@ a.addButton {
 a.button:hover, a.addButton:hover {
 	border-width: 2px 1px 1px 2px;
 }
+
+/* Show/Hide password list tab */
+
+li.unrarAvailable {
+	display:inline !important;
+}
+
+li.unrarUnavailable {
+	display:none !important;
+}

@@ -485,7 +485,7 @@ public class JDSimpleWebserverRequestHandler {
                 	
                     String passwordList = Encoding.htmlDecode(requestParameter.get("password_list"));
                     for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
-                        if (wrapper.isLoaded() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+                        if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
                         	ArrayList<String> pws = new ArrayList<String>();
                         	for (String pw : Regex.getLines(passwordList)) {
                         		pws.add(0, pw);
