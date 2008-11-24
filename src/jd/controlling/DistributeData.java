@@ -32,6 +32,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.Jobber;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -119,33 +120,16 @@ public class DistributeData extends ControlBroadcaster {
      */
     private boolean deepDecrypt(final ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
-        boolean hasDecryptedLinks = false;
+        final Integer DeepDecryptedLinks = 0;
+        final Vector<DownloadLink> newdecryptedLinks = new Vector<DownloadLink>();
 
         class DThread extends Thread {
-            private int number = 0;
             private DownloadLink link = null;
-            private Vector<DownloadLink> decryptedLinks = new Vector<DownloadLink>();
-            boolean canDecrypt = false;
+            Integer counter = 0;
 
-            public DThread(int i, DownloadLink link) {
+            public DThread(Integer counter, DownloadLink link) {
                 this.link = link;
-                this.number = i;
-            }
-
-            public Vector<DownloadLink> getDecryptedLinks() {
-                return this.decryptedLinks;
-            }
-
-            public boolean couldDecrypt() {
-                return canDecrypt;
-            }
-
-            public int getNumber() {
-                return number;
-            }
-
-            public void setCouldDecrypt(boolean bool) {
-                canDecrypt = bool;
+                this.counter = counter;
             }
 
             public void run() {
@@ -160,7 +144,7 @@ public class DistributeData extends ControlBroadcaster {
                         logger.warning("text not url decodeable");
                     }
                 }
-
+                boolean coulddecrypt = false;
                 for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
                     if (pDecrypt.usePlugin() && pDecrypt.canHandle(url)) {
                         try {
@@ -179,9 +163,10 @@ public class DistributeData extends ControlBroadcaster {
                                 dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
                             }
                             /* Das Plugin konnte arbeiten */
-                            setCouldDecrypt(true);
+                            counter++;
+                            coulddecrypt = true;
                             if (dLinks != null && dLinks.size() > 0) {
-                                decryptedLinks.addAll(dLinks);
+                                newdecryptedLinks.addAll(dLinks);
                             }
                             break;
                         } catch (Exception e) {
@@ -189,35 +174,27 @@ public class DistributeData extends ControlBroadcaster {
                         }
                     }
                 }
+                if (coulddecrypt == false) {
+                    newdecryptedLinks.add(link);
+                }
             }
         }
 
-        ArrayList<DThread> decryptThread = new ArrayList<DThread>();
+        Jobber decryptJobbers = new Jobber(4);
         for (int b = decryptedLinks.size() - 1; b >= 0; b--) {
-            DThread dthread = new DThread(b, decryptedLinks.get(b));
-            dthread.start();
-            decryptThread.add(dthread);
+            DThread dthread = new DThread(DeepDecryptedLinks, decryptedLinks.get(b));
+            decryptJobbers.add(dthread);
         }
-
-        Vector<DownloadLink> newdecryptedLinks = new Vector<DownloadLink>();
-        for (int j = decryptThread.size() - 1; j >= 0; j--) {
-            DThread thread = decryptThread.get(j);
-            while (thread.isAlive()) {
-                try {
-                    Thread.sleep(2);
-                } catch (InterruptedException e) {
-                }
-                if (thread.couldDecrypt()) {
-                    decryptedLinks.remove(thread.getNumber());
-                    if (thread.getDecryptedLinks().size() > 0) {
-                        newdecryptedLinks.addAll(thread.getDecryptedLinks());
-                        hasDecryptedLinks = true;
-                    }
-                }
+        decryptJobbers.start();
+        while (decryptJobbers.getJobsFinished() != decryptedLinks.size()) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
             }
         }
+        decryptedLinks.clear();
         decryptedLinks.addAll(newdecryptedLinks);
-        return hasDecryptedLinks;
+        return DeepDecryptedLinks != 0;
     }
 
     /**
