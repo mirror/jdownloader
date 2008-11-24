@@ -27,6 +27,6 @@ public class UserCashCom extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3393 $");
+        return getVersion("$Revision$");
     }
 }

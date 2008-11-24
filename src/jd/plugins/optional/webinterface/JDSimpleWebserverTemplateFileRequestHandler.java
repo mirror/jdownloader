@@ -48,6 +48,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
     /**
      * Create a new handler that serves files from a base directory
+     * 
      * @param base
      *            directory
      */
@@ -150,26 +151,27 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         // t.setParam("message", "great work");
         t.setParam("pakete", v);
     }
-    
-	private void add_password_list(Template t, HashMap<String, String> requestParameter) {
+
+    @SuppressWarnings("unchecked")
+    private void add_password_list(Template t, HashMap<String, String> requestParameter) {
         String pwlist = "";
-        
-    	for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+
+        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-            	Object obj = wrapper.getPlugin().interact("getPasswordList", null);
-            	if ( obj != null && obj instanceof ArrayList) {
-            		ArrayList<String> arrayList = new ArrayList<String>();
-            		arrayList.addAll((Collection<? extends String>) obj);
-            		for (String pw : arrayList) {
-            			if (!pw.trim().equals("")) {
-            				pwlist += System.getProperty("line.separator") + pw;
-            			}
-            		}
-            	}
-            	break;
+                Object obj = wrapper.getPlugin().interact("getPasswordList", null);
+                if (obj != null && obj instanceof ArrayList) {
+                    ArrayList<String> arrayList = new ArrayList<String>();
+                    arrayList.addAll((Collection<? extends String>) obj);
+                    for (String pw : arrayList) {
+                        if (!pw.trim().equals("")) {
+                            pwlist += System.getProperty("line.separator") + pw;
+                        }
+                    }
+                }
+                break;
             }
-    	}
-    	
+        }
+
         t.setParam("password_list", pwlist);
     }
 
@@ -266,6 +268,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         }
         ;
     }
+
     /*
      * private void addEntryandPercent(String var, String value, double percent)
      * { Hashtable<Object, Object> h_info = new Hashtable<Object, Object>();
@@ -399,16 +402,16 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
             t.setParam("page_refresh", JDWebinterface.getRefreshRate());
-            
+
             boolean hasUnrar = false;
             for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
                 if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                	hasUnrar = true;
-                	break;
+                    hasUnrar = true;
+                    break;
                 }
-        	}
+            }
             t.setParam("unrar_available", hasUnrar ? "unrarAvailable" : "unrarUnavailable");
-            
+
             if (url.startsWith("single_info.tmpl") == true) {
                 add_single_info(t, requestParameter);
             }

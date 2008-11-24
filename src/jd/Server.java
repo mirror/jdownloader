@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
 import jd.controlling.JDController;
-import jd.event.ControlEvent;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
@@ -141,9 +140,8 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
     // }
 
     public static void showCmdHelp() {
-    	
-        String[][] help = new String[][] { { JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" }, { "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-c/--add-container(s)", "Add containers" }, { "-d/--start-download", "Start download" }, { "-D/--stop-download", "Stop download" }, { "-H/--hide\t", "Don't open Linkgrabber when adding Links" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" },
-        { "-p/--add-password(s)" , "Add passwords" } ,
+
+        String[][] help = new String[][] { { JDUtilities.getJDTitle(), "Coalado|Astaldo|DwD|Botzi|eXecuTe GPLv3" }, { "http://jdownloader.org/\t\t", "http://www.the-lounge.org/viewforum.php?f=217" + System.getProperty("line.separator") }, { "-h/--help\t", "Show this help message" }, { "-a/--add-link(s)", "Add links" }, { "-c/--add-container(s)", "Add containers" }, { "-d/--start-download", "Start download" }, { "-D/--stop-download", "Stop download" }, { "-H/--hide\t", "Don't open Linkgrabber when adding Links" }, { "-m/--minimize\t", "Minimize download window" }, { "-f/--focus\t", "Get jD to foreground/focus" }, { "-s/--show\t", "Show JAC prepared captchas" }, { "-t/--train\t", "Train a JAC method" }, { "-r/--reconnect\t", "Perform a Reconnect" }, { "-C/--captcha <filepath or url> <method>", "Get code from image using JAntiCaptcha" }, { "-p/--add-password(s)", "Add passwords" },
         /*
          * {
          * "-e/--extract (<sourcePath1> (<sourcePath2...n> <targetPath>)) (-r/--rotate <seconds>)"
@@ -258,7 +256,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
                 startDownload = true;
 
             } else if (currentArg.equals("--stop-download") || currentArg.equals("-D")) {
-        		
+
                 addLinksSwitch = false;
                 addContainersSwitch = false;
                 addPasswordsSwitch = false;
@@ -266,7 +264,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 logger.info(currentArg + " parameter");
                 if (controller.getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-                	JDUtilities.getController().toggleStartStop();
+                    JDUtilities.getController().toggleStartStop();
                 }
 
             } else if (currentArg.equals("--show") || currentArg.equals("-s")) {
@@ -339,15 +337,15 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
             } else if (addPasswordsSwitch && !(currentArg.charAt(0) == '-')) {
 
                 logger.info("Add password: " + currentArg);
-                
-            	for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+
+                for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
                     if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                    	Object obj = wrapper.getPlugin().interact("addPassword", currentArg);
-                    	if (obj == null) logger.warning("Couldn't add password");
-                    	break;
+                        Object obj = wrapper.getPlugin().interact("addPassword", currentArg);
+                        if (obj == null) logger.warning("Couldn't add password");
+                        break;
                     }
-            	}
-                
+                }
+
                 // } else if (extractSwitch && !(currentArg.charAt(0) == '-')) {
                 //
                 // if (currentArg.equals("--rotate") || currentArg.equals("-r"))

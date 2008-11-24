@@ -17,18 +17,11 @@
 package jd.plugins.optional.jdunrar;
 
 import java.io.File;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
-import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.utils.DynByteBuffer;
@@ -347,44 +340,46 @@ public class UnrarWrapper extends Thread {
             if (f.isProtected()) {
                 if (smallestFile == null) {
                     smallestFile = f;
-                  
+
                 } else if (f.getSize() < smallestFile.getSize()) {
                     smallestFile = f;
                 }
                 if (biggestFile == null) {
                     biggestFile = f;
-                   
+
                 } else if (f.getSize() > biggestFile.getSize()) {
                     biggestFile = f;
                 }
             }
         }
 
-//        File fileFile = new File(this.file.getParentFile(), System.currentTimeMillis() + ".unrartmp");
-//       String str=file.getFilepath();
-//
-//     
-//       CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-//       CharsetDecoder decoder = Charset.forName("ISO-8859-1").newDecoder();
-//       
-//       try {
-//           // Convert a string to ISO-LATIN-1 bytes in a ByteBuffer
-//           // The new ByteBuffer is ready to be read.
-//           ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(str));
-//       
-//           // Convert ISO-LATIN-1 bytes in a ByteBuffer to a character ByteBuffer and then to a string.
-//           // The new ByteBuffer is ready to be read.
-//           CharBuffer cbuf = decoder.decode(bbuf);
-//           str = cbuf.toString();
-//       } catch (CharacterCodingException e) {
-//           e.printStackTrace();
-//       }
-//
-//        JDUtilities.writeLocalFile(fileFile,str);
-//        
-//       
-//        
-//        fileFile.deleteOnExit();
+        // File fileFile = new File(this.file.getParentFile(),
+        // System.currentTimeMillis() + ".unrartmp");
+        // String str=file.getFilepath();
+        //
+        //     
+        // CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        // CharsetDecoder decoder = Charset.forName("ISO-8859-1").newDecoder();
+        //       
+        // try {
+        // // Convert a string to ISO-LATIN-1 bytes in a ByteBuffer
+        // // The new ByteBuffer is ready to be read.
+        // ByteBuffer bbuf = encoder.encode(CharBuffer.wrap(str));
+        //       
+        // // Convert ISO-LATIN-1 bytes in a ByteBuffer to a character
+        // ByteBuffer and then to a string.
+        // // The new ByteBuffer is ready to be read.
+        // CharBuffer cbuf = decoder.decode(bbuf);
+        // str = cbuf.toString();
+        // } catch (CharacterCodingException e) {
+        // e.printStackTrace();
+        // }
+        //
+        // JDUtilities.writeLocalFile(fileFile,str);
+        //        
+        //       
+        //        
+        // fileFile.deleteOnExit();
 
         if (smallestFile.getSize() < 2097152) {
             int c = 0;
@@ -397,18 +392,18 @@ public class UnrarWrapper extends Thread {
                 exec.setDebug(DEBUG);
                 exec.addParameter("t");
                 // exec.addParameter("-p");
-                exec.addParameter("-sl" + (smallestFile.getSize()+1));
-                exec.addParameter("-sm" + (smallestFile.getSize()-1));
+                exec.addParameter("-sl" + (smallestFile.getSize() + 1));
+                exec.addParameter("-sm" + (smallestFile.getSize() - 1));
                 exec.addParameter("-c-");
                 exec.addParameter(this.file.getName());
                 exec.setRunin(this.file.getParentFile().getAbsolutePath());
                 exec.setWaitTimeout(-1);
-                
-                exec.addProcessListener(new ProcessListener(){
+
+                exec.addProcessListener(new ProcessListener() {
 
                     @Override
                     public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum) {
- 
+
                     }
 
                     @Override
@@ -418,10 +413,9 @@ public class UnrarWrapper extends Thread {
                             System.out.println("loaded enough.... one file is enough");
                             totalBuffer.put("All OK".getBytes(), 6);
                         }
-                        
+
                     }
-                    
-                    
+
                 }, Executer.LISTENER_STDSTREAM);
                 exec.addProcessListener(new PasswordListener(pass), Executer.LISTENER_ERRORSTREAM);
                 exec.start();
@@ -433,7 +427,7 @@ public class UnrarWrapper extends Thread {
                     this.password = pass;
                     crackProgress = 100;
                     fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                
+
                     return;
                 } else {
                     continue;
@@ -450,7 +444,7 @@ public class UnrarWrapper extends Thread {
                 exec.setDebug(DEBUG);
                 exec.addParameter("p");
                 // exec.addParameter("-p");
-                exec.addParameter("-sm"+(biggestFile.getSize()-1));
+                exec.addParameter("-sm" + (biggestFile.getSize() - 1));
 
                 exec.addParameter("-c-");
                 exec.addParameter("-ierr");
@@ -503,7 +497,7 @@ public class UnrarWrapper extends Thread {
                         this.password = pass;
                         crackProgress = 100;
                         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                        
+
                         return;
                     } else {
                         // signatur passt nicht zur extension.... Es wird
@@ -521,7 +515,7 @@ public class UnrarWrapper extends Thread {
             }
 
         }
-     
+
         crackProgress = 100;
         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
 
@@ -543,20 +537,19 @@ public class UnrarWrapper extends Thread {
         int i = 0;
         fireEvent(JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE);
         int c = 0;
-     
+
         while (true) {
             Executer exec = new Executer(unrarCommand);
             exec.setCodepage(JDUnrar.CODEPAGE);
             exec.setDebug(DEBUG);
             if (i > 0) {
                 if (passwordList.length < i) {
-                 
-                        fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
-                      
-                        if (password == null) return false;
-                        pass=password;
-                        password=null;
-                   
+
+                    fireEvent(JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE);
+
+                    if (password == null) return false;
+                    pass = password;
+                    password = null;
 
                 } else {
                     pass = this.passwordList[i - 1];

@@ -55,8 +55,7 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public String getVersion() {
-
-        return getVersion("$Revision: 3397 $");
+        return getVersion("$Revision$");
     }
 
     @Override
@@ -69,7 +68,7 @@ public class LetitBitNet extends PluginForHost {
         br.submitForm(free);
         String url = br.getRegex("link=(.*?)\"").getMatch(0);
         this.sleep(60000, downloadLink);
-        br.openDownload(downloadLink, url,true,1).startDownload();
+        br.openDownload(downloadLink, url, true, 1).startDownload();
 
     }
 

@@ -183,11 +183,13 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
                 m.setProperty("LINK", link);
                 File dir = this.getExtractToPath(link);
-                while(dir!=null&&!dir.exists())dir=dir.getParentFile();
-                if(dir!=null){
-                container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.linkmenu.openextract2", "Open directory (%s)", dir.getAbsolutePath()), 1002).setActionListener(this));
-//                m.setEnabled(link.getStringProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH) != null);
-                m.setProperty("LINK", link);
+                while (dir != null && !dir.exists())
+                    dir = dir.getParentFile();
+                if (dir != null) {
+                    container.addMenuItem(m = new MenuItem(MenuItem.NORMAL, JDLocale.LF("plugins.optional.jdunrar.linkmenu.openextract2", "Open directory (%s)", dir.getAbsolutePath()), 1002).setActionListener(this));
+                    // m.setEnabled(link.getStringProperty(JDUnrarConstants.DOWNLOADLINK_KEY_EXTRACTEDPATH)
+                    // != null);
+                    m.setProperty("LINK", link);
                 }
             } else {
                 FilePackage fp = (FilePackage) event.getSource();
@@ -354,7 +356,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             pwList.add(pw);
         }
         pwList.addAll(PasswordList.getPasswordList());
-        //Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
+        // Fügt den Archivnamen und dan dateinamen ans ende der passwortliste
         pwList.add(this.getArchiveName(link));
         pwList.add(new File(link.getFileOutput()).getName());
         wrapper.setPasswordList(pwList.toArray(new String[] {}));
@@ -489,8 +491,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         DownloadLink link;
         switch (source.getActionID()) {
         case 1:
-            //boolean newValue;
-            cfg.setProperty("ACTIVATED", /*newValue = */!cfg.getBooleanProperty("ACTIVATED", true));
+            // boolean newValue;
+            cfg.setProperty("ACTIVATED", /* newValue = */!cfg.getBooleanProperty("ACTIVATED", true));
             // if (newValue) {
             // JDUtilities.getController().addControlListener(this);
             // } else {
@@ -746,7 +748,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * @return
      */
     @SuppressWarnings("unused")
-	private String getCodepage() {
+    private String getCodepage() {
         Executer exec = new Executer(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         exec.addParameter("v");
         exec.addParameter("-v");
@@ -893,7 +895,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             onUnrarDummyEvent(id, wrapper);
             return;
         }
-        //int min;
+        // int min;
         switch (id) {
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
 
@@ -1078,11 +1080,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private void assignRealDownloadDir(UnrarWrapper wrapper) {
         // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
         // ": " + "Archive opened successfull");
-        if(wrapper.getPassword()!=null){
+        if (wrapper.getPassword() != null) {
             PasswordList.addPassword(wrapper.getPassword());
-            PasswordList.save();            
+            PasswordList.save();
         }
-        
+
         int min = this.getPluginConfig().getIntegerProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, 0);
         if (min > 0) {
 
@@ -1123,7 +1125,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private void onUnrarDummyEvent(int id, UnrarWrapper wrapper) {
         ProgressController pc = (ProgressController) wrapper.getDownloadLink().getProperty("PROGRESSCONTROLLER");
-        //int min;
+        // int min;
         switch (id) {
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED:
 
@@ -1311,35 +1313,36 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         }
 
     }
-    
+
+    @SuppressWarnings("unchecked")
     @Override
     public Object interact(String command, Object parameter) {
-    	
-    	if (command.equals("getPasswordList")) {
-    		return PasswordList.getPasswordList();
-    	} else if (command.equals("addPassword") && parameter instanceof String && parameter != "") {
-    		PasswordList.addPassword((String) parameter);
-    		PasswordList.save();
-    		PasswordList.cleanList();
-    		PasswordList.save();
-    		return true;
-    	} else if (command.equals("setPasswordList") && parameter instanceof ArrayList) {
-    		PasswordList.clearList();
-    		ArrayList<String> arrayList = new ArrayList<String>();
-    		arrayList.addAll((Collection<? extends String>) parameter);
-			for (String pw : arrayList) {
-    			PasswordList.addPassword(pw);
-        	}
-    		PasswordList.save();
-    		PasswordList.cleanList();
-    		PasswordList.save();
-    		return true;
-    	} else if (command.equals("isWorking")) {
-    		return queue.isAlive();
-    	} else {
-    		return null;
-    	}
-    	
+
+        if (command.equals("getPasswordList")) {
+            return PasswordList.getPasswordList();
+        } else if (command.equals("addPassword") && parameter instanceof String && parameter != "") {
+            PasswordList.addPassword((String) parameter);
+            PasswordList.save();
+            PasswordList.cleanList();
+            PasswordList.save();
+            return true;
+        } else if (command.equals("setPasswordList") && parameter instanceof ArrayList) {
+            PasswordList.clearList();
+            ArrayList<String> arrayList = new ArrayList<String>();
+            arrayList.addAll((Collection<? extends String>) parameter);
+            for (String pw : arrayList) {
+                PasswordList.addPassword(pw);
+            }
+            PasswordList.save();
+            PasswordList.cleanList();
+            PasswordList.save();
+            return true;
+        } else if (command.equals("isWorking")) {
+            return queue.isAlive();
+        } else {
+            return null;
+        }
+
     }
 
 }

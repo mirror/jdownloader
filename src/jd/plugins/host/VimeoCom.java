@@ -48,9 +48,9 @@ public class VimeoCom extends PluginForHost {
 
         this.clipData = br.getPage("/moogaloop/load/clip:" + clipID + "/local?param_force_embed=0&param_clip_id=" + clipID + "&param_show_portrait=0&param_multimoog=&param_server=vimeo.com&param_show_title=0&param_autoplay=0&param_show_byline=0&param_color=00ADEF&param_fullscreen=1&param_context=" + context + "&param_md5=0&param_context_id=&context=" + context);
         String title = getClipData("caption");
-        downloadLink.setFinalFileName(title + ".flv");     
-        
-        String dlURL = "/moogaloop/play/clip:" + getClipData("clip_id") + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q="+(getClipData("isHD").equals("1")?"hd":"sd");
+        downloadLink.setFinalFileName(title + ".flv");
+
+        String dlURL = "/moogaloop/play/clip:" + getClipData("clip_id") + "/" + getClipData("request_signature") + "/" + getClipData("request_signature_expires") + "/?q=" + (getClipData("isHD").equals("1") ? "hd" : "sd");
         br.setFollowRedirects(false);
         br.getPage(dlURL);
         this.finalURL = br.getRedirectLocation();
@@ -69,8 +69,7 @@ public class VimeoCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-
-        return getVersion("$Revision: 3397 $");
+        return getVersion("$Revision$");
     }
 
     @Override

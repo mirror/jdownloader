@@ -53,7 +53,6 @@ public class RappersIn extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
