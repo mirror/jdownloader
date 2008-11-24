@@ -61,9 +61,9 @@ public abstract class PluginForHost extends Plugin {
     private int maxConnections = 50;
 
     public static final String PROPERTY_PREMIUM = "PREMIUM";
-    private static Long LAST_CONNECTION_TIME = 0L;
-    private static Long LAST_STARTED_TIME = 0L;
-    private static Long WAIT_BETWEEN_STARTS = 0L;
+    private Long LAST_CONNECTION_TIME = 0L;
+    private Long LAST_STARTED_TIME = 0L;
+    private Long WAIT_BETWEEN_STARTS = 0L;
 
     private boolean enablePremium = false;
 
