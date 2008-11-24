@@ -634,7 +634,7 @@ public class Rapidshare extends PluginForHost {
 
         downloadLink.setName(erg[5]);
         downloadLink.setDownloadSize(Integer.parseInt(erg[4]));
-        downloadLink.setDupeCheckallowed(true);
+        downloadLink.setDupecheckAllowed(true);
 
         return true;
     }

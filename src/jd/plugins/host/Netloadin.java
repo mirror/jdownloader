@@ -371,7 +371,7 @@ public class Netloadin extends PluginForHost {
                 if (entries == null || entries.length < 3) { return false; }
                 downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
                 downloadLink.setName(entries[0]);
-                downloadLink.setDupeCheckallowed(true);
+                downloadLink.setDupecheckAllowed(true);
                 fileStatusText = "Might be offline";
                 return true;
             }
@@ -379,7 +379,7 @@ public class Netloadin extends PluginForHost {
             if (entries == null || entries.length < 3) { return false; }
 
             downloadLink.setName(entries[1]);
-            downloadLink.setDupeCheckallowed(true);
+            downloadLink.setDupecheckAllowed(true);
             fileStatusText = entries[2];
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 

@@ -200,7 +200,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
         return dupecheckallowed;
     }
 
-    public void setDupeCheckallowed(boolean b) {
+    public void setDupecheckAllowed(boolean b) {
         dupecheckallowed = b;
     }
 
@@ -640,7 +640,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         finalFileName = null;
-        setDupeCheckallowed(false);
+        setDupecheckAllowed(false);
         localSpeedLimit = -1;
         getPlugin().resetHosterWaitTime();
     }

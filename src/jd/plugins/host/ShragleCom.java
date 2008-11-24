@@ -117,6 +117,7 @@ public class ShragleCom extends PluginForHost {
         Thread.sleep(500);/* sonst kommen serverfehler */
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        br.setDebug(true);
         Thread.sleep(500);/* sonst kommen serverfehler */
         br.setDebug(true);
         if (br.getRedirectLocation() != null) {
@@ -156,6 +157,7 @@ public class ShragleCom extends PluginForHost {
         downloadLink.setName(name.trim());
         downloadLink.setDownloadSize(Long.parseLong(size));
         downloadLink.setMD5Hash(md5.trim());
+        downloadLink.setDupecheckAllowed(true);
         return true;
     }
 
