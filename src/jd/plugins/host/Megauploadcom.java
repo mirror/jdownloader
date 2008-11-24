@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -55,6 +57,8 @@ public class Megauploadcom extends PluginForHost {
 
     static private final String SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK = "Math\\.sqrt\\((.*?)\\)\\);(.*?)document\\.getElementById\\(\"(.*?)\"\\)\\.innerHTML = '<a href=\"(.*?)' (.*?) '(.*?)\"(.*?)onclick=\"loadingdownload\\(\\)";
 
+    private static final String MU_PARAM_PORT = "MU_PARAM_PORT";
+
     private String captchaPost;
 
     private String captchaURL;
@@ -68,6 +72,13 @@ public class Megauploadcom extends PluginForHost {
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.megaupload.com/premium/en/");
+        setConfigElements();
+    }
+
+    public int usePort() {
+        if (JDUtilities.getConfiguration().getIntegerProperty(MU_PARAM_PORT) == 1) return 800;
+        if (JDUtilities.getConfiguration().getIntegerProperty(MU_PARAM_PORT) == 2) return 1723;
+        return 80;
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -127,6 +138,7 @@ public class Megauploadcom extends PluginForHost {
             dlUrl = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
         }
         br.setFollowRedirects(true);
+        dlUrl = dlUrl.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
         dl = br.openDownload(downloadLink, dlUrl, true, 0);
         dl.startDownload();
     }
@@ -140,6 +152,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
+        br.setDebug(true);
         br.postPage("http://megaupload.com/en/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         String cookie = br.getCookie("http://megaupload.com", "user");
         if (cookie == null) {
@@ -221,6 +234,7 @@ public class Megauploadcom extends PluginForHost {
         String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
         tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
         String url = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
+        url = url.replaceFirst("megaupload\\.com/", "megaupload\\.com:" + usePort() + "/");
         dl = br.openDownload(downloadLink, url, true, 1);
         if (!dl.getConnection().isOK()) {
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
@@ -276,5 +290,10 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public void resetPluginGlobals() {
+    }
+
+    private void setConfigElements() {
+        String[] ports = new String[] { "80", "800", "1723" };
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, JDUtilities.getConfiguration(), MU_PARAM_PORT, ports, "Use this Port:").setDefaultValue("80"));
     }
 }
