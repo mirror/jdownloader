@@ -236,7 +236,14 @@ public class JDShutdown extends PluginOptional {
                 } catch (Exception e) {
                 }
             } else if (OS.indexOf("mac") >= 0) {
-                JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
+        		try {
+	            	if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
+	            	} else {
+	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
+	            	}
+            	} catch (Exception e) {
+                }
             } else {
             	if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
             		try {
