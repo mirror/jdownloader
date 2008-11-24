@@ -23,7 +23,6 @@ import java.awt.GridBagLayout;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.HashMap;
-import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -52,8 +51,7 @@ import jd.utils.JDUtilities;
  * Dies Klasse ziegt informationen zu einem DownloadLink an
  */
 public class DownloadInfo extends JFrame implements ChangeListener {
-    @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+
     private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
     private static final String PROPERTY_REFRESHRATE = "PROPERTY_LINK_REFRESHRATE";
 
@@ -228,7 +226,9 @@ public class DownloadInfo extends JFrame implements ChangeListener {
         }
 
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasComment()) {
-            addEntry("comment", JDLocale.L("gui.linkinfo.comment", "Kommentar"), downloadLink.getFilePackage().getComment());
+            JTextField comment = new JTextField(downloadLink.getFilePackage().getComment());
+            comment.setEditable(false);
+            addEntry("comment", JDLocale.L("gui.linkinfo.comment", "Kommentar"), comment);
         } else {
             removeEntry("comment");
         }

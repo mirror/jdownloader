@@ -22,7 +22,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.text.DecimalFormat;
 import java.util.HashMap;
-import java.util.logging.Logger;
 
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -51,8 +50,7 @@ import jd.utils.JDUtilities;
  * Dies Klasse ziegt informationen zu einem FilePackage an
  */
 public class PackageInfo extends JDialog implements ChangeListener {
-    @SuppressWarnings("unused")
-    private static Logger logger = JDUtilities.getLogger();
+
     private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
     private static final String PROPERTY_REFRESHRATE = "PROPERTY_PACKAGE_REFRESHRATE";
 
@@ -210,7 +208,11 @@ public class PackageInfo extends JDialog implements ChangeListener {
             pw.setEditable(false);
             addEntry(JDLocale.L("gui.packageinfo.password", "Password"), pw);
         }
-        if (fp.hasComment()) addEntry(JDLocale.L("gui.packageinfo.comment", "Comment"), fp.getComment());
+        if (fp.hasComment()) {
+            JTextField comment = new JTextField(fp.getComment());
+            comment.setEditable(false);
+            addEntry(JDLocale.L("gui.packageinfo.comment", "Comment"), comment);
+        }
         addEntry(JDLocale.L("gui.packageinfo.dldirectory", "Downloaddirectory"), fp.getDownloadDirectory());
         addEntry(JDLocale.L("gui.packageinfo.packagesize", "Packagesize"), JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " [" + fp.getTotalEstimatedPackageSize() + " KB]");
         addEntry(JDLocale.L("gui.packageinfo.loaded", "Loaded"), JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " [" + fp.getTotalKBLoaded() + " KB]");
