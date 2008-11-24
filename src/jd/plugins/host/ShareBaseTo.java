@@ -117,7 +117,9 @@ public class ShareBaseTo extends PluginForHost {
         }
 
         Form form = br.getFormbyValue("Please Activate Javascript");
-        form.setVariable(0, "Download Now !");
+       
+        form.setVariable(1, "Download Now !");
+        br.setDebug(true);
         br.submitForm(form);
 
         if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {
