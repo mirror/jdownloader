@@ -22,6 +22,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -172,7 +173,33 @@ public class JDShutdown extends PluginOptional {
     }
 
     public void shutDown() {
-
+    	
+    	/*
+    	 * Wait for JD-Unrar
+    	 */
+    	
+    	for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+            if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
+            	boolean logged = false;
+            	while (true) {
+            		try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+            		Object obj = wrapper.getPlugin().interact("isWorking", null);
+            		if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;
+            		if (!logged) {
+            			logger.info("JD-Unrar is working - wait before shutting down");
+            			logged = true;
+            		}
+            	}
+            	break;
+            }
+    	}
+    	
+    	logger.info("Shutting down now");
+    	
         CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>"), count, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
         if (shutDownMessage.result) {
             JDUtilities.getController().prepareShutdown();

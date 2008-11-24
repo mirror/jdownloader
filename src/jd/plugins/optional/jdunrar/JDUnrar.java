@@ -745,7 +745,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * 
      * @return
      */
-    private String getCodepage() {
+    @SuppressWarnings("unused")
+	private String getCodepage() {
         Executer exec = new Executer(this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND));
         exec.addParameter("v");
         exec.addParameter("-v");
@@ -1314,15 +1315,15 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     @Override
     public Object interact(String command, Object parameter) {
     	
-    	if (command == "getPasswordList") {
+    	if (command.equals("getPasswordList")) {
     		return PasswordList.getPasswordList();
-    	} else if (command == "addPassword" && parameter instanceof String && parameter != "") {
+    	} else if (command.equals("addPassword") && parameter instanceof String && parameter != "") {
     		PasswordList.addPassword((String) parameter);
     		PasswordList.save();
     		PasswordList.cleanList();
     		PasswordList.save();
     		return true;
-    	} else if (command == "setPasswordList" && parameter instanceof ArrayList) {
+    	} else if (command.equals("setPasswordList") && parameter instanceof ArrayList) {
     		PasswordList.clearList();
     		ArrayList<String> arrayList = new ArrayList<String>();
     		arrayList.addAll((Collection<? extends String>) parameter);
@@ -1333,6 +1334,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     		PasswordList.cleanList();
     		PasswordList.save();
     		return true;
+    	} else if (command.equals("isWorking")) {
+    		return queue.isAlive();
     	} else {
     		return null;
     	}
