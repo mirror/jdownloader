@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -40,15 +41,11 @@ import jd.utils.JDUtilities;
 
 public class Megauploadcom extends PluginForHost {
 
-    // static private final String COOKIE = "l=de; v=1; ve_view=1";
-
     static private final String ERROR_FILENOTFOUND = "Die Datei konnte leider nicht gefunden werden";
 
     static private final String ERROR_TEMP_NOT_AVAILABLE = "Zugriff auf die Datei ist vor";
 
     private static final String PATTERN_PASSWORD_WRONG = "Wrong password! Please try again";
-
-    static private final int PENDING_WAITTIME = 45000;
 
     static private final String SIMPLEPATTERN_CAPTCHA_POST_URL = "<form method=\"POST\" action=\"(.*?)\" target";
 
@@ -66,6 +63,8 @@ public class Megauploadcom extends PluginForHost {
 
     private boolean tempUnavailable = false;
 
+    private static int simultanpremium = 1;
+
     public Megauploadcom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.megaupload.com/premium/en/");
@@ -75,19 +74,22 @@ public class Megauploadcom extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
         br.setAcceptLanguage("en, en-gb;q=0.8");
-
-        br.postPage("http://megaupload.com/en/", "login=" + account.getUser() + "&password=" + account.getPass());
-        String cookie = br.getCookie("http://megaupload.com", "user");
-        if (cookie == null) {
+        try {
+            login(account);
+        } catch (PluginException e) {
             ai.setValid(false);
             return ai;
         }
+        if (!this.isPremium()) {
+            ai.setStatus("Free Membership");
+            ai.setValid(true);
+            return ai;
+        }
+        String cookie = br.getCookie("http://megaupload.com", "user");
         br.getPage("http://www.megaupload.com/xml/premiumstats.php?confirmcode=" + cookie + "&language=en&uniq=" + System.currentTimeMillis());
         String days = br.getRegex("daysremaining=\"(\\d*?)\"").getMatch(0);
         ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(days) * 24 * 50 * 50 * 1000));
         if (days == null || days.equals("0")) ai.setExpired(true);
-        // /xml/rewardpoints.php?confirmcode=ed4f6c040c12111d9aae6fa0cc046861&
-        // language=en&uniq=1218486921448
         br.getPage("http://www.megaupload.com/xml/rewardpoints.php?confirmcode=" + br.getCookie("http://megaupload.com", "user") + "&language=en&uniq=" + System.currentTimeMillis());
         String points = br.getRegex("availablepoints=\"(\\d*?)\"").getMatch(0);
         ai.setPremiumPoints(Integer.parseInt(points));
@@ -98,29 +100,52 @@ public class Megauploadcom extends PluginForHost {
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
+        login(account);
+        if (!this.isPremium()) {
+            simultanpremium = 1;
+            handleFree0(downloadLink);
+            return;
+        } else {
+            if (simultanpremium + 1 > 20) {
+                simultanpremium = 20;
+            } else {
+                simultanpremium++;
+            }
+        }
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
-        br.postPage("http://megaupload.com/de/", "login=" + account.getUser() + "&password=" + account.getPass());
-        String cookie = br.getCookie("http://megaupload.com", "user");
-        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account Invalid", LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         String id = Request.parseQuery(link).get("d");
         br.setFollowRedirects(false);
-        String dlUrl = "http://megaupload.com/de/?d=" + id;
+        String dlUrl = "http://megaupload.com/?d=" + id;
         br.getPage(dlUrl);
         if (br.getRedirectLocation() == null) {
             String[] tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
+            if (tmp == null) throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             Character l = (char) Math.abs(Integer.parseInt(tmp[1].trim()));
             String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
             tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
+            if (tmp == null) throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             dlUrl = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
         }
         br.setFollowRedirects(true);
-        br.setDebug(true);
         dl = br.openDownload(downloadLink, dlUrl, true, 0);
         dl.startDownload();
     }
 
     public String getAGBLink() {
         return "http://www.megaupload.com/terms/";
+    }
+
+    public boolean isPremium() {
+        return br.containsHTML("fo.addVariable\\(\"status\",\"\\(premium\\)\"\\);");
+    }
+
+    public void login(Account account) throws IOException, PluginException {
+        br.postPage("http://megaupload.com/en/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+        String cookie = br.getCookie("http://megaupload.com", "user");
+        if (cookie == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
     }
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
@@ -144,9 +169,8 @@ public class Megauploadcom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
-    public void handleFree(DownloadLink parameter) throws Exception {
+    public void handleFree0(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
-        getFileInformation(parameter);
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
         br.setFollowRedirects(true);
@@ -179,38 +203,41 @@ public class Megauploadcom extends PluginForHost {
 
         String pwdata = HTMLParser.getFormInputHidden(br + "", "passwordbox", "passwordcountdown");
         if (pwdata != null && pwdata.indexOf("passkey") > 0) {
-            logger.info("Password protected");
             String pass = Plugin.getUserInput(null, parameter);
 
             br.postPage("http://" + new URL(link).getHost() + "/de/", pwdata + "&pass=" + pass);
 
             if (br.containsHTML(PATTERN_PASSWORD_WRONG)) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
         }
-        sleep(PENDING_WAITTIME, downloadLink);
+        String Waittime = br.getRegex(Pattern.compile("<div style=.*?id=\"downloadhtml\"></div>.*?<script language=\"Javascript\">.*?x\\d+=(\\d+);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (Waittime == null) {
+            sleep(45 * 1000l, downloadLink);
+        } else {
+            sleep(Integer.parseInt(Waittime.trim()) * 1000l, downloadLink);
+        }
 
         String[] tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
         Character l = (char) Math.abs(Integer.parseInt(tmp[1].trim()));
         String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
         tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
         String url = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
-        br.setDebug(true);
-
         dl = br.openDownload(downloadLink, url, true, 1);
-        // dl = RAFDownload.download(downloadLink, br.createRequest(url));
-        // dl.setResume(true);
         if (!dl.getConnection().isOK()) {
-
-            logger.warning("Download Limit!");
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            String wait = dl.getConnection().getHeaderField("Retry-After");
-            dl.getConnection().disconnect();
-            logger.finer("Warten: " + wait + " minuten");
-            if (wait != null) {
-                linkStatus.setValue(Integer.parseInt(wait.trim()) * 60 * 1000);
+            if (dl.getConnection().getHeaderField("Retry-After") != null) {
+                dl.getConnection().disconnect();
+                br.getPage("http://www.megaupload.com/premium/de/?");
+                String wait = br.getRegex("Warten Sie bitte (.*?)Minuten").getMatch(0);
+                if (wait != null) {
+                    linkStatus.setValue(Integer.parseInt(wait.trim()) * 60 * 1000l);
+                } else {
+                    linkStatus.setValue(120 * 60 * 1000);
+                }
+                return;
             } else {
-                linkStatus.setValue(120 * 60 * 1000);
+                dl.getConnection().disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
             }
-            return;
 
         }
         if (!dl.getConnection().isContentDisposition()) {
@@ -227,7 +254,11 @@ public class Megauploadcom extends PluginForHost {
             downloadLink.setChunksProgress(null);
             linkStatus.setStatus(LinkStatus.ERROR_RETRY);
         }
+    }
 
+    public void handleFree(DownloadLink parameter) throws Exception {
+        getFileInformation(parameter);
+        handleFree0(parameter);
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -238,6 +269,10 @@ public class Megauploadcom extends PluginForHost {
         captchaPost = null;
         captchaURL = null;
         fields = null;
+    }
+
+    public int getMaxSimultanPremiumDownloadNum() {
+        return simultanpremium;
     }
 
     public void resetPluginGlobals() {
