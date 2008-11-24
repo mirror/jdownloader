@@ -418,7 +418,7 @@ public class DistributeData extends ControlBroadcaster {
         } else if (startDownload) {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));
             if (JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+                JDUtilities.getController().toggleStartStop();
             }
         } else {
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DISTRIBUTE_FINISHED, links));

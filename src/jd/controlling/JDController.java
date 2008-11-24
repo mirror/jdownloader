@@ -617,7 +617,7 @@ public class JDController implements ControlListener, UIListener {
                 Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
                 addLinksWithoutGrabber(links);
                 if (getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                    fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+                	toggleStartStop();
                 }
             }
 
@@ -1105,6 +1105,10 @@ public class JDController implements ControlListener, UIListener {
         }
         return null;
     }
+    
+    public void loadContainerFile(final File file) {
+    	loadContainerFile(file, false, false);
+    }
 
     /**
      * Hiermit wird eine Containerdatei geöffnet. Dazu wird zuerst ein passendes
@@ -1113,7 +1117,7 @@ public class JDController implements ControlListener, UIListener {
      * @param file
      *            Die Containerdatei
      */
-    public void loadContainerFile(final File file) {
+    public void loadContainerFile(final File file, final boolean hideGrabber, final boolean startDownload) {
         new Thread() {
             @SuppressWarnings("unchecked")
             public void run() {
@@ -1172,7 +1176,11 @@ public class JDController implements ControlListener, UIListener {
                         JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDUtilities.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
                         // schickt die Links zuerst mal zum Linkgrabber
                     }
-                    uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
+                    if (hideGrabber) addLinksWithoutGrabber((Vector<DownloadLink>) downloadLinks);
+                    else uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
+                    if (startDownload && getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
+                    	
+                    }
                 }
                 progress.finalize();
             }

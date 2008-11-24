@@ -266,10 +266,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
 
                 logger.info(currentArg + " parameter");
                 if (controller.getDownloadStatus() == JDController.DOWNLOAD_RUNNING) {
-                    // only in this way the button state is correctly set
-                    // stopDownloads() is called by button itself so it cannot
-                    // handle this
-                    controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+                	JDUtilities.getController().toggleStartStop();
                 }
 
             } else if (currentArg.equals("--show") || currentArg.equals("-s")) {
@@ -408,7 +405,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         }
 
         for (int i = 0; i < containersToAdd.size(); i++) {
-            controller.loadContainerFile(new File(containersToAdd.get(i)));
+            controller.loadContainerFile(new File(containersToAdd.get(i)), hideGrabber, startDownload);
         }
 
         String linksToAddString = "";
@@ -426,10 +423,7 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         } else if (startDownload) {
 
             if (controller.getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                // only in this way the button state is correctly set
-                // startDownloads() is called by button itself so it cannot
-                // handle this
-                controller.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_STARTSTOP_DOWNLOAD, this));
+                controller.toggleStartStop();
             }
 
         }
