@@ -113,14 +113,15 @@ public class Gwarezcc extends PluginForDecrypt {
                     String linkString = null;
 
                     for (int i = 0; i < 10; i++) {
-                        // viele links werden auch ohne recaptcha angeboten. deshalb wird der check zuerst gemacht.
+                        // viele links werden auch ohne recaptcha angeboten.
+                        // deshalb wird der check zuerst gemacht.
                         linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
                         if (linkString != null) break;
                         String k = br.getRegex("<script type=\"text/javascript\" src=\"http://api.recaptcha.net/challenge\\?k=(.*?)\"></script>").getMatch(0);
                         Browser rcBr = br.cloneBrowser();
                         rcBr.getPage("http://api.recaptcha.net/challenge?k=" + k);
                         String challenge = rcBr.getRegex("challenge : '(.*?)',").getMatch(0);
-                        String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);                  
+                        String server = rcBr.getRegex("server : '(.*?)',").getMatch(0);
                         String captchaAddress = server + "image?c=" + challenge;
                         File captchaFile = this.getLocalCaptchaFile(this);
                         Browser.download(captchaFile, rcBr.openGetConnection(captchaAddress));
@@ -129,18 +130,22 @@ public class Gwarezcc extends PluginForDecrypt {
                         forms[ii].put("recaptcha_challenge_field", challenge);
                         forms[ii].put("recaptcha_response_field", code);
                         br.submitForm(forms[ii]);
-                       
+
                     }
-                    if(linkString==null) linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
-                    
+                    if (linkString == null) linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
+
                     this.progress.increase(1);
                     // String linkString = gWarezDecrypt(parts[ii]);
                     Vector<DownloadLink> links = new DistributeData(linkString).findLinks(false);
                     if (links.size() == 0) continue;
-                    DownloadLink link = links.lastElement();
-                    link.setSourcePluginComment("gwarez.cc - load and play your favourite game");
-                    link.addSourcePluginPassword(password);
-                    decryptedLinks.add(link);
+                    for (DownloadLink l : links) {
+                        if (l.isAvailable()) {
+
+                            l.setSourcePluginComment("gwarez.cc - load and play your favourite game");
+                            l.addSourcePluginPassword(password);
+                            decryptedLinks.add(l);
+                        }
+                    }
                 }
             }
         } else if (parameter.matches(patternLink_Download_DLC.pattern())) {
