@@ -133,6 +133,7 @@ br.setFollowRedirects(true);
             String filesize = br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(0).trim() + " " + br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(1);
             if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setName(filename.trim());
+            downloadLink.setDupecheckAllowed(true);
             downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
             return true;
         } else {

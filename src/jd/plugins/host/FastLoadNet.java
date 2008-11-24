@@ -84,6 +84,7 @@ public class FastLoadNet extends PluginForHost {
         if (filename != null) {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(fileSize);
+            downloadLink.setDupecheckAllowed(true);
             return true;
         }
 

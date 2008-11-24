@@ -58,6 +58,7 @@ public class VimeoCom extends PluginForHost {
         downloadLink.setDownloadSize(br.getRequest().getContentLength());
         if (title == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(title);
+        downloadLink.setDupecheckAllowed(true);
 
         return true;
     }
