@@ -13,6 +13,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class DosyakaydetCom extends PluginForHost {
 
@@ -45,20 +46,29 @@ public class DosyakaydetCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
-        getFileInformation(downloadLink);
-        String captchaUrl = br.getRegex("<img class=\"captchapict\" src=\"(.*?)\"").getMatch(0);
-        File captchaFile = this.getLocalCaptchaFile(this);
-        try {
-            Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
-        } catch (Exception e) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
-        Form form = br.getForm(0);
-        form.put("private_key", captchaCode);
-        br.setFollowRedirects(false);
-        br.submitForm(form);
+        // 15 Cpatcha versuche
+        downloadLink.getLinkStatus().setStatusText(JDLocale.L("plugins.host.dosyakaydet.breakcaptcha", "Waiting for OCR"));
+        downloadLink.requestGuiUpdate();
+        for (int i = 0; i < 15; i++) {
+            getFileInformation(downloadLink);
+            String captchaUrl = br.getRegex("<img class=\"captchapict\" src=\"(.*?)\"").getMatch(0);
+            File captchaFile = this.getLocalCaptchaFile(this);
+            try {
+                Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
+            } catch (Exception e) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+            if (captchaCode == null) break;
+            Form form = br.getForm(0);
+            form.put("private_key", captchaCode);
+            br.setFollowRedirects(false);
+            br.submitForm(form);
+            if (!br.containsHTML("Kod yanl&#305;&#351;. Tekrar deneyin:")) {
+                break;
 
+            }
+        }
         String dlLink = br.getRedirectLocation();
         if (dlLink == null) {
             if (br.containsHTML("Kod yanl&#305;&#351;. Tekrar deneyin:")) {
