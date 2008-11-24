@@ -1670,7 +1670,7 @@ public class JDUtilities {
             e.printStackTrace();
             return false;
         }
-    }
+    } 
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
         if (dbconnect == null) {
