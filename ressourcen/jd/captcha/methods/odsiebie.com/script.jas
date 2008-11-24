@@ -3,7 +3,7 @@
 ##### erkennung nötig sind                                                              #####
 #####################################---------------------###################################
 ##############Set parameter
-param.simplifyFaktor = 2;
+param.simplifyFaktor = 1;
 param.trainOnlyUnknown=true;
 param.colorType = RGB;
 
@@ -13,12 +13,12 @@ param.borderVarianceX=5;
 param.borderVarianceY=5;
 param.scanVarianceX=5;
 param.scanVarianceY=5;
-param.overlayNoiseSize=4;
+param.overlayNoiseSize=0;
 param.intersectionDimensionWeight=0.3;
 param.minCleftSize=3;
 param.scanAngleLeft=0;
 param.scanAngleRight=0;
-param.scanAngleSteps=2;
+param.scanAngleSteps=0;
 param.errorAWeight=1;
 param.errorBWeight=6;
 param.coverageFaktorAWeight=3;
@@ -28,31 +28,18 @@ param.cleftFaktor=0.6;
 param.LetterSearchLimitPerfectPercent=5;
 param.quickScanReliabilityLimit=3.0;
 param.quickScanValityLimit=5.0;
-param.preScanFilter=80;
+param.preScanFilter=50;
 param.preScanFaktor=3;
-param.autoLetterNum=false;
-
-param.usepeakgapdetection=false;
-param.useaveragegapdetection=false;
-param.splitPixelObjectsOverlap=4;
-param.objectColorContrast = 0.1; 
-param.objectDetectionContrast = 0.99999;
-param.useObjectDetection = true;
-param.minimumObjectArea = 75;
+param.autoLetterNum=true;
 
 ############################
 
 ############Parameter die die Freistellung beeinflussen
-
+param.useSpecialGetLetters=OdsiebieCaptcha.getLetters;
+param.useLetterFilter=OdsiebieCaptcha.letterFilter;
 ############Parameter die die Bildbearbeitung beeinflussen
 param.backgroundsamplecleancontrast=0.11;
-param.RelativeContrast=0.9999;
 param.alignAngleSteps=2;
-
-
-letter.prepare.toBlackAndWhite();
-#letter.prepare.invert();
-#letter.prepare.align(-30,30);
 
 
 
