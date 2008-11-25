@@ -88,7 +88,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
 
         if (e.getSource() == add) {
             int a = v.size() + 1;
-            v.add(new ScheduleFrame("Schedule " + a));
+            v.add(new ScheduleFrame(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + a));
             reloadList();
             SwingUtilities.updateComponentTreeUI(this);
         }
@@ -168,7 +168,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
             list.add(s[i]);
         }
         if (size == 0) {
-            list.add("Create");
+            list.add(JDLocale.L("addons.schedule.menu.create", "Create"));
         }
 
     }
