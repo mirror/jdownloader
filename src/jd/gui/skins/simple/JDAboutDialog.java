@@ -97,7 +97,7 @@ public class JDAboutDialog {
         JPanel links = new JPanel();
         links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), "http://www.jdownloader.org/home")));
         links.add(new JSeparator());
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), "http://www.the-lounge.org/viewforum.php?f=291")));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), "http://www.the-lounge.org/viewforum.php?f=340")));
         links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), "http://www.jdownloader.org/support")));
 
