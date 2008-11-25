@@ -64,7 +64,7 @@ public class FilesTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
@@ -85,8 +85,8 @@ public class FilesTo extends PluginForHost {
         br.submitForm(captchaForm);
 
         if (br.containsHTML("Der eingegebene code ist falsch")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
-        br.openDownload(downloadLink, br.getRegex("action\\=\"(http://.*?files\\.to/dl/.*?)\">").getMatch(0), true, 1).startDownload();
+        String url = br.getRegex("<form id=\"dlform\".*?action\\=\"(http://.*?files\\.to/.*?)\">").getMatch(0);
+        br.openDownload(downloadLink, url, true, 1).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
