@@ -95,11 +95,11 @@ public class JDAboutDialog {
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel();
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), "http://jdownloader.net/index_en.php")));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), "http://www.jdownloader.org/home")));
         links.add(new JSeparator());
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), "http://jdownloader.net/support_en.php")));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), "http://www.the-lounge.org/viewforum.php?f=291")));
         links.add(new JSeparator());
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), "http://jdownloader.net/chat_en.php")));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), "http://www.jdownloader.org/support")));
 
         JPanel s = new JPanel(new BorderLayout(n, n));
         s.add(new JScrollPane(table), BorderLayout.CENTER);
