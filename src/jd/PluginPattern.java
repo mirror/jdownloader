@@ -61,7 +61,7 @@ public class PluginPattern {
 
     static public final String decrypterPattern_Redirecter_Plugin() {
         StringBuilder completePattern = new StringBuilder();
-        String[] list = { "http://[\\w\\.]*?fyad\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?is\\.gd/[a-zA-Z0-9]+", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*?rurl\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+" };
+        String[] list = { "http://[\\w\\.]*?fyad\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?is\\.gd/[a-zA-Z0-9]+", "http://[\\w\\.]*?redirect\\.wayaround\\.org/[a-zA-Z0-9]+/(.*)", "http://[\\w\\.]*?rurl\\.org/[a-zA-Z0-9]+", "http://[\\w\\.]*?tinyurl\\.com/[a-zA-Z0-9\\-]+", "http://[\\w\\.]*?smarturl\\.eu/\\?[a-zA-Z0-9]+" };
         for (String pattern : list) {
             if (completePattern.length() > 0) {
                 completePattern.append("|");

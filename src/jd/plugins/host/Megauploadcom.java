@@ -76,9 +76,14 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public int usePort() {
-        if (JDUtilities.getConfiguration().getIntegerProperty(MU_PARAM_PORT) == 1) return 800;
-        if (JDUtilities.getConfiguration().getIntegerProperty(MU_PARAM_PORT) == 2) return 1723;
-        return 80;
+        switch (JDUtilities.getConfiguration().getIntegerProperty(MU_PARAM_PORT)) {
+        case 1:
+            return 800;
+        case 2:
+            return 1723;
+        default:
+            return 80;
+        }
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {

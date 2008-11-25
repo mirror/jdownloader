@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -52,7 +51,7 @@ public class FileBaseTo extends PluginForHost {
             br.getPage(url + "&dl=1");
         }
 
-        if (br.containsHTML("Vielleicht wurde der Eintrag")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML("Vielleicht wurde der Eintrag")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String size = br.getRegex("<font style=\"font-size: 9pt;\" face=\"Verdana\">Datei.*?font-size: 9pt\">(.*?)</font>").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(size));
         return true;
@@ -61,38 +60,35 @@ public class FileBaseTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-  
-    
-     
+
         getFileInformation(downloadLink);
 
-        String url = downloadLink.getDownloadURL()+ "&dl=1";
+        String url = downloadLink.getDownloadURL() + "&dl=1";
         br.getPage(url);
         Form caform = null;
         br.setFollowRedirects(true);
         int i = 5;
         while ((caform = br.getFormbyValue("Ok!")) != null) {
-            if (i-- <= 0) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+            if (i-- <= 0) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             File captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
-            Browser.download(captchaFile, br.openGetConnection(br.getRegex("<img src=\"(http://filebase.to/captcha/CaptchaImage.php.*?)\" alt=\"\">").getMatch(0)));
+            Browser.download(captchaFile, br.openGetConnection("http://filebase.to" + br.getRegex("<img src=\"(/captcha/CaptchaImage\\.php.*?)\" alt=\"\">").getMatch(0)));
             String capTxt = Plugin.getCaptchaCode(this, "datenklo.net", captchaFile, false, downloadLink);
             caform.put("uid", capTxt);
-            caform.action = url;  
+            caform.action = url;
             br.submitForm(caform);
 
         }
 
         Form dlForm = br.getFormbyName("waitform");
-        String value = br.getRegex(Pattern.compile("document\\.waitform\\.wait\\.value = \"(.*?)\";", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String value = br.getRegex("document\\.waitform\\.wait\\.value = \"(.*?)\";").getMatch(0);
 
         dlForm.put("wait", value);
-        br.openDownload(downloadLink, dlForm,true,0).startDownload();
+        br.openDownload(downloadLink, dlForm, true, 1).startDownload();
 
     }
 
