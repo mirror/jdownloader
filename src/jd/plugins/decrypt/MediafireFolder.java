@@ -44,11 +44,12 @@ public class MediafireFolder extends PluginForDecrypt {
         progress.setRange(links.length);
 
         for (String[] element : links) {
-
-            DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
-            link.setName(element[1]);
-            link.setDownloadSize(Long.parseLong(element[2]));
-            decryptedLinks.add(link);
+            if (!element[2].equalsIgnoreCase("0")) {
+                DownloadLink link = createDownloadlink("http://www.mediafire.com/download.php?" + element[0]);
+                link.setName(element[1]);
+                link.setDownloadSize(Long.parseLong(element[2]));
+                decryptedLinks.add(link);
+            }
             progress.increase(1);
         }
 

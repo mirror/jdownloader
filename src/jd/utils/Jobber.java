@@ -115,7 +115,7 @@ public class Jobber {
     public void stop() {
         this.running = false;
         for (Worker w : workerList) {
-            w.interrupt();
+            if (w != null) w.interrupt();
         }
     }
 
