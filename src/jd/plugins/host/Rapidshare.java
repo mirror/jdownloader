@@ -16,7 +16,6 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -80,8 +79,6 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_PRESELECTED_SERVER = Pattern.compile("<form name=\"dlf?\" action=\"(.*?)\" method=\"post\">");
 
     private static final Pattern PATTERN_FIND_TICKET_WAITTIME = Pattern.compile("var c=([\\d]*?);");
-
-    private static final Pattern PATTERN_MATCHER_DOWNLOAD_ERRORPAGE = Pattern.compile("(RapidShare)", Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(2 minute)");
 
@@ -379,28 +376,12 @@ public class Rapidshare extends PluginForHost {
         // Download
         dl = new RAFDownload(this, downloadLink, request);
 
-        dl.connect();
-
-        if (dl.startDownload()) {
-
-            if (new File(downloadLink.getFileOutput()).length() < 8000) {
-                String page = JDUtilities.getLocalFile(new File(downloadLink.getFileOutput()));
-                error = findError(page + "");
-                if (page.contains("The download cannot be provided")) {
-                    new File(downloadLink.getFileOutput()).delete();
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Local IO Error (Javascripterror)");
-                }
-                if (Regex.matches(page, PATTERN_MATCHER_DOWNLOAD_ERRORPAGE)) {
-                    downloadLink.getLinkStatus().setStatusText("Download error(>log)");
-                    logger.severe("Error detected. " + JDUtilities.getLocalFile(new File(downloadLink.getFileOutput())));
-                    new File(downloadLink.getFileOutput()).delete();
-                    throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
-                }
-
-            }
-
+        HTTPConnection con = dl.connect();
+        if (!con.isContentDisposition() && con.getHeaderField("Cache-Control") != null) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
-
+        dl.startDownload();
     }
 
     /**
