@@ -92,6 +92,7 @@ public class MegasharesCom extends PluginForHost {
         if (!checkPassword(downloadLink)) { return; }
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, dlLink, true, 0);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
