@@ -58,7 +58,7 @@ public class PackageCreaterRS {
         });
         // ArrayList<File> upload = new ArrayList<File>();
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("<packages>");
         String uid = "jdown4";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);

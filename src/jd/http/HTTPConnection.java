@@ -260,7 +260,7 @@ public class HTTPConnection {
 
     public String toString() {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("-->" + this.getURL() + "\r\n");
         sb.append("----------------Request------------------\r\n");
         sb.append(connection.getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");

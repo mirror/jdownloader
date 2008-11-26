@@ -132,8 +132,8 @@ public class Regex {
         matcher = Pattern.compile(pattern, flags).matcher(data);
     }
 
-     // Gibt die Anzahl der Treffer zurück
-     
+    // Gibt die Anzahl der Treffer zurück
+
     public int count() {
         if (matcher == null) { return 0; }
         matcher.reset();
@@ -156,14 +156,14 @@ public class Regex {
     }
 
     // Gibt den matcher aus
-     
+
     public Matcher getMatcher() {
         matcher.reset();
         return matcher;
     }
 
-    // Gibt alle Treffer eines Matches in einem 2D array aus 
-    
+    // Gibt alle Treffer eines Matches in einem 2D array aus
+
     public String[][] getMatches() {
         if (matcher == null) { return null; }
         Matcher matchertmp = matcher;
@@ -207,7 +207,7 @@ public class Regex {
     }
 
     // Setzt den Matcher
-   
+
     public void setMatcher(Matcher matcher) {
         this.matcher = matcher;
     }
@@ -328,14 +328,16 @@ public class Regex {
         return Integer.parseInt(hours) * 60 * 60 * 1000 + Integer.parseInt(minutes) * 60 * 1000 + Integer.parseInt(seconds) * 1000;
 
     }
+
     /**
      * Setzt vor alle Steuerzeichen ein \
+     * 
      * @param pattern
      * @return
-    */
+     */
     public static String escape(String pattern) {
         char[] specials = new char[] { '(', '[', '{', '\\', '^', '-', '$', '|', ']', '}', ')', '?', '*', '+', '.' };
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.setLength(pattern.length());
         char act;
         for (int i = 0; i < pattern.length(); i++) {
@@ -345,7 +347,7 @@ public class Regex {
                     sb.append('\\');
                     break;
                 }
-                
+
             }
             sb.append(act);
         }

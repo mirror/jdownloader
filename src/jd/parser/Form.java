@@ -391,7 +391,7 @@ public class Form {
      * @return
      */
     public String getPropertyString() {
-        StringBuffer stbuffer = new StringBuffer();
+        StringBuilder stbuffer = new StringBuilder();
         boolean first = true;
         for (Map.Entry<String, InputField> entry : vars.entrySet()) {
             if (first) {

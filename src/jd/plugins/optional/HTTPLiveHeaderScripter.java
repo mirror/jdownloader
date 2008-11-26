@@ -189,7 +189,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
             sb.append("     [[[STEP]]]" + "\r\n");
@@ -203,7 +203,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.indexOf("[[[STEP]]]"), script.indexOf("[[[HSRC]]]") + 9);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
             sb.append("     [[[STEP]]]" + "\r\n");
@@ -216,7 +216,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             if (!validate()) { return; }
             String script = textArea.getText();
             int id = Math.max(script.lastIndexOf("[[[/STEP]]]") + 11, script.lastIndexOf("[[[HSRC]]]") + 9);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(script.substring(0, id).trim());
             sb.append("\r\n");
             sb.append("     [[[STEP]]]" + "\r\n");
@@ -238,7 +238,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
         ArrayList<String> ips = new ArrayList<String>();
         String[] requests = script.split("----------------------------------------------------------");
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String request : requests) {
 
             String[] lines = Regex.getLines(request.trim());
@@ -297,7 +297,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         int i = 0;
 
         String sc = sb.toString();
-        sb = new StringBuffer();
+        sb = new StringBuilder();
         sb.append("     [[[STEP]]]" + "\r\n");
         sb.append("          [[[DEFINE");
         for (String ip : ips) {
@@ -316,7 +316,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
         sb.append("     [[[/STEP]]]" + "\r\n");
         i++;
 
-        StringBuffer ret = new StringBuffer();
+        StringBuilder ret = new StringBuilder();
         ret.append("[[[HSRC]]]" + "\r\n");
         ret.append(sb);
         ret.append(sc);
@@ -327,11 +327,15 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        /*if (frame == null || !frame.isVisible()) {
-            menu.add(new MenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.action.start", "Start Scripter"), 0).setActionListener(this));
-        } else {
-            menu.add(new MenuItem(JDLocale.L("plugins.optional.httpliveheaderscripter.action.end", "Exit Scripter"), 0).setActionListener(this));
-        }*/
+        /*
+         * if (frame == null || !frame.isVisible()) { menu.add(new
+         * MenuItem(JDLocale
+         * .L("plugins.optional.httpliveheaderscripter.action.start",
+         * "Start Scripter"), 0).setActionListener(this)); } else { menu.add(new
+         * MenuItem
+         * (JDLocale.L("plugins.optional.httpliveheaderscripter.action.end",
+         * "Exit Scripter"), 0).setActionListener(this)); }
+         */
         menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }

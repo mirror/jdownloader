@@ -427,7 +427,7 @@ public class HTTP {
             rd = new BufferedReader(new InputStreamReader(urlInput.getInputStream()));
         }
         String line;
-        StringBuffer htmlCode = new StringBuffer();
+        StringBuilder htmlCode = new StringBuilder();
         while ((line = rd.readLine()) != null) {
             htmlCode.append(line + "\n");
         }

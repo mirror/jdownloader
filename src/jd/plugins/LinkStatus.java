@@ -25,7 +25,7 @@ import jd.utils.JDUtilities;
 public class LinkStatus implements Serializable {
     // Controlling Zeigt an, dass der Link gerade heruntergeladen wird
     public static final int DOWNLOADINTERFACE_IN_PROGRESS = 1 << 10;
- 
+
     // Controlling Die AGB wurde noch nicht unterzeichnet.
     public static final int ERROR_AGB_NOT_SIGNED = 1 << 16;
     /**
@@ -33,7 +33,7 @@ public class LinkStatus implements Serializable {
      * schon existiert
      */
     public static final int ERROR_ALREADYEXISTS = 1 << 13;
-    
+
     // PLugins: Captcha Text war falsch
     public final static int ERROR_CAPTCHA = 1 << 3;
     /**
@@ -41,7 +41,7 @@ public class LinkStatus implements Serializable {
      * Downloadinterface fehlgeschlagen ist. z.B. Misslungender Chunkload
      */
     public static final int ERROR_DOWNLOAD_FAILED = 1 << 14;
-   
+
     // Downloadinterface Zeigt an dass der Link nicht vollständig geladen wurde
     public static final int ERROR_DOWNLOAD_INCOMPLETE = 1 << 9;
     /**
@@ -49,10 +49,10 @@ public class LinkStatus implements Serializable {
      * sofort abgebrochen. Es werden keine weiteren versuche mehr gestartet
      */
     public static final int ERROR_FATAL = 1 << 17;
-    
+
     // Plugins & Downloadinterface: Die Datei konnte nicht gefunden werden
     public final static int ERROR_FILE_NOT_FOUND = 1 << 5;
-    
+
     // Plugins: Download Limit wurde erreicht
     public final static int ERROR_IP_BLOCKED = 1 << 4;
     /**
@@ -119,7 +119,7 @@ public class LinkStatus implements Serializable {
     public static final int WAITING_USERIO = 1 << 23;
     public static final int ERROR_POST_PROCESS = 1 << 24;
     private static final long serialVersionUID = 3885661829491436448L;
-    
+
     // Controlling: Link muß noch bearbeitet werden.
     public final static int TODO = 1 << 0;
     public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
@@ -221,7 +221,7 @@ public class LinkStatus implements Serializable {
         if (hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
             if (getErrorMessage() != null) {
                 ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s", getErrorMessage());
-            }else if (getStatusText() != null) {
+            } else if (getStatusText() != null) {
                 ret += JDLocale.LF("gui.downloadlink.errorpostprocess", "[failed] %s", getStatusText());
             } else {
                 ret += JDLocale.L("gui.downloadlink.errorpostprocess2", "[convert failed]");
@@ -403,7 +403,7 @@ public class LinkStatus implements Serializable {
     public String toString() {
         Class<? extends LinkStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(JDUtilities.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
         String latest = "";
         for (Field field : fields) {

@@ -27,7 +27,6 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -150,12 +149,12 @@ public class SingleDownloadController extends Thread {
 
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
-         
+
             } catch (Exception e) {
                 e.printStackTrace();
                 linkStatus.addStatus(LinkStatus.ERROR_FATAL);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
-             
+
             }
 
             if (isAborted()) {
@@ -248,9 +247,10 @@ public class SingleDownloadController extends Thread {
     private void onErrorPluginDefect(DownloadLink downloadLink2, PluginForHost currentPlugin2) {
         logger.severe(" The PLugin for " + currentPlugin.getHost() + " seems to be out of date. Please inform the Support-team http://jdownloader.org/support.");
         logger.severe(downloadLink2.getLinkStatus().getErrorMessage());
-        //Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
-   
-        logger.finest(currentPlugin2.getBrowser()+"");
+        // Dieser Exception deutet meistens auf einen PLuginfehler hin. Deshalb
+        // wird in diesem Fall die zuletzt geladene browserseite aufgerufen.
+
+        logger.finest(currentPlugin2.getBrowser() + "");
         downloadLink2.getLinkStatus().addStatus(LinkStatus.ERROR_FATAL);
         downloadLink2.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.pluindefekt", "Plugin out of date"));
 

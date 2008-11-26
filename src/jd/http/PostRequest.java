@@ -73,7 +73,7 @@ public class PostRequest extends Request {
     public String getPostDataString() {
         if (postData.isEmpty()) { return null; }
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
 
         for (Map.Entry<String, String> entry : postData.entrySet()) {
             buffer.append("&");

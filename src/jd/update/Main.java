@@ -133,7 +133,7 @@ public class Main {
         cont.add(comp, cons);
     }
 
-    private static void log(StringBuffer log, String string) {
+    private static void log(StringBuilder log, String string) {
         log.append(string);
         System.out.println(string);
 
@@ -141,7 +141,7 @@ public class Main {
 
     @SuppressWarnings("unchecked")
     public static void main(String args[]) {
-        final StringBuffer log = new StringBuffer();
+        final StringBuilder log = new StringBuilder();
         boolean OSFilter = true;
 
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
@@ -278,10 +278,8 @@ public class Main {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
-    
         for (int i = 0; i < args.length; i++) {
 
-           
             if (args[i].trim().equalsIgnoreCase("/nofilter")) {
                 OSFilter = false;
             }
@@ -309,20 +307,18 @@ public class Main {
             String str;
             if (JOptionPane.showConfirmDialog(frame, str = utils.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
                 Main.log(log, "Abort due to warnings " + str);
-               
-                    new File("updatewarnings.html").delete();
-                    new File("updatewarnings.html").deleteOnExit();
-                    if (new File("webcheck.tmp").exists()) {
-                        new File("webcheck.tmp").delete();
-                    }
-                    Main.log(log, "Local: " + new File("").getAbsolutePath());
-                    Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
-                    
-                        Main.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
-                        // }
-                    
 
-               
+                new File("updatewarnings.html").delete();
+                new File("updatewarnings.html").deleteOnExit();
+                if (new File("webcheck.tmp").exists()) {
+                    new File("webcheck.tmp").delete();
+                }
+                Main.log(log, "Local: " + new File("").getAbsolutePath());
+                Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
+
+                Main.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+                // }
+
                 logWindow.setText(log.toString());
                 Main.writeLocalFile(new File("updateLog.txt"), log.toString());
                 try {
@@ -427,17 +423,14 @@ public class Main {
         logWindow.setText(log.toString());
         Main.trace(new File("updateLog.txt").getAbsoluteFile());
 
-   
-            if (new File("webcheck.tmp").exists()) {
-                new File("webcheck.tmp").delete();
-            }
-            Main.log(log, "Local: " + new File("").getAbsolutePath());
-         
-            Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
-              Main.runCommand("java", new String[] { "-jar","-Xmx512m","JDownloader.jar" }, new File("").getAbsolutePath(), 0);
-         
+        if (new File("webcheck.tmp").exists()) {
+            new File("webcheck.tmp").delete();
+        }
+        Main.log(log, "Local: " + new File("").getAbsolutePath());
 
-        
+        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
+        Main.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+
         logWindow.setText(log.toString());
         Main.writeLocalFile(new File("updateLog.txt"), log.toString());
         try {
@@ -473,7 +466,7 @@ public class Main {
                 tmp.add(element.trim());
             }
         }
-       
+
         params = tmp.toArray(new String[] {});
         ProcessBuilder pb = new ProcessBuilder(params);
 

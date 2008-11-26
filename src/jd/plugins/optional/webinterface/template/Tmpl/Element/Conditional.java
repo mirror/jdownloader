@@ -90,7 +90,7 @@ public class Conditional extends Element {
             setControlValue(params.get(name));
         }
 
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
 
         Enumeration<?> de;
         if (type.equals("if") && control_val || type.equals("unless") && !control_val) {

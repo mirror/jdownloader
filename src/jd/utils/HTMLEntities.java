@@ -132,7 +132,7 @@ public class HTMLEntities {
             HTMLEntities.initializeEntitiesTables();
         }
 
-        StringBuffer buf = new StringBuffer(); // the otput string buffer
+        StringBuilder buf = new StringBuilder(); // the otput string buffer
 
         for (int i = 0; i < str.length(); ++i) {
             char ch = str.charAt(i);
@@ -246,7 +246,7 @@ public class HTMLEntities {
             HTMLEntities.initializeEntitiesTables();
         }
 
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         for (int i = 0; i < str.length(); ++i) {
             char ch = str.charAt(i);

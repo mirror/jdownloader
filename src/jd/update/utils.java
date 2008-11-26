@@ -45,6 +45,7 @@ public class utils {
         return null;
 
     }
+
     public static String getLocalFile(File file) {
         if (!file.exists()) { return ""; }
         BufferedReader f;
@@ -52,7 +53,7 @@ public class utils {
             f = new BufferedReader(new FileReader(file));
 
             String line;
-            StringBuffer ret = new StringBuffer();
+            StringBuilder ret = new StringBuilder();
             String sep = System.getProperty("line.separator");
             while ((line = f.readLine()) != null) {
                 ret.append(line + sep);
@@ -65,6 +66,7 @@ public class utils {
         }
         return "";
     }
+
     public static void saveObject(Object objectToSave, File fileOutput) {
 
         if (fileOutput != null) {

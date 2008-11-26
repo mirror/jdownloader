@@ -127,7 +127,7 @@ public class Replacer {
 
     private static String replace(String in, String remove, String replace) {
         if (in == null || remove == null || remove.length() == 0) { return in; }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         int oldIndex = 0;
         int newIndex = 0;
         int remLength = remove.length();

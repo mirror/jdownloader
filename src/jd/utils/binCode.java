@@ -37,7 +37,7 @@ public class binCode {
             String[] sts = bin.split("\\|");
             String[] codeArray = binCode.binArrayToCodeArray(sts);
             int minCount = sts[0].length();
-            StringBuffer ret = new StringBuffer();
+            StringBuilder ret = new StringBuilder();
             ret.append(minCount);
             for (int i = 0; i < sts.length; i++) {
                 ret.append("|" + codeArray[i]);
@@ -61,7 +61,7 @@ public class binCode {
     public static String codeToString(String code) {
         try {
             String[] binArray = binCode.codeToStringArray(code);
-            StringBuffer ret = new StringBuffer();
+            StringBuilder ret = new StringBuilder();
             boolean last = false;
             for (String element : binArray) {
                 ret.append((last ? "|" : "") + element);

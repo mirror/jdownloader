@@ -111,7 +111,7 @@ public class HTMLTooltip extends JWindow implements MouseListener, HyperlinkList
 
     public String getCSSString() {
         if (styles == null) { return ""; }
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("<style>");
         sb.append("\r\n");
 

@@ -89,7 +89,7 @@ public class HTMLEntities {
             HTMLEntities.initializeEntitiesTables();
         }
 
-        StringBuffer buf = new StringBuffer();
+        StringBuilder buf = new StringBuilder();
 
         for (int i = 0; i < str.length(); ++i) {
             char ch = str.charAt(i);

@@ -80,7 +80,7 @@ public class Util {
     }
 
     public static String escapeURL(String url) {
-        StringBuffer s = new StringBuffer();
+        StringBuilder s = new StringBuilder();
         String no_escape = "./-_";
 
         for (int i = 0; i < url.length(); i++) {

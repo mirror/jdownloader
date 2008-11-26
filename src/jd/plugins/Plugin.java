@@ -169,7 +169,7 @@ public abstract class Plugin implements ActionListener {
      * @return Key-value pairs
      */
     public static String joinMap(Map<String, String> map, String delPair, String delMap) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean first = true;
         for (Map.Entry<String, String> entry : map.entrySet()) {
             if (first) {

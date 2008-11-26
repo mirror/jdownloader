@@ -112,7 +112,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
 
             Configuration configuration = JDUtilities.getConfiguration();
 
-            StringBuffer b = new StringBuffer();
+            StringBuilder b = new StringBuilder();
             for (String element : JDRR.steps) {
                 b.append(element + System.getProperty("line.separator"));
             }

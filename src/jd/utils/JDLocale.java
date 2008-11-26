@@ -34,13 +34,9 @@ import jd.utils.io.JDIO;
  */
 public class JDLocale {
 
-    public static final String LOCALE_EDIT_MODE = "LOCALE_EDIT_MODE";
-
     private static HashMap<String, String> data = new HashMap<String, String>();
 
     private static HashMap<String, String> defaultData = new HashMap<String, String>();
-
-//    private static HashMap<String, String> missingData = new HashMap<String, String>();
 
     private static final String DEFAULTLANGUAGE = "english";
 
@@ -93,10 +89,7 @@ public class JDLocale {
             def = defaultData.get(key);
         }
         data.put(key, def);
-//        missingData.put(key, Encoding.UTF8Encode(def));
 
-//        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
-//        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".missing"), missingData);
         return def;
 
     }
@@ -148,33 +141,9 @@ public class JDLocale {
             }
 
         }
-//        if (dupes) {
-//            System.out.println("Duplicate entries found in " + file + ". Wrote fixed Version to " + new File(file.getAbsolutePath() + ".nodupes"));
-//            JDLocale.saveData(new File(file.getAbsolutePath() + ".nodupes"), dat);
-//        }
+
         return dat;
     }
-
-//    private static void saveData(File lc, HashMap<String, String> dat) {
-//
-//        if (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(JDLocale.LOCALE_EDIT_MODE, false)) return;
-//
-//        if (lc == null) lc = localeFile;
-//        if (dat == null) dat = data;
-//
-//        Vector<String> ret = new Vector<String>();
-//        for (Entry<String, String> i : dat.entrySet()) {
-//            ret.add(i.getKey() + " = " + i.getValue().replace("\r", "\\r").replace("\n", "\\n"));
-//        }
-//        Collections.sort(ret);
-//
-//        String str = "";
-//        for (int x = 0; x < ret.size(); x++) {
-//            str += ret.get(x) + System.getProperty("line.separator");
-//        }
-//        JDUtilities.writeLocalFile(lc, str);
-//
-//    }
 
     public static void setLocale(String lID) {
         if (data != null && localeFile != null) return;
@@ -195,7 +164,6 @@ public class JDLocale {
         } else {
             System.out.println("Could not load the default languagefile: " + defaultFile);
         }
-//        missingData = JDLocale.parseLanguageFile(JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng.missing"));
 
     }
 

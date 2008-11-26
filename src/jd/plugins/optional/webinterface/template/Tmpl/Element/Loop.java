@@ -82,7 +82,7 @@ public class Loop extends Element {
 
         if (control_val == null) { return ""; }
 
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         Enumeration<?> iterator = control_val.elements();
 
         boolean first = true;

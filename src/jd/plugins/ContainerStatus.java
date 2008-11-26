@@ -46,7 +46,7 @@ public class ContainerStatus {
      * @param status
      */
     public void addStatus(int status) {
-       latestStatus = status;
+        latestStatus = status;
         this.status |= status;
     }
 
@@ -91,10 +91,11 @@ public class ContainerStatus {
     public String getStatusText() {
         return statusText;
     }
+
     public String toString() {
         Class<? extends ContainerStatus> cl = this.getClass();
         Field[] fields = cl.getDeclaredFields();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(JDUtilities.fillString(Integer.toBinaryString(status), "0", "", 32) + " <Statuscode\r\n");
         String latest = "";
         for (Field field : fields) {

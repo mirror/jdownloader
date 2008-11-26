@@ -121,7 +121,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private int nickCount = 0;
     private String orgNick;
     private JTextPane right;
-    private StringBuffer sb;
+    private StringBuilder sb;
     private JScrollPane scrollPane;
     private JTextPane textArea;
     private JTextField textField;
@@ -659,7 +659,7 @@ public class JDChat extends PluginOptional implements ControlListener {
         if (sb.length() > TEXT_BUFFER) {
             String tmp = sb.toString();
             tmp = tmp.substring(tmp.indexOf("<!---->", sb.length() / 3)).trim();
-            sb = new StringBuffer();
+            sb = new StringBuilder();
             sb.append(tmp);
         }
         changed = true;
@@ -824,8 +824,8 @@ public class JDChat extends PluginOptional implements ControlListener {
 
     public boolean initAddon() {
         NAMES = new ArrayList<User>();
-        sb = new StringBuffer();
-    
+        sb = new StringBuilder();
+
         return true;
     }
 
@@ -1403,7 +1403,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     }
 
     public void updateNamesPanel() {
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         Collections.sort(NAMES);
 
         // USERLIST_STYLE

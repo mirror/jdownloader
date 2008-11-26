@@ -114,11 +114,6 @@ public class JDUtilities {
     private static JDController controller = null;
 
     /**
-     * Das aktuelle Verzeichnis (Laden/Speichern)
-     */
-    public static File currentDirectory;
-
-    /**
      * Damit werden die JARs rausgesucht
      */
     public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
@@ -150,7 +145,7 @@ public class JDUtilities {
     /**
      * Der Logger für Meldungen
      */
-    public static Logger logger = JDUtilities.getLogger();
+    private static Logger logger = JDUtilities.getLogger();
 
     public static final int RUNTYPE_LOCAL = 1;
 
@@ -968,12 +963,12 @@ public class JDUtilities {
             });
 
             OutputStream os = new OutputStream() {
-                private StringBuffer buffer = new StringBuffer();
+                private StringBuilder buffer = new StringBuilder();
 
                 public void write(int b) throws IOException {
                     if (b == 13 || b == 10) {
                         if (buffer.length() > 0) {
-                            JDUtilities.getLogger().severe(buffer.toString());
+                            logger.severe(buffer.toString());
                             if (buffer.indexOf("OutOfMemoryError") >= 0) {
                                 logger.finer("Restart");
                                 if (JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.messages.outofmemoryerror", "An error ocured!\r\nJDownloader is out of memory. Restart recommended.\r\nPlease report this bug!"))) {
@@ -981,7 +976,7 @@ public class JDUtilities {
                                 }
                             }
                         }
-                        buffer = new StringBuffer();
+                        buffer = new StringBuilder();
                     } else {
                         buffer.append((char) b);
                     }

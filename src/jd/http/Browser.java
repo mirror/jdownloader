@@ -311,7 +311,7 @@ public class Browser {
         switch (form.method) {
 
         case Form.METHOD_GET:
-            StringBuffer stbuffer = new StringBuffer();
+            StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
                 if (entry.getKey() != null) {
@@ -352,7 +352,7 @@ public class Browser {
         switch (form.method) {
 
         case Form.METHOD_GET:
-            StringBuffer stbuffer = new StringBuffer();
+            StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
                 if (entry.getKey() != null) {
@@ -702,7 +702,7 @@ public class Browser {
             url = "";
         }
         String[][] reg = new Regex(data, "<[ ]?script(.*?)>(.*?)<[ ]?/script>").getMatches();
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         // buff.append("var document[];\r\n");
         for (int i = 0; i < reg.length; i++) {
             if (reg[i][0].toLowerCase().contains("javascript")) {
@@ -851,7 +851,7 @@ public class Browser {
         switch (form.method) {
 
         case Form.METHOD_GET:
-            StringBuffer stbuffer = new StringBuffer();
+            StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
                 if (entry.getKey() != null) {

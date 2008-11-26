@@ -80,7 +80,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                         HTTPConnection con = br.openGetConnection(parameter + flash.get(flashcounter));
 
                         BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-                        StringBuffer sb = new StringBuffer();
+                        StringBuilder sb = new StringBuilder();
 
                         zaehler = new long[7];
                         byte[] b = new byte[1];

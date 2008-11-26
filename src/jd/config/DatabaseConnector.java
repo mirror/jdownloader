@@ -18,10 +18,10 @@ package jd.config;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.FileInputStream;
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -61,13 +61,13 @@ public class DatabaseConnector implements Serializable {
     public DatabaseConnector() {
         try {
             logger.info("Loading database");
-            
+
             checkDatabaseHeader();
-            
+
             con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
             con.setAutoCommit(true);
             con.createStatement().executeUpdate("SET LOGSIZE 1");
-            
+
             if (!new File(configpath + "database.script").exists()) {
                 logger.info("No configuration database found. Creating new one.");
 
@@ -110,114 +110,114 @@ public class DatabaseConnector implements Serializable {
             e.printStackTrace();
         }
     }
-    
+
     /**
      * Checks the database of inconsistency
      */
     private void checkDatabaseHeader() {
-    	logger.info("Checking database");
-    	File f = new File(configpath + "database.script");
-    	
-    	try {
-			BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
-			String line = "";
-			int counter = 0;
-			
-			while(counter < 7) {
-				line = in.readLine();
-				
-				switch(counter) {
-					case 0:
-						if(!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
-							revertDatabase();
-							return;
-						}
-						break;
-					case 1:
-						if(!line.equals("CREATE MEMORY TABLE CONFIG(NAME VARCHAR(256),OBJ OBJECT)")) {
-							revertDatabase();
-							return;
-						}
-						break;
-					case 2:
-						if(!line.equals("CREATE MEMORY TABLE LINKS(NAME VARCHAR(256),OBJ OBJECT)")) {
-							revertDatabase();
-							return;
-						}
-						break;
-					case 3:
-						if(!line.equals("CREATE USER SA PASSWORD \"\"")) {
-							revertDatabase();
-							return;
-						}
-						break;
-					case 4:
-						if(!line.equals("GRANT DBA TO SA")) {
-							revertDatabase();
-							return;
-						}
-						break;
-					case 5:
-						if(!line.equals("SET WRITE_DELAY 10")) {
-							revertDatabase();
-							return;
-						}
-						break;
-					case 6:
-						if(!line.equals("SET SCHEMA PUBLIC")) {
-							revertDatabase();
-							return;
-						}
-						break;
-				}
-				
-				counter++;
-			}
-			
-			while(((line = in.readLine()) != null)) {
-				if(!line.matches("INSERT INTO .*? VALUES\\('.*?','.*?'\\)")) {
-					revertDatabase();
-					return;
-				}
-			}
-			
-			backupDatabase();
-			in.close();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+        logger.info("Checking database");
+        File f = new File(configpath + "database.script");
+
+        try {
+            BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+            String line = "";
+            int counter = 0;
+
+            while (counter < 7) {
+                line = in.readLine();
+
+                switch (counter) {
+                case 0:
+                    if (!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
+                        revertDatabase();
+                        return;
+                    }
+                    break;
+                case 1:
+                    if (!line.equals("CREATE MEMORY TABLE CONFIG(NAME VARCHAR(256),OBJ OBJECT)")) {
+                        revertDatabase();
+                        return;
+                    }
+                    break;
+                case 2:
+                    if (!line.equals("CREATE MEMORY TABLE LINKS(NAME VARCHAR(256),OBJ OBJECT)")) {
+                        revertDatabase();
+                        return;
+                    }
+                    break;
+                case 3:
+                    if (!line.equals("CREATE USER SA PASSWORD \"\"")) {
+                        revertDatabase();
+                        return;
+                    }
+                    break;
+                case 4:
+                    if (!line.equals("GRANT DBA TO SA")) {
+                        revertDatabase();
+                        return;
+                    }
+                    break;
+                case 5:
+                    if (!line.equals("SET WRITE_DELAY 10")) {
+                        revertDatabase();
+                        return;
+                    }
+                    break;
+                case 6:
+                    if (!line.equals("SET SCHEMA PUBLIC")) {
+                        revertDatabase();
+                        return;
+                    }
+                    break;
+                }
+
+                counter++;
+            }
+
+            while (((line = in.readLine()) != null)) {
+                if (!line.matches("INSERT INTO .*? VALUES\\('.*?','.*?'\\)")) {
+                    revertDatabase();
+                    return;
+                }
+            }
+
+            backupDatabase();
+            in.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
-    
+
     /**
      * Makes a backup of the database
      */
     private void backupDatabase() {
-    	logger.info("Backup Database");
-    	
-    	File script = new File(configpath + "database.script");
-    	File scriptbackup = new File(configpath + "database.script.backup");
-    	
-    	if(script.exists()) {
-    		scriptbackup.delete();
-    		JDIO.copyFile(script, scriptbackup);
-    	}
+        logger.info("Backup Database");
+
+        File script = new File(configpath + "database.script");
+        File scriptbackup = new File(configpath + "database.script.backup");
+
+        if (script.exists()) {
+            scriptbackup.delete();
+            JDIO.copyFile(script, scriptbackup);
+        }
     }
-    
+
     /**
      * Reverts the database to the last checkpoint
      */
     private void revertDatabase() {
-    	logger.info("Error in database. Reverting database zu last checkpoint.");
-    	
-    	File script = new File(configpath + "database.script");
-    	File scriptbackup = new File(configpath + "database.script.backup");
-    	
-    	if(scriptbackup.exists()) {
-    		script.delete();
-    		JDIO.copyFile(scriptbackup, script);
-    	}
+        logger.info("Error in database. Reverting database zu last checkpoint.");
+
+        File script = new File(configpath + "database.script");
+        File scriptbackup = new File(configpath + "database.script.backup");
+
+        if (scriptbackup.exists()) {
+            script.delete();
+            JDIO.copyFile(scriptbackup, script);
+        }
     }
 
     /**

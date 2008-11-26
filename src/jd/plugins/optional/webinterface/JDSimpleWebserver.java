@@ -48,7 +48,7 @@ public class JDSimpleWebserver extends Thread {
         }
 
         public String readline(BufferedInputStream in) {
-            StringBuffer data = new StringBuffer("");
+            StringBuilder data = new StringBuilder("");
             int c;
             try {
                 in.mark(1);

@@ -39,14 +39,14 @@ public class ShareProtect extends PluginForDecrypt {
 
         br.getPage(parameter);
         String[] matches = br.getRegex("unescape\\(\\'(.*?)'\\)").getColumn(0);
-        StringBuffer htmlc = new StringBuffer();
+        StringBuilder htmlc = new StringBuilder();
         for (String element : matches) {
             htmlc.append(Encoding.htmlDecode(element) + "\n");
         }
 
         String[] links = new Regex(htmlc, "<input type=\"button\" value=\"Free\" onClick=.*? window\\.open\\(\\'\\./(.*?)\\'").getColumn(0);
         progress.setRange(links.length);
-        htmlc = new StringBuffer();
+        htmlc = new StringBuilder();
         for (String element : links) {
 
             br.getPage("http://" + br.getHost() + "/" + element);

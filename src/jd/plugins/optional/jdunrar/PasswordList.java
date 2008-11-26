@@ -69,14 +69,14 @@ public class PasswordList {
     }
 
     public static void cleanList() {
-        LIST=null;
+        LIST = null;
         ArrayList<String> list = getPasswordList();
         ArrayList<String> newList = new ArrayList<String>();
         for (String pw : list) {
             if (newList.indexOf(pw) < 0) newList.add(pw);
         }
         LIST = newList;
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String pw : getPasswordList()) {
             sb.append(pw + "\r\n");
         }
@@ -84,14 +84,13 @@ public class PasswordList {
     }
 
     public static void clearList() {
-        LIST=null;
+        LIST = null;
         getConfig().setProperty("LIST", "");
     }
 
-
     public static void save() {
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String pw : getPasswordList()) {
             sb.append(pw + "\r\n");
         }

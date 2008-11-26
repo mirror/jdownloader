@@ -278,7 +278,7 @@ public abstract class Request {
     public static String getCookieString(HashMap<String, Cookie> cookies) {
         if (cookies == null) { return null; }
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean first = true;
 
         for (Iterator<Entry<String, Cookie>> it = cookies.entrySet().iterator(); it.hasNext();) {
@@ -304,7 +304,7 @@ public abstract class Request {
     public static String getCookieString(ArrayList<Cookie> cookies) {
         if (cookies == null) { return null; }
 
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean first = true;
 
         for (Cookie cookie : cookies) {
@@ -470,7 +470,7 @@ public abstract class Request {
             rd = new BufferedReader(new InputStreamReader(con.getInputStream()));
         }
         String line;
-        StringBuffer htmlCode = new StringBuffer();
+        StringBuilder htmlCode = new StringBuilder();
         while ((line = rd.readLine()) != null) {
             htmlCode.append(line + "\r\n");
         }

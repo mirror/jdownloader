@@ -55,7 +55,7 @@ public class PackageCreater {
         });
         // ArrayList<File> upload = new ArrayList<File>();
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("<packages>");
         String uid = "3373035";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + 3373035);

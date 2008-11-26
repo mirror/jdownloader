@@ -33,7 +33,7 @@ import jd.utils.JDUtilities;
 public class JDRRUtils {
 
     public static String readline(BufferedInputStream in) {
-        StringBuffer data = new StringBuffer("");
+        StringBuilder data = new StringBuilder("");
         int c;
         try {
             in.mark(1);
@@ -106,7 +106,7 @@ public class JDRRUtils {
 
     public static void createStep(HashMap<String, String> headers, String postdata, Vector<String> steps) {
         if (!new Regex(headers.get(null), ".*?\\.(gif|jpg|png|bmp|ico|css|js).*?").matches()) {
-            StringBuffer hlh = new StringBuffer();
+            StringBuilder hlh = new StringBuilder();
             hlh.append("    [[[STEP]]]" + "\r\n");
             hlh.append("        [[[REQUEST]]]" + "\r\n");
             hlh.append("        " + headers.get(null) + "\r\n");

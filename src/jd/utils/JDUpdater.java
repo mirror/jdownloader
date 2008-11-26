@@ -246,7 +246,7 @@ public class JDUpdater {
         filelist = new ArrayList<File>();
         scanDir(new File(wd));
         logger.info("");
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         for (File file : filelist) {
             String sub = file.toString().substring(new File(wd).toString().length() + 1).replaceAll("\\\\", "/");

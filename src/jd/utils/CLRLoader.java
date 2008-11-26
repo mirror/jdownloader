@@ -48,7 +48,7 @@ public class CLRLoader {
 
             NodeList nodes = doc.getFirstChild().getChildNodes();
             String routerName = null;
-            StringBuffer hlh = new StringBuffer();
+            StringBuilder hlh = new StringBuilder();
             hlh.append("[[[HSRC]]]");
             hlh.append("\r\n");
             for (int i = 0; i < nodes.getLength(); i++) {
@@ -125,7 +125,7 @@ public class CLRLoader {
 
     }
 
-    private static void inputAuth(StringBuffer hlh, String basicauth) {
+    private static void inputAuth(StringBuilder hlh, String basicauth) {
         if (basicauth != null) {
             if (basicauth.equalsIgnoreCase("")) {
                 hlh.append("            Authorization: Basic %%%basicauth%%%" + "\r\n");

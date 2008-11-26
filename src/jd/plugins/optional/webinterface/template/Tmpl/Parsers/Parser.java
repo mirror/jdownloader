@@ -251,7 +251,7 @@ public class Parser {
         char[] c = line.toCharArray();
         int i = 0;
 
-        StringBuffer temp = new StringBuffer();
+        StringBuilder temp = new StringBuilder();
 
         for (i = 0; i < c.length; i++) {
             if (c[i] != '<') {
@@ -259,7 +259,7 @@ public class Parser {
             } else {
                 // found a tag
                 Util.debug_print("line so far: " + temp);
-                StringBuffer tag = new StringBuffer();
+                StringBuilder tag = new StringBuilder();
                 for (; i < c.length && c[i] != '>'; i++) {
                     tag.append(c[i]);
                 }
@@ -280,7 +280,7 @@ public class Parser {
                 while (tag.toString().substring(1).indexOf("<") > -1) {
                     do {
                         temp.append(tag.charAt(0));
-                        tag = new StringBuffer(tag.toString().substring(1));
+                        tag = new StringBuilder(tag.toString().substring(1));
                     } while (tag.charAt(0) != '<');
                 }
 
@@ -336,7 +336,7 @@ public class Parser {
                 // into the Vector
                 if (temp.length() > 0) {
                     parts.addElement(temp.toString());
-                    temp = new StringBuffer();
+                    temp = new StringBuilder();
                 }
 
                 // it is a valid template tag

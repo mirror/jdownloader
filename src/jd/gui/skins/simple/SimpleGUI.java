@@ -1845,7 +1845,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             }
         });
 
-        StringBuffer html = new StringBuffer();
+        StringBuilder html = new StringBuilder();
         html.append("<style type=\"text/css\">#highlight {    background-color: #3399FF;  border: thin double #000000;}body {font-family: Geneva, Arial, Helvetica, sans-serif;}</style>");
 
         if (message != null) {

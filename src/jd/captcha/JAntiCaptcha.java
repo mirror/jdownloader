@@ -311,8 +311,8 @@ public class JAntiCaptcha {
     private JFrame f;
 
     /**
-     * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst konvertiert
-     * werden.
+     * Bildtyp. Falls dieser von jpg unterschiedlich ist, muss zuerst
+     * konvertiert werden.
      */
 
     private String imageType;
@@ -1398,7 +1398,7 @@ public class JAntiCaptcha {
      * @return gibt die Lettermap als String zurück
      */
     private String getLetterMapString() {
-        StringBuffer ret = new StringBuffer();
+        StringBuilder ret = new StringBuilder();
         int i = 0;
         for (int x = 0; x < letterMap.length; x++) {
             ret.append("|");
@@ -2037,7 +2037,7 @@ public class JAntiCaptcha {
         }
         // captcha erstellen
         Captcha captcha = createCaptcha(captchaImage);
-if(captcha==null)return -1;
+        if (captcha == null) return -1;
         String code = null;
         String guess = "";
         // Zeige das OriginalBild

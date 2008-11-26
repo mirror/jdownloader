@@ -26,8 +26,8 @@ abstract public class ProcessListener {
      *            Die zuletzte gelesene zeile. \b chars werden als new line char
      *            angesehen
      * @param totalBuffer
-     *            Der complette BUffer (exec.getInputStringBuffer()|
-     *            exec.getErrorStringBuffer())
+     *            Der complette BUffer (exec.getInputStringBuilder()|
+     *            exec.getErrorStringBuilder())
      */
     abstract public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer);
 

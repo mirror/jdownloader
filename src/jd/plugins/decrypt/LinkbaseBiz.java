@@ -67,7 +67,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
 
                 for (int retry = 1; retry <= 10; retry++) {
                     try {
-                        String page = decodepage(this.br.getPage("http://linkbase.biz/?go=" + this.link));
+                        String page = decodePage(this.br.getPage("http://linkbase.biz/?go=" + this.link));
                         String link = new Regex(page, "<iframe src='(.*?)'").getMatch(0);
                         if (link == null) {
                             link = br.getRegex("<iframe src='(.*?)'").getMatch(0);
@@ -173,7 +173,7 @@ public class LinkbaseBiz extends PluginForDecrypt {
         return null;
     }
 
-    private static String decodepage(String page) {
+    private static String decodePage(String page) {
         if (page == null) return null;
         StringBuffer sb = new StringBuffer();
         String pattern = "(document\\.write\\(\".*?\"\\);)";

@@ -63,7 +63,7 @@ public class WebUpdater implements Serializable {
      */
     public String listPath;
 
-    private StringBuffer logger;
+    private StringBuilder logger;
 
     /**
      * Pfad zum Online-Bin verzeichniss
@@ -83,7 +83,7 @@ public class WebUpdater implements Serializable {
      *            (Dir Pfad zum Updateserver)
      */
     public WebUpdater() {
-        logger = new StringBuffer();
+        logger = new StringBuilder();
         setListPath("http://service.jdownloader.org/update/jd");
     }
 
@@ -364,7 +364,7 @@ public class WebUpdater implements Serializable {
         return null;
     }
 
-    public StringBuffer getLogger() {
+    public StringBuilder getLogger() {
         return logger;
     }
 
@@ -415,7 +415,7 @@ public class WebUpdater implements Serializable {
             rd = new BufferedReader(new InputStreamReader(httpConnection.getInputStream()));
         }
         String line;
-        StringBuffer htmlCode = new StringBuffer();
+        StringBuilder htmlCode = new StringBuilder();
         while ((line = rd.readLine()) != null) {
 
             htmlCode.append(line + "\n");
@@ -457,7 +457,7 @@ public class WebUpdater implements Serializable {
         this.progresslist = progresslist;
     }
 
-    public void setLogger(StringBuffer log) {
+    public void setLogger(StringBuilder log) {
         logger = log;
     }
 

@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.utils.io;
 
 import java.beans.XMLDecoder;
@@ -19,6 +35,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.util.Vector;
+import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -31,6 +48,13 @@ import jd.utils.OSDetector;
 
 public class JDIO {
 
+    private static Logger logger = JDUtilities.getLogger();
+
+    /**
+     * Das aktuelle Verzeichnis (Laden/Speichern)
+     */
+    private static File currentDirectory;
+
     /**
      * Schreibt content in eine Lokale textdatei
      * 
@@ -42,7 +66,7 @@ public class JDIO {
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
-                    JDUtilities.logger.severe("Konnte Datei nicht löschen " + file);
+                    logger.severe("Konnte Datei nicht löschen " + file);
                     return false;
                 }
             }
@@ -51,7 +75,7 @@ public class JDIO {
             }
             file.createNewFile();
             BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
-    
+
             f.write(content);
             f.close();
             return true;
@@ -70,7 +94,7 @@ public class JDIO {
             }
             fileOutput0 = hd + fileOutput0.replaceAll("([<|>|\\||\"|:|\\*|\\?|\\x00])+", "_");
         }
-    
+
         return fileOutput0;
     }
 
@@ -90,7 +114,7 @@ public class JDIO {
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
-                    JDUtilities.logger.severe("Konnte Datei nicht überschreiben " + file);
+                    logger.severe("Konnte Datei nicht überschreiben " + file);
                     return false;
                 }
             }
@@ -132,24 +156,24 @@ public class JDIO {
             JFileChooser fileChooserSave = new JFileChooser();
             fileChooserSave.setFileFilter(fileFilter);
             fileChooserSave.setSelectedFile(new File(((name != null) ? name : "*") + ((extension != null) ? extension : ".*")));
-            if (JDUtilities.currentDirectory != null) {
-                fileChooserSave.setCurrentDirectory(JDUtilities.currentDirectory);
+            if (currentDirectory != null) {
+                fileChooserSave.setCurrentDirectory(currentDirectory);
             }
             if (fileChooserSave.showSaveDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 fileOutput = fileChooserSave.getSelectedFile();
-                JDUtilities.currentDirectory = fileChooserSave.getCurrentDirectory();
+                currentDirectory = fileChooserSave.getCurrentDirectory();
             }
         }
-    
+
         if (fileOutput != null) {
             if (fileOutput.isDirectory()) {
                 fileOutput = new File(fileOutput, name + extension);
-    
+
             }
-    
+
             JDIO.waitOnObject(fileOutput);
             JDIO.saveReadObject.add(fileOutput);
-    
+
             if (fileOutput.exists()) {
                 fileOutput.delete();
             }
@@ -174,12 +198,12 @@ public class JDIO {
             }
             String hashPost = JDHash.getMD5(fileOutput);
             if (hashPost == null) {
-                JDUtilities.logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
+                logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             }
             JDIO.saveReadObject.remove(fileOutput);
-    
+
         } else {
-            JDUtilities.logger.severe("Schreibfehler: Fileoutput: null");
+            logger.severe("Schreibfehler: Fileoutput: null");
         }
     }
 
@@ -192,7 +216,7 @@ public class JDIO {
             try {
                 Thread.sleep(1);
             } catch (InterruptedException e) {
-    
+
                 e.printStackTrace();
             }
         }
@@ -215,19 +239,19 @@ public class JDIO {
         Object objectLoaded = null;
         if (fileInput == null) {
             JFileChooser fileChooserLoad = new JFileChooser();
-            if (JDUtilities.currentDirectory != null) {
-                fileChooserLoad.setCurrentDirectory(JDUtilities.currentDirectory);
+            if (currentDirectory != null) {
+                fileChooserLoad.setCurrentDirectory(currentDirectory);
             }
             if (fileChooserLoad.showOpenDialog(frame) == JFileChooser.APPROVE_OPTION) {
                 fileInput = fileChooserLoad.getSelectedFile();
-                JDUtilities.currentDirectory = fileChooserLoad.getCurrentDirectory();
+                currentDirectory = fileChooserLoad.getCurrentDirectory();
             }
         }
         if (fileInput != null) {
-    
+
             waitOnObject(fileInput);
             saveReadObject.add(fileInput);
-    
+
             try {
                 FileInputStream fis = new FileInputStream(fileInput);
                 BufferedInputStream buff = new BufferedInputStream(fis);
@@ -242,11 +266,11 @@ public class JDIO {
                 }
                 fis.close();
                 buff.close();
-    
+
                 saveReadObject.remove(fileInput);
                 return objectLoaded;
             } catch (Exception e) {
-                JDUtilities.logger.severe(e.getMessage());
+                logger.severe(e.getMessage());
             }
             saveReadObject.remove(fileInput);
         }
@@ -264,11 +288,11 @@ public class JDIO {
     public static File getResourceFile(String resource) {
         JDClassLoader cl = JDUtilities.getJDClassLoader();
         if (cl == null) {
-            JDUtilities.logger.severe("Classloader ==null: ");
+            logger.severe("Classloader ==null: ");
             return null;
         }
         URL clURL = JDUtilities.getJDClassLoader().getResource(resource);
-    
+
         if (clURL != null) {
             try {
                 return new File(clURL.toURI());
@@ -290,7 +314,7 @@ public class JDIO {
         BufferedReader f;
         try {
             f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
-    
+
             String line;
             StringBuffer ret = new StringBuffer();
             String sep = System.getProperty("line.separator");
@@ -300,7 +324,7 @@ public class JDIO {
             f.close();
             return ret.toString();
         } catch (IOException e) {
-    
+
             e.printStackTrace();
         }
         return "";
@@ -315,9 +339,9 @@ public class JDIO {
     public static String getFileExtension(File ret) {
         if (ret == null) { return null; }
         String str = ret.getAbsolutePath();
-    
+
         int i3 = str.lastIndexOf(".");
-    
+
         if (i3 > 0) { return str.substring(i3 + 1); }
         return null;
     }
@@ -331,7 +355,7 @@ public class JDIO {
      */
     public static boolean copyFile(File in, File out) {
         FileChannel inChannel = null;
-    
+
         FileChannel outChannel = null;
         try {
             if (!out.exists()) {
@@ -339,24 +363,24 @@ public class JDIO {
                 out.createNewFile();
             }
             inChannel = new FileInputStream(in).getChannel();
-    
+
             outChannel = new FileOutputStream(out).getChannel();
-    
+
             inChannel.transferTo(0, inChannel.size(), outChannel);
-    
+
             return true;
         } catch (FileNotFoundException e1) {
-    
+
             e1.printStackTrace();
             if (inChannel != null) {
                 try {
                     inChannel.close();
-    
+
                     if (outChannel != null) {
                         outChannel.close();
                     }
                 } catch (IOException e) {
-    
+
                     e.printStackTrace();
                     return false;
                 }
@@ -369,7 +393,7 @@ public class JDIO {
             if (inChannel != null) {
                 inChannel.close();
             }
-    
+
             if (outChannel != null) {
                 outChannel.close();
             }
