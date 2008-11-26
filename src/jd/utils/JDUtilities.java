@@ -38,12 +38,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -479,7 +479,7 @@ public class JDUtilities {
             return 0;
         }
     }
- 
+
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]
      * 
@@ -491,7 +491,7 @@ public class JDUtilities {
         DecimalFormat c = new DecimalFormat("0.00");
         return c.format(downloadMax / (1024.0 * 1024.0)) + " MB";
     }
- 
+
     public static String formatKbReadable(int value) {
         DecimalFormat c = new DecimalFormat("0.00");
         if (value >= 1024 * 1024) return c.format(value / (1024 * 1024.0)) + " GB";
@@ -622,7 +622,7 @@ public class JDUtilities {
                 mediaTracker.waitForID(0);
             } catch (InterruptedException e) {
                 return null;
-            }  
+            }
             mediaTracker.removeImage(captchaImage);
             JAntiCaptcha jac = new JAntiCaptcha(JDUtilities.getJACMethodsDirectory(), host);
             Captcha captcha = jac.createCaptcha(captchaImage);
@@ -1032,7 +1032,7 @@ public class JDUtilities {
         if (!file.exists()) { return ""; }
         BufferedReader f;
         try {
-            f = new BufferedReader(new FileReader(file));
+            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
 
             String line;
             StringBuffer ret = new StringBuffer();
@@ -1662,7 +1662,8 @@ public class JDUtilities {
                 file.getParentFile().mkdirs();
             }
             file.createNewFile();
-            BufferedWriter f = new BufferedWriter(new FileWriter(file));
+            BufferedWriter f = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), "UTF8"));
+
             f.write(content);
             f.close();
             return true;
@@ -1670,7 +1671,7 @@ public class JDUtilities {
             e.printStackTrace();
             return false;
         }
-    } 
+    }
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
         if (dbconnect == null) {
