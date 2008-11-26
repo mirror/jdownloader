@@ -28,10 +28,6 @@ import jd.http.PostRequest;
 import jd.parser.Regex;
 import jd.utils.io.JDIO;
 
-/**
- * Diese Klasse stellt Methoden zur Verfügung um in einen String mit
- * Platzhaltern werte einzusetzen
- */
 public class JDLocale {
 
     private static HashMap<String, String> data = new HashMap<String, String>();
@@ -114,35 +110,29 @@ public class JDLocale {
         return String.format(L(key, def), args);
     }
 
-    private static HashMap<String, String> parseLanguageFile(File file) {
-        HashMap<String, String> dat = new HashMap<String, String>();
+    public static void parseLanguageFile(File file, HashMap<String, String> data) {
+        data.clear();
+
         if (!file.exists()) {
             System.out.println("JDLocale: " + file + " not found");
-            return dat;
+            return;
         }
-        String str = JDIO.getLocalFile(file);
-        String[] lines = Regex.getLines(str);
-       
-        for (String element : lines) {
-            int split = element.indexOf("=");
-            if (split <= 0 || element.startsWith("#")) {
-                continue;
-            }
-            String key = element.substring(0, split).trim().toLowerCase();
-            String value = element.substring(split + 1).trim() + (element.endsWith(" ") ? " " : "");
+
+        String[] lines = Regex.getLines(JDIO.getLocalFile(file));
+        String key;
+        String value;
+        for (String line : lines) {
+            if (line.startsWith("#")) continue;
+            int split = line.indexOf("=");
+            if (split <= 0) continue;
+
+            key = line.substring(0, split).trim().toLowerCase();
+            value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
             value = value.replace("\\r", "\r").replace("\\n", "\n");
-           // value = Encoding.UTF8Decode(value);
-            if (dat.containsKey(key)) {
-                System.out.println("Dupe found: " + key);
-                dat.put(key, value);
-               
-            } else {
-                dat.put(key, value);
-            }
-
+            // value = Encoding.UTF8Decode(value);
+            data.put(key, value);
         }
 
-        return dat;
     }
 
     public static void setLocale(String lID) {
@@ -157,10 +147,10 @@ public class JDLocale {
             return;
         }
 
-        data = JDLocale.parseLanguageFile(localeFile);
+        JDLocale.parseLanguageFile(localeFile, data);
 
         if (defaultFile.exists()) {
-            defaultData = JDLocale.parseLanguageFile(defaultFile);
+            JDLocale.parseLanguageFile(defaultFile, defaultData);
         } else {
             System.out.println("Could not load the default languagefile: " + defaultFile);
         }

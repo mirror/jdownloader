@@ -786,7 +786,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private void initLocaleData() {
 
-        getLanguageFileEntries(languageFile, fileEntries);
+        JDLocale.parseLanguageFile(languageFile, fileEntries);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
@@ -846,31 +846,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuSaveAs.setEnabled(true);
     }
 
-    private void getLanguageFileEntries(File file, HashMap<String, String> data) {
-
-        data.clear();
-
-        if (!file.exists()) {
-            logger.info("File " + file + " doesn't exist; skip loading language file entries");
-            return;
-        }
-
-        String[] lines = Regex.getLines(JDIO.getLocalFile(file));
-        String[] match;
-
-        for (String line : lines) {
-            match = new Regex(line, "^(.*?)[\\s]*?=[\\s]*?(.*?)$").getRow(0);
-            if (match == null) continue;
-
-            match[0] = match[0].trim().toLowerCase();
-            if (!data.containsKey(match[0]) && !match[0].equals("") && !match[1].equals("")) {
-
-                match[1] = match[1].trim() + ((match[1].endsWith(" ")) ? " " : "");
-                data.put(match[0], match[1]);
-            }
-        }
-    }
-
     private void getSourceEntries() {
 
         if (cmboSelectSource.getSelectedIndex() == 0) {
@@ -883,7 +858,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private void getSourceEntriesFromFile() {
 
         sourcePatterns.clear();
-        getLanguageFileEntries(sourceFile, sourceEntries);
+        JDLocale.parseLanguageFile(sourceFile, sourceEntries);
     }
 
     private void getSourceEntriesFromFolder() {
@@ -898,18 +873,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             for (String[] match : matches) {
 
-//                match[0] = Encoding.UTF8Decode(match[0]).trim().toLowerCase();
                 match[0] = match[0].trim().toLowerCase();
                 if (sourceEntries.containsKey(match[0])) continue;
 
                 if (match[0].indexOf("\"") == -1) {
-
-//                    match[1] = Encoding.UTF8Decode(match[1]);
                     match[1] = match[1].substring(1, match[1].length() - 1);
                     sourceEntries.put(match[0], match[1]);
-
                 } else {
-
                     if (match[0].contains(",")) match[0] = match[0].substring(0, match[0].indexOf(",") + 1);
                     match[0] = match[0].replaceAll("\\.", "\\\\.");
                     match[0] = match[0].replaceAll("\"(.*?)[\",]", "(.*?)");
@@ -924,13 +894,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         Vector<File> fileContents = new Vector<File>();
 
         for (File entry : directory.listFiles()) {
-
             if (entry.isDirectory()) {
-
                 fileContents.addAll(getSourceFiles(entry));
-
             } else if (entry.isFile()) {
-
                 if (JDIO.getFileExtension(entry).equals("java")) fileContents.add(entry);
             }
         }
