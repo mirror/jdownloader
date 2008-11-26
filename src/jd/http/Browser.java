@@ -498,7 +498,6 @@ public class Browser {
         if (string == null) string = this.getRedirectLocation();
         if (string == null) return null;
         try {
-            string = string.replaceAll("\\s", "%20");
             new URL(string);
         } catch (Exception e) {
             if (request == null || request.getHttpConnection() == null) return string;
@@ -513,7 +512,7 @@ public class Browser {
             // path.substring(path.lastIndexOf("/"))
             string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/" + string;
         }
-        return string;
+        return Encoding.urlEncode(string);
     }
 
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) throws IOException {

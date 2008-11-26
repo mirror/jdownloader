@@ -18,6 +18,7 @@ package jd.http;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.regex.Matcher;
@@ -29,27 +30,28 @@ import sun.misc.BASE64Encoder;
 
 public class Encoding {
 
-    
-    public static byte[] base16Decode(String code){
-        while(code.length()%2>0)code+="0";
-        byte[] res= new byte[code.length()/2];
-       int i=0;
-        while(i<code.length()){
-          res[i/2]=(byte)Integer.parseInt(code.substring(i, i+2), 16);
-          i+=2;
-            
+    public static byte[] base16Decode(String code) {
+        while (code.length() % 2 > 0)
+            code += "0";
+        byte[] res = new byte[code.length() / 2];
+        int i = 0;
+        while (i < code.length()) {
+            res[i / 2] = (byte) Integer.parseInt(code.substring(i, i + 2), 16);
+            i += 2;
+
         }
         return res;
     }
+
     /**
-     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;" ;
-     * Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
+     * "http://rapidshare.com&#x2F;&#x66;&#x69;&#x6C;&#x65;&#x73;&#x2F;&#x35;&#x34;&#x35;&#x34;&#x31;&#x34;&#x38;&#x35;&#x2F;&#x63;&#x63;&#x66;&#x32;&#x72;&#x73;&#x64;&#x66;&#x2E;&#x72;&#x61;&#x72;"
+     * ; Wandelt alle hexkodierten zeichen in diesem Format in normalen text um
      * 
      * @param str
      * @return decoded string
      */
     public static String htmlDecode(String str) {
-        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) { return null; }
@@ -109,30 +111,36 @@ public class Encoding {
         return HTMLEntities.unhtmlentities(str);
     }
 
-    /**
-     * @author JD-Team Macht ein urlRawEncode und spart dabei die angegebenen
-     *         Zeichen aus
-     * @param str
-     * @return str URLCodiert
-     */
     public static String urlEncode(String str) {
+        boolean ishttpurl = false;
+        if (str == null) return null;
         try {
-            return URLEncoder.encode(str,"UTF-8");
-        } catch (Exception e) {
-            // TODO: handle exception
+            str = URLDecoder.decode(str, "UTF-8");
+        } catch (UnsupportedEncodingException e1) {
+            e1.printStackTrace();
         }
-        return null;
-        /*
-         * 
-         * 
-         * if (str == null) return str; String allowed =
-         * "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/\\:&=;" ;
-         * String ret = ""; String l; int i; for (i = 0; i < str.length(); i++) {
-         * char letter = str.charAt(i); if (allowed.indexOf(letter) >= 0) { ret +=
-         * letter; } else { l = Integer.toString(letter, 16); ret += "%" +
-         * (l.length() == 1 ? "0" + l : l); } }
-         */
+        try {
+            new URL(str);
+            ishttpurl = true;
+        } catch (Exception e) {
+        }
+        String urlcoded = null;
+        try {
+            urlcoded = URLEncoder.encode(str, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            urlcoded = str;
+        }
+        if (ishttpurl) {
+            urlcoded = urlcoded.replaceAll("%2F", "/");
+            urlcoded = urlcoded.replaceAll("%3A", ":");
+            urlcoded = urlcoded.replaceAll("\\+", "%20");
+            urlcoded = urlcoded.replaceAll("%3F", "?");
+            urlcoded = urlcoded.replaceAll("%3D", "=");
+            urlcoded = urlcoded.replaceAll("%26", "&");
+        }
 
+        return urlcoded;
     }
 
     /**
@@ -140,13 +148,22 @@ public class Encoding {
      * @param str
      * @return str als UTF8Decodiert
      */
+
     public static String UTF8Decode(String str) {
+        return UTF8Decode(str, null);
+    }
+
+    public static String UTF8Decode(String str, String sourceEncoding) {
         if (str == null) { return null; }
         try {
-            return new String(str.getBytes(), "UTF-8");
+            if (sourceEncoding != null) {
+                return new String(str.getBytes(sourceEncoding), "UTF-8");
+            } else {
+                return new String(str.getBytes(), "UTF-8");
+            }
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-            return null;
+            return str;
         }
     }
 
@@ -222,19 +239,20 @@ public class Encoding {
         }
         return new String(ret).trim();
     }
-    
+
     /**
      * Wenden htmlDecode an, bis es keine Änderungen mehr gibt. Aber max 50 mal!
+     * 
      * @param string
      * @return
      */
     public static String deepHtmlDecode(String string) {
-        String decoded,tmp;
-        tmp=Encoding.htmlDecode(string);
-        int i=50;
-        while(!tmp.equals(decoded=Encoding.htmlDecode(tmp))){                
-            tmp=decoded;
-            if(i--<=0){
+        String decoded, tmp;
+        tmp = Encoding.htmlDecode(string);
+        int i = 50;
+        while (!tmp.equals(decoded = Encoding.htmlDecode(tmp))) {
+            tmp = decoded;
+            if (i-- <= 0) {
                 System.err.println("Max Decodeingloop 50 reached!!!");
                 return tmp;
             }

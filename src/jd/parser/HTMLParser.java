@@ -178,7 +178,7 @@ public class HTMLParser {
         for (Pattern element : basePattern) {
             m = element.matcher(data);
             if (m.find()) {
-                url = Encoding.htmlDecode(m.group(2));
+                url = m.group(2);
                 break;
             }
         }
@@ -213,7 +213,7 @@ public class HTMLParser {
         for (Httppattern element : linkAndFormPattern) {
             m = element.p.matcher(data);
             while (m.find()) {
-                link = Encoding.htmlDecode(m.group(element.group));
+                link = m.group(element.group);
                 link = link.replaceAll(protocols[0] + "://", "http://");
                 if (!(link.length() > 3 && link.matches("^" + protocolPattern + "://.*")) && link.length() > 0) {
                     if (link.length() > 2 && link.substring(0, 3).equals("www")) {
@@ -238,8 +238,6 @@ public class HTMLParser {
         m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = m.group(0);
-            link = Encoding.htmlDecode(link);
-
             link = link.replaceAll(protocols[0] + "://", "http://");
             link = link.replaceFirst("^www\\.", "http://www\\.");
             link = link.trim();

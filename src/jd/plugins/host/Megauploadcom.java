@@ -156,8 +156,7 @@ public class Megauploadcom extends PluginForHost {
         return br.containsHTML("fo.addVariable\\(\"status\",\"\\(premium\\)\"\\);");
     }
 
-    public void login(Account account) throws IOException, PluginException {
-        br.setDebug(true);
+    public void login(Account account) throws IOException, PluginException {        
         br.postPage("http://megaupload.com/en/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         String cookie = br.getCookie("http://megaupload.com", "user");
         if (cookie == null) {

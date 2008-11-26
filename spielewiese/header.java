@@ -2,20 +2,20 @@ import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import jd.http.Encoding;
 import jd.plugins.Plugin;
-
-
 
 public class header {
 
     /**
      * @param args
+     * @throws UnsupportedEncodingException 
      * @throws java.text.ParseException
      * @throws ParseException
      * @throws UnsupportedEncodingException
      * @throws java.text.ParseException
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnsupportedEncodingException {
         // TODO Auto-generated method stub
 
         if (false) {
@@ -61,16 +61,53 @@ public class header {
         // System.out.println("Right Java Version");
         // }
         // }
-        if (true) {
-            //System.out.println(new Regex("<p style=\"color:red;\">You have reached the download limit for free-users. Would you like more?</p>", ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches() + "");
-            String l[] = {"filename==?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?="};
-            //String l[] = {"filename==?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?=", "=?UTF-8?attachment;filename=\"Dead.Space.Downfall.2008.DVDRip.XViD-WPi.by.flavioms.avi\";?=", "attachment; filename =     \"foo - %c3%a4.html'  ;", "attachment; filename* =UTF-8''foo - %c3%a4.html  ;", "attachment; filename='Spec T feat. Cherish - Killa (Lil' Prince Crunk Remix) 2oo8-GsE.mp3'", "attachment; filename=Spec T feat. Cherish - Killa (Lil' Prince Crunk Remix) 2oo8-GsE.mp3", "attachment; filename=\"Spec T feat. Cherish - Killa (Lil' Prince Crunk Remix) 2oo8-GsE.mp3\"", "attachment; filename =     \"foo - %c3%a4.html'  ;", "attachment; filename* =UTF-8''foo - %c3%a4.html;", "attachment; filename*=\" UTF-8''foo - %c3%a4.html\"", "attachment; filename*= UTF-8''foo - %c3%a4.html", "attachment; filename=\"foo-%c3%a4-%e2%82%ac.html\"", "inline; filena=foo  g .html", "inline; filename=foo  g .html", "inline; filename=\"foo  g .html\"",
-             //       "inline; filename=\"foo.html\"", "attachment; filename=\"foo.html\"", "attachment; filename=foo.html", "attachment; filename=\"foo-ä.html\"", "attachment; filename=\"foo-Ã¤.html\"", "attachment; filename=\"foo-%41.html\"", "attachment; filename=\"foo-%c3%a4-%e2%82%ac.html\"", "attachment; filename =\"foo.html\"", "attachment; filename= \"foo.html\"", "attachment; filename*=iso-8859-1''foo-%E4.html", "attachment; filename*=UTF-8''foo-%c3%a4-%e2%82%ac.html", "attachment; filename*=UTF-8''foo-a%cc%88.html", "attachment; filename*= UTF-8''foo-%c3%a4.html" };
+        if (false) {
+            // System.out.println(new Regex(
+            // "<p style=\"color:red;\">You have reached the download limit for free-users. Would you like more?</p>"
+            // , ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches() +
+            // "");
+            String l[] = { "filename==?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?=" };
+            // String l[] = {
+            // "filename==?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?="
+            // ,
+            // "=?UTF-8?attachment;filename=\"Dead.Space.Downfall.2008.DVDRip.XViD-WPi.by.flavioms.avi\";?="
+            // , "attachment; filename =     \"foo - %c3%a4.html'  ;",
+            // "attachment; filename* =UTF-8''foo - %c3%a4.html  ;",
+            // "attachment; filename='Spec T feat. Cherish - Killa (Lil' Prince Crunk Remix) 2oo8-GsE.mp3'"
+            // ,
+            // "attachment; filename=Spec T feat. Cherish - Killa (Lil' Prince Crunk Remix) 2oo8-GsE.mp3"
+            // ,
+            // "attachment; filename=\"Spec T feat. Cherish - Killa (Lil' Prince Crunk Remix) 2oo8-GsE.mp3\""
+            // , "attachment; filename =     \"foo - %c3%a4.html'  ;",
+            // "attachment; filename* =UTF-8''foo - %c3%a4.html;",
+            // "attachment; filename*=\" UTF-8''foo - %c3%a4.html\"",
+            // "attachment; filename*= UTF-8''foo - %c3%a4.html",
+            // "attachment; filename=\"foo-%c3%a4-%e2%82%ac.html\"",
+            // "inline; filena=foo  g .html", "inline; filename=foo  g .html",
+            // "inline; filename=\"foo  g .html\"",
+            // "inline; filename=\"foo.html\"",
+            // "attachment; filename=\"foo.html\"",
+            // "attachment; filename=foo.html",
+            // "attachment; filename=\"foo-ä.html\"",
+            // "attachment; filename=\"foo-Ã¤.html\"",
+            // "attachment; filename=\"foo-%41.html\"",
+            // "attachment; filename=\"foo-%c3%a4-%e2%82%ac.html\"",
+            // "attachment; filename =\"foo.html\"",
+            // "attachment; filename= \"foo.html\"",
+            // "attachment; filename*=iso-8859-1''foo-%E4.html",
+            // "attachment; filename*=UTF-8''foo-%c3%a4-%e2%82%ac.html",
+            // "attachment; filename*=UTF-8''foo-a%cc%88.html",
+            // "attachment; filename*= UTF-8''foo-%c3%a4.html" };
             for (String kk : l) {
                 System.out.print(kk + ">>");
                 System.out.println(Plugin.getFileNameFromDispositionHeader(kk));
             }
         }
+
+        System.out.println(Encoding.urlEncode("http://srv2.shragle.com/dl/free/UjdV0050/Der KÃ¶nig der LÃ¶wen.part1.rar?v=1"));
+        System.out.println(Encoding.urlEncode("http://srv2.shragle.com/dl/free/BGFQ4357/Der König der Löwen.part1.rar"));
+        System.out.println(new String(Plugin.extractFileNameFromURL("http://free.srv2.shragle.com/BGFQ4357/Der%20K%c3%b6nig%20der%20L%c3%b6wen.part1.rar").getBytes("ISO-8859-1"), "UTF-8"));
+        System.out.println(Encoding.urlEncode("die ist ein test und / hallöle"));
     }
 
 }

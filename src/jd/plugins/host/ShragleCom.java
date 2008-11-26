@@ -117,9 +117,7 @@ public class ShragleCom extends PluginForHost {
         Thread.sleep(500);/* sonst kommen serverfehler */
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        br.setDebug(true);
         Thread.sleep(500);/* sonst kommen serverfehler */
-        br.setDebug(true);
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
@@ -143,7 +141,6 @@ public class ShragleCom extends PluginForHost {
         String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
 
         String[] data = Regex.getLines(br.getPage("http://www.shragle.com/api.php?key=078e5ca290d728fd874121030efb4a0d&action=getStatus&fileID=" + id));
-        br.getPage(downloadLink.getDownloadURL());
         if (data.length != 4) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = data[0];
         String size = data[1];
@@ -153,7 +150,7 @@ public class ShragleCom extends PluginForHost {
 
         if (!status.equals("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-        downloadLink.setName(name.trim());
+        downloadLink.setFinalFileName(name.trim());
         downloadLink.setDownloadSize(Long.parseLong(size));
         downloadLink.setMD5Hash(md5.trim());
         downloadLink.setDupecheckAllowed(true);
@@ -168,14 +165,13 @@ public class ShragleCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
+        String wait = br.getRegex(Pattern.compile("Bitte warten Sie(.*?)Minuten", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l); }
         Form form = br.getFormbyName("download");
         sleep(10000l, downloadLink);
         br.setFollowRedirects(true);
-        /*
-         * zum zeitpunkt der implementation waren nur 3 verbindungen gesamt
-         * erlaubt
-         */
-        dl = br.openDownload(downloadLink, form, true, -3);
+        dl = br.openDownload(downloadLink, form, true, 1);
         HTTPConnection con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();
