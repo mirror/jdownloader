@@ -786,7 +786,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private void initLocaleData() {
 
-        JDLocale.parseLanguageFile(languageFile, fileEntries);
+        JDLocale.parseLanguageFile(languageFile, fileEntries, false);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
@@ -858,7 +858,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private void getSourceEntriesFromFile() {
 
         sourcePatterns.clear();
-        JDLocale.parseLanguageFile(sourceFile, sourceEntries);
+        JDLocale.parseLanguageFile(sourceFile, sourceEntries, false);
     }
 
     private void getSourceEntriesFromFolder() {

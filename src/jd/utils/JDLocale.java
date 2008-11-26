@@ -111,6 +111,10 @@ public class JDLocale {
     }
 
     public static void parseLanguageFile(File file, HashMap<String, String> data) {
+        JDLocale.parseLanguageFile(file, data, true);
+    }
+    
+    public static void parseLanguageFile(File file, HashMap<String, String> data, boolean format) {
         data.clear();
 
         if (!file.exists()) {
@@ -128,7 +132,7 @@ public class JDLocale {
 
             key = line.substring(0, split).trim().toLowerCase();
             value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
-            value = value.replace("\\r", "\r").replace("\\n", "\n");
+            if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
             // value = Encoding.UTF8Decode(value);
             data.put(key, value);
         }
