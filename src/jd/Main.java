@@ -71,7 +71,7 @@ public class Main {
     public static String getCaptcha(String path, String host) {
 
         boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
-
+System.setProperty("file.encoding","UTF8");
         if (hasMethod) {
 
             File file;
