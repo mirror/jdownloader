@@ -92,7 +92,7 @@ public class JDLocale {
         if (defaultData.containsKey(key)) {
             def = defaultData.get(key);
         }
-        data.put(key, Encoding.UTF8Encode(def));
+        data.put(key, def);
 //        missingData.put(key, Encoding.UTF8Encode(def));
 
 //        JDLocale.saveData(new File(localeFile.getAbsolutePath() + ".extended"), data);
@@ -138,7 +138,7 @@ public class JDLocale {
             String key = element.substring(0, split).trim().toLowerCase();
             String value = element.substring(split + 1).trim() + (element.endsWith(" ") ? " " : "");
             value = value.replace("\\r", "\r").replace("\\n", "\n");
-            value = Encoding.UTF8Decode(value);
+           // value = Encoding.UTF8Decode(value);
             if (dat.containsKey(key)) {
                 System.out.println("Dupe found: " + key);
                 dat.put(key, value);

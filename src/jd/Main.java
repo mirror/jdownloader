@@ -72,7 +72,7 @@ public class Main {
     public static String getCaptcha(String path, String host) {
 
         boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
-System.setProperty("file.encoding","UTF8");
+
         if (hasMethod) {
 
             File file;
@@ -144,7 +144,7 @@ System.setProperty("file.encoding","UTF8");
     }
 
     public static void main(String args[]) {
-
+        System.setProperty("file.encoding","UTF-8");
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
             logger.info("apple.laf.useScreenMenuBar=true");
