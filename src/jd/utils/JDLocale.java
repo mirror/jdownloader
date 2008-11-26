@@ -26,6 +26,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.http.PostRequest;
 import jd.parser.Regex;
+import jd.utils.io.JDIO;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mit
@@ -68,7 +69,7 @@ public class JDLocale {
     }
 
     public static Vector<String> getLocaleIDs() {
-        File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
+        File dir = JDIO.getResourceFile(LANGUAGES_DIR);
         if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
         Vector<String> ret = new Vector<String>();
@@ -126,7 +127,7 @@ public class JDLocale {
             System.out.println("JDLocale: " + file + " not found");
             return dat;
         }
-        String str = JDUtilities.getLocalFile(file);
+        String str = JDIO.getLocalFile(file);
         String[] lines = Regex.getLines(str);
        
         for (String element : lines) {
@@ -179,8 +180,8 @@ public class JDLocale {
         if (data != null && localeFile != null) return;
 
         localeID = lID;
-        localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
-        File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
+        localeFile = JDIO.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
+        File defaultFile = JDIO.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
 
         if (!localeFile.exists()) {
             System.out.println("Language " + localeID + " not installed");

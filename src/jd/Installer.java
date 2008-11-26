@@ -24,6 +24,7 @@ import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * Der Installer erscheint nur beim ersten mal Starten der Webstartversion und
@@ -52,7 +53,7 @@ public class Installer {
         JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, "english"));
 
         configContainer = new ConfigContainer(this, "Download");
-        configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath()));
+        configContainer.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")).setDefaultValue(JDIO.getResourceFile("downloads").getAbsolutePath()));
         SimpleGUI.showConfigDialog(null, configContainer, true);
         if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY) == null) {
             JDUtilities.getLogger().severe("downloaddir not set");

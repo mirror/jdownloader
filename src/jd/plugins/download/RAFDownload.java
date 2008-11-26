@@ -34,6 +34,7 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class RAFDownload extends DownloadInterface {
     class ChunkBuffer {
@@ -208,7 +209,7 @@ public class RAFDownload extends DownloadInterface {
 
                     long crc = JDUtilities.getCRC(new File(downloadLink.getFileOutput()));
 
-                    String sfvText = JDUtilities.getLocalFile(new File(sfv.getFileOutput()));
+                    String sfvText = JDIO.getLocalFile(new File(sfv.getFileOutput()));
                     if (sfvText != null && sfvText.toLowerCase().contains(new File(downloadLink.getFileOutput()).getName().toLowerCase())) {
                         String[] l = Regex.getLines(sfvText);
                         boolean c = false;

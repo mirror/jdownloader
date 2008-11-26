@@ -1348,6 +1348,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             fp.setDownloadLinks(linkList);
             for (int i = 0; i < files; i++) {
                 linkList.elementAt(i).setFilePackage(fp);
+             
             }
         } else {
             Vector<DownloadLink> linkListHost = new Vector<DownloadLink>();
@@ -1355,6 +1356,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             for (int i = tab.getLinkList().size() - 1; i >= 0; --i) {
                 if (linkList.elementAt(i).getHost().compareTo(host) == 0) {
                     DownloadLink link = linkList.remove(i);
+                
                     totalLinkList.remove(link);
                     linkListHost.add(link);
                     link.setFilePackage(fp);

@@ -33,6 +33,7 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class JDSimpleWebserver extends Thread {
 
@@ -184,8 +185,8 @@ public class JDSimpleWebserver extends Thread {
                                                         containertyp = new String(JDHexUtils.getByteArray(containertyp));
                                                     }
                                                     if (containertyp != null && (containertyp.contains("dlc") || containertyp.contains("ccf") || containertyp.contains("rsdf"))) {
-                                                        File containerfile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containertyp);
-                                                        if (JDUtilities.saveToFile(containerfile, JDHexUtils.getByteArray(element[0].substring(element[0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
+                                                        File containerfile = JDIO.getResourceFile("container/" + System.currentTimeMillis() + "." + containertyp);
+                                                        if (JDIO.saveToFile(containerfile, JDHexUtils.getByteArray(element[0].substring(element[0].indexOf(JDHexUtils.getHexString("\r\n\r\n")) + 8)))) {
                                                             /*
                                                              * RequestParameter
                                                              * zusammenbauen

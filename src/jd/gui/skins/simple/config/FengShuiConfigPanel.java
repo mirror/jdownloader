@@ -87,6 +87,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
+import jd.utils.io.JDIO;
 import net.miginfocom.swing.MigLayout;
 
 public class FengShuiConfigPanel extends JFrame implements ActionListener {
@@ -420,7 +421,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public String getDownloadDirectory() {
         if (ddir == null) {
             ddir = config.getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
-            if (ddir == null) ddir = JDUtilities.getResourceFile("downloads").getAbsolutePath();
+            if (ddir == null) ddir = JDIO.getResourceFile("downloads").getAbsolutePath();
         }
         return ddir;
     }

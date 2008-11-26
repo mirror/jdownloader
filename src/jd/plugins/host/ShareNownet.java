@@ -84,7 +84,7 @@ public class ShareNownet extends PluginForHost {
         if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         Form form = br.getForm(1);
-
+br.setDebug(true);
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */

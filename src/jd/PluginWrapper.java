@@ -37,6 +37,7 @@ import jd.update.WebUpdater;
 import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class PluginWrapper implements Comparable<PluginWrapper> {
 
@@ -93,7 +94,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
 
         try {
 
-            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+            if (CL == null) CL = new URLClassLoader(new URL[] { JDIO.getResourceFile("").toURI().toURL(), JDIO.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
 
                 ArrayList<Vector<String>> filelist = new ArrayList<Vector<String>>();
@@ -111,7 +112,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                 progress.increase(1);
                 for (Vector<String> entry : filelist) {
                     String plg = entry.get(0).split("\\?")[0];
-                    File path = JDUtilities.getResourceFile(plg);
+                    File path = JDIO.getResourceFile(plg);
                     String hash = JDHash.getMD5(path);
                     if (hash == null || !hash.equalsIgnoreCase(entry.get(1))) {
                         new WebUpdater().updateFile(entry);

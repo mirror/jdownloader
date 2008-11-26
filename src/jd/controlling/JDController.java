@@ -50,6 +50,7 @@ import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
+import jd.utils.io.JDIO;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
@@ -696,7 +697,7 @@ public class JDController implements ControlListener, UIListener {
      */
     public void restart() {
         prepareShutdown();
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDIO.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 
@@ -1173,7 +1174,7 @@ public class JDController implements ControlListener, UIListener {
                         }
                         String comment = downloadLinks.get(0).getFilePackage().getComment();
                         String password = downloadLinks.get(0).getFilePackage().getPassword();
-                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDUtilities.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
+                        JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDIO.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
                         // schickt die Links zuerst mal zum Linkgrabber
                     }
                     if (hideGrabber) addLinksWithoutGrabber((Vector<DownloadLink>) downloadLinks);
@@ -1244,10 +1245,10 @@ public class JDController implements ControlListener, UIListener {
             Object obj = JDUtilities.getDatabaseConnector().getLinks();
 
             if (obj == null) {
-                File file = JDUtilities.getResourceFile("links.dat");
+                File file = JDIO.getResourceFile("links.dat");
                 if (file.exists()) {
                     logger.info("Wrapping links.dat");
-                    obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
+                    obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
                     JDUtilities.getDatabaseConnector().saveLinks(packages);
                     // file.delete();
                 }
@@ -1579,7 +1580,7 @@ public class JDController implements ControlListener, UIListener {
         String cipher = encryptDLC(xml);
         if (cipher != null) {
 
-            JDUtilities.writeLocalFile(file, cipher);
+            JDIO.writeLocalFile(file, cipher);
             SubConfiguration cfg = JDUtilities.getSubConfig("DLCrypt");
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
 
@@ -1604,7 +1605,7 @@ public class JDController implements ControlListener, UIListener {
         String cipher = encryptDLC(xml);
         if (cipher != null) {
             SubConfiguration cfg = JDUtilities.getSubConfig("DLCrypt");
-            JDUtilities.writeLocalFile(file, cipher);
+            JDIO.writeLocalFile(file, cipher);
             if (cfg.getBooleanProperty("SHOW_INFO_AFTER_CREATE", false))
             // Nur Falls Die Meldung nicht deaktiviert wurde
             {

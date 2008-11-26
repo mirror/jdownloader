@@ -74,6 +74,7 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.tree.TreeModelSupport;
@@ -281,7 +282,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }
-            if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
                 ret = new File(ret.getAbsolutePath() + ".dlc");
             }
             JDUtilities.getController().saveDLC(ret, links);
@@ -340,7 +341,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
 
-            fc.setCurrentDirectory(fp.getDownloadDirectory() != null ? new File(fp.getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
+            fc.setCurrentDirectory(fp.getDownloadDirectory() != null ? new File(fp.getDownloadDirectory()) : JDIO.getResourceFile("downloads"));
             if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
                 ret = fc.getSelectedFile();
                 if (ret != null) {
@@ -413,7 +414,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fc.showSaveDialog(SimpleGUI.CURRENTGUI.getFrame());
             ret = fc.getSelectedFile();
             if (ret == null) { return; }
-            if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
                 ret = new File(ret.getAbsolutePath() + ".dlc");
             }

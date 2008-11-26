@@ -52,6 +52,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 
@@ -460,7 +461,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     private void loadAbos() {
         Object f = subConfig.getProperty(PROPERTY_ABOS);
         if (f == null) {
-            String content = JDUtilities.getLocalFile(JDUtilities.getResourceFile("abos.conf"));
+            String content = JDIO.getLocalFile(JDIO.getResourceFile("abos.conf"));
             Regex regex = new Regex(Pattern.compile("(.*?);(.*?);(.*?)\n").matcher(content));
 
             abos.clear();
@@ -471,7 +472,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             }
             saveAbos();
         } else {
-            JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
+            JDIO.getResourceFile("feeds.conf").deleteOnExit();
             abos = (Vector<String[]>) f;
             if (abos == null) {
                 abos = new Vector<String[]>();
@@ -483,7 +484,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     private void loadFeeds() {
         Object f = subConfig.getProperty(PROPERTY_FEEDS);
         if (f == null) {
-            String content = JDUtilities.getLocalFile(JDUtilities.getResourceFile("feeds.conf"));
+            String content = JDIO.getLocalFile(JDIO.getResourceFile("feeds.conf"));
             Regex regex = new Regex(Pattern.compile("(.*?);(.*?)\n").matcher(content));
 
             feeds.clear();
@@ -494,7 +495,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             }
             saveFeeds();
         } else {
-            JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
+            JDIO.getResourceFile("feeds.conf").deleteOnExit();
             feeds = (Vector<String[]>) f;
             if (feeds == null) {
                 feeds = new Vector<String[]>();

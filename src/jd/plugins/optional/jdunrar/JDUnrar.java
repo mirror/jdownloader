@@ -52,6 +52,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Jobber;
 import jd.utils.OSDetector;
+import jd.utils.io.JDIO;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 
@@ -685,7 +686,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         ConfigEntry ce;
         ConfigEntry conditionEntry;
         if (OSDetector.isWindows()) {
-            subConfig.setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath());
+            subConfig.setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDIO.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath());
             subConfig.save();
         }
         if (this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null) == null || this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, "").trim().length() == 0) {
@@ -753,7 +754,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         exec.addParameter("v");
         exec.addParameter("-v");
         exec.addParameter("-c-");
-        exec.addParameter(JDUtilities.getResourceFile("plugins/jdunrar/aeoeue.rar").getAbsolutePath());
+        exec.addParameter(JDIO.getResourceFile("plugins/jdunrar/aeoeue.rar").getAbsolutePath());
         exec.setWaitTimeout(-1);
         exec.start();
         exec.waitTimeout();
@@ -781,7 +782,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         exec.setCodepage(found);
         exec.addParameter("-v");
         exec.addParameter("-c-");
-        exec.addParameter(JDUtilities.getResourceFile("plugins/jdunrar/aeoeue.rar").getAbsolutePath());
+        exec.addParameter(JDIO.getResourceFile("plugins/jdunrar/aeoeue.rar").getAbsolutePath());
         exec.setWaitTimeout(-1);
         exec.start();
         exec.waitTimeout();
@@ -797,14 +798,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         if (path == null || !isUnrarCommandValid(path)) {
             if (OSDetector.isWindows()) {
-                path = JDUtilities.getResourceFile("tools\\Windows\\unrarw32\\unrar.exe").getAbsolutePath();
+                path = JDIO.getResourceFile("tools\\Windows\\unrarw32\\unrar.exe").getAbsolutePath();
                 this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                 this.getPluginConfig().save();
                 return;
             } else {
                 if (OSDetector.isLinux()) {
-                    if (isUnrarCommandValid(JDUtilities.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath())) {
-                        path = JDUtilities.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath();
+                    if (isUnrarCommandValid(JDIO.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath())) {
+                        path = JDIO.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath();
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;

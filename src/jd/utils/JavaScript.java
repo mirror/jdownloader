@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.utils.io.JDIO;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EcmaError;
@@ -28,7 +29,7 @@ import org.mozilla.javascript.Scriptable;
 public class JavaScript {
 
     public static String evalPage(Browser br) {
-        String clazz = JDUtilities.getLocalFile(JDUtilities.getResourceFile("jd/dummy.js"));
+        String clazz = JDIO.getLocalFile(JDIO.getResourceFile("jd/dummy.js"));
         clazz = clazz.replaceAll("%%%HOST%%%", br.getHost());
         clazz = clazz.replaceAll("%%%URL%%%", br.getHttpConnection().getURL() + "");
         clazz = clazz.replaceAll("%%%URLPATH%%%", br.getHttpConnection().getURL().getPath() + "");

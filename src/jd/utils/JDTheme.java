@@ -28,6 +28,7 @@ import javax.swing.ImageIcon;
 import jd.JDFileFilter;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.utils.io.JDIO;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern
@@ -55,7 +56,7 @@ public class JDTheme {
     }
 
     public static Vector<String> getThemeIDs() {
-        File dir = JDUtilities.getResourceFile(THEME_DIR);
+        File dir = JDIO.getResourceFile(THEME_DIR);
         if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".thm", false));
         Vector<String> ret = new Vector<String>();
@@ -143,14 +144,14 @@ public class JDTheme {
      * JDUtilities.writeLocalFile(themeFile, str); }
      */
     public static void setTheme(String themeID) {
-        File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".thm");
+        File file = JDIO.getResourceFile(THEME_DIR + themeID + ".thm");
         // themeFile = file;
         if (!file.exists()) {
             logger.severe("Theme " + themeID + " not installed");
             return;
         }
         data = new HashMap<String, String>();
-        String str = JDUtilities.getLocalFile(file);
+        String str = JDIO.getLocalFile(file);
         String[] lines = Regex.getLines(str);
         for (String element : lines) {
             int split = element.indexOf("=");
@@ -171,14 +172,14 @@ public class JDTheme {
         }
         if (defaultData == null) {
             defaultData = new HashMap<String, String>();
-            file = JDUtilities.getResourceFile(THEME_DIR + "default.thm");
+            file = JDIO.getResourceFile(THEME_DIR + "default.thm");
 
             if (!file.exists()) {
                 logger.severe("Theme default not installed");
                 return;
             }
             data = new HashMap<String, String>();
-            str = JDUtilities.getLocalFile(file);
+            str = JDIO.getLocalFile(file);
             lines = Regex.getLines(str);
             for (String element : lines) {
                 int split = element.indexOf("=");

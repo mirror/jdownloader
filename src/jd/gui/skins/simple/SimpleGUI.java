@@ -128,6 +128,7 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDTwitter;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTitledSeparator;
@@ -837,7 +838,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }
-            if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
                 ret = new File(ret.getAbsolutePath() + ".dlc");
             }
@@ -1823,7 +1824,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static void showChangelogDialog() {
-        String update = JDUtilities.getLocalFile(JDUtilities.getResourceFile("updatemessage.html"));
+        String update = JDIO.getLocalFile(JDIO.getResourceFile("updatemessage.html"));
         String message = new Regex(update, "<!--message-->(.+?)<!--message-->").getMatch(0);
         String version = new Regex(update, "<p>version(.*?)<").getMatch(0).trim();
         String updates = new Regex(update, "<ul>(.*?)</ul>").getMatch(0);

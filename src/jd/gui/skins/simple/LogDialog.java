@@ -52,6 +52,7 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.LogFormatter;
 import jd.utils.Upload;
+import jd.utils.io.JDIO;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann.
@@ -228,7 +229,7 @@ public class LogDialog extends JFrame implements ActionListener {
                     if (content == null || content.length() == 0) {
                         content = logField.getText();
                     }
-                    JDUtilities.writeLocalFile(ret, content);
+                    JDIO.writeLocalFile(ret, content);
                     JDUtilities.getLogger().info("Log saved to file: " + ret.getAbsolutePath());
                 }
             }

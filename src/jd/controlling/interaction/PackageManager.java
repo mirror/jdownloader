@@ -35,6 +35,7 @@ import jd.plugins.FilePackage;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -88,7 +89,7 @@ public class PackageManager extends Interaction implements Serializable {
         boolean oldUpdatePackage = false;
         FilePackage fp = new FilePackage();
         fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
-        fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
+        fp.setDownloadDirectory(JDIO.getResourceFile("packages").getAbsolutePath());
 
         // Existiert schon ein JD-Update Package in der DownloadListe?
         for (FilePackage fp_cur : JDUtilities.getController().getPackages()) {

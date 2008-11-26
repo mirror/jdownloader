@@ -47,6 +47,7 @@ import jd.http.HTTPConnection;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins
@@ -152,7 +153,7 @@ public abstract class Plugin implements ActionListener {
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
 
-        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getHost() + "/" + date + extension);
+        File dest = JDIO.getResourceFile("captchas/" + plugin.getHost() + "/" + date + extension);
         return dest;
     }
 

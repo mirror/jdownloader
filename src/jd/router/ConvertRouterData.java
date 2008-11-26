@@ -27,6 +27,7 @@ import java.util.Vector;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class ConvertRouterData {
     private static void ConvertXml(File file, File out) {
@@ -46,9 +47,9 @@ public class ConvertRouterData {
 
     public static void main(String[] args) {
 
-        File fileRoutersDat = JDUtilities.getResourceFile("jd/Routers.xml");
+        File fileRoutersDat = JDIO.getResourceFile("jd/Routers.xml");
 
-        File fileRoutersout = JDUtilities.getResourceFile("jd/new.xml");
+        File fileRoutersout = JDIO.getResourceFile("jd/new.xml");
         // formateNames(fileRoutersDat, fileRoutersout);
         ConvertRouterData.ConvertXml(fileRoutersDat, fileRoutersout);
         // RouterParser parser = new RouterParser();
@@ -143,14 +144,14 @@ public class ConvertRouterData {
     @SuppressWarnings("unchecked")
     private void saveTolist(Vector<String[]> list, File file) {
         if (file.exists()) {
-            list.addAll((Collection<? extends String[]>) JDUtilities.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
+            list.addAll((Collection<? extends String[]>) JDIO.loadObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), file, true));
             Collections.sort(list, new Comparator<String[]>() {
                 public int compare(String[] a, String[] b) {
                     return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
                 }
             });
         }
-        JDUtilities.saveObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), list, file, null, null, true);
+        JDIO.saveObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), list, file, null, null, true);
     } /*
          * private static String replace(String arg) { return
          * arg.replaceAll("&amp;nbsp;", " ").replaceAll("&#13;", "\n"); }

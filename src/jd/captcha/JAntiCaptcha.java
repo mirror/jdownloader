@@ -66,6 +66,7 @@ import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -130,7 +131,7 @@ public class JAntiCaptcha {
      * @return Gibt die Pfade zu allen Methoden zurück
      */
     public static File[] getMethods(String path) {
-        File dir = JDUtilities.getResourceFile(path);
+        File dir = JDIO.getResourceFile(path);
 
         if (dir == null || !dir.exists()) {
             if (JAntiCaptcha.isLoggerActive()) {
@@ -143,7 +144,7 @@ public class JAntiCaptcha {
             public boolean accept(File pathname) {
                 // if(JAntiCaptcha.isLoggerActive())logger.info(pathname.getName(
                 // ));
-                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDUtilities.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
+                if (pathname.isDirectory() && new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml").exists() && !JDIO.getLocalFile(new File(pathname.getAbsoluteFile() + UTILITIES.FS + "jacinfo.xml")).contains("disabled")) {
 
                     return true;
                 } else {
@@ -164,9 +165,9 @@ public class JAntiCaptcha {
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
-        boolean ret = JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
+        boolean ret = JDIO.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
         if (!ret) { return false; }
-        String info = JDUtilities.getLocalFile(JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
+        String info = JDIO.getLocalFile(JDIO.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
         if (info.contains("disabled")) { return false; }
         return true;
     }
@@ -908,9 +909,9 @@ public class JAntiCaptcha {
     private void getJACInfo() {
 
         Document doc;
-        File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "jacinfo.xml");
+        File f = JDIO.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "jacinfo.xml");
 
-        doc = UTILITIES.parseXmlString(JDUtilities.getLocalFile(f), false);
+        doc = UTILITIES.parseXmlString(JDIO.getLocalFile(f), false);
         if (doc == null) {
             if (JAntiCaptcha.isLoggerActive()) {
                 logger.severe("" + "jacinfo.xml" + " is missing2");
@@ -1454,7 +1455,7 @@ public class JAntiCaptcha {
      * @return File zu arg
      */
     public File getResourceFile(String arg) {
-        return JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + arg);
+        return JDIO.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + arg);
     }
 
     /**
@@ -1581,10 +1582,10 @@ public class JAntiCaptcha {
      * MTH File wird geladen und verarbeitet
      */
     private void loadMTHFile() {
-        File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "letters.mth");
+        File f = JDIO.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "letters.mth");
         String str = "<jDownloader></jDownloader>";
         if (f.exists()) {
-            str = JDUtilities.getLocalFile(f);
+            str = JDIO.getLocalFile(f);
         }
         Document mth = UTILITIES.parseXmlString(str, false);
         logger.info("Get file: " + f);

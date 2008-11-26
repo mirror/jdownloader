@@ -31,6 +31,7 @@ import jd.http.Encoding;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download
@@ -338,7 +339,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * @return Die Datei zum Abspeichern
      */
     public String getFileOutput() {
-        return JDUtilities.validatePath(getFileOutput0());
+        return JDIO.validatePath(getFileOutput0());
     }
 
     public String getFileOutput0() {
@@ -725,9 +726,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public void addSubdirectory(String subdir) {
         if (subdir != null && name.length() > 0) {
             if (subdirectory != null) {
-                subdirectory = new StringBuilder(subdirectory).append(File.separator).append(JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir))).toString();
+                subdirectory = new StringBuilder(subdirectory).append(File.separator).append(JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir))).toString();
             } else {
-                subdirectory = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(subdir));
+                subdirectory = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(subdir));
             }
         } else {
             subdirectory = null;
@@ -840,7 +841,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setName(String name) {
         if (name != null && name.length() > 0) {
-            this.name = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(name));
+            this.name = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(name));
             updatePartID();
         }
     }
@@ -866,7 +867,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public void setFinalFileName(String newfinalFileName) {
         if (newfinalFileName != null && newfinalFileName.length() > 0) {
-            finalFileName = JDUtilities.removeEndingPoints(JDUtilities.validateFileandPathName(newfinalFileName));
+            finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));
             updatePartID();
         } else {
             finalFileName = null;

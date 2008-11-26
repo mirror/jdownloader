@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class CryptMeCom extends PluginForDecrypt {
 
@@ -56,7 +57,7 @@ public class CryptMeCom extends PluginForDecrypt {
         String[][] containers = br.getRegex("<a href='(http://crypt-me.com/dl\\.php\\?file=.*?(\\..*?))' target='_blank'>").getMatches();
 
         for (String[] container : containers) {
-            File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + container[1]);
+            File containerFile = JDIO.getResourceFile("container/" + System.currentTimeMillis() + container[1]);
             Browser.download(containerFile, container[0]);
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(containerFile));
             containerFile.delete();

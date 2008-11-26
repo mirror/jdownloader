@@ -72,6 +72,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 import org.jdesktop.swingx.JXTable;
 import org.jdesktop.swingx.decorator.ColorHighlighter;
@@ -855,7 +856,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             return;
         }
 
-        String[] lines = Regex.getLines(JDUtilities.getLocalFile(file));
+        String[] lines = Regex.getLines(JDIO.getLocalFile(file));
         String[] match;
 
         for (String line : lines) {
@@ -895,7 +896,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         String[][] matches;
         for (File file : getSourceFiles(sourceFile)) {
 
-            matches = new Regex(JDUtilities.getLocalFile(file), "JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]").getMatches();
+            matches = new Regex(JDIO.getLocalFile(file), "JDLocale[\\s]*\\.L[F]?[\\s]*\\([\\s]*\"(.*?)\"[\\s]*,[\\s]*(\".*?\"|.*?)[\\s]*[,\\)]").getMatches();
 
             for (String[] match : matches) {
 
@@ -931,7 +932,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
             } else if (entry.isFile()) {
 
-                if (JDUtilities.getFileExtension(entry).equals("java")) fileContents.add(entry);
+                if (JDIO.getFileExtension(entry).equals("java")) fileContents.add(entry);
             }
         }
         return fileContents;

@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class DatabaseConnector implements Serializable {
 
@@ -82,7 +83,7 @@ public class DatabaseConnector implements Serializable {
                         if (tmppath.endsWith(".cfg")) {
                             logger.finest("Wrapping " + tmppath);
 
-                            Object props = JDUtilities.loadObject(null, f = JDUtilities.getResourceFile("config/" + tmppath), false);
+                            Object props = JDIO.loadObject(null, f = JDIO.getResourceFile("config/" + tmppath), false);
 
                             if (props != null) {
                                 pst.setString(1, tmppath.split(".cfg")[0]);
@@ -200,7 +201,7 @@ public class DatabaseConnector implements Serializable {
     	
     	if(script.exists()) {
     		scriptbackup.delete();
-    		JDUtilities.copyFile(script, scriptbackup);
+    		JDIO.copyFile(script, scriptbackup);
     	}
     }
     
@@ -215,7 +216,7 @@ public class DatabaseConnector implements Serializable {
     	
     	if(scriptbackup.exists()) {
     		script.delete();
-    		JDUtilities.copyFile(scriptbackup, script);
+    		JDIO.copyFile(scriptbackup, script);
     	}
     }
 

@@ -33,6 +33,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
+import jd.utils.io.JDIO;
 
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 
@@ -126,7 +127,7 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
 
         try {
             if (dest.createNewFile() && dest.canWrite()) {
-                JDUtilities.writeLocalFile(dest, content);
+                JDIO.writeLocalFile(dest, content);
                 return true;
             } else {
                 logger.severe("Can not write to: " + dest.getAbsolutePath());

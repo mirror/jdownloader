@@ -27,6 +27,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class VetaXin extends PluginForDecrypt {
 
@@ -55,7 +56,7 @@ public class VetaXin extends PluginForDecrypt {
             String links[] = br.getRegex(Pattern.compile("<a href=\"(/(dload|mirror)/.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
             String rsdf = br.getRegex(Pattern.compile("<a href=\"(/crypt\\.php\\?.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (rsdf != null) {
-                File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
+                File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
                 Browser.download(container, br.openGetConnection("http://vetax.in" + rsdf));
                 Vector<DownloadLink> dl_links = JDUtilities.getController().getContainerLinks(container);
                 container.delete();

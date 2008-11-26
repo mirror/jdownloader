@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class LinkCryptWs extends PluginForDecrypt {
 
@@ -74,7 +75,7 @@ public class LinkCryptWs extends PluginForDecrypt {
 
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
 
-        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
 
         /* TODO: Das kann man sicher besser lösen.. bitte mal wer reinschauen */
         FileOutputStream out = new FileOutputStream(container);

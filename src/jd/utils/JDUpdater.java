@@ -33,6 +33,7 @@ import javax.swing.JOptionPane;
 import jd.config.CFGConfig;
 import jd.http.Browser;
 import jd.update.WebUpdater;
+import jd.utils.io.JDIO;
 
 /**
  * Wie benutze ich diese Klasse.
@@ -310,9 +311,9 @@ public class JDUpdater {
             ftp.bin();
             ftp.cwd("/httpdocs/service/update/jd/");
             logger.info("write list.php");
-            JDUtilities.writeLocalFile(JDUtilities.getResourceFile("list.php"), list);
+            JDIO.writeLocalFile(JDIO.getResourceFile("list.php"), list);
             ftp.remove("list.php");
-            ftp.stor(JDUtilities.getResourceFile("list.php"));
+            ftp.stor(JDIO.getResourceFile("list.php"));
             ftp.remove("updatemessage.html");
             logger.info("write updatemessage (changelog)");
             ftp.stor(new File("updatemessage.html"));

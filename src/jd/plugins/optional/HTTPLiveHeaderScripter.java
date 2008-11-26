@@ -71,6 +71,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -149,10 +150,10 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             File ret = fc.getSelectedFile();
             if (ret == null || !ret.exists()) { return; }
             try {
-                Vector<String> save = (Vector<String>) JDUtilities.loadObject(frame, ret, true);
+                Vector<String> save = (Vector<String>) JDIO.loadObject(frame, ret, true);
                 textArea.setText(save.get(2));
             } catch (Exception e2) {
-                textArea.setText(JDUtilities.getLocalFile(ret));
+                textArea.setText(JDIO.getLocalFile(ret));
             }
 
         } else if (e.getSource() == menSave) {
@@ -163,7 +164,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }
-            if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("xml")) {
+            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("xml")) {
 
                 ret = new File(ret.getAbsolutePath() + ".xml");
             }
@@ -176,7 +177,7 @@ public class HTTPLiveHeaderScripter extends PluginOptional {
             save.add(textArea.getText());
             save.add("?s).*" + manu.toLowerCase() + ".*");
 
-            JDUtilities.saveObject(frame, save, ret, null, null, true);
+            JDIO.saveObject(frame, save, ret, null, null, true);
         } else if (e.getSource() == menExit) {
             frame.dispose();
         } else if (e.getSource() == menEditValidate) {

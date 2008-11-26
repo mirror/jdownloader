@@ -35,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class Stealth extends PluginForDecrypt {
 
@@ -49,7 +50,7 @@ public class Stealth extends PluginForDecrypt {
 
         String id = new Regex(parameter, Pattern.compile("\\?id\\=([a-zA-Z0-9]+)")).getMatch(0);
         if (id != null) {
-            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
             Vector<DownloadLink> dl_links;
             try {
                 Browser.download(container, br.openGetConnection("http://stealth.to/?go=dlc&id=" + id));

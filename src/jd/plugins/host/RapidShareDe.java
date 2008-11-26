@@ -35,7 +35,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
 import jd.utils.JDHash;
 import jd.utils.JDLocale;
-import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class RapidShareDe extends PluginForHost {
 
@@ -112,7 +112,7 @@ public class RapidShareDe extends PluginForHost {
 
         File l = new File(downloadLink.getFileOutput());
         if (l.length() < 10240) {
-            String local = JDUtilities.getLocalFile(l);
+            String local = JDIO.getLocalFile(l);
             if (Regex.matches(local, "Zugriffscode falsch")) {
                 l.delete();
                 l.deleteOnExit();

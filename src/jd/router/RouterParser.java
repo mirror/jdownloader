@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import javax.swing.JFrame;
 
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * Diese Klasse ließt eine Routers.dat Datei aus
@@ -212,7 +213,7 @@ public class RouterParser {
     @SuppressWarnings("unchecked")
     public Vector<RouterData> parseXMLFile(File file) {
 
-        Vector<RouterData> routerData = (Vector<RouterData>) JDUtilities.loadObject(new JFrame(), file, true);
+        Vector<RouterData> routerData = (Vector<RouterData>) JDIO.loadObject(new JFrame(), file, true);
         return routerData;
     }
 
@@ -309,7 +310,7 @@ public class RouterParser {
      */
     public void routerDatToXML(File dat, File xml) {
         RouterParser parser = new RouterParser();
-        JDUtilities.saveObject(new JFrame(), parser.parseFile(dat), xml, "routerdata", "xml", true);
+        JDIO.saveObject(new JFrame(), parser.parseFile(dat), xml, "routerdata", "xml", true);
 
     }
 }

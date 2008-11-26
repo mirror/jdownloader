@@ -25,6 +25,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * @author JD-Team
@@ -65,7 +66,7 @@ public class ConfigPanelDownload extends ConfigPanel {
         ConfigEntry conditionEntry;
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, JDUtilities.getConfiguration(), Configuration.PARAM_DOWNLOAD_DIRECTORY, JDLocale.L("gui.config.general.downloadDirectory", "Downloadverzeichnis")));
-        ce.setDefaultValue(JDUtilities.getResourceFile("downloads").getAbsolutePath());
+        ce.setDefaultValue(JDIO.getResourceFile("downloads").getAbsolutePath());
 
         container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, JDUtilities.getConfiguration(), Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, JDLocale.L("gui.config.general.createSubFolders", "Wenn möglich Unterordner mit Paketname erstellen")));
         ce.setDefaultValue(false);

@@ -43,6 +43,7 @@ import jd.utils.CLRLoader;
 import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -153,7 +154,7 @@ public class HTTPLiveHeader extends Interaction {
             }
         }
         ch.clear();
-        JDUtilities.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
+        JDIO.saveObject(new JFrame(), db, JDIO.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
     }
 
     public static String[] getParameter(String code) {
@@ -782,7 +783,7 @@ public class HTTPLiveHeader extends Interaction {
         Vector<String[]> ret = new Vector<String[]>();
         for (File element : list) {
             if (element.isFile() && element.getName().toLowerCase().matches(".*\\.xml$")) {
-                ret.addAll((Collection<? extends String[]>) JDUtilities.loadObject(new JFrame(), element, true));
+                ret.addAll((Collection<? extends String[]>) JDIO.loadObject(new JFrame(), element, true));
             }
         }
 

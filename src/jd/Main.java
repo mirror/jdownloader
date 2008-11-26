@@ -57,6 +57,7 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
+import jd.utils.io.JDIO;
 
 /**
  * @author astaldo/JD-Team
@@ -256,7 +257,7 @@ System.setProperty("file.encoding","UTF8");
         try {
             if (showSplash && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
 
-                splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
+                splashScreen = new SplashScreen(JDIO.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
                 splashScreen.setVisible(true);
 
             }
@@ -411,7 +412,7 @@ System.setProperty("file.encoding","UTF8");
 
         if (debug || JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
             try {
-                File log = JDUtilities.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
+                File log = JDIO.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
                 if (!log.getParentFile().exists()) {
                     log.getParentFile().mkdir();
                 }

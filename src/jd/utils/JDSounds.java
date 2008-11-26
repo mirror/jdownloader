@@ -28,6 +28,7 @@ import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.JDFileFilter;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.utils.io.JDIO;
 
 public class JDSounds {
     private static HashMap<String, String> data = new HashMap<String, String>();
@@ -51,7 +52,7 @@ public class JDSounds {
     }
 
     public static Vector<String> getSoundIDs() {
-        File dir = JDUtilities.getResourceFile(THEMES_DIR);
+        File dir = JDIO.getResourceFile(THEMES_DIR);
         if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".snd", false));
         Vector<String> ret = new Vector<String>();
@@ -161,14 +162,14 @@ public class JDSounds {
     }
 
     public static void setSoundTheme(String themeID) {
-        File file = JDUtilities.getResourceFile(THEMES_DIR + themeID + ".snd");
+        File file = JDIO.getResourceFile(THEMES_DIR + themeID + ".snd");
         if (!file.exists()) {
             logger.severe("SoundTheme " + themeID + " not installed");
             return;
         }
         logger.info("SoundTheme " + themeID + " loaded");
         data = new HashMap<String, String>();
-        String str = JDUtilities.getLocalFile(file);
+        String str = JDIO.getLocalFile(file);
         String[] lines = Regex.getLines(str);
         for (String element : lines) {
             int split = element.indexOf("=");
@@ -196,13 +197,13 @@ public class JDSounds {
     public static File SF(String key) {
         key = JDSounds.V(key);
         if (key == null) { return null; }
-        return JDUtilities.getResourceFile(SOUND_DIR + key + ".mp3");
+        return JDIO.getResourceFile(SOUND_DIR + key + ".mp3");
     }
 
     public static File SF(String key, String def) {
         key = JDSounds.V(key, def);
         if (key == null) { return null; }
-        return JDUtilities.getResourceFile(SOUND_DIR + key + ".mp3");
+        return JDIO.getResourceFile(SOUND_DIR + key + ".mp3");
     }
 
     /**

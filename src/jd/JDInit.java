@@ -54,6 +54,7 @@ import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * @author JD-Team
@@ -160,15 +161,15 @@ public class JDInit {
     }
 
     public void checkUpdate() {
-        File updater = JDUtilities.getResourceFile("webupdater.jar");
+        File updater = JDIO.getResourceFile("webupdater.jar");
         if (updater.exists()) {
             if (!updater.delete()) {
                 logger.severe("Webupdater.jar could not be deleted. PLease remove JDHOME/webupdater.jar to ensure a proper update");
             }
         }
-        if (JDUtilities.getResourceFile("webcheck.tmp").exists() && JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
-            JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDUtilities.getLocalFile(JDUtilities.getResourceFile("webcheck.tmp")));
-            JDUtilities.getResourceFile("webcheck.tmp").delete();
+        if (JDIO.getResourceFile("webcheck.tmp").exists() && JDIO.getLocalFile(JDIO.getResourceFile("webcheck.tmp")).indexOf("(Revision" + JDUtilities.getRevision() + ")") > 0) {
+            JDUtilities.getController().getUiInterface().showTextAreaDialog("Error", "Failed Update detected!", "It seems that the previous webupdate failed.\r\nPlease ensure that your java-version is equal- or above 1.5.\r\nMore infos at http://www.syncom.org/projects/jdownloader/wiki/FAQ.\r\n\r\nErrorcode: \r\n" + JDIO.getLocalFile(JDIO.getResourceFile("webcheck.tmp")));
+            JDIO.getResourceFile("webcheck.tmp").delete();
             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false);
         } else {
 
@@ -177,8 +178,8 @@ public class JDInit {
 
         String hash = "";
 
-        if (JDUtilities.getResourceFile("updatemessage.html").exists()) {
-            hash = JDHash.getMD5(JDUtilities.getResourceFile("updatemessage.html"));
+        if (JDIO.getResourceFile("updatemessage.html").exists()) {
+            hash = JDHash.getMD5(JDIO.getResourceFile("updatemessage.html"));
         }
 
         JDUtilities.getRunType();
@@ -210,8 +211,8 @@ public class JDInit {
 
         }
 
-        JDUtilities.getResourceFile("links.linkbackup").delete();
-        JDUtilities.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);
+        JDIO.getResourceFile("links.linkbackup").delete();
+        JDIO.saveObject(null, ret, JDIO.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);
     }
 
     public void doWebupdate(final boolean guiCall) {
@@ -256,7 +257,7 @@ public class JDInit {
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
 
-                updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
+                updater.filterAvailableUpdates(files, JDIO.getResourceFile("."));
 
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);
@@ -293,7 +294,7 @@ public class JDInit {
                         if (ccd.result) {
 
                             try {
-                                Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
+                                Browser.download(JDIO.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
                             } catch (IOException e) {
                                 progress.setStatusText(JDLocale.L("init.webupdate.error.could_not_load_webupdater", "Could not load Webupdater"));
                                 progress.setColor(Color.RED);
@@ -301,8 +302,8 @@ public class JDInit {
                                 return;
                             }
 
-                            JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-                            logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                            JDIO.writeLocalFile(JDIO.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                            logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDIO.getResourceFile(".").getAbsolutePath(), 0));
                             System.exit(0);
                         }
                     } else {
@@ -313,7 +314,7 @@ public class JDInit {
 
                             if (ccd.result) {
                                 try {
-                                    Browser.download(JDUtilities.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
+                                    Browser.download(JDIO.getResourceFile("webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
                                 } catch (IOException e) {
                                     progress.setStatusText(JDLocale.L("init.webupdate.error.could_not_load_webupdater", "Could not load Webupdater"));
                                     progress.setColor(Color.RED);
@@ -321,8 +322,8 @@ public class JDInit {
                                     return;
                                 }
 
-                                JDUtilities.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
-                                logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                                JDIO.writeLocalFile(JDIO.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
+                                logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDIO.getResourceFile(".").getAbsolutePath(), 0));
                                 System.exit(0);
                             }
                         } catch (HeadlessException e) {
@@ -341,11 +342,11 @@ public class JDInit {
     }
 
     public void checkMessage() {
-        File res = JDUtilities.getResourceFile("message.html");
+        File res = JDIO.getResourceFile("message.html");
         String hash = JDHash.getMD5(res);
 
         try {
-            Browser.download(JDUtilities.getResourceFile("message.html"), "http://78.143.20.68/messages/message.html");
+            Browser.download(JDIO.getResourceFile("message.html"), "http://78.143.20.68/messages/message.html");
         } catch (IOException e) {
 
             return;
@@ -353,7 +354,7 @@ public class JDInit {
         String hash2 = JDHash.getMD5(res);
 
         if ((hash2 != null && !hash2.equals(hash))) {
-            String message = JDUtilities.getLocalFile(res);
+            String message = JDIO.getLocalFile(res);
 
             if (message != null && message.trim().length() > 0) {
 
@@ -409,10 +410,10 @@ public class JDInit {
         Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
 
         if (obj == null) {
-            File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
+            File file = JDIO.getResourceFile(JDUtilities.CONFIG_PATH);
             if (file.exists()) {
                 logger.info("Wrapping jdownloader.config");
-                obj = JDUtilities.loadObject(null, file, Configuration.saveAsXML);
+                obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
                 System.out.println(obj.getClass().getName());
                 JDUtilities.getDatabaseConnector().saveConfiguration("jdownloaderconfig", obj);
             }
@@ -444,8 +445,8 @@ public class JDInit {
 
             if (!inst.isAborted()) {
 
-                File home = JDUtilities.getResourceFile(".");
-                if (home.canWrite() && !JDUtilities.getResourceFile("noupdate.txt").exists()) {
+                File home = JDIO.getResourceFile(".");
+                if (home.canWrite() && !JDIO.getResourceFile("noupdate.txt").exists()) {
 
                     JOptionPane.showMessageDialog(null, JDLocale.L("installer.welcome", "Welcome to jDownloader. Download missing files."));
 
@@ -463,7 +464,7 @@ public class JDInit {
                 if (!home.canWrite()) {
                     logger.info("INSTALL abgebrochen");
                     JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.error.noWriteRights", "Error. You do not have permissions to write to the dir"));
-                    JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                    JDUtilities.removeDirectoryOrFile(JDIO.getResourceFile("config"));
                     System.exit(1);
                 }
 
@@ -471,7 +472,7 @@ public class JDInit {
                 logger.info("INSTALL abgebrochen2");
                 JOptionPane.showMessageDialog(new JFrame(), JDLocale.L("installer.abortInstallation", "Error. User aborted installation."));
 
-                JDUtilities.removeDirectoryOrFile(JDUtilities.getResourceFile("config"));
+                JDUtilities.removeDirectoryOrFile(JDIO.getResourceFile("config"));
                 System.exit(0);
 
             }
@@ -482,7 +483,7 @@ public class JDInit {
 
     public void loadDownloadQueue() {
         if (!JDUtilities.getController().initDownloadLinks()) {
-            File links = JDUtilities.getResourceFile("links.dat");
+            File links = JDIO.getResourceFile("links.dat");
 
             if (links != null && links.exists()) {
                 File newFile = new File(links.getAbsolutePath() + ".bup");
@@ -501,7 +502,7 @@ public class JDInit {
         ClassLoader cl = JDUtilities.getJDClassLoader();
         Toolkit toolkit = Toolkit.getDefaultToolkit();
 
-        File dir = JDUtilities.getResourceFile("jd/img/");
+        File dir = JDIO.getResourceFile("jd/img/");
 
         String[] images = dir.list();
         if (images == null || images.length == 0) {
@@ -775,7 +776,7 @@ public class JDInit {
     }
 
     public void removeFiles() {
-        String[] remove = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("outdated.dat")));
+        String[] remove = Regex.getLines(JDIO.getLocalFile(JDIO.getResourceFile("outdated.dat")));
         String homedir = JDUtilities.getJDHomeDirectoryFromEnvironment().toString();
         if (remove != null) {
             for (String file : remove) {

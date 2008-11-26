@@ -27,7 +27,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
-import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * Diese Klasse parsed das JAC Script
@@ -1012,7 +1012,7 @@ public class JACScript {
         }
 
         File f;
-        String script = JDUtilities.getLocalFile(f = JDUtilities.getResourceFile("jd/captcha/methods/" + method + "/" + scriptFile));
+        String script = JDIO.getLocalFile(f = JDIO.getResourceFile("jd/captcha/methods/" + method + "/" + scriptFile));
 
         logger.info("JAC GET: " + f);
         if (script == null || script.length() == 0) {

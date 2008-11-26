@@ -48,6 +48,7 @@ import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class StreamingShareTool extends PluginOptional {
     public StreamingShareTool(PluginWrapper wrapper) {
@@ -89,11 +90,11 @@ public class StreamingShareTool extends PluginOptional {
             File ret = fc.getSelectedFile();
             if (ret == null || !ret.exists()) { return; }
             try {
-                String open = (String) JDUtilities.loadObject(frame, ret, true);
+                String open = (String) JDIO.loadObject(frame, ret, true);
                 textArea.setText(open);
 
             } catch (Exception e2) {
-                textArea.setText(JDUtilities.getLocalFile(ret));
+                textArea.setText(JDIO.getLocalFile(ret));
             }
             return;
         }
@@ -105,12 +106,12 @@ public class StreamingShareTool extends PluginOptional {
             fc.showSaveDialog(frame);
             File ret = fc.getSelectedFile();
             if (ret == null) { return; }
-            if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase(extension)) {
+            if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase(extension)) {
 
                 ret = new File(ret.getAbsolutePath() + "." + extension);
             }
 
-            JDUtilities.saveObject(frame, textArea.getText(), ret, null, null, true);
+            JDIO.saveObject(frame, textArea.getText(), ret, null, null, true);
             return;
         }
         if (e.getSource() == menFileValidate) {
@@ -212,7 +213,7 @@ public class StreamingShareTool extends PluginOptional {
             // TO-DO: Debuginfo
         }
 
-        if (JDUtilities.getFileExtension(ret) == null || !JDUtilities.getFileExtension(ret).equalsIgnoreCase("dlc")) {
+        if (JDIO.getFileExtension(ret) == null || !JDIO.getFileExtension(ret).equalsIgnoreCase("dlc")) {
 
             ret = new File(ret.getAbsolutePath() + ".dlc");
         }

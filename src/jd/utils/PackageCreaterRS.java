@@ -28,6 +28,7 @@ import javax.swing.JOptionPane;
 
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.parser.Regex;
+import jd.utils.io.JDIO;
 import jd.utils.zip.Zip;
 
 public class PackageCreaterRS {
@@ -69,7 +70,7 @@ public class PackageCreaterRS {
         String list = null;
         if (listphp != null) {
 
-            list = JDUtilities.getLocalFile(listphp);
+            list = JDIO.getLocalFile(listphp);
         }
         String[][] matches = new Regex(list, "\\<package\\>.+?\\<\\/package\\>").getMatches();
         for (String p : packages) {
@@ -196,7 +197,7 @@ public class PackageCreaterRS {
         sb.append("</packages>");
 
         System.out.println(list + "");
-        if (listphp != null) JDUtilities.writeLocalFile(new File(listphp.getParentFile(), "list2.php"), list + "");
+        if (listphp != null) JDIO.writeLocalFile(new File(listphp.getParentFile(), "list2.php"), list + "");
 
     }
 }

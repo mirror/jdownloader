@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class JDSimpleWebserverStaticFileRequestHandler {
 
@@ -50,7 +51,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
      * @return a response
      */
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
-        File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
+        File fileToRead = JDIO.getResourceFile("plugins/webinterface/" + url);
 
         HashMap<String, String> mimes = new HashMap<String, String>();
 
@@ -68,7 +69,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
         String mimeType = null;
         int indexOfDot = fileToRead.getName().indexOf('.');
         if (indexOfDot >= 0) {
-            String extension = JDUtilities.getFileExtension(fileToRead);
+            String extension = JDIO.getFileExtension(fileToRead);
             mimeType = "text/plain";
             if (mimes.containsKey(extension.toLowerCase())) {
                 mimeType = mimes.get(extension.toLowerCase());

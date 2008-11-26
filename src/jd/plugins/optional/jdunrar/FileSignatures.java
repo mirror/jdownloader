@@ -21,7 +21,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 import jd.parser.Regex;
-import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class FileSignatures {
 
@@ -61,7 +61,7 @@ public class FileSignatures {
  */
     public static Signature[] getSignatureList() {
         if (SIGNATURES != null) return SIGNATURES;
-        String[] m = Regex.getLines(JDUtilities.getLocalFile(JDUtilities.getResourceFile("jd/mime.type")));
+        String[] m = Regex.getLines(JDIO.getLocalFile(JDIO.getResourceFile("jd/mime.type")));
         SIGNATURES = new Signature[m.length];
         int i = 0;
         for (String e : m) {

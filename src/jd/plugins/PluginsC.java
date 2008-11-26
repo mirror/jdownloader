@@ -34,6 +34,7 @@ import jd.parser.Regex;
 import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -171,11 +172,11 @@ public abstract class PluginsC extends Plugin {
             md5 = JDHash.getMD5(f);
         }
 
-        String extension = JDUtilities.getFileExtension(f);
+        String extension = JDIO.getFileExtension(f);
         if (f.exists()) {
-            File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension);
+            File res = JDIO.getResourceFile("container/" + md5 + "." + extension);
             if (!res.exists()) {
-                JDUtilities.copyFile(f, res);
+                JDIO.copyFile(f, res);
             }
             if (!res.exists()) {
                 logger.severe("Could not copy file to homedir");

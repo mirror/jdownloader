@@ -39,6 +39,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 @SuppressWarnings("deprecation")
 // FIXME: Auf Browser umbauen (Viel Spaß =) )
@@ -84,7 +85,7 @@ public class CryptItCom extends PluginForDecrypt {
             return null;
         }
 
-        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+        File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
         Browser.download(container, con);
         decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
         container.delete();

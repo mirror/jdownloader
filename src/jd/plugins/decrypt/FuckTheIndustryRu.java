@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
+import jd.utils.io.JDIO;
 
 public class FuckTheIndustryRu extends PluginForDecrypt {
 
@@ -48,7 +49,7 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         String link = br.getRegex(patternDLC).getMatch(0);
         String pass = br.getRegex(patternPW).getMatch(0);
 
-        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         Browser.download(container, link);
         links = JDUtilities.getController().getContainerLinks(container);

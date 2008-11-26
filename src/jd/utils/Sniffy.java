@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.config.Configuration;
 import jd.parser.Regex;
+import jd.utils.io.JDIO;
 
 public final class Sniffy {
     public static Pattern blackList = Pattern.compile("(Wireshark|PRTG Traffic Grapher|INTEREST Security Scanner|NETCORtools|PIAFCTM|Attack Tool Kit 4.1|Big Mother|Colasoft Capsa|cb_PMM|easy Look at Net|easy Look at Packets|Ethereal|Etherscan Analyzer|SoftX HTTP Debugger Pro|SoftX HTTP Debugger Lite|HTTP Monitor|NetControl|Packetyzer|Traffic Analyzer|TCP Spy|tcpdump|windump|NetworkMiner|CommView|NetworkActiv|Network General|Packet Analyzer|OmniPeek|HTTP Analyzer|URL Helper|URL Snooper|ettercap|FritzCap|Network Monitor|Network Monitor|Essential NetTools|Gobbler|Ethload|Netman|PacketView|Network Analyzer|LAN Analyzer|NetMinder|LANdecoder32|Protocol Analyzer|EvilMonkey)", Pattern.CASE_INSENSITIVE);
@@ -47,7 +48,7 @@ public final class Sniffy {
     public static boolean hasWinSnifer() {
         try {
 
-            File reader2 = JDUtilities.getResourceFile("tools/windows/p.exe");
+            File reader2 = JDIO.getResourceFile("tools/windows/p.exe");
 
             String hash2 = JDHash.getMD5(reader2);
             if (hash2 == null || !hash2.equals("3c2298676457b5c49e55dbee3451c4b1")) {

@@ -18,6 +18,7 @@ import jd.utils.Executer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.OSDetector;
+import jd.utils.io.JDIO;
 
 public class JDGrowlNotification extends PluginOptional {
     public static int getAddonInterfaceVersion() {
@@ -103,7 +104,7 @@ public class JDGrowlNotification extends PluginOptional {
     public void growlNotification(String headline, String message, String title) {
         if (OSDetector.isMac()) {
             Executer exec = new Executer("/usr/bin/osascript");
-            exec.addParameter(JDUtilities.getResourceFile("jd/osx/growlNotification.scpt").getAbsolutePath());
+            exec.addParameter(JDIO.getResourceFile("jd/osx/growlNotification.scpt").getAbsolutePath());
             exec.addParameter(headline);
             exec.addParameter(message);
 

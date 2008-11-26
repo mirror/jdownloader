@@ -40,6 +40,7 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
+import jd.utils.io.JDIO;
 
 public class JDSimpleWebserverRequestHandler {
 
@@ -472,7 +473,7 @@ public class JDSimpleWebserverRequestHandler {
                 }
             } else if (requestParameter.get("do").compareToIgnoreCase("upload") == 0) {
                 if (requestParameter.containsKey("file")) {
-                    File container = JDUtilities.getResourceFile("container/" + requestParameter.get("file"));
+                    File container = JDIO.getResourceFile("container/" + requestParameter.get("file"));
                     Vector<DownloadLink> waitingLinkList = loadContainerFile(container);
                     addLinkstoWaitingList(waitingLinkList);
                 }
@@ -500,17 +501,17 @@ public class JDSimpleWebserverRequestHandler {
             }
         }
 
-        File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
+        File fileToRead = JDIO.getResourceFile("plugins/webinterface/" + url);
         if (!fileToRead.isFile()) {
             /*
              * default soll zur index.tmpl gehen, fall keine angabe gemacht
              * wurde
              */
             String tempurl = url + "index.tmpl";
-            File fileToRead2 = JDUtilities.getResourceFile("plugins/webinterface/" + tempurl);
+            File fileToRead2 = JDIO.getResourceFile("plugins/webinterface/" + tempurl);
             if (fileToRead2.isFile()) {
                 url = tempurl;
-                fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
+                fileToRead = JDIO.getResourceFile("plugins/webinterface/" + url);
             }
         }
 

@@ -168,6 +168,7 @@ public class Odsiebiecom extends PluginForHost {
         br.setDebug(true);
         dl = br.openDownload(downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
+            
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         }
