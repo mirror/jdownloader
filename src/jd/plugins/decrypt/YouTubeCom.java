@@ -131,12 +131,20 @@ public class YouTubeCom extends PluginForDecrypt {
             String link = "http://" + host + "/" + PLAYER + "?" + VIDEO_ID + "=" + video_id + "&" + "t=" + t;
             String name = Encoding.htmlDecode(br.getRegex(YT_FILENAME).getMatch(0).trim());
             /* Konvertierungsmöglichkeiten adden */
+            boolean gotHD = false;
 
             if (br.openGetConnection(link + "&fmt=18").getResponseCode() == 200) {
+                br.getHttpConnection().disconnect();
+                possibleconverts.add(ConversionMode.VIDEOMP4);
+            }
+            if (br.openGetConnection(link + "&fmt=22").getResponseCode() == 200) {
+                br.getHttpConnection().disconnect();
+                gotHD = true;
                 possibleconverts.add(ConversionMode.VIDEOMP4);
             }
             possibleconverts.add(ConversionMode.VIDEOFLV);
             if (br.openGetConnection(link + "&fmt=13").getResponseCode() == 200) {
+                br.getHttpConnection().disconnect();
                 possibleconverts.add(ConversionMode.VIDEO3GP);
             }
             possibleconverts.add(ConversionMode.AUDIOMP3);
@@ -155,6 +163,14 @@ public class YouTubeCom extends PluginForDecrypt {
                 thislink.setSourcePluginComment("Convert to " + convertTo.GetText());
                 thislink.setProperty("convertto", convertTo.name());
                 decryptedLinks.add(thislink);
+                if (gotHD && convertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
+                    thislink = createDownloadlink(link.replaceAll("&fmt=18", "&fmt=22"));
+                    thislink.setBrowserUrl(parameter);
+                    thislink.setFinalFileName(name + "(HD)" + ".tmp");
+                    thislink.setSourcePluginComment("Convert to " + convertTo.GetText());
+                    thislink.setProperty("convertto", convertTo.name());
+                    decryptedLinks.add(thislink);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
