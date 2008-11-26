@@ -4,7 +4,6 @@ addons.jdgrowlnotification.menu = Growl Benachrichtigungen
 addons.jdlowspeed.statusmessage.disabled = Low Speederkennung ausschalten
 addons.jdlowspeed.statusmessage.enabled = Low Speederkennung einschalten
 addons.jdshutdown.menu = Nach dem Downloaden herunterfahren
-addons.jdshutdown.run = System jetzt herunterfahren
 addons.jdshutdown.statusmessage.disabled = Das System wird nach dem Download NICHT heruntergefahren.
 addons.jdshutdown.statusmessage.enabled = Das System wird nach dem Download heruntergefahren.
 addons.schedule.menu.add = Hinzufügen
@@ -20,7 +19,6 @@ addons.schedule.menu.redo = Zurückstellen in[Stunden]
 addons.schedule.menu.remain = Verbleibend:
 addons.schedule.menu.remove = Entfernen
 addons.schedule.menu.running = Angehalten!
-addons.schedule.menu.schedule = Zeitplaner
 addons.schedule.menu.start = Start
 addons.schedule.menu.start_stop = Start/Stop Download?
 addons.schedule.menu.stop = Stop
@@ -210,7 +208,6 @@ gui.config.jdrr.reconnectfaild = Reconnect fehlgeschlagen
 gui.config.jdrr.savereconnect = Der Reconnect war erfolgreich möchten sie jetzt speichern?
 gui.config.jdrr.title = Reconnect Recorder
 gui.config.jdshutdown.forceshutdown = Shutdown erzwingen (Nur einige OS)
-gui.config.jdshutdown.hibernate = Ruhezustand/Hibernate (Nur einige OS)
 gui.config.jdshutdown.standby = Standby (Nur einige OS)
 gui.config.liveheader.autoconfig = Router automatisch erkennen
 gui.config.liveheader.btnfindip = Router IP ermitteln
@@ -243,16 +240,15 @@ gui.config.packagemanager.table.info = Info
 gui.config.plugin.abg_confirm = Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden
 gui.config.plugin.decrypt.btn_load = Lade Plugin
 gui.config.plugin.host.btn_load = Lade Plugin
-gui.config.plugin.host.desc = ACHTUNG!!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB`s 
- der Hoster. Bitte lesen Sie die AGB`s aufmerksam durch und aktivieren Sie das Plugin nur,
-falls Sie sich mit diesen Einverstanden erklären!
-Die Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl
-Bevorzugte Hoster sollten oben stehen!
+gui.config.plugin.host.desc = ACHTUNG!!! Das JD Team übernimmt keine Verantwortung für die Einhaltung der AGB`s \r\n der Hoster. Bitte lesen Sie die AGB`s aufmerksam durch und aktivieren Sie das Plugin nur,\r\nfalls Sie sich mit diesen Einverstanden erklären!\r\nDie Reihenfolge der Plugins bestimmt die Prioritäten der automatischen Mirrorauswahl\n\rBevorzugte Hoster sollten oben stehen!
 gui.config.plugin.host.name = Host Plugins
 gui.config.plugin.host.readagb = AGB
+gui.config.plugin.optional.btn_togglestatus = An/Aus
 gui.config.plugin.optional.forcedactive = Das Addon %s kann nicht abgeschaltet werden.
 gui.config.plugin.optional.link_help = http://jdownloader.org/page.php?id=122
 gui.config.plugin.optional.linktext_help = Hilfe
+gui.config.plugin.optional.statusactive = An
+gui.config.plugin.optional.statusinactive = Aus
 gui.config.popup.title = Konfiguration
 gui.config.reconnect.name = Reconnect
 gui.config.reloadcontainer = Heruntergeladene Container einlesen
@@ -414,6 +410,7 @@ gui.logdialog.warning.uploadfailed = Upload fehlgeschlagen
 gui.logdialog.yourlog = Hochgeladener Log: Editieren möglich!
 gui.logger.askquestion = Bitte beschreib dein(e) Problem/Bug/Frage!
 gui.mainframe.title.updatemessage = -->UPDATES VERFÜGBAR:
+gui.menu.action = Aktion
 gui.menu.action.about.accel = CTRL+F1
 gui.menu.action.about.desc = Über JDownloader
 gui.menu.action.about.mnem = A
@@ -529,8 +526,7 @@ gui.menu.file = Datei
 gui.menu.plugins.help = ?
 gui.menu.plugins.phost = Premium Hoster
 gui.menu.remove = Entfernen
-gui.messages.outofmemoryerror = Ein Speicherfehler wurde festgestellt. Neustart dringend empfohlen!
-Bitte benachrichtige die Entwickler über diesen Fehler!
+gui.messages.outofmemoryerror = Ein Speicherfehler wurde festgestellt. Neustart dringend empfohlen!\r\nBitte benachrichtige die Entwickler über diesen Fehler!
 gui.packageinfo.comment = Kommentar
 gui.packageinfo.dldirectory = Downloadverzeichnis
 gui.packageinfo.links = Links
@@ -738,8 +734,7 @@ locale.lngs.romanian = rumänisch
 locale.lngs.russian = russisch
 locale.lngs.spanish = spanisch
 locale.lngs.swedish = schwedisch
-main.start.logwarning.body = ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. 
-Diese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.
+main.start.logwarning.body = ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.
 main.start.logwarning.title = Logwarnung
 main.status.active = an
 main.status.inactive = aus
@@ -802,8 +797,7 @@ plugins.host.meinupload.serverdefect = Service nicht verfügbar
 plugins.host.premium.info.cash = Cash
 plugins.host.premium.info.error = Das %s Plugin unterstützt noch keine Accountinformationen.
 plugins.host.premium.info.files = Dateien
-plugins.host.premium.info.notvalid = Die Zugangsdaten für '%s' sind falsch! Bitte Passwort und Benutzername überprüfen!
-%s
+plugins.host.premium.info.notvalid = Die Zugangsdaten für '%s' sind falsch! Bitte Passwort und Benutzername überprüfen!\r\n%s
 plugins.host.premium.info.premiumpoints = PremiumPoints
 plugins.host.premium.info.status = Info
 plugins.host.premium.info.title = Accountinfo von %s für %s
@@ -851,6 +845,7 @@ plugins.optional.hjsplit.menu.config = Einstellungen
 plugins.optional.hjsplit.menu.extract.singlefils = Archiv(e) zusammenführen
 plugins.optional.hjsplit.menu.toggle = Aktivieren
 plugins.optional.httpliveheaderscripter.action.end = Skripter verlassen
+plugins.optional.httpliveheaderscripter.action.start = Scriptersteller starten
 plugins.optional.httpliveheaderscripter.gui.desc = XML-File
 plugins.optional.httpliveheaderscripter.gui.importff.message = Fügen Sie hier den Firefox Liveheader Mitschnitt ein
 plugins.optional.httpliveheaderscripter.gui.importff.title = Firefox Liveheader Mitschnitt importieren
@@ -954,14 +949,14 @@ plugins.optional.langfileeditor.pickmissingcolor = Farbe für fehlende Einträge
 plugins.optional.langfileeditor.pickoldcolor = Farbe für alte Einträge auswählen
 plugins.optional.langfileeditor.reload = Neu laden
 plugins.optional.langfileeditor.save = Speichern
-plugins.optional.langfileeditor.save.error.message = Beim Schreiben der LanguageFile trat ein Fehler auf:
-%s
+plugins.optional.langfileeditor.save.error.message = Beim Schreiben der LanguageFile trat ein Fehler auf:\n%s
 plugins.optional.langfileeditor.save.error.title = Fehler!
 plugins.optional.langfileeditor.save.success.message = LanguageFile erfolgreich gespeichert!
 plugins.optional.langfileeditor.save.success.title = Speichern erfolgreich!
 plugins.optional.langfileeditor.saveas = Speichern Als
 plugins.optional.langfileeditor.search = Suchen
 plugins.optional.langfileeditor.searchfor = Suche nach String: (Startposition ist die erste ausgewählte Zeile)
+plugins.optional.langfileeditor.show_gui = LanguageEditor starten
 plugins.optional.langfileeditor.showdupes = Doppelte Einträge anzeigen
 plugins.optional.langfileeditor.sourcefile = Quelle (Datei):
 plugins.optional.langfileeditor.sourcefolder = Quelle (Ordner):
@@ -1090,8 +1085,7 @@ sys.warning.dlcerror_unknown = DLC Fehler:
 sys.warning.dlcerror_url = DLC: URL Fehler:
 sys.warning.dlcerror_version = DLC Fehler: Veraltete JD Version (2)
 sys.warning.dlcerror_xml = DLC: XML Fehler
-sys.warning.linklist.incompatible = Linkliste inkompatibel. 
-Backup angelegt.
+sys.warning.linklist.incompatible = Linkliste inkompatibel. \r\nBackup angelegt.
 sys.warning.newmessage = Neue Systemnachricht
 system.dialogs.update = Updates verfügbar
 system.dialogs.update.message = <font size="2" face="Verdana, Arial, Helvetica, sans-serif">%s update(s)  und %s Paket(e) oder Addon(s) verfügbar. Jetzt installieren??</font>
