@@ -131,7 +131,7 @@ public class Odsiebiecom extends PluginForHost {
                         }
                     }
                 }
-
+                if (captchaCode == null) captchaCode = capform.getRegex("<b>(.*?)</b>").getMatch(0);
                 if (captchaurl == null && captchaCode == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 if (captchaCode == null) {
                     captchaFile = getLocalCaptchaFile(this);
@@ -159,8 +159,8 @@ public class Odsiebiecom extends PluginForHost {
             if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
         }
         /*
-         * Leerzeichen mÃ¼ssen durch %20 ersetzt werden!!!!!!!!, sonst werden sie
-         * von new URL() abgeschnitten
+         * Leerzeichen mÃ¼ssen durch %20 ersetzt werden!!!!!!!!, sonst werden
+         * sie von new URL() abgeschnitten
          */
         downloadurl = downloadurl.replaceAll(" ", "%20");
         /* Datei herunterladen */
@@ -168,7 +168,7 @@ public class Odsiebiecom extends PluginForHost {
         br.setDebug(true);
         dl = br.openDownload(downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
-            
+
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         }
