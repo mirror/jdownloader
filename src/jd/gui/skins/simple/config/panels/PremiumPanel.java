@@ -26,8 +26,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -193,21 +191,11 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
             }
             list.add(new Account("", ""));
-            final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i + 1));
-            active.setForeground(INACTIVE);
-            active.addItemListener(new ItemListener() {
-                public void itemStateChanged(ItemEvent e) {
-                    if (active.isSelected()) {
-                        active.setForeground(ACTIVE);
-                    } else {
-                        active.setForeground(INACTIVE);
-                    }
-                }
-            });
-            active.setSelected(true);
-            enables[i] = active;
+
+            panel.add(enables[i] = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i + 1)), "alignleft");
+            enables[i].setForeground(INACTIVE);
+            enables[i].setSelected(true);
             enables[i].addChangeListener(this);
-            panel.add(active, "alignleft");
 
             panel.add(btnCheck[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
             btnCheck[i].addActionListener(this);
@@ -245,12 +233,14 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     public void stateChanged(ChangeEvent e) {
         for (int i = 0; i < accountNum; i++) {
             if (e.getSource() == enables[i]) {
+                enables[i].setForeground((enables[i].isSelected()) ? ACTIVE : INACTIVE);
                 txtPassword[i].setEnabled(enables[i].isSelected());
                 txtUsername[i].setEnabled(enables[i].isSelected());
                 txtStatus[i].setEnabled(enables[i].isSelected());
                 btnCheck[i].setEnabled(enables[i].isSelected());
                 lblPassword[i].setEnabled(enables[i].isSelected());
                 lblUsername[i].setEnabled(enables[i].isSelected());
+                break;
             }
         }
     }
