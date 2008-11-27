@@ -135,6 +135,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         ArrayList<Account> accounts = (ArrayList<Account>) list;
         Account account;
         for (int i = 0; i < accountNum; i++) {
+            if (i >= accounts.size()) break;
             account = accounts.get(i);
             enables[i].setSelected(account.isEnabled());
             txtUsername[i].setText(account.getUser());
@@ -172,16 +173,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         txtStatus = new JTextField[accountNum];
         btnCheck = new JButton[accountNum];
         btnDelete = new JButton[accountNum];
-        ArrayList<Account> list = new ArrayList<Account>();
-        String premiumurl = null;
-        if (host.getBuyPremiumUrl() != null) {
-            premiumurl = "http://jdownloader.org/r.php?u=" + Encoding.urlEncode(host.getBuyPremiumUrl());
-        }
-        try {
-            if (premiumurl != null) btnBuy = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL(premiumurl));
-        } catch (MalformedURLException e1) {
-            premiumurl = null;
-        }
 
         JPanel panel = this;
         JTabbedPane tab = new JTabbedPane();
@@ -190,7 +181,6 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 tab.add(panel = new JPanel());
                 panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
             }
-            list.add(new Account("", ""));
 
             panel.add(enables[i] = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i + 1)), "alignleft");
             enables[i].setForeground(INACTIVE);
@@ -223,11 +213,20 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + (i * 5 + 1) + " - " + ((i + 1) * 5));
             }
             tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + ((i * 5 + 1 == accountNum) ? accountNum : (i * 5 + 1) + " - " + accountNum));
-            add(tab, "span");
+            this.add(tab, "span");
         }
-        if (premiumurl != null) add(btnBuy, "span, alignright");
-        add(freeTrafficChart, "spanx, spany");
 
+        String premiumUrl = host.getBuyPremiumUrl();
+        if (premiumUrl != null) {
+            try {
+                btnBuy = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl)));
+                this.add(btnBuy, "span, alignright");
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        this.add(freeTrafficChart, "spanx, spany");
     }
 
     public void stateChanged(ChangeEvent e) {
@@ -249,12 +248,14 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         for (int i = 0; i < accountNum; i++) {
             if (e.getSource() == this.btnCheck[i]) {
                 JDUtilities.getGUI().showAccountInformation(host, this.getAccounts().get(i));
+                break;
             } else if (e.getSource() == this.btnDelete[i]) {
                 txtUsername[i].setText("");
                 txtPassword[i].setText("");
                 txtStatus[i].setText("");
                 enables[i].setSelected(false);
                 createDataset();
+                break;
             }
         }
     }
