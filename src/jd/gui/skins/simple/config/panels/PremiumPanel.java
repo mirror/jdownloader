@@ -43,7 +43,6 @@ import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import jd.config.ConfigEntry;
 import jd.gui.skins.simple.components.ChartAPI_Entity;
 import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.JLinkButton;
@@ -67,10 +66,10 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
                 if (acc.getUser().length() > 0 && acc.getPass().length() > 0) {
                     try {
                         accCounter++;
-                        AccountInfo ai = ((PluginForHost) configEntry.getActionListener()).getAccountInformation(acc);
+                        AccountInfo ai = host.getAccountInformation(acc);
                         Long tleft = new Long(ai.getTrafficLeft());
                         if (tleft >= 0 && ai.isExpired() == false) {
-                            freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (accounts.size() + 1)) * accCounter), 50)));
+                            freeTrafficChart.addEntity(new ChartAPI_Entity(acc.getUser() + " [" + (Math.round(tleft.floatValue() / 1024 / 1024 / 1024 * 100) / 100.0) + " GB]", tleft, new Color(50, 255 - ((255 / (accountNum + 1)) * accCounter), 50)));
                             long rest = ai.getTrafficMax() - tleft;
                             if (rest > 0) collectTraffic = collectTraffic + rest;
                         }
@@ -90,23 +89,25 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
     private static final Color INACTIVE = new Color(0xa40604);
     private static final long serialVersionUID = 3275917572262383770L;
 
+    private PluginForHost host;
+    private int accountNum;
+
     private JCheckBox[] enables;
-    private JTextField[] usernames;
-    private JDPasswordField[] passwords;
-    private JTextField[] stati;
-    private ArrayList<Account> accounts;
-    private JLabel[] usernamesLabels;
-    private JLabel[] passwordsLabels;
-    private ConfigEntry configEntry;
-    private JButton[] checkBtns;
-    private JButton[] delete;
-    private JLinkButton buybutton;
+    private JLabel[] lblUsername;
+    private JLabel[] lblPassword;
+    private JTextField[] txtUsername;
+    private JDPasswordField[] txtPassword;
+    private JTextField[] txtStatus;
+    private JButton[] btnCheck;
+    private JButton[] btnDelete;
+    private JLinkButton btnBuy;
 
     private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
     private ChartRefresh loader;
 
     public PremiumPanel(GUIConfigEntry gce) {
-        this.configEntry = gce.getConfigEntry();
+        this.host = (PluginForHost) gce.getConfigEntry().getActionListener();
+        this.accountNum = gce.getConfigEntry().getEnd();
         this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
         this.createPanel();
     }
@@ -118,8 +119,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
      */
     public ArrayList<Account> getAccounts() {
         ArrayList<Account> accounts = new ArrayList<Account>();
-        for (int i = 0; i < enables.length; i++) {
-            Account a = new Account(usernames[i].getText(), new String(passwords[i].getPassword()));
+        for (int i = 0; i < accountNum; i++) {
+            Account a = new Account(txtUsername[i].getText(), new String(txtPassword[i].getPassword()));
             a.setEnabled(enables[i].isSelected());
             accounts.add(a);
         }
@@ -133,21 +134,20 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
      */
     @SuppressWarnings("unchecked")
     public void setAccounts(Object list) {
-        this.accounts = (ArrayList<Account>) list;
-        int i = 0;
-        for (Account account : accounts) {
-            if (i >= enables.length) break;
+        ArrayList<Account> accounts = (ArrayList<Account>) list;
+        Account account;
+        for (int i = 0; i < accountNum; i++) {
+            account = accounts.get(i);
             enables[i].setSelected(account.isEnabled());
-            usernames[i].setText(account.getUser());
-            passwords[i].setText(account.getPass());
-            stati[i].setText(account.getStatus());
-            passwords[i].setEnabled(account.isEnabled());
-            usernames[i].setEnabled(account.isEnabled());
-            stati[i].setEnabled(account.isEnabled());
-            checkBtns[i].setEnabled(account.isEnabled());
-            passwordsLabels[i].setEnabled(account.isEnabled());
-            usernamesLabels[i].setEnabled(account.isEnabled());
-            i++;
+            txtUsername[i].setText(account.getUser());
+            txtPassword[i].setText(account.getPass());
+            txtStatus[i].setText(account.getStatus());
+            txtPassword[i].setEnabled(account.isEnabled());
+            txtUsername[i].setEnabled(account.isEnabled());
+            txtStatus[i].setEnabled(account.isEnabled());
+            btnCheck[i].setEnabled(account.isEnabled());
+            lblPassword[i].setEnabled(account.isEnabled());
+            lblUsername[i].setEnabled(account.isEnabled());
         }
         createDataset();
     }
@@ -166,22 +166,21 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
     private void createPanel() {
 
-        int accountNum = configEntry.getEnd();
         enables = new JCheckBox[accountNum];
-        usernames = new JTextField[accountNum];
-        passwords = new JDPasswordField[accountNum];
-        usernamesLabels = new JLabel[accountNum];
-        passwordsLabels = new JLabel[accountNum];
-        stati = new JTextField[accountNum];
-        checkBtns = new JButton[accountNum];
-        delete = new JButton[accountNum];
+        txtUsername = new JTextField[accountNum];
+        txtPassword = new JDPasswordField[accountNum];
+        lblUsername = new JLabel[accountNum];
+        lblPassword = new JLabel[accountNum];
+        txtStatus = new JTextField[accountNum];
+        btnCheck = new JButton[accountNum];
+        btnDelete = new JButton[accountNum];
         ArrayList<Account> list = new ArrayList<Account>();
         String premiumurl = null;
-        if (((PluginForHost) configEntry.getActionListener()).getBuyPremiumUrl() != null) {
-            premiumurl = "http://jdownloader.org/r.php?u=" + Encoding.urlEncode(((PluginForHost) configEntry.getActionListener()).getBuyPremiumUrl());
+        if (host.getBuyPremiumUrl() != null) {
+            premiumurl = "http://jdownloader.org/r.php?u=" + Encoding.urlEncode(host.getBuyPremiumUrl());
         }
         try {
-            if (premiumurl != null) buybutton = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL(premiumurl));
+            if (premiumurl != null) btnBuy = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL(premiumurl));
         } catch (MalformedURLException e1) {
             premiumurl = null;
         }
@@ -210,23 +209,23 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             enables[i].addChangeListener(this);
             panel.add(active, "alignleft");
 
-            panel.add(checkBtns[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
-            checkBtns[i].addActionListener(this);
+            panel.add(btnCheck[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
+            btnCheck[i].addActionListener(this);
 
-            panel.add(delete[i] = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
-            delete[i].addActionListener(this);
+            panel.add(btnDelete[i] = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
+            btnDelete[i].addActionListener(this);
 
             panel.add(new JSeparator(), "w 30:push, growx, pushx");
-            panel.add(stati[i] = new JTextField(""), "spanx, pushx, growx");
-            stati[i].setEditable(false);
+            panel.add(txtStatus[i] = new JTextField(""), "spanx, pushx, growx");
+            txtStatus[i].setEditable(false);
 
-            panel.add(usernamesLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
-            panel.add(usernames[i] = new JTextField(""));
-            usernames[i].addFocusListener(this);
+            panel.add(lblUsername[i] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
+            panel.add(txtUsername[i] = new JTextField(""));
+            txtUsername[i].addFocusListener(this);
 
-            panel.add(passwordsLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-            panel.add(passwords[i] = new JDPasswordField(), "span, gapbottom 10:10:push");
-            passwords[i].addFocusListener(this);
+            panel.add(lblPassword[i] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
+            panel.add(txtPassword[i] = new JDPasswordField(), "span, gapbottom 10:10:push");
+            txtPassword[i].addFocusListener(this);
 
             enables[i].setSelected(false);
         }
@@ -238,34 +237,32 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + ((i * 5 + 1 == accountNum) ? accountNum : (i * 5 + 1) + " - " + accountNum));
             add(tab, "span");
         }
-        if (premiumurl != null) add(buybutton, "span, alignright");
+        if (premiumurl != null) add(btnBuy, "span, alignright");
         add(freeTrafficChart, "spanx, spany");
 
     }
 
     public void stateChanged(ChangeEvent e) {
-        for (int i = 0; i < enables.length; i++) {
+        for (int i = 0; i < accountNum; i++) {
             if (e.getSource() == enables[i]) {
-                passwords[i].setEnabled(enables[i].isSelected());
-                usernames[i].setEnabled(enables[i].isSelected());
-                stati[i].setEnabled(enables[i].isSelected());
-                checkBtns[i].setEnabled(enables[i].isSelected());
-                passwordsLabels[i].setEnabled(enables[i].isSelected());
-                usernamesLabels[i].setEnabled(enables[i].isSelected());
+                txtPassword[i].setEnabled(enables[i].isSelected());
+                txtUsername[i].setEnabled(enables[i].isSelected());
+                txtStatus[i].setEnabled(enables[i].isSelected());
+                btnCheck[i].setEnabled(enables[i].isSelected());
+                lblPassword[i].setEnabled(enables[i].isSelected());
+                lblUsername[i].setEnabled(enables[i].isSelected());
             }
         }
     }
 
     public void actionPerformed(ActionEvent e) {
-        int accountNum = configEntry.getEnd();
-        ArrayList<Account> acc = this.getAccounts();
         for (int i = 0; i < accountNum; i++) {
-            if (e.getSource() == this.checkBtns[i]) {
-                JDUtilities.getGUI().showAccountInformation(((PluginForHost) configEntry.getActionListener()), acc.get(i));
-            } else if (e.getSource() == this.delete[i]) {
-                usernames[i].setText("");
-                passwords[i].setText("");
-                stati[i].setText("");
+            if (e.getSource() == this.btnCheck[i]) {
+                JDUtilities.getGUI().showAccountInformation(host, this.getAccounts().get(i));
+            } else if (e.getSource() == this.btnDelete[i]) {
+                txtUsername[i].setText("");
+                txtPassword[i].setText("");
+                txtStatus[i].setText("");
                 enables[i].setSelected(false);
                 createDataset();
             }
