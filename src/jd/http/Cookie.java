@@ -109,7 +109,7 @@ public class Cookie {
     }
 
     public void setTimeDifferece(String Date) {
-        if (Date == null) {
+        if (Date == null || Date.length() == 0) {
             this.timedifference = 0;
             return;
         }
@@ -138,7 +138,7 @@ public class Cookie {
         } catch (ParseException e) {
             this.timedifference = 0;
             return;
-        }       
+        }
     }
 
     public Date getExpires() {
