@@ -130,6 +130,7 @@ public class UnrarWrapper extends Thread {
     private ArrayList<String> archiveParts;
     private int crackProgress;
     private int exitCode;
+    private boolean gotInterrupted;
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
@@ -207,7 +208,7 @@ public class UnrarWrapper extends Thread {
                 this.checkSizes();
                 switch (exitCode) {
                 case EXIT_CODE_SUCCESS:
-                    if (removeAfterExtraction) {
+                    if (!gotInterrupted && removeAfterExtraction) {
                         removeArchiveFiles();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
@@ -359,6 +360,7 @@ public class UnrarWrapper extends Thread {
         inter.start();
         exec.waitTimeout();
         this.exitCode = exec.getExitValue();
+        this.gotInterrupted = exec.gotInterrupted();
         inter.interrupt();
         config.setProperty("SPEED", speed);
         config.save();

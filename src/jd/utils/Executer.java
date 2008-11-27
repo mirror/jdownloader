@@ -244,7 +244,7 @@ public class Executer extends Thread {
         }
 
         try {
-
+            processgotinterrupted = false;
             process = pb.start();
 
             if (waitTimeout == 0) { return; }
@@ -373,6 +373,10 @@ public class Executer extends Thread {
 
     public int getExitValue() {
         return exitValue;
+    }
+
+    public boolean gotInterrupted() {
+        return processgotinterrupted;
     }
 
     public void addProcessListener(ProcessListener listener, int flag) {
