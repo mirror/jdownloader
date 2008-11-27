@@ -278,10 +278,10 @@ public class Executer extends Thread {
                 process.waitFor();
             } catch (InterruptedException e1) {
                 process.destroy();
-                processgotinterrupted = true;                
+                processgotinterrupted = true;
             }
             if (processgotinterrupted) {
-                exitValue = 0;
+                exitValue = -1;
             } else {
                 exitValue = process.exitValue();
             }
@@ -314,7 +314,7 @@ public class Executer extends Thread {
         return process;
     }
 
-    public void interrupt() {        
+    public void interrupt() {
         super.interrupt();
         if (sbeObserver != null) this.sbeObserver.interrupt();
         if (sboObserver != null) this.sboObserver.interrupt();
@@ -327,7 +327,7 @@ public class Executer extends Thread {
 
     public void writetoOutputStream(String data) {
         if (data == null || data.length() == 0) data = "";
-    
+
         try {
             outputStream.write(data.getBytes());
             outputStream.write("\n".getBytes());
