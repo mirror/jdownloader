@@ -189,7 +189,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
         JPanel panel = this;
         JTabbedPane tab = new JTabbedPane();
         for (int i = 0; i < accountNum; i++) {
-            if (i % 5 == 0) {
+            if (i % 5 == 0 && accountNum > 5) {
                 tab.add(panel = new JPanel());
                 panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
             }
@@ -230,12 +230,14 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
             enables[i].setSelected(false);
         }
-        int i;
-        for (i = 0; i < tab.getTabCount() - 1; i++) {
-            tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + (i * 5 + 1) + " - " + ((i + 1) * 5));
+        if (accountNum > 5) {
+            int i;
+            for (i = 0; i < tab.getTabCount() - 1; i++) {
+                tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + (i * 5 + 1) + " - " + ((i + 1) * 5));
+            }
+            tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + ((i * 5 + 1 == accountNum) ? accountNum : (i * 5 + 1) + " - " + accountNum));
+            add(tab, "span");
         }
-        tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + ((i * 5 + 1 == accountNum) ? accountNum : (i * 5 + 1) + " - " + accountNum));
-        if (accountNum > 5) add(tab, "span");
         if (premiumurl != null) add(buybutton, "span, alignright");
         add(freeTrafficChart, "spanx, spany");
 
