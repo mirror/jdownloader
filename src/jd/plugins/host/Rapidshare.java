@@ -143,7 +143,7 @@ public class Rapidshare extends PluginForHost {
 
         serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
         serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
-        serverList3 = new String[] { "dt", "l3", "tg", "tl", };
+        serverList3 = new String[] {"cg",  "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg","tg2", "tl", "tl2" };
 
         setConfigElements();
         enablePremium("http://rapidshare.com/premium.html");

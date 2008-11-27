@@ -38,13 +38,60 @@ import jd.utils.ProcessListener;
  */
 public class UnrarWrapper extends Thread {
 
-    private static final int CANNOT_FIND_VOLUME = 1;
-    private static final int COULD_NOT_FIND_PASSWORD = 1 << 1;
-    private static final int OPENED_SUCCESSFULL = 1 << 2;
-    private static final int STARTED = 1 << 3;
+    // private static final int CANNOT_FIND_VOLUME = 1;
+    // private static final int COULD_NOT_FIND_PASSWORD = 1 << 1;
+    // private static final int OPENED_SUCCESSFULL = 1 << 2;
+    // private static final int STARTED = 1 << 3;
     private static final int NO_FILES_FOUND = 1 << 4;
-    private static final int FAILED = 1 << 5;
-    private static final int FAILED_CRC = 1 << 6;
+    // private static final int FAILED = 1 << 5;
+    // private static final int FAILED_CRC = 1 << 6;
+    /**
+     * User stopped the process
+     */
+    public static final int EXIT_CODE_USER_BREAK = 255;
+    /**
+     * Create file error
+     */
+    public static final int EXIT_CODE_CREATE_ERROR = 9;
+    /**
+     * Not enough memory for operation
+     */
+    public static final int EXIT_CODE_MEMORY_ERROR = 8;
+    /**
+     * Command line option error
+     */
+    public static final int EXIT_CODE_USER_ERROR = 7;
+
+    /**
+     * Open file error
+     */
+    public static final int EXIT_CODE_OPEN_ERROR = 6;
+    /**
+     * Write to disk error
+     */
+    public static final int EXIT_CODE_WRITE_ERROR = 5;
+    /**
+     * Attempt to modify an archive previously locked by the 'k' command
+     */
+    public static final int EXIT_CODE_LOCKED_ARCHIVE = 4;
+    /**
+     * A CRC error occurred when unpacking
+     */
+    public static final int EXIT_CODE_CRC_ERROR = 3;
+    /**
+     * A fatal error occurred
+     */
+    public static final int EXIT_CODE_FATAL_ERROR = 2;
+    /**
+     * Non fatal error(s) occurred
+     * 
+     */
+    public static final int EXIT_CODE_WARNING = 1;
+    /**
+     * Successful operation
+     */
+    public static final int EXIT_CODE_SUCCESS = 0;
+
     private static final boolean DEBUG = true;
     private ArrayList<UnrarListener> listener = new ArrayList<UnrarListener>();
     private DownloadLink link;
@@ -82,6 +129,7 @@ public class UnrarWrapper extends Thread {
 
     private ArrayList<String> archiveParts;
     private int crackProgress;
+    private int exitCode;
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
@@ -155,37 +203,39 @@ public class UnrarWrapper extends Thread {
                 }
                 fireEvent(JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS);
 
-                boolean ex = extract();
-                boolean sc = this.checkSizes();
-                if (ex && sc) {
+                extract();
+                this.checkSizes();
+                switch (exitCode) {
+                case EXIT_CODE_SUCCESS:
                     if (removeAfterExtraction) {
                         removeArchiveFiles();
                     }
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
-                } else {
-
-                    if (statusid == JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC) {
-                        fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
-                    } else if (!sc && ex) {
-                        System.err.print("Extract WARNING: detected filesizecheck error. This might be caused through special chars. ");
-                        if (removeAfterExtraction) {
-                            removeArchiveFiles();
-                        }
-                        fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
-
-                    } else {
-                        fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
-                    }
-
-                }
-
-            } else {
-                if (statusid == JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC) {
+                    break;
+                case EXIT_CODE_CRC_ERROR:
+                    System.err.println("A CRC error occurred when unpacking");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
-                } else {
+                    break;
+                case EXIT_CODE_USER_BREAK:
+                    System.err.println(" User interrupted extraction");
+                case EXIT_CODE_CREATE_ERROR:
+                    System.err.println("Could not create Outputfile");
+                case EXIT_CODE_MEMORY_ERROR:
+                    System.err.println("Not enough memory for operation");
+                case EXIT_CODE_USER_ERROR:
+                    System.err.println("Command line option error");
+                case EXIT_CODE_OPEN_ERROR:
+                    System.err.println("Open file error");
+                case EXIT_CODE_WRITE_ERROR:
+                    System.err.println("Write to disk error");
+                case EXIT_CODE_LOCKED_ARCHIVE:
+                    System.err.println("Attempt to modify an archive previously locked by the 'k' command");
+                case EXIT_CODE_FATAL_ERROR:
+                    System.err.println("A fatal error occurred");
+                case EXIT_CODE_WARNING:
+                    System.err.println("Non fatal error(s) occurred");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                 }
-
                 return;
             }
         } catch (Exception e) {
@@ -308,6 +358,7 @@ public class UnrarWrapper extends Thread {
         statusid = -1;
         inter.start();
         exec.waitTimeout();
+        this.exitCode = exec.getExitValue();
         inter.interrupt();
         config.setProperty("SPEED", speed);
         config.save();
