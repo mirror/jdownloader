@@ -54,8 +54,195 @@ import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
-public class PremiumPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
-    class ChartRefresh extends Thread {
+public class PremiumPanel extends JPanel {
+
+    private static final long serialVersionUID = 3275917572262383770L;
+
+    private static final Color ACTIVE = new Color(0x7cd622);
+    private static final Color INACTIVE = new Color(0xa40604);
+
+    private PluginForHost host;
+    private int accountNum;
+    private AccountPanel[] accs;
+    private JLinkButton btnBuy;
+
+    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
+    private ChartRefresh loader;
+
+    public PremiumPanel(GUIConfigEntry gce) {
+        this.host = (PluginForHost) gce.getConfigEntry().getActionListener();
+        this.accountNum = gce.getConfigEntry().getEnd();
+        this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
+        this.createPanel();
+    }
+
+    /**
+     * Gibt alle aktuellen Accounts zurück
+     * 
+     * @return
+     */
+    public ArrayList<Account> getAccounts() {
+        ArrayList<Account> accounts = new ArrayList<Account>();
+        for (AccountPanel acc : accs) {
+            accounts.add(acc.getAccount());
+        }
+        return accounts;
+    }
+
+    /**
+     * List ist immer eine ArrayList<Account> mit Daten aus der config
+     * 
+     * @param list
+     */
+    @SuppressWarnings("unchecked")
+    public void setAccounts(Object list) {
+        ArrayList<Account> accounts = (ArrayList<Account>) list;
+        for (int i = 0; i < accountNum; i++) {
+            if (i >= accounts.size()) break;
+            accs[i].setAccount(accounts.get(i));
+        }
+        createDataset();
+    }
+
+    private void createDataset() {
+        loader = new ChartRefresh();
+        loader.start();
+    }
+
+    private void createPanel() {
+
+        accs = new AccountPanel[accountNum];
+
+        JPanel panel = this;
+        JTabbedPane tab = new JTabbedPane();
+        for (int i = 0; i < accountNum; i++) {
+            if (i % 5 == 0 && accountNum > 5) {
+                tab.add(panel = new JPanel());
+                panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
+            }
+            panel.add(accs[i] = new AccountPanel(i + 1), "span");
+        }
+
+        if (accountNum > 5) {
+            int i;
+            for (i = 0; i < tab.getTabCount() - 1; i++) {
+                tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + (i * 5 + 1) + " - " + ((i + 1) * 5));
+            }
+            tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + ((i * 5 + 1 == accountNum) ? accountNum : (i * 5 + 1) + " - " + accountNum));
+            this.add(tab, "span");
+        }
+
+        String premiumUrl = host.getBuyPremiumUrl();
+        if (premiumUrl != null) {
+            try {
+                btnBuy = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl)));
+                this.add(btnBuy, "span, alignright");
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        this.add(freeTrafficChart, "spanx, spany");
+    }
+
+    private class AccountPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
+
+        private static final long serialVersionUID = 5577685065338731763L;
+
+        private JCheckBox chkEnable;
+        private JLabel lblUsername;
+        private JLabel lblPassword;
+        private JTextField txtUsername;
+        private JDPasswordField txtPassword;
+        private JTextField txtStatus;
+        private JButton btnCheck;
+        private JButton btnDelete;
+
+        public AccountPanel(int nr) {
+            this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
+            this.createPanel(nr);
+        }
+
+        public void setAccount(Account account) {
+            chkEnable.setSelected(account.isEnabled());
+            txtUsername.setText(account.getUser());
+            txtPassword.setText(account.getPass());
+            txtStatus.setText(account.getStatus());
+            txtPassword.setEnabled(account.isEnabled());
+            txtUsername.setEnabled(account.isEnabled());
+            txtStatus.setEnabled(account.isEnabled());
+            btnCheck.setEnabled(account.isEnabled());
+            lblPassword.setEnabled(account.isEnabled());
+            lblUsername.setEnabled(account.isEnabled());
+        }
+
+        public Account getAccount() {
+            Account a = new Account(txtUsername.getText(), new String(txtPassword.getPassword()));
+            a.setEnabled(chkEnable.isSelected());
+            return a;
+        }
+
+        public void createPanel(int nr) {
+            add(chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr)), "alignleft");
+            chkEnable.setForeground(INACTIVE);
+            chkEnable.setSelected(true);
+            chkEnable.addChangeListener(this);
+
+            add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
+            btnCheck.addActionListener(this);
+
+            add(btnDelete = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
+            btnDelete.addActionListener(this);
+
+            add(new JSeparator(), "w 30:push, growx, pushx");
+            add(txtStatus = new JTextField(""), "spanx, pushx, growx");
+            txtStatus.setEditable(false);
+
+            add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
+            add(txtUsername = new JTextField(""));
+            txtUsername.addFocusListener(this);
+
+            add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
+            add(txtPassword = new JDPasswordField(), "span, gapbottom 10:10:push");
+            txtPassword.addFocusListener(this);
+
+            chkEnable.setSelected(false);
+        }
+
+        public void stateChanged(ChangeEvent e) {
+            boolean sel = chkEnable.isSelected();
+            chkEnable.setForeground((sel) ? ACTIVE : INACTIVE);
+            txtPassword.setEnabled(sel);
+            txtUsername.setEnabled(sel);
+            txtStatus.setEnabled(sel);
+            btnCheck.setEnabled(sel);
+            lblPassword.setEnabled(sel);
+            lblUsername.setEnabled(sel);
+        }
+
+        public void actionPerformed(ActionEvent e) {
+            if (e.getSource() == btnCheck) {
+                JDUtilities.getGUI().showAccountInformation(host, getAccount());
+            } else if (e.getSource() == btnDelete) {
+                txtUsername.setText("");
+                txtPassword.setText("");
+                txtStatus.setText("");
+                chkEnable.setSelected(false);
+                createDataset();
+            }
+        }
+
+        public void focusGained(FocusEvent e) {
+            ((JTextField) e.getSource()).selectAll();
+        }
+
+        public void focusLost(FocusEvent e) {
+            createDataset();
+        }
+    }
+
+    private class ChartRefresh extends Thread {
+        @Override
         public void run() {
             Long collectTraffic = new Long(0);
             freeTrafficChart.clear();
@@ -79,193 +266,7 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
             if (collectTraffic > 0) freeTrafficChart.addEntity(new ChartAPI_Entity(JDLocale.L("plugins.config.premium.chartapi.maxTraffic", "Max. Traffic to collect") + " [" + Math.round(((collectTraffic.floatValue() / 1024 / 1024 / 1024) * 100) / 100.0) + " GB]", collectTraffic, new Color(150, 150, 150)));
             freeTrafficChart.fetchImage();
-
         }
-    }
-
-    private static final Color ACTIVE = new Color(0x7cd622);
-    private static final Color INACTIVE = new Color(0xa40604);
-    private static final long serialVersionUID = 3275917572262383770L;
-
-    private PluginForHost host;
-    private int accountNum;
-
-    private JCheckBox[] enables;
-    private JLabel[] lblUsername;
-    private JLabel[] lblPassword;
-    private JTextField[] txtUsername;
-    private JDPasswordField[] txtPassword;
-    private JTextField[] txtStatus;
-    private JButton[] btnCheck;
-    private JButton[] btnDelete;
-    private JLinkButton btnBuy;
-
-    private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
-    private ChartRefresh loader;
-
-    public PremiumPanel(GUIConfigEntry gce) {
-        this.host = (PluginForHost) gce.getConfigEntry().getActionListener();
-        this.accountNum = gce.getConfigEntry().getEnd();
-        this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
-        this.createPanel();
-    }
-
-    /**
-     * Gibt alle aktuellen Accounts zurück
-     * 
-     * @return
-     */
-    public ArrayList<Account> getAccounts() {
-        ArrayList<Account> accounts = new ArrayList<Account>();
-        for (int i = 0; i < accountNum; i++) {
-            Account a = new Account(txtUsername[i].getText(), new String(txtPassword[i].getPassword()));
-            a.setEnabled(enables[i].isSelected());
-            accounts.add(a);
-        }
-        return accounts;
-    }
-
-    /**
-     * List ist immer eine ArrayList<Account> mit Daten aus der config
-     * 
-     * @param list
-     */
-    @SuppressWarnings("unchecked")
-    public void setAccounts(Object list) {
-        ArrayList<Account> accounts = (ArrayList<Account>) list;
-        Account account;
-        for (int i = 0; i < accountNum; i++) {
-            if (i >= accounts.size()) break;
-            account = accounts.get(i);
-            enables[i].setSelected(account.isEnabled());
-            txtUsername[i].setText(account.getUser());
-            txtPassword[i].setText(account.getPass());
-            txtStatus[i].setText(account.getStatus());
-            txtPassword[i].setEnabled(account.isEnabled());
-            txtUsername[i].setEnabled(account.isEnabled());
-            txtStatus[i].setEnabled(account.isEnabled());
-            btnCheck[i].setEnabled(account.isEnabled());
-            lblPassword[i].setEnabled(account.isEnabled());
-            lblUsername[i].setEnabled(account.isEnabled());
-        }
-        createDataset();
-    }
-
-    /**
-     * Creates the Dataset.
-     * 
-     * @param nothing
-     * 
-     * @return nothing
-     */
-    private void createDataset() {
-        loader = new ChartRefresh();
-        loader.start();
-    }
-
-    private void createPanel() {
-
-        enables = new JCheckBox[accountNum];
-        txtUsername = new JTextField[accountNum];
-        txtPassword = new JDPasswordField[accountNum];
-        lblUsername = new JLabel[accountNum];
-        lblPassword = new JLabel[accountNum];
-        txtStatus = new JTextField[accountNum];
-        btnCheck = new JButton[accountNum];
-        btnDelete = new JButton[accountNum];
-
-        JPanel panel = this;
-        JTabbedPane tab = new JTabbedPane();
-        for (int i = 0; i < accountNum; i++) {
-            if (i % 5 == 0 && accountNum > 5) {
-                tab.add(panel = new JPanel());
-                panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
-            }
-
-            panel.add(enables[i] = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i + 1)), "alignleft");
-            enables[i].setForeground(INACTIVE);
-            enables[i].setSelected(true);
-            enables[i].addChangeListener(this);
-
-            panel.add(btnCheck[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
-            btnCheck[i].addActionListener(this);
-
-            panel.add(btnDelete[i] = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
-            btnDelete[i].addActionListener(this);
-
-            panel.add(new JSeparator(), "w 30:push, growx, pushx");
-            panel.add(txtStatus[i] = new JTextField(""), "spanx, pushx, growx");
-            txtStatus[i].setEditable(false);
-
-            panel.add(lblUsername[i] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
-            panel.add(txtUsername[i] = new JTextField(""));
-            txtUsername[i].addFocusListener(this);
-
-            panel.add(lblPassword[i] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-            panel.add(txtPassword[i] = new JDPasswordField(), "span, gapbottom 10:10:push");
-            txtPassword[i].addFocusListener(this);
-
-            enables[i].setSelected(false);
-        }
-        if (accountNum > 5) {
-            int i;
-            for (i = 0; i < tab.getTabCount() - 1; i++) {
-                tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + (i * 5 + 1) + " - " + ((i + 1) * 5));
-            }
-            tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + ((i * 5 + 1 == accountNum) ? accountNum : (i * 5 + 1) + " - " + accountNum));
-            this.add(tab, "span");
-        }
-
-        String premiumUrl = host.getBuyPremiumUrl();
-        if (premiumUrl != null) {
-            try {
-                btnBuy = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl)));
-                this.add(btnBuy, "span, alignright");
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-            }
-        }
-
-        this.add(freeTrafficChart, "spanx, spany");
-    }
-
-    public void stateChanged(ChangeEvent e) {
-        for (int i = 0; i < accountNum; i++) {
-            if (e.getSource() == enables[i]) {
-                enables[i].setForeground((enables[i].isSelected()) ? ACTIVE : INACTIVE);
-                txtPassword[i].setEnabled(enables[i].isSelected());
-                txtUsername[i].setEnabled(enables[i].isSelected());
-                txtStatus[i].setEnabled(enables[i].isSelected());
-                btnCheck[i].setEnabled(enables[i].isSelected());
-                lblPassword[i].setEnabled(enables[i].isSelected());
-                lblUsername[i].setEnabled(enables[i].isSelected());
-                break;
-            }
-        }
-    }
-
-    public void actionPerformed(ActionEvent e) {
-        for (int i = 0; i < accountNum; i++) {
-            if (e.getSource() == this.btnCheck[i]) {
-                JDUtilities.getGUI().showAccountInformation(host, this.getAccounts().get(i));
-                break;
-            } else if (e.getSource() == this.btnDelete[i]) {
-                txtUsername[i].setText("");
-                txtPassword[i].setText("");
-                txtStatus[i].setText("");
-                enables[i].setSelected(false);
-                createDataset();
-                break;
-            }
-        }
-    }
-
-    public void focusGained(FocusEvent e) {
-        ((JTextField) e.getSource()).selectAll();
-    }
-
-    public void focusLost(FocusEvent e) {
-        createDataset();
     }
 
     private class JDPasswordField extends JPasswordField implements ClipboardOwner {
@@ -276,8 +277,8 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             super();
         }
 
+        @Override
         public void cut() {
-
             StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(stringSelection, this);
@@ -290,15 +291,13 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
 
             this.setSelectionStart(position);
             this.setSelectionEnd(position);
-
         }
 
+        @Override
         public void copy() {
-
             StringSelection stringSelection = new StringSelection(String.valueOf(this.getSelectedText()));
             Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
             clipboard.setContents(stringSelection, this);
-
         }
 
         public void lostOwnership(Clipboard arg0, Transferable arg1) {
