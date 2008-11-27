@@ -16,7 +16,6 @@
 
 package jd.http;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -70,10 +69,14 @@ public class Cookie {
                 try {
                     this.expires = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy", Locale.UK).parse(expires);
                 } catch (Exception e3) {
-                    JDUtilities.getLogger().severe("CookieParser failed: " + expires);
-                    this.expires = null;
-                    this.formatedexpires = null;
-                    return;
+                    try {
+                        this.expires = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK).parse(expires);
+                    } catch (Exception e4) {
+                        JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                        this.expires = null;
+                        this.formatedexpires = null;
+                        return;
+                    }
                 }
             }
         }
@@ -109,7 +112,7 @@ public class Cookie {
     }
 
     public void setTimeDifferece(String Date) {
-        if (Date == null || Date.length() == 0) {
+        if (Date == null || Date.length() < 6) {
             this.timedifference = 0;
             return;
         }
@@ -125,9 +128,13 @@ public class Cookie {
                 try {
                     ResponseDate = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy", Locale.UK).parse(Date);
                 } catch (Exception e3) {
-                    JDUtilities.getLogger().severe("CookieParser failed: " + expires);
-                    this.timedifference = 0;
-                    return;
+                    try {
+                        ResponseDate = new SimpleDateFormat("EEE, dd-MMM-yyyy hh:mm:ss z", Locale.UK).parse(Date);
+                    } catch (Exception e4) {
+                        JDUtilities.getLogger().severe("CookieParser failed: " + expires);
+                        this.timedifference = 0;
+                        return;
+                    }
                 }
             }
 
@@ -135,7 +142,7 @@ public class Cookie {
         ResponseDate2 = DATE_FORMAT.format(ResponseDate);
         try {
             this.timedifference = DATE_FORMAT.parse(Current).getTime() - DATE_FORMAT.parse(ResponseDate2).getTime();
-        } catch (ParseException e) {
+        } catch (Exception e) {
             this.timedifference = 0;
             return;
         }

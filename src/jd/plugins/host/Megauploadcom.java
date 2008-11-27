@@ -156,7 +156,7 @@ public class Megauploadcom extends PluginForHost {
         return br.containsHTML("fo.addVariable\\(\"status\",\"\\(premium\\)\"\\);");
     }
 
-    public void login(Account account) throws IOException, PluginException {        
+    public void login(Account account) throws IOException, PluginException {
         br.postPage("http://megaupload.com/en/", "login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
         String cookie = br.getCookie("http://megaupload.com", "user");
         if (cookie == null) {
@@ -169,7 +169,7 @@ public class Megauploadcom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-
+        if (br.containsHTML(">Dieser Link ist leider nicht verfügbar.<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String filename = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div").trim();
         String size = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div[2]").trim();
         if (filename == null || filename.length() == 0) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }

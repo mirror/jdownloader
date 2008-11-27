@@ -1631,7 +1631,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void mouseReleased(MouseEvent e) {
     }
 
-    protected void onPackageNameChanged(PackageTab tab) {
+    protected synchronized void onPackageNameChanged(PackageTab tab) {
         for (int i = 0; i < tabList.size(); i++) {
             if (tabList.get(i) == tab) {
                 String title = tab.getPackageName();
@@ -1731,7 +1731,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void startLinkGatherer() {
-
         class DThread extends Thread {
             private Vector<DownloadLink> links = null;
 
@@ -1771,10 +1770,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         progress.setMaximum(0);
         progress.setString(null);
         if (gatherer != null && gatherer.isAlive()) { return; }
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-        }
         gatherer = new Thread() {
 
             public synchronized void run() {
@@ -1782,10 +1777,28 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 decryptJobbers = new Jobber(4);
                 while (waitingLinkList.size() > 0 && gathererrunning == true) {
                     Set<String> ks = waitingLinkList.keySet();
-                    Vector<DownloadLink> links = waitingLinkList.remove(ks.iterator().next());
-                    progress.setMaximum(progress.getMaximum() + links.size());
-                    DThread dthread = new DThread(links);
-                    decryptJobbers.add(dthread);
+                    String it = ks.iterator().next();
+                    Vector<DownloadLink> links = waitingLinkList.remove(it);
+                    Vector<DownloadLink> links2 = new Vector<DownloadLink>();
+                    while (links.size() > 0) {
+                        links2.add(links.remove(0));
+                        if (links2.size() > 20) {
+                            progress.setMaximum(progress.getMaximum() + links2.size());
+                            DThread dthread = new DThread(links2);
+                            decryptJobbers.add(dthread);
+                            links2 = new Vector<DownloadLink>();
+                            break;
+                        }
+                    }
+                    links.addAll(links2);
+                    if (links.size() > 20) {
+                        /* zufall dran, damit die hoster durchgewechselt werden */
+                        waitingLinkList.put(it + System.currentTimeMillis(), links);
+                    } else {
+                        progress.setMaximum(progress.getMaximum() + links.size());
+                        DThread dthread = new DThread(links);
+                        decryptJobbers.add(dthread);
+                    }
                     if (!decryptJobbers.isAlive() && decryptJobbers.getJobsAdded() != decryptJobbers.getJobsFinished()) {
                         decryptJobbers.start();
                     }

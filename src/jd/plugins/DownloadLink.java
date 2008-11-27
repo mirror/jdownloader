@@ -17,6 +17,7 @@
 package jd.plugins;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
 import java.util.Vector;
@@ -569,15 +570,37 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      */
     public boolean isAvailable() {
         if (available != null) { return available; }
-        try {
-            available = ((PluginForHost) getPlugin()).getFileInformation(this);
-        } catch (Exception e) {
-            e.printStackTrace();
-            available = false;
-        }
-        try {
-            ((PluginForHost) getPlugin()).getBrowser().getHttpConnection().disconnect();
-        } catch (Exception e) {
+        int wait = 0;
+        available = false;
+        for (int retry = 0; retry < 5; retry++) {
+            try {
+                available = ((PluginForHost) getPlugin()).getFileInformation(this);
+                try {
+                    ((PluginForHost) getPlugin()).getBrowser().getHttpConnection().disconnect();
+                } catch (Exception e) {
+                }
+                break;
+            } catch (PluginException e) {
+                break;
+            } catch (IOException e) {
+                if (e.getMessage().contains("code: 500")) {
+                    try {
+                        wait += 500;
+                        JDUtilities.getLogger().finer("500 Error Code, retrying in " + wait);
+                        Thread.sleep(wait);
+                    } catch (InterruptedException e1) {
+                        available = false;
+                        break;
+                    }
+                    continue;
+                } else {
+                    e.printStackTrace();
+                    break;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                break;
+            }
         }
         return available;
     }

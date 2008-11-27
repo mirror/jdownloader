@@ -29,6 +29,7 @@ public class Jobber {
     private boolean killWorkerAfterQueueFinished = true;
     private boolean running = false;
     private int jobsAdded = 0;
+    boolean debug = false;
 
     public int getJobsAdded() {
         return jobsAdded;
@@ -83,7 +84,7 @@ public class Jobber {
             increaseWorkingWorkers();
             workerList[i] = new Worker(i);
         }
-        System.out.println("created " + paralellWorkerNum + " worker");
+        if (debug) System.out.println("created " + paralellWorkerNum + " worker");
     }
 
     private synchronized int increaseWorkingWorkers() {
@@ -169,7 +170,7 @@ public class Jobber {
         synchronized (jobList) {
             jobList.add(runnable);
             this.jobsAdded++;
-            System.out.println(this + " RINGRING!!!!");
+            if (debug) System.out.println(this + " RINGRING!!!!");
             // if a worker sleeps.... this should wake him up
 
             if (workerList != null) {
@@ -177,7 +178,7 @@ public class Jobber {
                     for (Worker w : workerList) {
                         synchronized (w) {
                             if (w.waitFlag) {
-                                System.out.println("Dhoo...Hey " + w + "!! Time to wake up and do some work.");
+                                if (debug) System.out.println("Dhoo...Hey " + w + "!! Time to wake up and do some work.");
                                 w.waitFlag = false;
                                 w.notify();
                                 break;
@@ -231,7 +232,7 @@ public class Jobber {
 
                 if (ra == null) {
 
-                    System.out.println(this + ": Work is done..I'll sleep now.");
+                    if (debug) System.out.println(this + ": Work is done..I'll sleep now.");
                     decreaseWorkingWorkers();
                     waitFlag = true;
                     synchronized (this) {
@@ -242,10 +243,10 @@ public class Jobber {
                             } catch (Exception e) {
                                 return;
                             }
-                            System.out.println(this + " good morning...get up!");
+                            if (debug) System.out.println(this + " good morning...get up!");
                         }
                     }
-                    System.out.println(this + ": I'm up");
+                    if (debug) System.out.println(this + ": I'm up");
                     continue;
                 }
                 jobsStarted++;
