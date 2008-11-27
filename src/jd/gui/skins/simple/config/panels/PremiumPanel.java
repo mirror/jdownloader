@@ -110,7 +110,6 @@ public class PremiumPanel extends JPanel {
     }
 
     private void createPanel() {
-
         accs = new AccountPanel[accountNum];
 
         JPanel panel = this;
@@ -159,21 +158,22 @@ public class PremiumPanel extends JPanel {
         private JButton btnDelete;
 
         public AccountPanel(int nr) {
-            this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
-            this.createPanel(nr);
+            setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
+            createPanel(nr);
         }
 
         public void setAccount(Account account) {
-            chkEnable.setSelected(account.isEnabled());
+            boolean sel = account.isEnabled();
             txtUsername.setText(account.getUser());
             txtPassword.setText(account.getPass());
             txtStatus.setText(account.getStatus());
-            txtPassword.setEnabled(account.isEnabled());
-            txtUsername.setEnabled(account.isEnabled());
-            txtStatus.setEnabled(account.isEnabled());
-            btnCheck.setEnabled(account.isEnabled());
-            lblPassword.setEnabled(account.isEnabled());
-            lblUsername.setEnabled(account.isEnabled());
+            chkEnable.setSelected(sel);
+            lblUsername.setEnabled(sel);
+            lblPassword.setEnabled(sel);
+            txtUsername.setEnabled(sel);
+            txtPassword.setEnabled(sel);
+            txtStatus.setEnabled(sel);
+            btnCheck.setEnabled(sel);
         }
 
         public Account getAccount() {
