@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -34,6 +35,8 @@ import jd.utils.JDUtilities;
 import jd.utils.io.JDIO;
 
 public class RelinkUs extends PluginForDecrypt {
+
+    ProgressController progress;
 
     public RelinkUs(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,7 +69,8 @@ public class RelinkUs extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        this.progress = progress;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);

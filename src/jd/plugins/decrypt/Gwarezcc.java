@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.controlling.DistributeData;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -51,7 +52,7 @@ public class Gwarezcc extends PluginForDecrypt {
         setConfigElements();
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
@@ -104,7 +105,7 @@ public class Gwarezcc extends PluginForDecrypt {
             } else {
                 password = password.trim();
             }
-            this.progress.setRange(forms.length);
+            progress.setRange(forms.length);
             for (int ii = 0; ii < forms.length; ii++) {
                 /* Parts decrypten und adden */
                 if (forms[ii].action.trim().startsWith("redirect")) {
@@ -135,7 +136,7 @@ public class Gwarezcc extends PluginForDecrypt {
                     }
                     if (linkString == null) linkString = br.getRegex("<meta http-equiv=\"refresh\".*?URL=(.*?)\">").getMatch(0);
 
-                    this.progress.increase(1);
+                    progress.increase(1);
                     // String linkString = gWarezDecrypt(parts[ii]);
                     Vector<DownloadLink> links = new DistributeData(linkString).findLinks(false);
                     if (links.size() == 0) continue;

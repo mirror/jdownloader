@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.ProgressController;
 import jd.crypt.AESdecrypt;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -130,7 +131,7 @@ public class CryptItCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         try {
             String url = param.toString();

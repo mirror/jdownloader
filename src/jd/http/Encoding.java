@@ -138,6 +138,7 @@ public class Encoding {
             urlcoded = urlcoded.replaceAll("%3F", "?");
             urlcoded = urlcoded.replaceAll("%3D", "=");
             urlcoded = urlcoded.replaceAll("%26", "&");
+            urlcoded = urlcoded.replaceAll("%23", "#");
         }
 
         return urlcoded;

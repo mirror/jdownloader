@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Vector;
 
 import jd.PluginWrapper;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.plugins.CryptedLink;
@@ -35,7 +36,7 @@ public class Wiireloaded extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         int submitvalue = getPluginConfig().getIntegerProperty("WIIReloaded_SubmitValue", 5);        
         String parameter = param.toString();
         Vector<String> link_passwds = new Vector<String>();

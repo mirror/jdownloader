@@ -40,6 +40,7 @@ import javax.swing.JPanel;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.parser.HTMLParser;
@@ -188,7 +189,7 @@ public class Serienjunkies extends PluginForDecrypt {
         return data.replaceAll("(?i)http://[\\w\\.]*?(serienjunkies\\.org|85\\.17\\.177\\.195|serienjunki\\.es).*", "--CUT--");
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ar = decryptItMain(param);
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         SerienjunkiesThread[] threads = new SerienjunkiesThread[ar.size()];

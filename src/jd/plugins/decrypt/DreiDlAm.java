@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginPattern;
 import jd.PluginWrapper;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -86,7 +87,7 @@ public class DreiDlAm extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws IOException, DecrypterException, InterruptedException {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws IOException, DecrypterException, InterruptedException {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setCookiesExclusive(true);

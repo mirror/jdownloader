@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.controlling.ProgressController;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -53,9 +54,13 @@ public class BrazilSeriesCom extends PluginForDecrypt {
 
     // Funktionieren nur teilweise zu viele Sonderfälle!
     // private static final Pattern PATTERN_DOWNLOADLINK_AVI =
-    // Pattern.compile("<a href=\"(.+?)\" target=\"_blank\" onMouseOver=\"MM_swapImage\\('Parte\\d+','','\\.\\./\\.\\./img/downloads/parte\\d+d\\.gif',1\\)\" onMouseOut=\"MM_swapImgRestore\\(\\)\"><img src=\"\\.\\./\\.\\./img/downloads/parte\\d+\\.gif\" name=\"Parte\\d+\" border=\"0\" id=\"Parte\\d+\"( /)?></a>",Pattern.CASE_INSENSITIVE);
+    // Pattern.compile(
+    // "<a href=\"(.+?)\" target=\"_blank\" onMouseOver=\"MM_swapImage\\('Parte\\d+','','\\.\\./\\.\\./img/downloads/parte\\d+d\\.gif',1\\)\" onMouseOut=\"MM_swapImgRestore\\(\\)\"><img src=\"\\.\\./\\.\\./img/downloads/parte\\d+\\.gif\" name=\"Parte\\d+\" border=\"0\" id=\"Parte\\d+\"( /)?></a>"
+    // ,Pattern.CASE_INSENSITIVE);
     // private static final Pattern PATTERN_DOWNLOADLINK_RMVB_SUBTITLE =
-    // Pattern.compile("<a href=\"(.+?)\" target=\"_blank\" onMouseOver=\"MM_swapImage\\('Image\\d+','','\\.\\./\\.\\./img/downloads/donwloadswd\\.gif',1\\)\" onMouseOut=\"MM_swapImgRestore\\(\\)\"><img src=\"\\.\\./\\.\\./img/downloads/donwloadws\\.gif\" name=\"Image\\d+\" width=\"97\" height=\"19\" border=\"0\" id=\"Image451\"( /)?></a>",Pattern.CASE_INSENSITIVE);
+    // Pattern.compile(
+    // "<a href=\"(.+?)\" target=\"_blank\" onMouseOver=\"MM_swapImage\\('Image\\d+','','\\.\\./\\.\\./img/downloads/donwloadswd\\.gif',1\\)\" onMouseOut=\"MM_swapImgRestore\\(\\)\"><img src=\"\\.\\./\\.\\./img/downloads/donwloadws\\.gif\" name=\"Image\\d+\" width=\"97\" height=\"19\" border=\"0\" id=\"Image451\"( /)?></a>"
+    // ,Pattern.CASE_INSENSITIVE);
 
     // Decrypt staffel
 
@@ -69,7 +74,7 @@ public class BrazilSeriesCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = cryptedLink.getCryptedUrl();
         if (new Regex(url, PATTERN_SUPPORTED_EPISODE).matches()) {

@@ -27,6 +27,7 @@ import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.http.Encoding;
 import jd.parser.Regex;
+import jd.utils.Jobber;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -41,8 +42,6 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     private CryptedLink cryptedLink = null;
-
-    protected ProgressController progress;
 
     /**
      * Diese Methode entschlüsselt Links.
@@ -68,7 +67,7 @@ public abstract class PluginForDecrypt extends Plugin {
     /**
      * Die Methode entschlüsselt einen einzelnen Link.
      */
-    public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter) throws Exception;
+    public abstract ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception;
 
     /**
      * Die Methode entschlüsselt einen einzelnen Link. Alle steps werden
@@ -82,17 +81,13 @@ public abstract class PluginForDecrypt extends Plugin {
      */
     public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
         this.cryptedLink = cryptedLink;
-        if (progress != null && !progress.isFinished()) {
-            progress.finalize();
-            logger.warning(" Progress ist besetzt von " + progress);
-        }
-
+        ProgressController progress;
         progress = new ProgressController("Decrypter: " + getLinkName());
         progress.setStatusText("decrypt-" + getHost() + ": " + getLinkName());
         cryptedLink.setProgressController(progress);
         ArrayList<DownloadLink> tmpLinks = null;
         try {
-            tmpLinks = decryptIt(cryptedLink);
+            tmpLinks = decryptIt(cryptedLink, progress);
         } catch (DecrypterException e) {
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
@@ -121,32 +116,35 @@ public abstract class PluginForDecrypt extends Plugin {
     public ArrayList<DownloadLink> decryptLinks(CryptedLink[] cryptedLinks) {
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, cryptedLinks);
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<Thread> decryptThread = new ArrayList<Thread>();
-        for (final CryptedLink element : cryptedLinks) {
-            Thread thread = new Thread(new Runnable() {
+        Jobber decryptJobbers = new Jobber(4);
 
-                public void run() {
-                    ArrayList<DownloadLink> links = decryptLink(element);
-                    for (DownloadLink link : links) {
-                        link.setBrowserUrl(element.getCryptedUrl());
-                    }
-                    decryptedLinks.addAll(links);
-                    
-                }});
-            thread.start();
-            decryptThread.add(thread);
-        }
-        for (Thread thread: decryptThread) {
-            while(thread.isAlive())
-            {
-                try {
-                    Thread.sleep(2);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+        class DThread extends Thread {
+            private CryptedLink decryptableLink = null;
+
+            public DThread(CryptedLink decryptableLink) {
+                this.decryptableLink = decryptableLink;
             }
-            
+
+            public void run() {
+                ArrayList<DownloadLink> links = decryptLink(decryptableLink);
+                for (DownloadLink link : links) {
+                    link.setBrowserUrl(decryptableLink.getCryptedUrl());
+                }
+                decryptedLinks.addAll(links);
+            }
+        }
+
+        for (int b = cryptedLinks.length - 1; b >= 0; b--) {
+            DThread dthread = new DThread(cryptedLinks[b]);
+            decryptJobbers.add(dthread);
+        }
+        int todo = decryptJobbers.getJobsAdded();
+        decryptJobbers.start();
+        while (decryptJobbers.getJobsFinished() != todo) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+            }
         }
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
 

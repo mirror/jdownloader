@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -46,7 +47,7 @@ public class Collectr extends PluginForDecrypt {
         super(wrapper);
     }
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = param.toString();
         String page = br.getPage(url);

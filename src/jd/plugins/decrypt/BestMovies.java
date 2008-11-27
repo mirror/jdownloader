@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -35,7 +36,8 @@ import jd.utils.JDUtilities;
 public class BestMovies extends PluginForDecrypt {
 
     static private final Pattern patternCaptcha_Needed = Pattern.compile("<img src=\"clockcaptcha.php\"");
-    //static private final Pattern patternCaptcha_Wrong = Pattern.compile("<b>Falsch</b>");
+    // static private final Pattern patternCaptcha_Wrong =
+    // Pattern.compile("<b>Falsch</b>");
     static private final Pattern patternIframe = Pattern.compile("<iframe src=\"(.+?)\"", Pattern.DOTALL);
 
     public BestMovies(PluginWrapper wrapper) {
@@ -43,127 +45,75 @@ public class BestMovies extends PluginForDecrypt {
     }
 
     /*
-     * This functions *should* work, since you'll get a lot of Nullpointers its deactivated so far.
-    private static String DoCaptcha(File file) throws Exception {
-        JFrame jf = new JFrame();
-        Image image = new JFrame().getToolkit().getImage(file.getAbsolutePath());
-        MediaTracker mediaTracker = new MediaTracker(jf);
-        mediaTracker.addImage(image, 0);
-        try {
-            mediaTracker.waitForID(0);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        mediaTracker.removeImage(image);
-        int width = image.getWidth(null);
-        int height = image.getHeight(null);
-        PixelGrabber pg = new PixelGrabber(image, 0, 0, width, height, false);
-        try {
-            pg.grabPixels();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+     * This functionsshould work, since you'll get a lot of Nullpointers its
+     * deactivated so far. private static String DoCaptcha(File file) throws
+     * Exception { JFrame jf = new JFrame(); Image image = new
+     * JFrame().getToolkit().getImage(file.getAbsolutePath()); MediaTracker
+     * mediaTracker = new MediaTracker(jf); mediaTracker.addImage(image, 0); try
+     * { mediaTracker.waitForID(0); } catch (InterruptedException e) {
+     * e.printStackTrace(); } mediaTracker.removeImage(image); int width =
+     * image.getWidth(null); int height = image.getHeight(null); PixelGrabber pg
+     * = new PixelGrabber(image, 0, 0, width, height, false); try {
+     * pg.grabPixels(); } catch (Exception e) { e.printStackTrace(); }
+     * 
+     * ColorModel cm = pg.getColorModel(); int[][] grid = new
+     * int[width][height]; if (!(cm instanceof IndexColorModel)) { int[] pixel =
+     * (int[]) pg.getPixels(); int i = 0; for (int y = 0; y < height; y++) { for
+     * (int x = 0; x < width; x++) { grid[x][y] = pixel[i]; i++; } } } int midX
+     * = width / 2; int midY = height / 2; int d = 10; int y = midY - d; int x =
+     * 0; // Scan top int[] red = null; int[] black = null; for (x = midX - d; x
+     * < midX + d; x++) { if (UTILITIES.getColorDifference(grid[x][y], 0xff0000)
+     * < 5) { red = new int[] { x, y }; break; } if
+     * (UTILITIES.getColorDifference(grid[x][y], 0) < 5) { black = new int[] {
+     * x, y }; break; } } // Scan bottom y = midY + d; for (x = midX - d; x <
+     * midX + d; x++) { if (UTILITIES.getColorDifference(grid[x][y], 0xff0000) <
+     * 5) { red = new int[] { x, y }; break; } if
+     * (UTILITIES.getColorDifference(grid[x][y], 0) < 5) { black = new int[] {
+     * x, y }; break; } } // scan left x = midX - d; for (y = midY - d; y < midY
+     * + d; y++) { if (UTILITIES.getColorDifference(grid[x][y], 0xff0000) < 5) {
+     * red = new int[] { x, y }; break; } if
+     * (UTILITIES.getColorDifference(grid[x][y], 0) < 5) { black = new int[] {
+     * x, y }; break; }
+     * 
+     * }
+     * 
+     * // scan right x = midX + d; for (y = midY - d; y < midY + d; y++) { if
+     * (UTILITIES.getColorDifference(grid[x][y], 0xff0000) < 5) { red = new
+     * int[] { x, y }; break; } if (UTILITIES.getColorDifference(grid[x][y], 0)
+     * < 5) { black = new int[] { x, y }; break; }
+     * 
+     * }
+     * 
+     * System.out.println("Red: " + red[0] + ":" + red[1]);
+     * 
+     * System.out.println("Black: " + black[0] + ":" + black[1]);
+     * 
+     * return ""; }
+     */
 
-        ColorModel cm = pg.getColorModel();
-        int[][] grid = new int[width][height];
-        if (!(cm instanceof IndexColorModel)) {
-            int[] pixel = (int[]) pg.getPixels();
-            int i = 0;
-            for (int y = 0; y < height; y++) {
-                for (int x = 0; x < width; x++) {
-                    grid[x][y] = pixel[i];
-                    i++;
-                }
-            }
-        }
-        int midX = width / 2;
-        int midY = height / 2;
-        int d = 10;
-        int y = midY - d;
-        int x = 0;
-        // Scan top
-        int[] red = null;
-        int[] black = null;
-        for (x = midX - d; x < midX + d; x++) {
-            if (UTILITIES.getColorDifference(grid[x][y], 0xff0000) < 5) {
-                red = new int[] { x, y };
-                break;
-            }
-            if (UTILITIES.getColorDifference(grid[x][y], 0) < 5) {
-                black = new int[] { x, y };
-                break;
-            }
-        }
-        // Scan bottom
-        y = midY + d;
-        for (x = midX - d; x < midX + d; x++) {
-            if (UTILITIES.getColorDifference(grid[x][y], 0xff0000) < 5) {
-                red = new int[] { x, y };
-                break;
-            }
-            if (UTILITIES.getColorDifference(grid[x][y], 0) < 5) {
-                black = new int[] { x, y };
-                break;
-            }
-        }
-        // scan left
-        x = midX - d;
-        for (y = midY - d; y < midY + d; y++) {
-            if (UTILITIES.getColorDifference(grid[x][y], 0xff0000) < 5) {
-                red = new int[] { x, y };
-                break;
-            }
-            if (UTILITIES.getColorDifference(grid[x][y], 0) < 5) {
-                black = new int[] { x, y };
-                break;
-            }
-
-        }
-
-        // scan right
-        x = midX + d;
-        for (y = midY - d; y < midY + d; y++) {
-            if (UTILITIES.getColorDifference(grid[x][y], 0xff0000) < 5) {
-                red = new int[] { x, y };
-                break;
-            }
-            if (UTILITIES.getColorDifference(grid[x][y], 0) < 5) {
-                black = new int[] { x, y };
-                break;
-            }
-
-        }
-
-        System.out.println("Red: " + red[0] + ":" + red[1]);
-        
-        System.out.println("Black: " + black[0] + ":" + black[1]);
-        
-        return "";
-    }
-    */
-    
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         String link = null;
         for (int retrycounter = 1; (decryptedLinks.isEmpty()) && (retrycounter <= 3); retrycounter++) {
 
-            if(retrycounter != 1){logger.info("Wrong Captcha, try again...");}            
-            
+            if (retrycounter != 1) {
+                logger.info("Wrong Captcha, try again...");
+            }
+
             br.getPage(parameter);
 
             if (br.getRegex(patternCaptcha_Needed).matches()) {
                 /* Captcha vorhanden */
                 File captchaFile = this.getLocalCaptchaFile(this);
                 Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://crypt.best-movies.us/clockcaptcha.php"));
-                
+
                 String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
-                
+
                 String time[] = new Regex(captchaCode, "(\\d+)[\\.\\:\\-\\,](\\d+)").getRow(0);
-                
-                if(time == null)
-                {
+
+                if (time == null) {
                     JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.L("jd.plugins.decrypt.BestMovies.CaptchaInputWrong", "Wrong Input, please enter time like this: 4:30"), 20);
                     logger.severe("Wrong User Input, Please enter time like this: 4:30");
                     throw new DecrypterException(DecrypterException.CAPTCHA);
@@ -176,9 +126,9 @@ public class BestMovies extends PluginForDecrypt {
                 br.submitForm(form);
 
             }
-                /* Kein Captcha oder Captcha erkannt */
-                link = br.getRegex(patternIframe).getMatch(0);
-                if (link != null) decryptedLinks.add(createDownloadlink(link));
+            /* Kein Captcha oder Captcha erkannt */
+            link = br.getRegex(patternIframe).getMatch(0);
+            if (link != null) decryptedLinks.add(createDownloadlink(link));
         }
 
         return decryptedLinks;

@@ -118,18 +118,15 @@ public class DistributeData extends ControlBroadcaster {
      * @param decryptedLinks
      * @return
      */
-    private boolean deepDecrypt(final ArrayList<DownloadLink> decryptedLinks) {
+    private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
-        final Integer DeepDecryptedLinks = 0;
         final Vector<DownloadLink> newdecryptedLinks = new Vector<DownloadLink>();
 
         class DThread extends Thread {
             private DownloadLink link = null;
-            Integer counter = 0;
 
-            public DThread(Integer counter, DownloadLink link) {
+            public DThread(DownloadLink link) {
                 this.link = link;
-                this.counter = counter;
             }
 
             public void run() {
@@ -163,7 +160,6 @@ public class DistributeData extends ControlBroadcaster {
                                 dLink.addSourcePluginPasswords(link.getSourcePluginPasswords());
                             }
                             /* Das Plugin konnte arbeiten */
-                            counter++;
                             coulddecrypt = true;
                             if (dLinks != null && dLinks.size() > 0) {
                                 newdecryptedLinks.addAll(dLinks);
@@ -182,19 +178,21 @@ public class DistributeData extends ControlBroadcaster {
 
         Jobber decryptJobbers = new Jobber(4);
         for (int b = decryptedLinks.size() - 1; b >= 0; b--) {
-            DThread dthread = new DThread(DeepDecryptedLinks, decryptedLinks.get(b));
+            DThread dthread = new DThread(decryptedLinks.get(b));
             decryptJobbers.add(dthread);
         }
+        int todo = decryptJobbers.getJobsAdded();
         decryptJobbers.start();
-        while (decryptJobbers.getJobsFinished() != decryptedLinks.size()) {
+        while (decryptJobbers.getJobsFinished() != todo) {
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {
             }
         }
+        boolean hasdeep = decryptedLinks.size() != newdecryptedLinks.size();
         decryptedLinks.clear();
         decryptedLinks.addAll(newdecryptedLinks);
-        return DeepDecryptedLinks != 0;
+        return hasdeep;
     }
 
     /**
@@ -216,10 +214,8 @@ public class DistributeData extends ControlBroadcaster {
         if (searchpw == true) {
             foundPasswords = HTMLParser.findPasswords(data);
         }
-
         this.orgData = data;
         reformDataString();
-
         // es werden die entschlüsselten Links (soweit überhaupt
         // vorhanden) an die HostPlugins geschickt, damit diese einen
         // Downloadlink erstellen können
@@ -291,46 +287,49 @@ public class DistributeData extends ControlBroadcaster {
     private ArrayList<DownloadLink> handleDecryptPlugins() {
 
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<Thread> decryptThreads = new ArrayList<Thread>();
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
 
+        class DThread extends Thread {
+            private CryptedLink[] decryptableLinks = null;
+            private PluginForDecrypt plg = null;
+
+            public DThread(PluginForDecrypt plg, CryptedLink[] decryptableLinks) {
+                this.decryptableLinks = decryptableLinks;
+                this.plg = plg;
+            }
+
+            public void run() {
+                decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
+            }
+        }
+        Jobber decryptJobbers = new Jobber(4);
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
-                    final PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
-                    final CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
-
+                    CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
                     if (plg.isAcceptOnlyURIs()) {
                         data = plg.cutMatches(data);
                     } else {
                         orgData = plg.cutMatches(orgData);
                     }
-                    Thread thread = new Thread(new Runnable() {
 
-                        public void run() {
-                            decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
-
-                        }
-                    });
-                    thread.start();
-                    decryptThreads.add(thread);
+                    DThread dthread = new DThread(plg, decryptableLinks);
+                    decryptJobbers.add(dthread);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
         }
-        for (Thread thread : decryptThreads) {
-            while (thread.isAlive()) {
-                try {
-                    Thread.sleep(2);
-                } catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+        int todo = decryptJobbers.getJobsAdded();
+        decryptJobbers.start();
+        while (decryptJobbers.getJobsFinished() != todo) {
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
             }
-
         }
         int i = 1;
         while (deepDecrypt(decryptedLinks)) {
