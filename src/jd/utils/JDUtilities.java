@@ -179,7 +179,7 @@ public class JDUtilities {
             userio_sem.drainPermits();
             userio_sem.release(1);
             throw e;
-        }
+        } 
     }
 
     public static void releaseUserIO_Semaphore() {
