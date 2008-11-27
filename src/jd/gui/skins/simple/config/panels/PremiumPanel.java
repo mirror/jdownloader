@@ -38,6 +38,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JSeparator;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -185,7 +186,13 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             premiumurl = null;
         }
 
+        JPanel panel = this;
+        JTabbedPane tab = new JTabbedPane();
         for (int i = 0; i < accountNum; i++) {
+            if (i % 5 == 0) {
+                tab.add(panel = new JPanel());
+                panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
+            }
             list.add(new Account("", ""));
             final JCheckBox active = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", i + 1));
             active.setForeground(INACTIVE);
@@ -201,31 +208,34 @@ public class PremiumPanel extends JPanel implements ChangeListener, ActionListen
             active.setSelected(true);
             enables[i] = active;
             enables[i].addChangeListener(this);
-            add(active, "alignleft");
+            panel.add(active, "alignleft");
 
-            add(checkBtns[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
+            panel.add(checkBtns[i] = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
             checkBtns[i].addActionListener(this);
 
-            add(delete[i] = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
+            panel.add(delete[i] = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
             delete[i].addActionListener(this);
 
-            add(new JSeparator(), "w 30:push, growx, pushx");
-            add(stati[i] = new JTextField(""), "spanx, pushx, growx");
+            panel.add(new JSeparator(), "w 30:push, growx, pushx");
+            panel.add(stati[i] = new JTextField(""), "spanx, pushx, growx");
             stati[i].setEditable(false);
 
-            add(usernamesLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
-            add(usernames[i] = new JTextField(""));
+            panel.add(usernamesLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
+            panel.add(usernames[i] = new JTextField(""));
             usernames[i].addFocusListener(this);
 
-            add(passwordsLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-            add(passwords[i] = new JDPasswordField(), "span, gapbottom 10:10:push");
+            panel.add(passwordsLabels[i] = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
+            panel.add(passwords[i] = new JDPasswordField(), "span, gapbottom 10:10:push");
             passwords[i].addFocusListener(this);
 
-            for (JCheckBox e : enables) {
-                if (e != null) e.setSelected(false);
-            }
-
+            enables[i].setSelected(false);
         }
+        int i;
+        for (i = 0; i < tab.getTabCount() - 1; i++) {
+            tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + (i * 5 + 1) + " - " + ((i + 1) * 5));
+        }
+        tab.setTitleAt(i, JDLocale.L("plugins.menu.accounts", "Accounts") + ": " + ((i * 5 + 1 == accountNum) ? accountNum : (i * 5 + 1) + " - " + accountNum));
+        if (accountNum > 5) add(tab, "span");
         if (premiumurl != null) add(buybutton, "span, alignright");
         add(freeTrafficChart, "spanx, spany");
 

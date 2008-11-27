@@ -23,7 +23,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
-import jd.http.Encoding;
 import jd.plugins.Plugin;
 
 public class HTMLParser {
