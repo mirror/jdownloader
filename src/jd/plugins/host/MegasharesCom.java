@@ -90,6 +90,7 @@ public class MegasharesCom extends PluginForHost {
         // Password protection
         br.getPage(downloadLink.getDownloadURL());
         if (!checkPassword(downloadLink)) { return; }
+        if (br.containsHTML("All download slots for this link are currently filled")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
@@ -120,6 +121,7 @@ public class MegasharesCom extends PluginForHost {
             linkStatus.setValue(60 * 1000l);
             return;
         }
+        if (br.containsHTML("All download slots for this link are currently filled")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
         // Reconnet/wartezeit check
         String[] dat = br.getRegex("Your download passport will renew.*?in (\\d+):<strong>(\\d+)</strong>:<strong>(\\d+)</strong>").getRow(0);
         if (dat != null) {
@@ -221,6 +223,10 @@ public class MegasharesCom extends PluginForHost {
             br.getPage(link);
         }
         if (br.containsHTML("You already have the maximum")) {
+            downloadLink.getLinkStatus().setStatusText("Unchecked due to already loading");
+            return true;
+        }
+        if (br.containsHTML("All download slots for this link are currently filled")) {
             downloadLink.getLinkStatus().setStatusText("Unchecked due to already loading");
             return true;
         }

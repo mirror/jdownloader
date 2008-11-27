@@ -58,6 +58,7 @@ public class EasyShareCom extends PluginForHost {
             sleep(waitfor, downloadLink);
             br.getPage(downloadLink.getDownloadURL());
         }
+        if (br.containsHTML("Hourly traffic exceeded")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
         Form form = br.getForm(0);
         String captchaUrl = br.getRegex("<form action=\".*?\".*?method=\"POST\">.*?<br>.*?<img src=\"(.*?)\">").getMatch(0);
         File captchaFile = this.getLocalCaptchaFile(this);
