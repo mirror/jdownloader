@@ -64,16 +64,14 @@ public class PremiumPanel extends JPanel {
     private PluginForHost host;
     private int accountNum;
     private AccountPanel[] accs;
-    private JLinkButton btnBuy;
 
     private ChartAPI_PIE freeTrafficChart = new ChartAPI_PIE("", 450, 60, this.getBackground());
-    private ChartRefresh loader;
 
     public PremiumPanel(GUIConfigEntry gce) {
-        this.host = (PluginForHost) gce.getConfigEntry().getActionListener();
-        this.accountNum = gce.getConfigEntry().getEnd();
-        this.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
-        this.createPanel();
+        host = (PluginForHost) gce.getConfigEntry().getActionListener();
+        accountNum = gce.getConfigEntry().getEnd();
+        setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
+        createPanel();
     }
 
     /**
@@ -105,8 +103,7 @@ public class PremiumPanel extends JPanel {
     }
 
     private void createDataset() {
-        loader = new ChartRefresh();
-        loader.start();
+        new ChartRefresh().start();
     }
 
     private void createPanel() {
@@ -134,8 +131,7 @@ public class PremiumPanel extends JPanel {
         String premiumUrl = host.getBuyPremiumUrl();
         if (premiumUrl != null) {
             try {
-                btnBuy = new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl)));
-                this.add(btnBuy, "span, alignright");
+                this.add(new JLinkButton(JDLocale.L("plugins.premium.premiumbutton", "Get Premium Account"), new URL("http://jdownloader.org/r.php?u=" + Encoding.urlEncode(premiumUrl))), "span, alignright");
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }

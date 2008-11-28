@@ -130,8 +130,6 @@ public class LogDialog extends JFrame implements ActionListener {
      */
     private JTextArea logField;
 
-    private JFrame owner;
-
     /**
      * Primary Constructor
      * 
@@ -141,7 +139,7 @@ public class LogDialog extends JFrame implements ActionListener {
      *            The connected Logger
      */
     public LogDialog(JFrame owner, Logger logger) {
-        this.owner = owner;
+
         this.setIconImage(JDUtilities.getImage(JDTheme.V("gui.images.terminal")));
         this.setTitle(JDLocale.L("gui.logDialog.title", "jDownloader Logausgabe"));
         this.setLayout(new GridBagLayout());
@@ -189,7 +187,7 @@ public class LogDialog extends JFrame implements ActionListener {
             if (content == null || content.length() == 0) {
                 content = Encoding.UTF8Encode(logField.getText());
             }
-            content = TextAreaDialog.showDialog(owner, "Log", JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
+            content = TextAreaDialog.showDialog(this, "Log", JDLocale.L("gui.logdialog.yourlog", "Hochgeladener Log: Editieren möglich!"), content);
 
             if (content == null || content.length() == 0) { return; }
 
