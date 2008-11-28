@@ -207,7 +207,7 @@ gui.config.captcha.jac_disable = Wyłącz automatyczną obsługę kodu Captcha
 gui.config.captcha.jac_methods = Użyj automatycznej obsługi kodu Captcha z:
 gui.config.captcha.show_input_dialog = Pokaż okienko wpisywania
 gui.config.captcha.train.level = Próba odczytania kodu Captcha (czas)
-gui.config.captcha.train.level.instanthelp = http://jdownloader.net/page.php?id=3
+gui.config.captcha.train.level.instanthelp = http://jdownloader.org/wiki/index.php?title=Captchafenster_abschalten_%26_Anzeigeschwelle
 gui.config.captcha.train.show_timeout = Odliczanie dla okienka z kodem Captcha
 gui.config.captcha.use_ces = Użyj Usługi Wymiany Kodu Captcha (C.E.S.) (wymagany restart)
 gui.config.captcha.use_collector = Wysyłaj nierozpoznane kody captcha
@@ -496,7 +496,7 @@ gui.config.routeripfinder.close = Zamknij okno
 gui.config.routeripfinder.featchip = Wyszukiwanie IP routera...
 gui.config.routeripfinder.ready = Znalezione IP: %s
 gui.config.showcontaineronloadinfo = Pokazuj dodatkowe informacje przy wczytywaniu
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.ath.cx/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/wiki/index.php?title=Konfiguration_der_Benutzeroberfl%C3%A4che
 gui.config.subpanel.btn_cancel = Anuluj
 gui.config.subpanel.btn_ok = OK
 gui.config.tablables.addons = Menadżer dodatków
@@ -634,7 +634,7 @@ gui.frame.packageinfo.entrypackagesize = Rozmiar pakietu
 gui.frame.packageinfo.entrypassword = Hasło
 gui.helplocale.title = Wsparcie bardzo pomaga!
 gui.images.jd_logo = gui.images.jd_logo
-gui.javacheck.html = <link href='http://jdownloader.ath.cx/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Używasz niewłaściwej wersji Javy. Najlepiej używać najnowszej wersji Javy firmy Sun. Czy mimo to chcesz spróbować uruchomić JDownloadera?<table width='100%%'><tr><th colspan='2'>Twoja wersja Javy:</th></tr><tr><th>Nazwa wykonawcza</th><td>%s</td></tr><tr><th>Wersja uruchomieniowa</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Używasz niewłaściwej wersji Javy. Najlepiej używać najnowszej wersji Javy firmy Sun. Czy mimo to chcesz spróbować uruchomić JDownloadera?<table width='100%%'><tr><th colspan='2'>Twoja wersja Javy:</th></tr><tr><th>Nazwa wykonawcza</th><td>%s</td></tr><tr><th>Wersja uruchomieniowa</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Niewłaściwa wersja Javy
 gui.linkgrabber.bar.title = Zbieracz informacji
 gui.linkgrabber.btn.accept = Akceptuj link
@@ -1761,7 +1761,7 @@ system.download.errors.linkisblocked = Mirror %s wczytywany
 system.download.triggerfileexists = Jeśli plik już istnieje:
 system.download.triggerfileexists.overwrite = Zastąp
 system.download.triggerfileexists.skip = Pomiń
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes?lng=pl
 system.update.error.message = Instalacja tych pakietów NIE POWIODŁA się:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFORMACJE</a><br/>
 system.update.message.title = Aktualizacja do wersji %s
