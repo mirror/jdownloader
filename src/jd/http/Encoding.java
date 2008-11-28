@@ -116,8 +116,7 @@ public class Encoding {
         if (str == null) return null;
         try {
             str = URLDecoder.decode(str, "UTF-8");
-        } catch (UnsupportedEncodingException e1) {
-            e1.printStackTrace();
+        } catch (Exception e) {
         }
         try {
             new URL(str);
@@ -127,7 +126,7 @@ public class Encoding {
         String urlcoded = null;
         try {
             urlcoded = URLEncoder.encode(str, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             urlcoded = str;
         }
@@ -176,7 +175,7 @@ public class Encoding {
     public static String UTF8Encode(String str) {
         try {
             return new String(str.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return null;
         }
