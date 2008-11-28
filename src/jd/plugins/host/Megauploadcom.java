@@ -153,7 +153,7 @@ public class Megauploadcom extends PluginForHost {
     }
 
     public boolean isPremium() {
-        return br.containsHTML("fo.addVariable\\(\"status\",\"\\(premium\\)\"\\);");
+        return br.containsHTML("fo.addVariable\\(\"premium\",\"1\"\\);");
     }
 
     public void login(Account account) throws IOException, PluginException {
