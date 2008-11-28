@@ -60,7 +60,7 @@ public class PackageCreaterRS {
 
         StringBuilder sb = new StringBuilder();
         sb.append("<packages>");
-        String uid = "jdown4";
+        String uid = "downVI";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
         JDFileChooser fc = new JDFileChooser();
         fc.setApproveButtonText("Select list.php");
@@ -75,7 +75,7 @@ public class PackageCreaterRS {
         String[][] matches = new Regex(list, "\\<package\\>.+?\\<\\/package\\>").getMatches();
         for (String p : packages) {
 
-            if (false && JOptionPane.showConfirmDialog(frame, "Upload " + p) != JOptionPane.OK_OPTION) continue;
+            if (JOptionPane.showConfirmDialog(frame, "Upload " + p) != JOptionPane.OK_OPTION) continue;
             File pDir = new File(srcDir, p);
             File[] files = pDir.listFiles(new FilenameFilter() {
                 public boolean accept(File dir, String name) {
@@ -99,7 +99,7 @@ public class PackageCreaterRS {
             zip.fillSize = 5 * 1024 * 1024 + 30000 + (int) (Math.random() * 1024.0 * 150.0);
             try {
                 zip.zip();
-                if (false && JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                if (true|| JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
                         String url = null;
                         System.out.println(url = Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
@@ -116,7 +116,13 @@ public class PackageCreaterRS {
                                 int versionid = (true || JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION) ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
 
                                 matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
+                                if(url.contains("_LIGHT_.jdu")){
+                                    matches[ii][0] = matches[ii][0].replaceAll("<light-url>.*?</light-url>", "<light-url>" + url.replace(".html", "") + "</light-url>");
+                                        
+                                }else{
                                 matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
+                                
+                                }
                                 System.out.println(matches[ii][0]);
                             }
                             all += matches[ii][0] + "\r\n";
@@ -160,23 +166,31 @@ public class PackageCreaterRS {
 
             try {
                 zip.zip();
-                if (false && JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
+                if (true|| JOptionPane.showConfirmDialog(frame, "Upload " + filename) == JOptionPane.OK_OPTION) {
                     if (pw != null) {
 
                         String url = null;
                         System.out.println(url = Upload.toRapidshareComPremium(new File(srcDir, filename), uid, pw));
 
-                        String tot = "<url>(.*?" + name + ".*?LIGHT\\_\\.jdu)</url>";
+                        String tot = "<url>(.*?" + name + ".*?v\\d+?\\.jdu)</url>";
                         String all = "<packages>\r\n";
 
                         for (int ii = 0; ii < matches.length; ii++) {
                             boolean entries = new Regex(matches[ii][0], tot).matches();
                             if (entries) {
+
                                 String v = new Regex(matches[ii][0], "<version>(.*?)</version>").getMatch(0).trim();
 
                                 int versionid = (true || JOptionPane.showConfirmDialog(frame, "increase version of " + name + "?") == JOptionPane.OK_OPTION) ? (Integer.parseInt(v) + 1) : (Integer.parseInt(v) + 0);
+
                                 matches[ii][0] = matches[ii][0].replaceAll("<version>.*?</version>", "<version>" + versionid + "</version>");
+                                if(url.contains("_LIGHT_.jdu")){
+                                    matches[ii][0] = matches[ii][0].replaceAll("<light-url>.*?</light-url>", "<light-url>" + url.replace(".html", "") + "</light-url>");
+                                        
+                                }else{
                                 matches[ii][0] = matches[ii][0].replaceAll("<url>.*?</url>", "<url>" + url.replace(".html", "") + "</url>");
+                                
+                                }
                                 System.out.println(matches[ii][0]);
                             }
                             all += matches[ii][0] + "\r\n";
