@@ -416,7 +416,7 @@ gui.config.liveheader.script = Skrypt HTTP
 gui.config.liveheader.selectrouter = Wybierz router
 gui.config.liveheader.user = Użytkownik
 gui.config.liveheader.waitforip = Czekaj na nowy adres IP (sek.)
-gui.config.liveheader.waittimeforipcheck = Czas oczekiwania na pierwszy adres IP (sek.)
+gui.config.liveheader.waittimeforipcheck = Interwał sprawdzania zmiany adresu IP (co x sek.)
 gui.config.liveheader.warning.nocurlconvert = JD nie może skonwertować skryptu CURL. Aby uzyskać pomoc, skontaktuj się z Ekipą Wsparcia Techniczjego JD!
 gui.config.liveheader.warning.notfound = JDownloader nie może wykryć ustawień twojego routera.
 gui.config.liveheader.warning.wizard = Wyszukiwanie ustawień może chwilę potrwać. Wprowadź dane do logowania. Gotowe?
@@ -554,9 +554,12 @@ gui.config.unrar.usehjmerge = Automatycznie scal pliki podzielone HJSplit
 gui.config.webupdate.name = Aktualizacja
 gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
 gui.dialog.about.chat = Czat
+gui.dialog.about.chaturl = http://www.jdownloader.org/support?lng=pl
 gui.dialog.about.email = Email
 gui.dialog.about.forum = Forum wsparcia technicznego
+gui.dialog.about.forumurl = http://www.the-lounge.org/viewforum.php?f=340
 gui.dialog.about.homepage = Strona domowa
+gui.dialog.about.homeurl = http://www.jdownloader.org/home?lng=pl
 gui.dialog.about.jddevteam = Twórcy JDownloadera
 gui.dialog.about.member = Osoba
 gui.dialog.about.section = Dział
@@ -1186,6 +1189,7 @@ jac.ces.login.pass = Hasło:
 jac.ces.login.title = CaptchaExchangeServer Login
 jac.ces.login.user = Nazwa użytkownika:
 jd.plugins.decrypt.bestmovies.captchainputwrong = Niepoprawny format. Czas powinien wyglądać tak: 4:30
+jdownloader.localnewsurl = http://jdownloader.org/news?lng=pl
 jdownloader.org = JDownloader.org
 linkinformation.available.error = Błąd!
 linkinformation.available.name = Dostępny

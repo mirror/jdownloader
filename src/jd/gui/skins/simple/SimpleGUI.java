@@ -1,4 +1,4 @@
-//    jDownloader - Downloadmanager
+﻿//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -1427,7 +1427,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         try {
             ImageIcon icon = JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.update_manager"), 16, -1);
-            JLinkButton linkButton = new JLinkButton(JDLocale.L("jdownloader.org", "jDownloader.org"), icon, new URL("http://jdownloader.org"));
+            JLinkButton linkButton = new JLinkButton(JDLocale.L("jdownloader.org", "jDownloader.org"), icon, new URL(JDLocale.L("jdownloader.localnewsurl","http://jdownloader.org/news?lng=en")));
             linkButton.setHorizontalTextPosition(SwingConstants.LEFT);
             linkButton.setBorder(null);
             Dimension d = new Dimension(10, 0);
