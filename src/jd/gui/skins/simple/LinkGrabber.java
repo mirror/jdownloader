@@ -1594,7 +1594,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         setLocationRelativeTo(null);
         pack();
 
-        setVisible(true);
+        // setVisible(true);
     }
 
     private boolean isDupe(DownloadLink link) {
