@@ -141,7 +141,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
             for (int i = 0; i < size; ++i) {
                 ScheduleFrame s = v.elementAt(i);
                 int a = i + 1;
-                panel.add(new JLabel("Schedule " + a + " Status: " + s.status.getText()));
+                panel.add(new JLabel(JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + a + " " + JDLocale.L("addons.schedule.menu.status", "Status") + ": " + s.status.getText()));
             }
             SwingUtilities.updateComponentTreeUI(this);
 
