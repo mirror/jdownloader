@@ -115,10 +115,6 @@ public class Encoding {
         boolean ishttpurl = false;
         if (str == null) return null;
         try {
-            str = URLDecoder.decode(str, "UTF-8");
-        } catch (Exception e) {
-        }
-        try {
             new URL(str);
             ishttpurl = true;
         } catch (Exception e) {
