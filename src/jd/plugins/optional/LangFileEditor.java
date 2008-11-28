@@ -109,7 +109,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private ChartAPI_Entity entDone, entMissing, entOld;
     private JMenu mnuFile, mnuKey, mnuEntries;
     private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
-    private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuContinueSearch, mnuDelete, mnuSearch, mnuTranslate, mnuTranslateMissing;
+    private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
     private JCheckBoxMenuItem mnuColorizeDone, mnuColorizeMissing, mnuColorizeOld;
     private JPopupMenu mnuContextPopup;
@@ -121,7 +121,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private Vector<KeyInfo> data = new Vector<KeyInfo>();
     private HashMap<String, Vector<String>> dupes = new HashMap<String, Vector<String>>();
     private String lngKey = null;
-    private String searchFor = "";
     private boolean changed = false;
     private static final JDFileFilter fileFilter = new JDFileFilter(JDLocale.L("plugins.optional.langfileeditor.fileFilter", "LanguageFiles (*.lng)"), ".lng", true);
     private boolean colorizeDone, colorizeMissing, colorizeOld;
@@ -252,6 +251,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         entOld.setData(numOld);
         entOld.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old") + " [" + entOld.getData() + "]");
         keyChart.fetchImage();
+
     }
 
     private JMenuBar buildMenu() {
@@ -317,9 +317,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuEntries.add(mnuPickDoneColor = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.pickDoneColor", "Pick Color for Done Entries")));
         mnuEntries.addSeparator();
         mnuEntries.add(mnuShowDupes = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.showDupes", "Show Dupes")));
-        mnuEntries.addSeparator();
-        mnuEntries.add(mnuSearch = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.search", "Search")));
-        mnuEntries.add(mnuContinueSearch = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.continueSearch", "Continue Search")));
 
         mnuColorizeMissing.setSelected(colorizeMissing);
         mnuColorizeOld.setSelected(colorizeOld);
@@ -336,17 +333,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuColorizeDone.addActionListener(this);
         mnuPickDoneColor.addActionListener(this);
         mnuShowDupes.addActionListener(this);
-        mnuSearch.addActionListener(this);
-        mnuContinueSearch.addActionListener(this);
 
         mnuColorizeMissing.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
         mnuColorizeOld.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F6, 0));
         mnuColorizeDone.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F7, 0));
         mnuShowDupes.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK));
-        // mnuSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
-        // KeyEvent.CTRL_DOWN_MASK));
-        mnuSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
-        mnuContinueSearch.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4, 0));
 
         // Menü-Bar zusammensetzen
         JMenuBar menuBar = new JMenuBar();
@@ -646,25 +637,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             frame.setVisible(false);
             frame.dispose();
 
-        } else if (e.getSource() == mnuSearch) {
-
-            searchFor = JOptionPane.showInputDialog(frame, JDLocale.L("plugins.optional.langfileeditor.searchFor", "String to search for: (Startposition is the first selected row)"), searchFor);
-            search();
-
-        } else if (e.getSource() == mnuContinueSearch) {
-
-            search();
         }
-    }
 
-    private void search() {
-        if (!searchFor.equals("")) {
-            int begin = table.getSelectedRow();
-            if (begin == table.getRowCount()) begin = -1;
-            if (table.getSearchable().search(searchFor, begin) == -1) {
-                table.getSearchable().search(searchFor, -1);
-            }
-        }
     }
 
     private String getLanguageKey() {
