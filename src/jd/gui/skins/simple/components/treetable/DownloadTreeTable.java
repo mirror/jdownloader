@@ -1020,7 +1020,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                     long total = chunk.getChunkSize();
                     long percent = chunk.getPercent() / 100;
                     sb.append("<tr>");
-                    sb.append("<td> Verbindung " + chunk.getID() + "</td>");
+                    sb.append("<td>" + JDLocale.L("gui.downloadlist.tooltip.connection", "Verbindung") + " " + chunk.getID() + "</td>");
                     sb.append("<td>" + JDUtilities.formatKbReadable(chunk.getBytesPerSecond() / 1024) + "/s</td>");
                     sb.append("<td>" + JDUtilities.formatKbReadable(loaded / 1024) + "/" + JDUtilities.formatKbReadable(total / 1024) + "</td>");
                     sb.append("<td><table width='100px' height='5px'  cellpadding='0' cellspacing='0' ><tr><td width='" + percent + "%' bgcolor='#000000'/><td width='" + (100 - percent) + "%' bgcolor='#cccccc'/></tr> </table></td>");

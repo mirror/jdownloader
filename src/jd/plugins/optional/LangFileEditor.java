@@ -655,7 +655,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private void translateRow(int row) {
-
         String def = tableModel.getValueAt(row, 1);
         if (!def.equals("")) {
             String res = JDLocale.translate(lngKey, def);
