@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -28,48 +29,47 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
 public class SharebankWs extends PluginForDecrypt {
-    private static final String  REGEX_FOLDER = "http://[\\w\\.]*?sharebank\\.ws/\\?v=[a-zA-Z0-9]+";
-    private static final String  REGEX_DLLINK = "http://[\\w\\.]*?sharebank\\.ws/\\?go=([a-zA-Z0-9]+)";
+    private static final String REGEX_FOLDER = "http://[\\w\\.]*?sharebank\\.ws/\\?v=[a-zA-Z0-9]+";
+    private static final String REGEX_DLLINK = "http://[\\w\\.]*?sharebank\\.ws/\\?go=([a-zA-Z0-9]+)";
+
     public SharebankWs(PluginWrapper wrapper) {
         super(wrapper);
     }
+
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = param.toString();
-        Regex urlGoRegex = new Regex(url,Pattern.compile(REGEX_DLLINK));
-
+        Regex urlGoRegex = new Regex(url, Pattern.compile(REGEX_DLLINK));
+        br.setDebug(true);
         String[] links = null;
-        if(url.matches(REGEX_FOLDER)){
+        if (url.matches(REGEX_FOLDER)) {
             br.getPage(url);
-            links =  br.getRegex(Pattern.compile("go=(.*?)'")).getColumn(0);
+            links = br.getRegex(Pattern.compile("go=(.*?)'")).getColumn(0);
 
-        }else if(urlGoRegex.matches()){
-            links = new String[]{urlGoRegex.getMatch(0)};
-        }else{
+        } else if (urlGoRegex.matches()) {
+            links = new String[] { urlGoRegex.getMatch(0) };
+        } else {
             logger.severe("Ungültiges Pattern in der JDinit für Sharebank.Ws");
         }
 
         progress.setRange(links.length);
         for (String element : links) {
             /* Get the security id and save them */
-            br.getPage("http://sharebank.ws/?go=" + element);
-            String securityId = br.getRegex(Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
-
-            /* Follow the link with the securityId and filter out the finalLink */
-            br.getPage("http://sharebank.ws/?" + securityId);
-            String finalLink = br.getRegex(Pattern.compile("<iframe src='(.*)' marginheight=")).getMatch(0);
-            if (finalLink == null) {
-                /*
-                 * Follow the link with the securityId and filter out the
-                 * finalLink
-                 */
-                securityId = br.getRegex(Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
-                br.getPage("http://sharebank.ws/?" + securityId);
-                finalLink = br.getRegex(Pattern.compile("<iframe src='(.*)' marginheight=")).getMatch(0);
+            Browser brc = br.cloneBrowser();
+            brc.getPage("http://sharebank.ws/?go=" + element);
+            String finalLink = null;
+            for (int retry = 0; retry < 5; retry++) {
+                String securityId = brc.getRegex(Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
+                brc.getPage("http://sharebank.ws/?" + securityId);
+                finalLink = brc.getRegex(Pattern.compile(">document.location='(.*?)';<")).getMatch(0);
+                if (finalLink != null && !finalLink.startsWith("?go")) {
+                    break;
+                }
             }
+            if (finalLink == null) return null;
             /* find base64 coded url */
-            String finalLink2 = br.getRegex(Pattern.compile("base64_decode\\('(.*?)'\\)")).getMatch(0);
+            String finalLink2 = brc.getRegex(Pattern.compile("base64_decode\\('(.*?)'\\)")).getMatch(0);
             if (finalLink2 != null) {
                 decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(finalLink2)));
             } else {
