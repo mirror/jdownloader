@@ -271,6 +271,7 @@ public class JHelpDialog extends JDialog implements ActionListener {
     public void showDialog() {
         setModal(true);
         this.setLocation(JDUtilities.getCenterOfComponent(parentFrame, this));
+        pack();
         setVisible(true);
     }
 
