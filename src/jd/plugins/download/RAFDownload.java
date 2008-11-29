@@ -290,10 +290,10 @@ public class RAFDownload extends DownloadInterface {
 
         } catch (Exception e) {
             try {
-                outputChannel.force(false);
+                if (outputChannel != null) outputChannel.force(false);
                 logger.info("CLOSE HD FILE");
-                outputFile.close();
-                outputChannel.close();
+                if (outputFile != null) outputFile.close();
+                if (outputChannel != null) outputChannel.close();
             } catch (Exception e2) {
                 e2.printStackTrace();
             }

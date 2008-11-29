@@ -182,12 +182,15 @@ public class Uploadedto extends PluginForHost {
         } else {
             logger.info("Direct Downloads active");
         }
+        
+        
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
-        dl.fakeContentRangeHeader(true);
+    
+  
         dl.setFileSizeVerified(true);
-        if (dl.getConnection().getContentLength() == 0) {
+        if (dl.getConnection().getContentLength() == 0||!dl.getConnection().isContentDisposition()) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
+            linkStatus.setValue(5 * 60 * 1000l);
             return;
         }
         dl.startDownload();
@@ -263,6 +266,7 @@ public class Uploadedto extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
         br.setCookie("http://uploaded.to/", "lang", "de");
+        br.setDebug(true);
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         checkPasswort(downloadLink);
@@ -301,7 +305,7 @@ public class Uploadedto extends PluginForHost {
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(20 * 60 * 1000l);
+            linkStatus.setValue(5 * 60 * 1000l);
             return;
         }
         dl.startDownload();

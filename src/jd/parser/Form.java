@@ -210,7 +210,7 @@ public class Form {
         if (action == null || action.matches("[\\s]*")) {
             if (baseurl == null) { return null; }
             ret = baseurl.toString();
-        } else if (!ret.matches("http://.*")) {
+        } else if (!ret.matches("https?://.*")) {
             if (baseurl == null) { return null; }
             if (ret.charAt(0) == '/') {
                 ret = "http://" + baseurl.getHost() + ret;
