@@ -32,7 +32,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.Jobber;
+import jd.utils.jobber.JDRunnable;
+import jd.utils.jobber.Jobber;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage
@@ -122,7 +123,7 @@ public class DistributeData extends ControlBroadcaster {
         if (decryptedLinks.isEmpty()) return false;
         final Vector<DownloadLink> newdecryptedLinks = new Vector<DownloadLink>();
 
-        class DThread extends Thread {
+        class DThread extends Thread implements JDRunnable {
             private DownloadLink link = null;
 
             public DThread(DownloadLink link) {
@@ -173,6 +174,11 @@ public class DistributeData extends ControlBroadcaster {
                 if (coulddecrypt == false) {
                     newdecryptedLinks.add(link);
                 }
+            }
+
+            public void go() throws Exception {
+               run();
+                
             }
         }
 
@@ -289,7 +295,7 @@ public class DistributeData extends ControlBroadcaster {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (DecryptPluginWrapper.getDecryptWrapper() == null) return decryptedLinks;
 
-        class DThread extends Thread {
+        class DThread extends Thread implements JDRunnable {
             private CryptedLink[] decryptableLinks = null;
             private PluginForDecrypt plg = null;
 
@@ -300,6 +306,11 @@ public class DistributeData extends ControlBroadcaster {
 
             public void run() {
                 decryptedLinks.addAll(plg.decryptLinks(decryptableLinks));
+            }
+
+            public void go() throws Exception {
+                run();
+                
             }
         }
         Jobber decryptJobbers = new Jobber(4);

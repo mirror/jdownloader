@@ -27,7 +27,8 @@ import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.http.Encoding;
 import jd.parser.Regex;
-import jd.utils.Jobber;
+import jd.utils.jobber.JDRunnable;
+import jd.utils.jobber.Jobber;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -118,7 +119,7 @@ public abstract class PluginForDecrypt extends Plugin {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         Jobber decryptJobbers = new Jobber(4);
 
-        class DThread extends Thread {
+        class DThread extends Thread implements JDRunnable {
             private CryptedLink decryptableLink = null;
 
             public DThread(CryptedLink decryptableLink) {
@@ -131,6 +132,11 @@ public abstract class PluginForDecrypt extends Plugin {
                     link.setBrowserUrl(decryptableLink.getCryptedUrl());
                 }
                 decryptedLinks.addAll(links);
+            }
+
+            public void go() throws Exception {
+                run();
+                
             }
         }
 

@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
+package jd.utils.jobber;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -22,7 +22,7 @@ import java.util.LinkedList;
 public class Jobber {
 
     private int paralellWorkerNum;
-    private LinkedList<Runnable> jobList;
+    private LinkedList<JDRunnable> jobList;
     private Worker[] workerList;
     private ArrayList<WorkerListener> listener;
     private int currentlyRunningWorker;
@@ -57,7 +57,7 @@ public class Jobber {
     public Jobber(int i) {
         this.paralellWorkerNum = i;
         this.currentlyRunningWorker = 0;
-        this.jobList = new LinkedList<Runnable>();
+        this.jobList = new LinkedList<JDRunnable>();
         this.listener = new ArrayList<WorkerListener>();
     }
 
@@ -120,7 +120,7 @@ public class Jobber {
         }
     }
 
-    private Runnable getNextRunnable() {
+    private JDRunnable getNextJDRunnable() {
         synchronized (jobList) {
             if (jobList.size() == 0) return null;
             return jobList.removeFirst();
@@ -144,14 +144,19 @@ public class Jobber {
         }
     }
 
-    private void fireJobFinished(Runnable job) {
+    private void fireJobFinished(JDRunnable job) {
         synchronized (listener) {
             for (WorkerListener wl : listener)
                 wl.onJobFinished(this, job);
         }
     }
-
-    private void fireJobStarted(Runnable job) {
+    private void fireJobException(JDRunnable job,Exception e) {
+        synchronized (listener) {
+            for (WorkerListener wl : listener)
+                wl.onJobException(this, job,e);
+        }
+    }
+    private void fireJobStarted(JDRunnable job) {
         synchronized (listener) {
             for (WorkerListener wl : listener)
                 wl.onJobStarted(this, job);
@@ -166,7 +171,7 @@ public class Jobber {
      * @param runnable
      * @return
      */
-    public int add(Runnable runnable) {
+    public int add(JDRunnable runnable) {
         synchronized (jobList) {
             jobList.add(runnable);
             this.jobsAdded++;
@@ -192,7 +197,7 @@ public class Jobber {
         }
 
     }
-
+   
     public void setKillWorkerAfterQueueFinished(boolean killWorkerAfterQueueFinished) {
         this.killWorkerAfterQueueFinished = killWorkerAfterQueueFinished;
     }
@@ -228,7 +233,7 @@ public class Jobber {
 
         public void run() {
             while (true) {
-                Runnable ra = getNextRunnable();
+                JDRunnable ra = getNextJDRunnable();
 
                 if (ra == null) {
 
@@ -250,10 +255,14 @@ public class Jobber {
                     continue;
                 }
                 jobsStarted++;
-                fireJobStarted(this);
-                ra.run();
+                fireJobStarted(ra);
+                try {
+                    ra.go();
+                } catch (Exception e) {            
+                    fireJobException(ra,e);
+                }
                 jobsFinished++;
-                fireJobFinished(this);
+                fireJobFinished(ra);
             }
         }
 
@@ -261,11 +270,18 @@ public class Jobber {
 
     public abstract class WorkerListener {
 
-        public abstract void onJobFinished(Jobber jobber, Runnable job);
+        public abstract void onJobFinished(Jobber jobber, JDRunnable job);
+/**
+ * Broadcastes occuring Exceptions
+ * @param jobber
+ * @param job
+ * @param e
+ */
+        public abstract void onJobException(Jobber jobber, JDRunnable job, Exception e);
 
         public abstract void onJobListFinished(Jobber jobber);
 
-        public abstract void onJobStarted(Jobber jobber, Runnable job);
+        public abstract void onJobStarted(Jobber jobber, JDRunnable job);
 
     }
 

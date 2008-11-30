@@ -44,7 +44,8 @@ import jd.plugins.optional.hjsplit.jaxe.ProgressEvent;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Jobber;
+import jd.utils.jobber.JDRunnable;
+import jd.utils.jobber.Jobber;
 
 public class JDHJSplit extends PluginOptional implements ControlListener {
 
@@ -245,9 +246,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     // Startet das Abwarbeiten der extractqueue
     private void addToQueue(final DownloadLink link) {
 
-        queue.add(new Runnable() {
+        queue.add(new JDRunnable() {
 
-            public void run() {
+            public void go() {
 
                 final ProgressController progress = new ProgressController("Default HJMerge", 100);
 

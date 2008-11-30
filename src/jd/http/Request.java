@@ -557,4 +557,9 @@ public abstract class Request {
 
     }
 
+    public Request cloneRequest() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

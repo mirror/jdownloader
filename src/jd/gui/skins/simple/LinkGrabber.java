@@ -95,7 +95,8 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.Jobber;
+import jd.utils.jobber.JDRunnable;
+import jd.utils.jobber.Jobber;
 
 /**
  * Diese Klasse sammelt die Links, bündelt sie zu Paketen und führt einen
@@ -1731,7 +1732,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private void startLinkGatherer() {
-        class DThread extends Thread {
+        class DThread extends Thread implements JDRunnable {
             private Vector<DownloadLink> links = null;
 
             public DThread(Vector<DownloadLink> links) {
@@ -1764,6 +1765,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     }
                     progress.setValue(progress.getValue() + 1);
                 }
+            }
+
+            public void go() throws Exception {
+                run();
+                
             }
         }
 

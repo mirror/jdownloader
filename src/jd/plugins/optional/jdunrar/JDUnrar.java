@@ -50,9 +50,9 @@ import jd.utils.Executer;
 import jd.utils.JDHexUtils;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Jobber;
 import jd.utils.OSDetector;
 import jd.utils.io.JDIO;
+import jd.utils.jobber.Jobber;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 

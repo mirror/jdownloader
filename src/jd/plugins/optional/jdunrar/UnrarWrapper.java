@@ -29,6 +29,7 @@ import jd.utils.Executer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.ProcessListener;
+import jd.utils.jobber.JDRunnable;
 
 /**
  * Die klasse dient zum verpacken der Unrar binary.
@@ -36,7 +37,7 @@ import jd.utils.ProcessListener;
  * @author coalado
  * 
  */
-public class UnrarWrapper extends Thread {
+public class UnrarWrapper extends Thread implements JDRunnable {
 
     // private static final int CANNOT_FIND_VOLUME = 1;
     // private static final int COULD_NOT_FIND_PASSWORD = 1 << 1;
@@ -889,5 +890,10 @@ public class UnrarWrapper extends Thread {
             }
         }
 
+    }
+
+    public void go() throws Exception {
+        run();
+        
     }
 }
