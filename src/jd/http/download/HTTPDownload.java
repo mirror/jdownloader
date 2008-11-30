@@ -1,14 +1,17 @@
 package jd.http.download;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 
 import jd.http.Browser;
 import jd.http.Request;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 import jd.utils.jobber.JDRunnable;
-import jd.utils.jobber.Jobber;
-import jd.utils.jobber.Jobber.WorkerListener;
 
 public class HTTPDownload {
     /**
@@ -24,9 +27,12 @@ public class HTTPDownload {
 
     private File outputFile;
     private int chunkNum;
-    private ArrayList<DownloadChunk> chunks;
+    private Threader chunks;
     private int flags = 0;
     private long fileSize;
+    private RandomAccessFile outputRAF;
+    private FileChannel outputChannel;
+    private long byteCounter;
 
     public long getFileSize() {
         return fileSize;
@@ -39,6 +45,7 @@ public class HTTPDownload {
     public HTTPDownload(Request request, File file, int flags) {
         this.orgRequest = request;
         this.flags = flags;
+        this.outputFile = file;
     }
 
     public HTTPDownload(Request request, File file) {
@@ -46,20 +53,91 @@ public class HTTPDownload {
         this.outputFile = file;
     }
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
+        try{
 
+            String destPath = "c:/test.download";
         Browser br = new Browser();
-        Request request = br.createGetRequest("http://services.jdownloader.net/ubuntu.iso");
 
-        HTTPDownload dl = new HTTPDownload(request, new File("cg:/test.download"), HTTPDownload.FLAG_RESUME);
+        Request request = br.createGetRequest("http://services.jdownloader.net/testfiles/25bmtest.test");
 
-        dl.setChunkNum(20);
+        final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
+
+        dl.setChunkNum(2);
+        try{
+            new Thread(){
+                public void run(){
+                    try {
+                        Thread.sleep(2000);
+                        dl.setChunkNum(4);                        
+                        Thread.sleep(6000);
+                        dl.setChunkNum(10);
+                        Thread.sleep(6000);
+                        dl.setChunkNum(20);
+                    } catch (Exception e) {
+                        // TODO Auto-generated catch block
+                        e.printStackTrace();
+                    }
+                    
+                }
+            }.start();
         dl.start();
+        long crc = JDUtilities.getCRC(new File(destPath));
+
+        if ("862E7007".trim().endsWith(Long.toHexString(crc).toUpperCase())) {
+            System.out.println("CRC OK");
+        } else {
+            System.out.println("CRC FAULT");
+        }
+        }catch(BrowserException e){
+            if(e.getType()==BrowserException.TYPE_LOCAL_IO){
+                new File(destPath).delete();
+                e.printStackTrace();
+            }
+        }
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private void setChunkNum(int i) throws BrowserException {
+        if (i == chunkNum) return;
+        if (chunks != null && chunks.isHasStarted()) {
+            if (i > chunkNum) addChunksDyn(i - chunkNum);
+            if (i < chunkNum) removeChunksDyn(chunkNum - i);
+        }
+        this.chunkNum = i;
 
     }
 
-    private void setChunkNum(int i) {
-        this.chunkNum = i;
+    private void removeChunksDyn(int i) {
+        // TODO Auto-generated method stub
+
+    }
+
+    private void addChunksDyn(int i) throws BrowserException {
+        while (i-- > 0) {
+            addChunk();
+        }
+    }
+
+    private void addChunk() throws BrowserException {
+        DownloadChunk biggestRemaining = null;
+        for (int i = 0; i < chunks.size(); i++) {
+            System.out.println(chunks.get(i) + ":" + ((DownloadChunk) chunks.get(i)).getRemainingChunkBytes());
+            if (biggestRemaining == null || biggestRemaining.getRemainingChunkBytes() < ((DownloadChunk) chunks.get(i)).getRemainingChunkBytes()) {
+                biggestRemaining = ((DownloadChunk) chunks.get(i));
+            }
+        }
+        long newSize = biggestRemaining.getRemainingChunkBytes() / 2;
+        System.out.println(biggestRemaining + " New size: " + newSize);
+        long old = biggestRemaining.getChunkEnd();
+        biggestRemaining.setChunkEnd(biggestRemaining.getChunkStart() + biggestRemaining.getChunkBytes() + newSize);
+
+        DownloadChunk newChunk = new DownloadChunk(this, biggestRemaining.getChunkEnd() + 1, old);
+        System.out.println("SPLIT: " + biggestRemaining + " + " + newChunk);
+        chunks.add(newChunk);
 
     }
 
@@ -67,11 +145,71 @@ public class HTTPDownload {
 
         // If resumeFlag is set and ResumInfo Import fails, initiate the Default
         // ChunkSetup
+        this.initOutputChannel();
         if (hasStatus(FLAG_RESUME) || !importResumeInfos()) {
 
             this.initChunks();
 
         }
+        this.byteCounter = 0l;
+        this.download();
+        this.closeFileDiscriptors();
+        this.clean();
+
+    }
+
+    private void closeFileDiscriptors() {
+        try {
+            outputChannel.force(false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            outputRAF.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            outputChannel.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    /**
+     * Renames all files and deletes tmp files
+     * 
+     * @throws BrowserException
+     */
+    private void clean() throws BrowserException {
+        if (!new File(outputFile.getAbsolutePath() + ".part").renameTo(outputFile)) { throw new BrowserException(JDLocale.L("exceptions.browserexception.couldnotrenam", "Could not rename outputfile"), BrowserException.TYPE_LOCAL_IO);
+
+        }
+        if (!new File(outputFile.getAbsolutePath() + ".jdp").delete()) {
+            new File(outputFile.getAbsolutePath() + ".jdp").deleteOnExit();
+        }
+    }
+
+    private void download() {
+        chunks.startAndWait();
+
+    }
+
+    private void initOutputChannel() throws FileNotFoundException, BrowserException {
+        if (outputFile.exists()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.alreadyexists", "Outputfile already exists"), BrowserException.TYPE_LOCAL_IO);
+
+        }
+
+        if (new File(outputFile.getAbsolutePath() + ".part").exists() && !this.hasStatus(FLAG_RESUME)) {
+            if (!new File(outputFile.getAbsolutePath() + ".part").delete()) { throw new BrowserException("Could not delete *.part file", BrowserException.TYPE_LOCAL_IO); }
+        }
+        if (!outputFile.getParentFile().exists()) {
+            outputFile.getParentFile().mkdirs();
+        }
+
+        outputRAF = new RandomAccessFile(outputFile.getAbsolutePath() + ".part", "rw");
+        outputChannel = outputRAF.getChannel();
 
     }
 
@@ -79,13 +217,13 @@ public class HTTPDownload {
      * Method creates the initial Chunks
      * 
      * @throws IOException
-     * @throws BrowserException 
+     * @throws BrowserException
      */
     private void initChunks() throws IOException, BrowserException {
-        this.chunks = new ArrayList<DownloadChunk>();
+        this.chunks = new Threader();
 
-        DownloadChunk chunk = new DownloadChunk();
-        chunk.setRequest(this.orgRequest);
+        DownloadChunk chunk = new DownloadChunk(this);
+
         // 0-Chunk has to be Rangeless.
         orgRequest.getHeaders().remove("Range");
         chunk.connect();
@@ -94,46 +232,37 @@ public class HTTPDownload {
             this.fileSize = orgRequest.getContentLength();
             this.addStatus(FLAG_FILESIZE_CORRECT);
         }
+
         chunk.setRange(0l, fileSize / chunkNum);
         chunks.add(chunk);
-        Jobber jobs = new Jobber(10);
-        jobs.addWorkerListener(jobs.new WorkerListener(){
+
+        chunks.getBroadcaster().addListener(chunks.new WorkerListener() {
 
             @Override
-            public void onJobException(Jobber jobber, JDRunnable job,Exception e) {
+            public void onThreadException(Threader th, JDRunnable job, Exception e) {
                 e.printStackTrace();
-                
             }
 
             @Override
-            public void onJobFinished(Jobber jobber, JDRunnable job) {
+            public void onThreadFinished(Threader th, JDRunnable job) {
                 // TODO Auto-generated method stub
-                
             }
 
-            @Override
-            public void onJobListFinished(Jobber jobber) {
-                // TODO Auto-generated method stub
-                
-            }
-
-            @Override
-            public void onJobStarted(Jobber jobber, JDRunnable job) {
-                // TODO Auto-generated method stub
-                
-            }
-            
         });
         for (int i = 1; i < chunkNum; i++) {
-            chunk=new DownloadChunk(chunk.getChunkEnd()+1,fileSize*(i+1)/chunkNum);          
-            chunk.setRequest(orgRequest);
-            chunks.add(chunk);            
-            jobs.add(chunk);
+            if (i < chunkNum - 1) {
+                chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, fileSize * (i + 1) / chunkNum);
+            } else {
+                chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, -1);
+
+            }
+
+            chunks.add(chunk);
+
         }
-        //TODO
-        //Fehler müssen hier noch abgefangen werden, z.B. über listener
-        jobs.start();
-       
+        // TODO
+        // Fehler müssen hier noch abgefangen werden, z.B. über listener
+
     }
 
     /**
@@ -158,5 +287,28 @@ public class HTTPDownload {
         int mask = 0xffffffff;
         mask &= ~status;
         this.flags &= mask;
+    }
+
+    public synchronized void writeBytes(DownloadChunk chunk, ByteBuffer buffer) throws IOException {
+
+        synchronized (outputChannel) {
+            buffer.flip();
+            this.outputRAF.seek(chunk.getWritePosition());
+            byteCounter += buffer.limit();
+            System.out.println(chunk + " - " + "Write " + buffer.limit() + " bytes at " + chunk.getWritePosition() + " total: " + byteCounter + " written until: " + (chunk.getWritePosition() + buffer.limit() - 1));
+
+            outputChannel.write(buffer);
+            // if (chunk.getID() >= 0) {
+            // downloadLink.getChunksProgress()[chunk.getID()] =
+            // chunk.getCurrentBytesPosition() - 1;
+            // }
+
+        }
+
+    }
+
+    public Request getRequest() {
+
+        return this.orgRequest;
     }
 }
