@@ -828,6 +828,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private HashMap<String, Vector<DownloadLink>> waitingLinkList;
 
+    private Vector<DownloadLink> addingLinkList;
+
     /**
      * @param parent
      *            GUI
@@ -842,6 +844,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         parentFrame = parent;
         tabList = new Vector<PackageTab>();
         waitingLinkList = new HashMap<String, Vector<DownloadLink>>();
+        addingLinkList = new Vector<DownloadLink>();
         initGUI();
 
         addLinks(linkList);
@@ -1080,14 +1083,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (isDupe(element)) {
                 continue;
             }
-            // System.out.println(element.getDownloadURL()+" - "+element.
-            // getDownloadSize());
             totalLinkList.add(element);
-            if (element.isAvailabilityChecked()) {
-                attachLinkToPackage(element);
-            } else {
-                addtowaitinglist(element);
-            }
+            addtowaitinglist(element);
         }
         if (waitingLinkList.size() > 0) {
             startLinkGatherer();
@@ -1637,14 +1634,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (tabList.get(i) == tab) {
                 String title = tab.getPackageName();
                 if (title.length() > 20) {
-                    tabbedPane.setToolTipTextAt(i, title);
+                    // tabbedPane.setToolTipTextAt(i, title);
                     title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
                 }
-                tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
+                // tabbedPane.setTitleAt(i, title + " (" +
+                // tab.getLinkList().size() + ")");
                 return;
             }
         }
-
     }
 
     private void removeEmptyPackages() {
@@ -1743,7 +1740,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (links.size() > 0 && gathererrunning == true) {
                     DownloadLink link = links.remove(0);
                     if (!guiConfig.getBooleanProperty(PROPERTY_ONLINE_CHECK, true)) {
-                        attachLinkToPackage(link);
+                        addingLinkList.add(link);
                         try {
                             Thread.sleep(5);
                         } catch (InterruptedException e) {
@@ -1761,7 +1758,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                             }
                         }
                         link.isAvailable();
-                        attachLinkToPackage(link);
+                        addingLinkList.add(link);
                     }
                     progress.setValue(progress.getValue() + 1);
                 }
@@ -1769,7 +1766,24 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             public void go() throws Exception {
                 run();
-                
+            }
+        }
+        class AThread extends Thread {
+            public AThread() {
+            }
+
+            public void run() {
+                while (gathererrunning == true) {
+                    while (addingLinkList.size() > 0 && gathererrunning == true) {
+                        DownloadLink link = addingLinkList.remove(0);
+                        attachLinkToPackage(link);
+                        reprintTabbedPane();
+                    }
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                    }
+                }
             }
         }
 
@@ -1780,6 +1794,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             public synchronized void run() {
                 gathererrunning = true;
+                AThread athread = new AThread();
+                athread.start();
                 decryptJobbers = new Jobber(4);
                 while (waitingLinkList.size() > 0 && gathererrunning == true) {
                     Set<String> ks = waitingLinkList.keySet();
