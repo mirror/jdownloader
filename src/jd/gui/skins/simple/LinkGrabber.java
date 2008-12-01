@@ -1750,10 +1750,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                             Vector<DownloadLink> dlinks = new Vector<DownloadLink>();
                             dlinks.add(link);
                             dlinks.addAll(links);
-                            boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(dlinks.toArray(new DownloadLink[] {}));
-                            if (ret != null) {
-                                for (int i = 0; i < dlinks.size(); i++) {
-                                    dlinks.get(i).setAvailable(ret[i]);
+                            if (dlinks.size() > 1) {
+                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(dlinks.toArray(new DownloadLink[] {}));
+                                if (ret != null) {
+                                    for (int i = 0; i < dlinks.size(); i++) {
+                                        dlinks.get(i).setAvailable(ret[i]);
+                                    }
                                 }
                             }
                         }
@@ -1779,10 +1781,18 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         attachLinkToPackage(link);
                         reprintTabbedPane();
                     }
+                    reprintTabbedPane();
                     try {
                         Thread.sleep(500);
                     } catch (InterruptedException e) {
+                        break;
                     }
+                }
+                /* restlichen adden */
+                while (addingLinkList.size() > 0) {
+                    DownloadLink link = addingLinkList.remove(0);
+                    attachLinkToPackage(link);
+                    reprintTabbedPane();
                 }
             }
         }
@@ -1797,14 +1807,20 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 AThread athread = new AThread();
                 athread.start();
                 decryptJobbers = new Jobber(4);
+                int maxperjob = 20;
                 while (waitingLinkList.size() > 0 && gathererrunning == true) {
+                    if (waitingLinkList.size() == 1) {
+                        maxperjob = 4;
+                    } else {
+                        maxperjob = 20;
+                    }
                     Set<String> ks = waitingLinkList.keySet();
                     String it = ks.iterator().next();
                     Vector<DownloadLink> links = waitingLinkList.remove(it);
                     Vector<DownloadLink> links2 = new Vector<DownloadLink>();
                     while (links.size() > 0) {
                         links2.add(links.remove(0));
-                        if (links2.size() > 20) {
+                        if (links2.size() > maxperjob) {
                             progress.setMaximum(progress.getMaximum() + links2.size());
                             DThread dthread = new DThread(links2);
                             decryptJobbers.add(dthread);
@@ -1813,7 +1829,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         }
                     }
                     links.addAll(links2);
-                    if (links.size() > 20) {
+                    if (links.size() > maxperjob) {
                         /* zufall dran, damit die hoster durchgewechselt werden */
                         waitingLinkList.put(it + System.currentTimeMillis(), links);
                     } else {
@@ -1828,7 +1844,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 int todo = decryptJobbers.getJobsAdded();
                 while (decryptJobbers.getJobsFinished() != todo) {
                     try {
-                        Thread.sleep(200);
+                        Thread.sleep(500);
                     } catch (InterruptedException e) {
                         break;
                     }
