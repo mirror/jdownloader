@@ -19,54 +19,115 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 
 public class GigaSizeCom extends PluginForHost {
 
     private static final String AGB_LINK = "http://www.gigasize.com/page.php?p=terms";
+    private static int simultanpremium = 1;
 
     public GigaSizeCom(PluginWrapper wrapper) {
         super(wrapper);
-        setConfigElements();
-
+        enablePremium("http://www.gigasize.com/register.php");
     }
 
-    @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
+    public void login(Account account) throws IOException, PluginException {
+        br.postPage("http://www.gigasize.com/login.php", "uname=" + Encoding.urlEncode(account.getUser()) + "&passwd=" + Encoding.urlEncode(account.getPass()) + "&=Login&login=1");
+        String cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[pass]");
+        if (cookie == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+        cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[user]");
+        if (cookie == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
 
-        br.getPage(downloadLink.getDownloadURL());
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        if (br.containsHTML("versuchen gerade mehr")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l); }
-        Form[] forms = br.getForms();
-        if (getPluginConfig().getBooleanProperty("USE_FREE_ACCOUNT", false)) {
-            Form login = forms[0];
-            login.put("uname", getPluginConfig().getStringProperty("FREE_USER"));
-            login.put("passwd", getPluginConfig().getStringProperty("FREE_PASS"));
-            login.put("remember", "false");
-            br.submitForm(login);
-            if (br.containsHTML("badLogin")) {
-                logger.severe("User account " + getPluginConfig().getStringProperty("FREE_USER") + "not valid.");
-                getPluginConfig().setProperty("USE_FREE_ACCOUNT", false);
-                getPluginConfig().save();
+    public boolean isPremium() throws IOException {
+        br.getPage("http://www.gigasize.com/myfiles.php");
+        return br.getRegex("<div class=\"logged pu\"><em class=\"png\">").matches();
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        this.setBrowserExclusive();
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        if (!isPremium()) {
+            ai.setStatus("Free Membership");
+            ai.setValid(true);
+            return ai;
+        }
+        br.getPage("http://www.gigasize.com/myfiles.php");
+        String expirein = br.getRegex("Ihr Premium Account.*?ab in(.*?)Tag.*?</p>").getMatch(0);
+        String points = br.getRegex("Erworbene Gigapoints: <span>(.*?)</span>").getMatch(0);
+        if (expirein != null) {
+            ai.setValidUntil(System.currentTimeMillis() + (Long.parseLong(expirein.trim()) * 24 * 50 * 50 * 1000));
+        }
+        if (points != null) {
+            ai.setPremiumPoints(points);
+        }
+        ai.setValid(true);
+        return ai;
+    }
+
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        DownloadLink downloadLink = (DownloadLink) parameter;
+        getFileInformation(parameter);
+        login(account);
+        if (!this.isPremium()) {
+            if (simultanpremium + 1 > 2) {
+                simultanpremium = 2;
+            } else {
+                simultanpremium++;
+            }
+            handleFree0(downloadLink);
+            return;
+        } else {
+            if (simultanpremium + 1 > 20) {
+                simultanpremium = 20;
+            } else {
+                simultanpremium++;
             }
         }
-        if (forms.length < 2) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        Form captchaForm = forms[1];
+        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        br.getPage("http://www.gigasize.com/form.php");
+        Form download = br.getForm(0);
+        dl = br.openDownload(downloadLink, download, true, 0);
+        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
+        dl.startDownload();
+    }
+
+    public void handleFree(DownloadLink parameter) throws Exception {
+        getFileInformation(parameter);
+        handleFree0(parameter);
+    }
+
+    public void handleFree0(DownloadLink downloadLink) throws Exception {
+        br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        if (br.containsHTML("versuchen gerade mehr")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l); }
+        Form captchaForm = br.getForm(0);
         String captchaCode = getCaptchaCode("http://www.gigasize.com/randomImage.php", downloadLink);
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
         Form download = br.getFormbyID("formDownload");
-
-        dl = br.openDownload(downloadLink, download);
+        dl = br.openDownload(downloadLink, download, true, 1);
         if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         dl.startDownload();
     }
@@ -77,14 +138,16 @@ public class GigaSizeCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-
+        if (br.containsHTML("Download-Slots sind besetzt")) {
+            downloadLink.getLinkStatus().setStatusText("Unchecked due to already loading");
+            return true;
+        }
         String[] dat = br.getRegex("strong>Name</strong>: <b>(.*?)</b></p>.*?<p>Gr.*? <span>(.*?)</span>").getRow(0);
-
+        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0]);
-
         downloadLink.setDownloadSize(Regex.getSize(dat[1]));
         return true;
     }
@@ -98,21 +161,15 @@ public class GigaSizeCom extends PluginForHost {
         return 1;
     }
 
+    public int getMaxSimultanPremiumDownloadNum() {
+        return simultanpremium;
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetPluginGlobals() {
-    }
-
-    private void setConfigElements() {
-        ConfigEntry conditionEntry;
-        config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "USE_FREE_ACCOUNT", JDLocale.L("plugins.host.gigasize.freeaccount.use", "Use Free account")).setDefaultValue(false));
-        ConfigEntry ce;
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), "FREE_USER", JDLocale.L("plugins.host.gigasize.freeaccount.user", "Email")));
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
-        config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, getPluginConfig(), "FREE_PASS", JDLocale.L("plugins.host.gigasize.freeaccount.pass", "Password")));
-        ce.setEnabledCondidtion(conditionEntry, "==", true);
     }
 }

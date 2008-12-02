@@ -122,7 +122,7 @@ public class DistributeData extends ControlBroadcaster {
     private boolean deepDecrypt(ArrayList<DownloadLink> decryptedLinks) {
         if (decryptedLinks.isEmpty()) return false;
         final Vector<DownloadLink> newdecryptedLinks = new Vector<DownloadLink>();
-
+        final Vector<DownloadLink> notdecryptedLinks = new Vector<DownloadLink>();
         class DThread extends Thread implements JDRunnable {
             private DownloadLink link = null;
 
@@ -172,13 +172,13 @@ public class DistributeData extends ControlBroadcaster {
                     }
                 }
                 if (coulddecrypt == false) {
-                    newdecryptedLinks.add(link);
+                    notdecryptedLinks.add(link);
                 }
             }
 
             public void go() throws Exception {
-               run();
-                
+                run();
+
             }
         }
 
@@ -195,10 +195,10 @@ public class DistributeData extends ControlBroadcaster {
             } catch (InterruptedException e) {
             }
         }
-        boolean hasdeep = decryptedLinks.size() != newdecryptedLinks.size();
         decryptedLinks.clear();
         decryptedLinks.addAll(newdecryptedLinks);
-        return hasdeep;
+        decryptedLinks.addAll(notdecryptedLinks);
+        return newdecryptedLinks.size() > 0;
     }
 
     /**
@@ -310,7 +310,7 @@ public class DistributeData extends ControlBroadcaster {
 
             public void go() throws Exception {
                 run();
-                
+
             }
         }
         Jobber decryptJobbers = new Jobber(4);
