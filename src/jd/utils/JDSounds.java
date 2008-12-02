@@ -27,8 +27,8 @@ import javazoom.jl.decoder.JavaLayerException;
 import javazoom.jl.player.advanced.AdvancedPlayer;
 import jd.JDFileFilter;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.io.JDIO;
 
 public class JDSounds {
     private static HashMap<String, String> data = new HashMap<String, String>();

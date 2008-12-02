@@ -37,13 +37,13 @@ import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.JDHash;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

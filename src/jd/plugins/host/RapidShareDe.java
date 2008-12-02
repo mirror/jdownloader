@@ -25,6 +25,8 @@ import jd.http.Encoding;
 import jd.http.GetRequest;
 import jd.http.HTTPConnection;
 import jd.http.PostRequest;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -33,9 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
-import jd.utils.io.JDIO;
 
 public class RapidShareDe extends PluginForHost {
 

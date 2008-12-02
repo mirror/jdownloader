@@ -88,6 +88,8 @@ import jd.config.SubConfiguration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -95,8 +97,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.jobber.JDRunnable;
-import jd.utils.jobber.Jobber;
 
 /**
  * Diese Klasse sammelt die Links, bündelt sie zu Paketen und führt einen

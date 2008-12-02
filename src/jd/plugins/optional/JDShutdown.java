@@ -33,10 +33,10 @@ import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.nutils.io.JDIO;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class JDShutdown extends PluginOptional {
 

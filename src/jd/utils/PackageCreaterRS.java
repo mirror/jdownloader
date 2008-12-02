@@ -27,9 +27,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.io.JDIO;
+import jd.nutils.zip.Zip;
 import jd.parser.Regex;
-import jd.utils.io.JDIO;
-import jd.utils.zip.Zip;
 
 public class PackageCreaterRS {
     public static void main(String[] args) {

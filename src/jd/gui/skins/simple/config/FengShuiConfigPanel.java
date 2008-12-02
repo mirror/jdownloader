@@ -80,6 +80,7 @@ import jd.gui.skins.simple.components.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
 import jd.router.reconnectrecorder.JDRRGui;
@@ -87,7 +88,6 @@ import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
-import jd.utils.io.JDIO;
 import net.miginfocom.swing.MigLayout;
 
 public class FengShuiConfigPanel extends JFrame implements ActionListener {

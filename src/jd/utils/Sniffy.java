@@ -20,8 +20,11 @@ import java.io.File;
 import java.util.regex.Pattern;
 
 import jd.config.Configuration;
+import jd.nutils.Executer;
+import jd.nutils.JDHash;
+import jd.nutils.OSDetector;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.io.JDIO;
 
 public final class Sniffy {
     public static Pattern blackList = Pattern.compile("(Wireshark|PRTG Traffic Grapher|INTEREST Security Scanner|NETCORtools|PIAFCTM|Attack Tool Kit 4.1|Big Mother|Colasoft Capsa|cb_PMM|easy Look at Net|easy Look at Packets|Ethereal|Etherscan Analyzer|SoftX HTTP Debugger Pro|SoftX HTTP Debugger Lite|HTTP Monitor|NetControl|Packetyzer|Traffic Analyzer|TCP Spy|tcpdump|windump|NetworkMiner|CommView|NetworkActiv|Network General|Packet Analyzer|OmniPeek|HTTP Analyzer|URL Helper|URL Snooper|ettercap|FritzCap|Network Monitor|Network Monitor|Essential NetTools|Gobbler|Ethload|Netman|PacketView|Network Analyzer|LAN Analyzer|NetMinder|LANdecoder32|Protocol Analyzer|EvilMonkey)", Pattern.CASE_INSENSITIVE);

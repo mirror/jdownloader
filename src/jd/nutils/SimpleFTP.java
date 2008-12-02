@@ -13,7 +13,7 @@ $Author: pjm2 $
 $Id: SimpleFTP.java,v 1.2 2004/05/29 19:27:37 pjm2 Exp $
 
  */
-package jd.utils;
+package jd.nutils;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

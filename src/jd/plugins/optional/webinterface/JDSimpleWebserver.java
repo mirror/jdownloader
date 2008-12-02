@@ -30,10 +30,10 @@ import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class JDSimpleWebserver extends Thread {
 

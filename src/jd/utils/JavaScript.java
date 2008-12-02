@@ -19,8 +19,8 @@ package jd.utils;
 import java.util.ArrayList;
 
 import jd.http.Browser;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.io.JDIO;
 
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.EcmaError;

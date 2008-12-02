@@ -19,6 +19,7 @@ package jd.utils;
 import java.io.File;
 
 import jd.config.Configuration;
+import jd.nutils.OSDetector;
 
 public class GetExplorer {
     /**

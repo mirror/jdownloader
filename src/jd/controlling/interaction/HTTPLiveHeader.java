@@ -38,12 +38,12 @@ import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.utils.CLRLoader;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;

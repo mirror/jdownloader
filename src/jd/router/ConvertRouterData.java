@@ -26,8 +26,8 @@ import java.util.Vector;
 
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class ConvertRouterData {
     private static void ConvertXml(File file, File out) {

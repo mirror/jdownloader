@@ -32,6 +32,7 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -40,7 +41,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
-import jd.utils.io.JDIO;
 
 public class JDSimpleWebserverRequestHandler {
 

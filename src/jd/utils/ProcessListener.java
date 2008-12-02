@@ -16,6 +16,9 @@
 
 package jd.utils;
 
+import jd.nutils.DynByteBuffer;
+import jd.nutils.Executer;
+
 abstract public class ProcessListener {
 
     /**

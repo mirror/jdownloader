@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.nutils.JDHash;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -28,7 +29,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
 
 public class ShareBaseTo extends PluginForHost {

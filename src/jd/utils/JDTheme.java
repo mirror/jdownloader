@@ -27,8 +27,8 @@ import javax.swing.ImageIcon;
 
 import jd.JDFileFilter;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.io.JDIO;
 
 /**
  * Diese Klasse stellt Methoden zur Verfügung um in einen String mitPlatzhaltern

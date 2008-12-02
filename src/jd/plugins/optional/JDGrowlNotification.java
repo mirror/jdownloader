@@ -10,15 +10,15 @@ import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
+import jd.nutils.Executer;
+import jd.nutils.OSDetector;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
-import jd.utils.Executer;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.OSDetector;
-import jd.utils.io.JDIO;
 
 public class JDGrowlNotification extends PluginOptional {
     public static int getAddonInterfaceVersion() {

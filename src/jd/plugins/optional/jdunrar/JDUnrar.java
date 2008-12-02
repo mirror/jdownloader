@@ -39,6 +39,10 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.Executer;
+import jd.nutils.OSDetector;
+import jd.nutils.io.JDIO;
+import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -46,13 +50,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.plugins.PluginProgress;
-import jd.utils.Executer;
 import jd.utils.JDHexUtils;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.OSDetector;
-import jd.utils.io.JDIO;
-import jd.utils.jobber.Jobber;
 
 public class JDUnrar extends PluginOptional implements ControlListener, UnrarListener {
 

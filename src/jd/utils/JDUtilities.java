@@ -79,6 +79,8 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.Executer;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -87,7 +89,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.utils.io.JDIO;
 
 /**
  * @author astaldo/JD-Team
@@ -1189,11 +1190,34 @@ public class JDUtilities {
 
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDIO.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
 
     }
+    /**
+     * Gibt ein FileOebject zu einem Resourcstring zurück
+     * 
+     * @author JD-Team
+     * @param resource
+     *            Ressource, die geladen werden soll
+     * @return File zu arg
+     */
+    public static File getResourceFile(String resource) {
+        JDClassLoader cl = JDUtilities.getJDClassLoader();
+        if (cl == null) {
+            System.err.println("Classloader ==null: ");
+            return null;
+        }
+        URL clURL = JDUtilities.getJDClassLoader().getResource(resource);
 
+        if (clURL != null) {
+            try {
+                return new File(clURL.toURI());
+            } catch (URISyntaxException e) {
+            }
+        }
+        return null;
+    }
     public static void restartJD(String[] jdArgs) {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
         String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
@@ -1201,7 +1225,7 @@ public class JDUtilities {
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);
 
-        logger.info(JDUtilities.runCommand("java", finalArgs, JDIO.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", finalArgs, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 

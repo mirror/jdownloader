@@ -66,12 +66,12 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;

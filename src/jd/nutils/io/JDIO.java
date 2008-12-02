@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils.io;
+package jd.nutils.io;
 
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
@@ -31,24 +31,19 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.channels.FileChannel;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 
-import jd.JDClassLoader;
-import jd.JDFileFilter;
-import jd.utils.JDHash;
-import jd.utils.JDUtilities;
-import jd.utils.OSDetector;
+import jd.nutils.JDHash;
+import jd.nutils.OSDetector;
+
 
 public class JDIO {
 
-    private static Logger logger = JDUtilities.getLogger();
+  
 
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
@@ -66,7 +61,7 @@ public class JDIO {
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
-                    logger.severe("Konnte Datei nicht löschen " + file);
+                    System.err.println("Konnte Datei nicht löschen " + file);
                     return false;
                 }
             }
@@ -114,7 +109,7 @@ public class JDIO {
         try {
             if (file.isFile()) {
                 if (!file.delete()) {
-                    logger.severe("Konnte Datei nicht überschreiben " + file);
+                    System.err.println("Konnte Datei nicht überschreiben " + file);
                     return false;
                 }
             }
@@ -198,12 +193,12 @@ public class JDIO {
             }
             String hashPost = JDHash.getMD5(fileOutput);
             if (hashPost == null) {
-                logger.severe("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
+                System.err.println("Schreibfehler: " + fileOutput + " Datei wurde nicht erstellt");
             }
             JDIO.saveReadObject.remove(fileOutput);
 
         } else {
-            logger.severe("Schreibfehler: Fileoutput: null");
+            System.err.println("Schreibfehler: Fileoutput: null");
         }
     }
 
@@ -270,37 +265,14 @@ public class JDIO {
                 saveReadObject.remove(fileInput);
                 return objectLoaded;
             } catch (Exception e) {
-                logger.severe(e.getMessage());
+                System.err.println(e.getMessage());
             }
             saveReadObject.remove(fileInput);
         }
         return null;
     }
 
-    /**
-     * Gibt ein FileOebject zu einem Resourcstring zurück
-     * 
-     * @author JD-Team
-     * @param resource
-     *            Ressource, die geladen werden soll
-     * @return File zu arg
-     */
-    public static File getResourceFile(String resource) {
-        JDClassLoader cl = JDUtilities.getJDClassLoader();
-        if (cl == null) {
-            logger.severe("Classloader ==null: ");
-            return null;
-        }
-        URL clURL = JDUtilities.getJDClassLoader().getResource(resource);
 
-        if (clURL != null) {
-            try {
-                return new File(clURL.toURI());
-            } catch (URISyntaxException e) {
-            }
-        }
-        return null;
-    }
 
     /**
      * public static String getLocalFile(File file) Liest file über einen

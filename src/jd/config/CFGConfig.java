@@ -20,7 +20,7 @@ import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 
-import jd.utils.io.JDIO;
+import jd.nutils.io.JDIO;
 
 public class CFGConfig extends SubConfiguration implements Serializable {
 

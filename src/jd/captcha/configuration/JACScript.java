@@ -27,7 +27,7 @@ import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
-import jd.utils.io.JDIO;
+import jd.nutils.io.JDIO;
 
 /**
  * Diese Klasse parsed das JAC Script

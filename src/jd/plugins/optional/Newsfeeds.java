@@ -47,12 +47,12 @@ import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class Newsfeeds extends PluginOptional implements ListSelectionListener {
 

@@ -30,6 +30,7 @@ import java.util.Vector;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.controlling.JDController;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -38,7 +39,6 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.plugins.optional.webinterface.template.Template;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class JDSimpleWebserverTemplateFileRequestHandler {
 

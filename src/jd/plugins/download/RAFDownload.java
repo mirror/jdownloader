@@ -26,15 +26,15 @@ import java.util.ArrayList;
 
 import jd.config.Configuration;
 import jd.http.Request;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class RAFDownload extends DownloadInterface {
     class ChunkBuffer {

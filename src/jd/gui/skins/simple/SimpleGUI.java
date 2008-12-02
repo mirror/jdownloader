@@ -117,6 +117,7 @@ import jd.gui.skins.simple.config.ConfigPanelPluginForHost;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -128,7 +129,6 @@ import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDTwitter;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTitledSeparator;

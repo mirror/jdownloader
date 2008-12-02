@@ -18,7 +18,7 @@ package jd.plugins.optional.jdchat;
 
 import java.awt.Color;
 
-import jd.utils.HTMLEntities;
+import jd.http.HTMLEntities;
 
 public class Utils {
     public static String getRandomColor() {

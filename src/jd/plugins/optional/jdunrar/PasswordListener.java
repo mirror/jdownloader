@@ -19,9 +19,9 @@ package jd.plugins.optional.jdunrar;
 import java.io.UnsupportedEncodingException;
 import java.util.regex.Pattern;
 
+import jd.nutils.DynByteBuffer;
+import jd.nutils.Executer;
 import jd.parser.Regex;
-import jd.utils.DynByteBuffer;
-import jd.utils.Executer;
 import jd.utils.ProcessListener;
 
 public class PasswordListener extends ProcessListener {

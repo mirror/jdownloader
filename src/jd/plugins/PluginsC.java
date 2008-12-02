@@ -30,11 +30,11 @@ import jd.config.MenuItem;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können

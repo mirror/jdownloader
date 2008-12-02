@@ -1,8 +1,9 @@
-package jd.http.download;
+package jd.nutils;
 
 import java.util.ArrayList;
 
-import jd.utils.jobber.JDRunnable;
+import jd.http.download.Broadcaster;
+import jd.nutils.jobber.JDRunnable;
 
 /**
  * Dieser Klasse kann man beliebig viele Threads hinzufügen. mit der

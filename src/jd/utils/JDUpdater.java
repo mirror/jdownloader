@@ -32,8 +32,10 @@ import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
 import jd.http.Browser;
+import jd.nutils.JDHash;
+import jd.nutils.SimpleFTP;
+import jd.nutils.io.JDIO;
 import jd.update.WebUpdater;
-import jd.utils.io.JDIO;
 
 /**
  * Wie benutze ich diese Klasse.

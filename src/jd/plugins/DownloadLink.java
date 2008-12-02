@@ -29,10 +29,10 @@ import jd.controlling.SingleDownloadController;
 import jd.controlling.SpeedMeter;
 import jd.event.ControlEvent;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.plugins.download.DownloadInterface;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download

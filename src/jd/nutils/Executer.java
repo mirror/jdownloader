@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
+package jd.nutils;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -24,6 +24,9 @@ import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
+
+import jd.utils.JDUtilities;
+import jd.utils.ProcessListener;
 
 public class Executer extends Thread {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";

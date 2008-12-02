@@ -51,13 +51,13 @@ import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.nutils.io.JDIO;
 import jd.utils.CheckJava;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.MacOSController;
-import jd.utils.io.JDIO;
 
 /**
  * @author astaldo/JD-Team

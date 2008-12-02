@@ -28,8 +28,8 @@ import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 
+import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 /**
  * Diese Klasse ließt eine Routers.dat Datei aus

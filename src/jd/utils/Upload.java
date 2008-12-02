@@ -23,6 +23,7 @@ import java.net.URLEncoder;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPPost;
+import jd.nutils.JDHash;
 import jd.parser.Form;
 import jd.parser.Regex;
 

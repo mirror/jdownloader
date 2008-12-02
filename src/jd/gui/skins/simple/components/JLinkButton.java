@@ -46,8 +46,8 @@ import javax.swing.table.TableCellRenderer;
 
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.Executer;
 import jd.parser.Regex;
-import jd.utils.Executer;
 import jd.utils.JDUtilities;
 import edu.stanford.ejalbert.BrowserLauncher;
 import edu.stanford.ejalbert.exception.BrowserLaunchingInitializingException;

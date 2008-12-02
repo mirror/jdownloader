@@ -31,8 +31,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
+import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class DatabaseConnector implements Serializable {
 

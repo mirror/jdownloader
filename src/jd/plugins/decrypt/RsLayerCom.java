@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -34,7 +35,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class RsLayerCom extends PluginForDecrypt {
 

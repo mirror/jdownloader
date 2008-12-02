@@ -32,12 +32,12 @@ import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.plugins.Plugin;
 import jd.update.WebUpdater;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class PluginWrapper implements Comparable<PluginWrapper> {
 

@@ -30,12 +30,12 @@ import jd.config.CFGConfig;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.http.Browser;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;

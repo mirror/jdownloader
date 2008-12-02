@@ -40,6 +40,7 @@ import jd.gui.UIInterface;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -50,7 +51,6 @@ import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
-import jd.utils.io.JDIO;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.

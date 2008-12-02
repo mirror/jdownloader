@@ -42,6 +42,10 @@ import jd.event.UIEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
+import jd.nutils.httpserver.Handler;
+import jd.nutils.httpserver.HttpServer;
+import jd.nutils.httpserver.Request;
+import jd.nutils.httpserver.Response;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -49,10 +53,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.httpserver.Handler;
-import jd.utils.httpserver.HttpServer;
-import jd.utils.httpserver.Request;
-import jd.utils.httpserver.Response;
 
 public class JDRemoteControl extends PluginOptional implements ControlListener {
     public JDRemoteControl(PluginWrapper wrapper) {

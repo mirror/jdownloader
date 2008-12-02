@@ -33,6 +33,8 @@ import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -44,8 +46,6 @@ import jd.plugins.optional.hjsplit.jaxe.ProgressEvent;
 import jd.plugins.optional.hjsplit.jaxe.ProgressEventListener;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.jobber.JDRunnable;
-import jd.utils.jobber.Jobber;
 
 public class JDHJSplit extends PluginOptional implements ControlListener {
 

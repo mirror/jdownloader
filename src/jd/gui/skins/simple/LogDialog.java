@@ -47,12 +47,12 @@ import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
 import jd.utils.LogFormatter;
 import jd.utils.Upload;
-import jd.utils.io.JDIO;
 
 /**
  * Ein Dialog, der Logger-Output anzeigen kann.

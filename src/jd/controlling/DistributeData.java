@@ -26,14 +26,14 @@ import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
 import jd.http.Browser;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.parser.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.jobber.JDRunnable;
-import jd.utils.jobber.Jobber;
 
 /**
  * Diese Klasse läuft in einem Thread und verteilt den Inhalt der Zwischenablage

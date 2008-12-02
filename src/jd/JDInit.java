@@ -43,18 +43,18 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.HTMLEntities;
+import jd.nutils.JDHash;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
 import jd.plugins.DownloadLink;
 import jd.update.PackageData;
 import jd.update.WebUpdater;
-import jd.utils.HTMLEntities;
-import jd.utils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 /**
  * @author JD-Team

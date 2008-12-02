@@ -22,9 +22,9 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.io.JDIO;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 /**
  * Der Installer erscheint nur beim ersten mal Starten der Webstartversion und

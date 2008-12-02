@@ -14,14 +14,14 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils.httpserver;
+package jd.nutils.httpserver;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import jd.utils.Executer;
+import jd.nutils.Executer;
 
 public class Response {
     private StringBuilder data = new StringBuilder();

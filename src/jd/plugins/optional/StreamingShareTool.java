@@ -43,12 +43,12 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class StreamingShareTool extends PluginOptional {
     public StreamingShareTool(PluginWrapper wrapper) {

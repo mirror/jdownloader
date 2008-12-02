@@ -25,8 +25,8 @@ import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.http.PostRequest;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
-import jd.utils.io.JDIO;
 
 public class JDLocale {
 

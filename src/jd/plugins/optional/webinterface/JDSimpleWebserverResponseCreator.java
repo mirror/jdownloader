@@ -19,7 +19,7 @@ package jd.plugins.optional.webinterface;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import jd.utils.Executer;
+import jd.nutils.Executer;
 
 public class JDSimpleWebserverResponseCreator {
     

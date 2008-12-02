@@ -22,10 +22,10 @@ import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.SingleDownloadController;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.io.JDIO;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 /**
  * @author JD-Team

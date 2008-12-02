@@ -54,13 +54,13 @@ import jd.event.ControlListener;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 import org.schwering.irc.lib.IRCConnection;
 import org.schwering.irc.lib.IRCUser;

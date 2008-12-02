@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils.zip;
+package jd.nutils.zip;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -27,7 +27,7 @@ import java.util.TreeSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import jd.utils.JDUtilities;
+
 
 public class UnZip {
     public boolean autoDelete = false;
@@ -98,7 +98,7 @@ public class UnZip {
         String zipName = e.getName();
         if (zipName.startsWith("/")) {
             if (!warnedMkDir) {
-                JDUtilities.getLogger().info("Ignoring absolute paths");
+               System.out.println("Ignoring absolute paths");
             }
             warnedMkDir = true;
             zipName = zipName.substring(1);
@@ -111,13 +111,13 @@ public class UnZip {
                 File d = new File(targetPath, dirName);
                 if (!(d.exists() && d.isDirectory())) {
                     if (!d.mkdirs()) {
-                        JDUtilities.getLogger().severe("Warning: unable to mkdir " + dirName);
+                        System.err.println("Warning: unable to mkdir " + dirName);
                     }
                     dirsMade.add(dirName);
                 }
             }
         }
-        JDUtilities.getLogger().info("Creating " + zipName);
+        System.out.println("Creating " + zipName);
         File toExtract = new File(targetPath, zipName);
         FileOutputStream os = new FileOutputStream(toExtract);
         InputStream is = zipF.getInputStream(e);

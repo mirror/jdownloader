@@ -14,7 +14,7 @@ import javax.imageio.ImageIO;
 
 import jd.captcha.gui.BasicWindow;
 import jd.http.Browser;
-import jd.utils.io.JDIO;
+import jd.nutils.io.JDIO;
 
 public class ICaptcha {
 

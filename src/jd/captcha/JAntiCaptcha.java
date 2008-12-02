@@ -65,8 +65,8 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.pixelgrid.PixelGrid;
 import jd.captcha.pixelobject.PixelObject;
 import jd.captcha.utils.UTILITIES;
+import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

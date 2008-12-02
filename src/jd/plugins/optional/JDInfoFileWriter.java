@@ -27,13 +27,13 @@ import jd.config.SubConfiguration;
 import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Replacer;
-import jd.utils.io.JDIO;
 
 public class JDInfoFileWriter extends PluginOptional implements ControlListener {
 

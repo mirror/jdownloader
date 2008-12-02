@@ -14,8 +14,8 @@ import java.util.Map.Entry;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.http.Request;
+import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
-import jd.utils.jobber.JDRunnable;
 
 public class DownloadChunk implements JDRunnable {
 

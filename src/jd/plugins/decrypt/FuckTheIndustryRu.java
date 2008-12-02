@@ -24,12 +24,12 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.io.JDIO;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class FuckTheIndustryRu extends PluginForDecrypt {
 

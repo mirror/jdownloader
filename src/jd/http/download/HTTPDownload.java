@@ -9,9 +9,10 @@ import java.nio.channels.FileChannel;
 
 import jd.http.Browser;
 import jd.http.Request;
+import jd.nutils.Threader;
+import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.jobber.JDRunnable;
 
 public class HTTPDownload {
     /**

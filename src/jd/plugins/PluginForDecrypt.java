@@ -26,9 +26,9 @@ import jd.config.MenuItem;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.http.Encoding;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
-import jd.utils.jobber.JDRunnable;
-import jd.utils.jobber.Jobber;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können

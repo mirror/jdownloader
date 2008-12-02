@@ -28,6 +28,7 @@ import jd.crypt.AESdecrypt;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.nutils.io.JDIO;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -40,7 +41,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 @SuppressWarnings("deprecation")
 // FIXME: Auf Browser umbauen (Viel Spaß =) )

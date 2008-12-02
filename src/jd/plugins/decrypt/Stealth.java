@@ -28,6 +28,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.nutils.io.JDIO;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -36,7 +37,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 public class Stealth extends PluginForDecrypt {
 

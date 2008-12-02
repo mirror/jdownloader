@@ -65,6 +65,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.HTMLTooltip;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.gui.skins.simple.components.JLinkButton;
+import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -74,7 +75,6 @@ import jd.plugins.download.DownloadInterface.Chunk;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDUtilities;
-import jd.utils.io.JDIO;
 
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.tree.TreeModelSupport;
