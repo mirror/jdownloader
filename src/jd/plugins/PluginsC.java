@@ -174,7 +174,7 @@ public abstract class PluginsC extends Plugin {
 
         String extension = JDIO.getFileExtension(f);
         if (f.exists()) {
-            File res = JDIO.getResourceFile("container/" + md5 + "." + extension);
+            File res = JDUtilities.getResourceFile("container/" + md5 + "." + extension);
             if (!res.exists()) {
                 JDIO.copyFile(f, res);
             }

@@ -313,9 +313,9 @@ public class JDUpdater {
             ftp.bin();
             ftp.cwd("/httpdocs/service/update/jd/");
             logger.info("write list.php");
-            JDIO.writeLocalFile(JDIO.getResourceFile("list.php"), list);
+            JDIO.writeLocalFile(JDUtilities.getResourceFile("list.php"), list);
             ftp.remove("list.php");
-            ftp.stor(JDIO.getResourceFile("list.php"));
+            ftp.stor(JDUtilities.getResourceFile("list.php"));
             ftp.remove("updatemessage.html");
             logger.info("write updatemessage (changelog)");
             ftp.stor(new File("updatemessage.html"));

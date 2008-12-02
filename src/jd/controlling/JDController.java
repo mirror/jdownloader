@@ -697,7 +697,7 @@ public class JDController implements ControlListener, UIListener {
      */
     public void restart() {
         prepareShutdown();
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDIO.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 
@@ -1245,7 +1245,7 @@ public class JDController implements ControlListener, UIListener {
             Object obj = JDUtilities.getDatabaseConnector().getLinks();
 
             if (obj == null) {
-                File file = JDIO.getResourceFile("links.dat");
+                File file = JDUtilities.getResourceFile("links.dat");
                 if (file.exists()) {
                     logger.info("Wrapping links.dat");
                     obj = JDIO.loadObject(null, file, Configuration.saveAsXML);

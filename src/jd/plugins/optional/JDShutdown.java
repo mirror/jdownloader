@@ -213,7 +213,7 @@ public class JDShutdown extends PluginOptional {
                     FileWriter fw = null;
                     BufferedWriter bw = null;
                     try {
-                        fw = new FileWriter(JDIO.getResourceFile("jd/shutdown.vbs"));
+                        fw = new FileWriter(JDUtilities.getResourceFile("jd/shutdown.vbs"));
                         bw = new BufferedWriter(fw);
 
                         bw.write("set WshShell = CreateObject(\"WScript.Shell\")\r\nWshShell.SendKeys \"^{ESC}^{ESC}^{ESC}{UP}{ENTER}{ENTER}\"\r\n");
@@ -221,7 +221,7 @@ public class JDShutdown extends PluginOptional {
                         bw.flush();
                         bw.close();
 
-                        JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", JDIO.getResourceFile("jd/shutdown.vbs").getAbsolutePath() }, null, 0);
+                        JDUtilities.runCommand("cmd", new String[] { "/c", "start", "/min", "cscript", JDUtilities.getResourceFile("jd/shutdown.vbs").getAbsolutePath() }, null, 0);
 
                     } catch (IOException e) {
                     }
@@ -239,9 +239,9 @@ public class JDShutdown extends PluginOptional {
             } else if (OS.indexOf("mac") >= 0) {
         		try {
 	            	if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
-	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDIO.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
+	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
 	            	} else {
-	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDIO.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
+	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
 	            	}
             	} catch (Exception e) {
                 }

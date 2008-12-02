@@ -21,9 +21,9 @@ public class ICaptcha {
     private static final int DIST = 30;
 
     public static void main(String[] args) throws Exception {
-        JDIO.getResourceFile("caps/icaptcha/").mkdirs();
+        JDUtilities.getResourceFile("caps/icaptcha/").mkdirs();
         for (int i = 0; i < 500; i++) {
-            if (JDIO.getResourceFile("caps/icaptcha/img" + i + ".png").exists()) continue;
+            if (JDUtilities.getResourceFile("caps/icaptcha/img" + i + ".png").exists()) continue;
             try {
                 Browser br = new Browser();
                 br.getPage("http://odsiebie.com/weryfikacja/icaptcha.php");
@@ -37,8 +37,8 @@ public class ICaptcha {
                 System.out.println((v.length() / 12) + " --> div:" + (v.length() / (12 * 5)));
 
                 BasicWindow.showImage(image, (v.length() / 12) + "");
-                ImageIO.write(image, "png", JDIO.getResourceFile("caps/icaptcha/img" + i + ".png"));
-                System.out.println(JDIO.getResourceFile("caps/icaptcha/img" + i + ".png").getAbsolutePath());
+                ImageIO.write(image, "png", JDUtilities.getResourceFile("caps/icaptcha/img" + i + ".png"));
+                System.out.println(JDUtilities.getResourceFile("caps/icaptcha/img" + i + ".png").getAbsolutePath());
                 Thread.sleep(500);
             } catch (Exception e) {
                 i--;

@@ -44,19 +44,19 @@ public class LinkShareOrg extends PluginForDecrypt {
 
         // Prüfen ob Containerfiles vorhanden sind
         if (!br.getPage("http://www.link-share.org/container/download.php?id=" + containerId + ".dlc").toString().contains("Die Datei wurde nicht gefunden")) {
-            File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
             Browser.download(container, "http://www.link-share.org/container/download.php?id=" + containerId + ".dlc");
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
         }
         if (decryptedLinks.size() == 0 && !br.getPage("http://www.link-share.org/container/download.php?id=" + containerId + ".ccf").toString().contains("Die Datei wurde nicht gefunden")) {
-            File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
             Browser.download(container, "http://www.link-share.org/container/download.php?id=" + containerId + ".ccf");
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
         }
         if (decryptedLinks.size() == 0 && !br.getPage("http://www.link-share.org/container/download.php?id=" + containerId + ".rsdf").toString().contains("Die Datei wurde nicht gefunden")) {
-            File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".rsdf");
             Browser.download(container, "http://www.link-share.org/container/download.php?id=" + containerId + ".rsdf");
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();

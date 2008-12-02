@@ -341,7 +341,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             fc.setApproveButtonText(JDLocale.L("gui.btn_ok", "OK"));
             fc.setFileSelectionMode(JDFileChooser.DIRECTORIES_ONLY);
 
-            fc.setCurrentDirectory(fp.getDownloadDirectory() != null ? new File(fp.getDownloadDirectory()) : JDIO.getResourceFile("downloads"));
+            fc.setCurrentDirectory(fp.getDownloadDirectory() != null ? new File(fp.getDownloadDirectory()) : JDUtilities.getResourceFile("downloads"));
             if (fc.showOpenDialog(this) == JDFileChooser.APPROVE_OPTION) {
                 ret = fc.getSelectedFile();
                 if (ret != null) {

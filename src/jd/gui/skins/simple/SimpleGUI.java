@@ -1824,7 +1824,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static void showChangelogDialog() {
-        String update = JDIO.getLocalFile(JDIO.getResourceFile("updatemessage.html"));
+        String update = JDIO.getLocalFile(JDUtilities.getResourceFile("updatemessage.html"));
         String message = new Regex(update, "<!--message-->(.+?)<!--message-->").getMatch(0);
         String version = new Regex(update, "<p>version(.*?)<").getMatch(0).trim();
         String updates = new Regex(update, "<ul>(.*?)</ul>").getMatch(0);

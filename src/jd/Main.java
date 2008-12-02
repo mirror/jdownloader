@@ -257,7 +257,7 @@ public class Main {
         try {
             if (showSplash && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_SHOW_SPLASH, true)) {
 
-                splashScreen = new SplashScreen(JDIO.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
+                splashScreen = new SplashScreen(JDUtilities.getResourceFile("/jd/img/jd_logo_large.png").getAbsolutePath());
                 splashScreen.setVisible(true);
 
             }
@@ -412,7 +412,7 @@ public class Main {
 
         if (debug || JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false)) {
             try {
-                File log = JDIO.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
+                File log = JDUtilities.getResourceFile("logs/" + (debug ? "debug" : "") + "log_" + System.currentTimeMillis() + ".log");
                 if (!log.getParentFile().exists()) {
                     log.getParentFile().mkdir();
                 }

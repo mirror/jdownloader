@@ -56,7 +56,7 @@ public class JDTheme {
     }
 
     public static Vector<String> getThemeIDs() {
-        File dir = JDIO.getResourceFile(THEME_DIR);
+        File dir = JDUtilities.getResourceFile(THEME_DIR);
         if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".thm", false));
         Vector<String> ret = new Vector<String>();
@@ -144,7 +144,7 @@ public class JDTheme {
      * JDUtilities.writeLocalFile(themeFile, str); }
      */
     public static void setTheme(String themeID) {
-        File file = JDIO.getResourceFile(THEME_DIR + themeID + ".thm");
+        File file = JDUtilities.getResourceFile(THEME_DIR + themeID + ".thm");
         // themeFile = file;
         if (!file.exists()) {
             logger.severe("Theme " + themeID + " not installed");
@@ -172,7 +172,7 @@ public class JDTheme {
         }
         if (defaultData == null) {
             defaultData = new HashMap<String, String>();
-            file = JDIO.getResourceFile(THEME_DIR + "default.thm");
+            file = JDUtilities.getResourceFile(THEME_DIR + "default.thm");
 
             if (!file.exists()) {
                 logger.severe("Theme default not installed");

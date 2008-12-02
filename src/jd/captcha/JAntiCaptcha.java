@@ -131,7 +131,7 @@ public class JAntiCaptcha {
      * @return Gibt die Pfade zu allen Methoden zurück
      */
     public static File[] getMethods(String path) {
-        File dir = JDIO.getResourceFile(path);
+        File dir = JDUtilities.getResourceFile(path);
 
         if (dir == null || !dir.exists()) {
             if (JAntiCaptcha.isLoggerActive()) {
@@ -165,9 +165,9 @@ public class JAntiCaptcha {
      * @return true/false
      */
     public static boolean hasMethod(String methodsPath, String methodName) {
-        boolean ret = JDIO.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
+        boolean ret = JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/script.jas").exists();
         if (!ret) { return false; }
-        String info = JDIO.getLocalFile(JDIO.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
+        String info = JDIO.getLocalFile(JDUtilities.getResourceFile(methodsPath + "/" + methodName + "/jacinfo.xml"));
         if (info.contains("disabled")) { return false; }
         return true;
     }
@@ -909,7 +909,7 @@ public class JAntiCaptcha {
     private void getJACInfo() {
 
         Document doc;
-        File f = JDIO.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "jacinfo.xml");
+        File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "jacinfo.xml");
 
         doc = UTILITIES.parseXmlString(JDIO.getLocalFile(f), false);
         if (doc == null) {
@@ -1455,7 +1455,7 @@ public class JAntiCaptcha {
      * @return File zu arg
      */
     public File getResourceFile(String arg) {
-        return JDIO.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + arg);
+        return JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + arg);
     }
 
     /**
@@ -1582,7 +1582,7 @@ public class JAntiCaptcha {
      * MTH File wird geladen und verarbeitet
      */
     private void loadMTHFile() {
-        File f = JDIO.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "letters.mth");
+        File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "letters.mth");
         String str = "<jDownloader></jDownloader>";
         if (f.exists()) {
             str = JDIO.getLocalFile(f);

@@ -1012,7 +1012,7 @@ public class JACScript {
         }
 
         File f;
-        String script = JDIO.getLocalFile(f = JDIO.getResourceFile("jd/captcha/methods/" + method + "/" + scriptFile));
+        String script = JDIO.getLocalFile(f = JDUtilities.getResourceFile("jd/captcha/methods/" + method + "/" + scriptFile));
 
         logger.info("JAC GET: " + f);
         if (script == null || script.length() == 0) {

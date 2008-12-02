@@ -50,7 +50,7 @@ public class RsLayerCom extends PluginForDecrypt {
         String link_id = new Regex(cryptedLink, patternSupported).getMatch(0);
         String container_link = "http://rs-layer.com/" + link_id + ContainerFormat;
         if (br.containsHTML(container_link)) {
-            File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ContainerFormat);
             Browser.download(container, br.openGetConnection(container_link));
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();

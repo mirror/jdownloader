@@ -47,9 +47,9 @@ public class ConvertRouterData {
 
     public static void main(String[] args) {
 
-        File fileRoutersDat = JDIO.getResourceFile("jd/Routers.xml");
+        File fileRoutersDat = JDUtilities.getResourceFile("jd/Routers.xml");
 
-        File fileRoutersout = JDIO.getResourceFile("jd/new.xml");
+        File fileRoutersout = JDUtilities.getResourceFile("jd/new.xml");
         // formateNames(fileRoutersDat, fileRoutersout);
         ConvertRouterData.ConvertXml(fileRoutersDat, fileRoutersout);
         // RouterParser parser = new RouterParser();

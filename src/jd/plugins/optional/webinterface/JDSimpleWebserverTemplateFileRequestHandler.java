@@ -399,7 +399,7 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
     @SuppressWarnings("deprecation")
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
         try {
-            Template t = new Template(JDIO.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
+            Template t = new Template(JDUtilities.getResourceFile("plugins/webinterface/" + url).getAbsolutePath());
 
             t.setParam("webinterface_version", JDWebinterface.instance.getPluginID());
             t.setParam("page_refresh", JDWebinterface.getRefreshRate());

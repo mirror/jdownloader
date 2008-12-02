@@ -104,7 +104,7 @@ public class JDGrowlNotification extends PluginOptional {
     public void growlNotification(String headline, String message, String title) {
         if (OSDetector.isMac()) {
             Executer exec = new Executer("/usr/bin/osascript");
-            exec.addParameter(JDIO.getResourceFile("jd/osx/growlNotification.scpt").getAbsolutePath());
+            exec.addParameter(JDUtilities.getResourceFile("jd/osx/growlNotification.scpt").getAbsolutePath());
             exec.addParameter(headline);
             exec.addParameter(message);
 

@@ -421,7 +421,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     public String getDownloadDirectory() {
         if (ddir == null) {
             ddir = config.getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY);
-            if (ddir == null) ddir = JDIO.getResourceFile("downloads").getAbsolutePath();
+            if (ddir == null) ddir = JDUtilities.getResourceFile("downloads").getAbsolutePath();
         }
         return ddir;
     }

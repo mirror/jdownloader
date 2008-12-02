@@ -89,7 +89,7 @@ public class PackageManager extends Interaction implements Serializable {
         boolean oldUpdatePackage = false;
         FilePackage fp = new FilePackage();
         fp.setName(JDLocale.L("modules.packagemanager.packagename", "JD-Update"));
-        fp.setDownloadDirectory(JDIO.getResourceFile("packages").getAbsolutePath());
+        fp.setDownloadDirectory(JDUtilities.getResourceFile("packages").getAbsolutePath());
 
         // Existiert schon ein JD-Update Package in der DownloadListe?
         for (FilePackage fp_cur : JDUtilities.getController().getPackages()) {

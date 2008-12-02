@@ -92,7 +92,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     private static final String PARAM_NATIVELANGUAGE = "PARAM_NATIVELANGUAGE";
     private static final String PERFORM = "PARAM_" + "PERFORM";
     private static final String PORT = "PARAM_" + "PORT";
-    public static final String STYLE = JDIO.getLocalFile(JDIO.getResourceFile("plugins/jdchat/styles.css"));
+    public static final String STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/styles.css"));
     static final String STYLE_ACTION = "action";
     public static final String STYLE_ERROR = "error";
     public static final String STYLE_HIGHLIGHT = "highlight";
@@ -101,7 +101,7 @@ public class JDChat extends PluginOptional implements ControlListener {
     public static final String STYLE_SELF = "self";
     public static final String STYLE_SYSTEM_MESSAGE = "system";
     private static final int TEXT_BUFFER = 1024 * 600;
-    public static final String USERLIST_STYLE = JDIO.getLocalFile(JDIO.getResourceFile("plugins/jdchat/userliststyles.css"));
+    public static final String USERLIST_STYLE = JDIO.getLocalFile(JDUtilities.getResourceFile("plugins/jdchat/userliststyles.css"));
 
     public static int getAddonInterfaceVersion() {
         return 2;

@@ -28,7 +28,6 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -153,35 +152,8 @@ public abstract class Plugin implements ActionListener {
         Calendar calendar = Calendar.getInstance();
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
 
-        File dest = JDIO.getResourceFile("captchas/" + plugin.getHost() + "/" + date + extension);
+        File dest = JDUtilities.getResourceFile("captchas/" + plugin.getHost() + "/" + date + extension);
         return dest;
-    }
-
-    /**
-     * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
-     *         auslagern
-     * @param map
-     *            Map
-     * @param delPair
-     *            Trennzeichen zwischen Key und Value
-     * @param delMap
-     *            Trennzeichen zwischen Map-Einträgen
-     * @return Key-value pairs
-     */
-    public static String joinMap(Map<String, String> map, String delPair, String delMap) {
-        StringBuilder buffer = new StringBuilder();
-        boolean first = true;
-        for (Map.Entry<String, String> entry : map.entrySet()) {
-            if (first) {
-                first = false;
-            } else {
-                buffer.append(delMap);
-            }
-            buffer.append(entry.getKey());
-            buffer.append(delPair);
-            buffer.append(entry.getValue());
-        }
-        return buffer.toString();
     }
 
     /**
@@ -222,7 +194,7 @@ public abstract class Plugin implements ActionListener {
                         }
                     }
                 }
-                return Plugin.joinMap(inp, "=", "; ");
+                return HTMLParser.joinMap(inp, "=", "; ");
             } catch (Exception e) {
                 e.printStackTrace();
             }

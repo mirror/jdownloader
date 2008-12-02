@@ -76,7 +76,7 @@ public class LinkCryptWs extends PluginForDecrypt {
 
         if (valid == false) throw new DecrypterException(DecrypterException.CAPTCHA);
 
-        File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
 
         /* TODO: Das kann man sicher besser lösen.. bitte mal wer reinschauen */
         FileOutputStream out = new FileOutputStream(container);

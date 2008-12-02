@@ -51,7 +51,7 @@ public final class Sniffy {
     public static boolean hasWinSnifer() {
         try {
 
-            File reader2 = JDIO.getResourceFile("tools/windows/p.exe");
+            File reader2 = JDUtilities.getResourceFile("tools/windows/p.exe");
 
             String hash2 = JDHash.getMD5(reader2);
             if (hash2 == null || !hash2.equals("3c2298676457b5c49e55dbee3451c4b1")) {

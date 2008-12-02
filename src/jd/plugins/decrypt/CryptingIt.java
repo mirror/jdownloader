@@ -45,7 +45,7 @@ public class CryptingIt extends PluginForDecrypt {
         String password = br.getRegex("<td valign=\"top\" style=\"border-bottom: 1px dotted #C8C8C8;\"><div align=\"center\">(.*?)</div></td>").getMatch(0, 2);
         String dlcLink = "http://crypting.it/files/download.php?fileid=" + id + "-m1.dlc";
 
-        File containerFile = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        File containerFile = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         Browser.download(containerFile, dlcLink);
         links = JDUtilities.getController().getContainerLinks(containerFile);

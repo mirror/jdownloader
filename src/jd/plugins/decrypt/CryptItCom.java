@@ -86,7 +86,7 @@ public class CryptItCom extends PluginForDecrypt {
             return null;
         }
 
-        File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
         Browser.download(container, con);
         decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
         container.delete();

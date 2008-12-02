@@ -83,7 +83,7 @@ public class DatabaseConnector implements Serializable {
                         if (tmppath.endsWith(".cfg")) {
                             logger.finest("Wrapping " + tmppath);
 
-                            Object props = JDIO.loadObject(null, f = JDIO.getResourceFile("config/" + tmppath), false);
+                            Object props = JDIO.loadObject(null, f = JDUtilities.getResourceFile("config/" + tmppath), false);
 
                             if (props != null) {
                                 pst.setString(1, tmppath.split(".cfg")[0]);

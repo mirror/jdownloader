@@ -51,7 +51,7 @@ public class JDSimpleWebserverStaticFileRequestHandler {
      * @return a response
      */
     public void handleRequest(String url, HashMap<String, String> requestParameter) {
-        File fileToRead = JDIO.getResourceFile("plugins/webinterface/" + url);
+        File fileToRead = JDUtilities.getResourceFile("plugins/webinterface/" + url);
 
         HashMap<String, String> mimes = new HashMap<String, String>();
 

@@ -50,7 +50,7 @@ public class FuckTheIndustryRu extends PluginForDecrypt {
         String link = br.getRegex(patternDLC).getMatch(0);
         String pass = br.getRegex(patternPW).getMatch(0);
 
-        File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         Vector<DownloadLink> links = null;
         Browser.download(container, link);
         links = JDUtilities.getController().getContainerLinks(container);

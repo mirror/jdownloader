@@ -161,7 +161,7 @@ public class Gwarezcc extends PluginForDecrypt {
             } else {
                 password = password.trim();
             }
-            File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
             Browser.download(container, br.cloneBrowser().openGetConnection("http://gwarez.cc/download/dlc/" + downloadid + "/"));
             for (DownloadLink dLink : JDUtilities.getController().getContainerLinks(container)) {
                 dLink.addSourcePluginPassword(password);

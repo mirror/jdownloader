@@ -128,7 +128,7 @@ public class MegaroticCom extends PluginForHost {
 
         String code = Plugin.getCaptchaCode(file, this, downloadLink);
 
-        br.postPage(captchaPost, Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code);
+        br.postPage(captchaPost, HTMLParser.joinMap(fields, "=", "&") + "&imagestring=" + code);
         if (br.getRegex(SIMPLEPATTERN_CAPTCHA_URl).getMatch(0) != null) {
 
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);

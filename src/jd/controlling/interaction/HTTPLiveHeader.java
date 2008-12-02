@@ -154,7 +154,7 @@ public class HTTPLiveHeader extends Interaction {
             }
         }
         ch.clear();
-        JDIO.saveObject(new JFrame(), db, JDIO.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
+        JDIO.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
     }
 
     public static String[] getParameter(String code) {

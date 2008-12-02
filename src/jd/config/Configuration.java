@@ -188,7 +188,7 @@ public class Configuration extends Property implements Serializable {
     }
 
     public String getDefaultDownloadDirectory() {
-        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDIO.getResourceFile("downloads").getAbsolutePath());
+        return JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_DOWNLOAD_DIRECTORY, JDUtilities.getResourceFile("downloads").getAbsolutePath());
     }
 
     /**

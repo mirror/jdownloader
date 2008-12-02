@@ -29,7 +29,7 @@ import org.mozilla.javascript.Scriptable;
 public class JavaScript {
 
     public static String evalPage(Browser br) {
-        String clazz = JDIO.getLocalFile(JDIO.getResourceFile("jd/dummy.js"));
+        String clazz = JDIO.getLocalFile(JDUtilities.getResourceFile("jd/dummy.js"));
         clazz = clazz.replaceAll("%%%HOST%%%", br.getHost());
         clazz = clazz.replaceAll("%%%URL%%%", br.getHttpConnection().getURL() + "");
         clazz = clazz.replaceAll("%%%URLPATH%%%", br.getHttpConnection().getURL().getPath() + "");

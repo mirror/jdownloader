@@ -461,7 +461,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     private void loadAbos() {
         Object f = subConfig.getProperty(PROPERTY_ABOS);
         if (f == null) {
-            String content = JDIO.getLocalFile(JDIO.getResourceFile("abos.conf"));
+            String content = JDIO.getLocalFile(JDUtilities.getResourceFile("abos.conf"));
             Regex regex = new Regex(Pattern.compile("(.*?);(.*?);(.*?)\n").matcher(content));
 
             abos.clear();
@@ -472,7 +472,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             }
             saveAbos();
         } else {
-            JDIO.getResourceFile("feeds.conf").deleteOnExit();
+            JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
             abos = (Vector<String[]>) f;
             if (abos == null) {
                 abos = new Vector<String[]>();
@@ -484,7 +484,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
     private void loadFeeds() {
         Object f = subConfig.getProperty(PROPERTY_FEEDS);
         if (f == null) {
-            String content = JDIO.getLocalFile(JDIO.getResourceFile("feeds.conf"));
+            String content = JDIO.getLocalFile(JDUtilities.getResourceFile("feeds.conf"));
             Regex regex = new Regex(Pattern.compile("(.*?);(.*?)\n").matcher(content));
 
             feeds.clear();
@@ -495,7 +495,7 @@ public class Newsfeeds extends PluginOptional implements ListSelectionListener {
             }
             saveFeeds();
         } else {
-            JDIO.getResourceFile("feeds.conf").deleteOnExit();
+            JDUtilities.getResourceFile("feeds.conf").deleteOnExit();
             feeds = (Vector<String[]>) f;
             if (feeds == null) {
                 feeds = new Vector<String[]>();

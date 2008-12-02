@@ -52,7 +52,7 @@ public class JDSounds {
     }
 
     public static Vector<String> getSoundIDs() {
-        File dir = JDIO.getResourceFile(THEMES_DIR);
+        File dir = JDUtilities.getResourceFile(THEMES_DIR);
         if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".snd", false));
         Vector<String> ret = new Vector<String>();
@@ -162,7 +162,7 @@ public class JDSounds {
     }
 
     public static void setSoundTheme(String themeID) {
-        File file = JDIO.getResourceFile(THEMES_DIR + themeID + ".snd");
+        File file = JDUtilities.getResourceFile(THEMES_DIR + themeID + ".snd");
         if (!file.exists()) {
             logger.severe("SoundTheme " + themeID + " not installed");
             return;
@@ -197,13 +197,13 @@ public class JDSounds {
     public static File SF(String key) {
         key = JDSounds.V(key);
         if (key == null) { return null; }
-        return JDIO.getResourceFile(SOUND_DIR + key + ".mp3");
+        return JDUtilities.getResourceFile(SOUND_DIR + key + ".mp3");
     }
 
     public static File SF(String key, String def) {
         key = JDSounds.V(key, def);
         if (key == null) { return null; }
-        return JDIO.getResourceFile(SOUND_DIR + key + ".mp3");
+        return JDUtilities.getResourceFile(SOUND_DIR + key + ".mp3");
     }
 
     /**

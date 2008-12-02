@@ -18,12 +18,13 @@ package jd.parser;
 
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
-import jd.plugins.Plugin;
 
 public class HTMLParser {
 
@@ -91,7 +92,7 @@ public class HTMLParser {
      *         Parameter des Formulars enthält
      */
     public static String getFormInputHidden(String data) {
-        return Plugin.joinMap(HTMLParser.getInputHiddenFields(data), "=", "&");
+        return HTMLParser.joinMap(HTMLParser.getInputHiddenFields(data), "=", "&");
     }
 
     /**
@@ -307,5 +308,32 @@ public class HTMLParser {
      */
     public static HashMap<String, String> getInputHiddenFields(String data, String startPattern, String lastPattern) {
         return HTMLParser.getInputHiddenFields(new Regex(data, startPattern + "(.*?)" + lastPattern).getMatch(0));
+    }
+
+    /**
+     * @author olimex Fügt Map als String mit Trennzeichen zusammen TODO:
+     *         auslagern
+     * @param map
+     *            Map
+     * @param delPair
+     *            Trennzeichen zwischen Key und Value
+     * @param delMap
+     *            Trennzeichen zwischen Map-Einträgen
+     * @return Key-value pairs
+     */
+    public static String joinMap(Map<String, String> map, String delPair, String delMap) {
+        StringBuilder buffer = new StringBuilder();
+        boolean first = true;
+        for (Map.Entry<String, String> entry : map.entrySet()) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(delMap);
+            }
+            buffer.append(entry.getKey());
+            buffer.append(delPair);
+            buffer.append(entry.getValue());
+        }
+        return buffer.toString();
     }
 }

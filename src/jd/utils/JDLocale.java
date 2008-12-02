@@ -61,7 +61,7 @@ public class JDLocale {
     }
 
     public static Vector<String> getLocaleIDs() {
-        File dir = JDIO.getResourceFile(LANGUAGES_DIR);
+        File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
         if (!dir.exists()) { return null; }
         File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
         Vector<String> ret = new Vector<String>();
@@ -143,8 +143,8 @@ public class JDLocale {
         if (data != null && localeFile != null) return;
 
         localeID = lID;
-        localeFile = JDIO.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
-        File defaultFile = JDIO.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
+        localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
+        File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
 
         if (!localeFile.exists()) {
             System.out.println("Language " + localeID + " not installed");

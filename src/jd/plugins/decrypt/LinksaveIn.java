@@ -48,7 +48,7 @@ public class LinksaveIn extends PluginForDecrypt {
         }
         parameter = parameter + ".dlc";
         URL url = new URL(parameter);
-        File container = JDIO.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+        File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
         HTTPConnection dlc_con = new HTTPConnection(url.openConnection());
         // Api ! nicht in org tauschen!
         dlc_con.setRequestProperty("Referer", "jdownloader.org");
