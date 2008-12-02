@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.http.download;
 
 import java.io.IOException;
@@ -64,13 +80,13 @@ public class DownloadChunk implements JDRunnable {
         return channel;
     }
 
-    public DownloadChunk(HTTPDownload owner, long start, long end)  {
+    public DownloadChunk(HTTPDownload owner, long start, long end) {
         this.owner = owner;
         this.chunkStart = start;
         this.chunkEnd = end;
-        if(start>end){
+        if (start > end) {
             System.out.println("HUHUHU");
-           // throw new BrowserException("range error");
+            // throw new BrowserException("range error");
         }
         request = owner.getRequest();
     }
@@ -176,9 +192,9 @@ public class DownloadChunk implements JDRunnable {
 
     public long getRemainingChunkBytes() {
         long end = chunkEnd;
-        if (end < 0){
+        if (end < 0) {
             end = owner.getFileSize() - 1;
-            System.out.println("FIlesize: "+end);
+            System.out.println("FIlesize: " + end);
         }
         return Math.max(0, end - this.chunkStart - bytesLoaded + 1);
 

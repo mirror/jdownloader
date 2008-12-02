@@ -187,7 +187,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         cmboFile.addActionListener(this);
 
         cmboSelectSource = new JComboBox(new String[] { JDLocale.L("plugins.optional.langfileeditor.sourceFolder", "Source Folder:"), JDLocale.L("plugins.optional.langfileeditor.sourceFile", "Source File:") });
-        cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 0));
+        cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 1));
         cmboSelectSource.addActionListener(this);
 
         topFolder = new JPanel(new BorderLayout(5, 5));
@@ -378,12 +378,12 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         } else if (e.getSource() == cmboSelectSource) {
 
             int index = cmboSelectSource.getSelectedIndex();
-            if (index == subConfig.getIntegerProperty(PROPERTY_SOURCE, 0)) return;
+            if (index == subConfig.getIntegerProperty(PROPERTY_SOURCE, 1)) return;
 
             if (changed) {
                 int res = JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.changed.message", "Language File changed! Save changes?"), JDLocale.L("plugins.optional.langfileeditor.changed.title", "Save changes?"), JOptionPane.YES_NO_CANCEL_OPTION);
                 if (res == JOptionPane.CANCEL_OPTION) {
-                    cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 0));
+                    cmboSelectSource.setSelectedIndex(subConfig.getIntegerProperty(PROPERTY_SOURCE, 1));
                     return;
                 } else if (res == JOptionPane.YES_OPTION) {
                     saveLanguageFile(languageFile);
@@ -392,7 +392,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 }
             }
 
-            if (index != subConfig.getIntegerProperty(PROPERTY_SOURCE, 0)) {
+            if (index != subConfig.getIntegerProperty(PROPERTY_SOURCE, 1)) {
                 subConfig.setProperty(PROPERTY_SOURCE, index);
                 subConfig.save();
 

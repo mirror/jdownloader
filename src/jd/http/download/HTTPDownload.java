@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.http.download;
 
 import java.io.File;
@@ -55,47 +71,47 @@ public class HTTPDownload {
     }
 
     public static void main(String[] args) {
-        try{
+        try {
 
             String destPath = "c:/test.download";
-        Browser br = new Browser();
+            Browser br = new Browser();
 
-        Request request = br.createGetRequest("http://services.jdownloader.net/testfiles/25bmtest.test");
+            Request request = br.createGetRequest("http://services.jdownloader.net/testfiles/25bmtest.test");
 
-        final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
+            final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
 
-        dl.setChunkNum(2);
-        try{
-            new Thread(){
-                public void run(){
-                    try {
-                        Thread.sleep(2000);
-                        dl.setChunkNum(4);                        
-                        Thread.sleep(6000);
-                        dl.setChunkNum(10);
-                        Thread.sleep(6000);
-                        dl.setChunkNum(20);
-                    } catch (Exception e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
+            dl.setChunkNum(2);
+            try {
+                new Thread() {
+                    public void run() {
+                        try {
+                            Thread.sleep(2000);
+                            dl.setChunkNum(4);
+                            Thread.sleep(6000);
+                            dl.setChunkNum(10);
+                            Thread.sleep(6000);
+                            dl.setChunkNum(20);
+                        } catch (Exception e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+
                     }
-                    
-                }
-            }.start();
-        dl.start();
-        long crc = JDUtilities.getCRC(new File(destPath));
+                }.start();
+                dl.start();
+                long crc = JDUtilities.getCRC(new File(destPath));
 
-        if ("862E7007".trim().endsWith(Long.toHexString(crc).toUpperCase())) {
-            System.out.println("CRC OK");
-        } else {
-            System.out.println("CRC FAULT");
-        }
-        }catch(BrowserException e){
-            if(e.getType()==BrowserException.TYPE_LOCAL_IO){
-                new File(destPath).delete();
-                e.printStackTrace();
+                if ("862E7007".trim().endsWith(Long.toHexString(crc).toUpperCase())) {
+                    System.out.println("CRC OK");
+                } else {
+                    System.out.println("CRC FAULT");
+                }
+            } catch (BrowserException e) {
+                if (e.getType() == BrowserException.TYPE_LOCAL_IO) {
+                    new File(destPath).delete();
+                    e.printStackTrace();
+                }
             }
-        }
         } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

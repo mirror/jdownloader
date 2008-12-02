@@ -62,7 +62,7 @@ public class JDLocale {
 
     public static Vector<String> getLocaleIDs() {
         File dir = JDUtilities.getResourceFile(LANGUAGES_DIR);
-        if (!dir.exists()) { return null; }
+        if (!dir.exists()) return null;
         File[] files = dir.listFiles(new JDFileFilter(null, ".lng", false));
         Vector<String> ret = new Vector<String>();
         for (File element : files) {
@@ -80,18 +80,19 @@ public class JDLocale {
         if (data.containsKey(key)) return data.get(key);
 
         System.out.println("Key not found: " + key);
-        if (def == null) def = key;
         if (defaultData.containsKey(key)) {
             def = defaultData.get(key);
+        } else if (def == null) {
+            def = key;
         }
         data.put(key, def);
 
         return def;
-
     }
 
     private static boolean isGerman() {
-        return System.getProperty("user.country") != null && System.getProperty("user.country").equalsIgnoreCase("DE");
+        String country = System.getProperty("user.country");
+        return country != null && country.equalsIgnoreCase("DE");
     }
 
     public static String L(String key, String def) {
@@ -107,13 +108,13 @@ public class JDLocale {
      * @return
      */
     public static String LF(String key, String def, Object... args) {
-        return String.format(L(key, def), args);
+        return String.format(JDLocale.L(key, def), args);
     }
 
     public static void parseLanguageFile(File file, HashMap<String, String> data) {
         JDLocale.parseLanguageFile(file, data, true);
     }
-    
+
     public static void parseLanguageFile(File file, HashMap<String, String> data, boolean format) {
         data.clear();
 
@@ -133,7 +134,7 @@ public class JDLocale {
             key = line.substring(0, split).trim().toLowerCase();
             value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
             if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
-            // value = Encoding.UTF8Decode(value);
+
             data.put(key, value);
         }
 
@@ -143,30 +144,28 @@ public class JDLocale {
         if (data != null && localeFile != null) return;
 
         localeID = lID;
-        localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
-        File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
 
-        if (!localeFile.exists()) {
+        localeFile = JDUtilities.getResourceFile(LANGUAGES_DIR + localeID + ".lng");
+        if (localeFile.exists()) {
+            JDLocale.parseLanguageFile(localeFile, data);
+        } else {
             System.out.println("Language " + localeID + " not installed");
             return;
         }
 
-        JDLocale.parseLanguageFile(localeFile, data);
-
+        File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
         if (defaultFile.exists()) {
             JDLocale.parseLanguageFile(defaultFile, defaultData);
         } else {
             System.out.println("Could not load the default languagefile: " + defaultFile);
         }
-
     }
 
     public static String translate(String to, String msg) {
-        return translate("auto", to, msg);
+        return JDLocale.translate("auto", to, msg);
     }
 
     public static String translate(String from, String to, String msg) {
-
         try {
             PostRequest r = new PostRequest("http://translate.google.com/translate_t?sl=" + from + "&tl=" + to);
 
@@ -181,7 +180,6 @@ public class JDLocale {
             e.printStackTrace();
             return null;
         }
-
     }
 
 }

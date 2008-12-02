@@ -28,7 +28,7 @@ public class GetExplorer {
      * @return
      */
     private static Object[] autoGetExplorerCommand() {
-    
+
         if (OSDetector.isWindows()) {
             return new Object[] { "Explorer", "explorer", new String[] { "%%path%%" } };
         } else if (OSDetector.isMac()) {
@@ -49,7 +49,7 @@ public class GetExplorer {
         return null;
     }
 
-    Object[] explorer = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FILE_BROWSER, null);
+    private Object[] explorer = (Object[]) JDUtilities.getConfiguration().getProperty(Configuration.PARAM_FILE_BROWSER, null);
 
     /**
      * Object[0] = Browsername Object[1] = Befehl zum Browser Object[2] =
@@ -69,17 +69,15 @@ public class GetExplorer {
             } else {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_FILE_BROWSER, explorer);
             }
-            return explorer;
-        } else {
-            return explorer;
         }
-
+        return explorer;
     }
 
     public boolean openExplorer(File path) {
         getExplorerCommand();
-while(!path.isDirectory())path=path.getParentFile();
-        if (path!=null && explorer != null) {
+        while (!path.isDirectory())
+            path = path.getParentFile();
+        if (path != null && explorer != null) {
 
             String spath = path.getAbsolutePath();
             String[] paramsArray = (String[]) explorer[2];

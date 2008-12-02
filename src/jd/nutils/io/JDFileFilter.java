@@ -1,5 +1,3 @@
-package jd.nutils.io;
-
 //    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
@@ -15,7 +13,7 @@ package jd.nutils.io;
 //
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+package jd.nutils.io;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -68,8 +66,8 @@ public class JDFileFilter extends javax.swing.filechooser.FileFilter implements 
         return false;
     }
 
-    //Gibt die Filefilter Beschreibung zurück
-     
+    // Gibt die Filefilter Beschreibung zurück
+
     @Override
     public String getDescription() {
         return this.description;

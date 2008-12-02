@@ -40,10 +40,7 @@ import javax.swing.JFrame;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
 
-
 public class JDIO {
-
-  
 
     /**
      * Das aktuelle Verzeichnis (Laden/Speichern)
@@ -271,8 +268,6 @@ public class JDIO {
         }
         return null;
     }
-
-
 
     /**
      * public static String getLocalFile(File file) Liest file über einen
