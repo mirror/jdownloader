@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.regex.Pattern;
@@ -133,6 +134,7 @@ public class Megauploadcom extends PluginForHost {
         br.setFollowRedirects(false);
         String dlUrl = "http://megaupload.com/?d=" + id;
         br.getPage(dlUrl);
+        handlePw(downloadLink);
         if (br.getRedirectLocation() == null) {
             String[] tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
             if (tmp == null) throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
@@ -186,6 +188,27 @@ public class Megauploadcom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    public void handlePw(DownloadLink downloadLink) throws PluginException, InterruptedException, MalformedURLException, IOException {
+        String pwdata = HTMLParser.getFormInputHidden(br + "", "passwordbox", "passwordcountdown");
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
+        if (pwdata != null && pwdata.indexOf("passkey") > 0) {
+            String passCode;
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput(null, downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            br.postPage("http://" + new URL(link).getHost() + "/de/", pwdata + "&pass=" + Encoding.urlEncode(passCode));
+            if (br.containsHTML(PATTERN_PASSWORD_WRONG)) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+            } else {
+                downloadLink.setProperty("pass", passCode);
+            }
+        }
+    }
+
     public void handleFree0(DownloadLink parameter) throws Exception {
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
@@ -217,15 +240,7 @@ public class Megauploadcom extends PluginForHost {
 
         br.postPage(captchaPost, Plugin.joinMap(fields, "=", "&") + "&imagestring=" + code);
         if (br.containsHTML(SIMPLEPATTERN_CAPTCHA_URl)) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-
-        String pwdata = HTMLParser.getFormInputHidden(br + "", "passwordbox", "passwordcountdown");
-        if (pwdata != null && pwdata.indexOf("passkey") > 0) {
-            String pass = Plugin.getUserInput(null, parameter);
-
-            br.postPage("http://" + new URL(link).getHost() + "/de/", pwdata + "&pass=" + pass);
-
-            if (br.containsHTML(PATTERN_PASSWORD_WRONG)) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
-        }
+        handlePw(downloadLink);
         String Waittime = br.getRegex(Pattern.compile("<div style=.*?id=\"downloadhtml\"></div>.*?<script language=\"Javascript\">.*?x\\d+=(\\d+);", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (Waittime == null) {
             sleep(45 * 1000l, downloadLink);

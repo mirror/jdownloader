@@ -37,6 +37,7 @@ public class GigaSizeCom extends PluginForHost {
     public GigaSizeCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://www.gigasize.com/register.php");
+        setStartIntervall(5000l);
     }
 
     public void login(Account account) throws IOException, PluginException {
@@ -58,6 +59,7 @@ public class GigaSizeCom extends PluginForHost {
         return br.getRegex("<div class=\"logged pu\"><em class=\"png\">").matches();
     }
 
+    @Override
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         this.setBrowserExclusive();
@@ -85,6 +87,7 @@ public class GigaSizeCom extends PluginForHost {
         return ai;
     }
 
+    @Override
     public void handlePremium(DownloadLink parameter, Account account) throws Exception {
         DownloadLink downloadLink = (DownloadLink) parameter;
         getFileInformation(parameter);
@@ -113,6 +116,7 @@ public class GigaSizeCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public void handleFree(DownloadLink parameter) throws Exception {
         getFileInformation(parameter);
         handleFree0(parameter);
@@ -167,6 +171,11 @@ public class GigaSizeCom extends PluginForHost {
 
     @Override
     public void reset() {
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 800;
     }
 
     @Override
