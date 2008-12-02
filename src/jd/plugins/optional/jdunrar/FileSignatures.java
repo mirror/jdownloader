@@ -22,25 +22,29 @@ import java.io.IOException;
 
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
+import jd.utils.JDUtilities;
 
 public class FileSignatures {
 
-/**
- * Überprüft eine datei auf ihre signatur
- * @param f
- * @return
- * @throws IOException
- */
+    /**
+     * Überprüft eine datei auf ihre signatur
+     * 
+     * @param f
+     * @return
+     * @throws IOException
+     */
     public static Signature getFileSignature(File f) throws IOException {
         return getSignature(readFileSignature(f));
 
     }
-/**
- * GIbt den signaturstring einer datei zurück
- * @param f
- * @return
- * @throws IOException
- */
+
+    /**
+     * GIbt den signaturstring einer datei zurück
+     * 
+     * @param f
+     * @return
+     * @throws IOException
+     */
     public static String readFileSignature(File f) throws IOException {
         FileInputStream reader = new FileInputStream(f);
         String sig = "";
@@ -55,10 +59,12 @@ public class FileSignatures {
 
     private static final Signature SIG_TXT = new Signature("TXTfile", null, "Plaintext", ".*\\.(txt|doc|nfo|html|htm|xml)");
     private static Signature[] SIGNATURES;
-/**
- * Gibt alle verfügbaren signaturen zurück
- * @return
- */
+
+    /**
+     * Gibt alle verfügbaren signaturen zurück
+     * 
+     * @return
+     */
     public static Signature[] getSignatureList() {
         if (SIGNATURES != null) return SIGNATURES;
         String[] m = Regex.getLines(JDIO.getLocalFile(JDUtilities.getResourceFile("jd/mime.type")));
@@ -66,10 +72,10 @@ public class FileSignatures {
         int i = 0;
         for (String e : m) {
             String[] entry = e.split(":::");
-            if(entry.length>=4){
+            if (entry.length >= 4) {
                 SIGNATURES[i++] = new Signature(entry[0], entry[1], entry[2], entry[3]);
-            }else{
-                System.err.println("Signature "+e+" invalid!");
+            } else {
+                System.err.println("Signature " + e + " invalid!");
             }
         }
         return SIGNATURES;
@@ -77,6 +83,7 @@ public class FileSignatures {
 
     /**
      * GIbt die signatur zu einem signaturstring zurück.
+     * 
      * @param sig
      * @return
      */
@@ -90,12 +97,14 @@ public class FileSignatures {
         return checkTxt(sig);
 
     }
-/**
- * Prüft ob eine Datei möglicheriwese eine TXT datei ist.
- * Dabei wird geprüft ob die signatur nur aus lesbaren zeichen besteht
- * @param sig
- * @return
- */
+
+    /**
+     * Prüft ob eine Datei möglicheriwese eine TXT datei ist. Dabei wird geprüft
+     * ob die signatur nur aus lesbaren zeichen besteht
+     * 
+     * @param sig
+     * @return
+     */
     public static Signature checkTxt(String sig) {
         for (int i = 0; i < sig.length(); i += 2) {
             if ((i + 2) > sig.length()) return null;

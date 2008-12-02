@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 
 import jd.nutils.io.JDIO;
+import jd.utils.JDUtilities;
 
 public class CFGConfig extends SubConfiguration implements Serializable {
 
