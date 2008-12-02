@@ -86,7 +86,6 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
  * @author eXecuTe
  * @author Greeny
  */
-
 public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
@@ -986,6 +985,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             return data.size();
         }
 
+        @Override
         public String getColumnName(int col) {
             return columnNames[col];
         }
@@ -1002,14 +1002,17 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             return "";
         }
 
+        @Override
         public Class<?> getColumnClass(int c) {
             return String.class;
         }
 
+        @Override
         public boolean isCellEditable(int row, int col) {
             return true;
         }
 
+        @Override
         public void setValueAt(Object value, int row, int col) {
             if (col == 2) {
                 data.get(row).setLanguage((String) value);
@@ -1088,6 +1091,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 return tableData.size();
             }
 
+            @Override
             public String getColumnName(int col) {
                 return columnNames[col];
             }
@@ -1110,11 +1114,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 return "";
             }
 
+            @Override
             public Class<?> getColumnClass(int col) {
                 if (col == 0) return Integer.class;
                 return String.class;
             }
 
+            @Override
             public boolean isCellEditable(int row, int col) {
                 return (col == 1);
             }
