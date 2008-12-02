@@ -141,7 +141,7 @@ public class YouTubeCom extends PluginForDecrypt {
             if (br.openGetConnection(link + "&fmt=22").getResponseCode() == 200) {
                 br.getHttpConnection().disconnect();
                 gotHD = true;
-                possibleconverts.add(ConversionMode.VIDEOMP4);
+                if (!possibleconverts.contains(ConversionMode.VIDEOMP4)) possibleconverts.add(ConversionMode.VIDEOMP4);
             }
             possibleconverts.add(ConversionMode.VIDEOFLV);
             if (br.openGetConnection(link + "&fmt=13").getResponseCode() == 200) {
