@@ -33,7 +33,6 @@ import jd.controlling.interaction.InteractionTrigger;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
-import jd.nutils.io.JDIO;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -51,7 +50,7 @@ public class JDShutdown extends PluginOptional {
 
     private MenuItem menuItem;
     private MenuItem menuItemRun;
-    
+
     public JDShutdown(PluginWrapper wrapper) {
         super(wrapper);
         initConfig();
@@ -66,7 +65,7 @@ public class JDShutdown extends PluginOptional {
             } else {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
             }
-        } else if(e.getSource() == menuItemRun) {
+        } else if (e.getSource() == menuItemRun) {
             this.shutDown();
         }
     }
@@ -89,9 +88,11 @@ public class JDShutdown extends PluginOptional {
 
         if (menuItem == null) menuItem = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdshutdown.menu", "Shutdown after downloads finished"), 0).setActionListener(this);
         menu.add(menuItem);
-        // if (menuItemRun == null) menuItemRun = new MenuItem(MenuItem.NORMAL, JDLocale.L("addons.jdshutdown.run", "System jetzt herunterfahren"), 0).setActionListener(this);
+        // if (menuItemRun == null) menuItemRun = new MenuItem(MenuItem.NORMAL,
+        // JDLocale.L("addons.jdshutdown.run", "System jetzt herunterfahren"),
+        // 0).setActionListener(this);
         // menu.add(menuItemRun);
-        
+
         return menu;
     }
 
@@ -145,13 +146,14 @@ public class JDShutdown extends PluginOptional {
                 }
             }
         } else {
-            if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+            if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
                 try {
                     JDUtilities.runCommand("powercfg.exe", new String[] { "hibernate on" }, null, 0);
                 } catch (Exception e) {
                     try {
                         JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate on" }, null, 0);
-                    } catch (Exception ex) {}
+                    } catch (Exception ex) {
+                    }
                 }
             } else {
                 try {
@@ -159,48 +161,50 @@ public class JDShutdown extends PluginOptional {
                 } catch (Exception e) {
                     try {
                         JDUtilities.runCommand("%windir%\\system32\\powercfg.exe", new String[] { "hibernate off" }, null, 0);
-                    } catch (Exception ex) {}
+                    } catch (Exception ex) {
+                    }
                 }
             }
-            
+
             try {
                 JDUtilities.runCommand("RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
             } catch (Exception e) {
                 try {
                     JDUtilities.runCommand("%windir%\\system32\\RUNDLL32.EXE", new String[] { "powrprof.dll,SetSuspendState" }, null, 0);
-                } catch (Exception ex) {}
+                } catch (Exception ex) {
+                }
             }
         }
     }
 
     public void shutDown() {
-    	
-    	/*
-    	 * Wait for JD-Unrar
-    	 */
-    	
-    	for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
+
+        /*
+         * Wait for JD-Unrar
+         */
+
+        for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
             if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-            	boolean logged = false;
-            	while (true) {
-            		try {
-						Thread.sleep(1000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
-            		Object obj = wrapper.getPlugin().interact("isWorking", null);
-            		if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;
-            		if (!logged) {
-            			logger.info("JD-Unrar is working - wait before shutting down");
-            			logged = true;
-            		}
-            	}
-            	break;
+                boolean logged = false;
+                while (true) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    Object obj = wrapper.getPlugin().interact("isWorking", null);
+                    if (obj == null || (obj instanceof Boolean && obj.equals(false))) break;
+                    if (!logged) {
+                        logger.info("JD-Unrar is working - wait before shutting down");
+                        logged = true;
+                    }
+                }
+                break;
             }
-    	}
-    	
-    	logger.info("Shutting down now");
-    	
+        }
+
+        logger.info("Shutting down now");
+
         CountdownConfirmDialog shutDownMessage = new CountdownConfirmDialog(((SimpleGUI) JDUtilities.getGUI()).getFrame(), JDLocale.L("interaction.shutdown.dialog.msg", "<h2><font color=\"red\">Achtung ihr Betriebssystem wird heruntergefahren!</font></h2>"), count, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
         if (shutDownMessage.result) {
             JDUtilities.getController().prepareShutdown();
@@ -237,47 +241,47 @@ public class JDShutdown extends PluginOptional {
                 } catch (Exception e) {
                 }
             } else if (OS.indexOf("mac") >= 0) {
-        		try {
-	            	if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
-	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
-	            	} else {
-	            		JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
-	            	}
-            	} catch (Exception e) {
+                try {
+                    if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+                        JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxhibernate.scpt").getAbsolutePath() }, null, 0);
+                    } else {
+                        JDUtilities.runCommand("/usr/bin/osascript", new String[] { JDUtilities.getResourceFile("jd/osx/osxshutdown.scpt").getAbsolutePath() }, null, 0);
+                    }
+                } catch (Exception e) {
                 }
             } else {
-            	if(getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
-            		try {
-	                	dbusPowerState("Hibernate");
-	                } catch (Exception e) {
-	                }
-            	} else if (getPluginConfig().getBooleanProperty(CONFIG_STANDBY, false)) {
-            		try {
-	                	dbusPowerState("Suspend");
-	                } catch (Exception e) {
-	                }
-            	} else {
-	                try {
-	                	dbusPowerState("Shutdown");
-	                } catch (Exception e) {
-	                }
-	                try {
-	                    JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
-	                } catch (Exception e) {
-	                }
-	                try {
-	                    JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
-	                } catch (Exception e) {
-	                }
-            	}
+                if (getPluginConfig().getBooleanProperty(CONFIG_HIBERNATE, false)) {
+                    try {
+                        dbusPowerState("Hibernate");
+                    } catch (Exception e) {
+                    }
+                } else if (getPluginConfig().getBooleanProperty(CONFIG_STANDBY, false)) {
+                    try {
+                        dbusPowerState("Suspend");
+                    } catch (Exception e) {
+                    }
+                } else {
+                    try {
+                        dbusPowerState("Shutdown");
+                    } catch (Exception e) {
+                    }
+                    try {
+                        JDUtilities.runCommand("dcop", new String[] { "--all-sessions", "--all-users", "ksmserver", "ksmserver", "logout", "0", "2", "0" }, null, 0);
+                    } catch (Exception e) {
+                    }
+                    try {
+                        JDUtilities.runCommand("sudo", new String[] { "shutdown", "-h", "now" }, null, 0);
+                    } catch (Exception e) {
+                    }
+                }
             }
         }
     }
-    
+
     private void dbusPowerState(String command) {
-    	JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement."+command }, null, 0);
+        JDUtilities.runCommand("dbus-send", new String[] { "--session", "--dest=org.freedesktop.PowerManagement", "--type=method_call", "--print-reply", "--reply-timeout=2000", "/org/freedesktop/PowerManagement", "org.freedesktop.PowerManagement." + command }, null, 0);
     }
-    
+
     public void initConfig() {
         SubConfiguration subConfig = getPluginConfig();
         ConfigEntry ce;
@@ -285,11 +289,12 @@ public class JDShutdown extends PluginOptional {
         ce.setDefaultValue(false);
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_HIBERNATE, JDLocale.L("gui.config.jdshutdown.hibernate", "Ruhezustand/Hibernate (Nur einige OS)")));
         ce.setDefaultValue(false);
-        
-        /*String OS = System.getProperty("os.name").toLowerCase();
-        if (!(OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1 || OS.indexOf("windows 2003") > -1)) { 
-            ce.setEnabled(false);
-        }*/
+
+        /*
+         * String OS = System.getProperty("os.name").toLowerCase(); if
+         * (!(OS.indexOf("windows xp") > -1 || OS.indexOf("windows vista") > -1
+         * || OS.indexOf("windows 2003") > -1)) { ce.setEnabled(false); }
+         */
         config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, CONFIG_FORCESHUTDOWN, JDLocale.L("gui.config.jdshutdown.forceshutdown", "Herunterfahren erzwingen (Nur einige OS)")));
         ce.setDefaultValue(false);
     }

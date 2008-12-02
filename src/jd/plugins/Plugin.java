@@ -43,7 +43,6 @@ import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
-import jd.nutils.io.JDIO;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;

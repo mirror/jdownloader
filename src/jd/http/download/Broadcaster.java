@@ -3,11 +3,11 @@ package jd.http.download;
 import java.util.ArrayList;
 
 public class Broadcaster<E> {
-    private ArrayList<Object> listener;
+
+    private ArrayList<E> listener;
 
     public Broadcaster() {
-        listener = new ArrayList<Object>();
-
+        listener = new ArrayList<E>();
     }
 
     public synchronized void addListener(E listener) {
@@ -16,15 +16,14 @@ public class Broadcaster<E> {
 
     public synchronized void removeListener(E listener) {
         this.listener.remove(listener);
-    };
+    }
 
     public int size() {
         return listener.size();
     }
 
     public synchronized E get(int i) {
-        return (E)listener.get(i);
-        
+        return listener.get(i);
     }
 
 }

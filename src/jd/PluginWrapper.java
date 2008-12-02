@@ -33,7 +33,6 @@ import java.util.regex.Pattern;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.nutils.JDHash;
-import jd.nutils.io.JDIO;
 import jd.plugins.Plugin;
 import jd.update.WebUpdater;
 import jd.utils.JDLocale;

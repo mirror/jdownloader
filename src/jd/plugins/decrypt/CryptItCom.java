@@ -28,7 +28,6 @@ import jd.crypt.AESdecrypt;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
-import jd.nutils.io.JDIO;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;

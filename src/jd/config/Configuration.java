@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.Vector;
 
 import jd.controlling.interaction.Interaction;
-import jd.nutils.io.JDIO;
 import jd.router.RouterData;
 import jd.utils.JDUtilities;
 

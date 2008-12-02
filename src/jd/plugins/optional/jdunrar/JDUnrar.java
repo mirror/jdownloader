@@ -41,7 +41,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
-import jd.nutils.io.JDIO;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;

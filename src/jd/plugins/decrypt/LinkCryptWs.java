@@ -26,7 +26,6 @@ import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
-import jd.nutils.io.JDIO;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;

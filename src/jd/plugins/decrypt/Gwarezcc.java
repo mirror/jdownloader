@@ -27,7 +27,6 @@ import jd.config.ConfigEntry;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.io.JDIO;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -92,8 +91,10 @@ public class Gwarezcc extends PluginForDecrypt {
             /* Link zu den Parts des Mirrors (Verschlüsselt) */
             br.getPage(parameter);
             String downloadid = new Regex(parameter, "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
-//            /* Parts suchen */
-//            String parts[] = br.getRegex(Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            // /* Parts suchen */
+            // String parts[] =
+            // br.getRegex(Pattern.compile("<a href=\"redirect\\.php\\?to=([^\"]*?)\"",
+            // Pattern.CASE_INSENSITIVE)).getColumn(0);
 
             Form[] forms = br.getForms();
 
@@ -178,56 +179,56 @@ public class Gwarezcc extends PluginForDecrypt {
         return getVersion("$Revision$");
     }
 
-//    private String gWarezDecrypt(String link) {
-//        HashMap<String, String> replace = new HashMap<String, String>();
-//        replace.put("JAC\\|", "1");
-//        replace.put("IBD\\|", "2");
-//        replace.put("HCE\\|", "3");
-//        replace.put("GDF\\|", "4");
-//        replace.put("FEG\\|", "5");
-//        replace.put("EFH\\|", "6");
-//        replace.put("DGI\\|", "7");
-//        replace.put("CHJ\\|", "8");
-//        replace.put("BIK\\|", "9");
-//        replace.put("AJL\\|", "0");
-//
-//        replace.put("\\|JQD\\|", "a");
-//        replace.put("\\|GRE\\|", "b");
-//        replace.put("\\|JKF\\|", "c");
-//        replace.put("\\|VHG\\|", "d");
-//        replace.put("\\|NDH\\|", "e");
-//        replace.put("\\|YKI\\|", "f");
-//        replace.put("\\|ZBJ\\|", "g");
-//        replace.put("\\|bFJK\\|", "h");
-//        replace.put("\\|FKL\\|", "i");
-//        replace.put("\\|ZDM\\|", "j");
-//        replace.put("\\|ZSN\\|", "k");
-//        replace.put("\\|KIO\\|", "l");
-//        replace.put("\\|GIP\\|", "m");
-//        replace.put("\\|SIQ\\|", "n");
-//        replace.put("\\|KAR\\|", "o");
-//        replace.put("\\|SUS\\|", "p");
-//        replace.put("\\|POT\\|", "q");
-//        replace.put("\\|hOPU\\|", "r");
-//        replace.put("\\|qYXV\\|", "s");
-//        replace.put("\\|SXW\\|", "t");
-//        replace.put("\\|UYX\\|", "u");
-//        replace.put("\\|UMY\\|", "v");
-//        replace.put("\\|QSZ\\|", "w");
-//        replace.put("\\|AKA\\|", "x");
-//        replace.put("\\|VPB\\|", "y");
-//        replace.put("\\|YYC\\|", "z");
-//
-//        replace.put("\\|DDA\\|", ":");
-//        replace.put("\\|SSB\\|", "/");
-//        replace.put("\\|OOC\\|", ".");
-//
-//        for (String key : replace.keySet()) {
-//            String with = replace.get(key);
-//            link = link.replaceAll(key, with);
-//        }
-//        return link;
-//    }
+    // private String gWarezDecrypt(String link) {
+    // HashMap<String, String> replace = new HashMap<String, String>();
+    // replace.put("JAC\\|", "1");
+    // replace.put("IBD\\|", "2");
+    // replace.put("HCE\\|", "3");
+    // replace.put("GDF\\|", "4");
+    // replace.put("FEG\\|", "5");
+    // replace.put("EFH\\|", "6");
+    // replace.put("DGI\\|", "7");
+    // replace.put("CHJ\\|", "8");
+    // replace.put("BIK\\|", "9");
+    // replace.put("AJL\\|", "0");
+    //
+    // replace.put("\\|JQD\\|", "a");
+    // replace.put("\\|GRE\\|", "b");
+    // replace.put("\\|JKF\\|", "c");
+    // replace.put("\\|VHG\\|", "d");
+    // replace.put("\\|NDH\\|", "e");
+    // replace.put("\\|YKI\\|", "f");
+    // replace.put("\\|ZBJ\\|", "g");
+    // replace.put("\\|bFJK\\|", "h");
+    // replace.put("\\|FKL\\|", "i");
+    // replace.put("\\|ZDM\\|", "j");
+    // replace.put("\\|ZSN\\|", "k");
+    // replace.put("\\|KIO\\|", "l");
+    // replace.put("\\|GIP\\|", "m");
+    // replace.put("\\|SIQ\\|", "n");
+    // replace.put("\\|KAR\\|", "o");
+    // replace.put("\\|SUS\\|", "p");
+    // replace.put("\\|POT\\|", "q");
+    // replace.put("\\|hOPU\\|", "r");
+    // replace.put("\\|qYXV\\|", "s");
+    // replace.put("\\|SXW\\|", "t");
+    // replace.put("\\|UYX\\|", "u");
+    // replace.put("\\|UMY\\|", "v");
+    // replace.put("\\|QSZ\\|", "w");
+    // replace.put("\\|AKA\\|", "x");
+    // replace.put("\\|VPB\\|", "y");
+    // replace.put("\\|YYC\\|", "z");
+    //
+    // replace.put("\\|DDA\\|", ":");
+    // replace.put("\\|SSB\\|", "/");
+    // replace.put("\\|OOC\\|", ".");
+    //
+    // for (String key : replace.keySet()) {
+    // String with = replace.get(key);
+    // link = link.replaceAll(key, with);
+    // }
+    // return link;
+    // }
 
     private void setConfigElements() {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_DLC, JDLocale.L("plugins.decrypt.gwarezcc.preferdlc", "Prefer DLC Container")).setDefaultValue(false));

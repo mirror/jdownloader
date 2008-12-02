@@ -30,7 +30,6 @@ import jd.config.CFGConfig;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.http.Browser;
-import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.update.PackageData;
@@ -116,7 +115,7 @@ public class PackageManager extends Interaction implements Serializable {
                 }
                 Vector<DownloadLink> links = distributeData.findLinks();
                 for (DownloadLink link : links) {
-                    logger.info("Add link " + link /*+ " : " + pkg*/);
+                    logger.info("Add link " + link /* + " : " + pkg */);
                     link.setFilePackage(fp);
                     link.setLinkType(DownloadLink.LINKTYPE_JDU);
                     link.setProperty("JDU", pkg);

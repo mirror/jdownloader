@@ -23,7 +23,6 @@ import jd.config.Configuration;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
-import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 
 public final class Sniffy {

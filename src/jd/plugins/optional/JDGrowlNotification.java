@@ -12,7 +12,6 @@ import jd.controlling.SingleDownloadController;
 import jd.event.ControlEvent;
 import jd.nutils.Executer;
 import jd.nutils.OSDetector;
-import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;

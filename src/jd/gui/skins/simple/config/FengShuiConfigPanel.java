@@ -80,7 +80,6 @@ import jd.gui.skins.simple.components.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
-import jd.nutils.io.JDIO;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
 import jd.router.reconnectrecorder.JDRRGui;

@@ -30,7 +30,6 @@ import java.util.Vector;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.controlling.JDController;
-import jd.nutils.io.JDIO;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;

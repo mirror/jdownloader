@@ -80,7 +80,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.nutils.Executer;
-import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -180,7 +179,7 @@ public class JDUtilities {
             userio_sem.drainPermits();
             userio_sem.release(1);
             throw e;
-        } 
+        }
     }
 
     public static void releaseUserIO_Semaphore() {
@@ -1194,6 +1193,7 @@ public class JDUtilities {
         System.exit(0);
 
     }
+
     /**
      * Gibt ein FileOebject zu einem Resourcstring zurück
      * 
@@ -1218,6 +1218,7 @@ public class JDUtilities {
         }
         return null;
     }
+
     public static void restartJD(String[] jdArgs) {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
         String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };

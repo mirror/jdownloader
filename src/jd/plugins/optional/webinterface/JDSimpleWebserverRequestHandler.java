@@ -32,7 +32,6 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
-import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -310,9 +309,10 @@ public class JDSimpleWebserverRequestHandler {
                                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
 
                             }
-                            /* leere packages aus der add liste entfernen
-                             * von oben nach unten, damit keine fehler
-                             * entstehen, falls mittendrin was gelöscht wird
+                            /*
+                             * leere packages aus der add liste entfernen von
+                             * oben nach unten, damit keine fehler entstehen,
+                             * falls mittendrin was gelöscht wird
                              */
                             for (index = JDWebinterface.Link_Adder_Packages.size() - 1; index >= 0; index--) {
                                 if (JDWebinterface.Link_Adder_Packages.get(index).size() == 0) {
@@ -324,7 +324,7 @@ public class JDSimpleWebserverRequestHandler {
                 }
 
                 if (requestParameter.containsKey("package_single_download_counter")) {
-                    
+
                     // Aktionen in der Download-liste ausführen
                     Integer download_id = 0;
                     Integer package_id = 0;
@@ -374,13 +374,13 @@ public class JDSimpleWebserverRequestHandler {
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
                         }
                         if (dowhat.compareToIgnoreCase("remove") == 0) {
-                            
-                            //entfernen
+
+                            // entfernen
                             JDUtilities.getController().removeDownloadLinks(links);
                             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, this));
                         }
                         if (dowhat.compareToIgnoreCase("abort") == 0) {
-                            
+
                             // abbrechen
                             for (Iterator<DownloadLink> it = links.iterator(); it.hasNext();) {
                                 link = it.next();
@@ -393,7 +393,7 @@ public class JDSimpleWebserverRequestHandler {
 
             } else if (requestParameter.get("do").compareToIgnoreCase("reconnect") == 0) {
                 class JDReconnect implements Runnable {
-                    
+
                     // Zeitverzögertes neustarten
                     JDReconnect() {
                         new Thread(this).start();
@@ -446,7 +446,7 @@ public class JDSimpleWebserverRequestHandler {
                 JDUtilities.getController().stopDownloads();
             } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
                 class JDRestart implements Runnable {
-                    
+
                     // Zeitverzögertes neustarten
                     JDRestart() {
                         new Thread(this).start();
@@ -483,20 +483,20 @@ public class JDSimpleWebserverRequestHandler {
         if (requestParameter.containsKey("passwd")) {
             if (requestParameter.get("passwd").compareToIgnoreCase("save") == 0) {
                 if (requestParameter.containsKey("password_list")) {
-                	
+
                     String passwordList = Encoding.htmlDecode(requestParameter.get("password_list"));
                     for (OptionalPluginWrapper wrapper : OptionalPluginWrapper.getOptionalWrapper()) {
                         if (wrapper.isEnabled() && wrapper.getPlugin().getClass().getName().endsWith("JDUnrar")) {
-                        	ArrayList<String> pws = new ArrayList<String>();
-                        	for (String pw : Regex.getLines(passwordList)) {
-                        		pws.add(0, pw);
+                            ArrayList<String> pws = new ArrayList<String>();
+                            for (String pw : Regex.getLines(passwordList)) {
+                                pws.add(0, pw);
                             }
-                    		Object obj = wrapper.getPlugin().interact("setPasswordList", pws);
-                    		if (obj == null) logger.warning("Couldn't set password list");
-                    		break;
+                            Object obj = wrapper.getPlugin().interact("setPasswordList", pws);
+                            if (obj == null) logger.warning("Couldn't set password list");
+                            break;
                         }
-                	}
-                    
+                    }
+
                 }
             }
         }
