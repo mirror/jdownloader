@@ -883,22 +883,26 @@ public class Browser {
 
             HTTPPost up = new HTTPPost(action, doRedirects);
             up.doUpload();
-            up.connect();
 
             up.getConnection().setRequestProperty("Accept", "*/*");
             up.getConnection().setRequestProperty("Accept-Language", acceptLanguage);
             up.getConnection().setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
             forwardCookies(up.getConnection());
             up.getConnection().setRequestProperty("Referer", currentURL.toString());
-            for (Map.Entry<String, String> entry : headers.entrySet()) {
-                up.getConnection().setRequestProperty(entry.getKey(), entry.getValue());
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet()) {
+                    up.getConnection().setRequestProperty(entry.getKey(), entry.getValue());
+                }
             }
-
+            up.connect();
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                up.sendVariable(entry.getKey(), Encoding.urlEncode(entry.getValue().getValue()));
+                if (entry.getValue().getValue() != null) {
+                    up.sendVariable(entry.getKey(), Encoding.urlEncode(entry.getValue().getValue()));
+                }
             }
+            up.setForm("filecontent");
             up.sendFile(form.getFileToPost().toString(), form.getFiletoPostName());
-
+            up.close();
             // Dummy request um das ganze kompatibel zu machen
             Request request = new Request(up.getConnection()) {
 
@@ -913,21 +917,27 @@ public class Browser {
                 }
 
             };
-            request.getHeaders().putAll(headers);
-            request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+            if (request.getHeaders() != null && headers != null) {
+                request.getHeaders().putAll(headers);
+            }
+            if (request.getHeaders() != null) {
+                request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+            }
+
             request.setFollowRedirects(doRedirects);
             forwardCookies(request);
-            request.getHeaders().put("Referer", currentURL.toString());
+            if (request.getHeaders() != null) {
+                request.getHeaders().put("Referer", currentURL.toString());
+            }
             String ret = null;
             checkContentLengthLimit(request);
             ret = request.read();
-
+            request.setHtmlCode(ret);
             updateCookies(request);
             this.request = request;
 
             currentURL = new URL(action);
 
-            up.close();
             return ret;
 
         }
