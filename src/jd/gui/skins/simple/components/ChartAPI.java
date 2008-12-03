@@ -33,9 +33,9 @@ import jd.http.Encoding;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-/*
- * Die ChartAPI greift auf die Google Chart API zurück
- * Sie funktioniert nur mit einer intakten Internet-Verbindung!
+/**
+ * Die ChartAPI greift auf die Google Chart API zurück Sie funktioniert nur mit
+ * einer intakten Internet-Verbindung!
  * 
  * @author gluewurm
  * 

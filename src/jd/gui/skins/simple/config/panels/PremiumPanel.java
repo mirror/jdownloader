@@ -116,7 +116,7 @@ public class PremiumPanel extends JPanel {
                 tab.add(panel = new JPanel());
                 panel.setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
             }
-            panel.add(accs[i] = new AccountPanel(i + 1), "span");
+            accs[i] = new AccountPanel(panel, i + 1);
         }
 
         if (accountNum > 5) {
@@ -140,9 +140,7 @@ public class PremiumPanel extends JPanel {
         this.add(freeTrafficChart, "spanx, spany");
     }
 
-    private class AccountPanel extends JPanel implements ChangeListener, ActionListener, FocusListener {
-
-        private static final long serialVersionUID = 5577685065338731763L;
+    private class AccountPanel implements ChangeListener, ActionListener, FocusListener {
 
         private JCheckBox chkEnable;
         private JLabel lblUsername;
@@ -153,9 +151,8 @@ public class PremiumPanel extends JPanel {
         private JButton btnCheck;
         private JButton btnDelete;
 
-        public AccountPanel(int nr) {
-            setLayout(new MigLayout("ins 5", "[right, pref!]10[100:pref, grow,fill]0[right][100:pref, grow,fill]"));
-            createPanel(nr);
+        public AccountPanel(JPanel panel, int nr) {
+            createPanel(panel, nr);
         }
 
         public void setAccount(Account account) {
@@ -178,28 +175,28 @@ public class PremiumPanel extends JPanel {
             return a;
         }
 
-        public void createPanel(int nr) {
-            add(chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr)), "alignleft");
+        public void createPanel(JPanel panel, int nr) {
+            panel.add(chkEnable = new JCheckBox(JDLocale.LF("plugins.config.premium.accountnum", "<html><b>Premium Account #%s</b></html>", nr)), "alignleft");
             chkEnable.setForeground(INACTIVE);
             chkEnable.setSelected(true);
             chkEnable.addChangeListener(this);
 
-            add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
+            panel.add(btnCheck = new JButton(JDLocale.L("plugins.config.premium.test", "Get Status")), "w pref:pref:pref, split 2");
             btnCheck.addActionListener(this);
 
-            add(btnDelete = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
+            panel.add(btnDelete = new JButton(JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.exit"), -1, 14)));
             btnDelete.addActionListener(this);
 
-            add(new JSeparator(), "w 30:push, growx, pushx");
-            add(txtStatus = new JTextField(""), "spanx, pushx, growx");
+            panel.add(new JSeparator(), "w 30:push, growx, pushx");
+            panel.add(txtStatus = new JTextField(""), "spanx, pushx, growx");
             txtStatus.setEditable(false);
 
-            add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
-            add(txtUsername = new JTextField(""));
+            panel.add(lblUsername = new JLabel(JDLocale.L("plugins.config.premium.user", "Premium User")), "gaptop 8");
+            panel.add(txtUsername = new JTextField(""));
             txtUsername.addFocusListener(this);
 
-            add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
-            add(txtPassword = new JDPasswordField(), "span, gapbottom 10:10:push");
+            panel.add(lblPassword = new JLabel(JDLocale.L("plugins.config.premium.password", "Password")), "gapleft 15");
+            panel.add(txtPassword = new JDPasswordField(), "span, gapbottom 10:10:push");
             txtPassword.addFocusListener(this);
 
             chkEnable.setSelected(false);
