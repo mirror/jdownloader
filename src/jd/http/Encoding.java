@@ -138,6 +138,25 @@ public class Encoding {
         return urlcoded;
     }
 
+    public static String urlDecode(String urlcoded, boolean isUrl) {
+        if (urlcoded == null) return null;
+        if (isUrl) {
+            urlcoded = urlcoded.replaceAll("%2F", "/");
+            urlcoded = urlcoded.replaceAll("%3A", ":");
+            urlcoded = urlcoded.replaceAll("\\+", "%20");
+            urlcoded = urlcoded.replaceAll("%3F", "?");
+            urlcoded = urlcoded.replaceAll("%3D", "=");
+            urlcoded = urlcoded.replaceAll("%26", "&");
+            urlcoded = urlcoded.replaceAll("%23", "#");
+        } else {
+            try {
+                urlcoded = URLDecoder.decode(urlcoded, "UTF-8");
+            } catch (Exception e) {
+            }
+        }
+        return urlcoded;
+    }
+
     /**
      * @author JD-Team
      * @param str

@@ -26,6 +26,7 @@ import jd.DecryptPluginWrapper;
 import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.HTMLParser;
@@ -195,6 +196,7 @@ public class DistributeData extends ControlBroadcaster {
             } catch (InterruptedException e) {
             }
         }
+        decryptJobbers.stop();
         decryptedLinks.clear();
         decryptedLinks.addAll(newdecryptedLinks);
         decryptedLinks.addAll(notdecryptedLinks);
@@ -208,7 +210,14 @@ public class DistributeData extends ControlBroadcaster {
      * @return Link-Vector
      */
     public Vector<DownloadLink> findLinks() {
-        return findLinks(true);
+        Vector<DownloadLink> ret = findLinks(true);
+        data = Encoding.urlDecode(data, true);
+        ret.addAll(findLinks(true));
+        data = data.replaceAll("--CUT--", "\n");
+        data = data.replaceAll("http://", "httpviajd://");
+        ret.addAll(findLinks(true));
+        data = data.replaceAll("httpviajd://", "http://");
+        return ret;
     }
 
     public Vector<DownloadLink> findLinks(boolean searchpw) {
@@ -260,10 +269,6 @@ public class DistributeData extends ControlBroadcaster {
         // Danach wird der (noch verbleibende) Inhalt der Zwischenablage an die
         // Plugins der Hoster geschickt
         useHoster(foundPasswords, links);
-        data = data.replaceAll("http://", "httpviajd://");
-        useHoster(foundPasswords, links);
-        data = data.replaceAll("httpviajd://", "http://");
-
         return links;
     }
 
@@ -342,6 +347,7 @@ public class DistributeData extends ControlBroadcaster {
             } catch (InterruptedException e) {
             }
         }
+        decryptJobbers.stop();
         int i = 1;
         while (deepDecrypt(decryptedLinks)) {
             i++;

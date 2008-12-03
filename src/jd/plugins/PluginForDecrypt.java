@@ -152,6 +152,7 @@ public abstract class PluginForDecrypt extends Plugin {
             } catch (InterruptedException e) {
             }
         }
+        decryptJobbers.stop();
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, decryptedLinks);
 
         return decryptedLinks;
