@@ -16,10 +16,21 @@
 
 package jd.plugins.host;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.RenderingHints;
+import java.awt.geom.GeneralPath;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
+
 import jd.PluginWrapper;
+import jd.captcha.gui.BasicWindow;
+import jd.captcha.specials.icaptcha.Curve;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
@@ -108,40 +119,16 @@ public class Odsiebiecom extends PluginForHost {
             if (capform != null) {
                 /* Captcha File holen */
 
-                String[] captchaurls = capform.getRegex("<img(.*?src=\".*?\".*?)/>").getColumn(0);
-                String captchaurl = null;
-
-                for (String url : captchaurls) {
-                    if (!url.contains("style")) {
-                        captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
-                        break;
-                    }
-                    if (url.contains("style")) {
-                        if (!new Regex(url, "display:none[ ]*?\"").matches()) {
-                            captchaurl = new Regex(url, "src.*?=.*?\"(.*?)\"").getMatch(0);
-                            break;
-                        } else {
-                            String[] captchacodes = capform.getRegex("<font(.*?style=\".*?\".*?.*?>.*?<)").getColumn(0);
-                            for (String tmp : captchacodes) {
-                                if (!new Regex(url, "display:none[ ]*?\"").matches()) {
-                                    captchaCode = new Regex(tmp, ">(.*?)<").getMatch(0).trim();
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (captchaCode == null) captchaCode = capform.getRegex("<b>(.*?)</b>").getMatch(0);
-                if (captchaurl == null && captchaCode == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                if (captchaCode == null) {
+                String[] letters = capform.getRegex("<div.*class=let.*?>(.*?)</div>").getColumn(0);
+                BufferedImage image = getCSSCaptchaImage(capform.getHtmlCode());
+                
+          
                     captchaFile = getLocalCaptchaFile(this);
-                    Browser cap_br = br.cloneBrowser();
-                    HTTPConnection captcha_con = cap_br.openGetConnection(captchaurl);
-                    if (captcha_con.getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
-                    Browser.download(captchaFile, captcha_con);
+                    ImageIO.write(image, "png", captchaFile);
+            
                     /* CaptchaCode holen */
-                    captchaCode = Plugin.getCaptchaCode(this, "none", captchaFile, false, downloadLink);
-                }
+                    captchaCode = Plugin.getCaptchaCode(this, "CCSCaptchaOdsiebie", captchaFile, false, downloadLink);
+                
 
                 capform.setVariable(0, captchaCode);
                 /* ÃœberprÃ¼fen(Captcha,Password) */
@@ -173,6 +160,48 @@ public class Odsiebiecom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         }
         dl.startDownload();
+    }
+
+    private BufferedImage getCSSCaptchaImage(String htmlCode) {
+        String[] letters = htmlCode.split("<div.*?class=");
+
+        int[][] grid = null;
+        Color[] cols = new Color[] { Color.BLUE.darker(), Color.GREEN.darker(), Color.MAGENTA.darker(), Color.DARK_GRAY, Color.RED.darker(), Color.RED, Color.RED };
+        String comp = null;
+        for (int i = 0; i < letters.length; i++) {
+            String[] lines = new Regex(letters[i], "<div.*?</div").getColumn(-1);
+            for (int y = 0; y < lines.length; y++) {
+                String[] pixel = new Regex(lines[y], "<span.*?</span").getColumn(-1);
+                if (grid == null) grid = new int[(letters.length-1)*(pixel.length+10)][lines.length];
+                int offset=(i-1)*(pixel.length+5);
+                for (int x = 0; x < pixel.length; x++) {
+                    if (comp == null) comp = pixel[x];
+                    grid[x+offset][y] = pixel[x].length()>30 ? cols[i].getRGB() : 0xffffff;
+                }
+
+            }
+
+        }
+        int width = grid.length;
+        int height = grid[0].length;
+        int faktor = 4;
+        BufferedImage image = new BufferedImage(width*faktor, height*faktor, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2 = image.createGraphics();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2.setStroke(new BasicStroke(8));
+        g2.setBackground(Color.WHITE);
+        g2.clearRect(0, 0, width, height);
+        g2.setColor(Color.BLACK);
+ 
+        for (int y = 0; y < height * faktor; y += faktor) {
+            for (int x = 0; x < width * faktor; x += faktor) {
+                int col=grid[x / faktor][y / faktor];
+                if(col==0)col=0xffffff;
+                g2.setColor(new Color(col));
+                g2.fillRect(x, y, faktor, faktor);
+            }
+        }
+        return image;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
