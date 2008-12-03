@@ -143,7 +143,7 @@ public class Rapidshare extends PluginForHost {
 
         serverList1 = new String[] { "cg", "cg2", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tl", "tl2" };
         serverList2 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "tg", "tg2", "tl", "tl2", "tl3" };
-        serverList3 = new String[] {"cg",  "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg","tg2", "tl", "tl2" };
+        serverList3 = new String[] { "cg", "dt", "gc", "gc2", "l3", "l32", "l33", "l34", "tg", "tg2", "tl", "tl2" };
 
         setConfigElements();
         enablePremium("http://rapidshare.com/premium.html");
@@ -705,12 +705,13 @@ public class Rapidshare extends PluginForHost {
         if (cookie == null || account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
 
             String error = findError(br + "");
-            if (error.contains("Fraud")) {
-                ai.setStatus(JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."));
-            } else {
-                ai.setStatus(this.dynTranslate(error));
+            if (error != null) {
+                if (error.contains("Fraud")) {
+                    ai.setStatus(JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."));
+                } else {
+                    ai.setStatus(this.dynTranslate(error));
+                }
             }
-
             ai.setValid(false);
             return ai;
         }

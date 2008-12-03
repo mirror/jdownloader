@@ -110,6 +110,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_UNRAR_INSTANCE = "UNRAR_INSTANCE";
 
     public static final String PARAM_UPDATE_HASH = "UPDATE_HASH";
+    
+    public static final String PARAM_UPDATE_VERSION = "UPDATE_VERSION";
 
     public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM";
 
