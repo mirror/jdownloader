@@ -19,9 +19,7 @@ package jd.plugins.host;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.RenderingHints;
-import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.regex.Pattern;
@@ -29,10 +27,6 @@ import java.util.regex.Pattern;
 import javax.imageio.ImageIO;
 
 import jd.PluginWrapper;
-import jd.captcha.gui.BasicWindow;
-import jd.captcha.specials.icaptcha.Curve;
-import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -78,13 +72,12 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        /* Nochmals das File Ã¼berprÃ¼fen */
+        /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         /*
          * Zuerst schaun ob wir nen Button haben oder direkt das File vorhanden
@@ -107,7 +100,7 @@ public class Odsiebiecom extends PluginForHost {
             /* kein Link gefunden */
             if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_FATAL); }
         } else {
-            /* Button folgen, schaun ob Link oder Captcha als nÃ¤chstes kommt */
+            /* Button folgen, schaun ob Link oder Captcha als nächstes kommt */
             downloadurl = "http://odsiebie.com/pobierz/" + steplink;
             br.getPage(downloadurl);
             if (br.getRedirectLocation() != null) {
@@ -118,20 +111,16 @@ public class Odsiebiecom extends PluginForHost {
             Form capform = br.getFormbyName("wer");
             if (capform != null) {
                 /* Captcha File holen */
-
-                String[] letters = capform.getRegex("<div.*class=let.*?>(.*?)</div>").getColumn(0);
                 BufferedImage image = getCSSCaptchaImage(capform.getHtmlCode());
-                
-          
-                    captchaFile = getLocalCaptchaFile(this);
-                    ImageIO.write(image, "png", captchaFile);
-            
-                    /* CaptchaCode holen */
-                    captchaCode = Plugin.getCaptchaCode(this, "CCSCaptchaOdsiebie", captchaFile, false, downloadLink);
-                
+
+                captchaFile = getLocalCaptchaFile(this);
+                ImageIO.write(image, "png", captchaFile);
+
+                /* CaptchaCode holen */
+                captchaCode = Plugin.getCaptchaCode(this, "CCSCaptchaOdsiebie", captchaFile, false, downloadLink);
 
                 capform.setVariable(0, captchaCode);
-                /* ÃœberprÃ¼fen(Captcha,Password) */
+                /* Überprüfen(Captcha,Password) */
                 downloadurl = "http://odsiebie.com/pobierz/" + steplink + "?captcha=" + captchaCode;
                 br.getPage(downloadurl);
                 if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("html?err")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
@@ -146,8 +135,8 @@ public class Odsiebiecom extends PluginForHost {
             if (downloadurl == null) { throw new PluginException(LinkStatus.ERROR_RETRY); }
         }
         /*
-         * Leerzeichen mÃ¼ssen durch %20 ersetzt werden!!!!!!!!, sonst werden
-         * sie von new URL() abgeschnitten
+         * Leerzeichen müssen durch %20 ersetzt werden!!!!!!!!, sonst werden sie
+         * von new URL() abgeschnitten
          */
         downloadurl = downloadurl.replaceAll(" ", "%20");
         /* Datei herunterladen */
@@ -155,7 +144,6 @@ public class Odsiebiecom extends PluginForHost {
         br.setDebug(true);
         dl = br.openDownload(downloadLink, downloadurl, false, 1);
         if (dl.getConnection().getContentType().contains("text")) {
-
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         }
@@ -172,11 +160,11 @@ public class Odsiebiecom extends PluginForHost {
             String[] lines = new Regex(letters[i], "<div.*?</div").getColumn(-1);
             for (int y = 0; y < lines.length; y++) {
                 String[] pixel = new Regex(lines[y], "<span.*?</span").getColumn(-1);
-                if (grid == null) grid = new int[(letters.length-1)*(pixel.length+10)][lines.length];
-                int offset=(i-1)*(pixel.length+5);
+                if (grid == null) grid = new int[(letters.length - 1) * (pixel.length + 10)][lines.length];
+                int offset = (i - 1) * (pixel.length + 5);
                 for (int x = 0; x < pixel.length; x++) {
                     if (comp == null) comp = pixel[x];
-                    grid[x+offset][y] = pixel[x].length()>30 ? cols[i].getRGB() : 0xffffff;
+                    grid[x + offset][y] = pixel[x].length() > 30 ? cols[i].getRGB() : 0xffffff;
                 }
 
             }
@@ -185,18 +173,18 @@ public class Odsiebiecom extends PluginForHost {
         int width = grid.length;
         int height = grid[0].length;
         int faktor = 4;
-        BufferedImage image = new BufferedImage(width*faktor, height*faktor, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(width * faktor, height * faktor, BufferedImage.TYPE_INT_RGB);
         Graphics2D g2 = image.createGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setStroke(new BasicStroke(8));
         g2.setBackground(Color.WHITE);
         g2.clearRect(0, 0, width, height);
         g2.setColor(Color.BLACK);
- 
+
         for (int y = 0; y < height * faktor; y += faktor) {
             for (int x = 0; x < width * faktor; x += faktor) {
-                int col=grid[x / faktor][y / faktor];
-                if(col==0)col=0xffffff;
+                int col = grid[x / faktor][y / faktor];
+                if (col == 0) col = 0xffffff;
                 g2.setColor(new Color(col));
                 g2.fillRect(x, y, faktor, faktor);
             }
@@ -204,6 +192,7 @@ public class Odsiebiecom extends PluginForHost {
         return image;
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
@@ -214,7 +203,6 @@ public class Odsiebiecom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
-
     }
 
 }

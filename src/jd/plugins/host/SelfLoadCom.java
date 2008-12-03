@@ -37,7 +37,7 @@ public class SelfLoadCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3540 $");
+        return getVersion("$Revision$");
     }
 
     @Override
@@ -54,6 +54,7 @@ public class SelfLoadCom extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
