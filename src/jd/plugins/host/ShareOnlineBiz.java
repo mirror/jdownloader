@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
-import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -40,15 +39,8 @@ public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.share-online.biz/service.php");
     }
-    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        String user = account.getUser();
-        String pass = account.getPass();
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        
-        
-    }
+
     @Override
     public String getAGBLink() {
         return "http://share-online.biz/rules.php";
@@ -56,8 +48,9 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        url = downloadLink.getDownloadURL();
+        url = downloadLink.getDownloadURL() + "&setlang=en";
         this.setBrowserExclusive();
+        br.setAcceptLanguage("en, en-gb;q=0.8");
         for (int i = 1; i < 3; i++) {
             try {
                 Thread.sleep(1000);/*
@@ -65,8 +58,8 @@ public class ShareOnlineBiz extends PluginForHost {
                                     */
                 String page = br.getPage(url);
                 if (page != null && br.getRedirectLocation() == null) {
-                    String filename = br.getRegex(Pattern.compile("<b>File name:</b></td>.*?<td align=left width=150px><div style=.*?><b>(.*?)</b></div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-                    String sizev = br.getRegex(Pattern.compile("<br>You have requested <font color=.*?>.*?</font> \\((.*?)\\) .</b>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                    String filename = br.getRegex(Pattern.compile("<b>File.name:</b></td>.*?<td align=left width=150px><div style=.*?><b>(.*?)</b></div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+                    String sizev = br.getRegex(Pattern.compile("You have requested <font.*?</font>(.*?).</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
 
                     if (filename == null || sizev == null) return false;
                     downloadLink.setDownloadSize(Regex.getSize(sizev.trim()));
@@ -90,7 +83,7 @@ public class ShareOnlineBiz extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        url = downloadLink.getDownloadURL();
+        url = downloadLink.getDownloadURL() + "&?setlang=en";
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);

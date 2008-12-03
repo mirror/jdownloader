@@ -581,7 +581,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public int getTimegapBetweenConnections() {
-        return 0;
+        return 500;
     }
 
     public void setStartIntervall(long interval) {

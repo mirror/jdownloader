@@ -38,8 +38,7 @@ import jd.utils.JDUtilities;
 public class QshareCom extends PluginForHost {
     public QshareCom(PluginWrapper wrapper) {
         super(wrapper);
-
-         this.enablePremium();
+        this.enablePremium("http://s1.qshare.com/index.php?sysm=sys_page&sysf=site&site=buy");
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -76,12 +75,12 @@ public class QshareCom extends PluginForHost {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy hh:mm:ss", Locale.UK);
         if (expire == null) {
-            if(br.containsHTML("Flatrate")){
+            if (br.containsHTML("Flatrate")) {
                 ai.setStatus("Account expired");
-            }else{
+            } else {
                 ai.setStatus("Logins not valid");
             }
-            
+
             ai.setValid(false);
             return ai;
         }
@@ -100,10 +99,8 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        // LinkStatus linkStatus = downloadLink.getLinkStatus();
 
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+        getFileInformation(downloadLink);
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
 
@@ -116,9 +113,6 @@ public class QshareCom extends PluginForHost {
 
         String url = br.getRegex("<a class=\"button\" href=\"(.*?)\"><span>Kostenlos</span></a>").getMatch(0);
         br.getPage(url);
-        //        
-        // Form[] forms = br.getForms();
-        // page = br.submitForm(forms[0]);
 
         if (br.getRegex("Du hast die maximal zulässige Anzahl").matches()) {
             logger.severe("There is already a download running with our ip");
@@ -136,7 +130,7 @@ public class QshareCom extends PluginForHost {
 
         }
 
-        br.openDownload(downloadLink, link).startDownload();
+        br.openDownload(downloadLink, link, false, 1).startDownload();
 
     }
 
@@ -176,7 +170,7 @@ public class QshareCom extends PluginForHost {
 
         if (br.getRedirectLocation() != null) {
             logger.info("Direct Download is activ");
-            dl = br.openDownload(downloadLink, (String)null, true, 0);
+            dl = br.openDownload(downloadLink, (String) null, true, 0);
         } else {
             logger.warning("InDirect Download is activ (is much slower... you should active direct downloading in the configs(qshare configs)");
             br.loadConnection(null);
@@ -220,8 +214,8 @@ public class QshareCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
         String page;
         // dateiname, dateihash, dateisize, dateidownloads, zeit bis
         // happyhour
@@ -231,7 +225,7 @@ public class QshareCom extends PluginForHost {
         page = br.getPage(downloadLink.getDownloadURL());
 
         String[] dat = new Regex(page, "<SPAN STYLE=\"font-size:13px;vertical-align:middle\">(.*?) \\((.*?)\\).*?</SPAN>").getRow(0);
-
+        if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0].trim());
         downloadLink.setDownloadSize((int) Regex.getSize(dat[1].trim()));
         return true;
@@ -246,7 +240,7 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

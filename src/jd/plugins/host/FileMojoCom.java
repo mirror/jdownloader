@@ -44,6 +44,7 @@ public class FileMojoCom extends PluginForHost {
             String url = downloadLink.getDownloadURL();
 
             String fileId = new Regex(url, "filemojo\\.com/(\\d+)").getMatch(0);
+            if (fileId==null) fileId = new Regex(url, "filemojo\\.com/l\\.php\\?flink=(\\d+)").getMatch(0);
             url = "http://www.filemojo.com/l.php?flink=" + fileId + "&fx=";
 
             br.getPage(url);
