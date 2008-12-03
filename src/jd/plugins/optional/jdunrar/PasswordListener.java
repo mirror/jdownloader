@@ -21,8 +21,8 @@ import java.util.regex.Pattern;
 
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
+import jd.nutils.ProcessListener;
 import jd.parser.Regex;
-import jd.utils.ProcessListener;
 
 public class PasswordListener extends ProcessListener {
 

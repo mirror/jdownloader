@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import jd.utils.JDUtilities;
-import jd.utils.ProcessListener;
 
 public class Executer extends Thread {
     public static final String CODEPAGE = OSDetector.isWindows() ? "ISO-8859-1" : "UTF-8";

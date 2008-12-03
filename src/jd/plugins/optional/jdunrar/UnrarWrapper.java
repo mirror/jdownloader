@@ -24,12 +24,12 @@ import java.util.regex.Pattern;
 import jd.config.SubConfiguration;
 import jd.nutils.DynByteBuffer;
 import jd.nutils.Executer;
+import jd.nutils.ProcessListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.ProcessListener;
 
 /**
  * Die klasse dient zum verpacken der Unrar binary.
