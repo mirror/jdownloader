@@ -31,7 +31,8 @@ public class Upload {
     public static String toJDownloader(String str, String desc) {
         try {
             Browser br = new Browser();
-            return "http://service.jdownloader.org/tools/log.php?id=" + br.postPage("http://service.jdownloader.org/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
+            String ret=br.postPage("http://services.jdownloader.net/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
+            return "http://services.jdownloader.net/tools/log.php?id=" + ret;
         } catch (IOException e) {
             e.printStackTrace();
         }

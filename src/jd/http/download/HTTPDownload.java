@@ -22,10 +22,13 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.Comparator;
 
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.Threader;
+import jd.nutils.Threader.Worker;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -80,17 +83,15 @@ public class HTTPDownload {
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
 
-            dl.setChunkNum(2);
+            dl.setChunkNum(6);
             try {
                 new Thread() {
                     public void run() {
                         try {
                             Thread.sleep(2000);
+                            System.out.println("LOWER to 2");
                             dl.setChunkNum(4);
-                            Thread.sleep(6000);
-                            dl.setChunkNum(10);
-                            Thread.sleep(6000);
-                            dl.setChunkNum(20);
+
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
                             e.printStackTrace();
@@ -118,7 +119,7 @@ public class HTTPDownload {
         }
     }
 
-    private void setChunkNum(int i) throws BrowserException {
+    private void setChunkNum(int i) throws BrowserException, InterruptedException {
         if (i == chunkNum) return;
         if (chunks != null && chunks.isHasStarted()) {
             if (i > chunkNum) addChunksDyn(i - chunkNum);
@@ -128,8 +129,34 @@ public class HTTPDownload {
 
     }
 
-    private void removeChunksDyn(int i) {
-        // TODO Auto-generated method stub
+    private void removeChunksDyn(int i) throws InterruptedException {
+        while (i-- > 0) {
+            removeChunk();
+        }
+
+    }
+
+    private void removeChunk() throws InterruptedException {
+        DownloadChunk slowest = null;
+        for (int i = chunks.size() - 1; i >= 0; i--) {
+            DownloadChunk dc = (DownloadChunk) chunks.get(i);
+            if (dc.isAlive()) {
+                slowest = dc;
+                break;
+            }
+        }
+        System.out.println("Disconnect chunk " + slowest);
+
+        this.chunks.interrupt(slowest);
+
+        // Wait until Chunk got closed
+        while (slowest.isAlive()) {
+            System.out.print("|");
+            Thread.sleep(50);
+        }
+
+        slowest.setChunkEnd(slowest.getWritePosition());
+        System.out.println("Disconnected");
 
     }
 
@@ -231,6 +258,52 @@ public class HTTPDownload {
     }
 
     /**
+     * Funktion überprüft ob eventl noch chunks hinzugefügt werden müssen um die
+     * datei zu ende zu laden. z.B. wenn chunks abgebrochen wurden.
+     */
+    private synchronized void checkForMissingParts() {
+        ArrayList<Long[]> missing = getMissingParts();
+        if (missing.size() == 0) return;
+        int activeChunks = chunks.getAlive().size();
+
+        int i = 0;
+        while (activeChunks < this.chunkNum && missing.size() > 0) {
+            DownloadChunk newChunk = new DownloadChunk(this, missing.get(i)[0], missing.get(i)[1]);
+            System.out.println("New chunk: " + newChunk);
+            chunks.add(newChunk);
+            i++;
+            activeChunks++;
+
+        }
+    }
+
+    private ArrayList<Long[]> getMissingParts() {
+        ArrayList<Long[]> missing = new ArrayList<Long[]>();
+        chunks.sort(new Comparator<Worker>() {
+            public int compare(Worker o1, Worker o2) {
+                return new Long(((DownloadChunk) o1.getRunnable()).getChunkStart()).compareTo(((DownloadChunk) o2.getRunnable()).getChunkStart());
+            }
+        });
+        DownloadChunk lastChunk = (DownloadChunk) chunks.get(0);
+        if (lastChunk.getChunkStart() > 0) {
+
+            missing.add(new Long[] { 0l, lastChunk.getChunkStart() - 1 });
+        }
+        for (int i = 1; i < chunks.size(); i++) {
+            DownloadChunk chunk = (DownloadChunk) chunks.get(i);
+            if (chunk.getChunkStart() == lastChunk.getChunkEnd() + 1) {
+                // all ok
+
+            } else if (chunk.getChunkStart() <= lastChunk.getChunkEnd() + 1) {
+                System.err.println("Overlap  Chunks: " + chunk + " - " + lastChunk);
+            } else {
+                missing.add(new Long[] { lastChunk.getChunkEnd() + 1, i < (chunks.size() - 1) ? ((DownloadChunk) chunks.get(i + 1)).getChunkStart() - 1 : -1l });
+            }
+        }
+        return missing;
+    }
+
+    /**
      * Method creates the initial Chunks
      * 
      * @throws IOException
@@ -257,12 +330,13 @@ public class HTTPDownload {
 
             @Override
             public void onThreadException(Threader th, JDRunnable job, Exception e) {
+                System.err.println(job);
                 e.printStackTrace();
             }
 
             @Override
             public void onThreadFinished(Threader th, JDRunnable job) {
-                // TODO Auto-generated method stub
+                checkForMissingParts();
             }
 
         });
@@ -312,7 +386,10 @@ public class HTTPDownload {
             buffer.flip();
             this.outputRAF.seek(chunk.getWritePosition());
             byteCounter += buffer.limit();
-            System.out.println(chunk + " - " + "Write " + buffer.limit() + " bytes at " + chunk.getWritePosition() + " total: " + byteCounter + " written until: " + (chunk.getWritePosition() + buffer.limit() - 1));
+            // System.out.println(chunk + " - " + "Write " + buffer.limit() +
+            // " bytes at " + chunk.getWritePosition() + " total: " +
+            // byteCounter + " written until: " + (chunk.getWritePosition() +
+            // buffer.limit() - 1));
 
             outputChannel.write(buffer);
             // if (chunk.getID() >= 0) {

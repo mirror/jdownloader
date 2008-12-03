@@ -17,8 +17,11 @@
 package jd.nutils;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 import jd.http.download.Broadcaster;
+import jd.http.download.DownloadChunk;
 import jd.nutils.jobber.JDRunnable;
 
 /**
@@ -113,9 +116,12 @@ public class Threader {
     public class Worker extends Thread {
 
         private JDRunnable runnable;
+        private boolean runnableAlive=false;
 
         public Worker(JDRunnable runnable) {
+
             this.runnable = runnable;
+            this.setName("Worker for " + runnable);
         }
 
         public JDRunnable getRunnable() {
@@ -124,14 +130,24 @@ public class Threader {
 
         public void run() {
             try {
+                this.runnableAlive=true;
                 runnable.go();
             } catch (Exception e) {
                 for (int i = 0; i < broadcaster.size(); i++) {
                     broadcaster.get(i).onThreadException(Threader.this, getRunnable(), e);
                 }
-                e.printStackTrace();
+
+                // e.printStackTrace();
+            }finally
+            {
+                this.runnableAlive=false;
             }
             onWorkerFinished(this);
+        }
+
+        public boolean isRunnableAlive() {
+            // TODO Auto-generated method stub
+            return runnableAlive;
         }
 
     }
@@ -152,6 +168,30 @@ public class Threader {
     public JDRunnable get(int i) {
 
         return workerlist.get(i).getRunnable();
+    }
+
+    public void interrupt(DownloadChunk slowest) {
+        for (Worker w : workerlist) {
+            if (w.getRunnable() == slowest) {
+                System.err.println("Interruot:, " + w + " - " + w.getRunnable() + "-" + slowest);
+                w.interrupt();
+                return;
+
+            }
+        }
+
+    }
+
+    public void sort(Comparator<Worker> comparator) {
+        Collections.sort(workerlist, comparator);
+    }
+
+    public ArrayList<JDRunnable> getAlive() {
+        ArrayList<JDRunnable> list = new ArrayList<JDRunnable>();
+        for (Worker w : workerlist) {
+            if (w.isRunnableAlive()) list.add(w.getRunnable());
+        }
+        return list;
     }
 
 }

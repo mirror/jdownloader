@@ -71,6 +71,7 @@ public class DownloadChunk implements JDRunnable {
     private boolean connectionRequested = false;
     private HTTPDownload owner;
     private long bytesLoaded = 0;
+    private boolean alive;
 
     public HTTPDownload getOwner() {
         return owner;
@@ -201,66 +202,90 @@ public class DownloadChunk implements JDRunnable {
     }
 
     public void go() throws Exception {
-        if (!this.isConnected()) this.connect();
-        download();
+        alive = true;
+        try {
+            if (!this.isConnected()) this.connect();
+            download();
+        } finally {
+            System.out.println(this+": Finally I got killed");
+            alive = false;
+        }
 
     }
 
+    public boolean isAlive() {
+        return alive;
+    }
+
     private void download() throws IOException {
-        this.bytesLoaded = 0l;
-        ByteBuffer buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
-        ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
-        miniBuffer.clear();
-        long loadUntil = 0;
-        int miniRead = 0;
+        try {
+            this.bytesLoaded = 0l;
+            ByteBuffer buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
+            ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
+            miniBuffer.clear();
+            long loadUntil = 0;
+            int miniRead = 0;
 
-        long startTime = 0;
-        buffer.clear();
-
-        main: while (true) {
-            startTime = System.currentTimeMillis();
-            loadUntil = getNextWriteTime();
-            if (this.getChunkEnd() > 0 && this.getWritePosition() + buffer.limit() > this.getChunkEnd()) {
-                try {
-                    buffer.limit((int) (this.getChunkEnd() - this.getWritePosition() + 1));
-                } catch (Exception e) {
-
-                }
-            }
-            while (buffer.hasRemaining() && System.currentTimeMillis() < loadUntil) {
-                miniBuffer.clear();
-                if (miniBuffer.remaining() > buffer.remaining()) {
-                    miniBuffer.limit(buffer.remaining());
-                }
-                miniRead = this.channel.read(miniBuffer);
-                miniBuffer.flip();
-                buffer.put(miniBuffer);
-
-                if (miniRead == -1) {
-                    if (buffer.position() == 0) break main;
-                    break;
-                }
-                bytesLoaded += miniRead;
-                // addPartBytes(miniblock);
-                // addToTotalLinkBytesLoaded(miniblock);
-                // addChunkBytesLoaded(miniblock);
-
-            }
-
-            // deltaTime = Math.max(System.currentTimeMillis() - startTime, 1);
-
-            owner.writeBytes(this, buffer);
-            this.writePosition += buffer.limit();
+            long startTime = 0;
             buffer.clear();
-            if (miniRead == -1) break main;
-            if (this.getChunkEnd() > 0 && this.getWritePosition() > this.getChunkEnd()) {
-                System.out.println("Overhead interrupt " + (this.getChunkEnd() - this.getWritePosition() + 1));
-                connection.disconnect();
-                return;
-            }
-        }
 
-        miniRead = 0;
+            main: while (true) {
+                startTime = System.currentTimeMillis();
+                loadUntil = getNextWriteTime();
+                if (this.getChunkEnd() > 0 && this.getWritePosition() + buffer.limit() > this.getChunkEnd()) {
+                    try {
+                        buffer.limit((int) (this.getChunkEnd() - this.getWritePosition() + 1));
+                    } catch (Exception e) {
+
+                    }
+                }
+                while (buffer.hasRemaining() && System.currentTimeMillis() < loadUntil) {
+                    miniBuffer.clear();
+                    if (miniBuffer.remaining() > buffer.remaining()) {
+                        miniBuffer.limit(buffer.remaining());
+                    }
+                    miniRead = this.channel.read(miniBuffer);
+                    miniBuffer.flip();
+                    buffer.put(miniBuffer);
+
+                    if (miniRead == -1) {
+                        if (buffer.position() == 0) break main;
+                        break;
+                    }
+                    bytesLoaded += miniRead;
+                    // addPartBytes(miniblock);
+                    // addToTotalLinkBytesLoaded(miniblock);
+                    // addChunkBytesLoaded(miniblock);
+
+                }
+
+                // deltaTime = Math.max(System.currentTimeMillis() - startTime,
+                // 1);
+
+                owner.writeBytes(this, buffer);
+                this.writePosition += buffer.limit();
+                buffer.clear();
+                if (miniRead == -1) break main;
+                if (this.getChunkEnd() > 0 && this.getWritePosition() > this.getChunkEnd()) {
+                    System.out.println("Overhead interrupt " + (this.getChunkEnd() - this.getWritePosition() + 1));
+
+                    return;
+                }
+            }
+
+            miniRead = 0;
+        } finally {
+            this.disconnect();
+          
+        }
+    }
+
+    private void disconnect() throws IOException {
+        channel.close();
+        this.inputStream.close();
+        connection.disconnect();
+      
+        
     }
 
     private long getNextWriteTime() {
