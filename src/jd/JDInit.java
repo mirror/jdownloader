@@ -547,8 +547,6 @@ public class JDInit {
         new DecryptPluginWrapper("crypt-it.com", "CryptItCom", "(http|ccf)://[\\w\\.]*?crypt-it\\.com/(s|e|d|c)/[a-zA-Z0-9]+");
         new DecryptPluginWrapper("cryptlink.ws", "Cryptlinkws", "http://[\\w\\.]*?cryptlink\\.ws/\\?file=[a-zA-Z0-9]+|http://[\\w\\.]*?cryptlink\\.ws/crypt\\.php\\?file=[0-9]+");
         new DecryptPluginWrapper("crypt-me.com", "CryptMeCom", "http://[\\w\\.]*?crypt-me\\.com/folder/[a-zA-Z0-9]+\\.html");
-        // new DecryptPluginWrapper("datenschleuder.cc", "DatenschleuderCc",
-        // "http://[\\w\\.]*?datenschleuder\\.cc/dl/(id|dir)/[0-9]+/[a-zA-Z0-9]+/.+");
         new DecryptPluginWrapper("ddl-music.org", "DDLMusicOrg", PluginPattern.decrypterPattern_DDLMusic_Plugin);
         new DecryptPluginWrapper("ddl-warez.org", "DDLWarez", "http://[\\w\\.]*?ddl-warez\\.org/detail\\.php\\?id=.+&cat=.+");
         new DecryptPluginWrapper("doperoms.net", "DoperomsCom", "http://[\\w.]*?doperoms\\.com/roms/(.+)/(.+).html");
@@ -563,8 +561,6 @@ public class JDInit {
         new DecryptPluginWrapper("flyload.net", "FlyLoadnet", "http://[\\w\\.]*?flyload\\.net/safe\\.php\\?id=[a-zA-Z0-9]+|http://[\\w\\.]*?flyload\\.net/request_window\\.php\\?(\\d+)|http://[\\w\\.]*?flyload\\.net/download\\.php\\?view\\.(\\d+)");
         new DecryptPluginWrapper("frozen-roms.in", "FrozenRomsIn", "http://[\\w\\.]*?frozen-roms\\.in/(details_[0-9]+|get_[0-9]+_[0-9]+)\\.html");
         new DecryptPluginWrapper("ftp2share.net", "ftp2share", "http://[\\w\\.]*?ftp2share\\.net/folder/[a-zA-Z0-9\\-]+/(.*?)|http://[\\w\\.]*?ftp2share\\.net/file/[a-zA-Z0-9\\-]+/(.*?)");
-        // new DecryptPluginWrapper("fucktheindustry.ru", "FuckTheIndustryRu",
-        // "http://[\\w\\.]*?92\\.241\\.164\\.63/file\\.php\\?id=[\\d]+");
         new DecryptPluginWrapper("gapping.org", "GappingOrg", "http://[\\w\\.]*?gapping\\.org/index\\.php\\?folderid=\\d+|http://[\\w\\.]*?gapping\\.org/f/\\d+\\.html|http://[\\w\\.]*?gapping\\.org/file\\.php\\?id=.+|http://[\\w\\.]*?gapping\\.org/g.*?\\.html|http://[\\w\\.]*?gapping\\.org/d/.*\\.html");
         new DecryptPluginWrapper("gwarez.cc", "Gwarezcc", "http://[\\w\\.]*?gwarez\\.cc/\\d{1,}\\#details|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/check/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/mirror/\\d{1,}/parts/\\d{1,}/|http://[\\w\\.]*?gwarez\\.cc/download/dlc/\\d{1,}/");
         new DecryptPluginWrapper("Hider.ath.cx", "HiderAthCx", "http://[\\w\\.]*?hider\\.ath\\.cx/\\d+");
