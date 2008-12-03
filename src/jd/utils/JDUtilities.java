@@ -1200,7 +1200,7 @@ public class JDUtilities {
      * @author JD-Team
      * @param resource
      *            Ressource, die geladen werden soll
-     * @return File zu arg
+     * @return File zu arg 
      */
     public static File getResourceFile(String resource) {
         JDClassLoader cl = JDUtilities.getJDClassLoader();
