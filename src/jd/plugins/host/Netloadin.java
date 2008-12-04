@@ -57,9 +57,9 @@ public class Netloadin extends PluginForHost {
     static private final String NEW_HOST_URL = "<a class=\"Orange_Link\" href=\"(.*?)\" >Alternativ klicke hier\\.<\\/a>";
 
     private static String getID(String link) {
-
-        return new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
-
+        String id = new Regex(link, "\\/datei([a-zA-Z0-9]+)").getMatch(0);
+        if (id == null) id = new Regex(link, "file_id=([a-zA-Z0-9]+)").getMatch(0);
+        return id;
     }
 
     private String fileStatusText;
