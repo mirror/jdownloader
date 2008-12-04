@@ -113,22 +113,32 @@ public class UCMS extends PluginForDecrypt {
                         break;
                     }
                 }
-                String links[][] = null;
-                if (br.containsHTML("unescape\\(unescape\\(unescape")) {
-                    String temp[] = br.getRegex(Pattern.compile("unescape\\(unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-                    String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(temp[0])));
-                    links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
-                } else if (br.containsHTML("unescape\\(unescape")) {
-                    String temp[] = br.getRegex(Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-                    String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(temp[0]));
-                    links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
+                /*
+                 * Bei hardcoremetal.biz wird mittlerweile der Download als
+                 * DLC-Container angeboten! Workaround für diese Seite
+                 */
+                if (br.containsHTML("ACTION=\"/download\\.php\"")) {
+                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                    Browser.download(container, br.openFormConnection(0));
+                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                 } else {
-                    links = br.getRegex(Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatches();
-                }
-                for (String[] element2 : links) {
-                    DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2[0]));
-                    link.addSourcePluginPassword(pass);
-                    decryptedLinks.add(link);
+                    String links[] = null;
+                    if (br.containsHTML("unescape\\(unescape\\(unescape")) {
+                        String temp = br.getRegex(Pattern.compile("unescape\\(unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                        String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(Encoding.htmlDecode(temp)));
+                        links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                    } else if (br.containsHTML("unescape\\(unescape")) {
+                        String temp = br.getRegex(Pattern.compile("unescape\\(unescape\\(\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                        String temp2 = Encoding.htmlDecode(Encoding.htmlDecode(temp));
+                        links = new Regex(temp2, Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                    } else {
+                        links = br.getRegex(Pattern.compile("ACTION=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                    }
+                    for (String element2 : links) {
+                        DownloadLink link = createDownloadlink(Encoding.htmlDecode(element2));
+                        link.addSourcePluginPassword(pass);
+                        decryptedLinks.add(link);
+                    }
                 }
             }
         } catch (IOException e) {
