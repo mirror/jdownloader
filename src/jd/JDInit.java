@@ -206,7 +206,13 @@ public class JDInit {
                     br.setConnectTimeout(15000);
                     if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
                         try {
-                            br.postPage("http://services.jdownloader.net/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", ""));
+                            String prev = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
+                            if (prev == null || prev.length() < 3) {
+                                prev = "0";
+                            } else {
+                                prev = prev.replaceAll(",|\\.", "");
+                            }
+                            br.postPage("http://services.jdownloader.net/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev);
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
                             JDUtilities.getConfiguration().save();
                         } catch (Exception e) {
