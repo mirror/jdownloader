@@ -32,11 +32,17 @@ public class JDTwitter {
         long oneDayBack = System.currentTimeMillis() - 1000 * 60 * 60 * 24;
         Browser br = new Browser();
         String status = null;
-        try {
+        try 
+        {
             br.getPage(JDLocale.L("main.twitter.url", "http://twitter.com/statuses/user_timeline/jdownloader.xml") + "?count=1&since=" + JDUtilities.formatTime(oneDayBack));
             status = br.getRegex("<status>[\\s\\S]*?<text>(.*?)</text>[\\s\\S]*?</status>").getMatch(0);
-        } catch (IOException e) {
-            logger.warning("twitter.com unreachable. This doesnt affect your Downloads, though it could be a clue that your internet connection is down.");
+        } 
+        catch (IOException e) 
+        {
+        	if(br.toString() == null)
+        	{
+                logger.warning("twitter.com unreachable. This doesnt affect your Downloads, though it could be a clue that your internet connection is down.");
+        	}
         }
 
         if (status == null || status.equals("") || status.matches(".*defaultmessage.*")) {

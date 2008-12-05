@@ -949,6 +949,17 @@ public class Browser {
         if (request == null) { return "Browser. no request yet"; }
         return request.toString();
     }
+    
+    
+    /**
+     * @return Use Browser.toString instead.
+      * @deprecated replaced by <code>Browser.toString</code>.  
+      * @see #toString()
+     */
+    @Deprecated 
+    public String GetHtmlCode() {
+    	return this.toString();
+    }
 
     public Regex getRegex(String string) {
         return new Regex(this, string);
