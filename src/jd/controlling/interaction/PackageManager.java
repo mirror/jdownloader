@@ -167,7 +167,7 @@ public class PackageManager extends Interaction implements Serializable {
         config.setProperty("PACKAGEDATA", data);
 
         try {
-            br.getPage("http://services.jdownloader.net/addonmanager/list.php?jd=" + JDUtilities.getRevision() + "&r=" + System.currentTimeMillis());
+            br.getPage("http://service.jdownloader.net/addonmanager/list.php?jd=" + JDUtilities.getRevision() + "&r=" + System.currentTimeMillis());
 
             String xml = br.getRegex("<packages>(.*?)</packages>").getMatch(-1);
 

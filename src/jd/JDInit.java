@@ -212,7 +212,7 @@ public class JDInit {
                             } else {
                                 prev = prev.replaceAll(",|\\.", "");
                             }
-                            br.postPage("http://services.jdownloader.net/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev);
+                            br.postPage("http://service.jdownloader.net/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev);
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
                             JDUtilities.getConfiguration().save();
                         } catch (Exception e) {
