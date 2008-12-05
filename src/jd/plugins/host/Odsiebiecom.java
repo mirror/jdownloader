@@ -114,6 +114,7 @@ public class Odsiebiecom extends PluginForHost {
                 BufferedImage image = getCSSCaptchaImage(capform.getHtmlCode());
 
                 captchaFile = getLocalCaptchaFile(this);
+                captchaFile.mkdirs();
                 ImageIO.write(image, "png", captchaFile);
 
                 /* CaptchaCode holen */
