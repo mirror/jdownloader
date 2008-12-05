@@ -68,7 +68,7 @@ public class JDUpdater {
             if (f.getName().contains("svn")) continue;
             if (!secureUploadFolder(f, root, test)) ret = false;
         }
-        return ret;
+        return ret;   
     }
 
     private boolean secureUploadFile(File file, File root, String test) throws FileNotFoundException, IOException, InterruptedException {

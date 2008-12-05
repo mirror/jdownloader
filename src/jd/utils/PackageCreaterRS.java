@@ -60,7 +60,7 @@ public class PackageCreaterRS {
 
         StringBuilder sb = new StringBuilder();
         sb.append("<packages>");
-        String uid = "360c03";
+        String uid = "downiv";
         String pw = JOptionPane.showInputDialog(frame, "PW für: " + uid);
         JDFileChooser fc = new JDFileChooser();
         fc.setApproveButtonText("Select list.php");

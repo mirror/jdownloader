@@ -116,12 +116,16 @@ public class Threader {
     public class Worker extends Thread {
 
         private JDRunnable runnable;
-        private boolean runnableAlive=false;
+        private boolean runnableAlive = false;
 
         public Worker(JDRunnable runnable) {
 
             this.runnable = runnable;
-            this.setName("Worker for " + runnable);
+
+        }
+
+        public String toString() {
+            return "Worker for " + runnable;
         }
 
         public JDRunnable getRunnable() {
@@ -130,7 +134,7 @@ public class Threader {
 
         public void run() {
             try {
-                this.runnableAlive=true;
+                this.runnableAlive = true;
                 runnable.go();
             } catch (Exception e) {
                 for (int i = 0; i < broadcaster.size(); i++) {
@@ -138,9 +142,8 @@ public class Threader {
                 }
 
                 // e.printStackTrace();
-            }finally
-            {
-                this.runnableAlive=false;
+            } finally {
+                this.runnableAlive = false;
             }
             onWorkerFinished(this);
         }

@@ -110,6 +110,7 @@ public class DownloadChunk implements JDRunnable {
     }
 
     public void setChunkEnd(long chunkEnd) {
+        System.out.println(this + " Chunkend to " + chunkEnd);
         this.chunkEnd = chunkEnd;
     }
 
@@ -206,8 +207,11 @@ public class DownloadChunk implements JDRunnable {
         try {
             if (!this.isConnected()) this.connect();
             download();
+            System.out.println("F2 "+this);
         } finally {
-            System.out.println(this+": Finally I got killed");
+            System.out.println("F3 "+this);
+            this.setChunkEnd(this.getWritePosition() - 1);
+          
             alive = false;
         }
 
@@ -218,19 +222,20 @@ public class DownloadChunk implements JDRunnable {
     }
 
     private void download() throws IOException {
-        try {
-            this.bytesLoaded = 0l;
-            ByteBuffer buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
-            ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
-            miniBuffer.clear();
-            long loadUntil = 0;
-            int miniRead = 0;
+        this.bytesLoaded = 0l;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
+        ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
+        miniBuffer.clear();
+        long loadUntil = 0;
+        int miniRead = 0;
 
-            long startTime = 0;
-            buffer.clear();
+      
+        buffer.clear();
+
+        try {
 
             main: while (true) {
-                startTime = System.currentTimeMillis();
+            
                 loadUntil = getNextWriteTime();
                 if (this.getChunkEnd() > 0 && this.getWritePosition() + buffer.limit() > this.getChunkEnd()) {
                     try {
@@ -244,15 +249,18 @@ public class DownloadChunk implements JDRunnable {
                     if (miniBuffer.remaining() > buffer.remaining()) {
                         miniBuffer.limit(buffer.remaining());
                     }
-                    miniRead = this.channel.read(miniBuffer);
-                    miniBuffer.flip();
-                    buffer.put(miniBuffer);
-
+                    try {
+                        miniRead = this.channel.read(miniBuffer);
+                    } finally {
+                        miniBuffer.flip();
+                        buffer.put(miniBuffer);
+                        if(miniRead>0) bytesLoaded += miniRead;
+                    }
                     if (miniRead == -1) {
                         if (buffer.position() == 0) break main;
                         break;
                     }
-                    bytesLoaded += miniRead;
+                    
                     // addPartBytes(miniblock);
                     // addToTotalLinkBytesLoaded(miniblock);
                     // addChunkBytesLoaded(miniblock);
@@ -275,17 +283,28 @@ public class DownloadChunk implements JDRunnable {
 
             miniRead = 0;
         } finally {
+            System.out.println("F1 "+this);
+            if (buffer.position() > 0) {
+                try{
+                owner.writeBytes(this, buffer);
+                }catch(Exception e){
+                    e.printStackTrace();
+                }
+                this.writePosition += buffer.limit();
+                buffer.clear();
+            }
+
             this.disconnect();
-          
+
         }
     }
 
     private void disconnect() throws IOException {
+        System.out.println(this+" CLOSE & Disconnect");
         channel.close();
         this.inputStream.close();
         connection.disconnect();
-      
-        
+
     }
 
     private long getNextWriteTime() {

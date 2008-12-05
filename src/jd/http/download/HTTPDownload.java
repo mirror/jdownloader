@@ -79,7 +79,7 @@ public class HTTPDownload {
             String destPath = "c:/test.download";
             Browser br = new Browser();
 
-            Request request = br.createGetRequest("http://services.jdownloader.net/testfiles/25bmtest.test");
+            Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.test");
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
 
@@ -91,6 +91,10 @@ public class HTTPDownload {
                             Thread.sleep(2000);
                             System.out.println("LOWER to 2");
                             dl.setChunkNum(4);
+                            Thread.sleep(3000);
+                            dl.setChunkNum(14);
+                            Thread.sleep(3000);
+                            dl.setChunkNum(2);
 
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
@@ -119,11 +123,14 @@ public class HTTPDownload {
         }
     }
 
-    private void setChunkNum(int i) throws BrowserException, InterruptedException {
+    private  void setChunkNum(int i) throws BrowserException, InterruptedException {
         if (i == chunkNum) return;
         if (chunks != null && chunks.isHasStarted()) {
-            if (i > chunkNum) addChunksDyn(i - chunkNum);
-            if (i < chunkNum) removeChunksDyn(chunkNum - i);
+
+            int tmp = chunkNum;
+            this.chunkNum = i;
+            if (i > tmp) addChunksDyn(i - tmp);
+            if (i < tmp) removeChunksDyn(tmp - i);
         }
         this.chunkNum = i;
 
@@ -145,9 +152,9 @@ public class HTTPDownload {
                 break;
             }
         }
-        System.out.println("Disconnect chunk " + slowest);
-
-        this.chunks.interrupt(slowest);
+        System.out.println("Disconnect chunk " + slowest + " remaining: " + slowest.getRemainingChunkBytes() + " " + slowest.getChunkBytes());
+       // slowest.setChunkEnd(slowest.getChunkStart() + slowest.getChunkBytes());
+         this.chunks.interrupt(slowest);
 
         // Wait until Chunk got closed
         while (slowest.isAlive()) {
@@ -155,7 +162,6 @@ public class HTTPDownload {
             Thread.sleep(50);
         }
 
-        slowest.setChunkEnd(slowest.getWritePosition());
         System.out.println("Disconnected");
 
     }
@@ -197,6 +203,7 @@ public class HTTPDownload {
         }
         this.byteCounter = 0l;
         this.download();
+        System.out.println("Close and UNlock file");
         this.closeFileDiscriptors();
         this.clean();
 
@@ -265,9 +272,14 @@ public class HTTPDownload {
         ArrayList<Long[]> missing = getMissingParts();
         if (missing.size() == 0) return;
         int activeChunks = chunks.getAlive().size();
-
+        System.out.println("Active chunks: " + activeChunks);
+        System.out.println("Missing parts: " + missing.size());
+        
+        for(int i=0; i<missing.size();i++){
+            System.out.println("Missing: "+missing.get(i)[0]+"-"+missing.get(i)[1]);
+        }
         int i = 0;
-        while (activeChunks < this.chunkNum && missing.size() > 0) {
+        while (activeChunks < this.chunkNum && missing.size() > i) {
             DownloadChunk newChunk = new DownloadChunk(this, missing.get(i)[0], missing.get(i)[1]);
             System.out.println("New chunk: " + newChunk);
             chunks.add(newChunk);
@@ -281,9 +293,10 @@ public class HTTPDownload {
         ArrayList<Long[]> missing = new ArrayList<Long[]>();
         chunks.sort(new Comparator<Worker>() {
             public int compare(Worker o1, Worker o2) {
-                return new Long(((DownloadChunk) o1.getRunnable()).getChunkStart()).compareTo(((DownloadChunk) o2.getRunnable()).getChunkStart());
+                return new Long(((DownloadChunk) o1.getRunnable()).getChunkStart()).compareTo(new Long(((DownloadChunk) o2.getRunnable()).getChunkStart()));
             }
         });
+
         DownloadChunk lastChunk = (DownloadChunk) chunks.get(0);
         if (lastChunk.getChunkStart() > 0) {
 
@@ -297,14 +310,35 @@ public class HTTPDownload {
             } else if (chunk.getChunkStart() <= lastChunk.getChunkEnd() + 1) {
                 System.err.println("Overlap  Chunks: " + chunk + " - " + lastChunk);
             } else {
-                missing.add(new Long[] { lastChunk.getChunkEnd() + 1, i < (chunks.size() - 1) ? ((DownloadChunk) chunks.get(i + 1)).getChunkStart() - 1 : -1l });
+                Long[] add;
+                missing.add(add = new Long[] { lastChunk.getChunkEnd() + 1, ((DownloadChunk) chunks.get(i)).getChunkStart() - 1 });
+                if (add[0] == 0 && add[1] == -1) {
+                    add[0] = 0l;
+                }
             }
+            lastChunk = chunk;
+            /*
+             * 0 - 4377600
+             * 4377601 - 8755200
+             * 8755201 - 13132800
+             * 13132801 - 17510400
+             * 17510401 - 18034688
+             * 18034689 - 21888000
+             * 21888001 - 22412288
+             * 22412289 - 26265599
+             * 
+             * 
+             */
+        }
+        if (lastChunk.getChunkEnd() != -1 && lastChunk.getChunkEnd() != this.fileSize - 1) {
+            missing.add(new Long[] { lastChunk.getChunkEnd() + 1, -1l });
+
         }
         return missing;
     }
 
     /**
-     * Method creates the initial Chunks
+     * Chunk [17510401 - 17903617] Method creates the initial Chunks
      * 
      * @throws IOException
      * @throws BrowserException
@@ -384,13 +418,11 @@ public class HTTPDownload {
 
         synchronized (outputChannel) {
             buffer.flip();
+            System.out.println(chunk + " - " + "Write " + buffer.limit() + " bytes at " + chunk.getWritePosition() + " total: " + byteCounter + " written until: " + (chunk.getWritePosition() + buffer.limit() - 1));
+
             this.outputRAF.seek(chunk.getWritePosition());
             byteCounter += buffer.limit();
-            // System.out.println(chunk + " - " + "Write " + buffer.limit() +
-            // " bytes at " + chunk.getWritePosition() + " total: " +
-            // byteCounter + " written until: " + (chunk.getWritePosition() +
-            // buffer.limit() - 1));
-
+           
             outputChannel.write(buffer);
             // if (chunk.getID() >= 0) {
             // downloadLink.getChunksProgress()[chunk.getID()] =
