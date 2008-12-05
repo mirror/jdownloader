@@ -34,7 +34,7 @@ public class Account extends Property {
     }
 
     public String getPass() {
-        return pass;
+        return pass.trim();
     }
 
     public String getStatus() {
@@ -43,7 +43,7 @@ public class Account extends Property {
 
     public String getUser() {
 
-        return user;
+        return user.trim();
     }
 
     public boolean isEnabled() {
