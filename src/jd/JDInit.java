@@ -595,7 +595,7 @@ public class JDInit {
         new DecryptPluginWrapper("iload.to", "ILoadTo", "http://iload\\.to/go/\\d+/|http://iload\\.to/view/.*?/");
         new DecryptPluginWrapper("imagefap.com", "ImagefapCom", "http://[\\w\\.]*?imagefap\\.com/(gallery\\.php\\?gid=.+|gallery/.+)");
         new DecryptPluginWrapper("joke-around.org", "JokeAroundOrg", "http://[\\w\\.]*?joke-around\\.org/\\![a-zA-Z0-9]+-[a-zA-Z0-9]+/");
-        new DecryptPluginWrapper("knoffl.com", "KnofflCom", "http://[\\w\\.]*?knoffl\\.com/(u/\\w+|\\d+)");
+        new DecryptPluginWrapper("knoffl.com", "KnofflCom", "http://[\\w\\.]*?knoffl\\.com/(u/[a-zA-Z0-9-]+|[a-zA-Z0-9-]+)");
         new DecryptPluginWrapper("leecher.ws", "LeecherWs", "http://[\\w\\.]*?leecher\\.ws/(folder/.+|out/.+/[0-9]+)");
         new DecryptPluginWrapper("LinkBank.eu", "LinkBankeu", "http://[\\w\\.]*?linkbank\\.eu/show\\.php\\?show=\\d+");
         new DecryptPluginWrapper("linkbase.biz", "LinkbaseBiz", "http://[\\w\\.]*?linkbase\\.biz/\\?v=[a-zA-Z0-9]+");
