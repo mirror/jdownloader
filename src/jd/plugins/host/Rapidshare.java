@@ -699,12 +699,14 @@ public class Rapidshare extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
         Browser br = new Browser();
         br.setAcceptLanguage("en, en-gb;q=0.8");
+        br.forceDebug(true);
         br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
         String cookie = br.getCookie("http://rapidshare.com", "user");
 
         if (cookie == null || account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
 
             String error = findError(br + "");
+            logger.finest("error: "+error);
             if (error != null) {
                 if (error.contains("Fraud")) {
                     ai.setStatus(JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."));
