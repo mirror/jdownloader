@@ -118,7 +118,7 @@ public class JDLocale {
     public static void parseLanguageFile(File file, HashMap<String, String> data, boolean format) {
         data.clear();
 
-        if (!file.exists()) {
+        if (file == null || !file.exists()) {
             System.out.println("JDLocale: " + file + " not found");
             return;
         }

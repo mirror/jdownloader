@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.utils;
 
 import java.util.Date;
@@ -32,7 +48,6 @@ public class Email {
     public void setSender(String email, String name) {
         this.senderEmail = email;
         this.senderName = name;
-
     }
 
     public void sendEmail(String email, String name, String subject, String message) throws MessagingException {
@@ -48,15 +63,14 @@ public class Email {
         }
 
         Message msg = new MimeMessage(session);
-    
-        msg.setFrom( new InternetAddress(senderEmail));
-       
+
+        msg.setFrom(new InternetAddress(senderEmail));
+
         msg.setRecipient(Message.RecipientType.TO, new InternetAddress(email));
         msg.setSentDate(new Date());
         msg.setSubject(subject);
         msg.setContent(message, "text/plain");
         Transport.send(msg);
-
     }
 
     class MailAuthenticator extends Authenticator {

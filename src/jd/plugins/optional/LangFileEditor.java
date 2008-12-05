@@ -58,6 +58,8 @@ import javax.swing.table.AbstractTableModel;
 
 import jd.JDFileFilter;
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.gui.skins.simple.LocationListener;
@@ -67,6 +69,7 @@ import jd.gui.skins.simple.components.ChartAPI_PIE;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
 import jd.nutils.io.JDIO;
+import jd.nutils.svn.Subversion;
 import jd.parser.Regex;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
@@ -78,6 +81,7 @@ import org.jdesktop.swingx.decorator.ColorHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import org.jdesktop.swingx.decorator.HighlightPredicate;
 import org.jdesktop.swingx.decorator.HighlighterFactory;
+import org.tmatesoft.svn.core.SVNException;
 
 /**
  * Editor for jDownloader language files. Gets JDLocale.L() and JDLocale.LF()
@@ -89,13 +93,22 @@ import org.jdesktop.swingx.decorator.HighlighterFactory;
 public class LangFileEditor extends PluginOptional implements MouseListener {
 
     private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
+
     private static final String PROPERTY_COLORIZE_DONE = "PROPERTY_COLORIZE_DONE";
     private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
     private static final String PROPERTY_COLORIZE_OLD = "PROPERTY_COLORIZE_OLD";
     private static final String PROPERTY_DONE_COLOR = "PROPERTY_DONE_COLOR";
     private static final String PROPERTY_MISSING_COLOR = "PROPERTY_MISSING_COLOR";
     private static final String PROPERTY_OLD_COLOR = "PROPERTY_OLD_COLOR";
+
     private static final String PROPERTY_SOURCE = "PROPERTY_SOURCE";
+
+    private static final String PROPERTY_SVN_REPOSITORY = "PROPERTY_SVN_REPOSITORY";
+    private static final String PROPERTY_SVN_ACCESS_ANONYMOUS = "PROPERTY_SVN_CHECKOUT_ANONYMOUS";
+    private static final String PROPERTY_SVN_ACCESS_USER = "PROPERTY_SVN_CHECKOUT_USER";
+    private static final String PROPERTY_SVN_ACCESS_PASS = "PROPERTY_SVN_CHECKOUT_PASS";
+    private static final String PROPERTY_SVN_WORKING_COPY = "PROPERTY_SVN_WORKING_COPY";
+    private static final String PROPERTY_SVN_UPDATE_ON_START = "PROPERTY_SVN_UPDATE_ON_START";
 
     private JFrame frame;
     private JXTable table;
@@ -106,8 +119,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     private ComboBrowseFile cmboSource[], cmboFile;
     private ChartAPI_PIE keyChart;
     private ChartAPI_Entity entDone, entMissing, entOld;
-    private JMenu mnuFile, mnuKey, mnuEntries;
+    private JMenu mnuFile, mnuSVN, mnuKey, mnuEntries;
     private JMenuItem mnuNew, mnuReload, mnuSave, mnuSaveAs, mnuClose;
+    private JMenuItem mnuSVNSettings, mnuSVNCheckOutNow;;
     private JMenuItem mnuAdopt, mnuAdoptMissing, mnuClear, mnuDelete, mnuTranslate, mnuTranslateMissing;
     private JMenuItem mnuPickDoneColor, mnuPickMissingColor, mnuPickOldColor, mnuShowDupes;
     private JCheckBoxMenuItem mnuColorizeDone, mnuColorizeMissing, mnuColorizeOld;
@@ -222,6 +236,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         SimpleGUI.restoreWindow(null, frame);
         frame.setVisible(true);
 
+        if (subConfig.getBooleanProperty(PROPERTY_SVN_UPDATE_ON_START, false)) updateSVN();
+
         sourceFile = cmboSource[cmboSelectSource.getSelectedIndex()].getCurrentPath();
         if (sourceFile != null) getSourceEntries();
         languageFile = cmboFile.getCurrentPath();
@@ -279,6 +295,16 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         mnuNew.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK));
         mnuSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
         mnuReload.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK));
+
+        // SVN Menü
+        mnuSVN = new JMenu(JDLocale.L("plugins.optional.langfileeditor.SVN", "SVN"));
+
+        mnuSVN.add(mnuSVNSettings = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.svn.settings", "SVN Settings")));
+        mnuSVN.addSeparator();
+        mnuSVN.add(mnuSVNCheckOutNow = new JMenuItem(JDLocale.L("plugins.optional.langfileeditor.svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
+
+        mnuSVNSettings.addActionListener(this);
+        mnuSVNCheckOutNow.addActionListener(this);
 
         // Key Menü
         mnuKey = new JMenu(JDLocale.L("plugins.optional.langfileeditor.key", "Key"));
@@ -341,6 +367,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         // Menü-Bar zusammensetzen
         JMenuBar menuBar = new JMenuBar();
         menuBar.add(mnuFile);
+        menuBar.add(mnuSVN);
         menuBar.add(mnuKey);
         menuBar.add(mnuEntries);
 
@@ -636,8 +663,56 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             frame.setVisible(false);
             frame.dispose();
 
+        } else if (e.getSource() == mnuSVNSettings) {
+
+            ConfigEntry ce, conditionEntry;
+            ConfigContainer container = new ConfigContainer(this);
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_REPOSITORY, JDLocale.L("plugins.optional.langfileeditor.svn.repository", "SVN Repository")).setDefaultValue("https://www.syncom.org/svn/jdownloader/trunk/src/"));
+            container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_ACCESS_ANONYMOUS, JDLocale.L("plugins.optional.langfileeditor.svn.access.anonymous", "Anonymous SVN CheckOut")).setDefaultValue(true));
+            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_ACCESS_USER, JDLocale.L("plugins.optional.langfileeditor.svn.access.user", "SVN Username")));
+            ce.setEnabledCondidtion(conditionEntry, "==", false);
+            container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_SVN_ACCESS_PASS, JDLocale.L("plugins.optional.langfileeditor.svn.access.pass", "SVN Password")));
+            ce.setEnabledCondidtion(conditionEntry, "==", false);
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, PROPERTY_SVN_WORKING_COPY, JDLocale.L("plugins.optional.langfileeditor.svn.workingCopy", "SVN Working Copy")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn"));
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
+
+                public void actionPerformed(ActionEvent e) {
+                    updateSVN();
+                }
+
+            }, JDLocale.L("plugins.optional.langfileeditor.svn.checkOut", "CheckOut SVN now (This may take several seconds ...)")));
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_UPDATE_ON_START, JDLocale.L("plugins.optional.langfileeditor.svn.checkOutOnStart", "CheckOut SVN on start")).setDefaultValue(false));
+            SimpleGUI.showConfigDialog(frame, container);
+
+        } else if (e.getSource() == mnuSVNCheckOutNow) {
+
+            updateSVN();
+
         }
 
+    }
+
+    private void updateSVN() {
+        try {
+            Subversion svn;
+            if (subConfig.getBooleanProperty(PROPERTY_SVN_ACCESS_ANONYMOUS, true)) {
+                svn = new Subversion(subConfig.getStringProperty(PROPERTY_SVN_REPOSITORY, "https://www.syncom.org/svn/jdownloader/trunk/src/"));
+            } else {
+                svn = new Subversion(subConfig.getStringProperty(PROPERTY_SVN_REPOSITORY, "https://www.syncom.org/svn/jdownloader/trunk/src/"), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_USER), subConfig.getStringProperty(PROPERTY_SVN_ACCESS_PASS));
+            }
+            String workingCopy = subConfig.getStringProperty(PROPERTY_SVN_WORKING_COPY, JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn");
+            svn.export(new File(workingCopy));
+            if (sourceFile == null || !sourceFile.getAbsolutePath().equals(workingCopy)) {
+                if (JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.svn.change.message", "Change the current source to the checked out SVN Repository?"), JDLocale.L("plugins.optional.langfileeditor.svn.change.title", "Change now?"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                    cmboSource[0].setText(workingCopy);
+                    cmboSelectSource.setSelectedIndex(0);
+                }
+            }
+        } catch (SVNException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(frame, JDLocale.LF("plugins.optional.langfileeditor.svn.error.message", "An error occured while checking the SVN Repository out! Please check the SVN settings!\n%s", e.getMessage()), JDLocale.L("plugins.optional.langfileeditor.svn.error.title", "Error!"), JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private String getLanguageKey() {

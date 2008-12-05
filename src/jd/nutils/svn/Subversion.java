@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.nutils.svn;
 
 import java.io.File;
@@ -19,15 +35,7 @@ import org.tmatesoft.svn.core.io.SVNRepository;
 import org.tmatesoft.svn.core.wc.SVNWCUtil;
 
 public class Subversion {
-    
-    public static void main(String[] args) throws Exception {
 
-        Subversion svn = new Subversion("https://www.syncom.org/svn/jdownloader/trunk/src/");
-
-        System.out.println("Exported to revision " + svn.export(new File("c:/testexport")));
-    }
-
-    
     private SVNRepository repository;
     private SVNURL svnurl;
     private String user;
@@ -35,6 +43,15 @@ public class Subversion {
 
     public Subversion(String url) throws SVNException {
         setupType(url);
+        checkRoot();
+    }
+
+    public Subversion(String url, String user, String pass) throws SVNException {
+        setupType(url);
+        this.user = user;
+        this.pass = pass;
+        ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(user, pass);
+        repository.setAuthenticationManager(authManager);
         checkRoot();
     }
 
@@ -47,7 +64,6 @@ public class Subversion {
             SVNErrorMessage err = SVNErrorMessage.create(SVNErrorCode.UNKNOWN, "Entry at URL ''{0}'' is a file while directory was expected", svnurl);
             throw new SVNException(err);
         }
-
     }
 
     private void setupType(String url) throws SVNException {
@@ -63,21 +79,9 @@ public class Subversion {
             FSRepositoryFactory.setup();
             repository = FSRepositoryFactory.create(svnurl);
         }
-
     }
 
-    public Subversion(String url, String user, String pass) throws SVNException {
-        setupType(url);
-        this.user = user;
-        this.pass = pass;
-        ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(user, pass);
-        repository.setAuthenticationManager(authManager);
-        checkRoot();
-
-    }
-
-
-    private long export(File file) throws SVNException {
+    public long export(File file) throws SVNException {
         JDUtilities.removeDirectoryOrFile(file);
         file.mkdirs();
 
@@ -100,7 +104,6 @@ public class Subversion {
     }
 
     private long latestRevision() throws SVNException {
-
         return repository.getLatestRevision();
     }
 }
