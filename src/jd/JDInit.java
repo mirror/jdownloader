@@ -45,6 +45,7 @@ import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTMLEntities;
 import jd.nutils.JDHash;
+import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 import jd.plugins.BackupLink;
@@ -202,6 +203,16 @@ public class JDInit {
         new Thread(new Runnable() {
             public void run() {
                 if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+                    String os = "unk";
+                    if (OSDetector.isLinux()) {
+                        os = "lin";
+                    } else if (OSDetector.isMac()) {
+                        os = "mac";
+                    } else if (OSDetector.isWindows()) {
+                        os = "win";
+                    }
+                    String tz = System.getProperty("user.timezone");
+                    if (tz == null) tz = "unknown";
                     Browser br = new Browser();
                     br.setConnectTimeout(15000);
                     if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
@@ -212,7 +223,7 @@ public class JDInit {
                             } else {
                                 prev = prev.replaceAll(",|\\.", "");
                             }
-                            br.postPage("http://service.jdownloader.net/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev);
+                            br.postPage("http://service.jdownloader.net/tools/s.php", "v=" + JDUtilities.getRevision().replaceAll(",|\\.", "") + "&p=" + prev + "&os=" + os + "&tz=" + Encoding.urlEncode(tz));
                             JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_VERSION, JDUtilities.getRevision());
                             JDUtilities.getConfiguration().save();
                         } catch (Exception e) {
