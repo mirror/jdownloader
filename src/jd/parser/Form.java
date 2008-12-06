@@ -401,7 +401,7 @@ public class Form {
             }
             stbuffer.append(entry.getKey());
             stbuffer.append("=");
-            stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
+            stbuffer.append(entry.getValue().getValue());
         }
         return stbuffer.toString();
 
@@ -549,7 +549,7 @@ public class Form {
                                * (siehe Liveheader im Firefox)
                                */
                 InputField field = vars.get(key);
-                ret.put(key, Encoding.urlEncode(field.getValue()));
+                ret.put(key, field.getValue());
             }
 
         }

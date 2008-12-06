@@ -31,10 +31,13 @@ public class Account extends Property {
     public Account(String user, String pass) {
         this.user = user;
         this.pass = pass;
+        if (this.user != null) this.user = this.user.trim();
+        if (this.pass != null) this.user = this.pass.trim();
     }
 
     public String getPass() {
-        return pass.trim();
+        if (pass != null) return pass.trim();
+        return null;
     }
 
     public String getStatus() {
@@ -42,8 +45,8 @@ public class Account extends Property {
     }
 
     public String getUser() {
-
-        return user.trim();
+        if (user != null) return user.trim();
+        return null;
     }
 
     public boolean isEnabled() {
@@ -60,6 +63,7 @@ public class Account extends Property {
 
     public void setPass(String pass) {
         this.pass = pass;
+        if (this.pass != null) this.user = this.pass.trim();
     }
 
     public void setStatus(String status) {
@@ -72,5 +76,6 @@ public class Account extends Property {
 
     public void setUser(String user) {
         this.user = user;
+        if (this.user != null) this.user = this.user.trim();
     }
 }

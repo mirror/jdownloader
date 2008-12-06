@@ -18,7 +18,6 @@ package jd.http;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.regex.Matcher;
@@ -87,55 +86,54 @@ public class Encoding {
         r.appendTail(sb);
         str = sb.toString();
 
-        sb = new StringBuffer();
-        pattern = "(\\%[a-f0-9A-F]{2})";
-        r = Pattern.compile(pattern, Pattern.DOTALL).matcher(str);
-        while (r.find()) {
-            if (r.group(1).length() > 0) {
-                char c = (char) Integer.parseInt(r.group(1).replaceFirst("\\%", ""), 16);
-                if (c == '$' || c == '\\') {
-                    r.appendReplacement(sb, "\\" + c);
-                } else {
-                    r.appendReplacement(sb, "" + c);
-                }
-            }
-        }
-        r.appendTail(sb);
-        str = sb.toString();
-
         try {
             str = URLDecoder.decode(str, "UTF-8");
         } catch (Exception e) {
+            e.printStackTrace();
         }
         return HTMLEntities.unhtmlentities(str);
     }
 
     public static String urlEncode(String str) {
-        boolean ishttpurl = false;
         if (str == null) return null;
         try {
-            new URL(str);
-            ishttpurl = true;
-        } catch (Exception e) {
-        }
-        String urlcoded = null;
-        try {
-            urlcoded = URLEncoder.encode(str, "UTF-8");
+            return URLEncoder.encode(str, "UTF-8");
         } catch (Exception e) {
             e.printStackTrace();
-            urlcoded = str;
+            return str;
         }
-        if (ishttpurl) {
-            urlcoded = urlcoded.replaceAll("%2F", "/");
-            urlcoded = urlcoded.replaceAll("%3A", ":");
-            urlcoded = urlcoded.replaceAll("\\+", "%20");
-            urlcoded = urlcoded.replaceAll("%3F", "?");
-            urlcoded = urlcoded.replaceAll("%3D", "=");
-            urlcoded = urlcoded.replaceAll("%26", "&");
-            urlcoded = urlcoded.replaceAll("%23", "#");
-        }
+    }
 
-        return urlcoded;
+    public static String urlEncode_light(String url) {
+        if (url == null) return null;
+        StringBuffer sb = new StringBuffer();
+        for (int i = 0; i < url.length(); i++) {
+            char ch = url.charAt(i);
+            if (ch >= 33 && ch <= 38) {
+                sb.append(ch);
+                continue;
+            } else if (ch >= 40 && ch <= 59) {
+                sb.append(ch);
+                continue;
+            } else if (ch == 61) {
+                sb.append(ch);
+                continue;
+            } else if (ch >= 63 && ch <= 95) {
+                sb.append(ch);
+                continue;
+            } else if (ch >= 97 && ch <= 126) {
+                sb.append(ch);
+                continue;
+            } else {
+                try {
+                    sb.append(URLEncoder.encode(String.valueOf(ch), "UTF-8"));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return url;
+                }
+            }
+        }
+        return sb.toString();
     }
 
     public static String urlDecode(String urlcoded, boolean isUrl) {
@@ -152,6 +150,7 @@ public class Encoding {
             try {
                 urlcoded = URLDecoder.decode(urlcoded, "UTF-8");
             } catch (Exception e) {
+                e.printStackTrace();
             }
         }
         return urlcoded;

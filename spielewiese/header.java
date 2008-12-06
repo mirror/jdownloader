@@ -103,13 +103,23 @@ public class header {
                 System.out.println(Plugin.getFileNameFromDispositionHeader(kk));
             }
         }
+        String k = "Test : ö & üä ! \" § $ & / ( ) = ? ~ ^ ° ¬æ " + Encoding.urlEncode("%");
+        System.out.println(k);
+        System.out.println((k = Encoding.urlEncode_light(k)));
+        System.out.println((k = Encoding.urlEncode_light(k)));
+        System.out.println(Encoding.urlDecode(k, false));
 
-        
-        
-//        
-//        System.out.println(Encoding.urlEncode("http://srv2.shragle.com/dl/free/UjdV0050/Der KÃ¶nig der LÃ¶wen.part1.rar?v=1"));
-//        System.out.println(Encoding.urlEncode("http://srv2.shragle.com/dl/free/BGFQ4357/Der König der Löwen.part1.rar"));
-//        System.out.println(new String(Plugin.extractFileNameFromURL("http://free.srv2.shragle.com/BGFQ4357/Der%20K%c3%b6nig%20der%20L%c3%b6wen.part1.rar").getBytes("ISO-8859-1"), "UTF-8"));
-//        System.out.println(Encoding.urlEncode("die ist ein test und / hallöle"));
+        //        
+        // System.out.println(Encoding.urlEncode(
+        // "http://srv2.shragle.com/dl/free/UjdV0050/Der KÃ¶nig der LÃ¶wen.part1.rar?v=1"
+        // ));
+        // System.out.println(Encoding.urlEncode(
+        // "http://srv2.shragle.com/dl/free/BGFQ4357/Der König der Löwen.part1.rar"
+        // ));
+        // System.out.println(new String(Plugin.extractFileNameFromURL(
+        // "http://free.srv2.shragle.com/BGFQ4357/Der%20K%c3%b6nig%20der%20L%c3%b6wen.part1.rar"
+        // ).getBytes("ISO-8859-1"), "UTF-8"));
+        //System.out.println(Encoding.urlEncode("die ist ein test und / hallöle"
+        // ));
     }
 }

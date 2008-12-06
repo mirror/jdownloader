@@ -98,7 +98,7 @@ public abstract class Request {
 
     public Request(String url) throws MalformedURLException {
 
-        this.url = new URL(Encoding.urlEncode(url));
+        this.url = new URL(Encoding.urlEncode_light(url));
 
         readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
 
@@ -358,7 +358,7 @@ public abstract class Request {
             }
             red = "http://" + this.getHttpConnection().getURL().getHost() + (red.charAt(0) == '/' ? red : path + "/" + red);
         }
-        return Encoding.urlEncode(red);
+        return Encoding.urlEncode_light(red);
 
     }
 

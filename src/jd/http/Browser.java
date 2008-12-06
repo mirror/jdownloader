@@ -322,7 +322,7 @@ public class Browser {
                     }
                     stbuffer.append(entry.getKey());
                     stbuffer.append("=");
-                    stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
+                    stbuffer.append(entry.getValue().getValue());
                 }
             }
             String varString = stbuffer.toString();
@@ -363,7 +363,7 @@ public class Browser {
                     }
                     stbuffer.append(entry.getKey());
                     stbuffer.append("=");
-                    stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
+                    stbuffer.append(entry.getValue().getValue());
                 }
             }
             String varString = stbuffer.toString();
@@ -512,7 +512,7 @@ public class Browser {
             // path.substring(path.lastIndexOf("/"))
             string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/" + string;
         }
-        return Encoding.urlEncode(string);
+        return Encoding.urlEncode_light(string);
     }
 
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) throws IOException {
@@ -861,7 +861,7 @@ public class Browser {
                     }
                     stbuffer.append(entry.getKey());
                     stbuffer.append("=");
-                    stbuffer.append(Encoding.urlEncode(entry.getValue().getValue()));
+                    stbuffer.append(entry.getValue().getValue());
                 }
             }
             String varString = stbuffer.toString();
@@ -897,7 +897,7 @@ public class Browser {
             up.connect();
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
                 if (entry.getValue().getValue() != null) {
-                    up.sendVariable(entry.getKey(), Encoding.urlEncode(entry.getValue().getValue()));
+                    up.sendVariable(entry.getKey(), entry.getValue().getValue());
                 }
             }
             up.setForm("filecontent");
@@ -1018,9 +1018,7 @@ public class Browser {
     }
 
     public static void downloadBinary(String filepath, String fileurl) throws IOException {
-
-        fileurl = fileurl.replaceAll(" ", "%20");
-        fileurl = Encoding.urlEncode(fileurl.replaceAll("\\\\", "/"));
+        fileurl = Encoding.urlEncode_light(fileurl.replaceAll("\\\\", "/"));
         File file = new File(filepath);
         if (file.isFile()) {
             if (!file.delete()) {
