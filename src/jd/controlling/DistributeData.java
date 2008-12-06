@@ -103,13 +103,23 @@ public class DistributeData extends ControlBroadcaster {
         for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
         }
-
-        data = data.replaceAll("http://", "httpviajd://");
-
         for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
             if (pHost.usePlugin() && pHost.canHandle(data)) return true;
         }
-
+        data = Encoding.urlDecode(data, true);
+        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
+        }
+        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+            if (pHost.usePlugin() && pHost.canHandle(data)) return true;
+        }
+        data = data.replaceAll("http://", "httpviajd://");
+        for (DecryptPluginWrapper pDecrypt : DecryptPluginWrapper.getDecryptWrapper()) {
+            if (pDecrypt.usePlugin() && pDecrypt.canHandle(data)) return true;
+        }
+        for (HostPluginWrapper pHost : JDUtilities.getPluginsForHost()) {
+            if (pHost.usePlugin() && pHost.canHandle(data)) return true;
+        }
         return false;
     }
 

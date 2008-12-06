@@ -55,12 +55,14 @@ public class Rlslog extends PluginForDecrypt {
                 }
             }
         } else {
-            String comment_pages_tag = br.getRegex(Pattern.compile("<!-- Comment page numbers -->(.*?)<!-- End comment page numbers -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            String comment_pages[] = new Regex(comment_pages_tag, "<a class=\"next-comment-page\" href=\"(.*?)\"").getColumn(0);
             Vector<String> pages = new Vector<String>();
             pages.add(param.toString());
-            for (String page : comment_pages) {
-                pages.add(page);
+            String comment_pages_tag = br.getRegex(Pattern.compile("<!-- Comment page numbers -->(.*?)<!-- End comment page numbers -->", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            if (comment_pages_tag != null) {
+                String comment_pages[] = new Regex(comment_pages_tag, "<a class=\"next-comment-page\" href=\"(.*?)\"").getColumn(0);
+                for (String page : comment_pages) {
+                    pages.add(page);
+                }
             }
             for (String page : pages) {
                 br.getPage(page);

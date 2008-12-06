@@ -108,7 +108,7 @@ public class header {
         System.out.println((k = Encoding.urlEncode_light(k)));
         System.out.println((k = Encoding.urlEncode_light(k)));
         System.out.println(Encoding.urlDecode(k, false));
-
+        System.out.println(Long.parseLong(null));
         //        
         // System.out.println(Encoding.urlEncode(
         // "http://srv2.shragle.com/dl/free/UjdV0050/Der KÃ¶nig der LÃ¶wen.part1.rar?v=1"
