@@ -32,7 +32,7 @@ public class Account extends Property {
         this.user = user;
         this.pass = pass;
         if (this.user != null) this.user = this.user.trim();
-        if (this.pass != null) this.user = this.pass.trim();
+        if (this.pass != null) this.pass = this.pass.trim();
     }
 
     public String getPass() {
@@ -63,7 +63,7 @@ public class Account extends Property {
 
     public void setPass(String pass) {
         this.pass = pass;
-        if (this.pass != null) this.user = this.pass.trim();
+        if (this.pass != null) this.pass = this.pass.trim();
     }
 
     public void setStatus(String status) {
