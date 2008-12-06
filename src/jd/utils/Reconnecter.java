@@ -21,6 +21,8 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
+import jd.router.RouterInfoCollector;
+
 import jd.config.Configuration;
 import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
@@ -132,10 +134,8 @@ public class Reconnecter {
 
         if (ipChangeSuccess) {
             Reconnecter.resetAllLinks();
-
-        }
-        if (ipChangeSuccess) {
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
+            RouterInfoCollector.showDialog();
         }
         IS_RECONNECTING = false;
         lastIPUpdate = System.currentTimeMillis();

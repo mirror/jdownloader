@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
@@ -38,7 +37,6 @@ import jd.utils.JDUtilities;
 
 public class RouterInfoCollector {
     public final static String PROPERTY_SHOW_ROUTERINFO_DIALOG = "PROPERTY_SHOW_ROUTERINFO_DIALOG";
-    protected boolean haveSip = false;
     public final static String RECONNECTTYPE_LIVE_HEADER = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
     public final static String RECONNECTTYPE_CLR = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
     protected String reconnectType = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
@@ -118,7 +116,6 @@ public class RouterInfoCollector {
                 routerMethodeNames = rmn.toArray(new String[rmn.size()]);
             }
         }
-        haveSip = GetRouterInfo.checkport(IP, 5060);
 
     }
 
@@ -159,7 +156,6 @@ public class RouterInfoCollector {
         if (routerErrorPage != null) ret.put("RouterErrorPage", routerErrorPage);
         if (isLiveheader()) ret.put("ReconnectMethode", reconnectMethode);
         if (isClr()) ret.put("ReconnectMethodeClr", reconnectMethodeClr);
-        if (haveSip) ret.put("HaveSip", "true");
         if (urlencode) {
             for (Entry<String, String> ent : ret.entrySet()) {
                 ent.setValue(URLEncoder.encode(ent.getValue()));
@@ -204,7 +200,6 @@ public class RouterInfoCollector {
         if (routerMAC.substring(0, 8).equalsIgnoreCase(routerInfo.routerMAC.substring(0, 8))) ret += 40;
         if (routerSite.equalsIgnoreCase(routerInfo.routerSite)) ret += 25;
         if (routerErrorPage.equalsIgnoreCase(routerInfo.routerErrorPage)) ret += 25;
-        if (haveSip == routerInfo.haveSip) ret += 10;
         return ret;
     }
 
@@ -225,7 +220,7 @@ public class RouterInfoCollector {
                     RouterInfoCollector ric = new RouterInfoCollector();
                     String xml = ric.toString();
                     if (xml != null && ric.isValidReconnect()) {
-                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("routerinfocollector.dialog.title", "Helfen sie die Routererkennung zu verbessern"), 30, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO | CountdownConfirmDialog.STYLE_DETAILLABLE, JDLocale.L("routerinfocollector.dialog.msg", "<b>Um die automatische Routererkennung zu verbessern sammeln wir Routerinformationen!</b><br>Wenn sie damit einverstanden sind die Informationen aus den Details an unseren Server zu übermitteln bestätigen sie mit ja!"), xml);
+                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("routerinfocollector.dialog.title", "Helfen sie die Routererkennung zu verbessern"), 30, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO , JDLocale.L("routerinfocollector.dialog.msg", "<b>Um die automatische Routererkennung zu verbessern sammeln wir Routerinformationen!</b><br>Wenn sie damit einverstanden sind die ihre Routerinformationen an unseren Server zu übermitteln bestätigen sie mit ja!"));
 
                         if (!ccd.window_Closed) JDUtilities.getConfiguration().setProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
                         if (ccd.result) ric.sendToServer();
@@ -246,10 +241,8 @@ public class RouterInfoCollector {
 
         Browser br = new Browser();
         try {
-            br.setAuth("http://jdownloader.org/router/import.php", "jd", "jdroutercollector");
-            String out = br.postPage("http://jdownloader.org/router/import.php", getHashMap(true));
-            // System.out.println(br);
-            if (out == null || !out.equals("No htmlCode read")) JDUtilities.getLogger().severe(out);
+//            br.setAuth("http://loaclhost/router/import.php", "jd", "jdroutercollector");
+            String out = br.postPage("http://service.jdownloader.net/routerdb/import.php", getHashMap(true));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -257,12 +250,6 @@ public class RouterInfoCollector {
 
     public static void main(String[] args) {
         new JDInit().loadConfiguration();
-        RouterInfoCollector ric = new RouterInfoCollector();
-        System.out.println(ric.IP);
-        String xml = ric.toString();
-        System.out.println(xml);
-
-        // System.out.println(rc.compare(rc));
-        System.exit(0);
+        showDialog();
     }
 }
