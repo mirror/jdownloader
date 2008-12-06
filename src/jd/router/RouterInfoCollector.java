@@ -246,7 +246,7 @@ public class RouterInfoCollector {
         Browser br = new Browser();
         try {
 //            br.setAuth("http://loaclhost/router/import.php", "jd", "jdroutercollector");
-            String out = br.postPage("http://service.jdownloader.net/routerdb/import.php", getHashMap(true));
+            br.postPage("http://service.jdownloader.net/routerdb/import.php", getHashMap(true));
         } catch (IOException e) {
             e.printStackTrace();
         }
