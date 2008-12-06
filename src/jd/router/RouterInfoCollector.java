@@ -222,7 +222,11 @@ public class RouterInfoCollector {
                     if (xml != null && ric.isValidReconnect()) {
                         CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("routerinfocollector.dialog.title", "Helfen sie die Routererkennung zu verbessern"), 30, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO , JDLocale.L("routerinfocollector.dialog.msg", "<b>Um die automatische Routererkennung zu verbessern sammeln wir Routerinformationen!</b><br>Wenn sie damit einverstanden sind die ihre Routerinformationen an unseren Server zu übermitteln bestätigen sie mit ja!"));
 
-                        if (!ccd.window_Closed) JDUtilities.getConfiguration().setProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
+                        if (!ccd.window_Closed) 
+                            {
+                            JDUtilities.getConfiguration().setProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
+                            JDUtilities.getConfiguration().save();
+                            }
                         if (ccd.result) ric.sendToServer();
                     }
 
