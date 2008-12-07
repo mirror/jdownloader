@@ -420,13 +420,14 @@ public class UTILITIES {
             f = new BufferedReader(new InputStreamReader(is));
 
             String line;
-            String ret = "";
+            StringBuilder ret = new StringBuilder();
 
             while ((line = f.readLine()) != null) {
-                ret += line + "\r\n";
+                ret.append(line);
+                ret.append(new char[] {'\r', '\n'});
             }
             f.close();
-            return ret;
+            return ret.toString();
         } catch (IOException e) {
 
             e.printStackTrace();
@@ -453,12 +454,13 @@ public class UTILITIES {
      * @return Pfad als String
      */
     public static String getFullPath(String[] entries) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (int i = 0; i < entries.length - 1; i++) {
-            ret += entries[i] + FS;
+            ret.append(entries[i]);
+            ret.append(FS);
         }
-        ret += entries[entries.length - 1];
-        return ret;
+        ret.append(entries[entries.length - 1]);
+        return ret.toString();
     }
 
     /**
@@ -511,13 +513,14 @@ public class UTILITIES {
             f = new BufferedReader(new FileReader(file));
 
             String line;
-            String ret = "";
+            StringBuilder ret = new StringBuilder();
 
             while ((line = f.readLine()) != null) {
-                ret += line + "\r\n";
+                ret.append(line);
+                ret.append(new char[] {'\r','\n'});
             }
             f.close();
-            return ret;
+            return ret.toString();
         } catch (IOException e) {
 
             e.printStackTrace();
@@ -547,17 +550,17 @@ public class UTILITIES {
 
             }
             byte[] digest = md.digest();
-            String ret = "";
+            StringBuilder ret = new StringBuilder();
 
             for (byte element : digest) {
                 String tmp = Integer.toHexString(element & 0xFF);
                 if (tmp.length() < 2) {
                     tmp = "0" + tmp;
                 }
-                ret += tmp;
+                ret.append(tmp);
             }
             in.close();
-            return ret;
+            return ret.toString();
 
         } catch (Exception e) {
 
@@ -637,11 +640,11 @@ public class UTILITIES {
             URLConnection con = UTILITIES.getConnection(urlStr);
             BufferedReader input = new BufferedReader(new InputStreamReader(con.getInputStream()));
             Scanner r = new Scanner(input).useDelimiter("\\Z");
-            String ret = "";
+            StringBuilder ret = new StringBuilder();
             while (r.hasNext()) {
-                ret += r.next();
+                ret.append(r.next());
             }
-            return ret;
+            return ret.toString();
         } catch (FileNotFoundException e) {
             UTILITIES.getLogger().severe(urlStr + " nicht gefunden");
             // DEBUG.error(e);
@@ -670,23 +673,22 @@ public class UTILITIES {
     public static String getPattern(String str) {
 
         String allowed = "QWERTZUIOPÜASDFGHJKLÖÄYXCVBNMqwertzuiopasdfghjklyxcvbnm 1234567890";
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         int i;
         for (i = 0; i < str.length(); i++) {
             char letter = str.charAt(i);
             // 176 == °
             if (letter == 176) {
-                ret += "(.*?)";
+                ret.append("(.*?)");
             } else if (allowed.indexOf(letter) == -1) {
-
-                ret += "\\" + letter;
+                ret.append('\\');
+                ret.append(letter);
             } else {
-
-                ret += letter;
+                ret.append(letter);
             }
         }
 
-        return ret;
+        return ret.toString();
     }
 
     public static int getPercent(int a, int b) {
@@ -1209,7 +1211,7 @@ public class UTILITIES {
      * @return Rückgabestring
      */
     public static String runCommandWaitAndReturn(String command) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         try {
             Runtime rt = Runtime.getRuntime();
             Process pr = rt.exec(command);
@@ -1218,14 +1220,14 @@ public class UTILITIES {
             String line;
 
             while ((line = br.readLine()) != null) {
-                ret += line;
+                ret.append(line);
 
             }
         } catch (IOException e) {
 
             e.printStackTrace();
         }
-        return ret;
+        return ret.toString();
     }
 
     /**
@@ -1357,18 +1359,19 @@ public class UTILITIES {
             str = URLDecoder.decode(str, "UTF-8");
 
             String allowed = "1234567890QWERTZUIOPASDFGHJKLYXCVBNMqwertzuiopasdfghjklyxcvbnm-_.?/:";
-            String ret = "";
+            StringBuilder ret = new StringBuilder();
             int i;
             for (i = 0; i < str.length(); i++) {
                 char letter = str.charAt(i);
                 if (allowed.indexOf(letter) >= 0) {
-                    ret += letter;
+                    ret.append(letter);
                 } else {
-                    ret += "%" + Integer.toString(letter, 16);
+                    ret.append('%');
+                    ret.append(Integer.toString(letter, 16));
                 }
             }
 
-            return ret;
+            return ret.toString();
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }

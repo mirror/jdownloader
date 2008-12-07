@@ -36,16 +36,20 @@ public final class JavaScript {
 
         Context cx = Context.enter();
         Scriptable scope = cx.initStandardObjects();
-        String parameter = "";
+        StringBuilder parameter = new StringBuilder();
         if (parameters != null) {
             if (parameters.length > 0) {
-                parameter = "'" + parameters[0] + "'";
+                parameter.append('\'');
+                parameter.append(parameters[0]);
+                parameter.append('\'');
                 for (int i = 1; i < parameters.length; i++) {
-                    parameter += ", '" + parameters[i] + "'";
+                    parameter.append(new char[] {',',' ', '\''});
+                    parameter.append(parameters[i]);
+                    parameter.append('\'');
                 }
             }
         }
-        String fun = "function f(){ " + javaScript + "\nreturn " + functionName + "(" + parameter + ")} f()";
+        String fun = "function f(){ " + javaScript + "\nreturn " + functionName + "(" + parameter.toString() + ")} f()";
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
         String ret = Context.toString(result);
         Context.exit();

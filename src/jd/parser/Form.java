@@ -28,7 +28,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
-import jd.http.Encoding;
 import jd.utils.JDUtilities;
 
 public class Form {
@@ -358,31 +357,41 @@ public class Form {
     }
 
     public String toString() {
-        String ret = "";
-        ret += "Action: " + action + "\n";
+        StringBuilder ret = new StringBuilder();
+        ret.append("Action: ");
+        ret.append(action);
+        ret.append('\n');
         if (method == METHOD_POST) {
-            ret += "Method: POST\n";
+            ret.append("Method: POST\n");
         } else if (method == METHOD_GET) {
-            ret += "Method: GET\n";
+            ret.append("Method: GET\n");
         } else if (method == METHOD_PUT) {
-            ret += "Method: PUT is not supported\n";
+            ret.append("Method: PUT is not supported\n");
         } else if (method == METHOD_FILEPOST) {
-            ret += "Method: FILEPOST\n";
-            ret += "filetoPostName:" + getFiletoPostName() + "\n";
+            ret.append("Method: FILEPOST\n");
+            ret.append("filetoPostName:");
+            ret.append(getFiletoPostName());
+            ret.append('\n');
             if (getFileToPost() == null) {
-                ret += "Warning: you have to set the fileToPost\n";
+                ret.append("Warning: you have to set the fileToPost\n");
             }
         } else if (method == METHOD_UNKNOWN) {
-            ret += "Method: Unknown\n";
+            ret.append("Method: Unknown\n");
         }
         for (Map.Entry<String, InputField> entry : vars.entrySet()) {
-            ret += "var: " + entry.getValue() + "\n";
+            ret.append("var: ");
+            ret.append(entry.getValue());
+            ret.append('\n');
         }
         for (Map.Entry<String, String> entry : formProperties.entrySet()) {
-            ret += "formProperty: " + entry.getKey() + "=" + entry.getValue() + "\n";
+            ret.append("formProperty: ");
+            ret.append(entry.getKey());
+            ret.append('=');
+            ret.append(entry.getValue());
+            ret.append('\n');
         }
 
-        return ret;
+        return ret.toString();
     }
 
     /**

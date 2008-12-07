@@ -214,15 +214,21 @@ public class Regex {
 
     @Override
     public String toString() {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         String[][] match = getMatches();
         for (int i = 0; i < match.length; i++) {
             for (int j = 0; j < match[i].length; j++) {
-                ret += "match[" + i + "][" + j + "] = " + match[i][j] + System.getProperty("line.separator");
+                ret.append("match[");
+                ret.append(i);
+                ret.append("][");
+                ret.append(j);
+                ret.append("] = ");
+                ret.append(match[i][j]);
+                ret.append(System.getProperty("line.separator"));
             }
         }
         matcher.reset();
-        return ret;
+        return ret.toString();
     }
 
     public static long getMilliSeconds(String wait) {
