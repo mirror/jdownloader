@@ -41,6 +41,7 @@ public class Wordpress extends PluginForDecrypt {
         defaultPasswords.add(new String[] { "hd-area.org", "hd-area.org" });
         defaultPasswords.add(new String[] { "movie-blog.org", "movie-blog.org", "movie-blog.dl.am" });
         defaultPasswords.add(new String[] { "xxx-blog.org", "xxx-blog.org", "xxx-blog.dl.am" });
+        defaultPasswords.add(new String[] { "zeitungsjunge.info", "www.zeitungsjunge.info" });
     }
 
     @Override
@@ -54,8 +55,8 @@ public class Wordpress extends PluginForDecrypt {
         Vector<String> link_passwds = new Vector<String>();
         for (String[] passwords : defaultPasswords) {
             if (br.getHost().toLowerCase().contains(passwords[0])) {
-                for (String password : passwords) {
-                    link_passwds.add(password);
+                for (int i = 0; i < passwords.length; i++) {
+                    if (i != 0) link_passwds.add(passwords[i]);
                 }
                 break;
             }
