@@ -150,7 +150,7 @@ public class HTMLParser {
      */
     public static String[] getHttpLinks(String data, String url) {
         data = data.trim();
-        String protocolPattern = "(h.{2,3}|https|ccf|dlc|ftp)";
+        String protocolPattern = "(h.{2,3}|httpviajd|https|ccf|dlc|ftp)";
         if (!data.matches(".*<.*>.*")) {
             int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
             if (c == 0)
@@ -158,7 +158,7 @@ public class HTMLParser {
             else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
                 String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
                 try {
-                    if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
+                    if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceFirst("^httpviajd", "").replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
