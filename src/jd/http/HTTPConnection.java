@@ -267,17 +267,23 @@ public class HTTPConnection {
         sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
-            String value = "";
+            StringBuilder value = new StringBuilder();
             for (String v : next.getValue()) {
-                value += ";" + v;
+                value.append(';');
+                value.append(v);
             }
-            if (value.length() > 0) value = value.substring(1);
-            sb.append(next.getKey() + ": " + value + "\r\n");
+            String v=value.toString();
+            if (v.length() > 0) v = v.substring(1);
+            sb.append(next.getKey());
+            sb.append(new char[] {':', ' '});
+            sb.append(v);
+            sb.append(new char[] {'\r', '\n'});
         }
-        sb.append("\r\n");
+        sb.append(new char[] {'\r', '\n'});
 
         if (this.postData != null) {
-            sb.append(this.postData + "\r\n");
+            sb.append(this.postData);
+            sb.append(new char[] {'\r', '\n'});
         }
         sb.append("----------------Response------------------\r\n");
 
@@ -286,13 +292,17 @@ public class HTTPConnection {
             // Achtung cookie reihenfolge ist wichtig!!!
             for (int i = next.getValue().size() - 1; i >= 0; i--) {
                 if (next.getKey() == null) {
-                    sb.append(next.getValue().get(i) + "\r\n");
+                    sb.append(next.getValue().get(i));
+                    sb.append(new char[] {'\r', '\n'});
                 } else {
-                    sb.append(next.getKey() + ": " + next.getValue().get(i) + "\r\n");
+                    sb.append(next.getKey());
+                    sb.append(new char[] {':', ' '});
+                    sb.append(next.getValue().get(i));
+                    sb.append(new char[] {'\r', '\n'});
                 }
             }
         }
-        sb.append("\r\n");
+        sb.append(new char[] {'\r', '\n'});
 
         return sb.toString();
 
