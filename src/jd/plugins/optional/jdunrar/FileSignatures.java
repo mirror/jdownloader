@@ -47,14 +47,16 @@ public class FileSignatures {
      */
     public static String readFileSignature(File f) throws IOException {
         FileInputStream reader = new FileInputStream(f);
-        String sig = "";
+        StringBuilder sig = new StringBuilder();
         for (int i = 0; i < 10; i++) {
             int h = reader.read();
             String s = Integer.toHexString(h);
-            sig += (s.length() < 2 ? "0" + s : s);
+            if(s.length() < 2)
+                sig.append('0');
+            sig.append(s);
         }
         reader.close();
-        return sig;
+        return sig.toString();
     }
 
     private static final Signature SIG_TXT = new Signature("TXTfile", null, "Plaintext", ".*\\.(txt|doc|nfo|html|htm|xml)");

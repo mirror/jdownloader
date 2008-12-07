@@ -51,19 +51,20 @@ public class HTTP {
      * @return cookiestring
      */
     public static String getCookieString(HTTPConnection con) {
-        String cookie = "";
+        StringBuilder cookie = new StringBuilder();
         try {
             List<String> list = con.getHeaderFields().get("Set-Cookie");
             ListIterator<String> iter = list.listIterator(list.size());
             boolean last = false;
             while (iter.hasPrevious()) {
-                cookie += (last ? "; " : "") + iter.previous().replaceFirst("; expires=.*", "");
+                if(last)cookie.append(new char[] {';', ' '});
+                cookie.append(iter.previous().replaceFirst("; expires=.*", ""));
                 last = true;
             }
         } catch (Exception e) {
             // TODO: handle exception
         }
-        return cookie;
+        return cookie.toString();
     }
 
     public static int getReadTimeoutFromConfiguration() {

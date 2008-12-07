@@ -369,20 +369,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         return true;
     }
 
-    private String escapePassword(String password) {
-        if (password == null) return password;
-        String retpw = "";
-        for (int i = 0; i < password.length(); i++) {
-            char cur = password.charAt(i);
-            if (cur == '"') {
-                retpw += '\"';
-            } else {
-                retpw += (char) cur;
-            }
-        }
-        return retpw;
-
-    }
 
     private void crackPassword() {
         ArchivFile smallestFile = null;
@@ -440,7 +426,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             for (String pass : this.passwordList) {
                 crackProgress = ((c++) * 100) / passwordList.length;
                 fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-                pass = escapePassword(pass);
                 Executer exec = new Executer(unrarCommand);
                 exec.setCodepage(JDUnrar.CODEPAGE);
                 exec.setDebug(DEBUG);
@@ -530,7 +515,8 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 if (new Regex(res, "(CRC failed|Total errors: )").matches() || res.contains("the file header is corrupt")) {
                     continue;
                 }
-                String sig = "";
+
+                StringBuilder sigger = new StringBuilder();
                 DynByteBuffer buff = exec.getInputStreamBuffer();
                 buff.flip();
                 for (int i = 0; i < buff.limit(); i++) {
@@ -538,9 +524,9 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     String s = Integer.toHexString((int) f);
                     s = (s.length() < 2 ? "0" + s : s);
                     s = s.substring(s.length() - 2);
-                    sig += s;
+                    sigger.append(s);
                 }
-
+                String sig = sigger.toString();
                 JDUtilities.getLogger().finest(exec.getInputStreamBuffer() + " : " + sig);
                 if (sig.trim().length() < 8) continue;
                 Signature signature = FileSignatures.getSignature(sig);

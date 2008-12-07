@@ -501,17 +501,20 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public String getSourcePluginPassword() {
         if (sourcePluginPasswords.size() == 0) { return null; }
         if (sourcePluginPasswords.size() == 1) { return sourcePluginPasswords.get(0); }
-        String ret = "{";
+        StringBuilder ret = new StringBuilder();
+        ret.append('{');
         for (int i = 0; i < sourcePluginPasswords.size(); i++) {
             if (sourcePluginPasswords.get(i).trim().length() > 0) {
-                ret += "\"" + sourcePluginPasswords.get(i) + "\"";
+                ret.append('"');
+                ret.append(sourcePluginPasswords.get(i));
+                ret.append('"');
                 if (i < sourcePluginPasswords.size() - 1) {
-                    ret += ", ";
+                    ret.append(new char[] { ',', ' ' });
                 }
             }
         }
-        ret += "}";
-        return ret;
+        ret.append('}');
+        return ret.toString();
     }
 
     public Vector<String> getSourcePluginPasswords() {
