@@ -590,18 +590,17 @@ public class Letter extends PixelGrid {
      */
     public String getPixelString() {
 
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-                ret += getPixelValue(x, y) / getMaxPixelValue() + "";
+                ret.append(getPixelValue(x, y) / getMaxPixelValue());
+
 
             }
-
-            ret += "|";
+            ret.append('|');
         }
-        ret = ret.substring(0, ret.length() - 1);
-        return ret;
+        return ret.toString().substring(0, ret.length() - 1);
     }
 
     /**

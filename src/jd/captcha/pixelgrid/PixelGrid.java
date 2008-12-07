@@ -1307,18 +1307,20 @@ public class PixelGrid extends Property {
      */
     public String getString() {
         int avg = getAverage();
-        String ret = "";
+        StringBuilder ret =new StringBuilder();
 
         for (int y = 0; y < getHeight(); y++) {
             for (int x = 0; x < getWidth(); x++) {
-
-                ret += isElement(getPixelValue(x, y), avg) ? "*" : (int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue()));
+                if(isElement(getPixelValue(x, y), avg))
+                    ret.append('*');
+                else
+                    ret.append((int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue())));
 
             }
-            ret += "\r\n";
+            ret.append(new char[] {'\r', '\n'});
         }
 
-        return ret;
+        return ret.toString();
 
     }
 
@@ -1819,14 +1821,20 @@ public class PixelGrid extends Property {
     }
 
     public String toHsbColorString() {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (int x = 0; x < getWidth(); x++) {
             for (int y = 0; y < getHeight(); y++) {
                 int[] rgb = UTILITIES.hexToRgb(getPixelValue(x, y));
                 float[] hsb = UTILITIES.rgb2hsb(rgb[0], rgb[1], rgb[2]);
-                ret += "y(" + y + ")x(" + x + ")=" + hsb[0] * 100 + "\n";
+                ret.append("y(");
+                ret.append(y);
+                ret.append(")x(");
+                ret.append(x);
+                ret.append(")=");
+                ret.append(hsb[0] * 100);
+                ret.append('\n');
             }
         }
-        return ret;
+        return ret.toString();
     }
 }
