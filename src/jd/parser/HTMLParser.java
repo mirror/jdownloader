@@ -129,11 +129,11 @@ public class HTMLParser {
     public static String getHttpLinkList(String data) {
         String[] links = HTMLParser.getHttpLinks(data, null);
         StringBuilder ret = new StringBuilder();
-        
+
         for (String element : links) {
             ret.append('\"');
             ret.append(element);
-            ret.append(new char[] {'"','\r','\n'});
+            ret.append(new char[] { '"', '\r', '\n' });
         }
         return ret.toString();
     }
@@ -158,7 +158,7 @@ public class HTMLParser {
             else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
                 String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
                 try {
-                    if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceFirst("^httpviajd", "").replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
+                    if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceFirst("^httpviajd", "http").replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
                 } catch (Exception e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();
