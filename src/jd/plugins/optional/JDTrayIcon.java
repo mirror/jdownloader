@@ -133,7 +133,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     private JMenuItem update;
 
     private JFrame guiFrame;
-
+    private boolean iconfied = false;
     private long lastDeIconifiedEvent = 0;
 
     public void actionPerformed(ActionEvent e) {
@@ -488,7 +488,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
             if (guiFrame.isVisible()) {
                 guiFrame.setVisible(false);
             } else {
-                if (OSDetector.isGnome()) {
+                if (OSDetector.isGnome() && iconfied) {
                     guiFrame.setState(JFrame.NORMAL);
                     guiFrame.setVisible(true);
                     guiFrame.setState(JFrame.ICONIFIED);
@@ -499,6 +499,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
                     guiFrame.setState(JFrame.NORMAL);
                     guiFrame.setVisible(true);
                 }
+                iconfied=false;
             }
 
         }
@@ -546,6 +547,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     public void mousePressed(MouseEvent arg0) {
         if (arg0.getSource() instanceof JDTrayIcon) {
             if (arg0.getClickCount() >= 2 && !SwingUtilities.isRightMouseButton(arg0)) {
+                iconfied=!iconfied;
                 miniIt();
             }
         }

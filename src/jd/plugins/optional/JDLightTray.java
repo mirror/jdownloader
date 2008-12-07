@@ -63,7 +63,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private TrayIcon trayIcon;
 
     private JFrame guiFrame;
-
+    private boolean iconfied = false;
     private long lastDeIconifiedEvent = System.currentTimeMillis() - 1000;
 
     public static int getAddonInterfaceVersion() {
@@ -166,6 +166,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
             if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
+                iconfied=!iconfied;
                 miniIt();
             } else {
                 if (trayIconPopup != null && trayIconPopup.isShowing()) {
@@ -233,7 +234,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             if (guiFrame.isVisible()) {
                 guiFrame.setVisible(false);
             } else {
-                if (OSDetector.isGnome()) {
+                if (OSDetector.isGnome() && iconfied) {
                     guiFrame.setState(JFrame.NORMAL);
                     guiFrame.setVisible(true);
                     guiFrame.setState(JFrame.ICONIFIED);
@@ -244,6 +245,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                     guiFrame.setState(JFrame.NORMAL);
                     guiFrame.setVisible(true);
                 }
+                iconfied=false;
             }
 
         }
