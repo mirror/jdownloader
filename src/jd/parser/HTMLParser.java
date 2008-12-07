@@ -128,11 +128,14 @@ public class HTMLParser {
      */
     public static String getHttpLinkList(String data) {
         String[] links = HTMLParser.getHttpLinks(data, null);
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
+        
         for (String element : links) {
-            ret += "\"" + element + "\"\r\n";
+            ret.append('\"');
+            ret.append(element);
+            ret.append(new char[] {'"','\r','\n'});
         }
-        return ret;
+        return ret.toString();
     }
 
     /**
@@ -147,17 +150,13 @@ public class HTMLParser {
      */
     public static String[] getHttpLinks(String data, String url) {
         data = data.trim();
-        String[] protocols = new String[] { "h.{2,3}", "https", "ccf", "dlc", "ftp" };
-        String protocolPattern = "(";
-        for (int i = 0; i < protocols.length; i++) {
-            protocolPattern += protocols[i] + (i + 1 == protocols.length ? ")" : "|");
-        }
+        String protocolPattern = "(h.{2,3}|https|ccf|dlc|ftp)";
         if (!data.matches(".*<.*>.*")) {
             int c = new Regex(data, "(" + protocolPattern + "://|(?<!://)www\\.)").count();
             if (c == 0)
                 return new String[] {};
             else if (c == 1 && data.length() < 100 && data.matches("^(" + protocolPattern + "://|www\\.).*")) {
-                String link = data.replaceFirst(protocols[0] + "://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
+                String link = data.replaceFirst("h.{2,3}://", "http://").replaceFirst("^www\\.", "http://www.").replaceFirst("[<>\"].*", "");
                 try {
                     if (!link.matches(".*\\s.*") || new Browser().openGetConnection(link.replaceAll("\\s", "%20")).isOK()) { return new String[] { link.replaceAll("\\s", "%20") }; }
                 } catch (Exception e) {
@@ -213,7 +212,7 @@ public class HTMLParser {
             m = element.p.matcher(data);
             while (m.find()) {
                 link = m.group(element.group);
-                link = link.replaceAll(protocols[0] + "://", "http://");
+                link = link.replaceAll("h.{2,3}://", "http://");
                 if (!(link.length() > 3 && link.matches("^" + protocolPattern + "://.*")) && link.length() > 0) {
                     if (link.length() > 2 && link.substring(0, 3).equals("www")) {
                         link = "http://" + link;
@@ -237,7 +236,7 @@ public class HTMLParser {
         m = Pattern.compile("(" + protocolPattern + "://|www\\.)[^\\s<>'\"]*(((?!\\s" + protocolPattern + "://|\\swww\\.)[^<>'\"]){0,20}([\\?|\\&][^<>'\\s\"]{1,10}\\=[^<>'\\s\"]+|\\.(htm[^<>'\\s\"]*|php|cgi|rar|zip|exe|avi|mpe?g|7z|bz2|doc|jpg|bmp|m4a|mdf|mkv|wav|mp[34]|pdf|wm[^<>'\\s\"]*|xcf|jar|swf|class|cue|bin|dll|cab|png|ico|gif|iso)[^<>'\\s\"]*))?", Pattern.CASE_INSENSITIVE).matcher(data);
         while (m.find()) {
             link = m.group(0);
-            link = link.replaceAll(protocols[0] + "://", "http://");
+            link = link.replaceAll("h.{2,3}://", "http://");
             link = link.replaceFirst("^www\\.", "http://www\\.");
             link = link.trim();
             if (!set.contains(link)) {
