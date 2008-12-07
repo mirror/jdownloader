@@ -272,10 +272,11 @@ public class ConfigurationDialog extends JFrame implements ActionListener, Chang
 
     private String fill(String s, int maxLength) {
         int add = maxLength - s.length();
+        StringBuilder st = new StringBuilder(s);
         for (int i = 0; i < add; i++) {
-            s += " ";
+            st.append(" ");
         }
-        return s;
+        return st.toString();
     }
 
     public ConfigPanel initSubPanel(Class<?> class1) {

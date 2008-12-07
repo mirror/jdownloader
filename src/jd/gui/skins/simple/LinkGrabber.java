@@ -320,7 +320,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         public void addLinks(DownloadLink[] list) {
             String password = getPassword();
-            String comment = getComment();
+            StringBuilder comment = new StringBuilder(getComment());
 
             String[] pws = JDUtilities.passwordStringToArray(password);
             Vector<String> pwList = new Vector<String>();
@@ -341,18 +341,19 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
                 String newComment = element.getSourcePluginComment();
                 if (newComment != null && comment.indexOf(newComment) < 0) {
-                    comment += "|" + newComment;
+                    comment.append("|");
+                    comment.append(newComment);
                 }
             }
-
-            if (comment.startsWith("|")) {
-                comment = comment.substring(1);
+            String CString = comment.toString();
+            if (CString.startsWith("|")) {
+                CString = CString.substring(1);
             }
 
             String pw = JDUtilities.passwordArrayToString(pwList.toArray(new String[pwList.size()]));
 
             if (!txtComment.hasFocus()) {
-                txtComment.setText(comment);
+                txtComment.setText(CString);
             }
             if (!txtPassword.hasFocus()) {
                 txtPassword.setText(pw);
