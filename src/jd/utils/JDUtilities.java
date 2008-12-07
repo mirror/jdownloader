@@ -1400,14 +1400,14 @@ public class JDUtilities {
 
         int l = passwords.length - 1;
         StringBuilder ret = new StringBuilder();
-        ret.append(new byte[] {'{','"'});
+        ret.append(new char[] {'{','"'});
         for (int i = 0; i < passwords.length; i++) {
             if (!passwords[i].matches("[\\s]*")) {
                 ret.append(passwords[i]);
                 if(i == l)
-                    ret.append(new byte[] {'"', '}'});
+                    ret.append(new char[] {'"', '}'});
                 else
-                    ret.append(new byte[] {'"', ',', '"'});
+                    ret.append(new char[] {'"', ',', '"'});
             }
         }
         return ret.toString();
