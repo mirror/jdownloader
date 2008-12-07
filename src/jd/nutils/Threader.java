@@ -134,6 +134,9 @@ public class Threader {
 
         public void run() {
             try {
+                for (int i = 0; i < broadcaster.size(); i++) {
+                    broadcaster.get(i).onThreadStarts(Threader.this, getRunnable());
+                }
                 this.runnableAlive = true;
                 runnable.go();
             } catch (Exception e) {
@@ -157,8 +160,9 @@ public class Threader {
 
     public abstract class WorkerListener {
 
-        public abstract void onThreadFinished(Threader th, JDRunnable job);
+        public abstract void onThreadFinished(Threader th, JDRunnable runnable);
 
+        public abstract void onThreadStarts(Threader threader, JDRunnable runnable);
         public abstract void onThreadException(Threader th, JDRunnable job, Exception e);
 
     }

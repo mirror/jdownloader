@@ -38,6 +38,7 @@ public class DownloadChunk implements JDRunnable {
     private static final int MAXBUFFER_SIZE = 1024 * 128;
     private static final int TIMEOUT_READ = 20000;
     private static final int TIMEOUT_CONNECT = 20000;
+    private static final int SPEEDMETER_INTERVAL = 3000;
     private Request request;
     /**
      * chunkStart. The first Byte that contains to the chunk. border included
@@ -72,6 +73,7 @@ public class DownloadChunk implements JDRunnable {
     private HTTPDownload owner;
     private long bytesLoaded = 0;
     private boolean alive;
+    private TwoLayerSpeedMeter speedmeter;
 
     public HTTPDownload getOwner() {
         return owner;
@@ -204,14 +206,15 @@ public class DownloadChunk implements JDRunnable {
 
     public void go() throws Exception {
         alive = true;
+        this.speedmeter = new TwoLayerSpeedMeter(SPEEDMETER_INTERVAL);
         try {
             if (!this.isConnected()) this.connect();
             download();
-            System.out.println("F2 "+this);
+            System.out.println("F2 " + this);
         } finally {
-            System.out.println("F3 "+this);
+            System.out.println("F3 " + this);
             this.setChunkEnd(this.getWritePosition() - 1);
-          
+
             alive = false;
         }
 
@@ -221,28 +224,43 @@ public class DownloadChunk implements JDRunnable {
         return alive;
     }
 
-    private void download() throws IOException {
+    private void download() throws IOException, InterruptedException {
         this.bytesLoaded = 0l;
         ByteBuffer buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
         ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
         miniBuffer.clear();
         long loadUntil = 0;
         int miniRead = 0;
+        long limit = -1;
 
-      
         buffer.clear();
 
         try {
 
             main: while (true) {
-            
-                loadUntil = getNextWriteTime();
+
                 if (this.getChunkEnd() > 0 && this.getWritePosition() + buffer.limit() > this.getChunkEnd()) {
                     try {
                         buffer.limit((int) (this.getChunkEnd() - this.getWritePosition() + 1));
                     } catch (Exception e) {
 
                     }
+                }
+                loadUntil = System.currentTimeMillis() + 250;
+                limit = owner.getChunkBandwidth(this);
+                if (limit > 0) {
+                    // System.out.println("limi " + limit);
+                    limit /= 4;
+                    limit = Math.max(1, limit);
+
+                    limit = Math.min(buffer.capacity(), limit);
+
+                    if (limit > buffer.capacity()) {
+                        HTTPDownload.debug("Buffer auf " + (limit * 1.1));
+                        buffer = ByteBuffer.allocateDirect((int) (limit * 1.1));
+                    }
+
+                    buffer.limit((int) limit);
                 }
                 while (buffer.hasRemaining() && System.currentTimeMillis() < loadUntil) {
                     miniBuffer.clear();
@@ -254,13 +272,18 @@ public class DownloadChunk implements JDRunnable {
                     } finally {
                         miniBuffer.flip();
                         buffer.put(miniBuffer);
-                        if(miniRead>0) bytesLoaded += miniRead;
+                        if (miniRead > 0) bytesLoaded += miniRead;
                     }
                     if (miniRead == -1) {
                         if (buffer.position() == 0) break main;
                         break;
                     }
-                    
+                    synchronized (speedmeter) {
+                        speedmeter.update(miniRead);
+                    }
+                    // System.out.println("Speed " + this + "  : " +
+                    // speedmeter.getSpeed());
+                    // owner.updateSpeed(miniRead);
                     // addPartBytes(miniblock);
                     // addToTotalLinkBytesLoaded(miniblock);
                     // addChunkBytesLoaded(miniblock);
@@ -279,15 +302,22 @@ public class DownloadChunk implements JDRunnable {
 
                     return;
                 }
+                long restWait = (loadUntil - System.currentTimeMillis());
+                if (limit <= 0 && restWait > 100) {
+
+                    HTTPDownload.debug("Buffer auf " + (buffer.capacity() * 1.5));
+                    buffer = ByteBuffer.allocateDirect((int) (buffer.capacity() * 1.5));
+                }
+                if (limit > 0 && restWait > 0) Thread.sleep(restWait);
             }
 
             miniRead = 0;
         } finally {
-            System.out.println("F1 "+this);
+            System.out.println("F1 " + this);
             if (buffer.position() > 0) {
-                try{
-                owner.writeBytes(this, buffer);
-                }catch(Exception e){
+                try {
+                    owner.writeBytes(this, buffer);
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
                 this.writePosition += buffer.limit();
@@ -299,22 +329,29 @@ public class DownloadChunk implements JDRunnable {
         }
     }
 
+    public long getSpeed() {
+        if (speedmeter == null || !this.isAlive()) return 0;
+        return this.speedmeter.getSpeed();
+    }
+
     private void disconnect() throws IOException {
-        System.out.println(this+" CLOSE & Disconnect");
+        System.out.println(this + " CLOSE & Disconnect");
         channel.close();
         this.inputStream.close();
         connection.disconnect();
 
     }
 
-    private long getNextWriteTime() {
-        // TODO Auto-generated method stub
-        return System.currentTimeMillis() + 1000;
-    }
-
     public boolean isConnected() {
 
         return connection != null;
+    }
+
+    public void resetSpeedMeter() {
+        synchronized (speedmeter) {
+            this.speedmeter = new TwoLayerSpeedMeter(SPEEDMETER_INTERVAL);
+        }
+
     }
 
 }

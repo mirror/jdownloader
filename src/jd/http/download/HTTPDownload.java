@@ -42,6 +42,7 @@ public class HTTPDownload {
      * indicates, that the stored filesize is correct.
      */
     private static final int FLAG_FILESIZE_CORRECT = 1 << 1;
+    private static final int SPEED_INTERVAL = 2000;
 
     private Request orgRequest;
 
@@ -53,6 +54,12 @@ public class HTTPDownload {
     private RandomAccessFile outputRAF;
     private FileChannel outputChannel;
     private long byteCounter;
+    private long bandwidthLimit;
+    private int activeChunks = 0;
+
+    public synchronized int getActiveChunks() {
+        return activeChunks;
+    }
 
     public long getFileSize() {
         return fileSize;
@@ -73,6 +80,14 @@ public class HTTPDownload {
         this.outputFile = file;
     }
 
+    public static void debug(String msg) {
+        try {
+            throw new Exception();
+        } catch (Exception ee) {
+            System.err.println(ee.getStackTrace()[1].getClassName() + "." + ee.getStackTrace()[1].getMethodName() + "[" + ee.getStackTrace()[1].getLineNumber() + "] " + msg);
+        }
+    }
+
     public static void main(String[] args) {
         try {
 
@@ -82,19 +97,18 @@ public class HTTPDownload {
             Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.test");
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
-
-            dl.setChunkNum(6);
+            dl.setBandwidthlimit(1 * 512 * 1000);
+            dl.setChunkNum(60);
             try {
                 new Thread() {
                     public void run() {
                         try {
-                            Thread.sleep(2000);
-                            System.out.println("LOWER to 2");
-                            dl.setChunkNum(4);
-                            Thread.sleep(3000);
-                            dl.setChunkNum(14);
-                            Thread.sleep(3000);
-                            dl.setChunkNum(2);
+                            while (true) {
+                                Thread.sleep(300);
+                                // dl.setBandwidthlimit(200 * 1000);
+                                System.out.println("speed " + dl.getSpeed());
+
+                            }
 
                         } catch (Exception e) {
                             // TODO Auto-generated catch block
@@ -123,10 +137,14 @@ public class HTTPDownload {
         }
     }
 
-    private  void setChunkNum(int i) throws BrowserException, InterruptedException {
+    private void setBandwidthlimit(long bytesPerSecond) {
+        this.bandwidthLimit = bytesPerSecond;
+
+    }
+
+    private void setChunkNum(int i) throws BrowserException, InterruptedException {
         if (i == chunkNum) return;
         if (chunks != null && chunks.isHasStarted()) {
-
             int tmp = chunkNum;
             this.chunkNum = i;
             if (i > tmp) addChunksDyn(i - tmp);
@@ -153,8 +171,7 @@ public class HTTPDownload {
             }
         }
         System.out.println("Disconnect chunk " + slowest + " remaining: " + slowest.getRemainingChunkBytes() + " " + slowest.getChunkBytes());
-       // slowest.setChunkEnd(slowest.getChunkStart() + slowest.getChunkBytes());
-         this.chunks.interrupt(slowest);
+        slowest.setChunkEnd(slowest.getChunkStart() + slowest.getChunkBytes());
 
         // Wait until Chunk got closed
         while (slowest.isAlive()) {
@@ -274,9 +291,9 @@ public class HTTPDownload {
         int activeChunks = chunks.getAlive().size();
         System.out.println("Active chunks: " + activeChunks);
         System.out.println("Missing parts: " + missing.size());
-        
-        for(int i=0; i<missing.size();i++){
-            System.out.println("Missing: "+missing.get(i)[0]+"-"+missing.get(i)[1]);
+
+        for (int i = 0; i < missing.size(); i++) {
+            System.out.println("Missing: " + missing.get(i)[0] + "-" + missing.get(i)[1]);
         }
         int i = 0;
         while (activeChunks < this.chunkNum && missing.size() > i) {
@@ -318,16 +335,9 @@ public class HTTPDownload {
             }
             lastChunk = chunk;
             /*
-             * 0 - 4377600
-             * 4377601 - 8755200
-             * 8755201 - 13132800
-             * 13132801 - 17510400
-             * 17510401 - 18034688
-             * 18034689 - 21888000
-             * 21888001 - 22412288
-             * 22412289 - 26265599
-             * 
-             * 
+             * 0 - 4377600 4377601 - 8755200 8755201 - 13132800 13132801 -
+             * 17510400 17510401 - 18034688 18034689 - 21888000 21888001 -
+             * 22412288 22412289 - 26265599
              */
         }
         if (lastChunk.getChunkEnd() != -1 && lastChunk.getChunkEnd() != this.fileSize - 1) {
@@ -345,21 +355,6 @@ public class HTTPDownload {
      */
     private void initChunks() throws IOException, BrowserException {
         this.chunks = new Threader();
-
-        DownloadChunk chunk = new DownloadChunk(this);
-
-        // 0-Chunk has to be Rangeless.
-        orgRequest.getHeaders().remove("Range");
-        chunk.connect();
-        System.out.println(orgRequest.printHeaders());
-        if (orgRequest.getContentLength() > 0) {
-            this.fileSize = orgRequest.getContentLength();
-            this.addStatus(FLAG_FILESIZE_CORRECT);
-        }
-
-        chunk.setRange(0l, fileSize / chunkNum);
-        chunks.add(chunk);
-
         chunks.getBroadcaster().addListener(chunks.new WorkerListener() {
 
             @Override
@@ -370,10 +365,42 @@ public class HTTPDownload {
 
             @Override
             public void onThreadFinished(Threader th, JDRunnable job) {
+                updateActiveChunkCount(-1);
                 checkForMissingParts();
+                updateSpeedMeters();
+            }
+
+            private void updateSpeedMeters() {
+                if (chunks == null || activeChunks == 0) return;
+                for (int i = 0; i < chunks.size(); i++) {
+                   ((DownloadChunk) chunks.get(i)).resetSpeedMeter();
+                }
+
+
+            }
+
+            @Override
+            public void onThreadStarts(Threader threader, JDRunnable runnable) {
+                updateActiveChunkCount(+1);
+
             }
 
         });
+        DownloadChunk chunk = new DownloadChunk(this);
+
+        // 0-Chunk has to be Rangeless.
+        orgRequest.getHeaders().remove("Range");
+        chunk.connect();
+
+        System.out.println(orgRequest.printHeaders());
+        if (orgRequest.getContentLength() > 0) {
+            this.fileSize = orgRequest.getContentLength();
+            this.addStatus(FLAG_FILESIZE_CORRECT);
+        }
+
+        chunk.setRange(0l, fileSize / chunkNum);
+        chunks.add(chunk);
+
         for (int i = 1; i < chunkNum; i++) {
             if (i < chunkNum - 1) {
                 chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, fileSize * (i + 1) / chunkNum);
@@ -387,6 +414,11 @@ public class HTTPDownload {
         }
         // TODO
         // Fehler müssen hier noch abgefangen werden, z.B. über listener
+
+    }
+
+    protected synchronized void updateActiveChunkCount(int i) {
+        this.activeChunks += i;
 
     }
 
@@ -418,11 +450,14 @@ public class HTTPDownload {
 
         synchronized (outputChannel) {
             buffer.flip();
-            System.out.println(chunk + " - " + "Write " + buffer.limit() + " bytes at " + chunk.getWritePosition() + " total: " + byteCounter + " written until: " + (chunk.getWritePosition() + buffer.limit() - 1));
+            // System.out.println(chunk + " - " + "Write " + buffer.limit() +
+            // " bytes at " + chunk.getWritePosition() + " total: " +
+            // byteCounter + " written until: " + (chunk.getWritePosition() +
+            // buffer.limit() - 1));
 
             this.outputRAF.seek(chunk.getWritePosition());
             byteCounter += buffer.limit();
-           
+
             outputChannel.write(buffer);
             // if (chunk.getID() >= 0) {
             // downloadLink.getChunksProgress()[chunk.getID()] =
@@ -436,5 +471,21 @@ public class HTTPDownload {
     public Request getRequest() {
 
         return this.orgRequest;
+    }
+
+    public long getChunkBandwidth(DownloadChunk downloadChunk) {
+        if (this.bandwidthLimit <= 0) return -1;
+        return Math.max(1, bandwidthLimit / this.getActiveChunks() + bandwidthLimit);
+
+    }
+
+    public long getSpeed() {
+        long speed = 0;
+        if (chunks == null || this.activeChunks == 0) return 0;
+        for (int i = 0; i < chunks.size(); i++) {
+            speed += ((DownloadChunk) chunks.get(i)).getSpeed();
+        }
+
+        return speed;
     }
 }
