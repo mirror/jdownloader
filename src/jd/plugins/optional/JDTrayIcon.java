@@ -44,6 +44,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
+import jd.nutils.OSDetector;
+
 import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -479,24 +481,30 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
             }
         });
     }
+
     private void miniIt() {
-        if(System.currentTimeMillis() > this.lastDeIconifiedEvent + 750)
-        {
-            this.lastDeIconifiedEvent=System.currentTimeMillis();
-        if (guiFrame.isVisible()) {
-            guiFrame.setVisible(false);
-        } else {
-            guiFrame.setState(JFrame.NORMAL);
-            guiFrame.setVisible(true);
-            guiFrame.setState(JFrame.ICONIFIED);
-            guiFrame.setVisible(false);
-            guiFrame.setState(JFrame.NORMAL);
-            guiFrame.setVisible(true);
-        }
-        
+        if (System.currentTimeMillis() > this.lastDeIconifiedEvent + 750) {
+            this.lastDeIconifiedEvent = System.currentTimeMillis();
+            if (guiFrame.isVisible()) {
+                guiFrame.setVisible(false);
+            } else {
+                if (OSDetector.isGnome()) {
+                    guiFrame.setState(JFrame.NORMAL);
+                    guiFrame.setVisible(true);
+                    guiFrame.setState(JFrame.ICONIFIED);
+                    guiFrame.setVisible(false);
+                    guiFrame.setState(JFrame.NORMAL);
+                    guiFrame.setVisible(true);
+                } else {
+                    guiFrame.setState(JFrame.NORMAL);
+                    guiFrame.setVisible(true);
+                }
+            }
+
         }
 
     }
+
     public void windowActivated(WindowEvent arg0) {
     }
 
@@ -514,7 +522,7 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
     }
 
     public void windowIconified(WindowEvent arg0) {
-            miniIt();
+        miniIt();
     }
 
     public void windowOpened(WindowEvent arg0) {
@@ -522,17 +530,17 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
 
     public void mouseClicked(MouseEvent arg0) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void mouseEntered(MouseEvent arg0) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void mouseExited(MouseEvent arg0) {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void mousePressed(MouseEvent arg0) {
@@ -541,11 +549,11 @@ public class JDTrayIcon extends PluginOptional implements WindowListener, MouseL
                 miniIt();
             }
         }
-        
+
     }
 
     public void mouseReleased(MouseEvent arg0) {
         // TODO Auto-generated method stub
-        
+
     }
 }

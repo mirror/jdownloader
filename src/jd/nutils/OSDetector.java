@@ -89,5 +89,59 @@ public class OSDetector {
         }
         return false;
     }
+    
+    /**
+     * erkennt gnome.
+     */
+    public static boolean isGnome() {
+        if(!isLinux()) return false;
+        // prüft gdm session
+        String gdmSession = System.getenv("GDMSESSION");
+        if (gdmSession != null && gdmSession.toLowerCase().contains("gnome")) {
+            return true;
+        }
+
+        // prüft desktop session
+        String desktopSession = System.getenv("DESKTOP_SESSION");
+        if (desktopSession != null && desktopSession.toLowerCase().contains("gnome")) {
+            return true;
+        }
+
+        // prüft gnome desktop id
+        String gnomeDesktopSessionId = System.getenv("GNOME_DESKTOP_SESSION_ID");
+        if (gnomeDesktopSessionId != null && gnomeDesktopSessionId.trim().length() > 0) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * erkennt KDE.
+     */
+    public static boolean isKDE() {
+        if(!isLinux()) return false;
+        
+        // prüft gdm session
+        String gdmSession = System.getenv("GDMSESSION");
+        if (gdmSession != null && gdmSession.toLowerCase().contains("kde")) {
+            return true;
+        }
+
+        // prüft desktop session
+        String desktopSession = System.getenv("DESKTOP_SESSION");
+        if (desktopSession != null && desktopSession.toLowerCase().contains("kde")) {
+            return true;
+        }
+
+        // prüft window manager
+        String windowManager = System.getenv("WINDOW_MANAGER");
+        if (windowManager != null && windowManager.trim().toLowerCase().endsWith("kde")) {
+            return true;
+        }
+
+        return false;
+    }
+
 
 }

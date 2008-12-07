@@ -33,6 +33,8 @@ import javax.swing.JFrame;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
+import jd.nutils.OSDetector;
+
 import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -62,7 +64,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     private JFrame guiFrame;
 
-    private long lastDeIconifiedEvent = System.currentTimeMillis()-1000;
+    private long lastDeIconifiedEvent = System.currentTimeMillis() - 1000;
 
     public static int getAddonInterfaceVersion() {
         return 2;
@@ -224,24 +226,30 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
             }
         });
     }
+
     private void miniIt() {
-        if(System.currentTimeMillis() > this.lastDeIconifiedEvent + 750)
-        {
-            this.lastDeIconifiedEvent=System.currentTimeMillis();
-        if (guiFrame.isVisible()) {
-            guiFrame.setVisible(false);
-        } else {
-            guiFrame.setState(JFrame.NORMAL);
-            guiFrame.setVisible(true);
-            guiFrame.setState(JFrame.ICONIFIED);
-            guiFrame.setVisible(false);
-            guiFrame.setState(JFrame.NORMAL);
-            guiFrame.setVisible(true);
-        }
-        
+        if (System.currentTimeMillis() > this.lastDeIconifiedEvent + 750) {
+            this.lastDeIconifiedEvent = System.currentTimeMillis();
+            if (guiFrame.isVisible()) {
+                guiFrame.setVisible(false);
+            } else {
+                if (OSDetector.isGnome()) {
+                    guiFrame.setState(JFrame.NORMAL);
+                    guiFrame.setVisible(true);
+                    guiFrame.setState(JFrame.ICONIFIED);
+                    guiFrame.setVisible(false);
+                    guiFrame.setState(JFrame.NORMAL);
+                    guiFrame.setVisible(true);
+                } else {
+                    guiFrame.setState(JFrame.NORMAL);
+                    guiFrame.setVisible(true);
+                }
+            }
+
         }
 
     }
+
     private String createInfoString() {
         StringBuilder creater = new StringBuilder();
         creater.append(JDUtilities.getJDTitle() + "\n");
