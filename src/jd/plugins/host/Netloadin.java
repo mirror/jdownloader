@@ -163,12 +163,19 @@ public class Netloadin extends PluginForHost {
         }
 
         if (br.containsHTML(LIMIT_REACHED) || br.containsHTML(DOWNLOAD_LIMIT)) {
-
+            String wait = new Regex(br.getRequest().getHtmlCode(), DOWNLOAD_WAIT_TIME).getMatch(0);
+            long waitTime = 0;
+            if (wait != null) {
+                waitTime = Long.parseLong(wait);
+                waitTime = waitTime * 10L;
+            }
+            if (waitTime == 0) {
+                logger.finest("Waittime was 0");
+                sleep(30000l, downloadLink);
+                linkStatus.addStatus(LinkStatus.ERROR_RETRY);
+                return;
+            }
             linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-
-            long waitTime = Long.parseLong(new Regex(br.getRequest().getHtmlCode(), DOWNLOAD_WAIT_TIME).getMatch(0));
-            waitTime = waitTime * 10L;
-
             linkStatus.setValue(waitTime);
             return;
         }
