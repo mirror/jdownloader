@@ -1223,35 +1223,81 @@ public class LetterComperator {
         hs.put("extensionError", getExtensionError());
         double t = getRealValityValue() * 6.0 / 100.0;
         double tmpError = getTotalPixelError();
-        String calc = "Error= " + getTotalPixelError() + " (totalPixelError) " + getTotalPixelError() * 100.0 / t + "\r\n";
+        StringBuilder calc = new StringBuilder("Error= ");
+        calc.append(getTotalPixelError());
+        calc.append(" (totalPixelError) ");
+        calc.append(getTotalPixelError()* 100.0 / t);
+        calc.append("\r\n");
         tmpError += Math.min(1.0, getCoverageFaktorA()) * coverageFaktorAWeight;
-        calc += Math.round(Math.min(1.0, getCoverageFaktorA()) * coverageFaktorAWeight * 100.0 / t) + "%          + " + Math.min(1.0, getCoverageFaktorA()) * coverageFaktorAWeight + "=" + tmpError + " (coverage A)\r\n";
-
+        calc.append(Math.round(Math.min(1.0, getCoverageFaktorA()) * coverageFaktorAWeight * 100.0 / t));
+        calc.append("%          + ");
+        calc.append(Math.min(1.0, getCoverageFaktorA()) * coverageFaktorAWeight);
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append(" (coverage A)\r\n");
         tmpError += Math.min(1.0, getCoverageFaktorB()) * coverageFaktorBWeight;
-        calc += Math.round(Math.min(1.0, getCoverageFaktorB()) * coverageFaktorBWeight * 100.0 / t) + "%          + " + Math.min(1.0, getCoverageFaktorB()) * coverageFaktorBWeight + "=" + tmpError + " (coverage B)\r\n";
+        calc.append(Math.round(Math.min(1.0, getCoverageFaktorB()) * coverageFaktorBWeight * 100.0 / t));
+        calc.append("%          + ");
+        calc.append(Math.min(1.0, getCoverageFaktorB()) * coverageFaktorBWeight);
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append(" (coverage B)\r\n");
         tmpError += Math.min(1.0, getHeightFaktor()) * intersectionDimensionWeight;
-        calc += Math.round(Math.min(1.0, getHeightFaktor()) * intersectionDimensionWeight * 100.0 / t) + "%          + " + Math.min(1.0, getHeightFaktor()) * intersectionDimensionWeight + "=" + tmpError + " (BHeightFaktor)\r\n";
+        calc.append(Math.round(Math.min(1.0, getHeightFaktor()) * intersectionDimensionWeight * 100.0 / t));
+        calc.append("%          + ");
+        calc.append(Math.min(1.0, getHeightFaktor()) * intersectionDimensionWeight);
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append(" (BHeightFaktor)\r\n");
         tmpError += Math.min(1.0, getWidthFaktor()) * intersectionDimensionWeight;
-        calc += Math.round(Math.min(1.0, getWidthFaktor()) * intersectionDimensionWeight * 100.0 / t) + "%          + " + Math.min(1.0, getWidthFaktor()) * intersectionDimensionWeight + "=" + tmpError + " (BWidthFaktor)\r\n";
-
+        calc.append(Math.round(Math.min(1.0, getWidthFaktor()) * intersectionDimensionWeight * 100.0 / t));
+        calc.append("%          + ");
+        calc.append(Math.min(1.0, getWidthFaktor()) * intersectionDimensionWeight);
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append(" (BWidthFaktor)\r\n");
         tmpError += Math.min(1.0, getIntersectionAHeightFaktor()) * intersectionAHeightWeight;
-        calc += Math.round(Math.min(1.0, getIntersectionAHeightFaktor()) * intersectionAHeightWeight * 100.0 / t) + "%          + " + Math.min(1.0, getIntersectionAHeightFaktor()) * intersectionAHeightWeight + "=" + tmpError + " (AHeightFaktor)\r\n";
+        calc.append(Math.round(Math.min(1.0, getIntersectionAHeightFaktor()) * intersectionAHeightWeight * 100.0 / t));
+        calc.append("%          + ");
+        calc.append(Math.min(1.0, getIntersectionAHeightFaktor()) * intersectionAHeightWeight);
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append(" (AHeightFaktor)\r\n");
 
         tmpError += Math.min(1.0, getIntersectionAWidthFaktor()) * intersectionAWidthWeight;
-        calc += Math.round(Math.min(1.0, getIntersectionAWidthFaktor()) * intersectionAWidthWeight * 100.0 / t) + "%          + " + Math.min(1.0, getIntersectionAWidthFaktor()) * intersectionAWidthWeight + "=" + tmpError + " (AWidthFaktor)\r\n";
+        calc.append(Math.round(Math.min(1.0, getIntersectionAWidthFaktor()) * intersectionAWidthWeight * 100.0 / t));
+        calc.append("%          + ");
+        calc.append(Math.min(1.0, getIntersectionAWidthFaktor()) * intersectionAWidthWeight);
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append( " (AWidthFaktor)\r\n");
         tmpError += (getBothElementsNum() - 1) * cleftFaktor;
-
-        calc += Math.round((getBothElementsNum() - 1) * cleftFaktor * 100.0 / t) + "%          + " + (getBothElementsNum() - 1) * cleftFaktor + "=" + tmpError + " (CleftFaktor)\r\n";
+        calc.append(Math.round((getBothElementsNum() - 1) * cleftFaktor * 100.0 / t));
+        calc.append("%          + ");
+        calc.append((getBothElementsNum() - 1) * cleftFaktor);
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append(" (CleftFaktor)\r\n");
         tmpError += getExtensionError();
-
-        calc += Math.round(getExtensionError() * 100.0 / t) + "%          + " + getExtensionError() + "=" + tmpError + " (ExtensionError)\r\n";
+        calc.append(Math.round(getExtensionError() * 100.0 / t));
+        calc.append("%          + ");
+        calc.append(getExtensionError());
+        calc.append('=');
+        calc.append(tmpError);
+        calc.append(" (ExtensionError)\r\n");
 
         tmpError /= divider;
-        calc += "/" + divider + " = " + tmpError + " => " + (tmpError * 100 + "% ");
+        calc.append('/');
+        calc.append(divider);
+        calc.append(new char[] {' ', '=', ' '});
+        calc.append(tmpError);
+        calc.append(" => ");
+        calc.append(tmpError * 100);
+        calc.append(new char[] {'%',' '});
         // tmpError = Math.min(1.0, tmpError);
 
         hs.put("totalFaktor", tmpError);
-        return tmpError * 100 + "% " + hs.toString() + "\r\n" + calc;
+        return tmpError * 100 + "% " + hs.toString() + "\r\n" + calc.toString();
 
     }
 
