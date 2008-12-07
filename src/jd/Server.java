@@ -405,13 +405,12 @@ public class Server extends UnicastRemoteObject implements ServerInterface {
         for (int i = 0; i < containersToAdd.size(); i++) {
             controller.loadContainerFile(new File(containersToAdd.get(i)), hideGrabber, startDownload);
         }
-
-        String linksToAddString = "";
-
-        for (int i = 0; i < linksToAdd.size(); i++) {
-            linksToAddString += linksToAdd.get(i) + "\n";
+        StringBuilder adder = new StringBuilder();
+        for (String string : linksToAdd) {
+            adder.append(string);
+            adder.append('\n');
         }
-        linksToAddString = linksToAddString.trim();
+        String linksToAddString = adder.toString().trim();
         if (!linksToAddString.equals("")) {
 
             DistributeData distributeData = new DistributeData(linksToAddString, hideGrabber, startDownload);

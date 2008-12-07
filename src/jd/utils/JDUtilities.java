@@ -163,13 +163,13 @@ public class JDUtilities {
     private static Semaphore userio_sem = new Semaphore(1);
 
     public static String getSimString(String a, String b) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         for (int i = 0; i < Math.min(a.length(), b.length()); i++) {
             if (a.charAt(i) == b.charAt(i)) {
-                ret += a.charAt(i);
+                ret.append(a.charAt(i));
             }
         }
-        return ret;
+        return ret.toString();
     }
 
     public static void acquireUserIO_Semaphore() throws InterruptedException {
@@ -313,18 +313,19 @@ public class JDUtilities {
     public static String convertExceptionReadable(Exception e) {
         String s = e.getClass().getName().replaceAll("Exception", "");
         s = s.substring(s.lastIndexOf(".") + 1);
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         String letter = null;
         for (int i = 0; i < s.length(); i++) {
             if ((letter = s.substring(i, i + 1)).equals(letter.toUpperCase())) {
-                ret += " " + letter;
+                ret.append(' ');
+                ret.append(letter);
             } else {
-                ret += letter;
+                ret.append(letter);
             }
         }
         String message = e.getLocalizedMessage();
-
-        return message != null ? ret.trim() + ": " + message : ret.trim();
+        String rets = ret.toString();
+        return message != null ? rets.trim() + ": " + message : rets.trim();
 
     }
 
@@ -886,11 +887,17 @@ public class JDUtilities {
     }
 
     public static String getJDTitle() {
-        String ret = JDUtilities.JD_TITLE + " " + JDUtilities.JD_VERSION + JDUtilities.getRevision();
+        StringBuilder ret = new StringBuilder(JDUtilities.JD_TITLE);
+        ret.append(' ');
+        ret.append(JDUtilities.JD_VERSION);
+        ret.append(JDUtilities.getRevision());
         if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
-            ret += " " + JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:") + " " + JDUtilities.getController().getWaitingUpdates().size();
+            ret.append(' ');
+            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
+            ret.append(' ');
+            ret.append(JDUtilities.getController().getWaitingUpdates().size());
         }
-        return ret;
+        return ret.toString();
     }
 
     public static int getLevenshteinDistance(String s, String t) {
@@ -1392,14 +1399,18 @@ public class JDUtilities {
         if (passwords.length == 1) { return passwords[0]; }
 
         int l = passwords.length - 1;
-
-        String ret = "{\"";
+        StringBuilder ret = new StringBuilder();
+        ret.append(new byte[] {'{','"'});
         for (int i = 0; i < passwords.length; i++) {
             if (!passwords[i].matches("[\\s]*")) {
-                ret += passwords[i] + (i == l ? "\"}" : "\",\"");
+                ret.append(passwords[i]);
+                if(i == l)
+                    ret.append(new byte[] {'"', '}'});
+                else
+                    ret.append(new byte[] {'"', ',', '"'});
             }
         }
-        return ret;
+        return ret.toString();
 
     }
 

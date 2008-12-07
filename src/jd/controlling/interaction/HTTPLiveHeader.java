@@ -216,12 +216,18 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     public static String getScriptFromCURL(String code, String name) {
-        String SEPARATOR = "\r\n";
-        String ret = "[[[HSRC]]]" + SEPARATOR + "";
+        char[] SEPARATOR = new char[] {'\r','\n'};
+        StringBuilder ret = new StringBuilder("[[[HSRC]]]");
+        ret.append(SEPARATOR);
         try {
-            ret += "    [[[STEP]]]" + SEPARATOR + "";
-            ret += "        [[[DEFINE routername=\"" + name + "\"/]]]" + SEPARATOR + "";
-            ret += "    [[[/STEP]]]" + SEPARATOR;
+            ret.append("    [[[STEP]]]");
+            ret.append(SEPARATOR);
+            ret.append("        [[[DEFINE routername=\"");
+            ret.append(name);
+            ret.append("\"/]]]");
+            ret.append(SEPARATOR);
+            ret.append("    [[[/STEP]]]");
+            ret.append(SEPARATOR);
             String[] lines = Regex.getLines(code);
             for (String element : lines) {
                 if (element.trim().toLowerCase().startsWith("curl")) {
@@ -237,41 +243,63 @@ public class HTTPLiveHeader extends Interaction {
 
                         // String[] login=new URL(url).getUserInfo().split(":");
 
-                        ret += "    [[[STEP]]]" + SEPARATOR + "";
-                        ret += "        [[[REQUEST]]]" + SEPARATOR + "";
+                        ret.append("    [[[STEP]]]");
+                        ret.append(SEPARATOR);
+                        ret.append("        [[[REQUEST]]]");
+                        ret.append(SEPARATOR);
                         if (element.indexOf("-d ") >= 0) {
-                            ret += "            POST " + path + " HTTP/1.1" + SEPARATOR + "";
-                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
+                            ret.append("            POST ");
+                            ret.append(path);
+                            ret.append(" HTTP/1.1");
+                            ret.append(SEPARATOR);
+                            ret.append("            Host: %%%routerip%%%");
+                            ret.append(SEPARATOR);
 
                         } else {
-                            ret += "            GET " + path + " HTTP/1.1" + SEPARATOR + "";
-                            ret += "            Host: " + "%%%routerip%%%" + "" + SEPARATOR + "";
+                            ret.append("            GET ");
+                            ret.append(path);
+                            ret.append(" HTTP/1.1");
+                            ret.append(SEPARATOR);
+                            ret.append("            Host: %%%routerip%%%");
+                            ret.append(SEPARATOR);
                         }
                         for (int t = 2; t < params.length; t++) {
                             if (params[t].equalsIgnoreCase("-H")) {
                                 t++;
-                                ret += "            " + params[t] + SEPARATOR;
+                                ret.append("            ");
+                                ret.append(params[t]);
+                                ret.append(SEPARATOR);
                             } else if (params[t].equalsIgnoreCase("-d")) {
                                 t++;
-                                ret += SEPARATOR + "            " + params[t];
+                                ret.append(SEPARATOR);
+                                ret.append("            ");
+                                ret.append(params[t]);
                             } else if (params[t].equalsIgnoreCase("-u")) {
                                 t++;
-                                ret += "            " + "Authorization: Basic %%%basicauth%%%" + SEPARATOR;
+
+                                ret.append("            Authorization: Basic %%%basicauth%%%");
+                                ret.append(SEPARATOR);
                             }
 
                             else if (params[t].equalsIgnoreCase("-b")) {
                                 t++;
-                                ret += "            " + "Cookie: %%%Set-Cookie%%%" + SEPARATOR;
+                                ret.append("            Cookie: %%%Set-Cookie%%%");
+                                ret.append(SEPARATOR);
                             } else if (params[t].equalsIgnoreCase("-e") || params[t].equalsIgnoreCase("--referer")) {
                                 t++;
-                                ret += "            " + "Referer: " + params[t] + SEPARATOR;
+                                ret.append("            Referer: ");
+                                ret.append(params[t]);
+                                ret.append(SEPARATOR);
                             } else {
                                 logger.info("Unknown flag: " + params[t] + " - ");
                             }
 
                         }
-                        ret += SEPARATOR + "        [[[/REQUEST]]]" + SEPARATOR;
-                        ret += "    [[[/STEP]]]" + SEPARATOR;
+                        ret.append(SEPARATOR);
+                        ret.append("        [[[/REQUEST]]]");
+                        ret.append(SEPARATOR);
+                        ret.append("    [[[/STEP]]]");
+                        ret.append(SEPARATOR);
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -285,8 +313,9 @@ public class HTTPLiveHeader extends Interaction {
             return null;
 
         }
-        ret += "[[[/HSRC]]]" + SEPARATOR;
-        return ret;
+        ret.append("[[[/HSRC]]]");
+        ret.append(SEPARATOR);
+        return ret.toString();
     }
 
     /**
@@ -420,21 +449,21 @@ public class HTTPLiveHeader extends Interaction {
                             String[] tmp = value.split("\\%\\%\\%(.*?)\\%\\%\\%");
                             String[] params = new Regex(value, "%%%(.*?)%%%").getColumn(-1);
                             if (params.length > 0) {
-                                String req;
+                                StringBuilder req;
                                 if (value.startsWith(params[0])) {
-                                    req = "";
+                                    req= new StringBuilder();
                                     logger.finer("Variables: " + variables);
                                     logger.finer("Headerproperties: " + headerProperties);
                                     for (int i = 0; i <= tmp.length; i++) {
                                         logger.finer("Replace variable: ********(" + params[i - 1] + ")");
 
-                                        req += getModifiedVariable(params[i - 1]);
+                                        req.append(getModifiedVariable(params[i - 1]));
                                         if (i < tmp.length) {
-                                            req += tmp[i];
+                                            req.append(tmp[i]);
                                         }
                                     }
                                 } else {
-                                    req = tmp[0];
+                                    req= new StringBuilder(tmp[0]);
                                     logger.finer("Variables: " + variables);
                                     logger.finer("Headerproperties: " + headerProperties);
                                     for (int i = 1; i <= tmp.length; i++) {
@@ -442,15 +471,14 @@ public class HTTPLiveHeader extends Interaction {
                                             continue;
                                         }
                                         logger.finer("Replace variable: *********(" + params[i - 1] + ")");
-
-                                        req += getModifiedVariable(params[i - 1]);
+                                        req.append(getModifiedVariable(params[i - 1]));
                                         if (i < tmp.length) {
-                                            req += tmp[i];
+                                            req.append(tmp[i]);
                                         }
                                     }
                                 }
 
-                                value = req;
+                                value = req.toString();
                             }
 
                             variables.put(key, value);
@@ -641,7 +669,7 @@ public class HTTPLiveHeader extends Interaction {
         try {
             String requestType;
             String path;
-            String post = "";
+            StringBuilder post = new StringBuilder();
             String host = null;
 
             HashMap<String, String> requestProperties = new HashMap<String, String>();
@@ -651,21 +679,20 @@ public class HTTPLiveHeader extends Interaction {
             // "%%%°%%%", 1);
             String[] params = new Regex(request, "%%%(.*?)%%%").getColumn(0);
             if (params.length > 0) {
-                String req;
+                StringBuilder req;
                 if (request.startsWith(params[0])) {
-                    req = "";
+                    req = new StringBuilder();
                     logger.finer("Variables: " + variables);
                     logger.finer("Headerproperties: " + headerProperties);
                     for (int i = 0; i <= tmp.length; i++) {
                         logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
-
-                        req += getModifiedVariable(params[i - 1]);
+                        req.append(getModifiedVariable(params[i - 1]));
                         if (i < tmp.length) {
-                            req += tmp[i];
+                            req.append(tmp[i]);
                         }
                     }
                 } else {
-                    req = tmp[0];
+                    req = new StringBuilder(tmp[0]);
                     logger.finer("Variables: " + variables);
                     logger.finer("Headerproperties: " + headerProperties);
                     for (int i = 1; i <= tmp.length; i++) {
@@ -673,15 +700,14 @@ public class HTTPLiveHeader extends Interaction {
                             continue;
                         }
                         logger.finer("Replace variable: " + getModifiedVariable(params[i - 1]) + "(" + params[i - 1] + ")");
-
-                        req += getModifiedVariable(params[i - 1]);
+                        req.append(getModifiedVariable(params[i - 1]));
                         if (i < tmp.length) {
-                            req += tmp[i];
+                            req.append(tmp[i]);
                         }
                     }
                 }
 
-                request = req;
+                request = req.toString();
             }
             String[] requestLines = HTTPLiveHeader.splitLines(request);
             if (requestLines.length == 0) {
@@ -704,7 +730,8 @@ public class HTTPLiveHeader extends Interaction {
             for (int li = 1; li < requestLines.length; li++) {
 
                 if (headersEnd) {
-                    post += requestLines[li] + "\r\n";
+                    post.append(requestLines[li]);
+                    post.append(new char[] {'\r','\n'});
                     continue;
                 }
                 if (requestLines[li].trim().length() == 0) {
@@ -742,9 +769,9 @@ public class HTTPLiveHeader extends Interaction {
                     br.getPage("http://" + host + path);
 
                 } else if (requestType.equalsIgnoreCase("POST")) {
-                    post = post.trim();
-                    logger.finer("POST " + "http://" + host + path + " " + post);
-                    br.postPageRaw("http://" + host + path, post);
+                    String poster = post.toString().trim();
+                    logger.finer("POST " + "http://" + host + path + " " + poster);
+                    br.postPageRaw("http://" + host + path, poster);
                 } else if (requestType.equalsIgnoreCase("AUTH")) {
                     logger.finer("Convert AUTH->GET");
                     br.getPage("http://" + host + path);

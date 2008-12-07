@@ -54,14 +54,14 @@ public class PackageManager extends Interaction implements Serializable {
     }
 
     private void checkNewInstalled() {
-        String links = "";
-        String error = "";
+        StringBuilder links = new StringBuilder();
+        StringBuilder error = new StringBuilder();
         for (PackageData pa : getPackageData()) {
             if (pa.isInstalled()) {
                 if (pa.getInstalledVersion() != Integer.parseInt(pa.getStringProperty("version"))) {
-                    error += JDLocale.LF("system.update.error.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl"));
+                    error.append(JDLocale.LF("system.update.error.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl")));
                 } else {
-                    links += JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl"));
+                    links.append(JDLocale.LF("system.update.success.message.infolink", "%s v.%s <a href='%s'>INFO</a><br/>", pa.getStringProperty("name"), pa.getStringProperty("version"), pa.getStringProperty("infourl")));
                 }
                 pa.setInstalled(false);
 
@@ -75,8 +75,8 @@ public class PackageManager extends Interaction implements Serializable {
             }
         }
 
-        if (!links.equals("")) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links), 15);
-        if (!error.equals("")) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links), 15);
+        if (!links.equals("")) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links.toString()), 15);
+        if (!error.equals("")) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links.toString()), 15);
 
     }
 
@@ -278,11 +278,14 @@ public class PackageManager extends Interaction implements Serializable {
                                 }
                             }
                             if (!ch) {
-                                String list = "";
+                                StringBuilder list = new StringBuilder();
                                 for (PackageData pa : getDownloadedPackages()) {
-                                    list += pa.getStringProperty("name") + " v." + pa.getStringProperty("version") + "<br/>";
+                                    list.append(pa.getStringProperty("name"));
+                                    list.append(new char[] {' ', 'v', '.'});
+                                    list.append(pa.getStringProperty("version"));
+                                    list.append(new char[] {'<', 'b', 'r', '/', '>'});
                                 }
-                                String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list);
+                                String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
                                 boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
                                 if (ret) {
                                     new JDInit().doWebupdate(true);

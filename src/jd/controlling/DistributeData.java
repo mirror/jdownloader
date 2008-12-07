@@ -391,17 +391,18 @@ public class DistributeData extends ControlBroadcaster {
             if (urls.length > 0) {
                 data = "";
             }
-
+            StringBuilder buff = new StringBuilder(data);
             Browser br = new Browser();
             for (String url : urls) {
 
                 try {
-                    data += br.getPage(url) + " ";
+                    buff.append(br.getPage(url));
+                    buff.append(' ');
                 } catch (Exception e) {
                 }
 
             }
-
+            data = buff.toString();
             links = findLinks();
 
         }

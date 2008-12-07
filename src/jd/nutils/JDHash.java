@@ -77,13 +77,15 @@ public class JDHash {
     }
 
     private static String byteArrayToHex(byte[] digest) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
         String tmp;
         for (byte d : digest) {
             tmp = Integer.toHexString(d & 0xFF);
-            ret += tmp.length() < 2 ? "0" + tmp : tmp;
+            if(tmp.length() < 2 )
+            ret.append('0');
+            ret.append(tmp);
         }
-        return ret;
+        return ret.toString();
     }
 
     public static String getMD5(String arg) {
