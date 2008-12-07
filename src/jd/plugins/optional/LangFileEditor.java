@@ -668,12 +668,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             ConfigEntry ce, conditionEntry;
             ConfigContainer container = new ConfigContainer(this);
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_REPOSITORY, JDLocale.L("plugins.optional.langfileeditor.svn.repository", "SVN Repository")).setDefaultValue("https://www.syncom.org/svn/jdownloader/trunk/src/"));
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, PROPERTY_SVN_WORKING_COPY, JDLocale.L("plugins.optional.langfileeditor.svn.workingCopy", "SVN Working Copy")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn"));
+            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
             container.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_SVN_ACCESS_ANONYMOUS, JDLocale.L("plugins.optional.langfileeditor.svn.access.anonymous", "Anonymous SVN CheckOut")).setDefaultValue(true));
             container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_SVN_ACCESS_USER, JDLocale.L("plugins.optional.langfileeditor.svn.access.user", "SVN Username")));
             ce.setEnabledCondidtion(conditionEntry, "==", false);
             container.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_SVN_ACCESS_PASS, JDLocale.L("plugins.optional.langfileeditor.svn.access.pass", "SVN Password")));
             ce.setEnabledCondidtion(conditionEntry, "==", false);
-            container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, PROPERTY_SVN_WORKING_COPY, JDLocale.L("plugins.optional.langfileeditor.svn.workingCopy", "SVN Working Copy")).setDefaultValue(JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn"));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
             container.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, new ActionListener() {
 

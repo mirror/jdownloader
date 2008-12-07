@@ -17,6 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Vector;
 import java.util.regex.Pattern;
 
@@ -30,18 +31,17 @@ import jd.plugins.PluginForDecrypt;
 
 public class Wordpress extends PluginForDecrypt {
 
-    private ArrayList<String[]> defaultPasswords = new ArrayList<String[]>();
+    private HashMap<String, String[]> defaultPasswords = new HashMap<String, String[]>();
 
     public Wordpress(PluginWrapper wrapper) {
         super(wrapper);
 
         /* Die defaultpasswörter der einzelnen seiten */
-        /* Host, defaultpw1, defaultpw2, usw */
-        defaultPasswords.add(new String[] { "doku.cc", "doku.cc", "doku.dl.am" });
-        defaultPasswords.add(new String[] { "hd-area.org", "hd-area.org" });
-        defaultPasswords.add(new String[] { "movie-blog.org", "movie-blog.org", "movie-blog.dl.am" });
-        defaultPasswords.add(new String[] { "xxx-blog.org", "xxx-blog.org", "xxx-blog.dl.am" });
-        defaultPasswords.add(new String[] { "zeitungsjunge.info", "www.zeitungsjunge.info" });
+        defaultPasswords.put("doku.cc", new String[] { "doku.cc", "doku.dl.am" });
+        defaultPasswords.put("hd-area.org", new String[] { "hd-area.org" });
+        defaultPasswords.put("movie-blog.org", new String[] { "movie-blog.org", "movie-blog.dl.am" });
+        defaultPasswords.put("xxx-blog.org", new String[] { "xxx-blog.org", "xxx-blog.dl.am" });
+        defaultPasswords.put("zeitungsjunge.info", new String[] { "www.zeitungsjunge.info" });
     }
 
     @Override
@@ -53,10 +53,10 @@ public class Wordpress extends PluginForDecrypt {
 
         /* Defaultpasswörter der Seite setzen */
         Vector<String> link_passwds = new Vector<String>();
-        for (String[] passwords : defaultPasswords) {
-            if (br.getHost().toLowerCase().contains(passwords[0])) {
-                for (int i = 0; i < passwords.length; i++) {
-                    if (i != 0) link_passwds.add(passwords[i]);
+        for (String host : defaultPasswords.keySet()) {
+            if (br.getHost().toLowerCase().contains(host)) {
+                for (String password : defaultPasswords.get(host)) {
+                    link_passwds.add(password);
                 }
                 break;
             }

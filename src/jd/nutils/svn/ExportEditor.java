@@ -63,7 +63,7 @@ public class ExportEditor implements ISVNEditor {
                 throw new SVNException(err);
             }
         }
-        System.out.println("dir added: " + path);
+        // System.out.println("dir added: " + path);
     }
 
     /*
@@ -168,7 +168,7 @@ public class ExportEditor implements ISVNEditor {
      * openFile call.
      */
     public void closeFile(String path, String textChecksum) throws SVNException {
-        System.out.println("file added: " + path);
+        // System.out.println("file added: " + path);
     }
 
     /*
