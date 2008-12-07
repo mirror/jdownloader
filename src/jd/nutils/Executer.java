@@ -223,13 +223,14 @@ public class Executer extends Thread {
         ArrayList<String> params = new ArrayList<String>();
         params.add(command);
         params.addAll(parameter);
-
-        String out = "";
-        for (String p : params) {
-            out += p + " ";
+        if (isDebug()) {
+            StringBuilder out = new StringBuilder();
+            for (String p : params) {
+                out.append(p);
+                out.append(' ');
+            }
+            logger.finest("Execute: " + out + " in " + runIn);
         }
-        if (isDebug()) logger.finest("Execute: " + out + " in " + runIn);
-
         ProcessBuilder pb = new ProcessBuilder(params.toArray(new String[] {}));
         if (runIn != null && runIn.length() > 0) {
             if (new File(runIn).exists()) {
