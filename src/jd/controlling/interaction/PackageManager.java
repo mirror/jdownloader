@@ -75,8 +75,8 @@ public class PackageManager extends Interaction implements Serializable {
             }
         }
 
-        if (!links.toString().equals("")) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links.toString()), 15);
-        if (!error.toString().equals("")) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links.toString()), 15);
+        if (links.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.success.message", "Installed new updates<hr>%s", links.toString()), 15);
+        if (error.length() > 0) JDUtilities.getGUI().showCountdownConfirmDialog(JDLocale.LF("system.update.error.message", "Installing updates FAILED for this packages:<hr>%s", links.toString()), 15);
 
     }
 
