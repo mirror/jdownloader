@@ -38,7 +38,7 @@ import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class Netloadin extends PluginForHost {
-    static private final String AGB_LINK = "http://netload.in/index.php?id=12";
+    static private final String AGB_LINK = "http://netload.in/index.php?id=13";
 
     static private final String CAPTCHA_WRONG = "Sicherheitsnummer nicht eingegeben";
 
