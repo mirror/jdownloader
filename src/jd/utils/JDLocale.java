@@ -81,63 +81,19 @@ public class JDLocale {
         int key = key2.toLowerCase().hashCode();
         if (data.containsKey(key)) return data.get(key);
 
-        System.out.println("Key not found: " + key2 + " Defaultvalue: "+def);
+        System.out.println("Key not found: " + key2 + " Defaultvalue: " + def);
         if (def == null) {
-            //defaultData nur im absoluten notfall laden 
+            // defaultData nur im absoluten Notfall laden
             loadDefault();
             if (defaultData.containsKey(key)) {
-
                 def = defaultData.get(key);
-            } 
-            if(def == null)
-            def = key2;
+            }
+            if (def == null) def = key2;
         }
 
         data.put(key, def);
 
         return def;
-    }
-
-    /**
-     * Intern wird jetzt der HashCode des Keys verwendet
-     * 
-     * @param file
-     * @param data
-     * @param format
-     */
-    @Deprecated
-    public static void oldParseLanguageFile(File file, HashMap<String, String> data, boolean format) {
-        data.clear();
-
-        if (file == null || !file.exists()) {
-            System.out.println("JDLocale: " + file + " not found");
-            return;
-        }
-
-        BufferedReader f;
-        try {
-            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
-
-            String line;
-            String key;
-            String value;
-            while ((line = f.readLine()) != null) {
-                if (line.startsWith("#")) continue;
-                int split = line.indexOf("=");
-                if (split <= 0) continue;
-
-                key = line.substring(0, split).trim().toLowerCase();
-                value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
-                if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
-
-                data.put(key, value);
-            }
-            f.close();
-        } catch (IOException e) {
-
-            e.printStackTrace();
-        }
-
     }
 
     private static boolean isGerman() {
@@ -162,10 +118,6 @@ public class JDLocale {
     }
 
     public static void parseLanguageFile(File file, HashMap<Integer, String> data) {
-        JDLocale.parseLanguageFile(file, data, true);
-    }
-
-    public static void parseLanguageFile(File file, HashMap<Integer, String> data, boolean format) {
         data.clear();
 
         if (file == null || !file.exists()) {
@@ -187,7 +139,7 @@ public class JDLocale {
 
                 key = line.substring(0, split).trim().toLowerCase();
                 value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
-                if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
+                value = value.replace("\\r", "\r").replace("\\n", "\n");
 
                 data.put(key.hashCode(), value);
             }

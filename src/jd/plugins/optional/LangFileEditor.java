@@ -26,10 +26,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -829,9 +832,8 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         initLocaleData();
     }
 
-    @SuppressWarnings("deprecation")
     private void initLocaleData() {
-        JDLocale.oldParseLanguageFile(languageFile, fileEntries, false);
+        parseLanguageFile(languageFile, fileEntries);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
@@ -899,10 +901,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private void getSourceEntriesFromFile() {
         sourcePatterns.clear();
-        JDLocale.oldParseLanguageFile(sourceFile, sourceEntries, false);
+        parseLanguageFile(sourceFile, sourceEntries);
     }
 
     private void getSourceEntriesFromFolder() {
@@ -944,6 +945,36 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
 
         return files;
+    }
+
+    private void parseLanguageFile(File file, HashMap<String, String> data) {
+        data.clear();
+
+        if (file == null || !file.exists()) {
+            System.out.println("JDLocale: " + file + " not found");
+            return;
+        }
+
+        try {
+            BufferedReader f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+
+            String line;
+            String key;
+            String value;
+            while ((line = f.readLine()) != null) {
+                if (line.startsWith("#")) continue;
+                int split = line.indexOf("=");
+                if (split <= 0) continue;
+
+                key = line.substring(0, split).trim().toLowerCase();
+                value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
+
+                data.put(key, value);
+            }
+            f.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public void mouseClicked(MouseEvent e) {
