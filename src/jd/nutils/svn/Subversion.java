@@ -50,7 +50,7 @@ public class Subversion {
         setupType(url);
         this.user = user;
         this.pass = pass;
-        ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(user, pass);
+        ISVNAuthenticationManager authManager = SVNWCUtil.createDefaultAuthenticationManager(this.user, this.pass);
         repository.setAuthenticationManager(authManager);
         checkRoot();
     }
@@ -86,8 +86,8 @@ public class Subversion {
         file.mkdirs();
 
         ISVNEditor exportEditor = new ExportEditor(file);
-        long rev;
-        ISVNReporterBaton reporterBaton = new ExportReporterBaton(rev = latestRevision());
+        long rev = latestRevision();
+        ISVNReporterBaton reporterBaton = new ExportReporterBaton(rev);
         /*
          * Now ask SVNKit to perform generic 'update' operation using our
          * reporter and editor.
