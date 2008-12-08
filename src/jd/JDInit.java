@@ -32,6 +32,8 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import jd.gui.skins.simple.JDLookAndFeelManager;
+
 import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.controlling.JDController;
@@ -477,7 +479,7 @@ public class JDInit {
                 splashScreen.finish();
             } catch (Exception e) {
             }
-            SimpleGUI.setUIManager();
+            JDLookAndFeelManager.setUIManager();
             Installer inst = new Installer();
 
             if (!inst.isAborted()) {
