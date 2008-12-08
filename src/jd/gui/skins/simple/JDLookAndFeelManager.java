@@ -85,4 +85,8 @@ public class JDLookAndFeelManager implements Serializable{
             e.printStackTrace();
         }
     }
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof JDLookAndFeelManager) && ((JDLookAndFeelManager) obj).ClassName.equals(ClassName);
+    }
 }
