@@ -83,6 +83,10 @@ public class Threader {
         if (this.hasStarted) worker.start();
     }
 
+    public boolean isHasDied() {
+        return hasDied;
+    }
+
     private synchronized void onWorkerFinished(Worker w) {
         returnedWorker++;
         for (int i = 0; i < broadcaster.size(); i++) {
@@ -105,7 +109,10 @@ public class Threader {
             while (waitFlag) {
                 try {
                     wait();
-                } catch (Exception e) {
+                } catch (InterruptedException e) {
+                    for (Worker w : workerlist)
+                        w.interrupt();
+
                     return;
                 }
             }
@@ -163,6 +170,7 @@ public class Threader {
         public abstract void onThreadFinished(Threader th, JDRunnable runnable);
 
         public abstract void onThreadStarts(Threader threader, JDRunnable runnable);
+
         public abstract void onThreadException(Threader th, JDRunnable job, Exception e);
 
     }

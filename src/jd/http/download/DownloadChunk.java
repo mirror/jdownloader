@@ -74,6 +74,7 @@ public class DownloadChunk implements JDRunnable {
     private long bytesLoaded = 0;
     private boolean alive;
     private TwoLayerSpeedMeter speedmeter;
+    private ByteBuffer buffer;
 
     public HTTPDownload getOwner() {
         return owner;
@@ -226,7 +227,7 @@ public class DownloadChunk implements JDRunnable {
 
     private void download() throws IOException, InterruptedException {
         this.bytesLoaded = 0l;
-        ByteBuffer buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
+        buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
         ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
         miniBuffer.clear();
         long loadUntil = 0;
@@ -292,8 +293,12 @@ public class DownloadChunk implements JDRunnable {
 
                 // deltaTime = Math.max(System.currentTimeMillis() - startTime,
                 // 1);
+                System.out.println("write "+this+" "+buffer.position());              
+owner.setChunkToWrite(this);
+owner.waitForWriter(this);
+System.out.println("GOON "+this);
 
-                owner.writeBytes(this, buffer);
+               // owner.writeBytes(this, buffer);
                 this.writePosition += buffer.limit();
                 buffer.clear();
                 if (miniRead == -1) break main;
@@ -316,7 +321,8 @@ public class DownloadChunk implements JDRunnable {
             System.out.println("F1 " + this);
             if (buffer.position() > 0) {
                 try {
-                    owner.writeBytes(this, buffer);
+                    owner.setChunkToWrite(this);
+                  
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -327,6 +333,10 @@ public class DownloadChunk implements JDRunnable {
             this.disconnect();
 
         }
+    }
+
+    public ByteBuffer getBuffer() {
+        return buffer;
     }
 
     public long getSpeed() {
@@ -348,9 +358,10 @@ public class DownloadChunk implements JDRunnable {
     }
 
     public void resetSpeedMeter() {
-        synchronized (speedmeter) {
+     
+  
             this.speedmeter = new TwoLayerSpeedMeter(SPEEDMETER_INTERVAL);
-        }
+        
 
     }
 
