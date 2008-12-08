@@ -105,7 +105,7 @@ public class HTTPDownload {
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
             dl.setBandwidthlimit(1 * 512 * 1000);
-            dl.setChunkNum(50);
+            dl.setChunkNum(100);
 
             try {
                 new Thread() {
@@ -481,12 +481,14 @@ public class HTTPDownload {
 
     public synchronized void writeWaitingChunk() throws InterruptedException, IOException {
         // Warte bis chunk zu schreiben anliegt
-        while (STATUS != 1)
-
+        while (STATUS != 1){
+            System.out.println("Nothing to write");
             wait();
+            
+        }
 
         // Schreibe Chunk
-        System.out.println("WRITE " + chunkToWrite);
+      
         ByteBuffer buffer = chunkToWrite.getBuffer();
         buffer.flip();
 
@@ -497,7 +499,7 @@ public class HTTPDownload {
 
         // benachrichtige gib chunkwarteplatz wieder frei
         STATUS = 2;
-        debug("STATUS =" + STATUS);
+       // debug("STATUS = " + STATUS);
         notifyAll();
 
     }
@@ -505,17 +507,29 @@ public class HTTPDownload {
     public synchronized void setChunkToWrite(DownloadChunk downloadChunk) throws InterruptedException {
         // warten bis schreibslot frei ist
         while (STATUS != 0) {
-            System.out.println("Locked 1 " + downloadChunk);
+            System.out.println("No free Slot for " + downloadChunk);
 
             this.wait();
 
         }
         // schreibslot belegen
-        System.out.println("Queued " + downloadChunk + " " + downloadChunk.getBuffer().position());
+        System.out.println("Queued to write next: " + downloadChunk + " " + downloadChunk.getBuffer().position());
         chunkToWrite = downloadChunk;
 
         STATUS = 1;
-        debug("STATUS =" + STATUS);
+       // debug("STATUS = " + STATUS);
+        notifyAll();
+
+    }
+    public synchronized void waitForWriter(DownloadChunk downloadChunk) throws InterruptedException {
+        // warten bis schreibslot gelöscht
+        while (STATUS != 2) {
+            System.out.println("Waiting :" + downloadChunk);
+            this.wait();
+
+        }
+        STATUS = 0;
+       // debug("STATUS = " + STATUS);
         notifyAll();
 
     }
@@ -541,17 +555,6 @@ public class HTTPDownload {
         return speed;
     }
 
-    public synchronized void waitForWriter(DownloadChunk downloadChunk) throws InterruptedException {
-        // warten bis schreibslot gelöscht
-        while (STATUS != 2) {
-            System.out.println("Locked 2" + downloadChunk);
-            this.wait();
-
-        }
-        STATUS = 0;
-        debug("STATUS =" + STATUS);
-        notifyAll();
-
-    }
+  
 
 }

@@ -293,12 +293,14 @@ public class DownloadChunk implements JDRunnable {
 
                 // deltaTime = Math.max(System.currentTimeMillis() - startTime,
                 // 1);
-                System.out.println("write "+this+" "+buffer.position());              
-owner.setChunkToWrite(this);
-owner.waitForWriter(this);
-System.out.println("GOON "+this);
+                
+                //Hier werden alle CHunks mit dem writer synchronisiert. Die Schreibfunktionen kann jeweils nur 1 Chunk betreten. Alle anderen Warten,
+                System.out.println("write " + this + " " + buffer.position());
+                owner.setChunkToWrite(this);
+                owner.waitForWriter(this);
+                System.out.println("Buffer written.. continue " + this);
 
-               // owner.writeBytes(this, buffer);
+                // owner.writeBytes(this, buffer);
                 this.writePosition += buffer.limit();
                 buffer.clear();
                 if (miniRead == -1) break main;
@@ -322,7 +324,7 @@ System.out.println("GOON "+this);
             if (buffer.position() > 0) {
                 try {
                     owner.setChunkToWrite(this);
-                  
+
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -358,10 +360,8 @@ System.out.println("GOON "+this);
     }
 
     public void resetSpeedMeter() {
-     
-  
-            this.speedmeter = new TwoLayerSpeedMeter(SPEEDMETER_INTERVAL);
-        
+
+        this.speedmeter = new TwoLayerSpeedMeter(SPEEDMETER_INTERVAL);
 
     }
 
