@@ -145,7 +145,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private void showGui() {
-
         frame = new JFrame();
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setTitle(JDLocale.L("plugins.optional.langfileeditor.title", "jDownloader - Language File Editor"));
@@ -243,11 +242,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         languageFile = cmboFile.getCurrentPath();
         if (languageFile == null) cmboFile.setCurrentPath(JDLocale.getLanguageFile());
         initLocaleData();
-
     }
 
     private void setInfoLabels() {
-
         int numMissing = 0, numOld = 0;
 
         for (KeyInfo entry : data) {
@@ -266,7 +263,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         entOld.setData(numOld);
         entOld.setCaption(JDLocale.L("plugins.optional.langfileeditor.keychart.old", "Old") + " [" + entOld.getData() + "]");
         keyChart.fetchImage();
-
     }
 
     private JMenuBar buildMenu() {
@@ -392,7 +388,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() instanceof MenuItem && ((MenuItem) e.getSource()).getActionID() == 0) {
 
             if (frame == null || !frame.isVisible()) {
@@ -704,11 +699,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             }
             String workingCopy = subConfig.getStringProperty(PROPERTY_SVN_WORKING_COPY, JDUtilities.getJDHomeDirectoryFromEnvironment().getAbsolutePath() + System.getProperty("file.separator") + "svn");
             svn.export(new File(workingCopy));
-            if (sourceFile == null || !sourceFile.getAbsolutePath().equals(workingCopy)) {
+            if (sourceFile == null || !sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy)) {
                 if (JOptionPane.showConfirmDialog(frame, JDLocale.L("plugins.optional.langfileeditor.svn.change.message", "Change the current source to the checked out SVN Repository?"), JDLocale.L("plugins.optional.langfileeditor.svn.change.title", "Change now?"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
                     cmboSource[0].setText(workingCopy);
                     cmboSelectSource.setSelectedIndex(0);
                 }
+            } else if (sourceFile.getAbsolutePath().equalsIgnoreCase(workingCopy) && !changed) {
+                initLocaleDataComplete();
             }
         } catch (SVNException e) {
             e.printStackTrace();
@@ -833,7 +830,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private void initLocaleData() {
-
         JDLocale.parseLanguageFile(languageFile, fileEntries, false);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
@@ -895,7 +891,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private void getSourceEntries() {
-
         if (cmboSelectSource.getSelectedIndex() == 0) {
             getSourceEntriesFromFolder();
         } else {
@@ -904,13 +899,11 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private void getSourceEntriesFromFile() {
-
         sourcePatterns.clear();
         JDLocale.parseLanguageFile(sourceFile, sourceEntries, false);
     }
 
     private void getSourceEntriesFromFolder() {
-
         sourceEntries.clear();
         sourcePatterns.clear();
 
@@ -938,7 +931,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
     }
 
     private Vector<File> getSourceFiles(File directory) {
-
         Vector<File> fileContents = new Vector<File>();
 
         for (File entry : directory.listFiles()) {
@@ -1024,24 +1016,22 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         public String toString() {
             return this.getKey() + " = " + this.getLanguage();
         }
+
     }
 
     private class DonePredicate implements HighlightPredicate {
-
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (!table.getValueAt(arg1.row, 1).equals("") && !table.getValueAt(arg1.row, 2).equals(""));
         }
     }
 
     private class MissingPredicate implements HighlightPredicate {
-
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (table.getValueAt(arg1.row, 2).equals(""));
         }
     }
 
     private class OldPredicate implements HighlightPredicate {
-
         public boolean isHighlighted(Component arg0, ComponentAdapter arg1) {
             return (table.getValueAt(arg1.row, 1).equals(""));
         }
@@ -1097,6 +1087,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 changed(true);
             }
         }
+
     }
 
     private class DupeDialog extends JDialog implements ActionListener {
@@ -1104,7 +1095,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         private static final long serialVersionUID = 1L;
 
         public DupeDialog(JFrame owner, HashMap<String, Vector<String>> dupes) {
-
             super(owner);
 
             setModal(true);
@@ -1139,11 +1129,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
 
         public void actionPerformed(ActionEvent e) {
-
             dispose();
         }
 
-        class MyDupeTableModel extends AbstractTableModel {
+        private class MyDupeTableModel extends AbstractTableModel {
 
             private static final long serialVersionUID = -5434313385327397539L;
 
@@ -1179,13 +1168,13 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
                 case 1:
                     return keys[row];
                 case 2:
-                    String ret = "";
+                    StringBuilder ret = new StringBuilder();
                     Vector<String> values = tableData.get(keys[row]);
                     for (String value : values) {
-                        if (!ret.isEmpty()) ret += " || ";
-                        ret += value;
+                        if (ret.length() > 0) ret.append(" || ");
+                        ret.append(value);
                     }
-                    return ret;
+                    return ret.toString();
                 }
                 return "";
             }
@@ -1200,6 +1189,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
             public boolean isCellEditable(int row, int col) {
                 return (col == 1);
             }
+
         }
     }
 
