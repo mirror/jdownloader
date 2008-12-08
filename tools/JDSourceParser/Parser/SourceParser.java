@@ -1,15 +1,37 @@
 package Parser;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import myIrcBot.Utilities;
-
 public class SourceParser {
+    private static String getLocalFile(File file) {
+        if (!file.exists())
+            return "";
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+
+            String line;
+            StringBuffer ret = new StringBuffer();
+            String sep = "\r\n";
+            while ((line = f.readLine()) != null) {
+                ret.append(line + sep);
+            }
+            f.close();
+            return ret.toString();
+        } catch (IOException e) {
+
+        }
+        return "";
+        }
 	private static void parseAdditon(File file, String regexp) {
-		String text = Utilities.getLocalFile(file);
+		String text = getLocalFile(file);
 		text = text.replaceAll("(?is)/\\*.*?\\*/", "");
 		text = text.replaceAll("//.*", "");
 		text = text.replaceAll(".*final .*", ""); // kann man nich verändern
