@@ -1,3 +1,19 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team jdownloader@freenet.de
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.gui.skins.simple;
 
 import java.io.Serializable;
@@ -10,45 +26,32 @@ import jd.config.SubConfiguration;
 
 import jd.utils.JDUtilities;
 
-public class JDLookAndFeelManager implements Serializable{
-    /**
-     * 
-     */
+public class JDLookAndFeelManager implements Serializable {
+
     private static final long serialVersionUID = -8056003135389551814L;
     public static final String PARAM_PLAF = "PLAF";
-    private String ClassName;
     private static boolean uiInitated = false;
     private static SubConfiguration config = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
-    public String getClassName() {
-        return ClassName;
-    }
-    public void setClassName(String className) {
-        ClassName = className;
-    }
-    public JDLookAndFeelManager(String ClassName) {
-        this.ClassName = ClassName;
-    }
-    public JDLookAndFeelManager(LookAndFeelInfo lafi) {
-        this.ClassName = lafi.getClassName();
-    }
-    @Override
-    public String toString() {
-        // TODO Auto-generated method stub
-        return ClassName.substring(ClassName.lastIndexOf(".")+1, ClassName.length()-11);
+    private String className;
+
+    public static JDLookAndFeelManager[] getInstalledLookAndFeels() {
+        LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
+        JDLookAndFeelManager[] ret = new JDLookAndFeelManager[lafis.length];
+        for (int i = 0; i < lafis.length; i++) {
+            ret[i] = new JDLookAndFeelManager(lafis[i]);
+        }
+        return ret;
     }
 
     public static JDLookAndFeelManager getPlaf() {
         Object plaf = config.getProperty(PARAM_PLAF, null);
-        if(plaf==null)
-        return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
-        if(plaf instanceof JDLookAndFeelManager)
+        if (plaf == null) return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+        if (plaf instanceof JDLookAndFeelManager) {
             return (JDLookAndFeelManager) plaf;
-        else if(plaf instanceof String)
-        {
+        } else if (plaf instanceof String) {
             for (LookAndFeelInfo lafi : UIManager.getInstalledLookAndFeels()) {
-                if(lafi.getName().equals(plaf))
-                {
-                    plaf=new JDLookAndFeelManager(lafi);
+                if (lafi.getName().equals(plaf)) {
+                    plaf = new JDLookAndFeelManager(lafi);
                     config.setProperty(PARAM_PLAF, plaf);
                     config.save();
                     return (JDLookAndFeelManager) plaf;
@@ -56,37 +59,48 @@ public class JDLookAndFeelManager implements Serializable{
             }
         }
         return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+    }
 
-    }
-    public static JDLookAndFeelManager[] getInstalledLookAndFeels() {
-        LookAndFeelInfo[] lafis = UIManager.getInstalledLookAndFeels();
-        JDLookAndFeelManager[] ret = new JDLookAndFeelManager[lafis.length];
-        for (int i = 0; i < lafis.length; i++) {
-            ret[i]=new JDLookAndFeelManager(lafis[i]);
-        }
-        return ret;
-    }
     public static void setUIManager() {
-        if (uiInitated) { return; }
+        if (uiInitated) return;
         uiInitated = true;
         try {
-            UIManager.setLookAndFeel(getPlaf().ClassName);
+            UIManager.setLookAndFeel(getPlaf().getClassName());
         } catch (ClassNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (InstantiationException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (IllegalAccessException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (UnsupportedLookAndFeelException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
+
+    public JDLookAndFeelManager(LookAndFeelInfo lafi) {
+        this.className = lafi.getClassName();
+    }
+
+    public JDLookAndFeelManager(String className) {
+        this.className = className;
+    }
+
     @Override
     public boolean equals(Object obj) {
-        return (obj instanceof JDLookAndFeelManager) && ((JDLookAndFeelManager) obj).ClassName.equals(ClassName);
+        return (obj instanceof JDLookAndFeelManager) && ((JDLookAndFeelManager) obj).getClassName().equals(className);
     }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
+    }
+
+    @Override
+    public String toString() {
+        return className.substring(className.lastIndexOf(".") + 1, className.length() - 11);
+    }
+
 }

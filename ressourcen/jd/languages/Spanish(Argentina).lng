@@ -1,5 +1,5 @@
 $translater$ = IrDA345 (ivan_345deepurple@hotmail.com)
-$version$ = $Revision: 3848 $
+$version$ = $Revision$
 addons.jdgrowlnotification.menu.enable = Mensajes habilitados
 addons.jdlowspeed.statusmessage.disabled = Deshabilitar detector de velocidad baja
 addons.jdlowspeed.statusmessage.enabled = Habilitar detector de velocidad baja
