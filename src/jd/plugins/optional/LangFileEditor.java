@@ -829,8 +829,9 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         initLocaleData();
     }
 
+    @SuppressWarnings("deprecation")
     private void initLocaleData() {
-        JDLocale.parseLanguageFile(languageFile, fileEntries, false);
+        JDLocale.oldParseLanguageFile(languageFile, fileEntries, false);
 
         HashMap<String, String> dupeHelp = new HashMap<String, String>();
         data.clear();
@@ -898,9 +899,10 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void getSourceEntriesFromFile() {
         sourcePatterns.clear();
-        JDLocale.parseLanguageFile(sourceFile, sourceEntries, false);
+        JDLocale.oldParseLanguageFile(sourceFile, sourceEntries, false);
     }
 
     private void getSourceEntriesFromFolder() {

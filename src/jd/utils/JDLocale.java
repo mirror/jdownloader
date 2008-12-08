@@ -32,9 +32,9 @@ import jd.parser.Regex;
 
 public class JDLocale {
 
-    private static HashMap<String, String> data = new HashMap<String, String>();
+    private static HashMap<Integer, String> data = new HashMap<Integer, String>();
 
-    private static HashMap<String, String> defaultData = new HashMap<String, String>();
+    private static HashMap<Integer, String> defaultData = new HashMap<Integer, String>();
 
     private static final String DEFAULTLANGUAGE = "english";
 
@@ -73,51 +73,32 @@ public class JDLocale {
         return ret;
     }
 
-    public static String getLocaleString(String key, String def) {
+    public static String getLocaleString(String key2, String def) {
         if (data == null || localeFile == null) {
             JDLocale.setLocale(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(SimpleGUI.PARAM_LOCALE, JDLocale.isGerman() ? "german" : "english"));
         }
 
-        key = key.toLowerCase();
+        int key = key2.toLowerCase().hashCode();
         if (data.containsKey(key)) return data.get(key);
 
         System.out.println("Key not found: " + key);
         if (defaultData.containsKey(key)) {
             def = defaultData.get(key);
         } else if (def == null) {
-            def = key;
+            def = key2;
         }
         data.put(key, def);
 
         return def;
     }
-
-    private static boolean isGerman() {
-        String country = System.getProperty("user.country");
-        return country != null && country.equalsIgnoreCase("DE");
-    }
-
-    public static String L(String key, String def) {
-        return JDLocale.getLocaleString(key, def);
-    }
-
     /**
-     * Wrapper für String.format(JDLocale.L(..),args)
-     * 
-     * @param key
-     * @param def
-     * @param args
-     * @return
+     * Intern wird jetzt der HashCode des Keys verwendet
+     * @param file
+     * @param data
+     * @param format
      */
-    public static String LF(String key, String def, Object... args) {
-        return String.format(JDLocale.L(key, def), args);
-    }
-
-    public static void parseLanguageFile(File file, HashMap<String, String> data) {
-        JDLocale.parseLanguageFile(file, data, true);
-    }
-
-    public static void parseLanguageFile(File file, HashMap<String, String> data, boolean format) {
+    @Deprecated
+    public static void oldParseLanguageFile(File file, HashMap<String, String> data, boolean format) {
         data.clear();
 
         if (file == null || !file.exists()) {
@@ -142,6 +123,64 @@ public class JDLocale {
                 if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
 
                 data.put(key, value);
+            }
+            f.close();
+        } catch (IOException e) {
+
+            e.printStackTrace();
+        }
+
+    }
+    private static boolean isGerman() {
+        String country = System.getProperty("user.country");
+        return country != null && country.equalsIgnoreCase("DE");
+    }
+
+    public static String L(String key, String def) {
+        return JDLocale.getLocaleString(key, def);
+    }
+
+    /**
+     * Wrapper für String.format(JDLocale.L(..),args)
+     * 
+     * @param key
+     * @param def
+     * @param args
+     * @return
+     */
+    public static String LF(String key, String def, Object... args) {
+        return String.format(JDLocale.L(key, def), args);
+    }
+
+    public static void parseLanguageFile(File file, HashMap<Integer, String> data) {
+        JDLocale.parseLanguageFile(file, data, true);
+    }
+
+    public static void parseLanguageFile(File file, HashMap<Integer, String> data, boolean format) {
+        data.clear();
+
+        if (file == null || !file.exists()) {
+            System.out.println("JDLocale: " + file + " not found");
+            return;
+        }
+
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
+
+            String line;
+            String key;
+            String value;
+            while ((line = f.readLine()) != null) {
+                if (line.startsWith("#")) continue;
+                int split = line.indexOf("=");
+                if (split <= 0) continue;
+
+                key = line.substring(0, split).trim().toLowerCase();
+                value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
+                if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
+
+                data.put(key.hashCode(), value);
             }
             f.close();
         } catch (IOException e) {
