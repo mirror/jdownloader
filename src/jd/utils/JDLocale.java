@@ -34,7 +34,7 @@ public class JDLocale {
 
     private static HashMap<Integer, String> data = new HashMap<Integer, String>();
 
-    private static HashMap<Integer, String> defaultData = new HashMap<Integer, String>();
+    private static HashMap<Integer, String> defaultData = null;
 
     private static final String DEFAULTLANGUAGE = "english";
 
@@ -81,18 +81,26 @@ public class JDLocale {
         int key = key2.toLowerCase().hashCode();
         if (data.containsKey(key)) return data.get(key);
 
-        System.out.println("Key not found: " + key);
-        if (defaultData.containsKey(key)) {
-            def = defaultData.get(key);
-        } else if (def == null) {
+        System.out.println("Key not found: " + key2 + " Defaultvalue: "+def);
+        if (def == null) {
+            //defaultData nur im absoluten notfall laden 
+            loadDefault();
+            if (defaultData.containsKey(key)) {
+
+                def = defaultData.get(key);
+            } 
+            if(def == null)
             def = key2;
         }
+
         data.put(key, def);
 
         return def;
     }
+
     /**
      * Intern wird jetzt der HashCode des Keys verwendet
+     * 
      * @param file
      * @param data
      * @param format
@@ -131,6 +139,7 @@ public class JDLocale {
         }
 
     }
+
     private static boolean isGerman() {
         String country = System.getProperty("user.country");
         return country != null && country.equalsIgnoreCase("DE");
@@ -190,6 +199,19 @@ public class JDLocale {
 
     }
 
+    private static void loadDefault() {
+        if (defaultData == null) {
+            System.err.println("JD have to load the default language, there is an missing entry");
+            defaultData = new HashMap<Integer, String>();
+            File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
+            if (defaultFile.exists()) {
+                JDLocale.parseLanguageFile(defaultFile, defaultData);
+            } else {
+                System.out.println("Could not load the default languagefile: " + defaultFile);
+            }
+        }
+    }
+
     public static void setLocale(String lID) {
         if (data != null && localeFile != null) return;
 
@@ -201,13 +223,6 @@ public class JDLocale {
         } else {
             System.out.println("Language " + localeID + " not installed");
             return;
-        }
-
-        File defaultFile = JDUtilities.getResourceFile(LANGUAGES_DIR + DEFAULTLANGUAGE + ".lng");
-        if (defaultFile.exists()) {
-            JDLocale.parseLanguageFile(defaultFile, defaultData);
-        } else {
-            System.out.println("Could not load the default languagefile: " + defaultFile);
         }
     }
 
