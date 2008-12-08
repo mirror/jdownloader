@@ -1225,7 +1225,7 @@ public class JDUtilities {
         }
         return null;
     }
-
+ 
     public static void restartJD(String[] jdArgs) {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
         String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
