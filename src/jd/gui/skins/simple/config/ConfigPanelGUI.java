@@ -22,7 +22,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
-import javax.swing.UIManager;
+import jd.gui.skins.simple.JDLookAndFeelManager;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -78,26 +78,8 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDSounds.PARAM_CURRENTTHEME, JDSounds.getSoundIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.soundTheme", "Soundtheme")));
         ce.setDefaultValue("noSounds");
 
-        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-        String[] plafs = new String[info.length];
-        String defplaf = JDUtilities.getConfiguration().getStringProperty(SimpleGUI.PARAM_PLAF, null);
-        if (defplaf == null) {
-            for (int i = 0; i < info.length; i++) {
-                if (!info[i].getName().matches("(?is).*(metal|motif).*")) {
-                    defplaf = info[i].getName();
-                    break;
-                }
-            }
-            if (defplaf == null) {
-                defplaf = "Windows";
-            }
-        }
-        for (int i = 0; i < plafs.length; i++) {
-            plafs[i] = info[i].getName();
-        }
-
-        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_PLAF, plafs, JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")));
-        ce.setDefaultValue(defplaf);
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, JDLookAndFeelManager.PARAM_PLAF, JDLookAndFeelManager.getInstalledLookAndFeels(), JDLocale.L("gui.config.gui.plaf", "Style(benötigt JD-Neustart)")));
+        ce.setDefaultValue(JDLookAndFeelManager.getPlaf());
 
         // Links Tab
         ConfigContainer links = new ConfigContainer(this, JDLocale.L("gui.config.gui.container.tab", "Downloadlinks"));

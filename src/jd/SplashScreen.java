@@ -22,7 +22,7 @@ import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 
-import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.JDLookAndFeelManager;
 
 /**
  * <p>
@@ -72,7 +72,7 @@ public class SplashScreen implements ActionListener {
     public SplashScreen(String path) throws IOException, AWTException {
         // final URL url =
         // this.getClass().getClassLoader().getResource(path);
-        SimpleGUI.setUIManager();
+        JDLookAndFeelManager.setUIManager();
         image = ImageIO.read(new File(path));
 
         currentImage = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().createCompatibleImage(image.getWidth(null), image.getHeight(null));

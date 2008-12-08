@@ -74,10 +74,7 @@ import javax.swing.JToolBar;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
-import javax.swing.UIManager.LookAndFeelInfo;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -132,8 +129,6 @@ import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
 import org.jdesktop.swingx.JXTitledSeparator;
-
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class SimpleGUI implements UIInterface, ActionListener, UIListener, WindowListener, DropTargetListener {
 
@@ -333,8 +328,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_LOCALE = "LOCALE";
 
-    public static final String PARAM_PLAF = "PLAF";
-
     public static final String PARAM_SHOW_SPLASH = "SHOW_SPLASH";
 
     public static final String PARAM_SHOW_FENGSHUI = "SHOW_FENGSHUI";
@@ -359,8 +352,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static final String PARAM_CUSTOM_BROWSER_PARAM = "PARAM_CUSTOM_ROWSER_PARAM";
 
     public static final String PARAM_NUM_PREMIUM_CONFIG_FIELDS = "PARAM_NUM_PREMIUM_CONFIG_FIELDS";
-
-    private static boolean uiInitated = false;
 
     /**
      * factory method for menu items
@@ -521,56 +512,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     }
 
-    public static void setUIManager() {
-        if (uiInitated) { return; }
-        uiInitated = true;
-        UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
-
-        boolean plafisSet = false;
-        String paf = guiConfig.getStringProperty(PARAM_PLAF, null);
-        if (paf != null) {
-            for (LookAndFeelInfo element : info) {
-                if (element.getName().equals(paf)) {
-                    try {
-                        UIManager.setLookAndFeel(element.getClassName());
-                        plafisSet = true;
-                        break;
-                    } catch (UnsupportedLookAndFeelException e) {
-                    } catch (ClassNotFoundException e) {
-
-                    } catch (InstantiationException e) {
-
-                    } catch (IllegalAccessException e) {
-
-                    }
-                }
-            }
-        } else {
-            for (int i = 0; i < info.length; i++) {
-                if (!info[i].getName().matches("(?is).*(metal|motif).*")) {
-                    try {
-                        UIManager.setLookAndFeel(info[i].getClassName());
-                        plafisSet = true;
-                        break;
-                    } catch (UnsupportedLookAndFeelException e) {
-                    } catch (ClassNotFoundException e) {
-
-                    } catch (InstantiationException e) {
-
-                    } catch (IllegalAccessException e) {
-
-                    }
-                }
-            }
-        }
-        if (!plafisSet) {
-            try {
-                UIManager.setLookAndFeel(new WindowsLookAndFeel());
-            } catch (UnsupportedLookAndFeelException e) {
-            }
-        }
-    }
-
     private JDAction actionAbout;
 
     private JDAction actionClipBoard;
@@ -704,7 +645,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public SimpleGUI() {
         super();
-        SimpleGUI.setUIManager();
+        JDLookAndFeelManager.setUIManager();
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
         menuBar = new JMenuBar();
@@ -1427,7 +1368,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
         try {
             ImageIcon icon = JDUtilities.getScaledImageIcon(JDTheme.V("gui.images.update_manager"), 16, -1);
-            JLinkButton linkButton = new JLinkButton(JDLocale.L("jdownloader.org", "jDownloader.org"), icon, new URL(JDLocale.L("jdownloader.localnewsurl","http://jdownloader.org/news?lng=en")));
+            JLinkButton linkButton = new JLinkButton(JDLocale.L("jdownloader.org", "jDownloader.org"), icon, new URL(JDLocale.L("jdownloader.localnewsurl", "http://jdownloader.org/news?lng=en")));
             linkButton.setHorizontalTextPosition(SwingConstants.LEFT);
             linkButton.setBorder(null);
             Dimension d = new Dimension(10, 0);

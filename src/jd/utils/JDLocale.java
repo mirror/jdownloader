@@ -16,8 +16,11 @@
 
 package jd.utils;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Vector;
 
@@ -25,7 +28,6 @@ import jd.JDFileFilter;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
 import jd.http.PostRequest;
-import jd.nutils.io.JDIO;
 import jd.parser.Regex;
 
 public class JDLocale {
@@ -123,19 +125,28 @@ public class JDLocale {
             return;
         }
 
-        String[] lines = Regex.getLines(JDIO.getLocalFile(file));
-        String key;
-        String value;
-        for (String line : lines) {
-            if (line.startsWith("#")) continue;
-            int split = line.indexOf("=");
-            if (split <= 0) continue;
+        BufferedReader f;
+        try {
+            f = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF8"));
 
-            key = line.substring(0, split).trim().toLowerCase();
-            value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
-            if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
+            String line;
+            String key;
+            String value;
+            while ((line = f.readLine()) != null) {
+                if (line.startsWith("#")) continue;
+                int split = line.indexOf("=");
+                if (split <= 0) continue;
 
-            data.put(key, value);
+                key = line.substring(0, split).trim().toLowerCase();
+                value = line.substring(split + 1).trim() + (line.endsWith(" ") ? " " : "");
+                if (format) value = value.replace("\\r", "\r").replace("\\n", "\n");
+
+                data.put(key, value);
+            }
+            f.close();
+        } catch (IOException e) {
+
+            e.printStackTrace();
         }
 
     }
