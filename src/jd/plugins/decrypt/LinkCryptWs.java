@@ -48,13 +48,13 @@ public class LinkCryptWs extends PluginForDecrypt {
 
         String containerId = new Regex(parameter, "dir/([a-zA-Z0-9]+)").getMatch(0);
 
-        br.getPage("http://linkcrypt.ws/download.php?id=" + containerId + "&art=dlc");
+        br.getPage("http://linkcrypt.ws/dlc/" + containerId);
 
         logger.finest("Captcha Protected");
 
         boolean valid = true;
         for (int i = 0; i < 5; ++i) {
-            if (br.containsHTML("<b>Bitte klicke auf den offenen Kreis!</b>")) {
+            if (br.containsHTML("Bitte klicke auf den offenen Kreis!")) {
                 valid = false;
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(0);
@@ -78,9 +78,12 @@ public class LinkCryptWs extends PluginForDecrypt {
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
 
         /* TODO: Das kann man sicher besser lösen.. bitte mal wer reinschauen */
+        String dlc = br.getRegex("(^.*?)<script").getMatch(0);
+        if (dlc == null) dlc = br.toString();
+
         FileOutputStream out = new FileOutputStream(container);
-        for (int i = 0; i < br.toString().length(); i++) {
-            out.write((byte) br.toString().charAt(i));
+        for (int i = 0; i < dlc.length(); i++) {
+            out.write((byte) dlc.charAt(i));
         }
         out.close();
 
