@@ -83,8 +83,7 @@ public class ClipboardHandler extends Thread implements ControlListener {
         enabled = true;
         while (enabled) {
             try {
-                DataFlavor[] flavors = clipboard.getAvailableDataFlavors();
-                for (DataFlavor element : flavors) {
+                for (DataFlavor element : clipboard.getAvailableDataFlavors()) {
 
                     if (element.isFlavorJavaFileListType()) {
                         List<?> list = (List<?>) clipboard.getData(element);
@@ -110,17 +109,14 @@ public class ClipboardHandler extends Thread implements ControlListener {
 
                     }
                     if (element.isFlavorTextType() && element.getRepresentationClass() == String.class && element.getHumanPresentableName().equals("Unicode String")) {
-                        String data = (String) clipboard.getData(element);
-
-                        data = data.trim();
 
                         // if (olddata == null) {
                         // olddata = data;
                         // }
-                        if (!data.equals(olddata)) {
-                            olddata = data;
+                        if (!((String) clipboard.getData(element)).equals(olddata)) {
+                            olddata = (String) clipboard.getData(element);
 
-                            distributeData = new DistributeData(data, true);
+                            distributeData = new DistributeData(olddata.trim(), true);
                             distributeData.addControlListener(JDUtilities.getController());
                             distributeData.start();
                         }
