@@ -27,12 +27,19 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import javax.swing.JOptionPane;
+
 import jd.JDInit;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
+import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
+import jd.nutils.JDHash;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -52,6 +59,7 @@ public class RouterInfoCollector {
     protected String IP = null;
     protected String routerHost = null;
     protected String pageHeader = null;
+    private String routerSiteLoggedIn=null;
     protected static Thread rict = null;
 
     public RouterInfoCollector() {
@@ -96,6 +104,30 @@ public class RouterInfoCollector {
 
         } catch (IOException e) {
         }
+        //login to router
+       String user=JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_USER);
+       String pass= JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_PASS);
+       Map<String, List<String>> headers = br.getRequest().getResponseHeaders();
+       
+       for(Iterator<Entry<String, List<String>>> it = headers.entrySet().iterator();it.hasNext();){
+          if( it.next().getValue().get(0).contains("uthenticate")){
+              br.setAuth(IP, user, pass);
+              try {
+                routerSiteLoggedIn = br.getPage("http://" + IP);
+                if(!br.getRequest().getHttpConnection().isOK()){
+                    routerSiteLoggedIn=null;
+                }
+            } catch (IOException e) {
+               
+            } 
+          }
+       }
+    
+  
+       
+            
+        
+        
         try {
             routerErrorPage = br.getPage("http://" + IP + "/error404");
         } catch (IOException e) {
@@ -114,6 +146,9 @@ public class RouterInfoCollector {
                     if (script[2].trim().equals(reconnectMethode) && !rmn.contains(script[1])) rmn.add(script[1]);
                 }
                 routerMethodeNames = rmn.toArray(new String[rmn.size()]);
+            }
+            if(routerMethodeNames==null||routerMethodeNames.length==0){
+                routerMethodeNames = new String[] {SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("routerinfocollector.namedialog.title", "Please enter the following routerinfos: manufacturer, model, firmware. (e.g DLink, 635 , FW1.37)"))};
             }
         }
 
@@ -137,13 +172,7 @@ public class RouterInfoCollector {
         HashMap<String, String> ret = new HashMap<String, String>();
         if (IP != null) ret.put("RouterIP", IP);
         if (routerHost != null) ret.put("RouterHost", routerHost);
-        if (routerMethodeNames != null) {
-            try {
-                ret.put("Routernames", JDUtilities.objectToXml(routerMethodeNames));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+   
         if (routerMAC != null) ret.put("RouterMAC", routerMAC.substring(0, 8));
         if (uPnPSCPDs != null) {
             try {
@@ -152,6 +181,7 @@ public class RouterInfoCollector {
                 e.printStackTrace();
             }
         }
+        if (routerSiteLoggedIn != null)ret.put("Routernames", routerSiteLoggedIn);
         if (pageHeader != null) ret.put("PageHeader", pageHeader);
         if (routerSite != null) ret.put("RouterPage", routerSite);
         if (routerErrorPage != null) ret.put("RouterErrorPage", routerErrorPage);
@@ -167,6 +197,17 @@ public class RouterInfoCollector {
                 }
             }
         }
+        
+        ret.put("hash", JDHash.getMD5(ret+""));
+        
+        if (routerMethodeNames != null) {
+            try {
+                ret.put("Routernames", JDUtilities.objectToXml(routerMethodeNames));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+       
         return ret;
 
     }
