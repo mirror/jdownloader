@@ -164,7 +164,7 @@ public class ScheduleControl extends JDialog implements ActionListener {
         String[] s = new String[size + 10];
 
         for (int i = 1; i <= size; ++i) {
-            s[i] = " Schedule " + i;
+            s[i] = " " + JDLocale.L("addons.schedule.menu.schedule", "Schedule") + " " + i;
             list.add(s[i]);
         }
         if (size == 0) {
