@@ -17,6 +17,7 @@
 package jd.router;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.URLEncoder;
@@ -39,26 +40,24 @@ public class RouterInfoCollector {
     public final static String PROPERTY_SHOW_ROUTERINFO_DIALOG = "PROPERTY_SHOW_ROUTERINFO_DIALOG";
     public final static String RECONNECTTYPE_LIVE_HEADER = JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl");
     public final static String RECONNECTTYPE_CLR = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
-    protected String reconnectType = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
+    protected static String reconnectType = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
     protected String routerSite = null;
-  
+
     protected String routerErrorPage = null;
     protected String routerMAC = null;
     protected String[] routerMethodeNames = null;
     protected HashMap<String, String> uPnPSCPDs = null;
-    protected String reconnectMethode = null;
-    protected String reconnectMethodeClr = null;
+    protected static String reconnectMethode = null;
+    protected static String reconnectMethodeClr = null;
     protected String IP = null;
     protected String routerHost = null;
     protected String pageHeader = null;
+    protected static Thread rict = null;
 
     public RouterInfoCollector() {
-        reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
-        reconnectMethodeClr = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null);
         IP = null;
         try {
             IP = getRouterIP();
-
         } catch (Exception e) {
         }
         try {
@@ -120,19 +119,20 @@ public class RouterInfoCollector {
 
     }
 
-    public boolean isLiveheader() {
+    public static boolean isLiveheader() {
+        reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
         return (reconnectType.equals(RECONNECTTYPE_LIVE_HEADER) && reconnectMethode != null);
     }
 
-    public boolean isClr() {
+    public static boolean isClr() {
+        reconnectMethodeClr = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null);
         return (reconnectType.equals(RECONNECTTYPE_CLR) && reconnectMethodeClr != null);
     }
 
-    public boolean isValidReconnect() {
+    public static boolean isValidReconnect() {
         return (isLiveheader() || isClr());
     }
 
-    @SuppressWarnings("deprecation")
     public HashMap<String, String> getHashMap(boolean urlencode) {
         HashMap<String, String> ret = new HashMap<String, String>();
         if (IP != null) ret.put("RouterIP", IP);
@@ -159,7 +159,12 @@ public class RouterInfoCollector {
         if (isClr()) ret.put("ReconnectMethodeClr", reconnectMethodeClr);
         if (urlencode) {
             for (Entry<String, String> ent : ret.entrySet()) {
-                ent.setValue(URLEncoder.encode(ent.getValue()));
+                try {
+                    ent.setValue(URLEncoder.encode(ent.getValue(), "UTF-8"));
+                } catch (UnsupportedEncodingException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
         }
         return ret;
@@ -213,26 +218,27 @@ public class RouterInfoCollector {
      * return ric.toXMLString(); }
      */
     public static void showDialog() {
-        // if (true) {
-        if (JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) {
-            new Thread(new Runnable() {
+        if (isValidReconnect()) {
+            if (JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) {
+                if (rict != null && rict.isAlive()) return;
+                rict = new Thread(new Runnable() {
+                    public void run() {
+                        RouterInfoCollector ric = new RouterInfoCollector();
+                        String xml = ric.toString();
+                        if (xml != null && isValidReconnect()) {
+                            CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("routerinfocollector.dialog.title", "Helfen sie die Routererkennung zu verbessern"), 30, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO | CountdownConfirmDialog.STYLE_DETAILLABLE, JDLocale.L("routerinfocollector.dialog.msg", "<b>Um die automatische Routererkennung zu verbessern sammeln wir Routerinformationen!</b><br>Wenn sie damit einverstanden sind die Informationen aus den Details an unseren Server zu übermitteln bestätigen sie mit ja!"), xml);
 
-                public void run() {
-                    RouterInfoCollector ric = new RouterInfoCollector();
-                    String xml = ric.toString();
-                    if (xml != null && ric.isValidReconnect()) {
-                        CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("routerinfocollector.dialog.title", "Helfen sie die Routererkennung zu verbessern"), 30, true, CountdownConfirmDialog.STYLE_YES | CountdownConfirmDialog.STYLE_NO | CountdownConfirmDialog.STYLE_DETAILLABLE, JDLocale.L("routerinfocollector.dialog.msg", "<b>Um die automatische Routererkennung zu verbessern sammeln wir Routerinformationen!</b><br>Wenn sie damit einverstanden sind die Informationen aus den Details an unseren Server zu übermitteln bestätigen sie mit ja!"), xml); 
-
-                        if (!ccd.window_Closed) 
-                            {
-                            JDUtilities.getConfiguration().setProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
-                            JDUtilities.getConfiguration().save();
+                            if (!ccd.window_Closed) {
+                                JDUtilities.getConfiguration().setProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
+                                JDUtilities.getConfiguration().save();
                             }
-                        if (ccd.result) ric.sendToServer();
-                    }
+                            if (ccd.result) ric.sendToServer();
+                        }
 
-                }
-            }).start();
+                    }
+                });
+                rict.start();
+            }
         }
     }
 
@@ -246,7 +252,8 @@ public class RouterInfoCollector {
 
         Browser br = new Browser();
         try {
-//            br.setAuth("http://loaclhost/router/import.php", "jd", "jdroutercollector");
+            // br.setAuth("http://loaclhost/router/import.php", "jd",
+            // "jdroutercollector");
             br.postPage("http://service.jdownloader.net/routerdb/import.php", getHashMap(true));
         } catch (IOException e) {
             e.printStackTrace();

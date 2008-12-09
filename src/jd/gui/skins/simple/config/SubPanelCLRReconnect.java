@@ -27,6 +27,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.router.FindRouterIP;
+import jd.router.RouterInfoCollector;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -75,6 +76,7 @@ public class SubPanelCLRReconnect extends ConfigPanel implements ActionListener 
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, JDLocale.L("gui.config.liveHeader.waitTimeForIPCheck", "Wartezeit bis zum ersten IP-Check[sek]"), 0, 600).setDefaultValue(5)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_HTTPSEND_RETRIES, JDLocale.L("gui.config.liveHeader.retries", "Max. Wiederholungen (-1 = unendlich)"), -1, 20).setDefaultValue(5)));
         addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, configuration, Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, JDLocale.L("gui.config.liveHeader.waitForIP", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20)));
+        addGUIConfigEntry(new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, configuration, RouterInfoCollector.PROPERTY_SHOW_ROUTERINFO_DIALOG, JDLocale.L("gui.config.reconnect.showupload", "Show ReconnectInfo Upload Window")).setDefaultValue(JDUtilities.getConfiguration().getBooleanProperty(RouterInfoCollector.PROPERTY_SHOW_ROUTERINFO_DIALOG, true))));
 
         routerScript = new GUIConfigEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, configuration, Configuration.PARAM_HTTPSEND_REQUESTS_CLR, JDLocale.L("gui.config.clr.script", "CLR Script")).setInstantHelp("http://wiki.jdownloader.org/index.php?title=CLR"));
         this.entries.add(routerScript);
