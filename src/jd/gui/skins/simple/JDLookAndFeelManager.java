@@ -47,7 +47,14 @@ public class JDLookAndFeelManager implements Serializable {
         Object plaf = config.getProperty(PARAM_PLAF, null);
         if (plaf == null) return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
         if (plaf instanceof JDLookAndFeelManager) {
-            return (JDLookAndFeelManager) plaf;
+            if (((JDLookAndFeelManager) plaf).className != null) {
+                return (JDLookAndFeelManager) plaf;
+            } else {
+                plaf = new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
+                config.setProperty(PARAM_PLAF, plaf);
+                config.save();
+                return (JDLookAndFeelManager) plaf;
+            }
         } else if (plaf instanceof String) {
             for (LookAndFeelInfo lafi : UIManager.getInstalledLookAndFeels()) {
                 if (lafi.getName().equals(plaf)) {
@@ -87,7 +94,7 @@ public class JDLookAndFeelManager implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
-        return (obj instanceof JDLookAndFeelManager) && ((JDLookAndFeelManager) obj).getClassName().equals(className);
+        return (obj instanceof JDLookAndFeelManager) && ((JDLookAndFeelManager) obj).getClassName() != null && ((JDLookAndFeelManager) obj).getClassName().equals(className);
     }
 
     public String getClassName() {
@@ -100,6 +107,7 @@ public class JDLookAndFeelManager implements Serializable {
 
     @Override
     public String toString() {
+        if (className == null) return null;
         return className.substring(className.lastIndexOf(".") + 1, className.length() - 11);
     }
 
