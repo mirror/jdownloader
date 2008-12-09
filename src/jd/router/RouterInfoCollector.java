@@ -41,6 +41,7 @@ public class RouterInfoCollector {
     public final static String RECONNECTTYPE_CLR = JDLocale.L("modules.reconnect.types.clr", "CLR Script");
     protected String reconnectType = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
     protected String routerSite = null;
+  
     protected String routerErrorPage = null;
     protected String routerMAC = null;
     protected String[] routerMethodeNames = null;
