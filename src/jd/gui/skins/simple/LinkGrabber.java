@@ -1635,11 +1635,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             if (tabList.get(i) == tab) {
                 String title = tab.getPackageName();
                 if (title.length() > 20) {
-                    // tabbedPane.setToolTipTextAt(i, title);
+                    tabbedPane.setToolTipTextAt(i, title);
                     title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
                 }
-                // tabbedPane.setTitleAt(i, title + " (" +
-                // tab.getLinkList().size() + ")");
+                tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
                 return;
             }
         }
