@@ -210,7 +210,7 @@ public class TreeTablePaneUI extends BasicTableUI {
                 } else if (path != null && path.getLastPathComponent() instanceof DownloadLink) {
                     dLink = (DownloadLink) path.getLastPathComponent();
 
-                    if (!dLink.isEnabled()) {
+                    if (!dLink.isEnabled() || !dLink.getPlugin().getWrapper().usePlugin()) {
                         color = COLOR_DISABLED;
                     } else if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_POST_PROCESS)) {
                         color = COLOR_ERROR_POST;

@@ -129,10 +129,9 @@ public class HTMLParser {
     public static String getHttpLinkList(String data) {
         String[] links = HTMLParser.getHttpLinks(data, null);
         StringBuilder ret = new StringBuilder();
-
         for (String element : links) {
             ret.append('\"');
-            ret.append(element);
+            ret.append(element.trim());
             ret.append(new char[] { '"', '\r', '\n' });
         }
         return ret.toString();

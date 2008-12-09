@@ -55,7 +55,7 @@ public class Threader {
     }
 
     private ArrayList<Worker> workerlist;
-    private int returnedWorker = 0;
+    private Integer returnedWorker = 0;
     private boolean waitFlag = false;
     private Broadcaster<WorkerListener> broadcaster;
     private boolean hasDied = false;

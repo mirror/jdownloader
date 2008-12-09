@@ -32,6 +32,7 @@ import java.util.regex.Pattern;
 
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
+import jd.event.ControlEvent;
 import jd.nutils.JDHash;
 import jd.plugins.Plugin;
 import jd.update.WebUpdater;
@@ -157,6 +158,7 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
     public void setUsePlugin(boolean bool) {
         getPluginConfig().setProperty("USE_PLUGIN", bool);
         getPluginConfig().save();
+        if (JDUtilities.getController() != null) JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, null));
     }
 
     public boolean canHandle(String data) {

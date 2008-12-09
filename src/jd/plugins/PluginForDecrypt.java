@@ -136,7 +136,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
             public void go() throws Exception {
                 run();
-                
+
             }
         }
 
@@ -171,6 +171,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
             for (int i = hits.length - 1; i >= 0; i--) {
                 String file = hits[i];
+                file = file.trim();
                 while (file.charAt(0) == '"') {
                     file = file.substring(1);
                 }

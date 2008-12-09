@@ -25,23 +25,23 @@ public class Jobber {
     private LinkedList<JDRunnable> jobList;
     private Worker[] workerList;
     private ArrayList<WorkerListener> listener;
-    private int currentlyRunningWorker;
+    private Integer currentlyRunningWorker;
     private boolean killWorkerAfterQueueFinished = true;
     private boolean running = false;
-    private int jobsAdded = 0;
+    private Integer jobsAdded = 0;
     boolean debug = false;
 
     public int getJobsAdded() {
         return jobsAdded;
     }
 
-    private int jobsFinished = 0;
+    private Integer jobsFinished = 0;
 
     public int getJobsFinished() {
         return jobsFinished;
     }
 
-    private int jobsStarted = 0;
+    private Integer jobsStarted = 0;
 
     public int getJobsStarted() {
         return jobsStarted;
@@ -78,7 +78,6 @@ public class Jobber {
 
     private void createWorker() {
         this.workerList = new Worker[paralellWorkerNum];
-
         currentlyRunningWorker = 0;
         for (int i = 0; i < paralellWorkerNum; i++) {
             increaseWorkingWorkers();
@@ -103,7 +102,6 @@ public class Jobber {
                 stop();
             }
         }
-
         return currentlyRunningWorker;
     }
 
@@ -150,12 +148,14 @@ public class Jobber {
                 wl.onJobFinished(this, job);
         }
     }
-    private void fireJobException(JDRunnable job,Exception e) {
+
+    private void fireJobException(JDRunnable job, Exception e) {
         synchronized (listener) {
             for (WorkerListener wl : listener)
-                wl.onJobException(this, job,e);
+                wl.onJobException(this, job, e);
         }
     }
+
     private void fireJobStarted(JDRunnable job) {
         synchronized (listener) {
             for (WorkerListener wl : listener)
@@ -174,7 +174,9 @@ public class Jobber {
     public int add(JDRunnable runnable) {
         synchronized (jobList) {
             jobList.add(runnable);
-            this.jobsAdded++;
+            synchronized (this.jobsAdded) {
+                this.jobsAdded++;
+            }
             if (debug) System.out.println(this + " RINGRING!!!!");
             // if a worker sleeps.... this should wake him up
 
@@ -197,7 +199,7 @@ public class Jobber {
         }
 
     }
-   
+
     public void setKillWorkerAfterQueueFinished(boolean killWorkerAfterQueueFinished) {
         this.killWorkerAfterQueueFinished = killWorkerAfterQueueFinished;
     }
@@ -254,14 +256,18 @@ public class Jobber {
                     if (debug) System.out.println(this + ": I'm up");
                     continue;
                 }
-                jobsStarted++;
+                synchronized (jobsStarted) {
+                    jobsStarted++;
+                }
                 fireJobStarted(ra);
                 try {
                     ra.go();
-                } catch (Exception e) {            
-                    fireJobException(ra,e);
+                } catch (Exception e) {
+                    fireJobException(ra, e);
                 }
-                jobsFinished++;
+                synchronized (jobsFinished) {
+                    jobsFinished++;
+                }
                 fireJobFinished(ra);
             }
         }
@@ -271,12 +277,14 @@ public class Jobber {
     public abstract class WorkerListener {
 
         public abstract void onJobFinished(Jobber jobber, JDRunnable job);
-/**
- * Broadcastes occuring Exceptions
- * @param jobber
- * @param job
- * @param e
- */
+
+        /**
+         * Broadcastes occuring Exceptions
+         * 
+         * @param jobber
+         * @param job
+         * @param e
+         */
         public abstract void onJobException(Jobber jobber, JDRunnable job, Exception e);
 
         public abstract void onJobListFinished(Jobber jobber);

@@ -248,11 +248,10 @@ public class DownloadWatchDog extends Thread implements ControlListener {
 
                                     if (nextDownloadLink.getLinkStatus().isStatus(LinkStatus.TODO)) {
 
-                                    	int maxPerHost = getSimultanDownloadNumPerHost();
-                                    	if ( maxPerHost == 0 ) maxPerHost = Integer.MAX_VALUE;
-                                    	
-                                        if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink)
-                                        		&& getDownloadNumByHost(nextDownloadLink.getPlugin()) < maxPerHost ) {
+                                        int maxPerHost = getSimultanDownloadNumPerHost();
+                                        if (maxPerHost == 0) maxPerHost = Integer.MAX_VALUE;
+
+                                        if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink) && getDownloadNumByHost(nextDownloadLink.getPlugin()) < maxPerHost && nextDownloadLink.getPlugin().getWrapper().usePlugin()) {
 
                                         return nextDownloadLink; }
 

@@ -185,6 +185,14 @@ public class TreeTableRenderer extends DefaultTableCellRenderer {
                     ui.setSelectionBackground(DONE_COLOR_FONT_B);
                 }
                 progress.setString("Plugin loading failed");
+            } else if (!dLink.getPlugin().getWrapper().usePlugin()) {
+                progress.setForeground(INACTIVE_PROGRESS_COLOR);
+                if (ui != null) {
+                    ui.setSelectionForeground(INACTIVE_PROGRESS_COLOR_FONT_A);
+                    ui.setSelectionBackground(INACTIVE_PROGRESS_COLOR_FONT_B);
+                }
+                progress.setString(JDLocale.L("gui.downloadlink.plugindisabled", "[Plugin disabled]"));
+                return progress;
             } else if (dLink.getPluginProgress() != null) {
                 progress.setForeground(dLink.getPluginProgress().getColor());
                 if (ui != null) {
