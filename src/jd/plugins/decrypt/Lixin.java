@@ -49,7 +49,7 @@ public class Lixin extends PluginForDecrypt {
         Matcher matcher;
         Form form;
         /* zuerst mal den evtl captcha abarbeiten */
-
+        br.setCookiesExclusive(false);
         br.getPage(parameter);
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             form = br.getForm(0);
@@ -99,7 +99,6 @@ public class Lixin extends PluginForDecrypt {
                 }
             }
         }
-
         return decryptedLinks;
     }
 

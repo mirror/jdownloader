@@ -77,6 +77,8 @@ public class MediafireCom extends PluginForHost {
         String[][] para = br.getRegex("[a-z]{2}\\(\\'([a-z0-9]{7,14})\\'\\,\\'([0-f0-9]*?)\\'\\,\\'([a-z0-9]{2,14})\\'\\)\\;").getMatches();
         if (para.length == 0 || para[0].length == 0) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
+        String error = br.getRegex("var et=(.*?);").getMatch(0);
+        if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
         String url = br.getRegex("http\\:\\/\\/\"(.*?)'\"").getMatch(0);
         url = "http://" + url.replaceAll("'(.*?)'", "$1");
 
