@@ -87,7 +87,7 @@ public class Netloadin extends PluginForHost {
         checkPassword(downloadLink, linkStatus);
         if (linkStatus.isFailed()) return;
 
-        String url = br.getRegex("<div class=\"Free_dl\"><a href=\"(.*?)\">").getMatch(0);
+        String url = br.getRegex(Pattern.compile("<div class=\"Free_dl\">.*?<a href=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (br.containsHTML(FILE_NOT_FOUND)) {
 
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
