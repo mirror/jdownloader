@@ -174,7 +174,7 @@ public class MyBot extends PircBot {
                                 nachri = nachri.replaceAll("%%user%%", sender);
                                 if (nachri.matches(".*%%cmd%%.*")) {
                                     try {
-                                        String reg = new Regexp(nachri, "%%cmd%%(.*)").getMatch(0);
+                                        String reg = new Regexp(nachri, "%%cmd%%(.*)").getFirstMatch(0);
                                         onMessage(channel, sender, login, hostname, reg);
                                         return;
                                     } catch (Exception e) {
@@ -184,7 +184,7 @@ public class MyBot extends PircBot {
                                 }
                                 if (nachri.matches(".*%%raw%%.*")) {
                                     try {
-                                        String reg = new Regexp(nachri, "%%raw%%(.*)").getMatch(0);
+                                        String reg = new Regexp(nachri, "%%raw%%(.*)").getFirstMatch(0);
                                         sendRawLine(reg);
                                         return;
                                     } catch (Exception e) {
@@ -269,7 +269,7 @@ public class MyBot extends PircBot {
                     if (delayedUserMsg) delayedUserMsg = false;
                     if (delayedMsg && fastLogedin(sender, ch2)) delayedMsg = false;
                     if (message.matches("[\\s]*!last [\\d]+")) {
-                        int n = Integer.parseInt(new Regexp(message, "last ([\\d]+)").getMatch(0));
+                        int n = Integer.parseInt(new Regexp(message, "last ([\\d]+)").getFirstMatch(0));
                         String[] logr = Utilities.getLocalFile(getLog(channel)).split("\r\n");
                         if (n > 30) {
                             sendMassmes(sender, sender, "es sind maximal 30 Nachrichten erlaubt verwenden sie stattdessen !log", 0);
@@ -306,7 +306,7 @@ public class MyBot extends PircBot {
                         return;
                     } else if (message.matches("[\\s]*!svn[\\s]*.*")) {
                         if (message.matches("[\\s]*!svn[\\s]*rev[\\s]*[\\d]+") && logedin(sender, ch2)) {
-                            version = Integer.parseInt(new Regexp(message, "[\\s]*!svn[\\s]*rev[\\s]*([\\d]+)").getMatch(0));
+                            version = Integer.parseInt(new Regexp(message, "[\\s]*!svn[\\s]*rev[\\s]*([\\d]+)").getFirstMatch(0));
                         } else {
                             sendMassmes(sender, channel, getSvn(), 0);
                         }
@@ -316,12 +316,12 @@ public class MyBot extends PircBot {
                         if (!logedin(sender, ch2)) return;
                         try {
                             if (message.matches("[\\s]*!rm ignore[\\s]*[\\d]+")) {
-                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!rm ignore[\\s]*([\\d]+)").getMatch(0));
+                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!rm ignore[\\s]*([\\d]+)").getFirstMatch(0));
                                 sendMassmes(sender, sender, settings.ignore.get(n) + " wurde aus der ignoreierliste entfernt", 0);
                                 settings.ignore.remove(n);
                                 Utilities.saveObject(settings, config);
                             } else if (message.matches("[\\s]*!rm ignore[\\s]*[^\\s].*")) {
-                                String name = new Regexp(message, "[\\s]*!rm ignore[\\s]*(.*)").getMatch(0).trim();
+                                String name = new Regexp(message, "[\\s]*!rm ignore[\\s]*(.*)").getFirstMatch(0).trim();
                                 if (settings.ignore.contains(name)) {
                                     settings.ignore.remove(name);
                                     sendMassmes(sender, sender, name + " wurde aus der ignoreierliste entfernt", 0);
@@ -370,12 +370,12 @@ public class MyBot extends PircBot {
                         if (!logedin(sender, ch2)) return;
                         try {
                             if (message.matches("[\\s]*!del[\\s]*[\\d]+")) {
-                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!del[\\s]*([\\d]+)").getMatch(0));
+                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!del[\\s]*([\\d]+)").getFirstMatch(0));
                                 sendMassmes(sender, sender, messages.get(n) + " :" + " wurde aus der Nachrichtenliste entfernt", 0);
                                 messages.remove(n);
                                 Utilities.saveObject(messages, messageFile);
                             } else if (message.matches("[\\s]*!del[\\s]*[^\\s].*")) {
-                                String name = new Regexp(message, "[\\s]*!del[\\s]*(.*)").getMatch(0).trim();
+                                String name = new Regexp(message, "[\\s]*!del[\\s]*(.*)").getFirstMatch(0).trim();
                                 for (int i = 0; i < messages.size(); i++) {
                                     BotMessage ob = messages.get(i);
                                     if (ob.regExp.contains(name)) {
@@ -404,12 +404,12 @@ public class MyBot extends PircBot {
                         if (!logedin(sender, ch2)) return;
                         try {
                             if (message.matches("[\\s]*!rm[\\s]*join[\\s]*[\\d]+")) {
-                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!rm join[\\s]*([\\d]+)").getMatch(0));
+                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!rm join[\\s]*([\\d]+)").getFirstMatch(0));
                                 sendMassmes(sender, sender, settings.joinMessages.get(n)[0] + "|" + settings.joinMessages.get(n)[1] + " : wurde aus der joinliste entfernt", 0);
                                 settings.joinMessages.remove(n);
                                 Utilities.saveObject(settings, config);
                             } else if (message.matches("[\\s]*!rm[\\s]join[\\s]*[^\\s].*")) {
-                                String name = new Regexp(message, "[\\s]*!rm[\\s]join[\\s]*(.*)").getMatch(0).trim();
+                                String name = new Regexp(message, "[\\s]*!rm[\\s]join[\\s]*(.*)").getFirstMatch(0).trim();
                                 for (int i = 0; i < settings.joinMessages.size(); i++) {
                                     String[] ob = settings.joinMessages.get(i);
                                     if (ob[0].matches("(?is).*" + name + ".*")) {
@@ -495,7 +495,7 @@ public class MyBot extends PircBot {
                         return;
                     } else if (message.matches("[\\s]*!ignore([\\s]|$).*")) {
                         if (!logedin(sender, ch2)) return;
-                        String name = new Regexp(message, "[\\s]*!ignore[\\s]*(.*)").getMatch(0).trim();
+                        String name = new Regexp(message, "[\\s]*!ignore[\\s]*(.*)").getFirstMatch(0).trim();
                         if (name != null && !name.matches("[\\s]*")) {
                             if (settings.ignore.contains(name)) {
                                 sendMassmes(sender, sender, name + " wird bereichts ignoriert", 0);
@@ -623,12 +623,12 @@ public class MyBot extends PircBot {
                         }
                         try {
                             if (message.matches("[\\s]*!delprem[\\s]*[\\d]+")) {
-                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!delprem[\\s]*([\\d]+)").getMatch(0));
+                                int n = Integer.parseInt(new Regexp(message, "[\\s]*!delprem[\\s]*([\\d]+)").getFirstMatch(0));
                                 sendMassmes(sender, sender, "der premium acc " + settings.premAccs.get(n)[0] + " wurde aus der liste entfernt", 0);
                                 settings.premAccs.remove(n);
                                 Utilities.saveObject(settings, config);
                             } else if (message.matches("[\\s]*!delprem[\\s]*[^\\s].*")) {
-                                String name = new Regexp(message, "[\\s]*!delprem[\\s]*(.*)").getMatch(0).trim();
+                                String name = new Regexp(message, "[\\s]*!delprem[\\s]*(.*)").getFirstMatch(0).trim();
                                 for (int i = 0; i < settings.premAccs.size(); i++) {
                                     try {
                                         String ob = settings.premAccs.get(i)[0];
@@ -687,13 +687,13 @@ public class MyBot extends PircBot {
                         try {
                             String base;
                             if (message.matches("[\\s]*![\\S]+to[\\S]*[\\s]*.*")) {
-                                base = "&sl=" + new Regexp(message, "[\\s]*!([\\S]*to[\\S]*)[\\s]*.*").getMatch(0).replaceFirst("to", "&tl=");
+                                base = "&sl=" + new Regexp(message, "[\\s]*!([\\S]*to[\\S]*)[\\s]*.*").getFirstMatch(0).replaceFirst("to", "&tl=");
                             } else if (message.matches("[\\s]*!toen*[\\s]*.*"))
                                 base = "&sl=de&tl=en";
                             else
-                                base = "&sl=en&tl=" + new Regexp(message, "[\\s]*!to([\\S]*)[\\s]*.*").getMatch(0);
-                            RequestInfo request = Utilities.postRequest(new URL("http://translate.google.com/translate_t" + "?" + base.replaceFirst(".", "")), null, null, null, "hl=de&ie=UTF-8&text=" + new Regexp(message, "[\\s]*![\\S]{0,8}to[\\S]*[\\s](.*)").getMatch(0) + base, true, 10000, 10000);
-                            sendMassmes(sender, channel, request.getRegexp("<div id=result_box dir=\"ltr\">(.*?)</div>").getMatch(0), 0);
+                                base = "&sl=en&tl=" + new Regexp(message, "[\\s]*!to([\\S]*)[\\s]*.*").getFirstMatch(0);
+                            RequestInfo request = Utilities.postRequest(new URL("http://translate.google.com/translate_t" + "?" + base.replaceFirst(".", "")), null, null, null, "hl=de&ie=UTF-8&text=" + new Regexp(message, "[\\s]*![\\S]{0,8}to[\\S]*[\\s](.*)").getFirstMatch(0) + base, true, 10000, 10000);
+                            sendMassmes(sender, channel, request.getRegexp("<div id=result_box dir=\"ltr\">(.*?)</div>").getFirstMatch(0), 0);
                         } catch (Exception e) {
                             e.printStackTrace();
 
@@ -702,7 +702,7 @@ public class MyBot extends PircBot {
                     } else if (message.matches("[\\s]*!whois .*")) {
 
                         try {
-                            String name = new Regexp(message, "[\\s]*!whois[\\s]*(.*)").getMatch(0);
+                            String name = new Regexp(message, "[\\s]*!whois[\\s]*(.*)").getFirstMatch(0);
                             UserInfo user = userInfo(name);
                             String adress = InetAddress.getByName(user.hostname.replaceFirst(".*\\@", "")).getHostAddress();
                             RequestInfo request = Utilities.postRequest(new URL("http://www.geobytes.com/IpLocator.htm?GetLocation "), null, null, null, "cid=0&c=0&Template=iplocator.htm&ipaddress=" + adress, true, 10000, 10000);
@@ -732,7 +732,7 @@ public class MyBot extends PircBot {
                     } else if (message.matches("[\\s]*!wiki .*")) {
 
                         try {
-                            String name = new Regexp(message, "[\\s]*!wiki[\\s]*(.*)").getMatch(0).replaceAll("\\s", "_");
+                            String name = new Regexp(message, "[\\s]*!wiki[\\s]*(.*)").getFirstMatch(0).replaceAll("\\s", "_");
 
                             RequestInfo request = Utilities.getRequest(new URL("http://wiki.jdownloader.org/index.php?search=" + name + "&go=Seite"), "", "", false);
 
@@ -740,7 +740,7 @@ public class MyBot extends PircBot {
                                 String[] links = null;
                                 if (!request.containsHTML("<a name=\"Keine_.C3.9Cbereinstimmungen_mit_Seitentiteln\">")) {
                                     try {
-                                        links = Utilities.getHttpLinks(request.getRegexp("Seitentiteln</span>(.*?)</ol>").getMatch(0), "http://wiki.jdownloader.org/");
+                                        links = Utilities.getHttpLinks(request.getRegexp("Seitentiteln</span>(.*?)</ol>").getFirstMatch(0), "http://wiki.jdownloader.org/");
                                     } catch (Exception e) {
                                         // TODO: handle exception
                                     }
@@ -756,7 +756,7 @@ public class MyBot extends PircBot {
                                     for (int i = 0; i < cats.length; i++) {
                                         int count = new Regexp(cats[i], name).count();
                                         if (count > 0) {
-                                            map.put("http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal#" + new Regexp(cats[i], ">(.*?)<").getMatch(0), count);
+                                            map.put("http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal#" + new Regexp(cats[i], ">(.*?)<").getFirstMatch(0), count);
 
                                         }
                                     }
@@ -827,12 +827,12 @@ public class MyBot extends PircBot {
                                         nouser = true;
                                     }
                                     if (nachri.matches(".*!delay=[\\d]+ .*")) {
-                                        delay = Integer.parseInt(new Regexp(nachri, ".*!delay=([\\d]+).*").getMatch(0));
+                                        delay = Integer.parseInt(new Regexp(nachri, ".*!delay=([\\d]+).*").getFirstMatch(0));
                                         nachri = nachri.replaceFirst("!delay=[\\d]+ ", "");
 
                                     }
                                     if (nachri.matches(".*!userdelay=[\\d]+ .*")) {
-                                        userDelay = Integer.parseInt(new Regexp(nachri, ".*!userdelay=([\\d]+).*").getMatch(0));
+                                        userDelay = Integer.parseInt(new Regexp(nachri, ".*!userdelay=([\\d]+).*").getFirstMatch(0));
                                         nachri = nachri.replaceFirst("!userdelay=[\\d]+ ", "");
 
                                     }
@@ -858,7 +858,7 @@ public class MyBot extends PircBot {
                                         try {
                                             String reg[] = new Regexp(nachri, "%%reg%%(.*?)%%").getMatches(1);
                                             for (int j = 0; j < reg.length; j++) {
-                                                replacement = new Regexp(message2, reg[j]).getMatch(0);
+                                                replacement = new Regexp(message2, reg[j]).getFirstMatch(0);
                                                 nachri = nachri.replaceFirst("%%reg%%.*?%%", replacement);
                                             }
 
@@ -869,7 +869,7 @@ public class MyBot extends PircBot {
                                     }
                                     if (nachri.matches(".*%%cmd%%.*")) {
                                         try {
-                                            String reg = new Regexp(nachri, "%%cmd%%(.*)").getMatch(0);
+                                            String reg = new Regexp(nachri, "%%cmd%%(.*)").getFirstMatch(0);
                                             onMessage(channel, sender, login, hostname, reg);
                                             return;
                                         } catch (Exception e) {
@@ -879,7 +879,7 @@ public class MyBot extends PircBot {
                                     }
                                     if (nachri.matches(".*%%raw%%.*")) {
                                         try {
-                                            String reg = new Regexp(nachri, "%%raw%%(.*)").getMatch(0);
+                                            String reg = new Regexp(nachri, "%%raw%%(.*)").getFirstMatch(0);
                                             sendRawLine(reg);
                                             return;
                                         } catch (Exception e) {
@@ -1038,7 +1038,7 @@ public class MyBot extends PircBot {
         for (int i = 0; i < info.length; i++) {
             if (info[i].code == 311) {
                 try {
-                    uinfo.hostname = new Regexp(info[i].response, ".*?([\\S]\\=.*?)[\\s]*\\*[\\s]*:").getMatch(0).replaceFirst("[\\s]", "@");
+                    uinfo.hostname = new Regexp(info[i].response, ".*?([\\S]\\=.*?)[\\s]*\\*[\\s]*:").getFirstMatch(0).replaceFirst("[\\s]", "@");
                 } catch (Exception e) {
                     // TODO: handle exception
                 }
