@@ -225,7 +225,7 @@ public class DownloadChunk implements JDRunnable {
         return alive;
     }
 
-    private void download() throws IOException, InterruptedException {
+    private void download() throws Exception, InterruptedException {
         this.bytesLoaded = 0l;
         buffer = ByteBuffer.allocateDirect(MAXBUFFER_SIZE);
         ByteBuffer miniBuffer = ByteBuffer.allocateDirect(1024 * 10);
