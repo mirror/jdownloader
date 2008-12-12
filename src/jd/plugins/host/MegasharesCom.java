@@ -84,11 +84,22 @@ public class MegasharesCom extends PluginForHost {
         return ai;
     }
 
+    public void loadpage(DownloadLink downloadLink) throws IOException {
+        boolean tmp = br.isFollowingRedirects();
+        br.setFollowRedirects(false);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.getRedirectLocation() != null) {
+            downloadLink.setUrlDownload(br.getRedirectLocation());
+            br.getPage(downloadLink.getDownloadURL());
+        }
+        br.setFollowRedirects(tmp);
+    }
+
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         login(account);
         // Password protection
-        br.getPage(downloadLink.getDownloadURL());
+        loadpage(downloadLink);
         if (!checkPassword(downloadLink)) { return; }
         if (br.containsHTML("All download slots for this link are currently filled")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l); }
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
@@ -104,13 +115,12 @@ public class MegasharesCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        String link = downloadLink.getDownloadURL();
         if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        br.getPage(link);
+        loadpage(downloadLink);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         // Cookies holen
         if (br.containsHTML("continue using Free service")) {
-            br.getPage(link);
+            loadpage(downloadLink);
         }
         // Password protection
         if (!checkPassword(downloadLink)) { return; }
@@ -142,9 +152,9 @@ public class MegasharesCom extends PluginForHost {
             HashMap<String, String> input = HTMLParser.getInputHiddenFields(br + "");
 
             String code = Plugin.getCaptchaCode(file, this, downloadLink);
-            String geturl = link + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
+            String geturl = downloadLink.getDownloadURL() + "&rs=check_passport_renewal&rsargs[]=" + code + "&rsargs[]=" + input.get("random_num") + "&rsargs[]=" + input.get("passport_num") + "&rsargs[]=replace_sec_pprenewal&rsrnd=" + (new Date().getTime());
             br.getPage(geturl);
-            br.getPage(link);
+            loadpage(downloadLink);
 
             if (br.containsHTML("You already have the maximum")) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
@@ -216,11 +226,10 @@ public class MegasharesCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         setBrowserExclusive();
-        String link = downloadLink.getDownloadURL();
-        br.getPage(link);
+        loadpage(downloadLink);
 
         if (br.containsHTML("continue using Free service")) {
-            br.getPage(link);
+            loadpage(downloadLink);
         }
         if (br.containsHTML("You already have the maximum")) {
             downloadLink.getLinkStatus().setStatusText("Unchecked due to already loading");
