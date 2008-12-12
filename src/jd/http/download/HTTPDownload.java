@@ -43,6 +43,7 @@ public class HTTPDownload {
      */
     private static final int FLAG_FILESIZE_CORRECT = 1 << 1;
     private static final int SPEED_INTERVAL = 2000;
+    private static HDWriter WRITER = null;
 
     private Request orgRequest;
 
@@ -104,8 +105,8 @@ public class HTTPDownload {
             Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.test");
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
-            dl.setBandwidthlimit(1 * 512 * 1000);
-            dl.setChunkNum(100);
+            dl.setBandwidthlimit(10 * 512 * 1000);
+            dl.setChunkNum(150);
 
             try {
                 new Thread() {
@@ -495,6 +496,8 @@ public class HTTPDownload {
         outputRAF.seek(chunkToWrite.getWritePosition());
         System.out.println(chunkToWrite + "Write " + chunkToWrite.getWritePosition() + "-" + (chunkToWrite.getWritePosition() + buffer.limit()) + " : " + this.getSpeed() + " " + buffer.limit());
         byteCounter += buffer.limit();
+   
+        
         outputChannel.write(buffer);
 
         // benachrichtige gib chunkwarteplatz wieder frei
@@ -502,6 +505,10 @@ public class HTTPDownload {
        // debug("STATUS = " + STATUS);
         notifyAll();
 
+    }
+
+    public FileChannel getOutputChannel() {
+        return outputChannel;
     }
 
     public synchronized void setChunkToWrite(DownloadChunk downloadChunk) throws InterruptedException {
@@ -555,6 +562,6 @@ public class HTTPDownload {
         return speed;
     }
 
-  
+
 
 }

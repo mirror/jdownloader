@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.XPath;
@@ -64,13 +65,14 @@ public class BluehostTo extends PluginForHost {
         if (!br.getRedirectLocation().contains("interface")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
 br.setFollowRedirects(true);
         br.getPage((String) null);
-        String trafficLeft = br.getXPathElement("/html/body/div[2]/div/ul[2]/div/div").trim();
-        XPath path = new XPath(br.toString(), "/html/body/div[2]/div/ul[2]/div[4]/center");
+        String trafficLeft = br.getXPathElement("/html/body/div/div/ul[2]/div/div").trim();
+        XPath path = new XPath(br.toString(), "/html/body/div/div/ul[2]/div[4]/center");
         double traffic = Double.parseDouble(trafficLeft) * 1000 * 1024 * 1024;
         ai.setTrafficLeft((long) traffic);
         ArrayList<String> matches = path.getMatches();
-        ai.setPremiumPoints(JDUtilities.filterInt(matches.get(1)));
-        ai.setAccountBalance(JDUtilities.filterInt(matches.get(2)) * 100);
+        ai.setPremiumPoints(JDUtilities.filterInt(matches.get(0)));
+        String f;
+        ai.setAccountBalance((int)(Float.parseFloat(f=Encoding.filterString(matches.get(1), "1234567890.,").replaceAll("\\,",".")) * 100.0));
         ai.setExpired(false);
         ai.setValidUntil(System.currentTimeMillis() + 60 * 60 * 1000);
 

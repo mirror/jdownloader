@@ -296,8 +296,9 @@ public class DownloadChunk implements JDRunnable {
                 
                 //Hier werden alle CHunks mit dem writer synchronisiert. Die Schreibfunktionen kann jeweils nur 1 Chunk betreten. Alle anderen Warten,
                 System.out.println("write " + this + " " + buffer.position());
-                owner.setChunkToWrite(this);
-                owner.waitForWriter(this);
+                //owner.setChunkToWrite(this);
+                HDWriter.getWriter().writeAndWait(this.getBuffer(),this.owner.getOutputChannel(),this.getWritePosition());
+               // owner.waitForWriter(this);
                 System.out.println("Buffer written.. continue " + this);
 
                 // owner.writeBytes(this, buffer);
