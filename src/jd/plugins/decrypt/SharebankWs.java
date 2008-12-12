@@ -41,7 +41,6 @@ public class SharebankWs extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String url = param.toString();
         Regex urlGoRegex = new Regex(url, Pattern.compile(REGEX_DLLINK));
-        br.setDebug(true);
         String[] links = null;
         if (url.matches(REGEX_FOLDER)) {
             br.getPage(url);
@@ -63,18 +62,17 @@ public class SharebankWs extends PluginForDecrypt {
                 String securityId = brc.getRegex(Pattern.compile("(go=.*?&q1=.*?&q2=.*?)>")).getMatch(0);
                 brc.getPage("http://sharebank.ws/?" + securityId);
                 finalLink = brc.getRegex(Pattern.compile(">document.location='(.*?)';<")).getMatch(0);
+                if (finalLink == null) {
+                    finalLink = brc.getRegex(Pattern.compile("base64_decode\\('(.*?)'\\)")).getMatch(0);
+                    finalLink = Encoding.Base64Decode(finalLink);
+                }
                 if (finalLink != null && !finalLink.startsWith("?go")) {
                     break;
                 }
             }
             if (finalLink == null) return null;
             /* find base64 coded url */
-            String finalLink2 = brc.getRegex(Pattern.compile("base64_decode\\('(.*?)'\\)")).getMatch(0);
-            if (finalLink2 != null) {
-                decryptedLinks.add(createDownloadlink(Encoding.Base64Decode(finalLink2)));
-            } else {
-                decryptedLinks.add(createDownloadlink(finalLink));
-            }
+            decryptedLinks.add(createDownloadlink(finalLink));
             progress.increase(1);
         }
 
