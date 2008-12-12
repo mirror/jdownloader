@@ -95,10 +95,13 @@ public abstract class PluginForDecrypt extends Plugin {
             progress.setColor(Color.RED);
             progress.finalize(15000l);
         } catch (Exception e) {
+            logger.severe("Decrypter out of date: " + this);
+            logger.severe("Decrypter out of date: " + getVersion());
             e.printStackTrace();
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
+            logger.severe("Decrypter out of date: " + getVersion());
             progress.setStatusText("Decrypter out of date: " + this.getHost());
             progress.setColor(Color.RED);
             progress.finalize(15000l);

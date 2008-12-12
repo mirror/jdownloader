@@ -28,7 +28,9 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
+import jd.controlling.JDController;
 import jd.event.ControlEvent;
+import jd.event.UIEvent;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
@@ -441,9 +443,9 @@ public class JDSimpleWebserverRequestHandler {
                 JDClose jdc = new JDClose();
 
             } else if (requestParameter.get("do").compareToIgnoreCase("start") == 0) {
-                JDUtilities.getController().startDownloads();
+                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS, null));
             } else if (requestParameter.get("do").compareToIgnoreCase("stop") == 0) {
-                JDUtilities.getController().stopDownloads();
+                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_STOP_DOWNLOADS, null));
             } else if (requestParameter.get("do").compareToIgnoreCase("restart") == 0) {
                 class JDRestart implements Runnable {
 

@@ -618,7 +618,7 @@ public class JDController implements ControlListener, UIListener {
                 Vector<DownloadLink> links = (Vector<DownloadLink>) event.getParameter();
                 addLinksWithoutGrabber(links);
                 if (getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                	toggleStartStop();
+                    toggleStartStop();
                 }
             }
 
@@ -1106,9 +1106,9 @@ public class JDController implements ControlListener, UIListener {
         }
         return null;
     }
-    
+
     public void loadContainerFile(final File file) {
-    	loadContainerFile(file, false, false);
+        loadContainerFile(file, false, false);
     }
 
     /**
@@ -1177,10 +1177,12 @@ public class JDController implements ControlListener, UIListener {
                         JDUtilities.getGUI().showHTMLDialog(JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), String.format(html, JDIO.getFileExtension(file).toLowerCase(), JDLocale.L("container.message.title", "DownloadLinkContainer loaded"), JDLocale.L("container.message.uploaded", "Brought to you by"), uploader, JDLocale.L("container.message.created", "Created with"), app, JDLocale.L("container.message.comment", "Comment"), comment, JDLocale.L("container.message.password", "Password"), password));
                         // schickt die Links zuerst mal zum Linkgrabber
                     }
-                    if (hideGrabber) addLinksWithoutGrabber((Vector<DownloadLink>) downloadLinks);
-                    else uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
+                    if (hideGrabber)
+                        addLinksWithoutGrabber((Vector<DownloadLink>) downloadLinks);
+                    else
+                        uiInterface.addLinksToGrabber((Vector<DownloadLink>) downloadLinks);
                     if (startDownload && getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING) {
-                    	
+
                     }
                 }
                 progress.finalize();
@@ -1676,7 +1678,7 @@ public class JDController implements ControlListener, UIListener {
      * Startet den Downloadvorgang. Dies eFUnkton sendet das startdownload event
      * und aktiviert die ersten downloads.
      */
-    public boolean startDownloads() {
+    public synchronized boolean startDownloads() {
         if (getDownloadStatus() == DOWNLOAD_NOT_RUNNING) {
             setDownloadStatus(DOWNLOAD_RUNNING);
             logger.info("StartDownloads");
@@ -1691,7 +1693,7 @@ public class JDController implements ControlListener, UIListener {
     /**
      * Bricht den Download ab und blockiert bis er abgebrochen wurde.
      */
-    public boolean stopDownloads() {
+    public synchronized boolean stopDownloads() {
         if (getDownloadStatus() == DOWNLOAD_RUNNING) {
             setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE, this));
@@ -1769,7 +1771,6 @@ public class JDController implements ControlListener, UIListener {
                 addPackage(fp);
             }
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-
             break;
         case UIEvent.UI_SAVE_LINKS:
             File file = (File) uiEvent.getParameter();

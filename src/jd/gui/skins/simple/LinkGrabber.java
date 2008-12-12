@@ -952,13 +952,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             confirmPackage(idx);
             removePackageAt(idx);
             emptyCheck();
-            if (mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
         } else if (e.getSource() == acceptAll) {
             stopGatherer();
             confirmAll();
             setVisible(false);
             dispose();
-            if (mStartAfterAdding.isSelected()) JDUtilities.getController().startDownloads();
         } else if (e.getSource() == sortPackages) {
             reprintTabbedPane();
         } else if (e.getSource() == mMerge) {
@@ -1382,7 +1380,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         }
 
         parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_PACKAGE_GRABBED, fp));
-
+        if (mStartAfterAdding.isSelected()) parentFrame.fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS, null));
         parentFrame.setDropTargetText(JDLocale.L("gui.dropTarget.downloadsAdded", "Downloads hinzugefügt: ") + files);
     }
 

@@ -446,19 +446,19 @@ public class JDRemoteControl extends PluginOptional implements ControlListener {
 
             // Do Start Download
             else if (request.getRequestUrl().equals("/action/start")) {
-                JDUtilities.getController().startDownloads();
+                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_START_DOWNLOADS, null));
                 response.addContent("Downloads started");
             }
 
             // Do Pause Download
             else if (request.getRequestUrl().equals("/action/pause")) {
-                JDUtilities.getController().pauseDownloads(true);
+                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_PAUSE_DOWNLOADS, true));
                 response.addContent("Downloads paused");
             }
 
             // Do Stop Download
             else if (request.getRequestUrl().equals("/action/stop")) {
-                JDUtilities.getController().stopDownloads();
+                JDUtilities.getGUI().fireUIEvent(new UIEvent(this, UIEvent.UI_STOP_DOWNLOADS, null));
                 response.addContent("Downloads stopped");
             }
 
