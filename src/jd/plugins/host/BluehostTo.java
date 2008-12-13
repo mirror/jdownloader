@@ -63,7 +63,7 @@ public class BluehostTo extends PluginForHost {
         br.submitForm(login);
 
         if (!br.getRedirectLocation().contains("interface")) throw new PluginException(LinkStatus.ERROR_PREMIUM);
-br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         br.getPage((String) null);
         String trafficLeft = br.getXPathElement("/html/body/div/div/ul[2]/div/div").trim();
         XPath path = new XPath(br.toString(), "/html/body/div/div/ul[2]/div[4]/center");
@@ -71,8 +71,7 @@ br.setFollowRedirects(true);
         ai.setTrafficLeft((long) traffic);
         ArrayList<String> matches = path.getMatches();
         ai.setPremiumPoints(JDUtilities.filterInt(matches.get(0)));
-        String f;
-        ai.setAccountBalance((int)(Float.parseFloat(f=Encoding.filterString(matches.get(1), "1234567890.,").replaceAll("\\,",".")) * 100.0));
+        ai.setAccountBalance((int) (Float.parseFloat(Encoding.filterString(matches.get(1), "1234567890.,").replaceAll("\\,", ".")) * 100.0));
         ai.setExpired(false);
         ai.setValidUntil(System.currentTimeMillis() + 60 * 60 * 1000);
 

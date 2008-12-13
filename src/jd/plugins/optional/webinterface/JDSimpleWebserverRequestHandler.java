@@ -28,7 +28,6 @@ import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.DistributeData;
-import jd.controlling.JDController;
 import jd.event.ControlEvent;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.LinkGrabber;

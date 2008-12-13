@@ -42,8 +42,6 @@ public class HTTPDownload {
      * indicates, that the stored filesize is correct.
      */
     private static final int FLAG_FILESIZE_CORRECT = 1 << 1;
-    private static final int SPEED_INTERVAL = 2000;
-    private static HDWriter WRITER = null;
 
     private Request orgRequest;
 
@@ -482,27 +480,26 @@ public class HTTPDownload {
 
     public synchronized void writeWaitingChunk() throws InterruptedException, IOException {
         // Warte bis chunk zu schreiben anliegt
-        while (STATUS != 1){
+        while (STATUS != 1) {
             System.out.println("Nothing to write");
             wait();
-            
+
         }
 
         // Schreibe Chunk
-      
+
         ByteBuffer buffer = chunkToWrite.getBuffer();
         buffer.flip();
 
         outputRAF.seek(chunkToWrite.getWritePosition());
         System.out.println(chunkToWrite + "Write " + chunkToWrite.getWritePosition() + "-" + (chunkToWrite.getWritePosition() + buffer.limit()) + " : " + this.getSpeed() + " " + buffer.limit());
         byteCounter += buffer.limit();
-   
-        
+
         outputChannel.write(buffer);
 
         // benachrichtige gib chunkwarteplatz wieder frei
         STATUS = 2;
-       // debug("STATUS = " + STATUS);
+        // debug("STATUS = " + STATUS);
         notifyAll();
 
     }
@@ -524,10 +521,11 @@ public class HTTPDownload {
         chunkToWrite = downloadChunk;
 
         STATUS = 1;
-       // debug("STATUS = " + STATUS);
+        // debug("STATUS = " + STATUS);
         notifyAll();
 
     }
+
     public synchronized void waitForWriter(DownloadChunk downloadChunk) throws InterruptedException {
         // warten bis schreibslot gelöscht
         while (STATUS != 2) {
@@ -536,7 +534,7 @@ public class HTTPDownload {
 
         }
         STATUS = 0;
-       // debug("STATUS = " + STATUS);
+        // debug("STATUS = " + STATUS);
         notifyAll();
 
     }
@@ -561,7 +559,5 @@ public class HTTPDownload {
 
         return speed;
     }
-
-
 
 }

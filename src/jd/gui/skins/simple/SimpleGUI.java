@@ -25,7 +25,6 @@ import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -1068,16 +1067,12 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 case ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED:
                     break;
                 case ControlEvent.CONTROL_JDPROPERTY_CHANGED:
-                    Property p = (Property) event.getSource();
-                    if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_DISABLE_RECONNECT)) {
-                        String img = getDoReconnectImage();
-                        logger.info("JJJ" + img);
-                        Image img2 = JDUtilities.getImage(img);
-                        btnReconnect.setIcon(new ImageIcon(img2));
-                    }
-
-                    if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
-                        btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
+                    if ((Property) event.getSource() == JDUtilities.getConfiguration()) {
+                        if (event.getParameter().equals(Configuration.PARAM_DISABLE_RECONNECT)) {
+                            btnReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
+                        } else if (event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
+                            btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
+                        }
                     }
                     break;
                 case ControlEvent.CONTROL_DOWNLOAD_START:
