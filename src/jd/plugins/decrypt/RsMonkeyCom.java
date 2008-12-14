@@ -35,7 +35,7 @@ public class RsMonkeyCom extends PluginForDecrypt {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.getPage(parameter);
-        String fileId = br.getRegex("iframe.*?src=\".*?rs=(.*?)(&|\")").getMatch(0);
+        String fileId = br.getRegex("iframe.*?src=\"(.*?)\"").getMatch(0);
         if (fileId == null) { return null; }
         decryptedLinks.add(createDownloadlink(fileId));
         return decryptedLinks;
