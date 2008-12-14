@@ -126,7 +126,15 @@ public class GigaSizeCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         br.setFollowRedirects(true);
         if (br.containsHTML("versuchen gerade mehr")) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l); }
-        Form captchaForm = br.getForm(0);
+        Form forms[] = br.getForms();
+        Form captchaForm = null;
+        for (Form form : forms) {
+            if (form.action != null && form.action.contains("formdownload.php")) {
+                captchaForm = form;
+                break;
+            }
+        }
+        if (captchaForm == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         String captchaCode = getCaptchaCode("http://www.gigasize.com/randomImage.php", downloadLink);
         captchaForm.put("txtNumber", captchaCode);
         br.submitForm(captchaForm);
