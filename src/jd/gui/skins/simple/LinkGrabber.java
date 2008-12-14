@@ -1760,7 +1760,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                         link.isAvailable();
                         addingLinkList.add(link);
                     }
-                    progress.setValue(progress.getValue() + 1);
                 }
             }
 
@@ -1777,6 +1776,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     while (addingLinkList.size() > 0 && gathererrunning == true) {
                         DownloadLink link = addingLinkList.remove(0);
                         attachLinkToPackage(link);
+                        progress.setValue(progress.getValue() + 1);
                     }
                     try {
                         Thread.sleep(500);
