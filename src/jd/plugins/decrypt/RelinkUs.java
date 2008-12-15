@@ -59,6 +59,9 @@ public class RelinkUs extends PluginForDecrypt {
 
     private void add_relinkus_links(String page, ArrayList<DownloadLink> decryptedLinks) throws IOException {
         String links[] = new Regex(page, Pattern.compile("action=\\'([^\\']*?)\\' method=\\'post\\' target=\\'\\_blank\\'", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        if (links.length == 0) {
+            links = new Regex(page, Pattern.compile("action=\"(.*?)\" method=\"post\" target=\"\\_blank\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
+        }
         progress.addToMax(links.length);
         for (String link : links) {
             String dl_link = new Regex(br.postPage(link, "submit=Open"), "iframe name=\"pagetext\" height=\"100%\" frameborder=\"no\" width=\"100%\" src=\"[\n\r]*?(.*?)\"", Pattern.CASE_INSENSITIVE).getMatch(0);

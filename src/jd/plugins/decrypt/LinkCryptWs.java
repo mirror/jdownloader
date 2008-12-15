@@ -58,7 +58,7 @@ public class LinkCryptWs extends PluginForDecrypt {
                 valid = false;
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(0);
-                Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx.php"));
+                Browser.download(file, br.cloneBrowser().openGetConnection("http://linkcrypt.ws/captx2.php"));
                 JDUtilities.acquireUserIO_Semaphore();
                 ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", JDLocale.L("plugins.decrypt.stealthto.captcha", "Please click on the Circle with a gap"), 20, null);
                 if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
