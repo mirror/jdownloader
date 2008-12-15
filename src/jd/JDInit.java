@@ -575,7 +575,7 @@ public class JDInit {
         new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html");
         new DecryptPluginWrapper("baberepublic.com", "LinkBucks", "http://[\\w\\.]*?baberepublic\\.com/link/[0-9a-zA-Z]+(/\\d+)?");
         new DecryptPluginWrapper("bat5.com", "URLCash", "http://.+bat5\\.com");
-        new DecryptPluginWrapper("best-movies.us", "BestMovies", "http://crypt\\.best-movies\\.us/go\\.php\\?id\\=\\d+");
+        new DecryptPluginWrapper("best-movies.us", "BestMovies", "http://crypt\\.(best-movies\\.us|capcrypt\\.info)/go\\.php\\?id\\=\\d+");
         new DecryptPluginWrapper("blog-xx.net", "BlogXXNet", "http://[\\w\\.]*?blog-xx\\.net/wp/(.*?)/");
         new DecryptPluginWrapper("bm4u.in", "Bm4uin", "http://[\\w\\.]*?bm4u\\.in/index\\.php\\?do=show_download&id=\\d+");
         new DecryptPluginWrapper("brazil-series.com", "BrazilSeriesCom", "http://[\\w\\.]*?brazil-series\\.com/(\\w+/\\w+/\\w+_ep\\d+\\.htm|\\w+/\\d+t/\\w+_intro.htm|\\w+/\\w+_intro.htm)");
