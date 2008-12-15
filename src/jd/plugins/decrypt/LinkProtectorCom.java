@@ -50,11 +50,16 @@ public class LinkProtectorCom extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
+        if (br.containsHTML("red>Bad Referrer!")) {
+            String ref = br.getRegex("You could get this File only from t.*?<br><a.*?><b>(.*?)</b>").getMatch(0);
+            if (ref == null) return null;
+            br.getPage(ref);
+            br.getPage(parameter);
+        }
         boolean do_continue = false;
         for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
             if (br.containsHTML("<h1>PASSWORD PROTECTED LINK</h1>") || br.containsHTML("Incorrect Password")) {
                 String passCode = getUserInput(null, param);
-
                 Form pwForm = br.getForm(0);
                 pwForm.put("u_password", passCode);
                 br.submitForm(pwForm);
@@ -68,7 +73,6 @@ public class LinkProtectorCom extends PluginForDecrypt {
             String cryptedLink = br.getRegex("write\\(stream\\('(.*?)'\\)").getMatch(0);
             int charCode = Integer.parseInt(br.getRegex("fromCharCode\\(yy\\[i\\]-(.*?)\\)\\;").getMatch(0));
             String decryptedLink = decryptCode(cryptedLink, charCode);
-
             String link = new Regex(decryptedLink, "<iframe src=\"(.*?)\"").getMatch(0);
             if (link != null) {
                 decryptedLinks.add(createDownloadlink(link));
