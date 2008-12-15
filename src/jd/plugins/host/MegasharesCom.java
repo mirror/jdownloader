@@ -105,7 +105,7 @@ public class MegasharesCom extends PluginForHost {
         String dlLink = br.getRegex("<div id=\"dlink\"><a href=\"(.*?)\">Click").getMatch(0);
         if (dlLink == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, dlLink, true, 0);
+        dl = br.openDownload(downloadLink, dlLink, true, -2);
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -171,7 +171,6 @@ public class MegasharesCom extends PluginForHost {
         }
         // Dateigröße holen
         dat = br.getRegex("<dt>Filename:&nbsp;<strong>(.*?)</strong>&nbsp;&nbsp;&nbsp;(.*?)</dt>").getRow(0);
-        br.setDebug(true);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url, true, 1);
         if (!dl.getConnection().isContentDisposition()) {
@@ -255,8 +254,14 @@ public class MegasharesCom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
+    }
+
+    @Override
+    public int getTimegapBetweenConnections() {
+        return 2000;
     }
 
     @Override

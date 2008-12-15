@@ -157,13 +157,12 @@ public class CryptItCom extends PluginForDecrypt {
 
             byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
             byte[] b2 = new byte[] { 0x02, 0x00 };
-            br.setDebug(true);
             br.getHeaders().put("Content-Type", "application/x-amf");
             br.setFollowRedirects(false);
-            String postdata=new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass;
+            String postdata = new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass;
             br.postPageRaw("http://crypt-it.com/engine/", postdata);
             String[] ciphers = br.getRegex(Pattern.compile("url(.*?)size", Pattern.CASE_INSENSITIVE)).getColumn(0);
-
+            br.getHeaders().remove("Content-Type");
             FilePackage fp = new FilePackage();
             fp.setName(packagename);
             fp.setPassword(password);
