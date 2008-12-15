@@ -137,11 +137,11 @@ public class Megauploadcom extends PluginForHost {
         handlePw(downloadLink);
         if (br.getRedirectLocation() == null) {
             String[] tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK).getRow(0);
-            if (tmp == null) throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            if (tmp == null) throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             Character l = (char) Math.abs(Integer.parseInt(tmp[1].trim()));
             String i = tmp[4] + (char) Math.sqrt(Integer.parseInt(tmp[5].trim()));
             tmp = br.getRegex(SIMPLEPATTERN_GEN_DOWNLOADLINK_LINK).getRow(0);
-            if (tmp == null) throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            if (tmp == null) throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             dlUrl = Encoding.htmlDecode(tmp[3] + i + l + tmp[5]);
         }
         br.setFollowRedirects(true);
@@ -163,7 +163,7 @@ public class Megauploadcom extends PluginForHost {
         String cookie = br.getCookie("http://megaupload.com", "user");
         if (cookie == null) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 

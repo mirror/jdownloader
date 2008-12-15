@@ -106,7 +106,7 @@ public class DepositFiles extends PluginForHost {
         String cookie = br.getCookie("http://depositfiles.com", "autologin");
         if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE | LinkStatus.ERROR_PREMIUM);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 

@@ -114,7 +114,7 @@ public class Filer extends PluginForHost {
         String cookie = br.getCookie("http://filer.net", "filer_net");
         if (cookie == null) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -156,7 +156,7 @@ public class Filer extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url, true, 0);
-        if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+        if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         dl.startDownload();
     }
 

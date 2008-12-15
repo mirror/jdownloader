@@ -183,7 +183,7 @@ public class Uploadedto extends PluginForHost {
             logger.info("Direct Downloads active");
         }
         
-        
+        br.setDebug(true);
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
     
   

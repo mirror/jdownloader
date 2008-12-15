@@ -45,12 +45,12 @@ public class GigaSizeCom extends PluginForHost {
         String cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[pass]");
         if (cookie == null) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
         cookie = br.getCookie("http://www.gigasize.com", "Cookieuser[user]");
         if (cookie == null) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
