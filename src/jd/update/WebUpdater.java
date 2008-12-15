@@ -406,7 +406,7 @@ public class WebUpdater implements Serializable {
         httpConnection.setReadTimeout(20000);
         httpConnection.setReadTimeout(20000);
         httpConnection.setInstanceFollowRedirects(true);
-        httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        httpConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
         // Content-Encoding: gzip
         BufferedReader rd;
         if (httpConnection.getHeaderField("Content-Encoding") != null && httpConnection.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {

@@ -227,8 +227,9 @@ public class Browser {
 
     public String getPage(String string) throws IOException {
         string = getURL(string);
-
+        boolean sendref = true;
         if (currentURL == null) {
+            sendref = false;
             currentURL = new URL(string);
         }
 
@@ -236,11 +237,11 @@ public class Browser {
             // throw new SnifferException();
         }
         GetRequest request = new GetRequest(string);
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         doAuth(request);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
@@ -387,8 +388,9 @@ public class Browser {
 
     public HTTPConnection openGetConnection(String string) throws IOException {
         string = getURL(string);
-
+        boolean sendref = true;
         if (currentURL == null) {
+            sendref = false;
             currentURL = new URL(string);
         }
         if (snifferCheck()) {
@@ -402,10 +404,10 @@ public class Browser {
         if (readTimeout > 0) {
             request.setReadTimeout(readTimeout);
         }
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
@@ -427,7 +429,9 @@ public class Browser {
 
     public Request createGetRequest(String string) throws Exception {
         string = getURL(string);
+        boolean sendref = true;
         if (currentURL == null) {
+            sendref = false;
             currentURL = new URL(string);
         }
         if (snifferCheck()) {
@@ -441,10 +445,10 @@ public class Browser {
         if (readTimeout > 0) {
             request.setReadTimeout(readTimeout);
         }
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
@@ -461,7 +465,9 @@ public class Browser {
 
     public Request createGetRequestfromOldRequest(Request oldrequest) throws Exception {
         String string = getURL(oldrequest.getLocation());
+        boolean sendref = true;
         if (currentURL == null) {
+            sendref = false;
             currentURL = new URL(string);
         }
         if (snifferCheck()) {
@@ -476,10 +482,10 @@ public class Browser {
         if (readTimeout > 0) {
             request.setReadTimeout(readTimeout);
         }
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
@@ -517,8 +523,9 @@ public class Browser {
 
     private HTTPConnection openPostConnection(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
-
+        boolean sendref = true;
         if (currentURL == null) {
+            sendref = false;
             currentURL = new URL(url);
         }
         if (snifferCheck()) {
@@ -526,7 +533,7 @@ public class Browser {
         }
         PostRequest request = new PostRequest(url);
         doAuth(request);
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -535,7 +542,7 @@ public class Browser {
             request.setReadTimeout(readTimeout);
         }
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
             request.getPostData().putAll(post);
         }
@@ -557,6 +564,11 @@ public class Browser {
 
     public Request createPostRequestfromOldRequest(Request oldrequest, String postdata) throws IOException {
         String url = getURL(oldrequest.getLocation());
+        boolean sendref = true;
+        if (currentURL == null) {
+            sendref = false;
+            currentURL = new URL(url);
+        }
         HashMap<String, String> post = Request.parseQuery(postdata);
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
@@ -564,7 +576,7 @@ public class Browser {
         PostRequest request = new PostRequest(url);
         request.setCookies(oldrequest.getCookies());
         doAuth(request);
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -573,7 +585,7 @@ public class Browser {
             request.setReadTimeout(readTimeout);
         }
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
             request.getPostData().putAll(post);
         }
@@ -586,12 +598,17 @@ public class Browser {
 
     public Request createPostRequest(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
+        boolean sendref = true;
+        if (currentURL == null) {
+            sendref = false;
+            currentURL = new URL(url);
+        }
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
         doAuth(request);
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -600,7 +617,7 @@ public class Browser {
             request.setReadTimeout(readTimeout);
         }
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) {
             request.getPostData().putAll(post);
         }
@@ -623,8 +640,9 @@ public class Browser {
 
     public String postPage(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
-
+        boolean sendref = true;
         if (currentURL == null) {
+            sendref = false;
             currentURL = new URL(url);
         }
         if (snifferCheck()) {
@@ -632,7 +650,7 @@ public class Browser {
         }
         PostRequest request = new PostRequest(url);
         doAuth(request);
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -641,7 +659,7 @@ public class Browser {
             request.setReadTimeout(readTimeout);
         }
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) request.getPostData().putAll(post);
         if (headers != null) {
             request.getHeaders().putAll(headers);
@@ -753,8 +771,9 @@ public class Browser {
 
     public String postPageRaw(String url, String post) throws IOException {
         url = getURL(url);
-
+        boolean sendref = true;
         if (currentURL == null) {
+            sendref = false;
             currentURL = new URL(url);
         }
         if (snifferCheck()) {
@@ -762,7 +781,7 @@ public class Browser {
         }
         PostRequest request = new PostRequest(url);
         doAuth(request);
-        request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+        request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -771,7 +790,7 @@ public class Browser {
             request.setReadTimeout(readTimeout);
         }
         forwardCookies(request);
-        request.getHeaders().put("Referer", currentURL.toString());
+        if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (post != null) request.setPostDataString(post);
         if (headers != null) {
             request.getHeaders().putAll(headers);
@@ -890,7 +909,7 @@ public class Browser {
 
             up.getConnection().setRequestProperty("Accept", "*/*");
             up.getConnection().setRequestProperty("Accept-Language", acceptLanguage);
-            up.getConnection().setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+            up.getConnection().setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
             forwardCookies(up.getConnection());
             up.getConnection().setRequestProperty("Referer", currentURL.toString());
             if (headers != null) {
@@ -925,7 +944,7 @@ public class Browser {
                 request.getHeaders().putAll(headers);
             }
             if (request.getHeaders() != null) {
-                request.getHeaders().put("ACCEPT-LANGUAGE", acceptLanguage);
+                request.getHeaders().put("Accept-Language", acceptLanguage);
             }
 
             request.setFollowRedirects(doRedirects);

@@ -93,7 +93,7 @@ public class PostRequest extends Request {
         httpConnection.setDoOutput(true);
         String parameter = postDataString != null ? postDataString : getPostDataString();
         if (parameter != null) {
-            parameter = parameter.trim();
+            if (postDataString == null) parameter = parameter.trim();
             httpConnection.setRequestProperty("Content-Length", parameter.length() + "");
             httpConnection.connect();
             httpConnection.post(parameter);

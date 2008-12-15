@@ -238,7 +238,7 @@ public static RequestInfo postRequest(URL url, String cookie,
 	httpConnection
 			.setRequestProperty(
 					"User-Agent",
-					"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+			"Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
 	if (requestProperties != null) {
 		Set<String> keys = requestProperties.keySet();
 		Iterator<String> iterator = keys.iterator();
@@ -296,7 +296,7 @@ public static RequestInfo getRequest(URL link, String cookie, String referrer, b
     // lassen
     // so ist das Programm nicht so auffallig
     httpConnection.setRequestProperty("Accept-Language", ACCEPT_LANGUAGE);
-    httpConnection.setRequestProperty("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+    httpConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
     RequestInfo requestInfo = readFromURL(httpConnection);
     requestInfo.setConnection(httpConnection);
     // logger.finer("getRequest " + link + ": " +

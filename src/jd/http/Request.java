@@ -396,7 +396,9 @@ public abstract class Request {
     private void initDefaultHeader() {
         headers = new HashMap<String, String>();
         headers.put("Accept-Language", "de, en-gb;q=0.9, en;q=0.8");
-        headers.put("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)");
+        headers.put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        headers.put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        headers.put("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
         headers.put("Connection", "close");
         headers.put("Cache-Control", "no-cache");
         headers.put("Pragma", "no-cache");

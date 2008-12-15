@@ -17,9 +17,7 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -34,15 +32,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.HTTP;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.RequestInfo;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-@SuppressWarnings("deprecation")
-// FIXME: Auf Browser umbauen (Viel Spaß =) )
 public class CryptItCom extends PluginForDecrypt {
 
     private static final String PATTERN_PASSWORD_FOLDER = "<input type=\"password\"";
@@ -139,35 +133,36 @@ public class CryptItCom extends PluginForDecrypt {
             String[] temp = new Regex(url, Pattern.compile("http://crypt-it.com/(.*?)/(.*?)/", Pattern.CASE_INSENSITIVE)).getRow(0);
             String mode = temp[0];
             String folder = temp[1];
-            RequestInfo ri = HTTP.getRequest(new URL("http://crypt-it.com/" + mode + "/" + folder));
+            br.getPage("http://crypt-it.com/" + mode + "/" + folder);
             String pass = "";
-            if (ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
+            if (br.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                 pass = param.getDecrypterPassword();
                 for (int retrycounter = 1; retrycounter <= 5; retrycounter++) {
                     if (pass == null) {
                         pass = getUserInput(JDLocale.L("plugins.decrypt.cryptitcom.password", "Ordner ist Passwortgeschützt. Passwort angeben:"), param.getDecrypterPassword(), param);
                     }
                     String post = "a=pw&pw=" + Encoding.urlEncode(pass);
-                    ri = HTTP.postRequest(new URL("http://crypt-it.com/" + mode + "/" + folder), null, null, null, post, true);
-                    if (!ri.containsHTML(PATTERN_PASSWORD_FOLDER)) {
+                    br.setFollowRedirects(true);
+                    br.postPage("http://crypt-it.com/" + mode + "/" + folder, post);
+                    if (!br.containsHTML(PATTERN_PASSWORD_FOLDER)) {
                         break;
                     }
                     pass = null;
                 }
             }
             if (pass == null) pass = "";/* falls kein passwort korrekt war */
-            String cookie = ri.getCookie();
-            String packagename = new Regex(ri.getHtmlCode(), Pattern.compile("class=\"folder\">(.*?)</", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            String password = new Regex(ri.getHtmlCode(), Pattern.compile("<b>Password:</b>(.*?)<", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+            String packagename = br.getRegex(Pattern.compile("class=\"folder\">(.*?)</", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String password = br.getRegex(Pattern.compile("<b>Password:</b>(.*?)<", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             if (password != null) password = password.trim();
-
-            HashMap<String, String> header = new HashMap<String, String>();
-            header.put("Content-Type", "application/x-amf");
 
             byte[] b = new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x11, 0x63, 0x72, 0x79, 0x70, 0x74, 0x69, 0x74, 0x32, 0x2e, 0x67, 0x65, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x00, 0x02, 0x2f, 0x31, 0x00, 0x00, 0x00, 0x11, 0x0a, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x06 };
             byte[] b2 = new byte[] { 0x02, 0x00 };
-            ri = HTTP.postRequest(new URL("http://crypt-it.com/engine/"), cookie, null, header, new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass, false);
-            String[] ciphers = new Regex(ri.getHtmlCode(), Pattern.compile("url(.*?)size", Pattern.CASE_INSENSITIVE)).getColumn(0);
+            br.setDebug(true);
+            br.getHeaders().put("Content-Type", "application/x-amf");
+            br.setFollowRedirects(false);
+            String postdata=new String(b) + folder + new String(b2) + new String(new byte[] { (byte) pass.length() }) + pass;
+            br.postPageRaw("http://crypt-it.com/engine/", postdata);
+            String[] ciphers = br.getRegex(Pattern.compile("url(.*?)size", Pattern.CASE_INSENSITIVE)).getColumn(0);
 
             FilePackage fp = new FilePackage();
             fp.setName(packagename);

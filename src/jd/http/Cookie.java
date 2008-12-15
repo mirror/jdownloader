@@ -103,12 +103,18 @@ public class Cookie {
         try {
             long a = DATE_FORMAT.parse(Current).getTime() - this.timedifference;
             long b = DATE_FORMAT.parse(formatedexpires).getTime();
+            @SuppressWarnings("unused")
             boolean c = a > b;
-            return c;
+            // return c;
+            /*
+             * TODO: rausfinden wie richtig das expire date berechnet wird,denn
+             * anscheinend handelt das jeder browser anders
+             */
         } catch (Exception e1) {
             JDUtilities.getLogger().severe("CookieParser failed: " + expires);
             return false;
         }
+        return false;
     }
 
     public void setTimeDifferece(String Date) {
