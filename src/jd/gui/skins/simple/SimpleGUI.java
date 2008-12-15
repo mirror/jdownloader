@@ -1175,17 +1175,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void doReconnect() {
-        boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
         if (!guiConfig.getBooleanProperty(PARAM_DISABLE_CONFIRM_DIALOGS, false)) {
             int confirm = JOptionPane.showConfirmDialog(frame, JDLocale.L("gui.reconnect.confirm", "Wollen Sie sicher eine neue Verbindung aufbauen?"));
             if (confirm == JOptionPane.OK_OPTION) {
+                boolean tmp = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_DISABLE_RECONNECT, true);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, false);
                 fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_RECONNECT));
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
             }
         } else {
             fireUIEvent(new UIEvent(this, UIEvent.UI_INTERACT_RECONNECT));
         }
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_DISABLE_RECONNECT, tmp);
     }
 
     public void fireUIEvent(UIEvent uiEvent) {
