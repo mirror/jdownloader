@@ -43,7 +43,7 @@ public class PluginPattern {
         completePattern.append("(game-blog\\.us/game-.+\\.html)");
         completePattern.append("|(pressefreiheit\\.ws/[\\d]+/.+\\.html)");
         completePattern.append("|(zeitungsjunge\\.info/.*?/.*?/.*?/)");
-        String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc" };
+        String[] listType1 = { "hd-area.org", "movie-blog.org", "doku.cc", "sound-blog.org" };
         for (String pattern : listType1) {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\d{4}/\\d{2}/\\d{2}/.+)");
         }
