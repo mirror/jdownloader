@@ -1789,6 +1789,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (addingLinkList.size() > 0) {
                     DownloadLink link = addingLinkList.remove(0);
                     attachLinkToPackage(link);
+                    progress.setValue(progress.getValue() + 1);
                 }
                 reprintTabbedPane();
             }
