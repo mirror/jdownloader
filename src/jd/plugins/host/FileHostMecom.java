@@ -1,11 +1,9 @@
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -17,11 +15,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
-
 public class FileHostMecom extends PluginForHost {
-    private String captchaCode;
     private String passCode = null;
     private String url;
 
@@ -103,7 +97,20 @@ public class FileHostMecom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() == null) {
             Form form = br.getForm(0);
+            if (form.getVars().containsKey("password")) {
+                if (downloadLink.getStringProperty("pass", null) == null) {
+                    passCode = Plugin.getUserInput(null, downloadLink);
+                } else {
+                    /* gespeicherten PassCode holen */
+                    passCode = downloadLink.getStringProperty("pass", null);
+                }
+                form.put("password", passCode);
+            }
             br.submitForm(form);
+            if (br.containsHTML(">Wrong password<")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             url = br.getRegex("24 hours<br><br>.*?<span style.*?>.*?<a href=\"(.*?)\">.*?</a>").getMatch(0);
         } else {
             url = br.getRedirectLocation();
@@ -117,10 +124,20 @@ public class FileHostMecom extends PluginForHost {
 
     public String getCaptcha() {
         String captcha = br.getRegex(Pattern.compile("<b>Enter code below:</b></td></tr>(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String captchas[] = new Regex(captcha, Pattern.compile("<span.*?>(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
+        String captchas[][] = new Regex(captcha, Pattern.compile("<span.*?padding-left:(.*?)px;.*?>(.*?)</span>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatches();
         String retcap = "";
-        for (String cap : captchas) {
-            retcap = retcap + cap;
+        int currentorder = Integer.MAX_VALUE;
+        for (int i = 0; i < captchas.length; i++) {
+            int x = 0;
+            currentorder = Integer.MAX_VALUE;
+            for (int y = 0; y < captchas.length; y++) {
+                if (Integer.parseInt(captchas[y][0]) < currentorder) {
+                    currentorder = Integer.parseInt(captchas[y][0]);
+                    x = y;
+                }
+            }
+            retcap = retcap + captchas[x][1];
+            captchas[x][0] = Integer.toString(Integer.MAX_VALUE);
         }
         return retcap;
     }
@@ -136,16 +153,35 @@ public class FileHostMecom extends PluginForHost {
         String captcha = getCaptcha();
         form = br.getForm(0);
         form.put("code", captcha);
+        if (form.getVars().containsKey("password")) {
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput(null, downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            form.put("password", passCode);
+        }
+        br.setFollowRedirects(false);
         sleep(20000, downloadLink);
+        br.submitForm(form);
+        if (br.containsHTML(">Wrong password<")) {
+            downloadLink.setProperty("pass", null);
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        if (br.containsHTML("<b>Enter code below:</b>")) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        if (passCode != null) {
+            downloadLink.setProperty("pass", passCode);
+        }
         br.setFollowRedirects(true);
         /* Datei herunterladen */
         br.setDebug(true);
-        dl = br.openDownload(downloadLink, form);
+        dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     @Override

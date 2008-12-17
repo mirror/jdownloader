@@ -45,7 +45,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
     }
 
     @Override
-    public void fireTableChanged(int id, Object param) {
+    public synchronized void fireTableChanged(int id, Object param) {
         if (id == DownloadLinksView.REFRESH_DATA_AND_STRUCTURE_CHANGED) {
             setVisible(false);
         }

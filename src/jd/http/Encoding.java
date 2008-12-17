@@ -107,7 +107,7 @@ public class Encoding {
     public static String formEncoding(String str) {
         /* Form Variablen dürfen keine Leerzeichen haben */
         if (str == null) return null;
-        return str.replaceAll(" ", "+");
+        return urlEncode(str);
     }
 
     public static String urlEncode_light(String url) {

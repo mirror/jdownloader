@@ -28,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.config.Property;
+import jd.http.Encoding;
 import jd.utils.JDUtilities;
 
 public class Form {
@@ -273,9 +274,9 @@ public class Form {
             if (match[0].equalsIgnoreCase("type")) {
                 ret.setType(match[1]);
             } else if (match[0].equalsIgnoreCase("name")) {
-                ret.setKey(match[1]);
+                ret.setKey(Encoding.formEncoding(match[1]));
             } else if (match[0].equalsIgnoreCase("value")) {
-                ret.setValue(match[1]);
+                ret.setValue(Encoding.formEncoding(match[1]));
             } else {
                 ret.setProperty(match[0], match[1]);
             }
@@ -285,9 +286,9 @@ public class Form {
             if (match[0].equalsIgnoreCase("type")) {
                 ret.setType(match[1]);
             } else if (match[0].equalsIgnoreCase("name")) {
-                ret.setKey(match[1]);
+                ret.setKey(Encoding.formEncoding(match[1]));
             } else if (match[0].equalsIgnoreCase("value")) {
-                ret.setValue(match[1]);
+                ret.setValue(Encoding.formEncoding(match[1]));
             } else {
                 ret.setProperty(match[0], match[1]);
             }
