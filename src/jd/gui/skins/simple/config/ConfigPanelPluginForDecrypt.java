@@ -161,7 +161,7 @@ public class ConfigPanelPluginForDecrypt extends ConfigPanel implements ActionLi
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
-                if (table.getSelectedColumn() < 0) return;
+                if (table.getSelectedRow() < 0) return;
                 DecryptPluginWrapper dpw = pluginsForDecrypt.get(table.getSelectedRow());
                 btnEdit.setEnabled(dpw.hasConfig());
                 btnLoad.setEnabled(!dpw.isLoaded());
