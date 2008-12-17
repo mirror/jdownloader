@@ -67,7 +67,7 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     public boolean isPremium() throws IOException {
-        if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://www.share-online.biz/members.php")) {
+        if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://www.share-online.biz/members.php") || br.toString().startsWith("Not HTML Code.")) {
             br.getPage("http://www.share-online.biz/members.php");
         }
         if (br.containsHTML("<b>Premium account</b>")) { return true; }

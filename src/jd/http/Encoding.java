@@ -104,6 +104,12 @@ public class Encoding {
         }
     }
 
+    public static String formEncoding(String str) {
+        /* Form Variablen dürfen keine Leerzeichen haben */
+        if (str == null) return null;
+        return str.replaceAll(" ", "+");
+    }
+
     public static String urlEncode_light(String url) {
         if (url == null) return null;
         StringBuffer sb = new StringBuffer();

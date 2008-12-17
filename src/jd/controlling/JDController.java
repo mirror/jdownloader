@@ -218,6 +218,8 @@ public class JDController implements ControlListener, UIListener {
      */
     private DownloadWatchDog watchdog;
 
+    private Integer StartStopSync = new Integer(0);
+
     public JDController() {
 
         packages = new Vector<FilePackage>();
@@ -1085,7 +1087,7 @@ public class JDController implements ControlListener, UIListener {
         return false;
     }
 
-    public DownloadLink getLinkThatBlocks(DownloadLink link) {
+    public synchronized DownloadLink getLinkThatBlocks(DownloadLink link) {
         synchronized (packages) {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;
@@ -1678,45 +1680,49 @@ public class JDController implements ControlListener, UIListener {
      * Startet den Downloadvorgang. Dies eFUnkton sendet das startdownload event
      * und aktiviert die ersten downloads.
      */
-    public synchronized boolean startDownloads() {
-        if (getDownloadStatus() == DOWNLOAD_NOT_RUNNING) {
-            setDownloadStatus(DOWNLOAD_RUNNING);
-            logger.info("StartDownloads");
-            watchdog = new DownloadWatchDog(this);
-            watchdog.start();
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
-            return true;
+    public boolean startDownloads() {
+        synchronized (StartStopSync) {
+            if (getDownloadStatus() == DOWNLOAD_NOT_RUNNING) {
+                setDownloadStatus(DOWNLOAD_RUNNING);
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_START, this));
+                logger.info("StartDownloads");
+                watchdog = new DownloadWatchDog(this);
+                watchdog.start();
+                return true;
+            }
+            return false;
         }
-        return false;
     }
 
     /**
      * Bricht den Download ab und blockiert bis er abgebrochen wurde.
      */
-    public synchronized boolean stopDownloads() {
-        if (getDownloadStatus() == DOWNLOAD_RUNNING) {
-            setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE, this));
+    public boolean stopDownloads() {
+        synchronized (StartStopSync) {
+            if (getDownloadStatus() == DOWNLOAD_RUNNING) {
+                setDownloadStatus(DOWNLOAD_TERMINATION_IN_PROGRESS);
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_ACTIVE, this));
 
-            watchdog.abort();
-            setDownloadStatus(DOWNLOAD_NOT_RUNNING);
+                watchdog.abort();
+                setDownloadStatus(DOWNLOAD_NOT_RUNNING);
 
-            synchronized (packages) {
-                for (FilePackage fp : packages) {
-                    for (DownloadLink link : fp.getDownloadLinks()) {
-                        if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
-                            link.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                            link.setEnabled(true);
+                synchronized (packages) {
+                    for (FilePackage fp : packages) {
+                        for (DownloadLink link : fp.getDownloadLinks()) {
+                            if (link.getLinkStatus().hasStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE)) {
+                                link.getLinkStatus().removeStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                                link.setEnabled(true);
+                            }
                         }
                     }
                 }
+                logger.info("termination broadcast");
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
+                fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
+                return true;
+            } else {
+                return false;
             }
-            logger.info("termination broadcast");
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_TERMINATION_INACTIVE, this));
-            fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_DOWNLOAD_STOP, this));
-            return true;
-        } else {
-            return false;
         }
     }
 
