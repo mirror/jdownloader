@@ -97,8 +97,9 @@ public class DepositFiles extends PluginForHost {
 
     public void login(Account account) throws IOException, PluginException {
         br.setFollowRedirects(true);
-        br.getPage("http://depositfiles.com/en/gold/payment.php");
-        Form login = br.getFormbyValue("enter");
+        setLangtoGer();
+        br.getPage("http://depositfiles.com/de/gold/payment.php");
+        Form login = br.getFormbyValue("einloggen");
         login.put("login", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);
@@ -106,11 +107,16 @@ public class DepositFiles extends PluginForHost {
         String cookie = br.getCookie("http://depositfiles.com", "autologin");
         if (cookie == null || br.containsHTML("Benutzername-Passwort-Kombination")) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
+    public void setLangtoGer() throws IOException {
+        br.setCookie("http://depositfiles.com", "lang_current", "de");
+    }
+
     public boolean isFreeAccount() throws IOException {
+        setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/");
         if (br.containsHTML("<div class=\"access\">Ihr Gold")) return false;
         String status = br.getRegex("<div class=\"access\">Ihre aktuelle Status:(.*?)- Mitglied</div>").getMatch(0);
@@ -121,7 +127,8 @@ public class DepositFiles extends PluginForHost {
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        this.setBrowserExclusive();
+        setBrowserExclusive();
+        br.setDebug(true);
         try {
             login(account);
         } catch (PluginException e) {
@@ -204,12 +211,11 @@ public class DepositFiles extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
+        setBrowserExclusive();
         correctUrl(downloadLink);
         String link = downloadLink.getDownloadURL();
 
-        br.setFollowRedirects(true);
-        br.setCookie("http://depositfiles.com", "lang_current", "de");
+        setLangtoGer();
         br.setFollowRedirects(false);
         br.getPage(link);
 
