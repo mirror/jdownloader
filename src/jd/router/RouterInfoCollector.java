@@ -135,9 +135,6 @@ public class RouterInfoCollector {
                 }
 
             }
-            if (routerMethodeNames == null) {
-                routerMethodeNames = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("routerinfocollector.namedialog.title", "Please enter the following routerinfos: manufacturer, model, firmware. (e.g DLink, 635 , FW1.37)"));
-            }
         }
 
     }
@@ -262,7 +259,12 @@ public class RouterInfoCollector {
                                 JDUtilities.getConfiguration().setProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, false);
                                 JDUtilities.getConfiguration().save();
                             }
-                            if (ccd.result) ric.sendToServer();
+                            if (ccd.result) {
+                                if (ric.routerMethodeNames == null) {
+                                    ric.routerMethodeNames = SimpleGUI.CURRENTGUI.showUserInputDialog(JDLocale.L("routerinfocollector.namedialog.title", "Please enter the following routerinfos: manufacturer, model, firmware. (e.g DLink, 635 , FW1.37)"));
+                                }
+                                ric.sendToServer();
+                            }
                         }
 
                     }
