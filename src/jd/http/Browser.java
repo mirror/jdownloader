@@ -315,7 +315,7 @@ public class Browser {
             StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null) {
+                if (entry.getKey() != null && entry.getValue().getValue() != null && entry.getValue().getValue().length() > 0) {
                     if (first) {
                         first = false;
                     } else {
@@ -356,7 +356,7 @@ public class Browser {
             StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null) {
+                if (entry.getKey() != null && entry.getValue().getValue() != null && entry.getValue().getValue().length() > 0) {
                     if (first) {
                         first = false;
                     } else {
@@ -876,7 +876,7 @@ public class Browser {
             StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null) {
+                if (entry.getKey() != null && entry.getValue().getValue() != null && entry.getValue().getValue().length() > 0) {
                     if (first) {
                         first = false;
                     } else {
