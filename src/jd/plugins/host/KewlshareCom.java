@@ -23,8 +23,7 @@ public class KewlshareCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        setBrowserExclusive();
-        br.setDebug(true);
+        setBrowserExclusive();        
         br.getPage(downloadLink.getDownloadURL());
         String filename = br.getRegex("<tr><td>File Name : <strong>(.*?)\\|\\|").getMatch(0);
         String filesize = br.getRegex("<tr><td>File Name : <strong>.*?\\|\\|(.*?)</strong></td></tr>").getMatch(0);
