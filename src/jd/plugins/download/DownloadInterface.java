@@ -176,10 +176,12 @@ abstract public class DownloadInterface {
          */
         private HTTPConnection copyConnection(HTTPConnection connection) {
             try {
-                downloadLink.getPlugin().waitForNextConnectionAllowed();
-            } catch (InterruptedException e1) {
+                while (downloadLink.getPlugin().waitForNextConnectionAllowed()) {
+                }
+            } catch (InterruptedException e) {
                 return null;
             }
+            downloadLink.getPlugin().putLastConnectionTime(System.currentTimeMillis());
             long start = startByte;
             String end = (endByte > 0 ? endByte + 1 : "") + "";
 
@@ -1671,7 +1673,7 @@ abstract public class DownloadInterface {
         if (!connected) connect();
         // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
         // mehrfachAufruf von connect entstehen kann
-        if (this.downloadLink.getFinalFileName() == null) {
+        if (this.downloadLink.getFinalFileName() == null && connection != null && connection.isContentDisposition()) {
             String name = Plugin.getFileNameFormHeader(connection);
             this.downloadLink.setFinalFileName(name);
         }

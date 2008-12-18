@@ -104,10 +104,25 @@ public class Encoding {
         }
     }
 
+    public static boolean isUrlCoded(String str) {
+        if (str == null) return false;
+        try {
+            if (URLDecoder.decode(str, "UTF-8").length() != str.length()) {
+                return true;
+            } else
+                return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     public static String formEncoding(String str) {
         /* Form Variablen dürfen keine Leerzeichen haben */
         if (str == null) return null;
-        return urlEncode(str);
+        if (isUrlCoded(str)) {
+            return str.replaceAll(" ", "+");
+        } else
+            return urlEncode(str);
     }
 
     public static String urlEncode_light(String url) {

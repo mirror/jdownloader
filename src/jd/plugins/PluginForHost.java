@@ -61,8 +61,9 @@ public abstract class PluginForHost extends Plugin {
     private int maxConnections = 50;
 
     public static final String PROPERTY_PREMIUM = "PREMIUM";
-    private Long LAST_CONNECTION_TIME = 0L;
-    private Long LAST_STARTED_TIME = 0L;
+
+    private static HashMap<Class<? extends PluginForHost>, Long> LAST_CONNECTION_TIME = new HashMap<Class<? extends PluginForHost>, Long>();
+    private static HashMap<Class<? extends PluginForHost>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForHost>, Long>();
     private Long WAIT_BETWEEN_STARTS = 0L;
 
     private boolean enablePremium = false;
@@ -346,6 +347,24 @@ public abstract class PluginForHost extends Plugin {
         return Math.max(0, (HOSTER_WAIT_UNTIL_TIMES.get(this.getClass()) - System.currentTimeMillis()));
     }
 
+    public synchronized long getLastTimeStarted() {
+        if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
+        return Math.max(0, (LAST_STARTED_TIME.get(this.getClass())));
+    }
+
+    public synchronized void putLastTimeStarted(long time) {
+        LAST_STARTED_TIME.put(this.getClass(), time);
+    }
+
+    public synchronized long getLastConnectionTime() {
+        if (!LAST_CONNECTION_TIME.containsKey(this.getClass())) { return 0; }
+        return Math.max(0, (LAST_CONNECTION_TIME.get(this.getClass())));
+    }
+
+    public synchronized void putLastConnectionTime(long time) {
+        LAST_CONNECTION_TIME.put(this.getClass(), time);
+    }
+
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         link.getLinkStatus().addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
         link.getLinkStatus().setErrorMessage("Plugin has no handlePremium Method!");
@@ -364,9 +383,7 @@ public abstract class PluginForHost extends Plugin {
         } catch (InterruptedException e) {
             return;
         }
-        synchronized (LAST_STARTED_TIME) {
-            LAST_STARTED_TIME = System.currentTimeMillis();
-        }
+        putLastTimeStarted(System.currentTimeMillis());
         if (!isAGBChecked()) {
             logger.severe("AGB not signed : " + getPluginID());
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_AGB_NOT_SIGNED);
@@ -544,7 +561,6 @@ public abstract class PluginForHost extends Plugin {
     public void resetHosterWaitTime() {
         HOSTER_WAIT_TIMES.put(this.getClass(), 0l);
         HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), 0l);
-
     }
 
     /**
@@ -574,14 +590,12 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void setHosterWaittime(long milliSeconds) {
-
         HOSTER_WAIT_TIMES.put(this.getClass(), milliSeconds);
         HOSTER_WAIT_UNTIL_TIMES.put(this.getClass(), System.currentTimeMillis() + milliSeconds);
-
     }
 
     public int getTimegapBetweenConnections() {
-        return 500;
+        return 750;
     }
 
     public void setStartIntervall(long interval) {
@@ -589,10 +603,7 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public boolean waitForNextStartAllowed(DownloadLink downloadLink) throws InterruptedException {
-        long time = 0l;
-        synchronized (LAST_STARTED_TIME) {
-            time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - LAST_STARTED_TIME));
-        }
+        long time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - getLastTimeStarted()));
         if (time > 0) {
             try {
                 this.sleep(time, downloadLink);
@@ -607,13 +618,14 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
-    public void waitForNextConnectionAllowed() throws InterruptedException {
-        synchronized (LAST_CONNECTION_TIME) {
-            long time = Math.max(0, getTimegapBetweenConnections() - (System.currentTimeMillis() - LAST_CONNECTION_TIME));
+    public boolean waitForNextConnectionAllowed() throws InterruptedException {
+        long time = Math.max(0, getTimegapBetweenConnections() - (System.currentTimeMillis() - getLastConnectionTime()));
+        if (time > 0) {
             Thread.sleep(time);
-            LAST_CONNECTION_TIME = System.currentTimeMillis();
+            return true;
+        } else {
+            return false;
         }
-
     }
 
     public void setMaxConnections(int maxConnections) {
