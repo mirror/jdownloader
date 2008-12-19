@@ -2,7 +2,6 @@ import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import jd.http.Encoding;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Plugin;

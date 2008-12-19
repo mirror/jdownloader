@@ -327,7 +327,6 @@ public class DistributeData extends ControlBroadcaster {
 
             public void go() throws Exception {
                 run();
-
             }
         }
         Jobber decryptJobbers = new Jobber(4);
@@ -335,7 +334,7 @@ public class DistributeData extends ControlBroadcaster {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
-                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
+                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();                    
 
                     CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
                     if (plg.isAcceptOnlyURIs()) {

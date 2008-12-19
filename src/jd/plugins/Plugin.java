@@ -40,6 +40,9 @@ import jd.config.ConfigContainer;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
+import jd.gui.skins.simple.ConvertDialog;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -93,6 +96,15 @@ public abstract class Plugin implements ActionListener {
         String captchaText = JDUtilities.getCaptcha(plugin, null, file, false, link);
         if (captchaText == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         return captchaText;
+    }
+
+    public static ConversionMode DisplayDialog(Object[] displaymodes, String name, CryptedLink link) throws InterruptedException {
+        link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
+        JDUtilities.acquireUserIO_Semaphore();
+        ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);
+        JDUtilities.releaseUserIO_Semaphore();
+        link.getProgressController().setProgressText(null);
+        return temp;
     }
 
     public static String getCaptchaCode(Plugin plugin, String method, File file, boolean forceJAC, DownloadLink link) throws PluginException, InterruptedException {

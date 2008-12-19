@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import jd.PluginWrapper;
 import jd.config.MenuItem;
@@ -29,6 +30,8 @@ import jd.http.Encoding;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Links entschlüsseln können
@@ -39,10 +42,52 @@ public abstract class PluginForDecrypt extends Plugin {
 
     public PluginForDecrypt(PluginWrapper wrapper) {
         super(wrapper);
-
     }
 
-    private CryptedLink cryptedLink = null;
+    private CryptedLink curcryptedLink = null;
+
+    private static HashMap<Class<? extends PluginForDecrypt>, Long> LAST_STARTED_TIME = new HashMap<Class<? extends PluginForDecrypt>, Long>();
+    private Long WAIT_BETWEEN_STARTS = 0L;
+
+    public synchronized long getLastTimeStarted() {
+        if (!LAST_STARTED_TIME.containsKey(this.getClass())) { return 0; }
+        return Math.max(0, (LAST_STARTED_TIME.get(this.getClass())));
+    }
+
+    public synchronized void putLastTimeStarted(long time) {
+        LAST_STARTED_TIME.put(this.getClass(), time);
+    }
+
+    public void setStartIntervall(long interval) {
+        WAIT_BETWEEN_STARTS = interval;
+    }
+
+    public boolean waitForNextStartAllowed(CryptedLink link) throws InterruptedException {
+        String temp = link.getProgressController().getStatusText();
+        long time = Math.max(0, WAIT_BETWEEN_STARTS - (System.currentTimeMillis() - getLastTimeStarted()));
+        if (time > 0) {
+            try {
+                this.sleep(time, link);
+            } catch (InterruptedException e) {
+                link.getProgressController().setStatusText(temp);
+                throw e;
+            }
+            link.getProgressController().setStatusText(temp);
+            return true;
+        } else {
+            link.getProgressController().setStatusText(temp);
+            return false;
+        }
+    }
+
+    public void sleep(long i, CryptedLink link) throws InterruptedException {
+        while (i > 0) {
+            i -= 1000;
+            link.getProgressController().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
+            Thread.sleep(1000);
+        }
+        link.getProgressController().setStatusText(null);
+    }
 
     /**
      * Diese Methode entschlüsselt Links.
@@ -81,28 +126,38 @@ public abstract class PluginForDecrypt extends Plugin {
      * @return Ein Vector mit Klartext-links
      */
     public ArrayList<DownloadLink> decryptLink(CryptedLink cryptedLink) {
-        this.cryptedLink = cryptedLink;
+        curcryptedLink = cryptedLink;
         ProgressController progress;
         progress = new ProgressController("Decrypter: " + getLinkName());
         progress.setStatusText("decrypt-" + getHost() + ": " + getLinkName());
-        cryptedLink.setProgressController(progress);
+        curcryptedLink.setProgressController(progress);
+        try {
+            while (waitForNextStartAllowed(curcryptedLink)) {
+            }
+        } catch (InterruptedException e) {
+            return new ArrayList<DownloadLink>();
+        }
+        putLastTimeStarted(System.currentTimeMillis());
         ArrayList<DownloadLink> tmpLinks = null;
         try {
-            tmpLinks = decryptIt(cryptedLink, progress);
+            tmpLinks = decryptIt(curcryptedLink, progress);
         } catch (DecrypterException e) {
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
             progress.setColor(Color.RED);
             progress.finalize(15000l);
+        } catch (InterruptedException e2) {
+            tmpLinks = new ArrayList<DownloadLink>();
         } catch (Exception e) {
+            progress.finalize();
             logger.severe("Decrypter out of date: " + this);
-            logger.severe("Decrypter out of date: " + getVersion());
+            logger.severe("Decrypter out of date: " + getVersion());            
             e.printStackTrace();
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
             logger.severe("Decrypter out of date: " + getVersion());
-            progress.setStatusText("Decrypter out of date: " + this.getHost());
+            progress.setStatusText("Decrypter out of date: " + this.getHost());            
             progress.setColor(Color.RED);
             progress.finalize(15000l);
             return new ArrayList<DownloadLink>();
@@ -124,13 +179,15 @@ public abstract class PluginForDecrypt extends Plugin {
 
         class DThread extends Thread implements JDRunnable {
             private CryptedLink decryptableLink = null;
+            private PluginForDecrypt plg = null;
 
-            public DThread(CryptedLink decryptableLink) {
+            public DThread(CryptedLink decryptableLink, PluginForDecrypt plg) {
                 this.decryptableLink = decryptableLink;
+                this.plg = plg;
             }
 
             public void run() {
-                ArrayList<DownloadLink> links = decryptLink(decryptableLink);
+                ArrayList<DownloadLink> links = plg.decryptLink(decryptableLink);
                 for (DownloadLink link : links) {
                     link.setBrowserUrl(decryptableLink.getCryptedUrl());
                 }
@@ -139,12 +196,11 @@ public abstract class PluginForDecrypt extends Plugin {
 
             public void go() throws Exception {
                 run();
-
             }
         }
 
         for (int b = cryptedLinks.length - 1; b >= 0; b--) {
-            DThread dthread = new DThread(cryptedLinks[b]);
+            DThread dthread = new DThread(cryptedLinks[b], (PluginForDecrypt) wrapper.getNewPluginInstance());
             decryptJobbers.add(dthread);
         }
         int todo = decryptJobbers.getJobsAdded();
@@ -200,9 +256,9 @@ public abstract class PluginForDecrypt extends Plugin {
 
     @Override
     public String getLinkName() {
-        if (cryptedLink == null) return "";
+        if (curcryptedLink == null) return "";
         try {
-            return new URL(cryptedLink.toString()).getFile();
+            return new URL(curcryptedLink.toString()).getFile();
         } catch (MalformedURLException e) {
             return "";
         }

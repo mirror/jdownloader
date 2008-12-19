@@ -61,6 +61,62 @@ public class Browser {
     private HashMap<String, Auth> auths = new HashMap<String, Auth>();
     private boolean debug = false;
 
+    private static HashMap<String, Long> LAST_PAGE_ACCESS = new HashMap<String, Long>();
+    private HashMap<String, Long> last_page_access = new HashMap<String, Long>();
+    private String LAST_PAGE_ACCESS_identifier = null;
+    private long WAIT_BETWEEN_PAGE_ACCESS = 0L;
+    private boolean exclusive_PAGE_ACCESS = true;
+
+    private synchronized long get_LAST_PAGE_ACCESS() {
+        if (LAST_PAGE_ACCESS_identifier == null) return 0L;
+        if (!exclusive_PAGE_ACCESS) {
+            if (LAST_PAGE_ACCESS.containsKey(LAST_PAGE_ACCESS_identifier)) { return LAST_PAGE_ACCESS.get(LAST_PAGE_ACCESS_identifier); }
+        } else {
+            if (last_page_access.containsKey(LAST_PAGE_ACCESS_identifier)) { return last_page_access.get(LAST_PAGE_ACCESS_identifier); }
+        }
+        return 0L;
+    }
+
+    private synchronized void put_LAST_PAGE_ACCESS(long time) {
+        if (LAST_PAGE_ACCESS_identifier == null) return;
+        if (!exclusive_PAGE_ACCESS) {
+            LAST_PAGE_ACCESS.put(LAST_PAGE_ACCESS_identifier, time);
+        } else {
+            last_page_access.put(LAST_PAGE_ACCESS_identifier, time);
+        }
+    }
+
+    public void set_PAGE_ACCESS_exclusive(boolean value) {
+        exclusive_PAGE_ACCESS = value;
+        
+    }
+
+    public void set_LAST_PAGE_ACCESS_identifier(String value) {
+        LAST_PAGE_ACCESS_identifier = value;
+    }
+
+    public void set_WAIT_BETWEEN_PAGE_ACCESS(long value) {
+        WAIT_BETWEEN_PAGE_ACCESS = value;
+    }
+
+    private void waitForPageAccess() {
+        if (LAST_PAGE_ACCESS_identifier == null) return;
+        while (true) {
+            long time = Math.max(0, WAIT_BETWEEN_PAGE_ACCESS - (System.currentTimeMillis() - get_LAST_PAGE_ACCESS()));
+            if (time > 0) {
+                try {
+                    Thread.sleep(time);
+                } catch (InterruptedException e) {
+                    break;
+                }
+                continue;
+            } else {
+                break;
+            }
+        }
+        put_LAST_PAGE_ACCESS(System.currentTimeMillis());
+    }
+
     public void clearCookies(String string) {
         getCookies().put(string, null);
 
@@ -245,7 +301,7 @@ public class Browser {
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
-
+        waitForPageAccess();
         request.connect();
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         String ret = null;
@@ -285,8 +341,7 @@ public class Browser {
 
     private void checkContentLengthLimit(Request request) throws BrowserException {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
-        if (Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) > limit) { throw new BrowserException("Content-length too big"); }
-
+        if (Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) > limit) throw new BrowserException("Content-length too big");
     }
 
     public int getReadTimeout() {
@@ -411,7 +466,7 @@ public class Browser {
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
-
+        waitForPageAccess();
         request.connect();
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
 
@@ -549,6 +604,7 @@ public class Browser {
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
+        waitForPageAccess();
         request.connect();
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         this.request = request;
@@ -666,7 +722,7 @@ public class Browser {
         }
 
         String ret = null;
-
+        waitForPageAccess();
         request.connect();
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         checkContentLengthLimit(request);
@@ -797,7 +853,7 @@ public class Browser {
         }
 
         String ret = null;
-
+        waitForPageAccess();
         request.connect();
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         checkContentLengthLimit(request);
@@ -1115,6 +1171,10 @@ public class Browser {
 
     public Browser cloneBrowser() {
         Browser br = new Browser();
+        br.exclusive_PAGE_ACCESS = exclusive_PAGE_ACCESS;
+        br.WAIT_BETWEEN_PAGE_ACCESS = WAIT_BETWEEN_PAGE_ACCESS;
+        br.last_page_access = last_page_access;
+        br.LAST_PAGE_ACCESS_identifier = LAST_PAGE_ACCESS_identifier;       
         br.acceptLanguage = acceptLanguage;
         br.connectTimeout = connectTimeout;
         br.currentURL = currentURL;

@@ -32,6 +32,7 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -49,6 +50,8 @@ public class YouTubeCom extends PluginForDecrypt {
 
     public YouTubeCom(PluginWrapper wrapper) {
         super(wrapper);
+        br.set_LAST_PAGE_ACCESS_identifier("youtube");
+        br.set_WAIT_BETWEEN_PAGE_ACCESS(100l);
     }
 
     private String clean(String s) {
@@ -133,7 +136,6 @@ public class YouTubeCom extends PluginForDecrypt {
             String name = Encoding.htmlDecode(br.getRegex(YT_FILENAME).getMatch(0).trim());
             /* Konvertierungsmöglichkeiten adden */
             boolean gotHD = false;
-
             if (br.openGetConnection(link + "&fmt=18").getResponseCode() == 200) {
                 br.getHttpConnection().disconnect();
                 possibleconverts.add(ConversionMode.VIDEOMP4);
@@ -151,7 +153,7 @@ public class YouTubeCom extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            ConversionMode convertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
+            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, param);
             if (convertTo != null) {
                 if (convertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
                     link += "&fmt=18";

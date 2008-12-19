@@ -22,11 +22,11 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class MyvideoDe extends PluginForDecrypt {
@@ -56,7 +56,7 @@ public class MyvideoDe extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-        ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
+        ConversionMode ConvertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, param);
         if (ConvertTo == null) return decryptedLinks;
         DownloadLink thislink = createDownloadlink(link);
         thislink.setBrowserUrl(parameter);

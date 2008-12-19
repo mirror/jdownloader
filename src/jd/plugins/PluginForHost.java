@@ -611,6 +611,7 @@ public abstract class PluginForHost extends Plugin {
                 downloadLink.getLinkStatus().setStatusText(null);
                 throw e;
             }
+            downloadLink.getLinkStatus().setStatusText(null);
             return true;
         } else {
             downloadLink.getLinkStatus().setStatusText(null);

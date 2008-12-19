@@ -23,12 +23,12 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
@@ -66,7 +66,7 @@ public class SpiegelDe extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink,ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORTED_VIDEO).matches()) {
             String id = new Regex(cryptedLink.getCryptedUrl(), PATTERN_SUPPORTED_VIDEO).getMatch(0);
@@ -83,7 +83,7 @@ public class SpiegelDe extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.VIDEOMP4);
             possibleconverts.add(ConversionMode.PODCAST);
             possibleconverts.add(ConversionMode.IPHONE);
-            ConversionMode convertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
+            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, cryptedLink);
 
             if (convertTo != null) {
                 DownloadLink downloadLink = null;

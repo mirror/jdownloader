@@ -23,26 +23,27 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
 public class ClipfishDe extends PluginForDecrypt {
 
-    private static final Pattern PATTERN_CAHNNEL_VIDEO  = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/n\\.php/channel/\\d+/video/(\\d+)");
+    private static final Pattern PATTERN_CAHNNEL_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/n\\.php/channel/\\d+/video/(\\d+)");
     private static final Pattern PATTERN_STANDARD_VIDEO = Pattern.compile("http://[\\w\\.]*?clipfish\\.de/video/(\\d+)(/.+)?");
-    private static final Pattern PATTERN_FLV_FILE       = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
-    private static final Pattern PATTERN_TITEL          = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
-    private static final String  XML_PATH               = "http://www.clipfish.de/video_n.php?vid=";
+    private static final Pattern PATTERN_FLV_FILE = Pattern.compile("&url=(http://.+?\\.flv)&", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_TITEL = Pattern.compile("<title>(.+?)</title>", Pattern.CASE_INSENSITIVE);
+    private static final String XML_PATH = "http://www.clipfish.de/video_n.php?vid=";
+
     public ClipfishDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink,ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.clearCookies(getHost());
         Regex regexInfo = new Regex(br.getPage(cryptedLink.getCryptedUrl()), PATTERN_TITEL);
@@ -71,7 +72,7 @@ public class ClipfishDe extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-        ConversionMode ConvertTo = ConvertDialog.DisplayDialog(possibleconverts.toArray(), name);
+        ConversionMode ConvertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, cryptedLink);
         if (ConvertTo != null) {
             downloadLink.setFinalFileName(name + ".tmp");
             downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());
