@@ -220,7 +220,7 @@ public class QshareCom extends PluginForHost {
         String[] dat = br.getRegex("<SPAN STYLE=\"font-size:13px;vertical-align:middle\">(.*?) \\((.*?)\\).*?</SPAN>").getRow(0);
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0].trim());
-        downloadLink.setDownloadSize((int) Regex.getSize(dat[1].trim()));
+        downloadLink.setDownloadSize(Regex.getSize(dat[1].trim()));
         return true;
     }
 
