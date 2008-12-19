@@ -141,14 +141,14 @@ public class ShragleCom extends PluginForHost {
         String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
 
         String[] data = Regex.getLines(br.getPage("http://www.shragle.com/api.php?key=078e5ca290d728fd874121030efb4a0d&action=getStatus&fileID=" + id));
-        if (data.length != 4) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (data.length != 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String name = data[0];
         String size = data[1];
         String md5 = data[2];
         // status 0: all ok 1: abused
         String status = data[3];
 
-        if (!status.equals("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (!status.equals("0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
 
         downloadLink.setFinalFileName(name.trim());
         downloadLink.setDownloadSize(Long.parseLong(size));

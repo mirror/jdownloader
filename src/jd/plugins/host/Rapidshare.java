@@ -614,7 +614,9 @@ public class Rapidshare extends PluginForHost {
         /*
          * 1: Normal online -1: date nicht gefunden 3: Drect download
          */
-        if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) return false;
+        if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) {            
+            return false;
+        }
 
         downloadLink.setName(erg[5]);
         downloadLink.setDownloadSize(Integer.parseInt(erg[4]));

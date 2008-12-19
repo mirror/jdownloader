@@ -18,6 +18,7 @@ package jd.controlling;
 
 import java.io.File;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
@@ -134,11 +135,14 @@ public class SingleDownloadController extends Thread {
             currentPlugin.init();
             try {
                 currentPlugin.handle(downloadLink);
+            } catch (UnknownHostException e) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setErrorMessage("No InternetConnection?");
+                linkStatus.setValue(5 * 60 * 1000l);
             } catch (SocketTimeoutException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
                 linkStatus.setErrorMessage("Hoster offline");
                 linkStatus.setValue(20 * 60 * 1000l);
-
             } catch (InterruptedException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 e.printStackTrace();
@@ -383,6 +387,7 @@ public class SingleDownloadController extends Thread {
      * @param step
      */
     private void onErrorFileNotFound(DownloadLink downloadLink, PluginForHost plugin) {
+        downloadLink.setDupecheckAllowed(false);
         logger.severe("File not found :" + downloadLink);
     }
 
@@ -447,7 +452,7 @@ public class SingleDownloadController extends Thread {
         logger.severe("Error occurred: Temporarily unavailably: " + downloadLink.getLinkStatus().getValue() + " ms");
 
         LinkStatus status = downloadLink.getLinkStatus();
-        status.setErrorMessage(JDLocale.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
+        if (status.getErrorMessage() == null) status.setErrorMessage(JDLocale.L("controller.status.tempUnavailable", "kurzzeitig nicht verfügbar"));
 
         /*
          * Value<=0 bedeutet das der link dauerhauft deaktiviert bleiben soll.

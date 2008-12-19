@@ -376,7 +376,9 @@ public class Netloadin extends PluginForHost {
 
             if (entries == null) {
                 entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
-                if (entries == null || entries.length < 3) { return false; }
+                if (entries == null || entries.length < 3) {                    
+                    return false;
+                }
                 downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
                 downloadLink.setName(entries[0]);
                 downloadLink.setDupecheckAllowed(true);
@@ -384,7 +386,9 @@ public class Netloadin extends PluginForHost {
                 return true;
             }
 
-            if (entries == null || entries.length < 3) { return false; }
+            if (entries == null || entries.length < 3) {                
+                return false;
+            }
 
             downloadLink.setName(entries[1]);
             downloadLink.setDupecheckAllowed(true);
@@ -392,11 +396,11 @@ public class Netloadin extends PluginForHost {
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 
             downloadLink.setMD5Hash(entries[4].trim());
-            if (entries[3].equalsIgnoreCase("online")) { return true; }
+            if (entries[3].equalsIgnoreCase("online")) { return true; }            
             return false;
         } catch (Exception e) {
             e.printStackTrace();
-        }
+        }        
         return false;
 
     }

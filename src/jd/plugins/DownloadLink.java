@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -583,6 +584,9 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 } catch (Exception e) {
                 }
                 break;
+            } catch (UnknownHostException e) {
+                available = false;
+                break;
             } catch (PluginException e) {
                 logger.severe("Hoster Plugin Version: " + getPlugin().getVersion());
                 break;
@@ -608,6 +612,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 break;
             }
         }
+        if (available == false) setDupecheckAllowed(false);
         return available;
     }
 

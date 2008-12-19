@@ -182,13 +182,12 @@ public class Uploadedto extends PluginForHost {
         } else {
             logger.info("Direct Downloads active");
         }
-        
+
         br.setDebug(true);
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, this.getPluginConfig().getIntegerProperty("PREMIUMCHUNKS", 1));
-    
-  
+
         dl.setFileSizeVerified(true);
-        if (dl.getConnection().getContentLength() == 0||!dl.getConnection().isContentDisposition()) {
+        if (dl.getConnection().getContentLength() == 0 || !dl.getConnection().isContentDisposition()) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(5 * 60 * 1000l);
             return;
@@ -215,7 +214,7 @@ public class Uploadedto extends PluginForHost {
             String fileName = lines[0].trim();
 
             long fileSize = Long.parseLong(lines[1].trim());
-            downloadLink.setName(fileName);
+            downloadLink.setFinalFileName(fileName);
             downloadLink.setDupecheckAllowed(true);
             downloadLink.setDownloadSize(fileSize);
             downloadLink.setSha1Hash(lines[2].trim());

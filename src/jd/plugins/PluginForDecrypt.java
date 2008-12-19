@@ -19,6 +19,7 @@ package jd.plugins;
 import java.awt.Color;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -141,6 +142,11 @@ public abstract class PluginForDecrypt extends Plugin {
         ArrayList<DownloadLink> tmpLinks = null;
         try {
             tmpLinks = decryptIt(curcryptedLink, progress);
+        } catch (UnknownHostException e) {
+            progress.setStatusText("No InternetConnection?");
+            progress.setColor(Color.RED);
+            progress.finalize(15000l);
+            return new ArrayList<DownloadLink>();
         } catch (DecrypterException e) {
             tmpLinks = new ArrayList<DownloadLink>();
             progress.setStatusText(this.getHost() + ": " + e.getErrorMessage());
@@ -151,13 +157,13 @@ public abstract class PluginForDecrypt extends Plugin {
         } catch (Exception e) {
             progress.finalize();
             logger.severe("Decrypter out of date: " + this);
-            logger.severe("Decrypter out of date: " + getVersion());            
+            logger.severe("Decrypter out of date: " + getVersion());
             e.printStackTrace();
         }
         if (tmpLinks == null) {
             logger.severe("Decrypter out of date: " + this);
             logger.severe("Decrypter out of date: " + getVersion());
-            progress.setStatusText("Decrypter out of date: " + this.getHost());            
+            progress.setStatusText("Decrypter out of date: " + this.getHost());
             progress.setColor(Color.RED);
             progress.finalize(15000l);
             return new ArrayList<DownloadLink>();
