@@ -21,6 +21,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -99,38 +100,36 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         getFileInformation(downloadLink);
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
-
-        if (br.getRedirectLocation() != null) br.getPage((String) null);
-
         String error = br.getRegex("<SPAN STYLE=\"font\\-size:13px;color:#BB0000;font\\-weight:bold\">(.*?)</SPAN>").getMatch(0);
-        if (error != null) { throw new PluginException(LinkStatus.ERROR_FATAL, Encoding.UTF8Encode(error));
+        if (error != null) throw new PluginException(LinkStatus.ERROR_FATAL, Encoding.UTF8Encode(error));
 
-        }
-
-        String url = br.getRegex("<a class=\"button\" href=\"(.*?)\"><span>Kostenlos</span></a>").getMatch(0);
+        String url = br.getRegex(Pattern.compile("<SCRIPT TYPE=\"text/javascript\">.*?function free\\(\\).*?window.location = \"(.*?)\";", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.getPage(url);
 
-        if (br.getRegex("Du hast die maximal zulässige Anzahl").matches()) {
-            logger.severe("There is already a download running with our ip");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        if (br.getRegex("Du hast die maximal zulässige Anzahl").matches()) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
 
+        String wait = br.getRegex("Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getMatch(0);
+
+        if (wait != null && !downloadLink.getBooleanProperty("trywithoutwait", true)) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
+
+        String link = br.getRegex("<DIV ID=\"download_link\"><A HREF=\"(.*?)\"").getMatch(0);
+
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, link, true, 1);
+        if (!dl.getConnection().isContentDisposition() && wait != null) {
+            dl.getConnection().disconnect();
+            downloadLink.setProperty("trywithoutwait", false);
+            throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-
-        String wait = new Regex(br, "Dein Frei-Traffic wird in ([\\d]*?) Minuten wieder").getMatch(0);
-        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(wait.trim()) * 60 * 1000l);
-
+        if (dl.startDownload()) {
+            downloadLink.setProperty("trywithoutwait", true);
         }
-        String link = new Regex(br, "<DIV ID=\"download_link\"><A HREF=\"(.*?)\"").getMatch(0);
-
-        if (link == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-
-        }
-
-        br.openDownload(downloadLink, link, false, 1).startDownload();
 
     }
 
@@ -215,32 +214,23 @@ public class QshareCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        String page;
-        // dateiname, dateihash, dateisize, dateidownloads, zeit bis
-        // happyhour
-        Browser br = new Browser();
+        setBrowserExclusive();
         br.setFollowRedirects(true);
-
-        page = br.getPage(downloadLink.getDownloadURL());
-
-        String[] dat = new Regex(page, "<SPAN STYLE=\"font-size:13px;vertical-align:middle\">(.*?) \\((.*?)\\).*?</SPAN>").getRow(0);
+        br.getPage(downloadLink.getDownloadURL());
+        String[] dat = br.getRegex("<SPAN STYLE=\"font-size:13px;vertical-align:middle\">(.*?) \\((.*?)\\).*?</SPAN>").getRow(0);
         if (dat.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(dat[0].trim());
         downloadLink.setDownloadSize((int) Regex.getSize(dat[1].trim()));
         return true;
-
     }
 
     @Override
     public String getFileInformationString(DownloadLink downloadLink) {
-
         return downloadLink.getName() + " (" + JDUtilities.formatBytesToMB(downloadLink.getDownloadSize()) + ")";
     }
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 

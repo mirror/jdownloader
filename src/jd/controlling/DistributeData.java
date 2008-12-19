@@ -27,6 +27,7 @@ import jd.HostPluginWrapper;
 import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.HTMLEntities;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.HTMLParser;
@@ -220,6 +221,7 @@ public class DistributeData extends ControlBroadcaster {
      * @return Link-Vector
      */
     public Vector<DownloadLink> findLinks() {
+        data = HTMLEntities.unhtmlentities(data);
         Vector<DownloadLink> ret = findLinks(true);
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinks(true));

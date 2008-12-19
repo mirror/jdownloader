@@ -65,9 +65,11 @@ public class HTMLEntities {
      */
     private static final Hashtable<String, Integer> unhtmlentities_map = new Hashtable<String, Integer>();
 
-    // ==============================================================================
+    //==========================================================================
+    // ====
     // METHODS
-    // ==============================================================================
+    //==========================================================================
+    // ====
 
     /**
      * Get the html entities translation table.
@@ -240,6 +242,7 @@ public class HTMLEntities {
      * @see #htmlentities(String)
      */
     public static String unhtmlentities(String str) {
+        if (str == null) return null;
 
         // initialize html translation maps table the first time is called
         if (htmlentities_map.isEmpty()) {
