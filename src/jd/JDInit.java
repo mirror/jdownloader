@@ -761,8 +761,8 @@ public class JDInit {
         new HostPluginWrapper("RomHustler.Net", "RomHustlerNet", "http://[\\w.]*?romhustler\\.net/download/.*?/\\d+");
         new HostPluginWrapper("SharedZilla.com", "SharedZillacom", "http://[\\w\\.]*?sharedzilla\\.com/(en|ru)/get\\?id=\\d+");
         new HostPluginWrapper("Share-Now.net", "ShareNownet", "http://[\\w\\.]*?share-now\\.net/{1,}files/\\d+-(.*?)\\.html");
-        new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+/.*?");
-        new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?datei\\.in/\\?[a-zA-Z0-9]+/.*?");
+        new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?shareplace\\.com/\\?[a-zA-Z0-9]+(/.*?)?");
+        new HostPluginWrapper("Shareplace.com", "Shareplacecom", "http://[\\w\\.]*?datei\\.in/\\?[a-zA-Z0-9]+(/.*?)?");
         new HostPluginWrapper("shragle.com", "ShragleCom", "http://[\\w\\.]*?shragle\\.(com|de)/files/[a-zA-Z0-9]+/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("SiloFiles.com", "SiloFilescom", "http://[\\w\\.]*?silofiles\\.com/file/\\d+/.*?");
         new HostPluginWrapper("Speedy-Share.com", "SpeedySharecom", "http://[\\w\\.]*?speedy\\-share\\.com/[a-zA-Z0-9]+/(.*)");
