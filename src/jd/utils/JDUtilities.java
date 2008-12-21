@@ -26,7 +26,9 @@ import java.awt.Insets;
 import java.awt.MediaTracker;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -1270,7 +1272,15 @@ public class JDUtilities {
         out.close();
         return new String(ba.toByteArray());
     }
-
+    public static Object xmlStringToObjekt(String in) throws IOException {
+        Object objectLoaded = null;
+        ByteArrayInputStream ba = new ByteArrayInputStream(in.getBytes());
+        XMLDecoder xmlDecoder = new XMLDecoder(ba);
+        objectLoaded = xmlDecoder.readObject();
+        xmlDecoder.close();
+        ba.close();
+        return objectLoaded;
+    }
     /**
      * Setzt die Konfigurations instanz
      * 
