@@ -245,6 +245,7 @@ public class RouterInfoCollector {
      * return ric.toXMLString(); }
      */
     public static void showDialog() {
+        /*
         if (isValidReconnect()) {
             if (JDUtilities.getConfiguration().getBooleanProperty(PROPERTY_SHOW_ROUTERINFO_DIALOG, true)) {
                 if (rict != null && rict.isAlive()) return;
@@ -272,6 +273,7 @@ public class RouterInfoCollector {
                 rict.start();
             }
         }
+        */
     }
 
     public void sendToServer() {
