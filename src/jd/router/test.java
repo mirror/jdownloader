@@ -56,6 +56,8 @@ public class test {
 
              for (Entry<Integer, RInfo> rfo : routers.entrySet()) {
                 System.out.println(rfo.getKey()+":"+rfo.getValue().getRouterName());
+                System.out.println(rfo.getValue().getReconnectMethode());
+                System.out.println("-------------");
             }
         } catch (IOException e) {
             // TODO Auto-generated catch block
