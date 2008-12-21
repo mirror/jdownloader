@@ -30,8 +30,6 @@ import java.util.Map.Entry;
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
-import jd.gui.skins.simple.SimpleGUI;
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.nutils.JDHash;
 import jd.utils.JDLocale;
@@ -293,7 +291,20 @@ public class RouterInfoCollector {
             e.printStackTrace();
         }
     }
-
+    public static RInfo getRInfo()
+    {
+        RouterInfoCollector infoc = new RouterInfoCollector();
+        RInfo info = new RInfo();
+        info.setRouterName(infoc.routerMethodeNames);
+        info.setPageHeader(infoc.pageHeader);
+        info.setRouterErrorPage(infoc.routerErrorPage);
+        info.setRouterHost(infoc.routerHost);
+        info.setRouterIP(infoc.IP);
+        info.setRouterMAC(infoc.routerMAC.substring(0, 8));
+        info.setRouterPage(infoc.routerSite);
+        info.setUPnPSCPDs(infoc.uPnPSCPDs);
+        return info;
+    }
     public static void main(String[] args) {
         new JDInit().loadConfiguration();
         showDialog();
