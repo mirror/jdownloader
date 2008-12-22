@@ -179,14 +179,7 @@ public class JDInit {
             Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
         }
 
-        String hash = "";
-
-        if (JDUtilities.getResourceFile("updatemessage.html").exists()) {
-            hash = JDHash.getMD5(JDUtilities.getResourceFile("updatemessage.html"));
-        }
-
-        JDUtilities.getRunType();
-        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_HASH, "").equals(hash)) {
+        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
             logger.info("Returned from Update");
 
             if (splashScreen != null) {
@@ -196,8 +189,6 @@ public class JDInit {
             SimpleGUI.showChangelogDialog();
 
         }
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_UPDATE_HASH, hash);
-        JDUtilities.getConfiguration().save();
         submitVersion();
     }
 

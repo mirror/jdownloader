@@ -45,8 +45,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
@@ -114,7 +112,6 @@ import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.ConfigurationPopup;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.nutils.io.JDIO;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
@@ -1760,44 +1757,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static void showChangelogDialog() {
-        String update = JDIO.getLocalFile(JDUtilities.getResourceFile("updatemessage.html"));
-        String message = new Regex(update, "<!--message-->(.+?)<!--message-->").getMatch(0);
-        String version = new Regex(update, "<p>version(.*?)<").getMatch(0).trim();
-        String updates = new Regex(update, "<ul>(.*?)</ul>").getMatch(0);
-        String[][] lines = new Regex(updates, "<li>(.*?)\\:(.*?)</li>").getMatches();
-        ArrayList<String[]> list = new ArrayList<String[]>();
-        for (String[] line : lines) {
-            String type = new Regex(line[1], "\\((.*?)\\)").getMatch(0);
-            if (type != null) {
-                line[1] = line[1].replaceAll("\\((.*?)\\)", "");
-                line[0] += " (" + type + ")";
-            }
-            list.add(line);
-        }
-
-        Collections.sort(list, new Comparator<String[]>() {
-            public int compare(String[] a, String[] b) {
-                return a[0].compareToIgnoreCase(b[0]);
-            }
-        });
-
-        StringBuilder html = new StringBuilder();
-        html.append("<style type=\"text/css\">#highlight {    background-color: #3399FF;  border: thin double #000000;}body {font-family: Geneva, Arial, Helvetica, sans-serif;}</style>");
-
-        if (message != null) {
-            html.append(message);
-        }
-        if (list.size() > 0) {
-            html.append("<ul>");
-            for (String[] line : list) {
-                html.append("<li>" + line[0] + " : " + line[1] + "</li>");
-
-            }
-            html.append("</ul>");
-        }
-
         JDTheme.setTheme("default");
-        JDUtilities.getGUI().showHelpMessage(JDLocale.LF("system.update.message.title", "Update to version %s", version), html.toString(), false, JDLocale.L("system.update.changelogurl", "http://jdownloader.org/changes?toolmode=1"), JDLocale.L("system.update.showchangelog", "Show all changes"), 60);
+        JDUtilities.getGUI().showHelpMessage(JDLocale.LF("system.update.message.title", "Updated to version %s", JDUtilities.getRevision()), "Update successfull", false, "http://wiki.jdownloader.net/changes/index", JDLocale.L("system.update.showchangelogv2", "What's new?"), 60);
     }
 
     public SubConfiguration getGuiConfig() {

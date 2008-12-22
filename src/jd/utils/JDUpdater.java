@@ -68,7 +68,7 @@ public class JDUpdater {
             if (f.getName().contains("svn")) continue;
             if (!secureUploadFolder(f, root, test)) ret = false;
         }
-        return ret;   
+        return ret;
     }
 
     private boolean secureUploadFile(File file, File root, String test) throws FileNotFoundException, IOException, InterruptedException {
@@ -316,9 +316,6 @@ public class JDUpdater {
             JDIO.writeLocalFile(JDUtilities.getResourceFile("list.php"), list);
             ftp.remove("list.php");
             ftp.stor(JDUtilities.getResourceFile("list.php"));
-            ftp.remove("updatemessage.html");
-            logger.info("write updatemessage (changelog)");
-            ftp.stor(new File("updatemessage.html"));
             // Quit from the FTP server.
             ftp.disconnect();
             logger.info("update ok");
