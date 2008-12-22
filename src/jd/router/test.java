@@ -49,6 +49,7 @@ public class test {
             String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
 //            String st = br.postPage("http://localhost/router/getRouters.php", he);
             ArrayList<RInfo> ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
+     
             HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
             HashMap<Integer, RInfo> upnpRouters = new HashMap<Integer, RInfo>();
             for (RInfo info : ra) {

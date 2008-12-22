@@ -79,7 +79,12 @@ public class RInfo implements Serializable {
             }
             if (name != null) setRouterNames(name);
             if (getRouterMAC() == null || getRouterMAC().length() == 0) {
-                RouterMAC = infoupnp[2].replaceAll(" ", "0");
+                try {
+                    RouterMAC = infoupnp[2].replaceAll(" ", "0");
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+
             }
         }
     }
@@ -211,17 +216,15 @@ public class RInfo implements Serializable {
     public int compare(RInfo rInfo)
     {
         int ret = 0;
-        if(!RouterIP.equals(rInfo.RouterIP))
-           ret+=5;
-        if(!RouterHost.equals(rInfo.RouterHost))
-            ret+=10;
-        if(!RouterMAC.equals(rInfo.RouterMAC))
-            ret+=10;
-        if(!RouterMAC.equals(rInfo.RouterMAC))
-            ret+=10;
-        ret+=EditDistance.getLevenshteinDifference(PageHeader, rInfo.PageHeader);
-        ret+=EditDistance.getLevenshteinDifference(RouterErrorPage, rInfo.RouterErrorPage);
-        ret+=EditDistance.getLevenshteinDifference(RouterPage, rInfo.RouterPage);
+        if(RouterIP!=null &&!RouterIP.equals(rInfo.RouterIP))
+           ret+=50;
+        if(RouterHost!=null &&!RouterHost.equals(rInfo.RouterHost))
+            ret+=100;
+        if(RouterMAC!=null &&!RouterMAC.equals(rInfo.RouterMAC))
+            ret+=100;
+        ret+=EditDistance.getLevenshteinDistance(PageHeader, rInfo.PageHeader);
+        ret+=EditDistance.getLevenshteinDistance(RouterErrorPage, rInfo.RouterErrorPage);
+        ret+=EditDistance.getLevenshteinDistance(RouterPage, rInfo.RouterPage);
         return ret;
     }
     @Override
@@ -353,59 +356,62 @@ public class RInfo implements Serializable {
         return ret;
 
     }
-
+    public void sendToServer()
+    {
+        try {
+            try {
+                if(ReconnectMethode!=null && !ReconnectMethode.contains("%%%pass%%%"))
+                {
+                    ReconnectMethode=SQLRouterData.setPlaceHolder(ReconnectMethode);
+                }
+                if(RouterNames!=null)
+                {
+                    if(RouterNames.length==0)
+                        RouterNames=null;
+                    else
+                    {
+                    int c = 0;
+                    while(RouterNames[0].startsWith("<?xml version"))
+                    {
+                        RouterNames = ((String[]) JDUtilities.xmlStringToObjekt(RouterNames[0]));
+                        if(RouterNames.length==0)
+                        {
+                            RouterNames=null;
+                            break;
+                        }
+                        if(c++==10)
+                        {
+                            RouterNames=null;
+                            break;
+                        }
+                    }
+                    }
+                        
+                     
+                }
+                if(RouterNames==null ||RouterNames[0].equals("Reconnect Recorder Methode") )
+                {
+                    String name = new Regex(getRouterPage(), "<title>(.*?)</title>").getMatch(0);
+                    if(name!=null)
+                        RouterNames=new String[] {name};
+                }
+                 
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+             SQLRouterData.br.postPage("http://localhost/router/import2.php",getHashMap());
+     
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     public static void main(String[] args) {
-        Browser br = new Browser();
+
         File[] files = new File("/home/dwd/www/router/rd/test").listFiles();
         for (File file : files) {
             ArrayList<RInfo> infos = (ArrayList<RInfo>) JDIO.loadObject(SQLRouterData.frame, file, true);
             for (RInfo info : infos) {
-                try {
-                    try {
-                        if(info.ReconnectMethode!=null && !info.ReconnectMethode.contains("%%%pass%%%"))
-                        {
-                            info.ReconnectMethode=SQLRouterData.setPlaceHolder(info.ReconnectMethode);
-                        }
-                        if(info.RouterNames!=null)
-                        {
-                            if(info.RouterNames.length==0)
-                                info.RouterNames=null;
-                            else
-                            {
-                            int c = 0;
-                            while(info.RouterNames[0].startsWith("<?xml version"))
-                            {
-                                info.RouterNames = ((String[]) JDUtilities.xmlStringToObjekt(info.RouterNames[0]));
-                                if(info.RouterNames.length==0)
-                                {
-                                    info.RouterNames=null;
-                                    break;
-                                }
-                                if(c++==10)
-                                {
-                                    info.RouterNames=null;
-                                    break;
-                                }
-                            }
-                            }
-                                
-                             
-                        }
-                        if(info.RouterNames==null ||info.RouterNames[0].equals("Reconnect Recorder Methode") )
-                        {
-                            String name = new Regex(info.getRouterPage(), "<title>(.*?)</title>").getMatch(0);
-                            if(name!=null)
-                                info.RouterNames=new String[] {name};
-                        }
-                         
-                    } catch (Exception e) {
-                        // TODO: handle exception
-                    }
-                     br.postPage("http://localhost/router/import2.php",info.getHashMap());
-             
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                
             }
         }
     }

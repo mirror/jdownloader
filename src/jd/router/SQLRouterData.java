@@ -23,10 +23,13 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import jd.http.Browser;
+
 import jd.parser.Regex;
 
 public class SQLRouterData {
     public static JFrame frame = new JFrame();
+    public static Browser br = new Browser();
     public static String setPlaceHolder(String data)
     {
         if(data==null)return null;
@@ -34,7 +37,7 @@ public class SQLRouterData {
         String pwpat = "%%%pass%%%";
         if(reg!=null && reg.length()==32 && reg.matches("[a-zA-Z0-9]*"))
             pwpat="MD5PasswordL(%%%pass%%%)";
-        data=data.replaceAll("(?is)(\\&aa|password|pws|passwor|pass|\\@\\&ps|^p1|^t1|pswd)=([^\\&$]*?)([\\s]+\\[\\[\\[| HTTP|$)", "$1="+pwpat+"$3").replaceAll("(?is)(username|name|user)\\=([^\\&]*?)([\\s]+\\[\\[\\[| HTTP|$)", "$1=%%%user%%%$3").replaceAll("(?is)=NAME([^\\&]*)\\&PASSWOR", "=NAME%%%user%%%&PASSWOR")
+        data=data.replaceAll("(?is)(\\&aa|password|pws|passwor|pass|\\@\\&ps|^p1|^t1|pswd)=([^\\&$]*?)([\\s]+\\[\\[\\[|\\[\\[\\[| HTTP|$)", "$1="+pwpat+"$3").replaceAll("(?is)(username|(?<!router)name|user)\\=([^\\&]*?)([\\s]+\\[\\[\\[|\\[\\[\\[| HTTP|$)", "$1=%%%user%%%$3").replaceAll("(?is)=NAME([^\\&]*)\\&PASSWOR", "=NAME%%%user%%%&PASSWOR")
         .replaceAll("(?is)RC=@D=([^\\=]*)=([^\\=]*) HTTP", "RC=@D=%%%pass%%%=%%%user%%% HTTP").replaceAll("(?is)RC=@D([^\\=].*?) HTTP", "RC=@D%%%pass%%%%%%user%%% HTTP");
         return data;
     }
@@ -129,7 +132,7 @@ public class SQLRouterData {
              {
                  info.setReconnectMethode(setPlaceHolder(info.getReconnectMethode()));
              }
-             info.save();
+             info.sendToServer();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -176,7 +179,6 @@ public class SQLRouterData {
     }
     public static void main(String[] args) throws SAXException, ParserConfigurationException {
         readFile(new File("/home/dwd/www/router/rd/db.xml"));
-
     }
 
 }
