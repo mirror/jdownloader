@@ -227,9 +227,10 @@ public class Netloadin extends PluginForHost {
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        Browser br = new Browser();
-
-        br.postPage("http://" + getHost() + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=");
+        setBrowserExclusive();
+        br.setDebug(true);
+        br.getPage("http://netload.in/index.php");
+        br.postPage("http://netload.in/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=login");
 
         if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) {
             ai.setValid(false);
@@ -271,7 +272,7 @@ public class Netloadin extends PluginForHost {
         downloadLink.setUrlDownload("http://netload.in/datei" + Netloadin.getID(downloadLink.getDownloadURL()) + ".htm");
         br.setFollowRedirects(false);
         br.setDebug(true);
-        br.postPage("http://" + getHost() + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=");
+        br.postPage("http://" + getHost() + "/index.php", "txtuser=" + account.getUser() + "&txtpass=" + account.getPass() + "&txtcheck=login&txtlogin=login");
         if (br.getRedirectLocation() == null || !br.getRedirectLocation().trim().equalsIgnoreCase("http://netload.in/index.php")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
         br.openGetConnection(downloadLink.getDownloadURL());
         Request con;
@@ -376,9 +377,7 @@ public class Netloadin extends PluginForHost {
 
             if (entries == null) {
                 entries = br.getRegex(";(.*?);(.*?);(.*?)").getRow(0);
-                if (entries == null || entries.length < 3) {                    
-                    return false;
-                }
+                if (entries == null || entries.length < 3) { return false; }
                 downloadLink.setDownloadSize((int) Regex.getSize(entries[1] + " bytes"));
                 downloadLink.setName(entries[0]);
                 downloadLink.setDupecheckAllowed(true);
@@ -386,9 +385,7 @@ public class Netloadin extends PluginForHost {
                 return true;
             }
 
-            if (entries == null || entries.length < 3) {                
-                return false;
-            }
+            if (entries == null || entries.length < 3) { return false; }
 
             downloadLink.setName(entries[1]);
             downloadLink.setDupecheckAllowed(true);
@@ -396,11 +393,11 @@ public class Netloadin extends PluginForHost {
             downloadLink.setDownloadSize((int) Regex.getSize(entries[2] + " bytes"));
 
             downloadLink.setMD5Hash(entries[4].trim());
-            if (entries[3].equalsIgnoreCase("online")) { return true; }            
+            if (entries[3].equalsIgnoreCase("online")) { return true; }
             return false;
         } catch (Exception e) {
             e.printStackTrace();
-        }        
+        }
         return false;
 
     }
