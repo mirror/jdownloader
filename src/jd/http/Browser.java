@@ -88,7 +88,7 @@ public class Browser {
 
     public void set_PAGE_ACCESS_exclusive(boolean value) {
         exclusive_PAGE_ACCESS = value;
-        
+
     }
 
     public void set_LAST_PAGE_ACCESS_identifier(String value) {
@@ -370,7 +370,7 @@ public class Browser {
             StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null && entry.getValue().getValue() != null && entry.getValue().getValue().length() > 0) {
+                if (entry.getKey() != null) {
                     if (first) {
                         first = false;
                     } else {
@@ -378,7 +378,11 @@ public class Browser {
                     }
                     stbuffer.append(entry.getKey());
                     stbuffer.append("=");
-                    stbuffer.append(entry.getValue().getValue());
+                    if (entry.getValue().getValue() != null) {
+                        stbuffer.append(entry.getValue().getValue());
+                    } else {
+                        stbuffer.append("");
+                    }
                 }
             }
             String varString = stbuffer.toString();
@@ -411,7 +415,7 @@ public class Browser {
             StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null && entry.getValue().getValue() != null && entry.getValue().getValue().length() > 0) {
+                if (entry.getKey() != null) {
                     if (first) {
                         first = false;
                     } else {
@@ -419,7 +423,11 @@ public class Browser {
                     }
                     stbuffer.append(entry.getKey());
                     stbuffer.append("=");
-                    stbuffer.append(entry.getValue().getValue());
+                    if (entry.getValue().getValue() != null) {
+                        stbuffer.append(entry.getValue().getValue());
+                    } else {
+                        stbuffer.append("");
+                    }
                 }
             }
             String varString = stbuffer.toString();
@@ -932,7 +940,7 @@ public class Browser {
             StringBuilder stbuffer = new StringBuilder();
             boolean first = true;
             for (Map.Entry<String, InputField> entry : form.getVars().entrySet()) {
-                if (entry.getKey() != null && entry.getValue().getValue() != null && entry.getValue().getValue().length() > 0) {
+                if (entry.getKey() != null) {
                     if (first) {
                         first = false;
                     } else {
@@ -940,7 +948,11 @@ public class Browser {
                     }
                     stbuffer.append(entry.getKey());
                     stbuffer.append("=");
-                    stbuffer.append(entry.getValue().getValue());
+                    if (entry.getValue().getValue() != null) {
+                        stbuffer.append(entry.getValue().getValue());
+                    } else {
+                        stbuffer.append("");
+                    }
                 }
             }
             String varString = stbuffer.toString();
@@ -1174,7 +1186,7 @@ public class Browser {
         br.exclusive_PAGE_ACCESS = exclusive_PAGE_ACCESS;
         br.WAIT_BETWEEN_PAGE_ACCESS = WAIT_BETWEEN_PAGE_ACCESS;
         br.last_page_access = last_page_access;
-        br.LAST_PAGE_ACCESS_identifier = LAST_PAGE_ACCESS_identifier;       
+        br.LAST_PAGE_ACCESS_identifier = LAST_PAGE_ACCESS_identifier;
         br.acceptLanguage = acceptLanguage;
         br.connectTimeout = connectTimeout;
         br.currentURL = currentURL;

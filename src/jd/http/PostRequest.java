@@ -76,11 +76,15 @@ public class PostRequest extends Request {
         StringBuilder buffer = new StringBuilder();
 
         for (Map.Entry<String, String> entry : postData.entrySet()) {
-            if (entry.getKey() != null && entry.getValue() != null && entry.getValue().length() > 0) {
+            if (entry.getKey() != null) {
                 buffer.append("&");
                 buffer.append(entry.getKey());
                 buffer.append("=");
-                buffer.append(entry.getValue());
+                if (entry.getValue() != null) {
+                    buffer.append(entry.getValue());
+                } else {
+                    buffer.append("");
+                }
             }
         }
         return buffer.toString().substring(1);
