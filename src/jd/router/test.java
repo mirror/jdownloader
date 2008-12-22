@@ -44,8 +44,10 @@ public class test {
         he.put("RouterMAC", infos.getRouterMAC());
         he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
         he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
+        he.put("HTMLTagCount", ""+infos.countHtmlTags());
         try {
             String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+//            String st = br.postPage("http://localhost/router/getRouters.php", he);
             ArrayList<RInfo> ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
             HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
             for (RInfo info : ra) {

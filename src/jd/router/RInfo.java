@@ -185,7 +185,13 @@ public class RInfo implements Serializable {
     public void setHaveUpnp(boolean haveUpnp) {
         this.haveUpnp = haveUpnp;
     }
-
+    public int countHtmlTags()
+    {
+        if(RouterPage==null)
+        return 0;
+        return new Regex(RouterPage,"<[^>]*>").count();
+    }
+    
     private int id;
     private String[] RouterNames = null;
     private boolean haveUpnpReconnect = false;
@@ -304,13 +310,23 @@ public class RInfo implements Serializable {
                                 e.printStackTrace();
                             }
                         }
-                        if(field.getName().equals("RouterNames")  && StrCont.startsWith("<?xml version"))
+                        int c=0;
+                        while(field.getName().equals("RouterNames")  && StrCont.startsWith("<?xml version"))
                         {
+                            if(c++==10)
+                                {StrCont="";
+                                break;
+                                }
                             try {
-                                StrCont = ((String[]) JDUtilities.xmlStringToObjekt(StrCont))[0];
+                                String[] t = ((String[]) JDUtilities.xmlStringToObjekt(StrCont));
+                                if(StrCont.length()==0)
+                                    StrCont="";
+                                else
+                                StrCont =  t[0];
                             } catch (Exception e) {
                                 // TODO: handle exception
                             }
+
                         }
                             if(StrCont.length()==0)
                                 StrCont=null;
@@ -333,6 +349,7 @@ public class RInfo implements Serializable {
                 }
             }
         }
+        ret.put("HTMLTagCount", ""+countHtmlTags());
         return ret;
 
     }
@@ -345,12 +362,42 @@ public class RInfo implements Serializable {
             for (RInfo info : infos) {
                 try {
                     try {
+                        if(info.ReconnectMethode!=null && !info.ReconnectMethode.contains("%%%pass%%%"))
+                        {
+                            info.ReconnectMethode=SQLRouterData.setPlaceHolder(info.ReconnectMethode);
+                        }
+                        if(info.RouterNames!=null)
+                        {
+                            if(info.RouterNames.length==0)
+                                info.RouterNames=null;
+                            else
+                            {
+                            int c = 0;
+                            while(info.RouterNames[0].startsWith("<?xml version"))
+                            {
+                                info.RouterNames = ((String[]) JDUtilities.xmlStringToObjekt(info.RouterNames[0]));
+                                if(info.RouterNames.length==0)
+                                {
+                                    info.RouterNames=null;
+                                    break;
+                                }
+                                if(c++==10)
+                                {
+                                    info.RouterNames=null;
+                                    break;
+                                }
+                            }
+                            }
+                                
+                             
+                        }
                         if(info.RouterNames==null ||info.RouterNames[0].equals("Reconnect Recorder Methode") )
                         {
                             String name = new Regex(info.getRouterPage(), "<title>(.*?)</title>").getMatch(0);
                             if(name!=null)
                                 info.RouterNames=new String[] {name};
                         }
+                         
                     } catch (Exception e) {
                         // TODO: handle exception
                     }
