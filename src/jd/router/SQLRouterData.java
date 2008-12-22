@@ -29,6 +29,7 @@ public class SQLRouterData {
     public static JFrame frame = new JFrame();
     public static String setPlaceHolder(String data)
     {
+        if(data==null)return null;
         String reg = new Regex(data, "(\\&aa|password|pws|passwor|pass|\\@\\&ps|^p1|^t1|pswd)=([^\\&]*?)([\\s]+\\[\\[\\[| HTTP|$)").getMatch(1);
         String pwpat = "%%%pass%%%";
         if(reg!=null && reg.length()==32 && reg.matches("[a-zA-Z0-9]*"))
@@ -39,6 +40,7 @@ public class SQLRouterData {
     }
     public static String replaceTimeStamps(String data)
     {
+        if(data==null)return null;
         return data.replaceAll("[A-Z][a-z]{1,2}, \\d{2} [A-Z][a-z]{1,2} \\d{4} \\d{2}:\\d{2}:\\d{2}( [A-Z]{2,3})", "");
     }
     public static boolean writeLocalFile(File file, String content) {
@@ -67,6 +69,7 @@ public class SQLRouterData {
     }
     public static String[] getNameFormUPnPSCPDs(HashMap<String, String> UPnPSCPDs)
     {
+        if(UPnPSCPDs==null)return null;
         for (Entry<String, String> element : UPnPSCPDs.entrySet()) {
             if(element.getValue().contains("<modelName>"))
             {

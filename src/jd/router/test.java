@@ -50,12 +50,25 @@ public class test {
 //            String st = br.postPage("http://localhost/router/getRouters.php", he);
             ArrayList<RInfo> ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
             HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
+            HashMap<Integer, RInfo> upnpRouters = new HashMap<Integer, RInfo>();
             for (RInfo info : ra) {
                 Integer b = info.compare(infos);
+                if(info.getReconnectMethode()!=null && info.getReconnectMethode().contains("SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination"))
+                {
+                    upnpRouters.put(b, info);
+                }
+                else
                 routers.put(b, info);
             }
+            upnpRouters=(HashMap<Integer, RInfo>) revSortByValue(upnpRouters);
+            System.out.println("Upnp Router ------------------------------------");
+            for (Entry<Integer, RInfo> rfo : upnpRouters.entrySet()) {
+                System.out.println(rfo.getKey()+":"+rfo.getValue().getRouterName());
+                System.out.println(rfo.getValue().getReconnectMethode());
+                System.out.println("-------------");
+            }
+            System.out.println("Upnp Router end ------------------------------------");
             routers=(HashMap<Integer, RInfo>) revSortByValue(routers);
-
              for (Entry<Integer, RInfo> rfo : routers.entrySet()) {
                 System.out.println(rfo.getKey()+":"+rfo.getValue().getRouterName());
                 System.out.println(rfo.getValue().getReconnectMethode());
