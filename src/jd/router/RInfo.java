@@ -78,7 +78,7 @@ public class RInfo implements Serializable {
                 if (infoupnp[1] != null) name += " " + infoupnp[1];
             }
             if (name != null) setRouterNames(name);
-            if (getRouterMAC() == null | getRouterMAC().length() == 0) {
+            if (getRouterMAC() == null || getRouterMAC().length() == 0) {
                 RouterMAC = infoupnp[2].replaceAll(" ", "0");
             }
         }

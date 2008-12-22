@@ -300,9 +300,19 @@ public class RouterInfoCollector {
         info.setRouterErrorPage(infoc.routerErrorPage);
         info.setRouterHost(infoc.routerHost);
         info.setRouterIP(infoc.IP);
-        info.setRouterMAC(infoc.routerMAC.substring(0, 8));
+        try {
+            info.setRouterMAC(infoc.routerMAC.substring(0, 8));
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
         info.setRouterPage(infoc.routerSite);
-        info.setUPnPSCPDs(infoc.uPnPSCPDs);
+        try {
+            info.setUPnPSCPDs(infoc.uPnPSCPDs);
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+
         return info;
     }
     public static void main(String[] args) {
