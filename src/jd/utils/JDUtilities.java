@@ -396,7 +396,7 @@ public class JDUtilities {
             return Integer.parseInt(Encoding.filterString(src, "1234567890"));
         } catch (NumberFormatException e) {
             return 0;
-        }
+        } 
     }
 
     public static long filterLong(String src) {
@@ -406,7 +406,7 @@ public class JDUtilities {
             return 0;
         }
     }
-
+  
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]
      * 
