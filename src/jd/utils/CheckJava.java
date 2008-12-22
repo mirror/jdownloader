@@ -22,9 +22,11 @@ import jd.parser.Regex;
 public class CheckJava {
 
     public boolean check() {
-        String runtimeName = System.getProperty("java.runtime.name").toLowerCase();
-        String runtimeVersion = System.getProperty("java.runtime.version").toLowerCase();
-
+        String runtimeName = System.getProperty("java.runtime.name");
+        String runtimeVersion = System.getProperty("java.runtime.version");
+        if (runtimeName == null || runtimeVersion == null) return false;
+        runtimeName = runtimeName.toLowerCase();
+        runtimeVersion = runtimeVersion.toLowerCase();
         if (!new Regex(runtimeVersion, "1\\.(5|6)").matches()) {
             String html = JDLocale.LF("gui.javacheck.html", "<link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>", runtimeName, runtimeVersion);
             return HTMLDialog.showDialog(null, JDLocale.L("gui.javacheck.title", "Wrong Java Version"), html);
