@@ -62,10 +62,28 @@ public class GetMacAdress {
     
     private String callArpToolDefault ( String ipAddress ) throws IOException, InterruptedException
     {
-        ProcessBuilder pb = new ProcessBuilder(new String[] {"ping", ipAddress});
-        pb.start();
-        String out = JDUtilities.runCommand("arp", new String[] {ipAddress}, null,10);
-        pb.directory();
+        String out =null;
+        try {
+            ProcessBuilder pb = new ProcessBuilder(new String[] {"ping", ipAddress});
+            pb.start();
+            out = JDUtilities.runCommand("arp", new String[] {ipAddress}, null,10);
+            pb.directory();
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        if(out==null)
+        {
+            try {
+                out = JDUtilities.runCommand("ip", new String[] {"neigh", "show"}, null,10);
+                if(out!=null)
+                {
+                    InetAddress hostAddress = InetAddress.getByName( ipAddress );
+                    out=new Regex(out, "("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+")[^\r\n]*").getMatch(-1);
+                }
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
         return out;
      }
     public static void main(String[] args) {
