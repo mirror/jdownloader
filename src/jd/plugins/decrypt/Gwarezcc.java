@@ -89,6 +89,8 @@ public class Gwarezcc extends PluginForDecrypt {
 
         } else if (parameter.matches(patternLink_Details_Mirror_Parts.pattern())) {
             /* Link zu den Parts des Mirrors (Verschlüsselt) */
+            br.getHeaders().put("Referer", parameter.replaceAll("parts", "check"));
+
             br.getPage(parameter);
             String downloadid = new Regex(parameter, "\\/mirror/([\\d].*)/parts/([\\d].*)/").getMatch(0);
             // /* Parts suchen */
