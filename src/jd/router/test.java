@@ -39,7 +39,10 @@ public class test {
      */
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
+        long time = System.currentTimeMillis();
+        System.out.println("Routerinformationen werden gesammelt");
         RInfo infos = RouterInfoCollector.getRInfo();
+        System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum sammeln der Routerinformationen");
         Browser br = new Browser();
         HashMap<String, String> he = new HashMap<String, String>();
         he.put("RouterHost", infos.getRouterHost());
@@ -48,12 +51,19 @@ public class test {
         he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
         he.put("HTMLTagCount", "" + infos.countHtmlTags());
         try {
+            time = System.currentTimeMillis();
+            System.out.println("Lade passende Routerdaten");
             String st = br.postPage( "http://service.jdownloader.net/routerdb/getRouters.php", he);
+            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum laden der Routerdatens");
 //            String st = br.postPage("http://localhost/router/getRouters.php", he);
+            time = System.currentTimeMillis();
+            System.out.println("Verarbeite Routerdaten");
             ArrayList<RInfo> ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
-
+            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum verarbeiten der Routerdatens");
             HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
             HashMap<Integer, RInfo> upnpRouters = new HashMap<Integer, RInfo>();
+            time = System.currentTimeMillis();
+            System.out.println("Vergleiche Routerdaten");
             for (RInfo info : ra) {
                 Integer b = info.compare(infos);
                 if (info.getReconnectMethode() != null && info.getReconnectMethode().contains("SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination")) {
@@ -62,6 +72,8 @@ public class test {
                     routers.put(b, info);
             }
             upnpRouters = (HashMap<Integer, RInfo>) revSortByValue(upnpRouters);
+            routers = (HashMap<Integer, RInfo>) revSortByValue(routers);
+            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum vergleich der Routerdatens");
             System.out.println("Upnp Router ------------------------------------");
             for (Entry<Integer, RInfo> rfo : upnpRouters.entrySet()) {
                 System.out.println(rfo.getKey() + ":" + rfo.getValue().getRouterName());
@@ -69,7 +81,6 @@ public class test {
                 System.out.println("-------------");
             }
             System.out.println("Upnp Router end ------------------------------------");
-            routers = (HashMap<Integer, RInfo>) revSortByValue(routers);
             for (Entry<Integer, RInfo> rfo : routers.entrySet()) {
                 System.out.println(rfo.getKey() + ":" + rfo.getValue().getRouterName());
                 System.out.println(rfo.getValue().getReconnectMethode());
