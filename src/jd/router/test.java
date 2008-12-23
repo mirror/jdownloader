@@ -39,9 +39,10 @@ public class test {
      */
     @SuppressWarnings("unchecked")
     public static void main(String[] args) {
+        long time2 = System.currentTimeMillis();
         long time = System.currentTimeMillis();
         System.out.println("Routerinformationen werden gesammelt");
-        RInfo infos = RouterInfoCollector.getRInfo();
+        RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
         System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum sammeln der Routerinformationen");
         Browser br = new Browser();
         HashMap<String, String> he = new HashMap<String, String>();
@@ -86,7 +87,7 @@ public class test {
                 System.out.println(rfo.getValue().getReconnectMethode());
                 System.out.println("-------------");
             }
-            
+            System.out.println("Router gefunden in "+(System.currentTimeMillis()-time2));
             System.out.println("Es wurden "+ra.size()+" Router gefunden");
             System.out.println("Es wurden "+((double)br.getRequest().getContentLength())/(double)1024+" kb übertragen");
         } catch (IOException e) {
