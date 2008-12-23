@@ -28,7 +28,8 @@ public class EditDistance {
      * @return
      */
     public static int getLevenshteinDistance(String s, String t) {
-        if (s == null || t == null) { throw new IllegalArgumentException("Strings must not be null"); }
+        if (s == null) {if(t==null) return 0; return t.length();}
+        if (t == null) {return s.length();}
 
         int n = s.length();
         int m = t.length();
