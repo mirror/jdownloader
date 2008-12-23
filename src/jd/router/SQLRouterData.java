@@ -90,7 +90,7 @@ public class SQLRouterData {
         return null;
     }
     @SuppressWarnings("unchecked")
-    public static void readString(String string) throws ParserConfigurationException, SAXException, IOException
+    private static void readString(String string) throws ParserConfigurationException, SAXException, IOException
     {
         try {
             byte[] bytes = string.getBytes();
@@ -138,7 +138,7 @@ public class SQLRouterData {
         }
 
     }
-    public static void readFile(File file) throws SAXException, ParserConfigurationException
+    private static void readFile(File file) throws SAXException, ParserConfigurationException
     {
         if (!file.exists())
             return;

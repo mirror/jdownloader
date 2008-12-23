@@ -1,22 +1,11 @@
 package jd.router;
-
-import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
-import java.util.ArrayList;
 import java.util.HashMap;
-
 import jd.parser.Regex;
-
-import jd.http.Browser;
-
-import jd.nutils.JDHash;
-
-import jd.nutils.io.JDIO;
-
 import jd.utils.EditDistance;
 
 import jd.utils.JDUtilities;
@@ -262,28 +251,6 @@ public class RInfo implements Serializable {
         }
         return false;
     }
-
-    @SuppressWarnings("unchecked")
-    public void save() {
-        String md5 = "";
-        if (ReconnectMethode != null && ReconnectMethode.length() > 0) {
-            md5 = JDHash.getMD5(ReconnectMethode);
-        } else {
-            md5 = "clr_" + JDHash.getMD5(ReconnectMethode);
-        }
-        File file = new File("/home/dwd/www/router/rd/test", md5 + ".xml");
-        ArrayList<RInfo> infos = new ArrayList<RInfo>();
-        infos.add(this);
-
-        if (file.exists()) {
-            infos = (ArrayList<RInfo>) JDIO.loadObject(SQLRouterData.frame, file, true);
-            if (!infos.contains(this)) infos.add(this);
-            file.delete();
-        }
-        JDIO.saveObject(SQLRouterData.frame, infos, file, md5 + ".xml", "xml", true);
-
-    }
-
     public HashMap<String, String> getHashMap() {
         Class<? extends RInfo> infoc = getClass();
         HashMap<String, String> ret = new HashMap<String, String>();
@@ -403,16 +370,6 @@ public class RInfo implements Serializable {
      
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-    public static void main(String[] args) {
-
-        File[] files = new File("/home/dwd/www/router/rd/test").listFiles();
-        for (File file : files) {
-            ArrayList<RInfo> infos = (ArrayList<RInfo>) JDIO.loadObject(SQLRouterData.frame, file, true);
-            for (RInfo info : infos) {
-                
-            }
         }
     }
 }
