@@ -54,12 +54,12 @@ public class test {
             time = System.currentTimeMillis();
             System.out.println("Lade passende Routerdaten");
             String st = br.postPage( "http://service.jdownloader.net/routerdb/getRouters.php", he);
-            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum laden der Routerdatens");
+            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum laden der Routerdaten");
 //            String st = br.postPage("http://localhost/router/getRouters.php", he);
             time = System.currentTimeMillis();
             System.out.println("Verarbeite Routerdaten");
             ArrayList<RInfo> ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
-            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum verarbeiten der Routerdatens");
+            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum verarbeiten der Routerdaten");
             HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
             HashMap<Integer, RInfo> upnpRouters = new HashMap<Integer, RInfo>();
             time = System.currentTimeMillis();
@@ -73,7 +73,7 @@ public class test {
             }
             upnpRouters = (HashMap<Integer, RInfo>) revSortByValue(upnpRouters);
             routers = (HashMap<Integer, RInfo>) revSortByValue(routers);
-            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum vergleich der Routerdatens");
+            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum vergleich der Routerdaten");
             System.out.println("Upnp Router ------------------------------------");
             for (Entry<Integer, RInfo> rfo : upnpRouters.entrySet()) {
                 System.out.println(rfo.getKey() + ":" + rfo.getValue().getRouterName());
