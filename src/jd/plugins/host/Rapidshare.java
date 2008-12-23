@@ -1,4 +1,4 @@
-﻿//    jDownloader - Downloadmanager
+//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
 //    This program is free software: you can redistribute it and/or modify

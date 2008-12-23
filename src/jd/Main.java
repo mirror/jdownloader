@@ -13,7 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//[-17, -23, 10, -114, 96, 74, 124, -124, 14, -120, -48, 58, 103, -10, -73, -40]
+//
 
 package jd;
 

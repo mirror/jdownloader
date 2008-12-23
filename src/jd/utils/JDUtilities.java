@@ -397,7 +397,7 @@ public class JDUtilities {
         } catch (NumberFormatException e) {
             return 0;
         } 
-    }
+    }  
 
     public static long filterLong(String src) {
         try {

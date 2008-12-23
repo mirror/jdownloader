@@ -53,7 +53,7 @@ public class BluehostTo extends PluginForHost {
         br.clearCookies(getHost());
         br.setDebug(true);
         // br.setFollowRedirects(true);
-        br.getPage("http://bluehost.to/v2a/index.php");
+        br.getPage("http://bluehost.to/index.php");
 
         Form login = br.getForm(0);
 
@@ -84,11 +84,24 @@ public class BluehostTo extends PluginForHost {
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage("http://bluehost.to");
-        br.postPage("http://bluehost.to/setcookie.php", "loginname=" + account.getUser() + "&loginpass=" + account.getPass() + "&gobutton.x=&gobutton.y=");
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
-        if (dl.getConnection().getContentType().contains("text")) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Beta Error");
+        
+        Form login= br.getForm(5);
+        login.put("loginname",account.getUser());
+        login.put("loginpass",account.getPass());
+       br.submitForm(login);
+       
+       dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
+        if (dl.getConnection().getContentType().contains("text")) {           
+            String page=br.loadConnection(dl.getConnection());
+            br.getRequest().setHtmlCode(page);
+            Form download = br.getFormbyName("download");
+            if(download==null){
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error");
+            }
+            dl =  br.openDownload(downloadLink, download,true,0);
+            if (dl.getConnection().getContentType().contains("text")) {  
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error");
+            }
         }
         dl.startDownload();
     }
@@ -127,22 +140,10 @@ public class BluehostTo extends PluginForHost {
 
         String[] dat = page.split("\\, ");
 
-        if (dat.length != 5) {
-            Browser br = new Browser();
-            br.getPage(downloadLink.getDownloadURL());
-            String filename = br.getRegex("dl_filename2\">(.*?)</div>").getMatch(0);
-            String filesize = br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(0).trim() + " " + br.getRegex("<div class=\"dl_groessefeld\">(\\d+?)<font style='font-size: 8px;'>(.*?)</font></div>").getMatch(1);
-            if (filesize == null || filename == null) {                
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadLink.setName(filename.trim());
-            downloadLink.setDupecheckAllowed(true);
-            downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
-            return true;
-        } else {
+       
             downloadLink.setName(dat[0]);
             downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
-        }
+        
         return true;
     }
 
