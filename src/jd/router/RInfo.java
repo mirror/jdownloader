@@ -1,4 +1,5 @@
 package jd.router;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
@@ -37,7 +38,11 @@ public class RInfo implements Serializable {
     }
 
     public void setRouterMAC(String routerMAC) {
-        if (RouterMAC == null) RouterMAC = routerMAC.replaceAll(" ", "0");
+        if (RouterMAC == null) {
+            RouterMAC = routerMAC.replaceAll(" ", "0");
+            if(RouterMAC.length()>8)
+                RouterMAC=RouterMAC.substring(0, 8);
+        }
     }
 
     public String getPageHeader() {
@@ -55,6 +60,7 @@ public class RInfo implements Serializable {
     public void setRouterPage(String routerPage) {
         RouterPage = SQLRouterData.replaceTimeStamps(routerPage);
     }
+
     public void setUPnPSCPDs(HashMap<String, String> UPnPSCPDs) {
 
         if (UPnPSCPDs != null) {
@@ -66,7 +72,7 @@ public class RInfo implements Serializable {
                 name = infoupnp[0];
                 if (infoupnp[1] != null) name += " " + infoupnp[1];
             }
-            if (name != null) setRouterNames(name);
+            if (name != null) setRouterName(name);
             if (getRouterMAC() == null || getRouterMAC().length() == 0) {
                 try {
                     RouterMAC = infoupnp[2].replaceAll(" ", "0");
@@ -77,6 +83,7 @@ public class RInfo implements Serializable {
             }
         }
     }
+
     @SuppressWarnings("unchecked")
     public void setUPnPSCPDs(String pnPSCPDs) {
         if (pnPSCPDs == null) { return; }
@@ -114,36 +121,6 @@ public class RInfo implements Serializable {
         ReconnectMethodeClr = reconnectMethodeClr;
     }
 
-    public String[] getRouterNames() {
-        return RouterNames;
-    }
-
-    public void setRouterNames(String[] routerNames) {
-        RouterNames = routerNames;
-    }
-
-    public void setRouterNames(String routerNames) {
-        if (routerNames == null || routerNames.length() == 0 || routerNames.equals("Reconnect Recorder Methode")) setPlaceholder = true;
-        if (RouterNames == null) {
-            try {
-                if (routerNames != null && routerNames.length() > 0) {
-                    if (routerNames.startsWith("<?xml version")) {
-                        RouterNames = (String[]) JDUtilities.xmlStringToObjekt(routerNames);
-                        if (RouterNames instanceof String[])
-                            RouterNames = new String[] { routerNames };
-                        else
-                            RouterNames = new String[] { routerNames };
-                    } else
-                        RouterNames = new String[] { routerNames };
-                } else
-                    RouterNames = null;
-
-            } catch (Exception e) {
-                RouterNames = new String[] { routerNames };
-            }
-        }
-    }
-
     public String getRouterPageLoggedIn() {
         return RouterPageLoggedIn;
     }
@@ -179,20 +156,18 @@ public class RInfo implements Serializable {
     public void setHaveUpnp(boolean haveUpnp) {
         this.haveUpnp = haveUpnp;
     }
-    public int countHtmlTags()
-    {
-        if(RouterPage==null)
-        return 0;
-        return new Regex(RouterPage,"<[^>]*>").count();
+
+    public int countHtmlTags() {
+        if (RouterPage == null) return 0;
+        return new Regex(RouterPage, "<[^>]*>").count();
     }
-    
+
     private int id;
-    private String[] RouterNames = null;
     private boolean haveUpnpReconnect = false;
     private boolean haveUpnp = false;
     public transient boolean setPlaceholder = false;
     private String RouterName = null;
-    
+
     public String getRouterName() {
         return RouterName;
     }
@@ -202,20 +177,18 @@ public class RInfo implements Serializable {
     }
 
     private String RouterIP, RouterHost, RouterMAC = null, PageHeader, RouterPage, RouterErrorPage, ReconnectMethode, ReconnectMethodeClr, RouterPageLoggedIn;
-    public int compare(RInfo rInfo)
-    {
+
+    public int compare(RInfo rInfo) {
         int ret = 0;
-        if(RouterIP!=null &&!RouterIP.equals(rInfo.RouterIP))
-           ret+=50;
-        if(RouterHost!=null &&!RouterHost.equals(rInfo.RouterHost))
-            ret+=100;
-        if(RouterMAC!=null &&!RouterMAC.equals(rInfo.RouterMAC))
-            ret+=100;
-        ret+=EditDistance.getLevenshteinDistance(PageHeader, rInfo.PageHeader);
-        ret+=EditDistance.getLevenshteinDistance(RouterErrorPage, rInfo.RouterErrorPage);
-        ret+=EditDistance.getLevenshteinDistance(RouterPage, rInfo.RouterPage);
+        if (RouterIP != null && !RouterIP.equals(rInfo.RouterIP)) ret += 50;
+        if (RouterHost != null && !RouterHost.equals(rInfo.RouterHost)) ret += 100;
+        if (RouterMAC != null && !RouterMAC.equals(rInfo.RouterMAC)) ret += 100;
+        ret += EditDistance.getLevenshteinDistance(PageHeader, rInfo.PageHeader);
+        ret += EditDistance.getLevenshteinDistance(RouterErrorPage, rInfo.RouterErrorPage);
+        ret += EditDistance.getLevenshteinDistance(RouterPage, rInfo.RouterPage);
         return ret;
     }
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof RInfo) {
@@ -227,15 +200,10 @@ public class RInfo implements Serializable {
                     } else if (ob.RouterMAC == null) {
                         ob.RouterMAC = RouterMAC;
                     }
-                    if (RouterNames == null) {
-                        if (ob.RouterNames != null) RouterNames = ob.RouterNames;
-                    } else if (ob.RouterNames == null) {
-                        ob.RouterNames = RouterNames;
-                    }
-                    if (RouterNames != null && ob.RouterNames != null) {
-                        if (ob.RouterNames.length > 1 && RouterNames.length == 1)
-                            ob.RouterNames = RouterNames;
-                        else if (RouterNames.length > 1 && ob.RouterNames.length == 1) RouterNames = ob.RouterNames;
+                    if (RouterName == null) {
+                        if (ob.RouterName != null) RouterName = ob.RouterName;
+                    } else if (ob.RouterName == null) {
+                        ob.RouterName = RouterName;
                     }
                     if (haveUpnp && !ob.haveUpnp) {
                         ob.haveUpnp = true;
@@ -251,6 +219,7 @@ public class RInfo implements Serializable {
         }
         return false;
     }
+
     public HashMap<String, String> getHashMap() {
         Class<? extends RInfo> infoc = getClass();
         HashMap<String, String> ret = new HashMap<String, String>();
@@ -263,16 +232,8 @@ public class RInfo implements Serializable {
                         if (content instanceof String)
                             StrCont = (String) content;
                         else if (content instanceof Boolean)
-                            StrCont = ((Boolean) content)? "1":"0";
-                        else if (field.getName().equals("RouterNames") || content instanceof String[]) {
-                            try {
-                                StrCont = ((String[]) content)[0];
-                            } catch (Exception e) {
-                                // TODO: handle exception
-                            }
-
-                        } else
-                        {
+                            StrCont = ((Boolean) content) ? "1" : "0";
+                        else {
                             try {
                                 StrCont = JDUtilities.objectToXml(content);
                             } catch (IOException e) {
@@ -280,29 +241,26 @@ public class RInfo implements Serializable {
                                 e.printStackTrace();
                             }
                         }
-                        int c=0;
-                        while(field.getName().equals("RouterNames")  && StrCont.startsWith("<?xml version"))
-                        {
-                            if(c++==10)
-                                {StrCont="";
+                        int c = 0;
+                        while (field.getName().equals("RouterName") && StrCont.startsWith("<?xml version")) {
+                            if (c++ == 10) {
+                                StrCont = "";
                                 break;
-                                }
+                            }
                             try {
                                 String[] t = ((String[]) JDUtilities.xmlStringToObjekt(StrCont));
-                                if(StrCont.length()==0)
-                                    StrCont="";
+                                if (StrCont.length() == 0)
+                                    StrCont = "";
                                 else
-                                StrCont =  t[0];
+                                    StrCont = t[0];
                             } catch (Exception e) {
                                 // TODO: handle exception
                             }
 
                         }
-                            if(StrCont.length()==0)
-                                StrCont=null;
+                        if (StrCont.length() == 0) StrCont = null;
                     }
-                    if(StrCont!=null)
-                    {
+                    if (StrCont != null) {
                         try {
                             ret.put(field.getName(), URLEncoder.encode(StrCont, "UTF-8"));
                         } catch (UnsupportedEncodingException e) {
@@ -319,55 +277,42 @@ public class RInfo implements Serializable {
                 }
             }
         }
-        ret.put("HTMLTagCount", ""+countHtmlTags());
+        ret.put("HTMLTagCount", "" + countHtmlTags());
         return ret;
 
     }
-    public void sendToServer()
-    {
+
+    public void sendToServer() {
         try {
             try {
-                if(ReconnectMethode!=null && !ReconnectMethode.contains("%%%pass%%%"))
-                {
-                    ReconnectMethode=SQLRouterData.setPlaceHolder(ReconnectMethode);
+                if (ReconnectMethode != null && !ReconnectMethode.contains("%%%pass%%%")) {
+                    ReconnectMethode = SQLRouterData.setPlaceHolder(ReconnectMethode);
                 }
-                if(RouterNames!=null)
-                {
-                    if(RouterNames.length==0)
-                        RouterNames=null;
-                    else
-                    {
+                if (RouterName != null) {
                     int c = 0;
-                    while(RouterNames[0].startsWith("<?xml version"))
-                    {
-                        RouterNames = ((String[]) JDUtilities.xmlStringToObjekt(RouterNames[0]));
-                        if(RouterNames.length==0)
-                        {
-                            RouterNames=null;
+                    while (RouterName.startsWith("<?xml version")) {
+                        String[] arRouterNames = ((String[]) JDUtilities.xmlStringToObjekt(RouterName));
+                        if (arRouterNames.length == 0) {
+                            RouterName = null;
                             break;
-                        }
-                        if(c++==10)
-                        {
-                            RouterNames=null;
+                        } else
+                            RouterName = arRouterNames[0];
+                        if (c++ == 10) {
+                            RouterName = null;
                             break;
                         }
                     }
-                    }
-                        
-                     
+
                 }
-                if(RouterNames==null ||RouterNames[0].equals("Reconnect Recorder Methode") )
-                {
-                    String name = new Regex(getRouterPage(), "<title>(.*?)</title>").getMatch(0);
-                    if(name!=null)
-                        RouterNames=new String[] {name};
+                if (RouterName == null || RouterName.equals("Reconnect Recorder Methode")) {
+                    RouterName = new Regex(getRouterPage(), "<title>(.*?)</title>").getMatch(0);
                 }
-                 
+
             } catch (Exception e) {
                 // TODO: handle exception
             }
-             SQLRouterData.br.postPage("http://localhost/router/import2.php",getHashMap());
-     
+            SQLRouterData.br.postPage("http://localhost/router/import2.php", getHashMap());
+
         } catch (Exception e) {
             e.printStackTrace();
         }

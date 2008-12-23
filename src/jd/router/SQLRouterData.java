@@ -125,7 +125,7 @@ public class SQLRouterData {
              }
              if(info.getReconnectMethodeClr()!=null && info.getReconnectMethodeClr().length()>0)
              {
-                 info.setRouterNames(new Regex(info.getReconnectMethodeClr(), "<Router name=\"(.*?)\" />").getMatch(0));
+                 info.setRouterName(new Regex(info.getReconnectMethodeClr(), "<Router name=\"(.*?)\" />").getMatch(0));
                  
              }
              if(info.setPlaceholder)
