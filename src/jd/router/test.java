@@ -1,6 +1,5 @@
 package jd.router;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +17,7 @@ import jd.utils.JDUtilities;
 import jd.http.Browser;
 
 public class test {
+    @SuppressWarnings("unchecked")
     public static Map revSortByValue(Map map) {
         List list = new LinkedList(map.entrySet());
         Collections.sort(list, new Comparator() {
@@ -33,9 +33,11 @@ public class test {
         }
         return result;
     }
+
     /**
      * @param args
      */
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) {
         RInfo infos = RouterInfoCollector.getRInfo();
         Browser br = new Browser();
@@ -44,37 +46,38 @@ public class test {
         he.put("RouterMAC", infos.getRouterMAC());
         he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
         he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
-        he.put("HTMLTagCount", ""+infos.countHtmlTags());
+        he.put("HTMLTagCount", "" + infos.countHtmlTags());
         try {
-            String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+            String st = br.postPage( "http://service.jdownloader.net/routerdb/getRouters.php", he);
 //            String st = br.postPage("http://localhost/router/getRouters.php", he);
             ArrayList<RInfo> ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
-     
+
             HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
             HashMap<Integer, RInfo> upnpRouters = new HashMap<Integer, RInfo>();
             for (RInfo info : ra) {
                 Integer b = info.compare(infos);
-                if(info.getReconnectMethode()!=null && info.getReconnectMethode().contains("SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination"))
-                {
+                if (info.getReconnectMethode() != null && info.getReconnectMethode().contains("SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination")) {
                     upnpRouters.put(b, info);
-                }
-                else
-                routers.put(b, info);
+                } else
+                    routers.put(b, info);
             }
-            upnpRouters=(HashMap<Integer, RInfo>) revSortByValue(upnpRouters);
+            upnpRouters = (HashMap<Integer, RInfo>) revSortByValue(upnpRouters);
             System.out.println("Upnp Router ------------------------------------");
             for (Entry<Integer, RInfo> rfo : upnpRouters.entrySet()) {
-                System.out.println(rfo.getKey()+":"+rfo.getValue().getRouterName());
+                System.out.println(rfo.getKey() + ":" + rfo.getValue().getRouterName());
                 System.out.println(rfo.getValue().getReconnectMethode());
                 System.out.println("-------------");
             }
             System.out.println("Upnp Router end ------------------------------------");
-            routers=(HashMap<Integer, RInfo>) revSortByValue(routers);
-             for (Entry<Integer, RInfo> rfo : routers.entrySet()) {
-                System.out.println(rfo.getKey()+":"+rfo.getValue().getRouterName());
+            routers = (HashMap<Integer, RInfo>) revSortByValue(routers);
+            for (Entry<Integer, RInfo> rfo : routers.entrySet()) {
+                System.out.println(rfo.getKey() + ":" + rfo.getValue().getRouterName());
                 System.out.println(rfo.getValue().getReconnectMethode());
                 System.out.println("-------------");
             }
+            
+            System.out.println("Es wurden "+ra.size()+" Router gefunden");
+            System.out.println("Es wurden "+((double)br.getRequest().getContentLength())/(double)1024+" kb übertragen");
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
