@@ -66,12 +66,12 @@ public class GetMacAdress {
         try {
             ProcessBuilder pb = new ProcessBuilder(new String[] {"ping", ipAddress});
             pb.start();
-            out = JDUtilities.runCommand("arp", new String[] {ipAddress}, null,10);
+            out = JDUtilities.runCommand("darp", new String[] {ipAddress}, null,10);
             pb.directory();
         } catch (Exception e) {
             // TODO: handle exception
         }
-        if(out==null)
+        if(out==null||out.trim().length()==0)
         {
             try {
                 out = JDUtilities.runCommand("ip", new String[] {"neigh", "show"}, null,10);
