@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -37,7 +36,7 @@ public class MyvideoDe extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
+        ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
 
@@ -55,8 +54,7 @@ public class MyvideoDe extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-
-        ConversionMode ConvertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, param);
+        ConversionMode ConvertTo = Plugin.DisplayDialog(possibleconverts, name, param);
         if (ConvertTo == null) return decryptedLinks;
         DownloadLink thislink = createDownloadlink(link);
         thislink.setBrowserUrl(parameter);

@@ -98,7 +98,7 @@ public abstract class Plugin implements ActionListener {
         return captchaText;
     }
 
-    public static ConversionMode DisplayDialog(Object[] displaymodes, String name, CryptedLink link) throws InterruptedException {
+    public static ConversionMode DisplayDialog(ArrayList<ConversionMode> displaymodes, String name, CryptedLink link) throws InterruptedException {
         link.getProgressController().setProgressText(SimpleGUI.WAITING_USER_IO);
         JDUtilities.acquireUserIO_Semaphore();
         ConversionMode temp = ConvertDialog.DisplayDialog(displaymodes, name);

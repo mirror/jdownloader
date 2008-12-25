@@ -38,7 +38,6 @@ import jd.utils.JDUtilities;
 
 public class YouTubeCom extends PluginForDecrypt {
 
-    // TODO: Neue Plugins im StreamingShare-Addon eintragen!
     static private String host = "youtube.com";
     static private final Pattern patternswfArgs = Pattern.compile("(.*?swfArgs.*)", Pattern.CASE_INSENSITIVE);
     private static final String PLAYER = "get_video";
@@ -81,7 +80,7 @@ public class YouTubeCom extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
+        ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(true);
@@ -153,7 +152,8 @@ public class YouTubeCom extends PluginForDecrypt {
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
 
-            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, param);
+            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts, name, param);
+
             if (convertTo != null) {
                 if (convertTo == ConvertDialog.ConversionMode.VIDEOMP4) {
                     link += "&fmt=18";

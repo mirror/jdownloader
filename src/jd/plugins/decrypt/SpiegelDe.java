@@ -75,15 +75,16 @@ public class SpiegelDe extends PluginForDecrypt {
             String name = new Regex(xmlInfos, PATTERN_THEMA).getMatch(0) + "-" + new Regex(xmlInfos, PATTERN_HEADLINE).getMatch(0);
             String comment = new Regex(xmlInfos, PATTERN_TEASER).getMatch(0);
 
-            Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
+            ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
             possibleconverts.add(ConversionMode.VIDEOFLV);
             possibleconverts.add(ConversionMode.AUDIOMP3);
             possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
             possibleconverts.add(ConversionMode.VIDEO3GP);
             possibleconverts.add(ConversionMode.VIDEOMP4);
-            possibleconverts.add(ConversionMode.PODCAST);
-            possibleconverts.add(ConversionMode.IPHONE);
-            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, cryptedLink);
+            possibleconverts.add(ConversionMode.VIDEOPODCAST);
+            possibleconverts.add(ConversionMode.VIDEOIPHONE);
+            ConversionMode convertTo = Plugin.DisplayDialog(possibleconverts, name, cryptedLink);
+
 
             if (convertTo != null) {
                 DownloadLink downloadLink = null;
@@ -93,12 +94,12 @@ public class SpiegelDe extends PluginForDecrypt {
                     fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T6).getMatch(0);
                     downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
                     downloadLink.setFinalFileName(name + ".3gp");
-                } else if (convertTo == ConversionMode.IPHONE) {
+                } else if (convertTo == ConversionMode.VIDEOIPHONE) {
                     // type 8
                     fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T8).getMatch(0);
                     downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);
                     downloadLink.setFinalFileName(name + ".mp4");
-                } else if (convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.PODCAST) {
+                } else if (convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.VIDEOPODCAST) {
                     // type9
                     fileName = new Regex(xmlEncodings, PATTERN_FILENAME_T9).getMatch(0);
                     downloadLink = createDownloadlink("http://video.promobil2spiegel.netbiscuits.com/" + fileName);

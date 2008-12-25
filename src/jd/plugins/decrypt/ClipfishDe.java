@@ -18,7 +18,6 @@ package jd.plugins.decrypt;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -55,7 +54,7 @@ public class ClipfishDe extends PluginForDecrypt {
             name += tokenizer.nextToken("-");
         }
 
-        Vector<ConversionMode> possibleconverts = new Vector<ConversionMode>();
+        ArrayList<ConversionMode> possibleconverts = new ArrayList<ConversionMode>();
         int vidId = -1;
         if (new Regex(cryptedLink.getCryptedUrl(), PATTERN_STANDARD_VIDEO).matches()) {
             vidId = Integer.parseInt(new Regex(cryptedLink.getCryptedUrl(), PATTERN_STANDARD_VIDEO).getMatch(0));
@@ -72,7 +71,8 @@ public class ClipfishDe extends PluginForDecrypt {
         possibleconverts.add(ConversionMode.VIDEOFLV);
         possibleconverts.add(ConversionMode.AUDIOMP3);
         possibleconverts.add(ConversionMode.AUDIOMP3_AND_VIDEOFLV);
-        ConversionMode ConvertTo = Plugin.DisplayDialog(possibleconverts.toArray(), name, cryptedLink);
+        ConversionMode ConvertTo = Plugin.DisplayDialog(possibleconverts, name, cryptedLink);
+
         if (ConvertTo != null) {
             downloadLink.setFinalFileName(name + ".tmp");
             downloadLink.setBrowserUrl(cryptedLink.getCryptedUrl());

@@ -95,7 +95,7 @@ public class SpiegelDe extends PluginForHost {
                 if (downloadLink.getProperty("convertto") != null) {
                     ConversionMode convertTo = ConversionMode.valueOf(downloadLink.getProperty("convertto").toString());
                     ConversionMode inType;
-                    if (convertTo == ConversionMode.IPHONE || convertTo == ConversionMode.PODCAST || convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.VIDEO3GP) {
+                    if (convertTo == ConversionMode.VIDEOIPHONE || convertTo == ConversionMode.VIDEOPODCAST || convertTo == ConversionMode.VIDEOMP4 || convertTo == ConversionMode.VIDEO3GP) {
                         inType = convertTo;
                     } else {
                         inType = ConversionMode.VIDEOFLV;
