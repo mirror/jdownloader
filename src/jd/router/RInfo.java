@@ -162,11 +162,20 @@ public class RInfo implements Serializable {
         return new Regex(RouterPage, "<[^>]*>").count();
     }
 
-    private int id;
+    private int id, integrety;
+    public int getIntegrety() {
+        return integrety;
+    }
+
+    public void setIntegrety(String integrety) {
+        this.integrety = Integer.parseInt(integrety);
+    }
+
     private boolean haveUpnpReconnect = false;
     private boolean haveUpnp = false;
     public transient boolean setPlaceholder = false;
     private String RouterName = null;
+    
 
     public String getRouterName() {
         return RouterName;

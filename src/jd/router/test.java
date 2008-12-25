@@ -1,6 +1,5 @@
 package jd.router;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -34,16 +33,8 @@ public class test {
         return result;
     }
 
-    /**
-     * @param args
-     */
     @SuppressWarnings("unchecked")
-    public static void main(String[] args) {
-        long time2 = System.currentTimeMillis();
-        long time = System.currentTimeMillis();
-        System.out.println("Routerinformationen werden gesammelt");
-        RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
-        System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum sammeln der Routerinformationen");
+    public static ArrayList<RInfo> getPossibleRinfos(RInfo infos) {
         Browser br = new Browser();
         HashMap<String, String> he = new HashMap<String, String>();
         he.put("RouterHost", infos.getRouterHost());
@@ -52,45 +43,78 @@ public class test {
         he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
         he.put("HTMLTagCount", "" + infos.countHtmlTags());
         try {
-            time = System.currentTimeMillis();
-            System.out.println("Lade passende Routerdaten");
-            String st = br.postPage( "http://service.jdownloader.net/routerdb/getRouters.php", he);
-            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum laden der Routerdaten");
-//            String st = br.postPage("http://localhost/router/getRouters.php", he);
-            time = System.currentTimeMillis();
-            System.out.println("Verarbeite Routerdaten");
-            ArrayList<RInfo> ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
-            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum verarbeiten der Routerdaten");
+            String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+            // String st = br.postPage("http://localhost/router/getRouters.php",
+            // he);
+            System.out.println("Es wurden " + ((double) br.getRequest().getContentLength()) / (double) 1024 + " kb übertragen");
+            return (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
+
+        } catch (Exception e) {
+            // TODO: handle exception
+        }
+        return null;
+    }
+
+    /**
+     * @param args
+     */
+    @SuppressWarnings("unchecked")
+    public static void main(String[] args) {
+        long time2 = System.currentTimeMillis();
+        RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
+        try {
+
             HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
-            HashMap<Integer, RInfo> upnpRouters = new HashMap<Integer, RInfo>();
-            time = System.currentTimeMillis();
-            System.out.println("Vergleiche Routerdaten");
+            HashMap<Integer, RInfo> experimentalRouters = new HashMap<Integer, RInfo>();
+            int upnp = 0;
+            ArrayList<RInfo> ra = getPossibleRinfos(infos);
+            int integ = 0;
+            int c = 0;
+            int diff = 0;
             for (RInfo info : ra) {
-                Integer b = info.compare(infos);
+
                 if (info.getReconnectMethode() != null && info.getReconnectMethode().contains("SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination")) {
-                    upnpRouters.put(b, info);
-                } else
-                    routers.put(b, info);
+                    upnp++;
+                } else {
+                    Integer b = info.compare(infos);
+                    if (info.getIntegrety() > 1) {
+                        routers.put(b, info);
+                        diff += b;
+                        integ += info.getIntegrety();
+                        c++;
+                    } else {
+                        experimentalRouters.put(b, info);
+                    }
+                }
             }
-            upnpRouters = (HashMap<Integer, RInfo>) revSortByValue(upnpRouters);
-            routers = (HashMap<Integer, RInfo>) revSortByValue(routers);
-            System.out.println("Es wurden "+(System.currentTimeMillis()-time)+" Millisekunden benötigt zum vergleich der Routerdaten");
-            System.out.println("Upnp Router ------------------------------------");
-            for (Entry<Integer, RInfo> rfo : upnpRouters.entrySet()) {
-                System.out.println(rfo.getKey() + ":" + rfo.getValue().getRouterName());
-                System.out.println(rfo.getValue().getReconnectMethode());
-                System.out.println("-------------");
-            }
-            System.out.println("Upnp Router end ------------------------------------");
+            HashMap<Integer, RInfo> routers2;
+            if (diff != 0 && integ != 0 && c != 0) {
+                double d = ((double) 100 / (double) diff) * ((double) integ) / 100;
+                routers2 = new HashMap<Integer, RInfo>(routers.size());
+                for (Entry<Integer, RInfo> info : routers.entrySet()) {
+                    
+                    routers2.put((int) (info.getKey() * d), info.getValue());
+                }
+            } else
+                routers2 = routers;
+            routers = (HashMap<Integer, RInfo>) revSortByValue(routers2);
+            experimentalRouters = (HashMap<Integer, RInfo>) revSortByValue(experimentalRouters);
+            System.out.println(upnp+" Upnp Router ------------------------------------");
             for (Entry<Integer, RInfo> rfo : routers.entrySet()) {
-                System.out.println(rfo.getKey() + ":" + rfo.getValue().getRouterName());
+                System.out.println(rfo.getKey() + ":"+rfo.getValue().getIntegrety()+":" + rfo.getValue().getRouterName());
                 System.out.println(rfo.getValue().getReconnectMethode());
                 System.out.println("-------------");
             }
-            System.out.println("Router gefunden in "+(System.currentTimeMillis()-time2));
-            System.out.println("Es wurden "+ra.size()+" Router gefunden");
-            System.out.println("Es wurden "+((double)br.getRequest().getContentLength())/(double)1024+" kb übertragen");
-        } catch (IOException e) {
+            System.out.println("experimentalRouters ------------------------------------");
+            for (Entry<Integer, RInfo> rfo : experimentalRouters.entrySet()) {
+                System.out.println(rfo.getKey() + ":"+rfo.getValue().getIntegrety()+":" + rfo.getValue().getRouterName());
+                System.out.println(rfo.getValue().getReconnectMethode());
+                System.out.println("-------------");
+            }
+            System.out.println("Router gefunden in " + (System.currentTimeMillis() - time2));
+            System.out.println("Es wurden " + ra.size() + " Router gefunden");
+
+        } catch (Exception e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
