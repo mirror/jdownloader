@@ -17,15 +17,17 @@ import jd.http.Browser;
 
 public class test {
     @SuppressWarnings("unchecked")
-    public static Map revSortByValue(Map map) {
-        List list = new LinkedList(map.entrySet());
+    public static Map sortByIntegrety(Map<RInfo, Integer> map) {
+        LinkedList list = new LinkedList(map.entrySet());
         Collections.sort(list, new Comparator() {
             public int compare(Object o1, Object o2) {
-                return ((Comparable) ((Map.Entry) (o1)).getKey()).compareTo(((Map.Entry) (o2)).getKey());
+                if (((Comparable) ((Map.Entry<RInfo, Integer>) (o1)).getValue()).equals(((Map.Entry<RInfo, Integer>) (o2)).getValue())) {
+                    return ((Comparable) ((Map.Entry<RInfo, Integer>) (o2)).getKey().getIntegrety()).compareTo(((Map.Entry<RInfo, Integer>) (o1)).getKey().getIntegrety());
+                } else
+                    return ((Comparable) ((Map.Entry) (o1)).getValue()).compareTo(((Map.Entry) (o2)).getValue());
             }
         });
-        // logger.info(list);
-        Map result = new LinkedHashMap();
+        LinkedHashMap result = new LinkedHashMap();
         for (Iterator it = list.iterator(); it.hasNext();) {
             Map.Entry entry = (Map.Entry) it.next();
             result.put(entry.getKey(), entry.getValue());
@@ -64,54 +66,64 @@ public class test {
         RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
         try {
 
-            HashMap<Integer, RInfo> routers = new HashMap<Integer, RInfo>();
-            HashMap<Integer, RInfo> experimentalRouters = new HashMap<Integer, RInfo>();
+            HashMap<RInfo, Integer> routers = new HashMap<RInfo, Integer>();
+            HashMap<RInfo, Integer> experimentalRouters = new HashMap<RInfo, Integer>();
+            HashMap<String, RInfo> routersMethodes = new HashMap<String, RInfo>();
             int upnp = 0;
             ArrayList<RInfo> ra = getPossibleRinfos(infos);
-            int integ = 0;
-            int c = 0;
-            int diff = 0;
             for (RInfo info : ra) {
 
-                if (info.getReconnectMethode() != null && info.getReconnectMethode().contains("SoapAction:urn:schemas-upnp-org:service:WANIPConnection:1#ForceTermination")) {
+                if (info.getReconnectMethode() != null && info.getReconnectMethode().toLowerCase().contains("schemas-upnp-org:service:wanipconnection:1#forcetermination")) {
                     upnp++;
                 } else {
+                    if (info.isHaveUpnpReconnect()) upnp++;
+                    
+                    RInfo meth = null;
+                    if(info.getReconnectMethode()!=null)
+                        meth=routersMethodes.get(info.getReconnectMethode());
+                    else if(info.getReconnectMethodeClr() != null)
+                        meth=routersMethodes.get(info.getReconnectMethodeClr());
+                    if (meth!=null) {
+                        int inte = info.getIntegrety();
+                        if(info.getReconnectMethodeClr() != null)
+                        inte =200;
+                        meth.setIntegrety(meth.getIntegrety()+inte);
+                    }
+                    else if (info.getReconnectMethodeClr() != null) {
+                        Integer b = info.compare(infos);
+                        info.setIntegrety(200);
+                        routers.put(info, b);
+                        routersMethodes.put(info.getReconnectMethodeClr(), info);
+                    }
+                    else if (info.getReconnectMethode()!=null)
+                    {
                     Integer b = info.compare(infos);
-                    if (info.getIntegrety() > 1) {
-                        routers.put(b, info);
-                        diff += b;
-                        integ += info.getIntegrety();
-                        c++;
+                    routersMethodes.put(info.getReconnectMethode(), info);
+                    // System.out.println(info.getRouterName());
+                    if (info.getIntegrety() > 3) {
+                        routers.put(info, b);
                     } else {
-                        experimentalRouters.put(b, info);
+                        experimentalRouters.put(info, b);
+                    }
                     }
                 }
             }
-            HashMap<Integer, RInfo> routers2;
-            if (diff != 0 && integ != 0 && c != 0) {
-                double d = ((double) 100 / (double) diff) * ((double) integ) / 100;
-                routers2 = new HashMap<Integer, RInfo>(routers.size());
-                for (Entry<Integer, RInfo> info : routers.entrySet()) {
-                    
-                    routers2.put((int) (info.getKey() * d), info.getValue());
-                }
-            } else
-                routers2 = routers;
-            routers = (HashMap<Integer, RInfo>) revSortByValue(routers2);
-            experimentalRouters = (HashMap<Integer, RInfo>) revSortByValue(experimentalRouters);
-            System.out.println(upnp+" Upnp Router ------------------------------------");
-            for (Entry<Integer, RInfo> rfo : routers.entrySet()) {
-                System.out.println(rfo.getKey() + ":"+rfo.getValue().getIntegrety()+":" + rfo.getValue().getRouterName());
-                System.out.println(rfo.getValue().getReconnectMethode());
-                System.out.println("-------------");
+            routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+            experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
+            System.out.println(upnp + " Upnp Router ------------------------------------");
+            System.out.println(routers.size() + " normale Router ------------------------------------");
+            for (Entry<RInfo, Integer> rfo : routers.entrySet()) {
+                System.out.println("Routervergleichswert:" + rfo.getValue() + " Integrität:" + rfo.getKey().getIntegrety() + ":" + rfo.getKey().getRouterName());
+                System.out.println(rfo.getKey().getReconnectMethode());
+                System.out.println("-------------------------------------------");
             }
-            System.out.println("experimentalRouters ------------------------------------");
-            for (Entry<Integer, RInfo> rfo : experimentalRouters.entrySet()) {
-                System.out.println(rfo.getKey() + ":"+rfo.getValue().getIntegrety()+":" + rfo.getValue().getRouterName());
-                System.out.println(rfo.getValue().getReconnectMethode());
-                System.out.println("-------------");
+            System.out.println(experimentalRouters.size() + " experimentelle Router  ------------------------------------");
+            for (Entry<RInfo, Integer> rfo : experimentalRouters.entrySet()) {
+                System.out.println("Routervergleichswert:" + rfo.getValue() + " Integrität:" + rfo.getKey().getIntegrety() + ":" + rfo.getKey().getRouterName());
+                System.out.println(rfo.getKey().getReconnectMethode());
+                System.out.println("-------------------------------------------");
             }
-            System.out.println("Router gefunden in " + (System.currentTimeMillis() - time2));
+            System.out.println("Router gefunden in " + (System.currentTimeMillis() - time2) + " Millisekunden");
             System.out.println("Es wurden " + ra.size() + " Router gefunden");
 
         } catch (Exception e) {

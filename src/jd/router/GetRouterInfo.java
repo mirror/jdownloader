@@ -537,6 +537,6 @@ public class GetRouterInfo {
     }
 
     public static void main(String[] args) {
-        isUpnp("10.11.12.253", "49000");
+        System.out.println(new GetRouterInfo(null).getAdress());
     }
 }

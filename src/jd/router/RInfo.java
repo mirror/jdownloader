@@ -170,6 +170,9 @@ public class RInfo implements Serializable {
     public void setIntegrety(String integrety) {
         this.integrety = Integer.parseInt(integrety);
     }
+    public void setIntegrety(int integrety) {
+        this.integrety = integrety;
+    }
 
     private boolean haveUpnpReconnect = false;
     private boolean haveUpnp = false;
@@ -197,7 +200,7 @@ public class RInfo implements Serializable {
         ret += EditDistance.getLevenshteinDistance(RouterPage, rInfo.RouterPage);
         return ret;
     }
-
+/*
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof RInfo) {
@@ -228,7 +231,7 @@ public class RInfo implements Serializable {
         }
         return false;
     }
-
+*/
     public HashMap<String, String> getHashMap() {
         Class<? extends RInfo> infoc = getClass();
         HashMap<String, String> ret = new HashMap<String, String>();
@@ -290,7 +293,10 @@ public class RInfo implements Serializable {
         return ret;
 
     }
+    public void setRouterNames(String string) {
+        // TODO Auto-generated method stub
 
+    }
     public void sendToServer() {
         try {
             try {
@@ -320,7 +326,9 @@ public class RInfo implements Serializable {
             } catch (Exception e) {
                 // TODO: handle exception
             }
-            SQLRouterData.br.postPage("http://localhost/router/import2.php", getHashMap());
+
+            if(ReconnectMethode!=null)
+            System.out.println(SQLRouterData.br.postPage("http://localhost/router/setIntegrety2.php", getHashMap()));
 
         } catch (Exception e) {
             e.printStackTrace();
