@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -68,7 +67,6 @@ public class test {
 
             HashMap<RInfo, Integer> routers = new HashMap<RInfo, Integer>();
             HashMap<RInfo, Integer> experimentalRouters = new HashMap<RInfo, Integer>();
-            HashMap<String, RInfo> routersMethodes = new HashMap<String, RInfo>();
             int upnp = 0;
             ArrayList<RInfo> ra = getPossibleRinfos(infos);
             for (RInfo info : ra) {
@@ -78,27 +76,15 @@ public class test {
                 } else {
                     if (info.isHaveUpnpReconnect()) upnp++;
                     
-                    RInfo meth = null;
-                    if(info.getReconnectMethode()!=null)
-                        meth=routersMethodes.get(info.getReconnectMethode());
-                    else if(info.getReconnectMethodeClr() != null)
-                        meth=routersMethodes.get(info.getReconnectMethodeClr());
-                    if (meth!=null) {
-                        int inte = info.getIntegrety();
-                        if(info.getReconnectMethodeClr() != null)
-                        inte =200;
-                        meth.setIntegrety(meth.getIntegrety()+inte);
-                    }
-                    else if (info.getReconnectMethodeClr() != null) {
+
+                    if (info.getReconnectMethodeClr() != null) {
                         Integer b = info.compare(infos);
                         info.setIntegrety(200);
                         routers.put(info, b);
-                        routersMethodes.put(info.getReconnectMethodeClr(), info);
                     }
                     else if (info.getReconnectMethode()!=null)
                     {
                     Integer b = info.compare(infos);
-                    routersMethodes.put(info.getReconnectMethode(), info);
                     // System.out.println(info.getRouterName());
                     if (info.getIntegrety() > 3) {
                         routers.put(info, b);
@@ -108,7 +94,36 @@ public class test {
                     }
                 }
             }
+            
             routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+            HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
+            Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
+            while (inter.hasNext()) {
+                Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
+                RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
+                if(meth!=null)
+                {
+                    meth.setIntegrety(meth.getIntegrety()+entry.getKey().getIntegrety());
+                    inter.remove();
+                }
+                else
+                    methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
+            }
+            routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+            experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
+            methodes = new HashMap<String, RInfo>();
+            inter = experimentalRouters.entrySet().iterator();
+            while (inter.hasNext()) {
+                Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
+                RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
+                if(meth!=null)
+                {
+                    meth.setIntegrety(meth.getIntegrety()+entry.getKey().getIntegrety());
+                    inter.remove();
+                }
+                else
+                    methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
+            }
             experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
             System.out.println(upnp + " Upnp Router ------------------------------------");
             System.out.println(routers.size() + " normale Router ------------------------------------");
