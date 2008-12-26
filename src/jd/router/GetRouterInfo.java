@@ -23,9 +23,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Authenticator;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.PasswordAuthentication;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Vector;
 import java.util.logging.Logger;
@@ -33,6 +36,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextField;
+
+import jd.nutils.jobber.JDRunnable;
+
+import jd.nutils.Threader;
+
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.ProgressDialog;
@@ -115,6 +123,29 @@ public class GetRouterInfo {
 
     public boolean cancel = false;
     public boolean testAll = false;
+
+    @SuppressWarnings("unchecked")
+    public static ArrayList<InetAddress> getInterfaces() {
+        ArrayList<InetAddress> ret = new ArrayList<InetAddress>();
+        try {
+            Enumeration e = NetworkInterface.getNetworkInterfaces();
+
+            while (e.hasMoreElements()) {
+                NetworkInterface ni = (NetworkInterface) e.nextElement();
+
+                Enumeration e2 = ni.getInetAddresses();
+
+                while (e2.hasMoreElements()) {
+                    InetAddress ip = (InetAddress) e2.nextElement();
+                    if (ip.isLoopbackAddress()) break;
+                    if (ip.getHostAddress().matches("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}")) ret.add(ip);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
 
     private Logger logger = JDUtilities.getLogger();
 
@@ -213,7 +244,7 @@ public class GetRouterInfo {
             }
 
         }
-        Vector<String> hosts = new Vector<String>();
+        final Vector<String> hosts = new Vector<String>();
         hosts.add("fritz.fonwlan.box");
         hosts.add("speedport.ip");
         hosts.add("fritz.box");
@@ -294,12 +325,10 @@ public class GetRouterInfo {
         hosts.add("192.168.0.99");
         hosts.add("172.16.0.1");
         hosts.add("192.168.4.1");
-
-        String localHost;
         String ip;
-        try {
-            localHost = InetAddress.getLocalHost().getHostName();
-            for (InetAddress ia : InetAddress.getAllByName(localHost)) {
+
+        for (InetAddress ia : getInterfaces()) {
+            try {
 
                 if (GetRouterInfo.validateIP(ia.getHostAddress() + "")) {
                     ip = ia.getHostAddress();
@@ -315,30 +344,42 @@ public class GetRouterInfo {
                         }
                     }
                 }
+                hosts.remove(ia.getHostName());
+                hosts.remove(ia.getAddress());
+            } catch (Exception exc) {
             }
-            hosts.remove(localHost);
-        } catch (UnknownHostException exc) {
         }
-        int size = hosts.size();
 
+        final int size = hosts.size();
+        final Threader threader = new Threader();
         for (int i = 0; i < size && !cancel; i++) {
-            setProgress(i * 100 / size);
-            final String hostname = hosts.get(i);
-            setProgressText("testing " + hostname);
-            try {
-                if (InetAddress.getByName(hostname).isReachable(1500)) {
-                    if (checkport80(hostname)) {
-                        adress = hostname;
-                        setProgress(100);
-                        return adress;
-                    }
-                }
+            final int d = i;
+            threader.add(new JDRunnable() {
 
-            } catch (IOException e) {
-            }
+                public void go() throws Exception {
+
+                    final String hostname = hosts.get(d);
+                    setProgressText("testing " + hostname);
+                    try {
+                        if (InetAddress.getByName(hostname).isReachable(1500)) {
+                            if (checkport80(hostname)) {
+                                adress = hostname;
+                                setProgress(100);
+                                threader.interrupt();
+                            }
+                        }
+
+                    } catch (IOException e) {
+                    }
+                    setProgress(d * 100 / size);
+
+                }
+            });
+
         }
+        threader.startAndWait();
         setProgress(100);
-        return null;
+        return adress;
 
     }
 
