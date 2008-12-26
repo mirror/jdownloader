@@ -47,18 +47,16 @@ public class test {
         if(infos.getRouterErrorPage()!=null)
         he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
         he.put("HTMLTagCount", "" + infos.countHtmlTags());
-        for (Entry<String, String> el : he.entrySet()) {
-            System.out.println(el.getValue());
-        }
         try {
             String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
-            // String st = br.postPage("http://localhost/router/getRouters.php",
-            // he);
+//             String st = br.postPage("http://localhost/router/getRouters.php",
+//             he);
+//            System.out.println("st"+st.substring(0, 1000));
             System.out.println("Es wurden " + ((double) br.getRequest().getContentLength()) / (double) 1024 + " kb übertragen");
             return (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
 
         } catch (Exception e) {
-            // TODO: handle exception
+            e.printStackTrace();
         }
         return null;
     }
