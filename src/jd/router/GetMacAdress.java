@@ -30,6 +30,7 @@ public class GetMacAdress {
         String resultLine = callArpTool ( hostAddress.getHostAddress() );
         String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
         if(rd==null)return null;
+        rd.replaceAll("\\s", "0");
         String[] d = rd.split("[:\\-]");
         StringBuilder ret = new StringBuilder(18);
         for (String string : d) {
