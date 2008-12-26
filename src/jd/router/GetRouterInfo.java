@@ -182,7 +182,7 @@ public class GetRouterInfo {
         }
         if (new File("/sbin/route").exists()) {
             try {
-//                String OS = System.getProperty("os.name").toLowerCase();
+                // String OS = System.getProperty("os.name").toLowerCase();
                 String routingt = JDUtilities.runCommand("/sbin/route", null, "/", 2).replaceFirst(".*\n.*", "");
                 Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = pattern.matcher(routingt);
@@ -295,11 +295,27 @@ public class GetRouterInfo {
         hosts.add("172.16.0.1");
         hosts.add("192.168.4.1");
 
-
-        
         String localHost;
+        String ip;
         try {
             localHost = InetAddress.getLocalHost().getHostName();
+            for (InetAddress ia : InetAddress.getAllByName(localHost)) {
+
+                if (GetRouterInfo.validateIP(ia.getHostAddress() + "")) {
+                    ip = ia.getHostAddress();
+
+                    if (ip != null && ip.lastIndexOf(".") != -1) {
+                        String host = ip.substring(0, ip.lastIndexOf(".")) + ".";
+                        for (int i = 0; i < 255; i++) {
+                            String lhost = host + i;
+                            if (!lhost.equals(ip) && !hosts.contains(lhost)) {
+                                hosts.add(lhost);
+                            }
+
+                        }
+                    }
+                }
+            }
             hosts.remove(localHost);
         } catch (UnknownHostException exc) {
         }
