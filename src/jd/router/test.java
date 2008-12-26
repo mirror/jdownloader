@@ -43,6 +43,9 @@ public class test {
         he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
         he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
         he.put("HTMLTagCount", "" + infos.countHtmlTags());
+        for (Entry<String, String> el : he.entrySet()) {
+            System.out.println(el.getValue());
+        }
         try {
             String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
             // String st = br.postPage("http://localhost/router/getRouters.php",
