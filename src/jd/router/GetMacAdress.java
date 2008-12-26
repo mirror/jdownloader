@@ -28,7 +28,19 @@ public class GetMacAdress {
     {
         InetAddress hostAddress = InetAddress.getByName( host );
         String resultLine = callArpTool ( hostAddress.getHostAddress() );
-        return new Regex(resultLine, "..[:\\-]..[:\\-]..[:\\-]..[:\\-]..[:\\-]..").getMatch(-1).replaceAll("-", ":");
+        String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
+        if(rd==null)return null;
+        String[] d = rd.split("[:\\-]");
+        StringBuilder ret = new StringBuilder(18);
+        for (String string : d) {
+            
+            if (string.length()<2) {
+                ret.append('0');
+            }
+            ret.append(string);
+            ret.append(':');
+        }
+        return ret.toString().substring(0, 17);
     }
     
 
