@@ -38,20 +38,16 @@ public class test {
     public static ArrayList<RInfo> getPossibleRinfos(RInfo infos) {
         Browser br = new Browser();
         HashMap<String, String> he = new HashMap<String, String>();
-        if(infos.getRouterHost()!=null)
-        he.put("RouterHost", infos.getRouterHost());
-        if(infos.getRouterHost()!=null)
-        he.put("RouterMAC", infos.getRouterMAC());
-        if(infos.getPageHeader()!=null)
-        he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
-        if(infos.getRouterErrorPage()!=null)
-        he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
+        if (infos.getRouterHost() != null) he.put("RouterHost", infos.getRouterHost());
+        if (infos.getRouterHost() != null) he.put("RouterMAC", infos.getRouterMAC());
+        if (infos.getPageHeader() != null) he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
+        if (infos.getRouterErrorPage() != null) he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
         he.put("HTMLTagCount", "" + infos.countHtmlTags());
         try {
             String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
-//             String st = br.postPage("http://localhost/router/getRouters.php",
-//             he);
-//            System.out.println("st"+st.substring(0, 1000));
+            // String st = br.postPage("http://localhost/router/getRouters.php",
+            // he);
+            // System.out.println(st);
             System.out.println("Es wurden " + ((double) br.getRequest().getContentLength()) / (double) 1024 + " kb übertragen");
             return (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
 
@@ -75,20 +71,14 @@ public class test {
             int upnp = 0;
             ArrayList<RInfo> ra = getPossibleRinfos(infos);
             for (RInfo info : ra) {
+                // System.out.println(info.getReconnectMethode());
+                if (info.isHaveUpnpReconnect()) upnp++;
 
-                if (info.getReconnectMethode() != null && info.getReconnectMethode().toLowerCase().contains("schemas-upnp-org:service:wanipconnection:1#forcetermination")) {
-                    upnp++;
-                } else {
-                    if (info.isHaveUpnpReconnect()) upnp++;
-                    
-
-                    if (info.getReconnectMethodeClr() != null) {
-                        Integer b = info.compare(infos);
-                        info.setIntegrety(200);
-                        routers.put(info, b);
-                    }
-                    else if (info.getReconnectMethode()!=null)
-                    {
+                if (info.getReconnectMethodeClr() != null) {
+                    Integer b = info.compare(infos);
+                    info.setIntegrety(200);
+                    routers.put(info, b);
+                } else if (info.getReconnectMethode() != null) {
                     Integer b = info.compare(infos);
                     // System.out.println(info.getRouterName());
                     if (info.getIntegrety() > 3) {
@@ -96,22 +86,19 @@ public class test {
                     } else {
                         experimentalRouters.put(info, b);
                     }
-                    }
                 }
             }
-            
+
             routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
             HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
             Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
             while (inter.hasNext()) {
                 Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
                 RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
-                if(meth!=null)
-                {
-                    meth.setIntegrety(meth.getIntegrety()+entry.getKey().getIntegrety());
+                if (meth != null) {
+                    meth.setIntegrety(meth.getIntegrety() + entry.getKey().getIntegrety());
                     inter.remove();
-                }
-                else
+                } else
                     methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
             }
             routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
@@ -121,12 +108,10 @@ public class test {
             while (inter.hasNext()) {
                 Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
                 RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
-                if(meth!=null)
-                {
-                    meth.setIntegrety(meth.getIntegrety()+entry.getKey().getIntegrety());
+                if (meth != null) {
+                    meth.setIntegrety(meth.getIntegrety() + entry.getKey().getIntegrety());
                     inter.remove();
-                }
-                else
+                } else
                     methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
             }
             experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
