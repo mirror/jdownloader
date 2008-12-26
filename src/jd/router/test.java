@@ -38,9 +38,13 @@ public class test {
     public static ArrayList<RInfo> getPossibleRinfos(RInfo infos) {
         Browser br = new Browser();
         HashMap<String, String> he = new HashMap<String, String>();
+        if(infos.getRouterHost()!=null)
         he.put("RouterHost", infos.getRouterHost());
+        if(infos.getRouterHost()!=null)
         he.put("RouterMAC", infos.getRouterMAC());
+        if(infos.getPageHeader()!=null)
         he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
+        if(infos.getRouterErrorPage()!=null)
         he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
         he.put("HTMLTagCount", "" + infos.countHtmlTags());
         for (Entry<String, String> el : he.entrySet()) {
