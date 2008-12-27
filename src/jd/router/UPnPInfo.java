@@ -108,9 +108,6 @@ public class UPnPInfo {
         return mett;
     }
     public static String createUpnpReconnect(HashMap<String, String> SCPDs) throws SAXException, IOException, ParserConfigurationException {            
-
-        // ---- Get list of nodes to given element tag name ----
-        StringInputStream input =null;
         for (Entry<String, String> ent : SCPDs.entrySet()) {
             if(ent.getValue().contains("</UDN>"))
             {
