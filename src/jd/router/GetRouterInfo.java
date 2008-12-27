@@ -675,7 +675,7 @@ public class GetRouterInfo {
                             tempinfo.setReconnectMethode(info);
                             upnprouters.put(tempinfo, 1);
                         }
-                        router = checkrouters(routers);
+                        router = checkrouters(upnprouters);
                         
                     }
                     if(router==null)
