@@ -19,6 +19,7 @@ package jd.router;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,6 +37,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+
+import jd.nutils.jobber.JDRunnable;
+
+import jd.nutils.Threader;
 
 public class UPnPInfo {
 
@@ -63,9 +68,76 @@ public class UPnPInfo {
     }
 
     public UPnPInfo(String ipadress) {
+        this(ipadress, 10000);
+    }
+    private static String createUpnpReconnect(HashMap<String, String> SCPDs, String desc) throws ParserConfigurationException, SAXException, IOException
+    {
+        
+        StringInputStream input = new StringInputStream(SCPDs.get(desc));
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document document = builder.parse(input);
+
+        NodeList ndList = document.getElementsByTagName("serviceType");
+        // printNodesFromList( ndList ); // printNodesFromList see below
+        Node node = null;
+        for (int i = 0; i < ndList.getLength(); i++) {
+            node = ndList.item(i);
+            if (node.getFirstChild().getTextContent().contains("WANIPConnection")) break;
+            node = null;
+        }
+        NodeList cl = node.getParentNode().getChildNodes();
+        HashMap<String, String> meth = new HashMap<String, String>();
+        // System.out.println(cl.getLength());
+        for (int i = 0; i < cl.getLength(); i++) {
+            Node cln = cl.item(i);
+            if (cln.hasChildNodes()) {
+                meth.put(cln.getNodeName(), cln.getTextContent().trim());
+            }
+        }
+        if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) { return null; }
+        if (!SCPDs.get(SCPDs.keySet().iterator().next().replaceFirst("(http://.*?)/.*", "$1/" + meth.get("SCPDURL").replaceFirst("^\\/", ""))).contains("ForceTermination")) { return null; }
+        String mett = "[[[HSRC]]]\r\n[[[STEP]]]\r\n[[[REQUEST]]]\r\n";
+        mett += "POST " + meth.get("controlURL") + " HTTP/1.1\r\n";
+        String hostport = new Regex(SCPDs.keySet().iterator().next(), ".*(\\:[\\d]+)").getMatch(0);
+        mett += "Host: %%%routerip%%%" + hostport + "\r\n";
+        mett += "Content-Type: text/xml; charset=\"utf-8\"\r\n";
+        mett += "SoapAction:" + meth.get("serviceType") + "#ForceTermination\r\n";
+        mett += "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='" + meth.get("serviceType") + "' /> </s:Body> </s:Envelope>\r\n";
+        mett += "[[[/REQUEST]]]\r\n[[[/STEP]]]\r\n[[[/HSRC]]]";
+        return mett;
+    }
+    public static String createUpnpReconnect(HashMap<String, String> SCPDs) throws SAXException, IOException, ParserConfigurationException {            
+
+        // ---- Get list of nodes to given element tag name ----
+        StringInputStream input =null;
+        for (Entry<String, String> ent : SCPDs.entrySet()) {
+            if(ent.getValue().contains("</UDN>"))
+            {
+                return createUpnpReconnect(SCPDs, ent.getKey());
+            }
+        }
+
+        return null;
+    }
+
+    public UPnPInfo(String ipadress, final long waittime) {
         this.host = ipadress;
         final ControlPoint c = new ControlPoint();
         c.start();
+        final Threader th = new Threader();
+        th.add(new JDRunnable() {
+
+            public void go() throws Exception {
+                try {
+                    Thread.sleep(waittime);
+                } catch (InterruptedException e) {
+                }
+                c.stop();
+                th.interrupt();
+
+            }
+        });
         c.addSearchResponseListener(new SearchResponseListener() {
 
             public void deviceSearchResponseReceived(SSDPPacket ssdpPacket) {
@@ -73,60 +145,20 @@ public class UPnPInfo {
                 if (ia.getHostAddress().endsWith(host) || ia.getHostName().endsWith(host)) {
                     ssdpP = ssdpPacket;
                     c.stop();
+                    th.interrupt();
                 }
             }
         });
-        int d = 0;
-        while (ssdpP == null) {
-            if (d++ == 1000) {
-                c.stop();
-                return;
-            }
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
+        th.startAndWait();
+        if (ssdpP == null) return;
         try {
             // ---- Parse XML file ----
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
+
             if (ssdpP.getLocation() == null) return;
-            Document document = builder.parse(new Browser().openGetConnection(ssdpP.getLocation()).getInputStream());
 
-            // ---- Get list of nodes to given element tag name ----
-            NodeList ndList = document.getElementsByTagName("serviceType");
-            // printNodesFromList( ndList ); // printNodesFromList see below
-            Node node = null;
-            for (int i = 0; i < ndList.getLength(); i++) {
-                node = ndList.item(i);
-                if (node.getFirstChild().getTextContent().contains("WANIPConnection")) break;
-                node = null;
-            }
-            NodeList cl = node.getParentNode().getChildNodes();
-            HashMap<String, String> meth = new HashMap<String, String>();
-            // System.out.println(cl.getLength());
-            for (int i = 0; i < cl.getLength(); i++) {
-                Node cln = cl.item(i);
-                if (cln.hasChildNodes()) {
-                    meth.put(cln.getNodeName(), cln.getTextContent().trim());
-                }
-            }
+
             getSCPDURLs(ssdpP.getLocation());
-            if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) { return; }
-            if (!new Browser().getPage(ssdpP.getLocation().replaceFirst("(http://.*?)/.*", "$1/" + meth.get("SCPDURL").replaceFirst("^\\/", ""))).contains("ForceTermination")) { return; }
-            met = "[[[HSRC]]]\r\n[[[STEP]]]\r\n[[[REQUEST]]]\r\n";
-            met += "POST " + meth.get("controlURL") + " HTTP/1.1\r\n";
-            String hostport = "";
-            if (ssdpP.getLocation().matches(".*\\:[\\d]+.*")) hostport = new Regex(ssdpP.getLocation(), ".*(\\:[\\d]+)").getMatch(0);
-            met += "Host: %%%routerip%%%" + hostport + "\r\n";
-            met += "Content-Type: text/xml; charset=\"utf-8\"\r\n";
-            met += "SoapAction:" + meth.get("serviceType") + "#ForceTermination\r\n";
-            met += "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='" + meth.get("serviceType") + "' /> </s:Body> </s:Envelope>\r\n";
-            met += "[[[/REQUEST]]]\r\n[[[/STEP]]]\r\n[[[/HSRC]]]";
-
+            met=createUpnpReconnect(SCPDs, ssdpP.getLocation());
             //System.out.println(ndList.item(0).getParentNode().getChildNodes().
             // item(1).getFirstChild());
             // ---- Error handling ----
@@ -144,5 +176,11 @@ public class UPnPInfo {
             ioe.printStackTrace();
         }
 
+    }
+
+    public static void main(String[] args) {
+        UPnPInfo upnp = new UPnPInfo(RouterInfoCollector.getRouterIP());
+        System.out.println(upnp.met);
+        System.exit(0);
     }
 }

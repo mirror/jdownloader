@@ -65,6 +65,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import jd.router.RouterInfoCollector;
+
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -113,7 +115,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
     private JPanel progresspanel;
     private JProgressBar progress = null;
     public String Reconnectmethode = null;
-
+    public String ReconnectmethodeClr = null;
     private String wikiurl = JDLocale.L("gui.fengshuiconfig.wikiurl", "http://wiki.jdownloader.org/index.php?title=DE:fengshui:");
 
     public FengShuiConfigPanel() {
@@ -682,7 +684,13 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             saveit = true;
         }
         if (Reconnectmethode != null && !Reconnectmethode.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null))) {
+            config.setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
             config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, Reconnectmethode);
+            saveit = true;
+        }
+        if (ReconnectmethodeClr != null && !ReconnectmethodeClr.equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, null))) {
+            config.setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_CLR);
+            config.setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, Reconnectmethode);
             saveit = true;
         }
         if (routername.getText() != null && !routername.getText().equals(config.getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, ""))) {

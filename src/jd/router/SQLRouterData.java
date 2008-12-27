@@ -90,7 +90,7 @@ public class SQLRouterData {
         return null;
     }
     @SuppressWarnings("unchecked")
-    private static void readString(String string) throws ParserConfigurationException, SAXException, IOException
+    private static RInfo readString(String string) throws ParserConfigurationException, SAXException, IOException
     {
         try {
             byte[] bytes = string.getBytes();
@@ -132,11 +132,11 @@ public class SQLRouterData {
              {
                  info.setReconnectMethode(setPlaceHolder(info.getReconnectMethode()));
              }
-             info.sendToServer();
+             return info;
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+        return null;
     }
     private static void readFile(File file) throws SAXException, ParserConfigurationException
     {

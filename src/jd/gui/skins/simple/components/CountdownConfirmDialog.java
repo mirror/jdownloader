@@ -53,7 +53,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     public final static int STYLE_STOP_COUNTDOWN = 1 << 5;
     public final static int STYLE_MSGLABLE = 1 << 6;
     public final static int STYLE_DETAILLABLE = 1 << 7;
-
+    public final static int STYLE_NOTALWAYSONTOP = 1 << 8;
     public static boolean showCountdownConfirmDialog(Frame owner, String msg, int countdown) {
         CountdownConfirmDialog d = new CountdownConfirmDialog(owner, msg, countdown);
 
@@ -92,6 +92,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
         setModal(true);
+        if((style & STYLE_NOTALWAYSONTOP) == 0)
         setAlwaysOnTop(true);
         addWindowListener(new WindowListener() {
 

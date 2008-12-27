@@ -28,14 +28,25 @@ import java.net.PasswordAuthentication;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
 import java.util.Vector;
+import java.util.Map.Entry;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.JTextField;
+
+import jd.gui.skins.simple.SimpleGUI;
+
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
 
 import jd.nutils.jobber.JDRunnable;
 
@@ -45,7 +56,6 @@ import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
-import jd.gui.skins.simple.components.ConfirmCheckBoxDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.gui.skins.simple.config.GUIConfigEntry;
@@ -70,6 +80,11 @@ public class GetRouterInfo {
         }
     }
 
+    private Threader threader = null;
+    private Threader th2 = null;
+    private boolean cancel = false;
+    private CountdownConfirmDialog confirm = null;
+
     public static boolean isFritzbox(String iPaddress) {
         Browser br = new Browser();
         try {
@@ -78,6 +93,24 @@ public class GetRouterInfo {
         } catch (Exception e) {
         }
         return false;
+    }
+
+    public void cancel() {
+        cancel = true;
+        if (threader != null) {
+            try {
+                threader.interrupt();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        } else if (th2 != null) {
+            try {
+                th2.interrupt();
+            } catch (Exception e) {
+                // TODO: handle exception
+            }
+        }
+
     }
 
     public static boolean isUpnp(String iPaddress, String port) {
@@ -121,7 +154,6 @@ public class GetRouterInfo {
 
     public String adress = null;
 
-    public boolean cancel = false;
     public boolean testAll = false;
 
     @SuppressWarnings("unchecked")
@@ -214,9 +246,8 @@ public class GetRouterInfo {
         if (new File("/sbin/route").exists()) {
             try {
                 String OS = System.getProperty("os.name").toLowerCase();
-                if (OS.indexOf("mac") > -1)
-                {
-                    String routingt = JDUtilities.runCommand("/sbin/route", new String[] {"-n", "get", "default"}, "/", 2);
+                if (OS.indexOf("mac") > -1) {
+                    String routingt = JDUtilities.runCommand("/sbin/route", new String[] { "-n", "get", "default" }, "/", 2);
                     Pattern pattern = Pattern.compile("gateway: (\\S*)", Pattern.CASE_INSENSITIVE);
                     Matcher matcher = pattern.matcher(routingt);
                     while (matcher.find()) {
@@ -241,34 +272,32 @@ public class GetRouterInfo {
                         }
 
                     }
-                }
-                else
-                {
-                String routingt = JDUtilities.runCommand("/sbin/route", null, "/", 2).replaceFirst(".*\n.*", "");
-                Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = pattern.matcher(routingt);
-                while (matcher.find()) {
-                    String hostname = matcher.group(1).trim();
-                    if (!hostname.matches("[\\s]*\\*[\\s]*")) {
-                        setProgressText("testing " + hostname);
-                        try {
-                            if (InetAddress.getByName(hostname).isReachable(1500)) {
-                                if (checkport80(hostname)) {
-                                    adress = hostname;
-                                    setProgress(100);
-                                    return adress;
+                } else {
+                    String routingt = JDUtilities.runCommand("/sbin/route", null, "/", 2).replaceFirst(".*\n.*", "");
+                    Pattern pattern = Pattern.compile(".{16}(.{16}).*", Pattern.CASE_INSENSITIVE);
+                    Matcher matcher = pattern.matcher(routingt);
+                    while (matcher.find()) {
+                        String hostname = matcher.group(1).trim();
+                        if (!hostname.matches("[\\s]*\\*[\\s]*")) {
+                            setProgressText("testing " + hostname);
+                            try {
+                                if (InetAddress.getByName(hostname).isReachable(1500)) {
+                                    if (checkport80(hostname)) {
+                                        adress = hostname;
+                                        setProgress(100);
+                                        return adress;
+                                    }
                                 }
+                            } catch (UnknownHostException e) {
+
+                                e.printStackTrace();
+                            } catch (IOException e) {
+
+                                e.printStackTrace();
                             }
-                        } catch (UnknownHostException e) {
-
-                            e.printStackTrace();
-                        } catch (IOException e) {
-
-                            e.printStackTrace();
                         }
-                    }
 
-                }
+                    }
                 }
             } catch (Exception e) {
                 // TODO: handle exception
@@ -382,7 +411,7 @@ public class GetRouterInfo {
         }
 
         final int size = hosts.size();
-        final Threader threader = new Threader();
+        threader = new Threader();
         for (int i = 0; i < size && !cancel; i++) {
             final int d = i;
             threader.add(new JDRunnable() {
@@ -414,58 +443,246 @@ public class GetRouterInfo {
 
     }
 
-    public String[] getRouterData(String ip) {
-        setProgressText("Get Routerdata");
-        adress = ip;
-        if (testAll) routerDatas = new HTTPLiveHeader().getLHScripts();
-        if (getRouterDatas() == null) { return null; }
+    @SuppressWarnings("unchecked")
+    public static Map sortByIntegrety(Map<RInfo, Integer> map) {
+        LinkedList list = new LinkedList(map.entrySet());
+        Collections.sort(list, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                if (((Comparable) ((Map.Entry<RInfo, Integer>) (o1)).getValue()).equals(((Map.Entry<RInfo, Integer>) (o2)).getValue())) {
+                    return ((Comparable) ((Map.Entry<RInfo, Integer>) (o2)).getKey().getIntegrety()).compareTo(((Map.Entry<RInfo, Integer>) (o1)).getKey().getIntegrety());
+                } else
+                    return ((Comparable) ((Map.Entry) (o1)).getValue()).compareTo(((Map.Entry) (o2)).getValue());
+            }
+        });
+        LinkedHashMap result = new LinkedHashMap();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            Map.Entry entry = (Map.Entry) it.next();
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
 
+    private RInfo checkrouters(HashMap<RInfo, Integer> routers) {
         int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
         int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
-        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, adress);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, username);
         JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
-        final int size = routerDatas.size();
-        for (int i = 0; i < size && !cancel; i++) {
+        int size = routers.size();
+        int i = 0;
+        for (Entry<RInfo, Integer> info2 : routers.entrySet()) {
+            if (cancel) return null;
+            if (info2.getKey().getReconnectMethode() != null) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, info2.getKey().getReconnectMethode());
+            } else if (info2.getKey().getReconnectMethodeClr() != null) {
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_CLR);
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR, info2.getKey().getReconnectMethodeClr());
+            } else
+                continue;
+            setProgressText("Testing router: " + info2.getKey().getRouterName());
+            setProgress(i++ * 100 / size);
 
-            String[] data = routerDatas.get(i);
-            if (data.length < 6) {
-                String[] newDat = new String[6];
-                for (int j = 0; j < data.length; j++) {
-                    newDat[j] = data[j];
-                }
-                for (int j = data.length; j < newDat.length; j++) {
-                    newDat[j] = "";
-                }
-                data = newDat;
-            }
-            setProgressText("Testing router: " + data[1]);
-            setProgress(i * 100 / size);
-
-            if (isEmpty(username)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, data[4]);
-            } else {
-                data[4] = username;
-            }
-            if (isEmpty(password)) {
-                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, data[5]);
-            } else {
-                data[5] = password;
-            }
-            JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, data[2]);
             JDUtilities.getConfiguration().save();
             if (Reconnecter.waitForNewIP(1)) {
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
                 JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
                 JDUtilities.getConfiguration().save();
                 setProgress(100);
-                return data;
+                return info2.getKey();
             }
         }
-        setProgress(100);
         return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public RInfo getRouterData() {
+
+        setProgressText("collect routerinformations");
+
+        final RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
+        infos.setReconnectMethode(null);
+        infos.setReconnectMethodeClr(null);
+        th2 = new Threader();
+        final class isalvs {
+            boolean isAlv = true;
+        }
+        final isalvs isalv = new isalvs();
+        final JDRunnable jupnp = new JDRunnable() {
+
+            public void go() throws Exception {
+
+                try {
+                    UPnPInfo upnp = new UPnPInfo(infos.getRouterIP());
+                    if (upnp.met != null) {
+                        infos.setUPnPSCPDs(upnp.SCPDs);
+                        infos.setReconnectMethode(upnp.met);
+
+                    }
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+                isalv.isAlv = false;
+            }
+
+        };
+
+        th2.getBroadcaster().addListener(th2.new WorkerListener() {
+
+            @Override
+            public void onThreadException(Threader th, JDRunnable job, Exception e) {
+                // TODO Auto-generated method stub
+
+            }
+
+            @Override
+            public void onThreadFinished(Threader th, JDRunnable runnable) {
+                if (runnable == jupnp) {
+                    isalv.isAlv = false;
+                    th2.notify();
+                }
+
+            }
+
+            @Override
+            public void onThreadStarts(Threader threader, JDRunnable runnable) {
+                // TODO Auto-generated method stub
+
+            }
+        });
+        th2.add(jupnp);
+        th2.add(new JDRunnable() {
+
+            public void go() throws Exception {
+                try {
+
+                    HashMap<RInfo, Integer> routers = new HashMap<RInfo, Integer>();
+                    HashMap<RInfo, Integer> experimentalRouters = new HashMap<RInfo, Integer>();
+                    int upnp = 0;
+                    Browser br = new Browser();
+                    HashMap<String, String> he = new HashMap<String, String>();
+                    if (infos.getRouterHost() != null) he.put("RouterHost", infos.getRouterHost());
+                    if (infos.getRouterHost() != null) he.put("RouterMAC", infos.getRouterMAC());
+                    if (infos.getPageHeader() != null) he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
+                    if (infos.getRouterErrorPage() != null) he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
+                    he.put("HTMLTagCount", "" + infos.countHtmlTags());
+                    ArrayList<RInfo> ra;
+                    try {
+                        setProgressText("download similar routermethods");
+                        String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+                        // String st =
+                        // br.postPage("http://localhost/router/getRouters.php",
+                        // he);
+                        // System.out.println(st);
+                        ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
+
+                    } catch (Exception e) {
+                        return;
+                    }
+                    setProgressText("sort routermethods");
+                    for (RInfo info : ra) {
+                        // System.out.println(info.getReconnectMethode());
+                        if (info.isHaveUpnpReconnect()) upnp++;
+
+                        if (info.getReconnectMethodeClr() != null) {
+                            Integer b = info.compare(infos);
+                            info.setIntegrety(200);
+                            routers.put(info, b);
+                        } else if (info.getReconnectMethode() != null) {
+                            Integer b = info.compare(infos);
+                            // System.out.println(info.getRouterName());
+                            if (info.getIntegrety() > 3) {
+                                routers.put(info, b);
+                            } else {
+                                experimentalRouters.put(info, b);
+                            }
+                        }
+                    }
+
+                    routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
+                    Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
+                    while (inter.hasNext()) {
+                        Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
+                        RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
+                        if (meth != null) {
+                            meth.setIntegrety(meth.getIntegrety() + entry.getKey().getIntegrety());
+                            inter.remove();
+                        } else
+                            methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
+                    }
+                    routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
+                    methodes = new HashMap<String, RInfo>();
+                    inter = experimentalRouters.entrySet().iterator();
+                    while (inter.hasNext()) {
+                        Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
+                        RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
+                        if (meth != null) {
+                            meth.setIntegrety(meth.getIntegrety() + entry.getKey().getIntegrety());
+                            inter.remove();
+                        } else
+                            methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
+                    }
+                    experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
+                    if (upnp > 0) {
+                        while (isalv.isAlv) {
+                            try {
+                                wait();
+                            } catch (Exception e) {
+                                // TODO: handle exception
+                            }
+
+                        }
+                        if (infos.getReconnectMethode() == null) {
+
+                            confirm = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie ok wenn sie Upnp aktiviert haben!", infos.getRouterIP()), 600, false, CountdownConfirmDialog.STYLE_CANCEL|CountdownConfirmDialog.STYLE_OK|CountdownConfirmDialog.STYLE_STOP_COUNTDOWN|CountdownConfirmDialog.STYLE_NOTALWAYSONTOP);
+                            if (confirm.result) {
+                                try {
+                                    setProgressText("testing upnp");
+                                    for (int i = 0; i < 30 && !cancel; i++) {
+                                        setProgress(i++ * 100 / 30);
+                                        UPnPInfo upnpd = new UPnPInfo(infos.getRouterIP(), 10000);
+                                        if (upnpd.met != null) {
+                                            infos.setUPnPSCPDs(upnpd.SCPDs);
+                                            infos.setReconnectMethode(upnpd.met);
+                                            break;
+                                        }
+                                    }
+                                } catch (Exception e) {
+                                    // TODO: handle exception
+                                }
+                            }
+                        }
+                    }
+                    if (infos.getReconnectMethode() != null) return;
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, infos.getRouterIP());
+                    RInfo router = checkrouters(routers);
+                    if (router == null && !cancel) {
+                        if (experimentalRouters.size() > 0) {
+                            boolean conf = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.liveHeader.warning.experimental", "Möchten sie experimentelle Reconnectmethoden testen?\r\nExperimentelle Reconnectmethoden sind nicht so zuverlässig\r\nund beeinflussen möglicherweise die Routereinstellungen"));
+                            if (conf) router = checkrouters(experimentalRouters);
+                        }
+                    }
+                    setProgress(100);
+                    if (router != null) {
+                        infos.setRouterName(router.getRouterName());
+                        infos.setReconnectMethode(router.getReconnectMethode());
+                        infos.setReconnectMethodeClr(router.getReconnectMethodeClr());
+                    }
+                } catch (Exception e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                setProgress(100);
+            }
+        });
+        th2.startAndWait();
+        if (infos.getReconnectMethode() != null || infos.getReconnectMethodeClr() != null)
+            return infos;
+        else
+            return null;
     }
 
     public Vector<String[]> getRouterDatas() {
@@ -499,10 +716,6 @@ public class GetRouterInfo {
         return null;
     }
 
-    private boolean isEmpty(String arg) {
-        return (arg == null || arg.matches("[\\s]*"));
-    }
-
     public void setLoginPass(String text) {
         loginPass = text;
     }
@@ -530,80 +743,74 @@ public class GetRouterInfo {
 
     public static void autoConfig(final Object pass, final Object user, final Object ip, final Object routerScript) {
 
-        final ConfirmCheckBoxDialog ccbd = new ConfirmCheckBoxDialog(JDLocale.L("gui.config.liveHeader.warning.wizard.title", "Routererkennung jetzt starten?"), JDLocale.L("gui.config.liveHeader.warning.wizard", "Die automatische Suche nach den Einstellungen kann einige Minuten in Anspruch nehmen.\r\n Bitte geben Sie vorher Ihre Router Logindaten ein. Jetzt ausführen?"), JDLocale.L("gui.config.liveHeader.warning.wizard.checkall", "Alle Router prüfen"));
-        if (ccbd.isOk) {
-            Thread th;
-            final ProgressDialog progress = new ProgressDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
+        final ProgressDialog progress = new ProgressDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.progress.message", "jDownloader sucht nach Ihren Routereinstellungen"), null, false, true);
+        final GetRouterInfo routerInfo = new GetRouterInfo(progress);
+        final Thread th = new Thread() {
+            @Override
+            public void run() {
+                String pw = "";
+                String username = "";
+                String ipadresse = null;
+                if (pass instanceof GUIConfigEntry) {
+                    pw = (String) ((GUIConfigEntry) pass).getText();
+                    username = (String) ((GUIConfigEntry) user).getText();
+                    ipadresse = (String) ((GUIConfigEntry) ip).getText();
+                } else if (pass instanceof JTextField) {
+                    pw = (String) ((JTextField) pass).getText();
+                    username = (String) ((JTextField) user).getText();
+                    ipadresse = (String) ((JTextField) ip).getText();
+                }
+                if (ipadresse != null && !ipadresse.matches("\\s*")) JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, ipadresse);
 
-            th = new Thread() {
-                @Override
-                public void run() {
-                    String pw = "";
-                    String username = "";
-                    String ipadresse = "";
-                    if (pass instanceof GUIConfigEntry) {
-                        pw = (String) ((GUIConfigEntry) pass).getText();
-                        username = (String) ((GUIConfigEntry) user).getText();
-                        ipadresse = (String) ((GUIConfigEntry) ip).getText();
-                    } else if (pass instanceof JTextField) {
-                        pw = (String) ((JTextField) pass).getText();
-                        username = (String) ((JTextField) user).getText();
-                        ipadresse = (String) ((JTextField) ip).getText();
-                    }
-                    GetRouterInfo routerInfo = new GetRouterInfo(progress);
-                    routerInfo.testAll = ccbd.isChecked;
-                    routerInfo.setLoginPass(pw);
-                    routerInfo.setLoginUser(username);
-                    if (username != null && !username.matches("[\\s]*")) {
-                        routerInfo.username = username;
-                    }
-                    if (pw != null && !pw.matches("[\\s]*")) {
-                        routerInfo.password = pw;
-                    }
-                    String[] data;
-                    if (GetRouterInfo.validateIP(ipadresse + "")) {
-                        data = routerInfo.getRouterData(ipadresse + "");
-                    } else {
-                        data = routerInfo.getRouterData(null);
-                    }
-                    if (data == null) {
-                        progress.setVisible(false);
-                        progress.dispose();
-                        JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
-                        return;
-                    }
-                    if (routerScript != null && routerScript instanceof GUIConfigEntry) {
-                        ((GUIConfigEntry) routerScript).setData(data[2]);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data[1]);
-                    }
-
-                    else if (routerScript != null && routerScript instanceof FengShuiConfigPanel) {
-                        FengShuiConfigPanel m = ((FengShuiConfigPanel) routerScript);
-                        m.routername.setText(data[1]);
-                        m.Reconnectmethode = data[2];
-                    }
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data[1]);
-                    if (username == null || username.matches("[\\s]*")) {
-                        if (user instanceof GUIConfigEntry)
-                            ((GUIConfigEntry) user).setData(data[4]);
-                        else if (user instanceof JTextField) ((JTextField) user).setText(data[4]);
-                    }
-                    if (pw == null || pw.matches("[\\s]*")) {
-                        if (pass instanceof GUIConfigEntry)
-                            ((GUIConfigEntry) pass).setData(data[5]);
-                        else if (pass instanceof JTextField) ((JTextField) pass).setText(data[5]);
-                    }
+                routerInfo.setLoginPass(pw);
+                routerInfo.setLoginUser(username);
+                if (username != null && !username.matches("[\\s]*")) {
+                    routerInfo.username = username;
+                }
+                if (pw != null && !pw.matches("[\\s]*")) {
+                    routerInfo.password = pw;
+                }
+                RInfo data = routerInfo.getRouterData();
+                if (data == null) {
                     progress.setVisible(false);
                     progress.dispose();
-                    JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.yourRouter", "Sie haben eine") + " " + data[1]);
-
+                    JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.notFound", "jDownloader konnte ihre Routereinstellung nicht automatisch ermitteln."));
+                    return;
                 }
-            };
-            th.start();
-            progress.setThread(th);
-            progress.setVisible(true);
+                if (routerScript != null && routerScript instanceof GUIConfigEntry) {
+                    ((GUIConfigEntry) routerScript).setData(data.getReconnectMethode());
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
+                }
 
-        }
+                else if (routerScript != null && routerScript instanceof FengShuiConfigPanel) {
+                    FengShuiConfigPanel m = ((FengShuiConfigPanel) routerScript);
+                    m.routername.setText(data.getRouterName());
+                    m.Reconnectmethode = data.getReconnectMethode();
+                    m.ReconnectmethodeClr = data.getReconnectMethodeClr();
+                }
+                JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, data.getRouterName());
+                progress.setVisible(false);
+                progress.dispose();
+                JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.yourRouter", "Sie haben einen") + " " + data.getRouterName());
+
+            }
+        };
+        th.start();
+        progress.setThread(th);
+        progress.setVisible(true);
+        new Thread(new Runnable() {
+            public void run() {
+                while (th.isAlive()) {
+                    try {
+                        th.wait();
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+                }
+                routerInfo.cancel();
+            }
+        }).start();
+
     }
 
     public static void main(String[] args) {
