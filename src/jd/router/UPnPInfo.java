@@ -18,6 +18,7 @@ package jd.router;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -46,7 +47,7 @@ public class UPnPInfo {
 
     private String host = null;
     private SSDPPacket ssdpP = null;
-    public String met = null;
+    public ArrayList<String> met = new ArrayList<String>();
     public HashMap<String, String> SCPDs = null;
 
     // protected String
@@ -71,54 +72,62 @@ public class UPnPInfo {
         this(ipadress, 10000);
     }
 
-    private static String createUpnpReconnect(HashMap<String, String> SCPDs, String desc) throws ParserConfigurationException, SAXException, IOException {
+    private static ArrayList<String> createUpnpReconnect(HashMap<String, String> SCPDs, String desc) throws ParserConfigurationException, SAXException, IOException {
 
         StringInputStream input = new StringInputStream(SCPDs.get(desc));
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document document = builder.parse(input);
-        String Termination = null;
+        ArrayList<String> terminations = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<String>();
         for ( Entry<String, String> ent : SCPDs.entrySet()) {
             if(ent.getValue().contains("<name>ForceTermination</name>"))
             {
-                Termination=ent.getKey().replaceFirst(".*?\\:\\d+", "");
+                terminations.add(ent.getKey().replaceFirst(".*?\\:\\d+", ""));
             }
                 
         }
-        System.out.println(Termination);
-        if(Termination==null) return null;
+        if(terminations.size()==0) return ret;
         NodeList ndList = document.getElementsByTagName("SCPDURL");
         // printNodesFromList( ndList ); // printNodesFromList see below
 
         Node node = null;
-        for (int i = 0; i < ndList.getLength(); i++) {
-            node = ndList.item(i);
-            if (node.getTextContent()!=null && node.getFirstChild().getTextContent().contains(Termination)) break;
+        for (int j = 0; j < ndList.getLength(); j++) {
+            node = ndList.item(j);
+            if (node.getTextContent()!=null)
+            {
+                for (String string : terminations) {
+                    if( node.getFirstChild().getTextContent().contains(string))
+                    {
+                        NodeList cl = node.getParentNode().getChildNodes();
+                        HashMap<String, String> meth = new HashMap<String, String>();
+                        // System.out.println(cl.getLength());
+                        for (int i = 0; i < cl.getLength(); i++) {
+                            Node cln = cl.item(i);
+                            if (cln.hasChildNodes()) {
+                                meth.put(cln.getNodeName(), cln.getTextContent().trim());
+                            }
+                        }
+                        if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) { continue; }
+                        String mett = "[[[HSRC]]]\r\n[[[STEP]]]\r\n[[[REQUEST]]]\r\n";
+                        mett += "POST " + meth.get("controlURL") + " HTTP/1.1\r\n";
+                        String hostport = new Regex(SCPDs.keySet().iterator().next(), ".*(\\:[\\d]+)").getMatch(0);
+                        mett += "Host: %%%routerip%%%" + hostport + "\r\n";
+                        mett += "Content-Type: text/xml; charset=\"utf-8\"\r\n";
+                        mett += "SoapAction:" + meth.get("serviceType") + "#ForceTermination\r\n";
+                        mett += "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='" + meth.get("serviceType") + "' /> </s:Body> </s:Envelope>\r\n";
+                        mett += "[[[/REQUEST]]]\r\n[[[/STEP]]]\r\n[[[/HSRC]]]";
+                        ret.add(mett);
+                    }
+                }
+            }
+
             node = null;
         }
-        NodeList cl = node.getParentNode().getChildNodes();
-        HashMap<String, String> meth = new HashMap<String, String>();
-        // System.out.println(cl.getLength());
-        for (int i = 0; i < cl.getLength(); i++) {
-            Node cln = cl.item(i);
-            if (cln.hasChildNodes()) {
-                meth.put(cln.getNodeName(), cln.getTextContent().trim());
-            }
-        }
-        if (!meth.containsKey("serviceType") || !meth.containsKey("controlURL") || !meth.containsKey("SCPDURL")) { return null; }
-        if (!SCPDs.get(SCPDs.keySet().iterator().next().replaceFirst("(http://.*?)/.*", "$1/" + meth.get("SCPDURL").replaceFirst("^\\/", ""))).contains("ForceTermination")) { return null; }
-        String mett = "[[[HSRC]]]\r\n[[[STEP]]]\r\n[[[REQUEST]]]\r\n";
-        mett += "POST " + meth.get("controlURL") + " HTTP/1.1\r\n";
-        String hostport = new Regex(SCPDs.keySet().iterator().next(), ".*(\\:[\\d]+)").getMatch(0);
-        mett += "Host: %%%routerip%%%" + hostport + "\r\n";
-        mett += "Content-Type: text/xml; charset=\"utf-8\"\r\n";
-        mett += "SoapAction:" + meth.get("serviceType") + "#ForceTermination\r\n";
-        mett += "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='" + meth.get("serviceType") + "' /> </s:Body> </s:Envelope>\r\n";
-        mett += "[[[/REQUEST]]]\r\n[[[/STEP]]]\r\n[[[/HSRC]]]";
-        return mett;
+        return ret;
     }
 
-    public static String createUpnpReconnect(HashMap<String, String> SCPDs) throws SAXException, IOException, ParserConfigurationException {
+    public static ArrayList<String> createUpnpReconnect(HashMap<String, String> SCPDs) throws SAXException, IOException, ParserConfigurationException {
         for (Entry<String, String> ent : SCPDs.entrySet()) {
             if (ent.getValue().contains("</UDN>")) { return createUpnpReconnect(SCPDs, ent.getKey()); }
         }

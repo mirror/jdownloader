@@ -507,6 +507,8 @@ public class GetRouterInfo {
         th2 = new Threader();
         final class isalvs {
             boolean isAlv = true;
+            ArrayList<String> meths = null;
+            HashMap<String, String> SCPDs = null;
         }
         final isalvs isalv = new isalvs();
         final JDRunnable jupnp = new JDRunnable() {
@@ -515,9 +517,9 @@ public class GetRouterInfo {
 
                 try {
                     UPnPInfo upnp = new UPnPInfo(infos.getRouterIP());
-                    if (upnp.met != null) {
-                        infos.setUPnPSCPDs(upnp.SCPDs);
-                        infos.setReconnectMethode(upnp.met);
+                    if (upnp.met != null && upnp.met.size()!=0) {
+                        isalv.SCPDs=upnp.SCPDs;
+                        isalv.meths=upnp.met;
 
                     }
                 } catch (Exception e) {
@@ -635,7 +637,7 @@ public class GetRouterInfo {
                             }
 
                         }
-                        if (infos.getReconnectMethode() == null) {
+                        if (isalv.meths == null) {
 
                             confirm = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), 600, false, CountdownConfirmDialog.STYLE_CANCEL|CountdownConfirmDialog.STYLE_OK|CountdownConfirmDialog.STYLE_STOP_COUNTDOWN|CountdownConfirmDialog.STYLE_NOTALWAYSONTOP);
                             if (confirm.result) {
@@ -646,7 +648,11 @@ public class GetRouterInfo {
                                         UPnPInfo upnpd = new UPnPInfo(infos.getRouterIP(), 10000);
                                         if (upnpd.met != null) {
                                             infos.setUPnPSCPDs(upnpd.SCPDs);
-                                            infos.setReconnectMethode(upnpd.met);
+                                            if (upnpd.met != null && upnpd.met.size()!=0) {
+
+                                                isalv.SCPDs=upnpd.SCPDs;
+                                                isalv.meths=upnpd.met;
+                                            }
                                             break;
                                         }
                                     }
@@ -656,37 +662,31 @@ public class GetRouterInfo {
                             }
                         }
                     }
-                    if (infos.getReconnectMethode() != null)
-                    {
-                        int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
-                        int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, username);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, infos.getReconnectMethode());
-                    setProgressText("Testing Upnpmethode for: " + infos.getRouterName());
-                    JDUtilities.getConfiguration().save();
-                    if (Reconnecter.waitForNewIP(1)) {
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
-                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
-                        JDUtilities.getConfiguration().save();
-                        setProgress(100);
-                        return;
-                    }
-                    else
-                    {
-                        infos.setReconnectMethode(null);
-                    }
-                    }
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, infos.getRouterHost());
-                    RInfo router = checkrouters(routers);
+                    RInfo router=null;
+                    if (isalv.meths != null)
+                    {
+                        HashMap<RInfo, Integer> upnprouters = new HashMap<RInfo, Integer>();
+                        for (String info : isalv.meths) {
+                            RInfo tempinfo = new RInfo();
+                            tempinfo.setRouterHost(infos.getRouterHost());
+                            tempinfo.setRouterIP(infos.getRouterIP());
+                            tempinfo.setUPnPSCPDs(isalv.SCPDs);
+                            tempinfo.setReconnectMethode(info);
+                            upnprouters.put(tempinfo, 1);
+                        }
+                        router = checkrouters(routers);
+                        
+                    }
+                    if(router==null)
+                    {
+                    router = checkrouters(routers);
                     if (router == null && !cancel) {
                         if (experimentalRouters.size() > 0) {
                             boolean conf = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.liveHeader.warning.experimental", "Möchten sie experimentelle Reconnectmethoden testen?\r\nExperimentelle Reconnectmethoden sind nicht so zuverlässig\r\nund beeinflussen möglicherweise die Routereinstellungen"));
                             if (conf) router = checkrouters(experimentalRouters);
                         }
+                    }
                     }
                     setProgress(100);
                     if (router != null) {
