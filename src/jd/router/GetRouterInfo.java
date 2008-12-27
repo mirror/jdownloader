@@ -637,7 +637,7 @@ public class GetRouterInfo {
                         }
                         if (infos.getReconnectMethode() == null) {
 
-                            confirm = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterIP()), 600, false, CountdownConfirmDialog.STYLE_CANCEL|CountdownConfirmDialog.STYLE_OK|CountdownConfirmDialog.STYLE_STOP_COUNTDOWN|CountdownConfirmDialog.STYLE_NOTALWAYSONTOP);
+                            confirm = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("gui.config.liveHeader.warning.upnpinactive", "Bitte aktivieren sie fals vorhanden Upnp in den Netzwerkeinstellungen ihres Routers <br><a href=\"http://%s\">zum Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wikiartikel: Upnp Routern</a><br>drücken sie Ok wenn sie Upnp aktiviert haben oder abbrechen wenn sie fortfahren wollen!", infos.getRouterHost()), 600, false, CountdownConfirmDialog.STYLE_CANCEL|CountdownConfirmDialog.STYLE_OK|CountdownConfirmDialog.STYLE_STOP_COUNTDOWN|CountdownConfirmDialog.STYLE_NOTALWAYSONTOP);
                             if (confirm.result) {
                                 try {
                                     setProgressText("testing upnp");
@@ -657,7 +657,7 @@ public class GetRouterInfo {
                         }
                     }
                     if (infos.getReconnectMethode() != null) return;
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, infos.getRouterIP());
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, infos.getRouterHost());
                     RInfo router = checkrouters(routers);
                     if (router == null && !cancel) {
                         if (experimentalRouters.size() > 0) {
