@@ -193,7 +193,10 @@ public class UPnPInfo {
 
     public static void main(String[] args) {
         UPnPInfo upnp = new UPnPInfo(RouterInfoCollector.getRouterIP());
-        System.out.println(upnp.met);
+        for (String string : upnp.met) {
+            System.out.println(string);
+        }
+
         System.exit(0);
     }
 }
