@@ -656,7 +656,30 @@ public class GetRouterInfo {
                             }
                         }
                     }
-                    if (infos.getReconnectMethode() != null) return;
+                    if (infos.getReconnectMethode() != null)
+                    {
+                        int retries = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_RETRIES, 5);
+                        int wipchange = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 20);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, 0);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, 10);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_USER, username);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_PASS, password);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_RECONNECT_TYPE, RouterInfoCollector.RECONNECTTYPE_LIVE_HEADER);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_REQUESTS, infos.getReconnectMethode());
+                    setProgressText("Testing Upnpmethode for: " + infos.getRouterName());
+                    JDUtilities.getConfiguration().save();
+                    if (Reconnecter.waitForNewIP(1)) {
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_RETRIES, retries);
+                        JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, wipchange);
+                        JDUtilities.getConfiguration().save();
+                        setProgress(100);
+                        return;
+                    }
+                    else
+                    {
+                        infos.setReconnectMethode(null);
+                    }
+                    }
                     JDUtilities.getConfiguration().setProperty(Configuration.PARAM_HTTPSEND_IP, infos.getRouterHost());
                     RInfo router = checkrouters(routers);
                     if (router == null && !cancel) {

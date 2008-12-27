@@ -70,20 +70,30 @@ public class UPnPInfo {
     public UPnPInfo(String ipadress) {
         this(ipadress, 10000);
     }
-    private static String createUpnpReconnect(HashMap<String, String> SCPDs, String desc) throws ParserConfigurationException, SAXException, IOException
-    {
-        
+
+    private static String createUpnpReconnect(HashMap<String, String> SCPDs, String desc) throws ParserConfigurationException, SAXException, IOException {
+
         StringInputStream input = new StringInputStream(SCPDs.get(desc));
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder = factory.newDocumentBuilder();
         Document document = builder.parse(input);
-
-        NodeList ndList = document.getElementsByTagName("serviceType");
+        String Termination = null;
+        for ( Entry<String, String> ent : SCPDs.entrySet()) {
+            if(ent.getValue().contains("<name>ForceTermination</name>"))
+            {
+                Termination=ent.getKey().replaceFirst(".*?\\:\\d+", "");
+            }
+                
+        }
+        System.out.println(Termination);
+        if(Termination==null) return null;
+        NodeList ndList = document.getElementsByTagName("SCPDURL");
         // printNodesFromList( ndList ); // printNodesFromList see below
+
         Node node = null;
         for (int i = 0; i < ndList.getLength(); i++) {
             node = ndList.item(i);
-            if (node.getFirstChild().getTextContent().contains("WANIPConnection")) break;
+            if (node.getTextContent()!=null && node.getFirstChild().getTextContent().contains(Termination)) break;
             node = null;
         }
         NodeList cl = node.getParentNode().getChildNodes();
@@ -107,12 +117,10 @@ public class UPnPInfo {
         mett += "[[[/REQUEST]]]\r\n[[[/STEP]]]\r\n[[[/HSRC]]]";
         return mett;
     }
-    public static String createUpnpReconnect(HashMap<String, String> SCPDs) throws SAXException, IOException, ParserConfigurationException {            
+
+    public static String createUpnpReconnect(HashMap<String, String> SCPDs) throws SAXException, IOException, ParserConfigurationException {
         for (Entry<String, String> ent : SCPDs.entrySet()) {
-            if(ent.getValue().contains("</UDN>"))
-            {
-                return createUpnpReconnect(SCPDs, ent.getKey());
-            }
+            if (ent.getValue().contains("</UDN>")) { return createUpnpReconnect(SCPDs, ent.getKey()); }
         }
 
         return null;
@@ -153,9 +161,8 @@ public class UPnPInfo {
 
             if (ssdpP.getLocation() == null) return;
 
-
             getSCPDURLs(ssdpP.getLocation());
-            met=createUpnpReconnect(SCPDs, ssdpP.getLocation());
+            met = createUpnpReconnect(SCPDs, ssdpP.getLocation());
             //System.out.println(ndList.item(0).getParentNode().getChildNodes().
             // item(1).getFirstChild());
             // ---- Error handling ----
