@@ -76,39 +76,55 @@ public class GetMacAdress {
     private String callArpToolDefault ( String ipAddress ) throws IOException, InterruptedException
     {
         String out =null;
+        InetAddress hostAddress = InetAddress.getByName( ipAddress );
         ProcessBuilder pb = null;
         try {
             pb = new ProcessBuilder(new String[] {"ping", ipAddress});
             pb.start();
             out = JDUtilities.runCommand("arp", new String[] {ipAddress}, null,10);
             pb.directory();
+            if(!out.matches("(?is).*(("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+")).*"))
+                out=null;
         } catch (Exception e) {
             if(pb!=null)
             pb.directory();
-            e.printStackTrace();
         }
         if(out==null||out.trim().length()==0)
         {
             try {
+                pb = new ProcessBuilder(new String[] {"ping", ipAddress});
+                pb.start();
                 out = JDUtilities.runCommand("ip", new String[] {"neigh", "show"}, null,10);
+                pb.directory();
                 if(out!=null)
                 {
-                    InetAddress hostAddress = InetAddress.getByName( ipAddress );
+//                    System.out.println(out);
+//                    System.out.println(!out.matches("(?is).*(("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+")).*"));
+                    if(!out.matches("(?is).*(("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+").*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?|.*..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?.*("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+")).*"))
+                        out=null;
+                    else
                     out=new Regex(out, "("+hostAddress.getHostName()+"|"+hostAddress.getHostAddress()+")[^\r\n]*").getMatch(-1);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                if(pb!=null)
+                    pb.directory();
             }
         }
         return out;
      }
     public static void main(String[] args) {
         try {
-            System.out.println(getMacAddress());
+            System.out.println(new GetMacAdress().getMacAddress("10.11.12.5"));
         } catch (SocketException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         } catch (UnknownHostException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
