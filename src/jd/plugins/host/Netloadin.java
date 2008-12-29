@@ -415,7 +415,7 @@ public class Netloadin extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 2;
+        return 1;
     }
 
     @Override
