@@ -100,7 +100,7 @@ public class JDUtilities {
      * Parametername für den Konfigpath
      */
     public static final String CONFIG_PATH = "jDownloader.config";
-
+ 
     /**
      * Die Konfiguration
      */
