@@ -27,6 +27,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.peer.TrayIconPeer;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
@@ -61,7 +62,7 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
     private TrayIconPopup trayIconPopup;
 
     private TrayIcon trayIcon;
-
+    
     private JFrame guiFrame;
     private boolean iconfied = false;
     private long lastDeIconifiedEvent = System.currentTimeMillis() - 1000;
@@ -165,17 +166,38 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
 
     public void mousePressed(MouseEvent e) {
         if (e.getSource() instanceof TrayIcon) {
-            if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
-                iconfied=!iconfied;
-                miniIt();
+            if (!OSDetector.isMac()) {   
+                if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isRightMouseButton(e)) {
+                    iconfied=!iconfied;
+                    miniIt();
+                } else {
+                    if (trayIconPopup != null && trayIconPopup.isShowing()) {
+                        trayIconPopup.dispose();
+                        trayIconPopup = null;
+                    } else if (SwingUtilities.isRightMouseButton(e)) {
+                        trayIconPopup = new TrayIconPopup();
+                        calcLocation(trayIconPopup, e.getPoint());
+                        trayIconPopup.setVisible(true);
+                    }
+                }
             } else {
-                if (trayIconPopup != null && trayIconPopup.isShowing()) {
-                    trayIconPopup.dispose();
-                    trayIconPopup = null;
-                } else if (SwingUtilities.isRightMouseButton(e)) {
-                    trayIconPopup = new TrayIconPopup();
-                    calcLocation(trayIconPopup, e.getPoint());
-                    trayIconPopup.setVisible(true);
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (e.getClickCount() >= (subConfig.getBooleanProperty(PROPERTY_SINGLE_CLICK, false) ? 1 : 2) && !SwingUtilities.isLeftMouseButton(e)) {
+                        iconfied=!iconfied;
+                        miniIt();
+                    } else {
+                        if (trayIconPopup != null && trayIconPopup.isShowing()) {
+                            trayIconPopup.dispose();
+                            trayIconPopup = null;
+                        } else if (SwingUtilities.isLeftMouseButton(e)) {
+                            trayIconPopup = new TrayIconPopup();
+                            Point pointOnScreen = e.getLocationOnScreen();
+                            if (e.getX() > 0)
+                                pointOnScreen.x -= e.getPoint().x;
+                            calcLocation(trayIconPopup, pointOnScreen);
+                            trayIconPopup.setVisible(true);
+                        }
+                    }
                 }
             }
         }
@@ -206,22 +228,29 @@ public class JDLightTray extends PluginOptional implements MouseListener, MouseM
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 int limitX = (int) screenSize.getWidth() / 2;
                 int limitY = (int) screenSize.getHeight() / 2;
-
-                if (p.x <= limitX) {
-                    if (p.y <= limitY) {
-                        // top left
-                        window.setLocation(p.x, p.y);
+                if (!OSDetector.isMac()) {
+                    if (p.x <= limitX) {
+                        if (p.y <= limitY) {
+                            // top left
+                            window.setLocation(p.x, p.y);
+                        } else {
+                            // bottom left
+                            window.setLocation(p.x, p.y - window.getHeight());
+                        }
                     } else {
-                        // bottom left
-                        window.setLocation(p.x, p.y - window.getHeight());
+                        if (p.y <= limitY) {
+                            // top right
+                            window.setLocation(p.x - window.getWidth(), p.y);
+                        } else {
+                            // bottom right
+                            window.setLocation(p.x - window.getWidth(), p.y - window.getHeight());
+                        }
                     }
                 } else {
-                    if (p.y <= limitY) {
-                        // top right
-                        window.setLocation(p.x - window.getWidth(), p.y);
+                    if (p.getX() <= (screenSize.getWidth() - window.getWidth())) {
+                        window.setLocation((int) p.getX(), 22);  
                     } else {
-                        // bottom right
-                        window.setLocation(p.x - window.getWidth(), p.y - window.getHeight());
+                        window.setLocation(p.x - window.getWidth(), 22);
                     }
                 }
             }
