@@ -39,7 +39,7 @@ public class CineTo extends PluginForDecrypt {
 
         br.getPage(parameter);
         if (parameter.matches(patternLink_Protected)) {
-            String[] captcha = br.getRegex("span class=\"(.*?)\"").getColumn(0);
+            String[] captcha = br.getRegex("span class=\"([ws]?)\"").getColumn(0);
             String capText = "";
             if (captcha.length == 80) {
                 for (int j = 1; j < 5; j++) {
