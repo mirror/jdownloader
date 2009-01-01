@@ -275,6 +275,7 @@ public class JDUpdater {
     }
 
     private boolean update() {
+        if(true)return true;
         ftp = new SimpleFTP();
         try {
             ftp.connect("78.143.20.68", 1200, "jd", JOptionPane.showInputDialog("Bluehost Updateserver Passwort"));
@@ -309,9 +310,9 @@ public class JDUpdater {
         try {
             logger.info("connect to ftp");
             SimpleFTP ftp = new SimpleFTP();
-            ftp.connect("87.118.121.244", 21, JOptionPane.showInputDialog("USER jdownloader.org"), JOptionPane.showInputDialog("PASS jdownloader.org"));
+            ftp.connect("service.jdownloader.net", 2121, JOptionPane.showInputDialog("USER jdownloader.org"), JOptionPane.showInputDialog("PASS jdownloader.org"));
             ftp.bin();
-            ftp.cwd("/httpdocs/service/update/jd/");
+            ftp.cwd("/http/update/");
             logger.info("write list.php");
             JDIO.writeLocalFile(JDUtilities.getResourceFile("list.php"), list);
             ftp.remove("list.php");
@@ -320,7 +321,7 @@ public class JDUpdater {
             ftp.disconnect();
             logger.info("update ok");
 
-            new Browser().getPage("http://service.jdownloader.org/update/jd/updatelist.php");
+            System.out.println(new Browser().getPage("http://service.jdownloader.net/dlcrypt/configs/updatelist.php"));
 
         } catch (IOException e) {
             e.printStackTrace();

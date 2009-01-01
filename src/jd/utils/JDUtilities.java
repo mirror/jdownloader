@@ -405,7 +405,7 @@ public class JDUtilities {
         } catch (NumberFormatException e) {
             return 0;
         }
-    }
+    } 
   
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]

@@ -371,32 +371,7 @@ public class JDInit {
         }.start();
     }
 
-    public void checkMessage() {
-        File res = JDUtilities.getResourceFile("message.html");
-        String hash = JDHash.getMD5(res);
-
-        try {
-            Browser.download(JDUtilities.getResourceFile("message.html"), "http://78.143.20.68/messages/message.html");
-        } catch (IOException e) {
-
-            return;
-        }
-        String hash2 = JDHash.getMD5(res);
-
-        if ((hash2 != null && !hash2.equals(hash))) {
-            String message = JDIO.getLocalFile(res);
-
-            if (message != null && message.trim().length() > 0) {
-
-                CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI.getFrame(), JDLocale.L("sys.warning.newMessage", "New Systemmessage"), HTMLEntities.htmlentities(Encoding.UTF8Decode(message)), 3 * 60, false, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_STOP_COUNTDOWN);
-                if (!ccd.result) {
-                    res.delete();
-                    res.deleteOnExit();
-                }
-            }
-        }
-
-    }
+ 
 
     void init() {
         CookieHandler.setDefault(null);

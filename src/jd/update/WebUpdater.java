@@ -84,7 +84,7 @@ public class WebUpdater implements Serializable {
      */
     public WebUpdater() {
         logger = new StringBuilder();
-        setListPath("http://service.jdownloader.org/update/jd");
+        setListPath("http://service.jdownloader.net/update/");
     }
 
     /**
