@@ -81,7 +81,10 @@ controller.status.tomanyuser = Zajęty
 controller.status.unknownerror = Nieznany błąd
 controller.status.wait = Czekaj: %s sec.
 convert.dialog.chooseformat = Wybierz format:
+convert.dialog.forcekeep = Wymuszaj
 convert.dialog.keepformat = Format dla tej  sesji
+convert.dialog.staykeepingformat = Najpierw preferowany  format.
+convert.dialog.toppriority = Preferowany format
 convert.progress.convertingto = Konwertowanie do
 convert.progress.unknownintype = Nieznany format
 decrypter.invalidaccount = Nie znaleziono właściwego konta
@@ -424,8 +427,10 @@ gui.config.liveheader.selectrouter = Wybierz router
 gui.config.liveheader.user = Użytkownik
 gui.config.liveheader.waitforip = Czekaj na nowy adres IP (sek.)
 gui.config.liveheader.waittimeforipcheck = Interwał sprawdzania zmiany adresu IP (co x sek.)
+gui.config.liveheader.warning.experimental = Czy chcesz przetestować niestabilne eksperymentalne metody ponownego nawiązywania połączenia?\r\n Metody te mogą zmienić ustawienia Twojego routera.
 gui.config.liveheader.warning.nocurlconvert = JD nie może skonwertować skryptu CURL. Aby uzyskać pomoc, skontaktuj się z Ekipą Wsparcia Techniczjego JD!
 gui.config.liveheader.warning.notfound = JDownloader nie może wykryć ustawień twojego routera.
+gui.config.liveheader.warning.upnpinactive = Włącz obsługę Upnp w ustawieniach swojego routera.<br><a href=\"http://%s\">Do Rutera</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wiki: Upnp w routerze</a><br>Klknij OK, gdy Upnp zostanie włączone lub anuluj by przejść dalej!
 gui.config.liveheader.warning.wizard = Wyszukiwanie ustawień może chwilę potrwać. Wprowadź dane do logowania. Gotowe?
 gui.config.liveheader.warning.wizard.checkall = Wszytkie routery sprawdzono.
 gui.config.liveheader.warning.wizard.title = Czy chcesz uruchomić teraz wykrywanie routerów?
@@ -1795,6 +1800,7 @@ system.update.error.message = Instalacja tych pakietów NIE POWIODŁA się:<hr>%
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFORMACJE</a><br/>
 system.update.message.title = Aktualizacja do wersji %s
 system.update.showchangelog = Pokaż wszystkie zmiany
+system.update.showchangelogv2 = Co nowego?
 system.update.success.message = Zainstalowano nowe aktualizacje<hr>%s
 system.update.success.message.infolink = %s v.%s <a href='%s'>INFORMACJE</a><br/>
 train.choose.folder = Wybierz folder
