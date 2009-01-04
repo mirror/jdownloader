@@ -19,7 +19,7 @@ public class PlikusPl extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.plikus.pl/index.html";
+        return "http://www.osemka.pl/html/regulamin/#regulamin_plikus";
     }
 
     @Override
