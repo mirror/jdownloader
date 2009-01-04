@@ -448,7 +448,7 @@ gui.config.packagemanager.doautoupdateafterdownloads = Zainstaluj pakiety po ich
 gui.config.packagemanager.name = Menadżer Pakietów
 gui.config.packagemanager.reset = Resetuj informacje o wersji
 gui.config.packagemanager.supportjd = Wspomóż JD przez pobieranie wypasionych dodatków
-gui.config.packagemanager.supportjd.instanthelp = http://wiki.jdownloader.org/index.php?title=Addon-Manager
+gui.config.packagemanager.supportjd.instanthelp = http://www.jdownloader.org/pl/knowledge/wiki/addons/install-and-update
 gui.config.packagemanager.table.info = Informacje
 gui.config.plugin.abg_confirm = Przeczytałem regulamin %s i akceptuję go!
 gui.config.plugin.container.btn_settings = Ustawienia
@@ -565,14 +565,14 @@ gui.config.unrar.use_extractto = Używaj wybranej ścieżki wypakowywania
 gui.config.unrar.use_subpath = Używaj podścieżki
 gui.config.unrar.usehjmerge = Automatycznie scal pliki podzielone HJSplit
 gui.config.webupdate.name = Aktualizacja
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://www.jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.chat = Czat
-gui.dialog.about.chaturl = http://www.jdownloader.org/support?lng=pl
+gui.dialog.about.chaturl = http://wiki.jdownloader.org/pl/knowledge/chat
 gui.dialog.about.email = Email
 gui.dialog.about.forum = Forum wsparcia technicznego
 gui.dialog.about.forumurl = http://www.the-lounge.org/viewforum.php?f=340
 gui.dialog.about.homepage = Strona domowa
-gui.dialog.about.homeurl = http://www.jdownloader.org/home?lng=pl
+gui.dialog.about.homeurl = http://www.jdownloader.org/pl/home/index
 gui.dialog.about.jddevteam = Twórcy JDownloadera
 gui.dialog.about.member = Osoba
 gui.dialog.about.section = Dział
@@ -830,9 +830,9 @@ gui.menu.action.exit.desc = Wyłącz program
 gui.menu.action.exit.mnem = B
 gui.menu.action.exit.name = Wyjdź
 gui.menu.action.help.accel = CTRL+9
-gui.menu.action.help.desc = Pokaż pomoc
+gui.menu.action.help.desc = Otwórz stronę Forum wsparcia technicznego
 gui.menu.action.help.mnem = s
-gui.menu.action.help.name = Pomoc
+gui.menu.action.help.name = Forum wsparcia
 gui.menu.action.hostconfig.accel = CTRL+Alt+H
 gui.menu.action.hostconfig.desc = Otwórz ustawienia hostingu
 gui.menu.action.hostconfig.mnem = H =
@@ -907,9 +907,9 @@ gui.menu.action.viewlog.desc = Wyświetlanie zapisów dziennika
 gui.menu.action.viewlog.mnem = L
 gui.menu.action.viewlog.name = Wyświetl okno dziennika
 gui.menu.action.wiki.accel = CTRL+W
-gui.menu.action.wiki.desc = Otwórz wiki JDownloadera
+gui.menu.action.wiki.desc = Otwórz Bazę wiedzy o JDownloaderze
 gui.menu.action.wiki.mnem = W
-gui.menu.action.wiki.name = Otwórz wiki
+gui.menu.action.wiki.name = Otwórz Bazę wiedzy
 gui.menu.action_mnem = K
 gui.menu.add = Dodaj
 gui.menu.addons = Dodatki
