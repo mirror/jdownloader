@@ -369,7 +369,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
         return true;
     }
 
-
     private void crackPassword() {
         ArchivFile smallestFile = null;
         ArchivFile biggestFile = null;
@@ -572,7 +571,37 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     }
 
+    /**
+     * Prüft ob ein bestimmter Unrarbefehl gültig ist
+     * 
+     * @param path
+     * @return
+     */
+    public static boolean isUnrarCommandValid(String path) {
+        try {
+            Executer exec = new Executer(path);
+            exec.setWaitTimeout(5);
+            exec.start();
+            exec.waitTimeout();
+            String ret = exec.getErrorStream() + " " + exec.getOutputStream();
+
+            if (new Regex(ret, "RAR.*?Alexander").matches()) {
+                return true;
+            } else if (new Regex(ret, "RAR.*?3\\.").matches()) {
+                return true;
+            } else {
+                System.err.println("Wrong unrar: " + Regex.getLines(exec.getErrorStream())[0]);
+                return false;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
     private boolean open() throws UnrarException {
+        if (!isUnrarCommandValid(unrarCommand)) return false;
         String pass = null;
         int i = 0;
         fireEvent(JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE);
@@ -619,9 +648,20 @@ public class UnrarWrapper extends Thread implements JDRunnable {
             String match;
             if ((match = new Regex(res, Pattern.compile("Bad archive (.{5,})")).getMatch(0)) != null) {
                 statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
-                match = new Regex(match, "\\.part(\\d+)\\.").getMatch(0);
-                currentVolume = Integer.parseInt(match.trim());
-
+                String filename = match;
+                currentVolume = 0;
+                match = new Regex(filename, "\\.part(\\d+)\\.").getMatch(0);
+                if (match != null) {
+                    currentVolume = Integer.parseInt(match.trim());
+                } else {
+                    match = new Regex(filename, "(.*?)\\.rar").getMatch(0);
+                    if (match != null) {
+                        currentVolume = 1;
+                    } else {
+                        match = new Regex(filename, "\\.r(\\d+)").getMatch(0);
+                        if (match != null) currentVolume = Integer.parseInt(match.trim()) + 2;
+                    }
+                }
                 return false;
             }
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
@@ -629,7 +669,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;
             } else {
-
+                if (res.indexOf("Cannot find volume") != -1) { return false; }
                 String[] volumes = Pattern.compile("Volume (.*?)Pathname/Comment", Pattern.DOTALL).split(res);
                 ArchivFile tmp = null;
                 String namen = "";
@@ -694,12 +734,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
                         }
                     }
-
                 }
-                //
-                if (res.indexOf("Cannot find volume") != -1) {
-
-                return false; }
                 return true;
 
             }
@@ -858,9 +893,19 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
                     String currentWorkingFile = match.trim();
                     currentlyWorkingOn = getArchivFile(currentWorkingFile);
-                    match = new Regex(latestLine, "\\.part(\\d+)\\.").getMatch(0);
-                    currentVolume = Integer.parseInt(match.trim());
-
+                    String filename = latestLine;
+                    match = new Regex(filename, "\\.part(\\d+)\\.").getMatch(0);
+                    if (match != null) {
+                        currentVolume = Integer.parseInt(match.trim());
+                    } else {
+                        match = new Regex(filename, "(.*?)\\.rar").getMatch(0);
+                        if (match != null) {
+                            currentVolume = 1;
+                        } else {
+                            match = new Regex(filename, "\\.r(\\d+)").getMatch(0);
+                            if (match != null) currentVolume = Integer.parseInt(match.trim()) + 2;
+                        }
+                    }
                     exec.interrupt();
                 }
 
@@ -873,6 +918,27 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     exec.interrupt();
                 }
 
+                if ((match = new Regex(latestLine, "packed data CRC failed in volume(.{5,})").getMatch(0)) != null) {
+                    statusid = JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC;
+                    String currentWorkingFile = new Regex(latestLine, "(.*?): packed").getMatch(0);
+                    currentlyWorkingOn = getArchivFile(currentWorkingFile.trim());
+                    currentVolume = 0;
+                    String filename = match;
+                    match = new Regex(filename, "\\.part(\\d+)\\.").getMatch(0);
+                    if (match != null) {
+                        currentVolume = Integer.parseInt(match.trim());
+                    } else {
+                        match = new Regex(filename, "(.*?)\\.rar").getMatch(0);
+                        if (match != null) {
+                            currentVolume = 1;
+                        } else {
+                            match = new Regex(filename, "\\.r(\\d+)").getMatch(0);
+                            if (match != null) currentVolume = Integer.parseInt(match.trim()) + 2;
+                        }
+                    }
+                    exec.interrupt();
+                }
+
             }
         }
 
@@ -880,6 +946,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public void go() throws Exception {
         run();
-        
+
     }
 }
