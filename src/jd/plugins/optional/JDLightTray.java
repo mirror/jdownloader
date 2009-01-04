@@ -27,14 +27,11 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.awt.peer.TrayIconPeer;
 import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
-
-import jd.nutils.OSDetector;
 
 import jd.Main;
 import jd.PluginWrapper;
@@ -44,6 +41,7 @@ import jd.config.MenuItem;
 import jd.config.SubConfiguration;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;

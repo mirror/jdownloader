@@ -10,9 +10,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.utils.JDUtilities;
-
 import jd.http.Browser;
+import jd.utils.JDUtilities;
 
 public class test {
     @SuppressWarnings("unchecked")

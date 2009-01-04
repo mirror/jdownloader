@@ -24,16 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.nutils.jobber.JDRunnable;
-
-import jd.nutils.Threader;
-
-import jd.parser.Regex;
-
 import jd.JDInit;
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.http.Browser;
+import jd.nutils.Threader;
+import jd.nutils.jobber.JDRunnable;
+import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 

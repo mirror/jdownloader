@@ -32,8 +32,6 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import jd.gui.skins.simple.JDLookAndFeelManager;
-
 import jd.config.CFGConfig;
 import jd.config.Configuration;
 import jd.controlling.JDController;
@@ -41,12 +39,11 @@ import jd.controlling.ProgressController;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
 import jd.gui.UIInterface;
+import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTMLEntities;
-import jd.nutils.JDHash;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -69,10 +66,10 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
             // wäre
@@ -107,7 +104,7 @@ public class JDInit {
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
 
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
@@ -151,7 +148,7 @@ public class JDInit {
 
     private SplashScreen splashScreen;
 
-    private static long LASTREQUEST = 0;
+    // private static long LASTREQUEST = 0;
 
     // private Vector<Vector<String>> files;
 
@@ -252,20 +249,20 @@ public class JDInit {
         cfg.save();
 
         logger.finer("Init Webupdater");
-//        if (!guiCall) {
-//            if ((System.currentTimeMillis() - LASTREQUEST) < (30 * 60 * 1000l)) {
-//                logger.finer("30 min sperre");
-//                return;
-//            }
-//        } else {
-//            if ((System.currentTimeMillis() - LASTREQUEST) < (1 * 30 * 1000l)) {
-//                logger.finer("30 sekunden sperre");
-//                return;
-//            }
-//        }
+        // if (!guiCall) {
+        // if ((System.currentTimeMillis() - LASTREQUEST) < (30 * 60 * 1000l)) {
+        // logger.finer("30 min sperre");
+        // return;
+        // }
+        // } else {
+        // if ((System.currentTimeMillis() - LASTREQUEST) < (1 * 30 * 1000l)) {
+        // logger.finer("30 sekunden sperre");
+        // return;
+        // }
+        // }
         final ProgressController progress = new ProgressController(JDLocale.L("init.webupdate.progress.0_title", "Webupdate"), 100);
 
-        LASTREQUEST = System.currentTimeMillis();
+        // LASTREQUEST = System.currentTimeMillis();
         final WebUpdater updater = new WebUpdater();
         logger.finer("Get available files");
         // logger.info(files + "");
@@ -370,8 +367,6 @@ public class JDInit {
 
         }.start();
     }
-
- 
 
     void init() {
         CookieHandler.setDefault(null);

@@ -17,7 +17,6 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
-import java.util.Vector;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;

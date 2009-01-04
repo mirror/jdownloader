@@ -21,8 +21,6 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.router.RouterInfoCollector;
-
 import jd.config.Configuration;
 import jd.controlling.interaction.BatchReconnect;
 import jd.controlling.interaction.ExternReconnect;
@@ -31,6 +29,7 @@ import jd.controlling.interaction.Interaction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.router.RouterInfoCollector;
 
 public class Reconnecter {
 

@@ -17,15 +17,14 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import jd.http.Browser;
+import jd.parser.Regex;
+
 import org.hsqldb.lib.StringInputStream;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
-import jd.http.Browser;
-
-import jd.parser.Regex;
 
 public class SQLRouterData {
     public static JFrame frame = new JFrame();

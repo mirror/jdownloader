@@ -44,23 +44,19 @@ import java.util.regex.Pattern;
 
 import javax.swing.JTextField;
 
-import jd.gui.skins.simple.SimpleGUI;
-
-import jd.gui.skins.simple.components.CountdownConfirmDialog;
-
-import jd.nutils.jobber.JDRunnable;
-
-import jd.nutils.Threader;
-
 import jd.config.Configuration;
 import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
+import jd.gui.skins.simple.SimpleGUI;
+import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.gui.skins.simple.config.ConfigurationDialog;
 import jd.gui.skins.simple.config.FengShuiConfigPanel;
 import jd.gui.skins.simple.config.GUIConfigEntry;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
+import jd.nutils.Threader;
+import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;

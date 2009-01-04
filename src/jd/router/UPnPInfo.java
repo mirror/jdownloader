@@ -27,6 +27,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import jd.http.Browser;
+import jd.nutils.Threader;
+import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 
 import org.cybergarage.upnp.ControlPoint;
@@ -38,10 +40,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-
-import jd.nutils.jobber.JDRunnable;
-
-import jd.nutils.Threader;
 
 public class UPnPInfo {
 

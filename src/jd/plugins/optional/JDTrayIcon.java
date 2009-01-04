@@ -44,8 +44,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 
-import jd.nutils.OSDetector;
-
 import jd.Main;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -56,6 +54,7 @@ import jd.controlling.ClipboardHandler;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDAction;
 import jd.gui.skins.simple.SimpleGUI;
+import jd.nutils.OSDetector;
 import jd.plugins.PluginOptional;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;

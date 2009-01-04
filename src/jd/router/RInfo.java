@@ -6,9 +6,9 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.HashMap;
+
 import jd.parser.Regex;
 import jd.utils.EditDistance;
-
 import jd.utils.JDUtilities;
 
 public class RInfo implements Serializable {

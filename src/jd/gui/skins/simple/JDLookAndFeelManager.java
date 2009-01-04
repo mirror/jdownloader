@@ -23,7 +23,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import jd.config.SubConfiguration;
-
 import jd.utils.JDUtilities;
 
 public class JDLookAndFeelManager implements Serializable {

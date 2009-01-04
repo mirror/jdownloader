@@ -65,8 +65,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import jd.router.RouterInfoCollector;
-
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -84,6 +82,7 @@ import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
+import jd.router.RouterInfoCollector;
 import jd.router.reconnectrecorder.JDRRGui;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;

@@ -22,12 +22,11 @@ import java.io.File;
 import java.util.List;
 import java.util.Locale;
 
-import jd.gui.skins.simple.JDLookAndFeelManager;
-
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
+import jd.gui.skins.simple.JDLookAndFeelManager;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JLinkButton;
