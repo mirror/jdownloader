@@ -109,18 +109,34 @@ public class BluehostTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        getFileInformation(downloadLink);
+        String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
+
+        String[] dat = page.split("\\, ");
+
+       
+            downloadLink.setName(dat[0]);
+            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
+           if( Integer.parseInt(dat[3])>0){
+               throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,Integer.parseInt(dat[3])*1000l);
+           }
+        
         br.getPage(downloadLink.getDownloadURL());
-        if (Regex.matches(br, "Sie haben diese Datei in der letzten Stunde")) {
-            logger.info("File has been requestst more then 3 times in the last hour. Reconnect or wait 1 hour.");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        }
+     
         Form[] forms = br.getForms();
-        dl = br.openDownload(downloadLink, forms[2], false, 1);
-        if (!dl.getConnection().isContentDisposition()) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
-        }
+
+         //   br.cloneBrowser().getPage("http://bluehost.to/style.css");
+           // br.cloneBrowser().getPage("http://bluehost.to/css/autosuggest_inquisitor.css");
+            
+        
+        
+     Form dlForm=forms[2];
+     dlForm.remove("UPLOADSCRIPT_LOGSESSION");
+     br.clearCookies("bluehost.to");
+     br.submitForm(dlForm);
+     br.getPage(downloadLink.getDownloadURL());
+   forms=br.getForms();  
+ // String url = br.getRegex("var url=\\'(.*?)\\'\\;").getMatch(0);
+  br.openDownload(downloadLink, forms[1]);
         dl.startDownload();
     }
 
@@ -140,9 +156,12 @@ public class BluehostTo extends PluginForHost {
 
         String[] dat = page.split("\\, ");
 
-       
+       downloadLink.setMD5Hash(dat[5].trim());
             downloadLink.setName(dat[0]);
             downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
+           if( Integer.parseInt(dat[3])>0){
+               throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,Integer.parseInt(dat[3]));
+           }
         
         return true;
     }
