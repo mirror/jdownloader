@@ -751,7 +751,8 @@ public class JDInit {
         new HostPluginWrapper("self-load.com", "SelfLoadCom", "http://[\\w\\.]*?self-load\\.com/\\d+/.+");
         new HostPluginWrapper("plikus.pl", "PlikusPl", "http://[\\w\\.]*?plikus\\.pl/zobacz_plik-.*?-\\d+\\.html");
         new HostPluginWrapper("uploading.com", "UploadingCom", "http://[\\w\\.]*?uploading\\.com/files/.*?/.+");
-        new HostPluginWrapper("kewlshare.com", "KewlshareCom", "http://[\\w\\.]*?kewlshare\\.com/dl/[a-zA-Z0-9]+/.*");
+        new HostPluginWrapper("kewlshare.com", "KewlshareCom", "http://[\\w\\.]*?kewlshare\\.com/dl/[a-zA-Z0-9]+/.*");        
+        new HostPluginWrapper("sharebomb.com", "ShareBombCom", "http://[\\w\\.]*?sharebomb\\.com/[0-9]+.*");
     }
 
     public void loadPluginOptional() {
