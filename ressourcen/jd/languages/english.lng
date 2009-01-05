@@ -167,7 +167,7 @@ gui.config.fengshui.expertview = Advanced Configuration
 gui.config.fengshui.fritzbox.title = Detected Router: Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = Show meesage never again
 gui.config.fengshui.fritzbox.upnpactive = You have a Fritz!Box router. Please enable UPNP for your fritz!box.
-gui.config.fengshui.fritzbox.upnpinactive = Please enable UPNP fo your Fritz!Box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Please enable UPNP fo your Fritz!Box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.fengshui.rdautomatic = Automatic
 gui.config.fengshui.rdmanual = Manual
 gui.config.fengshui.rdname = Router detection
@@ -214,7 +214,7 @@ gui.config.jac.column.use = Use
 gui.config.jac.status.auto = Automatic detection
 gui.config.jac.status.noauto = Manual control
 gui.config.jdrr.close = Close
-gui.config.jdrr.infolable = 	 <span color=\"#4682B4\"> Check the IP address of the router and press the Start <br> W browser window with the home page of the router opens <br> Reconnect after you hit to stop and save. <br> More information is available </ span> <a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\"> here </ a>
+gui.config.jdrr.infolable = 	 <span color=\"#4682B4\"> Check the IP address of the router and press the Start <br> W browser window with the home page of the router opens <br> Reconnect after you hit to stop and save. <br> More information is available </ span> <a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\"> here </ a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnect failed
 gui.config.jdrr.savereconnect = Reconnect was successfull. Save now?
@@ -237,7 +237,7 @@ gui.config.liveheader.waittimeforipcheck = Firs IP check timeout (sec)
 gui.config.liveheader.warning.experimental = Do you want to test experimental Router reconnect methods?\r\n Please not that those methods can change some of your router settings!
 gui.config.liveheader.warning.nocurlconvert = JD can't convert the CURL script. Please ask the JD-Support-Team for support!
 gui.config.liveheader.warning.notfound = jDownloader can't detect your router settings.
-gui.config.liveheader.warning.upnpinactive = Please activate Upnp support in your router's network configuration. <br><a href=\"http://%s\">Go to Router</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wiki article: Upnp in Router</a><br>Click OK when you activate Upnp support in router or Cancel to skip.
+gui.config.liveheader.warning.upnpinactive = Please activate Upnp support in your router's network configuration. <br><a href=\"http://%s\">Go to Router</a><br><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/upnp\">Wiki article: Upnp in Router</a><br>Click OK when you activate Upnp support in router or Cancel to skip.
 gui.config.liveheader.warning.wizard = The settings search can take a while. Please enter your router login data. Execute now?
 gui.config.liveheader.warning.wizard.checkall = Check all routers (very slow)
 gui.config.liveheader.warning.wizard.title = Start automatic router-detection now?
@@ -258,7 +258,7 @@ gui.config.plugin.host.desc = Attention!!\r\nThe jD Team takes no responsibility
 gui.config.plugin.host.name = Host plugins
 gui.config.plugin.host.readagb = Read TOS
 gui.config.plugin.optional.forcedactive = The addon %s cannot be disabled.
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = Help
 gui.config.popup.title = Configuration
 gui.config.reconnect.name = Reconnect
@@ -269,7 +269,7 @@ gui.config.routeripfinder.close = Close Window
 gui.config.routeripfinder.featchip = Detecting your router's IP
 gui.config.routeripfinder.ready = IP found: %s
 gui.config.showcontaineronloadinfo = Show detailed containerinformation on load
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.addons = Addon manager
 gui.config.tablables.containerplugin = Link Containers
 gui.config.tablables.decryptplugin = Decryption
@@ -292,12 +292,12 @@ gui.config.unrar.subpath = Subpath
 gui.config.unrar.subpath_minnum = Only use subpath if archive contains more than x files
 gui.config.unrar.use_extractto = Use customized extract path
 gui.config.unrar.use_subpath = Use subpath
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.chat = Chat
-gui.dialog.about.chaturl = http://www.jdownloader.org/pl/knowledge/index
+gui.dialog.about.chaturl = http://jdownloader.org/knowledge/chat
 gui.dialog.about.email = Email
 gui.dialog.about.forum = Support board
-gui.dialog.about.forumurl = http://www.the-lounge.org/viewforum.php?f=340
+gui.dialog.about.forumurl = http://jdownloader.org/knowledge/forum
 gui.dialog.about.homepage = Homepage
 gui.dialog.about.homeurl = http://www.jdownloader.org/home
 gui.dialog.about.jddevteam = JDownloader Developer Team
@@ -349,8 +349,8 @@ gui.fengshuiconfig.routername = Routername
 gui.fengshuiconfig.routerpassword = Password
 gui.fengshuiconfig.testsettings = Check settings
 gui.fengshuiconfig.username = Username
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Wrong Java Version
 gui.linkgrabber.bar.title = Information collector
 gui.linkgrabber.btn.accept = Accept package
@@ -576,8 +576,8 @@ gui.splash.text.webupdate = Check Updates
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Speed
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.plugin_activity.column_plugin = Module
 gui.tab.plugin_activity.column_progress = Progress
 gui.table.contextmenu.browselink = Open in browser
@@ -696,7 +696,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">Attention! Your operatin
 interaction.simpleexecute.cmd = Command
 interaction.simpleexecute.executein = Execute in (folder)
 interaction.simpleexecute.extended = Advanced Settings
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Execute Programm/Script
 interaction.simpleexecute.parameter = Parameter(1 parameter/line)
 interaction.simpleexecute.test = Execute now
@@ -734,7 +734,7 @@ interaction.trigger.package_finished.desc = Executed after a package got finishe
 interaction.trigger.single_download_failed = Download failed
 interaction.trigger.single_download_failed.desc = Executed after a download failed
 jd.plugins.decrypt.bestmovies.captchainputwrong = Wrong Input, please enter time like this: 4:30
-jdownloader.localnewsurl = http://jdownloader.org/news?lng=en
+jdownloader.localnewsurl = http://jdownloader.org/news/index
 jdownloader.org = jDownloader.org
 linkinformation.available.error = Error!
 linkinformation.download.aborted = Aborted
@@ -768,7 +768,7 @@ main.start.logwarning.title = Logwarning
 main.status.active = on
 main.status.inactive = off
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.packagemanager.downloadednewpackage.title2 = <p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>
 modules.packagemanager.packagename = JD-Update
 modules.reconnect.pleaseselect = Method:
@@ -823,7 +823,7 @@ plugins.host.enterlinkpassword = Please enter Linkpassword
 plugins.host.fastload.browsererror = Could not open the Link in Browser
 plugins.host.fastload.errors = Browserlauncher missconfigured
 plugins.host.fastload.info = You try to download for the very first time from fast-load.net.\r\nThis plugin has some specials: To download you have to enter a captcha in browser.\r\nJD will now open an info URL
-plugins.host.fastload.infourl = http://wiki.jdownloader.org?title=Fast-load.net
+
 plugins.host.fastload.prepare = Wait for linkconfirmation
 plugins.host.meinupload.serverdefect = Service not available
 plugins.host.premium.info.cash = Cash
@@ -899,7 +899,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Model? (e.g. Gigaset 55
 plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script creater
 plugins.optional.httpliveheaderscripter.gui.validate.error = Script not valid
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Script is Valid.
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugins.optional.infofilewriter.content = Content:
 plugins.optional.infofilewriter.filename = Filename:
@@ -1062,7 +1062,7 @@ plugins.optional.streamsharingtool.gui.savefile = Save List
 plugins.optional.streamsharingtool.gui.title = StreamShare Link Creator
 plugins.optional.streamsharingtool.name = StreamingShare Link-Generator
 plugins.optional.streamsharingtool.textarea.inittext = Insert your Links here
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Clipboard
 plugins.optional.trayicon.configuration = Configuration
 plugins.optional.trayicon.dnd = Drag'n Drop
@@ -1144,7 +1144,7 @@ system.download.errors.linkisblocked = Mirror %s is loading
 system.download.triggerfileexists = If the file already exists:
 system.download.triggerfileexists.overwrite = Overwrite
 system.download.triggerfileexists.skip = Skip Link
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Installing updates FAILED for this packages:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFO</a><br/>
 system.update.message.title = Update to version %s

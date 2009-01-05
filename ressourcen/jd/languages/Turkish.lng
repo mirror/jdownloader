@@ -168,7 +168,7 @@ gui.config.fengshui.expertview = Gelişmiş Yapılandırma
 gui.config.fengshui.fritzbox.title = Algılanan router: Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = Bu mesajı birdaha gösterme
 gui.config.fengshui.fritzbox.upnpactive = Fritz!Box routerınız var. Lütfen fritz!box'unuz için UPNP'yi etkinleştirin.
-gui.config.fengshui.fritzbox.upnpinactive = Fritz!Box'unuz için lütfen UPNP'yi etkinleştirin<br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Fritz!Box'unuz için lütfen UPNP'yi etkinleştirin<br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.fengshui.rdautomatic = Otomatik
 gui.config.fengshui.rdmanual = El İle
 gui.config.fengshui.rdname = Router Algılama:
@@ -216,7 +216,7 @@ gui.config.jac.column.use = Kullan
 gui.config.jac.status.auto = Otomatik Algılama
 gui.config.jac.status.noauto = El ile
 gui.config.jdrr.close = Kapat
-gui.config.jdrr.infolable = <span color=\"#4682B4\">Router'ın IP adresini girin ve başlata basın , Router'ın ana sayfası (ayarları) tarayıcınızda açılacak ,<br> bu sayfadan internete Tekrar Bağlanın. Daha fazla bilgi için </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">bakınız</a>
+gui.config.jdrr.infolable = <span color=\"#4682B4\">Router'ın IP adresini girin ve başlata basın , Router'ın ana sayfası (ayarları) tarayıcınızda açılacak ,<br> bu sayfadan internete Tekrar Bağlanın. Daha fazla bilgi için </span><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\">bakınız</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Tekrar Bağlan Başarısız?
 gui.config.jdrr.savereconnect = Tekrar Bağlan başarılı , şimdi kaydedilsin mi ?
@@ -262,7 +262,7 @@ gui.config.plugin.host.readagb = TOS'yi oku
 gui.config.plugin.optional.btn_opendir = Eklenti Klasörünü Aç
 gui.config.plugin.optional.btn_togglestatus = Açık/Kapalı
 gui.config.plugin.optional.forcedactive = %s eklentisi devre dışı bırakılamadı !
-gui.config.plugin.optional.link_help = http://jdownloader.org/page.php?id=122
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/start
 gui.config.plugin.optional.linktext_help = Yardım
 gui.config.plugin.optional.statusactive = Açık
 gui.config.plugin.optional.statusınactive = Kapalı
@@ -310,12 +310,12 @@ gui.config.unrar.thread = Çıkartmadan sonra indirmeye devam et
 gui.config.unrar.use_extractto = Buraya çıkart (seçilirse varsayılan indirme klasörüne çıkartmaz, kendiniz belirlersiniz)
 gui.config.unrar.use_subpath = Alt-dizin kullanılsın (indiği yerde x klasörü yaratır ve oraya çıkartır) x=paket adı
 gui.config.unrar.usehjmerge = HJ ile bölünmüş dosyaları oto-birleştir
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.chat = Sohbet
 gui.dialog.about.chaturl = http://jdownloader.org/support?&lng=tr
 gui.dialog.about.email = E-Posta
 gui.dialog.about.forum = Destek Forumları
-gui.dialog.about.forumurl = http://www.the-lounge.org/viewforum.php?f=389
+gui.dialog.about.forumurl = http://jdownloader.org/knowledge/forum
 gui.dialog.about.homepage = Ana Sayfa
 gui.dialog.about.homeurl = http://jdownloader.org/home?&lng=tr
 gui.dialog.about.jddevteam = JDownloader Geliştiren Takımı
@@ -366,8 +366,8 @@ gui.fengshuiconfig.routername = Router Adı
 gui.fengshuiconfig.routerpassword = Parola
 gui.fengshuiconfig.testsettings = Ayarları Test Et
 gui.fengshuiconfig.username = Kullanıcı Adı
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Java sürümünüz:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime sürümü</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Java sürümünüz:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime sürümü</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Yanlış Java sürümü
 gui.linkgrabber.bar.title = Bilgi Toplayıcı
 gui.linkgrabber.btn.accept = Paketi Ekle
@@ -608,7 +608,7 @@ gui.splash.text.webupdate = Güncellemeler Kontrol Ediliyor
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Mak.İnd
 gui.statusbar.speed = Hız
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
 gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=Kategorie:Turkish_Wiki
 gui.tab.plugin_activity.column_plugin = Modül
 gui.tab.plugin_activity.column_progress = İlerleme
@@ -730,7 +730,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">Dikkat! İşletim sistem
 interaction.simpleexecute.cmd = Komut
 interaction.simpleexecute.executein = Burda çalıştır (klasör)
 interaction.simpleexecute.extended = Gelişmiş ayarlar
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Program/Script yürüt
 interaction.simpleexecute.parameter = Parametre (her satır için tek parametre)
 interaction.simpleexecute.test = Şimdi çalıştır
@@ -769,7 +769,7 @@ interaction.trigger.single_download_failed = İndirme başarısız
 interaction.trigger.single_download_failed.desc = İndirme başarısız olduğunda yürüt
 interaction.unrar.name = Unrar
 jd.plugins.decrypt.bestmovies.captchaınputwrong = Yanlış girildi, Lütfen bu şekilde girin: 4:30
-jdownloader.localnewsurl = http://jdownloader.org/news?&lng=tr
+jdownloader.localnewsurl = http://jdownloader.org/news/index
 jdownloader.org = jDownloader.org
 linkinformation.available.error = Hata!
 linkinformation.download.aborted = Vazgeçildi
@@ -803,7 +803,7 @@ main.start.logwarning.title = Günlük Uyarısı
 main.status.active = Açık
 main.status.inactive = Kapalı
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.packagemanager.downloadednewpackage.title2 = <p>Güncellemeler yüklendi. JD'nin yeniden başlatılması gerek.<br/> Şimdi yeniden başlat?<hr>%s</p>
 modules.packagemanager.loadednewpackage.more = Daha çok bilgi & Kurulum notları
 modules.packagemanager.loadednewpackage.title = Paket güncellemesi yüklendi
@@ -864,7 +864,7 @@ plugins.host.enterlinkpassword = Link parolasını girin lütfen
 plugins.host.fastload.browsererror = Bu Link , tarayıcıda açılamadı.
 plugins.host.fastload.errors = Tarayıcı ayarlarınız yanlış.
 plugins.host.fastload.info = fast-load.net'den ilk defa indiriyorsunuz.\r\nBu takmabirim farklı çalışır:\r\nBurdan indirmek için captcha'yı tarayıcınızda girmelisiniz.\r\nJD şimdi info URL açacak.
-plugins.host.fastload.infourl = http://wiki.jdownloader.org?title=Fast-load.net
+
 plugins.host.fastload.prepare = Link onaylaması için bekle
 plugins.host.fastload.ticketmessage = Hızı 300kb/s ye çıkartmak için Fastload.net sürat bileti alın
 plugins.host.fastload.wait_ticketmessage = Sürat bileti için bekle
@@ -952,7 +952,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Model? (örn: Gigaset 5
 plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header betik yaratıcı
 plugins.optional.httpliveheaderscripter.gui.validate.error = Betik geçersiz
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Betik geçerli
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTP Live Header betikleme
 plugins.optional.infofilewriter.content = İçerik:
 plugins.optional.infofilewriter.filename = Dosya adı:
@@ -1126,7 +1126,7 @@ plugins.optional.streamsharingtool.gui.savefile = Listeyi Kaydet
 plugins.optional.streamsharingtool.gui.title = StreamShare Link Yaratıcı
 plugins.optional.streamsharingtool.name = StreamingShare Link-Üretici
 plugins.optional.streamsharingtool.textarea.inittext = Linklerinizi buraya yerleştirin
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayıcon.clipboard = Pano
 plugins.optional.trayıcon.configuration = Yapılandırma
 plugins.optional.trayıcon.dnd = Sürükle&Bırak
@@ -1209,7 +1209,7 @@ system.download.errors.linkisblocked = %s Ayna link zaten yükleniyor
 system.download.triggerfileexists = Eğer dosya zaten var ise:
 system.download.triggerfileexists.overwrite = Üstüne yaz
 system.download.triggerfileexists.skip = Atla
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Bu paketler için güncelleme başarısız :
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFO</a><br/>
 system.update.message.title = Bu sürüme güncellenmiş %s

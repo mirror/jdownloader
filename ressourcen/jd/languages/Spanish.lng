@@ -155,7 +155,7 @@ gui.config.fengshui.expertview = Configuración avanzada
 gui.config.fengshui.fritzbox.title = Router detectado: Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = Mostrar mensaje nunca más
 gui.config.fengshui.fritzbox.upnpactive = Tienes un router Fritz!Box. Por favor habilita UPNP para tu fritz!box.
-gui.config.fengshui.fritzbox.upnpinactive = Por favor habilita UPNP para tu fritz!box <br><a href="http://%s">Interfase web Fritz!Box</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Por favor habilita UPNP para tu fritz!box <br><a href="http://%s">Interfase web Fritz!Box</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.general.createsubfolders = Crear subfolder incluyendo nombre del paquete (si es posible)
 gui.config.general.downloaddirectory = Directorio de descarga
 gui.config.general.filelogger = Crear archivo de eventos en el directorio ./logs/
@@ -236,7 +236,7 @@ gui.config.plugin.host.name = Servidor de plugins
 gui.config.plugin.host.readagb = Leer TOS
 gui.config.plugin.optional.btn_opendir = Abrir directorio de addon
 gui.config.plugin.optional.btn_togglestatus = On/Off
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = Help
 gui.config.plugin.optional.statusactive = On
 gui.config.plugin.optional.statusinactive = Off
@@ -248,7 +248,7 @@ gui.config.routeripfinder.close = Cerrar ventana
 gui.config.routeripfinder.featchip = Detectando tu IP del router
 gui.config.routeripfinder.ready = IP encontrada: %s
 gui.config.showcontaineronloadinfo = Mostrar información detallada del contenedor al cargar
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.addons = Administrador de addon
 gui.config.tablables.containerplugin = Contenedores de link
 gui.config.tablables.decryptplugin = Desencriptador
@@ -271,7 +271,7 @@ gui.config.unrar.remove_infofile = Eliminar información del archivo despues de 
 gui.config.unrar.subpath = Subruta
 gui.config.unrar.use_extractto = Usar ruta de extracción personalizada
 gui.config.unrar.use_subpath = Usar subruta
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = Acerca de jDownloader
 gui.dialogs.agb_tos.agbaccepted = Acepto los términos del servicio
@@ -315,8 +315,8 @@ gui.fengshuiconfig.routername = Nombre del Router
 gui.fengshuiconfig.routerpassword = Contraseña
 gui.fengshuiconfig.testsettings = Comprobar Ajustes
 gui.fengshuiconfig.username = Nombre de usuario
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Usas una versión errónea de Java. Por favor usa Sun Java.¿Iniciar jDownloader de todas formas?<table width='100%%'><tr><th colspan='2'>Tu versión de Java:</th></tr><tr><th>Nombre</th><td>%s</td></tr><tr><th>Versión</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>Usas una versión errónea de Java. Por favor usa Sun Java.¿Iniciar jDownloader de todas formas?<table width='100%%'><tr><th colspan='2'>Tu versión de Java:</th></tr><tr><th>Nombre</th><td>%s</td></tr><tr><th>Versión</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Versión errónea de Java
 gui.linkgrabber.bar.title = Colector de información
 gui.linkgrabber.btn.accept = Aceptar paquete
@@ -550,8 +550,8 @@ gui.splash.text.webupdate = Comprobar actualizaciones
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Descargas Máx.
 gui.statusbar.speed = Velocidad
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.plugin_activity.column_plugin = Módulo
 gui.tab.plugin_activity.column_progress = Progreso
 gui.table.contextmenu.browselink = Abrir en el navegador
@@ -670,7 +670,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red"> ¡Atención! Tu sistema
 interaction.simpleexecute.cmd = Comando
 interaction.simpleexecute.executein = Ejecutar en (carpeta)
 interaction.simpleexecute.extended = Ajustes avanzados
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Ejecutar Programa/Script
 interaction.simpleexecute.parameter = Parámetro (1 parámetro por línea)
 interaction.simpleexecute.test = Ejecutar ahora
@@ -740,7 +740,7 @@ main.start.logwarning.title = Advertencia de registro
 main.status.active = on
 main.status.inactive = off
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.packagemanager.downloadednewpackage.title2 = <p>Actualizaciones cargadas. Se requiere un reinicio de jD<br/> ¿REINICIAR AHORA?<hr>%s</p>
 modules.packagemanager.loadednewpackage.more = Más información y notas de instalación
 modules.packagemanager.loadednewpackage.title = Paquete de actualización instalado
@@ -866,7 +866,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Modelo? (ejm. Gigaset 5
 plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script creater
 plugins.optional.httpliveheaderscripter.gui.validate.error = Script no valido
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Script Valido.
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugins.optional.infofilewriter.content = Contenido:
 plugins.optional.infofilewriter.filename = Nombre del archivo:
@@ -1007,7 +1007,7 @@ plugins.optional.streamsharingtool.gui.savefile = Save List
 plugins.optional.streamsharingtool.gui.title = StreamShare Link Creator
 plugins.optional.streamsharingtool.name = StreamingShare Link-Generator
 plugins.optional.streamsharingtool.textarea.inittext = Insert your Links here
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Portapapeles
 plugins.optional.trayicon.configuration = Configuración
 plugins.optional.trayicon.dnd = Arrastar y soltar
@@ -1087,7 +1087,7 @@ system.download.errors.linkisblocked = Cargando espejo %s
 system.download.triggerfileexists = si el archivo ya esxiste:
 system.download.triggerfileexists.overwrite = Sobrescribir
 system.download.triggerfileexists.skip = Saltar enlace
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Fallo al instalar actualizaciónes para este paquete:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFORMACIÓN</a><br/>
 system.update.message.title = Actualizado a versión %s

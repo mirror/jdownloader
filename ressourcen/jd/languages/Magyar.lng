@@ -155,7 +155,7 @@ gui.config.fengshui.expertview = Haladó Beállítások
 gui.config.fengshui.fritzbox.title = Router észlelése: Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = Ez az üzenet ne jelenjen meg újra!
 gui.config.fengshui.fritzbox.upnpactive = észlelte Fritz!Box router-t. Engedélyezned kell UPNP a fritz!box-ot.
-gui.config.fengshui.fritzbox.upnpinactive = Engedélyezned kell UPNP a fritz!box-ot. <br><a href="http://%s">to Fritz!Box Web interfész</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Engedélyezned kell UPNP a fritz!box-ot. <br><a href="http://%s">to Fritz!Box Web interfész</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.fengshui.rdautomatic = Automatikus
 gui.config.fengshui.rdmanual = Manuális
 gui.config.fengshui.rdname = Router keresés
@@ -244,7 +244,7 @@ gui.config.plugin.host.name = Szerver plugin
 gui.config.plugin.host.readagb = TOS írás
 gui.config.plugin.optional.btn_togglestatus = Be/Ki
 gui.config.plugin.optional.forcedactive = Ha az hozzáadja %set nem tud tiltani.
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = Segítség
 gui.config.plugin.optional.statusactive = Be
 gui.config.plugin.optional.statusinactive = Ki
@@ -256,7 +256,7 @@ gui.config.routeripfinder.close = Ablak bezárása
 gui.config.routeripfinder.featchip = Router-IP Keresése
 gui.config.routeripfinder.ready = IP Találat: %s
 gui.config.showcontaineronloadinfo = Dobozinformációk mutatása letöltéskor
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.addons = Frissítési menedzser
 gui.config.tablables.containerplugin = Készitők Linkjei
 gui.config.tablables.decryptplugin = Dekódolás
@@ -279,7 +279,7 @@ gui.config.unrar.subpath = Al útvonal
 gui.config.unrar.subpath_minnum = Egyetlen Al-útvonal használat ha az archívum többet tartalmaz mint x fájlok
 gui.config.unrar.use_extractto = Kivonati útvonal  használat szabott Al-útvonalra
 gui.config.unrar.use_subpath = Al-útvonal  használat
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.chat = Cset
 gui.dialog.about.email = Email
 gui.dialog.about.forum = Támogatási Tanács
@@ -331,8 +331,8 @@ gui.fengshuiconfig.routername = Router-Név
 gui.fengshuiconfig.routerpassword = Jelszó
 gui.fengshuiconfig.testsettings = Beállítások ellenőrzése
 gui.fengshuiconfig.username = Név
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Te egy hibás java verziót használsz. Használj egy eredeti Sun Javát. Utánna indítsd el újra a jDownloader-t!<table width='100%%'><tr><th colspan='2'>Your Java Verzió:</th></tr><tr><th>Futásidő Név</th><td>%s</td></tr><tr><th>Futásidő Verzió</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>Te egy hibás java verziót használsz. Használj egy eredeti Sun Javát. Utánna indítsd el újra a jDownloader-t!<table width='100%%'><tr><th colspan='2'>Your Java Verzió:</th></tr><tr><th>Futásidő Név</th><td>%s</td></tr><tr><th>Futásidő Verzió</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Hibás Java Verzió
 gui.linkgrabber.bar.title = információ gyűjtő
 gui.linkgrabber.btn.accept = Csomag elfogadása
@@ -558,7 +558,7 @@ gui.splash.text.webupdate = Frissítések ellenőrzése
 gui.statusbar.premium = Prémium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Sebesség
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
 gui.support.wikiurl = http://fonixportal.gepe.hu
 gui.tab.plugin_activity.column_plugin = Modul
 gui.tab.plugin_activity.column_progress = Haladás
@@ -678,7 +678,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">Vigyázat az Géped kika
 interaction.simpleexecute.cmd = Parancs
 interaction.simpleexecute.executein = Végrehajtási (mappa)
 interaction.simpleexecute.extended = Haladó beállítás
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Végrehajtás Program/Script
 interaction.simpleexecute.parameter = Paraméter(1 paraméter/vonal)
 interaction.simpleexecute.test = Végrehajtás most.
@@ -748,7 +748,7 @@ main.start.logwarning.title = Log Figyelmeztetés
 main.status.active = Be
 main.status.inactive = Ki
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.packagemanager.downloadednewpackage.title2 = <p>Frissítések betöltve. Program újraindítást igényel.<br/> Újraindítás most?<hr>%s</p>
 modules.packagemanager.packagename = JD-Frissítés
 modules.reconnect.pleaseselect = Módszer:
@@ -878,7 +878,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Model? (PL: Gigaset 555
 plugins.optional.httpliveheaderscripter.gui.title = HTTP fejléc irás készitő
 plugins.optional.httpliveheaderscripter.gui.validate.error = irás nem érvényes.
 plugins.optional.httpliveheaderscripter.gui.validate.ok = irás érvényes.
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTP  fejléc irás
 plugins.optional.infofilewriter.content = Tartalom:
 plugins.optional.infofilewriter.filename = Fájlnév:
@@ -1032,7 +1032,7 @@ plugins.optional.streamsharingtool.gui.savefile = Lista Mentése
 plugins.optional.streamsharingtool.gui.title = �?ramláselosztás Link készítés
 plugins.optional.streamsharingtool.name = �?ramláselosztás Link-Generátor
 plugins.optional.streamsharingtool.textarea.inittext = illeszd be a Linkedet itt.
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Vágólap
 plugins.optional.trayicon.configuration = Beállitások
 plugins.optional.trayicon.dnd = Húz és Dob
@@ -1112,7 +1112,7 @@ system.download.errors.linkisblocked = Tükör, amit %s betölt.
 system.download.triggerfileexists = Ha a fájl már létezik:
 system.download.triggerfileexists.overwrite = Felülírás
 system.download.triggerfileexists.skip = Atugrás
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Hibás telepítet frissítések csomagja:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFÓ</a><br/>
 system.update.message.title = Verzió Frissítés %s

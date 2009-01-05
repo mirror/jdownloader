@@ -155,7 +155,7 @@ gui.config.fengshui.expertview = Configuration avancée
 gui.config.fengshui.fritzbox.title = Routeur détecté: Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = Ne plus montrer ce message
 gui.config.fengshui.fritzbox.upnpactive = Vous avez un routeur Fritz!Box. Veuillez activer UPNP pour votre fritz!box.
-gui.config.fengshui.fritzbox.upnpinactive = Veuillez activer UPNP pour votre fritz!box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Veuillez activer UPNP pour votre fritz!box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.fengshui.rdautomatic = Automatique
 gui.config.fengshui.rdmanual = Manuel
 gui.config.fengshui.rdname = Détection d'un routeur
@@ -245,7 +245,7 @@ gui.config.plugin.host.readagb = Lire le TOS
 gui.config.plugin.optional.btn_opendir = Ouvrir le répertoire de l'Addon
 gui.config.plugin.optional.btn_togglestatus = En/Hors fonction
 gui.config.plugin.optional.forcedactive = Le greffon %s ne peut être désactivé
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = Aide
 gui.config.plugin.optional.statusactive = En fonction
 gui.config.plugin.optional.statusinactive = Hors fonction
@@ -257,7 +257,7 @@ gui.config.routeripfinder.close = Fermer la fenêtre
 gui.config.routeripfinder.featchip = Détection de l'IP du routeur
 gui.config.routeripfinder.ready = IP trouvé: %s
 gui.config.showcontaineronloadinfo = Montrer les informations détaillées du conteneur au chargement
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.addons = Gestionnaire des greffons
 gui.config.tablables.containerplugin = Liens des conteneurs
 gui.config.tablables.decryptplugin = Décryption
@@ -292,7 +292,7 @@ gui.config.unrar.thread = Continuer avec le téléchargement après extraction
 gui.config.unrar.use_extractto = Utiliser le chemin d'extraction indiqué
 gui.config.unrar.use_subpath = Utiliser un sous répertoire
 gui.config.unrar.usehjmerge = Relier les fichiers séparés HJ
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.chat = Clavardage
 gui.dialog.about.email = Courriel
 gui.dialog.about.forum = Forum de discussion
@@ -344,8 +344,8 @@ gui.fengshuiconfig.routername = Nom du routeur
 gui.fengshuiconfig.routerpassword = Mot de passe
 gui.fengshuiconfig.testsettings = Vérifier les paramètres
 gui.fengshuiconfig.username = Nom d'utilisateur
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Vous n'avez pas la bonne version de Java. Utiliser la version originale de Sun. Démarrer jDownloader tant bien même?<table width='100%%'><tr><th colspan='2'>Votre version de Java:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>Vous n'avez pas la bonne version de Java. Utiliser la version originale de Sun. Démarrer jDownloader tant bien même?<table width='100%%'><tr><th colspan='2'>Votre version de Java:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Mauvaise version de Java
 gui.linkgrabber.bar.title = Collecteur d'information
 gui.linkgrabber.btn.accept = Accepter un paquet
@@ -585,8 +585,8 @@ gui.splash.text.webupdate = Vérification des mises à jour
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Téléchar. Max.
 gui.statusbar.speed = Vitesse
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.plugin_activity.column_plugin = Module
 gui.tab.plugin_activity.column_progress = Progression
 gui.table.contextmenu.browselink = Ouvrir dans le navigateur
@@ -706,7 +706,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">Attention! Votre SE va s
 interaction.simpleexecute.cmd = Commande
 interaction.simpleexecute.executein = Exécuter dans le répertoire
 interaction.simpleexecute.extended = Paramètres avancés
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Exécuter Programme/Script
 interaction.simpleexecute.parameter = Paramètres (1 paramètre / ligne)
 interaction.simpleexecute.test = Exécuter maintenant
@@ -776,7 +776,7 @@ main.start.logwarning.title = Journal d'alerte
 main.status.active = En fonction
 main.status.inactive = Hors fonction
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.packagemanager.downloadednewpackage.title2 = <p> Mises à jour chargé. Un redémarrage de JD est nécessaire. <br/> Redémarrer maintenant? <hr>%s </p>
 modules.packagemanager.loadednewpackage.title = Mise à jour du paquet effectuée
 modules.packagemanager.packagename = JD-Mise à jour
@@ -911,7 +911,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Modèle? (e.g. Gigaset 
 plugins.optional.httpliveheaderscripter.gui.title = Createur de script HTTP Live Header
 plugins.optional.httpliveheaderscripter.gui.validate.error = Script non valide
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Le script est valide
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugins.optional.infofilewriter.content = Contenu:
 plugins.optional.infofilewriter.filename = Nom du fichier:
@@ -1065,7 +1065,7 @@ plugins.optional.streamsharingtool.gui.savefile = Enregistrer la liste
 plugins.optional.streamsharingtool.gui.title = Createur de lien StreamShare
 plugins.optional.streamsharingtool.name = Générateur de lien StreamShare
 plugins.optional.streamsharingtool.textarea.inittext = Insérez vos liens ici
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Presse Papier
 plugins.optional.trayicon.configuration = Configuration
 plugins.optional.trayicon.dnd = Glisser&Déposer
@@ -1145,7 +1145,7 @@ system.download.errors.linkisblocked = Miroir %s est en chargement
 system.download.triggerfileexists = Si le fichier existe déjà:
 system.download.triggerfileexists.overwrite = Écraser
 system.download.triggerfileexists.skip = Ignorer
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = L'installation des mises à jour a échoué pour ces paquets:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFO</a><br/>
 system.update.message.title = Mise à jour à la version %s

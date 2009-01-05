@@ -91,7 +91,7 @@ gui.config.captcha.ces.btn_messages = Показать сообщения
 gui.config.captcha.ces.btn_register = Зарегистрировать
 gui.config.captcha.ces.btn_sendmessages = Отправ. сообщение
 gui.config.captcha.ces.btn_stats = Моя статистика
-gui.config.captcha.ces.help = http://jdownloader.org/page.php?id=106
+gui.config.captcha.ces.help = http://jdownloader.org/knowledge/wiki/start
 gui.config.captcha.ces.pass = C.E.S. Пароль
 gui.config.captcha.ces.tab = Сервис обмена капчи
 gui.config.captcha.ces.user = C.E.S. Логин
@@ -288,7 +288,7 @@ gui.config.plugin.host.readagb = Читать ПС
 gui.config.plugin.optional.btn_opendir = Открыть папку расширений
 gui.config.plugin.optional.btn_settings = Настройки
 gui.config.plugin.optional.btn_togglestatus = Вкл./Выкл.
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = Справка
 gui.config.plugin.optional.name = Доп. плагины
 gui.config.plugin.optional.statusactive = Вкл.
@@ -304,7 +304,7 @@ gui.config.popup.title = Настройки
 gui.config.reconnect.name = Переподключение
 gui.config.reloadcontainer = Перезагрузить Download Container
 gui.config.showcontaineronloadinfo = Показывать полную инфу о контейнере при загрузке
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.containerplugin = Контейнеры ссылок
 gui.config.tablables.decryptplugin = Описание
 gui.config.tablables.download = Закачки/Сеть
@@ -345,7 +345,7 @@ gui.config.unrar.passwordlist.btn_save.name = Сохранить
 gui.config.unrar.thread = Продолжить загрузку после извлечения
 gui.config.unrar.usehjmerge = Объединить HJSplitfiles
 gui.config.webupdate.name = Автообновление
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = О программе
 gui.dialogs.agb_tos.agbaccepted = Я согласен с правилами
@@ -381,7 +381,7 @@ gui.droptarget.label = перетащите ссылки сюда
 gui.droptarget.title = Сборщик ссылок
 gui.helplocale.title = Support helps alot!
 gui.images.jd_logo = gui.images.jd_logo
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Вы используете неверную версию Java. Пользуйтесь настоящей Sun Java. Запустить jDownloader все равно?<table width='100%%'><tr><th colspan='2'>Ваша версия Jаv'ы:</th></tr><tr><th>Runtime название</th><td>%s</td></tr><tr><th>Runtime Версия</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>Вы используете неверную версию Java. Пользуйтесь настоящей Sun Java. Запустить jDownloader все равно?<table width='100%%'><tr><th colspan='2'>Ваша версия Jаv'ы:</th></tr><tr><th>Runtime название</th><td>%s</td></tr><tr><th>Runtime Версия</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Неверная версия Java
 gui.linkgrabber.bar.title = инфо о сборщике
 gui.linkgrabber.btn.accept = Принять пакет
@@ -604,8 +604,8 @@ gui.splash.text.update = Проверка обновлений
 gui.statusbar.premium = Премиум
 gui.statusbar.sim_ownloads = Макс.Dls.
 gui.statusbar.speed = Скорость
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.download.column_host = Хост
 gui.tab.download.column_index = NВє
 gui.tab.download.column_link = Файл
@@ -815,7 +815,7 @@ locale.lngs.swedish = Swedish
 main.start.logwarning.body = ВНИМАНИЕ. Ваш уровень журнала настроен на  %s и Запись журнала остановлена %s. Эти настройки рекомендуются только  для отладки.
 main.start.logwarning.title = Logwarning
 main.status.inactive = off
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.container.dlc.containerinfo = <div style="width:450px;font-family:Geneva, Arial, Helvetica, sans-serif; font-size: 9px;"><font color="#0066FF"><strong>DLContainer успешно загружен.</strong></font><br/><hr/><table style="width:450px"><tr><td>Создано</td><td>%s</td></tr><tr><td>Создано с помощью </td><td>%s</td></tr><tr><td>Пакеты </td><td>%s</td></tr><tr><td>Категория </td><td>%s</td></tr><tr ><td colspan="2">%s</td></tr></table></div>
 modules.container.dlc.loadedmessage = Контейнер сборщика ссылок загружен
 modules.packagemanager.loadednewpackage.title = Установка обновлений и расширений
@@ -864,7 +864,7 @@ plugins.hoster.rapidshare.com.concernspremiumuser = (*1) Премиум поль
 plugins.hoster.rapidshare.com.extendedtab = Дополнительные настройки
 plugins.hoster.rapidshare.com.freedownloadiflimitnotreached = Лимит халявной закачки не исчерпан
 plugins.hoster.rapidshare.com.happyhours = Проверка счастливых часов
-plugins.hoster.rapidshare.com.hhactive.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Активен до %s<br>Последняя проверка %s<br>Последний счастливый час был %s to %s</p></div></body>
+plugins.hoster.rapidshare.com.hhactive.html = <body><div><p style='text-align:center'><img src='http://jdownloader.org/img/hh.jpg' /><br>Активен до %s<br>Последняя проверка %s<br>Последний счастливый час был %s to %s</p></div></body>
 plugins.hoster.rapidshare.com.important = Важно!
 plugins.hoster.rapidshare.com.increasetickettime = Увеличение времени доступа (0%-500%)
 plugins.hoster.rapidshare.com.info.error = <div style='text-align:center; width:100%; height:100%; color:red;'><b>Аккаунт не найден</b></div>

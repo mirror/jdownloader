@@ -136,7 +136,7 @@ gui.config.popup.title = Configurace
 gui.config.reconnect.name = Reconnect
 gui.config.reloadcontainer = Naplnit Download uložiště
 gui.config.showcontaineronloadinfo = Zobrazit detailní informace o zaplnění uložiště
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.containerplugin = Odkazy Uložiště
 gui.config.tablables.decryptplugin = Dekódování
 gui.config.tablables.download = Stahování/Síť
@@ -178,7 +178,7 @@ gui.downloadlist.tooltip.simultan_downloads = Max. souběžných stahování:
 gui.droptarget.downloadsadded = Přidat sathování:
 gui.droptarget.label = Zde zadejte link
 gui.droptarget.title = Sběratel linků
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Špatná verze Java
 gui.linkgrabber.bar.title = Informace o souboru
 gui.linkgrabber.btn.accept = Akceptovat balíček
@@ -362,7 +362,7 @@ gui.splash.text.update = Kontrola aktualizací
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Rychlost
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
 gui.support.wikiurl = http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal_English
 gui.tab.plugin_activity.column_plugin = Modul
 gui.tab.plugin_activity.column_progress = Průběh

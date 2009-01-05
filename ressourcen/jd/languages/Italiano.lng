@@ -139,7 +139,7 @@ gui.config.fengshui.expertview = Configurazione avanzata
 gui.config.fengshui.fritzbox.title = Router rilevato: Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = Non visualizzare più questo messaggio
 gui.config.fengshui.fritzbox.upnpactive = Avete un router Fritz!Box. abilitate il UPNP nel vostro Fritz!box.
-gui.config.fengshui.fritzbox.upnpinactive = Abilitare l'UPNP nel vostro router Fritz!Box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Abilitare l'UPNP nel vostro router Fritz!Box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.general.createsubfolders = Crea sottocartella con il nome del file (se possibile)
 gui.config.general.downloaddirectory = Cartella download
 gui.config.general.filelogger = Crea file di log nella cartella ./logs/
@@ -203,7 +203,7 @@ gui.config.plugin.host.name = Server plugin
 gui.config.plugin.host.readagb = Leggi TOS
 gui.config.plugin.optional.btn_opendir = Apri cartella dei plugin
 gui.config.plugin.optional.btn_togglestatus = Si/no
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = Guida in linea
 gui.config.plugin.optional.statusactive = Si
 gui.config.plugin.optional.statusinactive = No
@@ -214,7 +214,7 @@ gui.config.routeripfinder = Ricerca IP router
 gui.config.routeripfinder.close = Chiudi finestra
 gui.config.routeripfinder.featchip = Rilevazione dell'IP del router
 gui.config.showcontaineronloadinfo = Mostra informazioni dettagliate al caricamento
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.addons = Gestore plugin
 gui.config.tablables.containerplugin = Contenitori link
 gui.config.tablables.decryptplugin = Decriptatore
@@ -241,7 +241,7 @@ gui.config.unrar.overwrite = Sovrascrivi i file esistenti
 gui.config.unrar.passwordlist = Lista password
 gui.config.unrar.thread = Procedi con il download dopo l'estrazione
 gui.config.unrar.usehjmerge = Unisci i file HJSplit
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = Informazioni su jDownloader
 gui.dialogs.agb_tos.agbaccepted = Accetto i termini del servizio
@@ -278,8 +278,8 @@ gui.fengshuiconfig.general.tooltip = <html>E' possibile impostare qui il percors
 gui.fengshuiconfig.languages.restartwarning = E' necessario riavviare jDownloader per modificare la lingua; riavviare ora jDownloader?
 gui.fengshuiconfig.plugin.host.tooltip = <html>Se disponete di un account Premium per uns erver potete inserire  qui<br> utente e password  e JD li userà automaticamente<br> se scaricherete i file da quel server
 gui.fengshuiconfig.reconnect.tooltip = <html>talvolta è necessario cambiare l'ip e riconnettersi per evitare i tempi di attesa!
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>State usando una versione di Java errata. Per cortesia installate una versione Java di Sun. Eseguire comunque jDownloader?<table width='100%%'><tr><th colspan='2'>La vostra versione Java:</th></tr><tr><th>Nome di esecuzione</th><td>%s</td></tr><tr><th>Versione di esecuzione</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>State usando una versione di Java errata. Per cortesia installate una versione Java di Sun. Eseguire comunque jDownloader?<table width='100%%'><tr><th colspan='2'>La vostra versione Java:</th></tr><tr><th>Nome di esecuzione</th><td>%s</td></tr><tr><th>Versione di esecuzione</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Versione errata Java
 gui.linkgrabber.bar.title = Informazioni collezione
 gui.linkgrabber.btn.accept = Accetta pacchetto
@@ -513,8 +513,8 @@ gui.splash.text.webupdate = Verifica aggiornamenti
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Down.
 gui.statusbar.speed = Velocità 
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=jDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.plugin_activity.column_plugin = Modulo
 gui.tab.plugin_activity.column_progress = Progresso
 gui.table.contextmenu.browselink = Apri nel browser
@@ -633,7 +633,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">Attenzione! Il sistema s
 interaction.simpleexecute.cmd = Comando
 interaction.simpleexecute.executein = Esegui in (cartella)
 interaction.simpleexecute.extended = Impostazioni Avanzate
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Esegui Programma/Codice
 interaction.simpleexecute.parameter = Parametro (1 parametro/linea)
 interaction.simpleexecute.test = Esegui ora
@@ -703,7 +703,7 @@ main.start.logwarning.body = ATTENZIONE: Il log è impostato a %s e il salvatagg
 main.start.logwarning.title = Log avvisi
 main.status.active = on
 main.status.inactive = off
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=jDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.container.dlc.containerinfo = <div style="width:450px;font-family:Geneva, Arial, Helvetica, sans-serif; font-size: 9px;"><font color="#0066FF"><strong>DLContainer caricato correttamente.</strong></font><br/><hr/><table style="width:450px"><tr><td>Creato da </td><td>%s</td></tr><tr><td>Creato con </td><td>%s</td></tr><tr><td>Pacchetti </td><td>%s</td></tr><tr><td>Categorie </td><td>%s</td></tr><tr ><td colspan="2">%s</td></tr></table></div>
 modules.container.dlc.loadedmessage = Caricato DownloadLinkContainer
 modules.packagemanager.downloadednewpackage.title2 = <p>Aggiornamenti caricati. E' necessario riavviare jDownloader.<br/> RIAVVIARE ORA?<hr>%s</p>
@@ -819,7 +819,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Modello? (es. Gigaset 5
 plugins.optional.httpliveheaderscripter.gui.title = Generatore codice LiveHeader HTTP
 plugins.optional.httpliveheaderscripter.gui.validate.error = Script non valido
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Script valido
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTP Live Header Scripter
 plugins.optional.infofilewriter.content = Contenuto:
 plugins.optional.infofilewriter.filename = Nome file:
@@ -933,7 +933,7 @@ plugins.optional.streamsharingtool.gui.savefile = Salva lista
 plugins.optional.streamsharingtool.gui.title = Creatore collegamento StreamShare
 plugins.optional.streamsharingtool.name = Generatore collegamento StreamingShare
 plugins.optional.streamsharingtool.textarea.inittext = Inserire qui il collegamento
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Memoria appunti
 plugins.optional.trayicon.configuration = Configurazione
 plugins.optional.trayicon.dnd = Trascinamento
@@ -1008,7 +1008,7 @@ system.download.errors.linkisblocked = Caricamento server mirror %s...
 system.download.triggerfileexists = Se il file esiste già :
 system.download.triggerfileexists.overwrite = Sovrascrivi
 system.download.triggerfileexists.skip = Salta collegamento
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Installazione aggiornamenti FALLITA per questo pacchetto:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFO</a><br/>
 system.update.message.title = Aggiornato a versione %s

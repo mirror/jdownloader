@@ -154,7 +154,7 @@ gui.config.fengshui.expertview = خيارات متقدمة
 gui.config.fengshui.fritzbox.title = إكتشاف الراوتر Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = لا تظهر هذه الرسالة ثانية
 gui.config.fengshui.fritzbox.upnpactive = لديك راوتر Fritz!Box .. برجاء تفعيل UPNP فى الراوتر Fritz!Box ..
-gui.config.fengshui.fritzbox.upnpinactive = برجاء تفعيل الـ UPNP فى الروتر Fritz!Box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = برجاء تفعيل الـ UPNP فى الروتر Fritz!Box <br><a href="http://%s">to Fritz!Box Webinterface</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.general.createsubfolders = إنشاء مجلد فرعى يحتوى على إسم الحزمة لو أمكن 
 gui.config.general.downloaddirectory = مجلد التحميلات
 gui.config.general.filelogger = إنشاء ملف سجل فى المجلد ./logs/
@@ -235,7 +235,7 @@ gui.config.plugin.host.name = برامج المضيف المساعدة
 gui.config.plugin.host.readagb = قراءة شروط الإستخدام 
 gui.config.plugin.optional.btn_opendir = فتح مجلد الملحقات
 gui.config.plugin.optional.btn_togglestatus = تفعيل/تعطيل
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = مساعدة
 gui.config.plugin.optional.statusactive = فعال
 gui.config.plugin.optional.statusinactive = معطل
@@ -247,7 +247,7 @@ gui.config.routeripfinder.close = إغلاق النافذة
 gui.config.routeripfinder.featchip = إكتشاف أى بى الراوتر الخص بك
 gui.config.routeripfinder.ready = التائج: %s
 gui.config.showcontaineronloadinfo = إظهار تفاصيل حاويات التحميل عند البدء
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/index
 gui.config.tablables.addons = منسق الملحقات
 gui.config.tablables.containerplugin = ربط الحافظات 
 gui.config.tablables.decryptplugin = فك التشفير
@@ -270,7 +270,7 @@ gui.config.unrar.remove_infofile = حذف ملف التفاصيل بعد نجا�
 gui.config.unrar.subpath = المسار الفرعى
 gui.config.unrar.use_extractto = إستخدم مسار مخصص لفك الضغط
 gui.config.unrar.use_subpath = إستخدم المسار الفرعى
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.sourceurl = http://service.jdownloader.org/html/about_en.html
 gui.dialog.about.title = عن JDownloader
 gui.dialogs.agb_tos.agbaccepted = موافق على كل شروط الإستخدام
@@ -314,8 +314,8 @@ gui.fengshuiconfig.routername = إسم الراوتر
 gui.fengshuiconfig.routerpassword = كلمة المرور
 gui.fengshuiconfig.testsettings = فحص الإعدادات
 gui.fengshuiconfig.username = إسم المستخدم
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>You useses a wrong Java version. Please use a original Sun Java. Start jDownloader anyway?<table width='100%%'><tr><th colspan='2'>Your Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = خطأ فى إصدارة الجافا
 gui.linkgrabber.bar.title = جامع البيانات
 gui.linkgrabber.btn.accept = تأكيد الحزمة
@@ -541,8 +541,8 @@ gui.splash.text.webupdate = مراجعة التحديثات
 gui.statusbar.premium = إشتراك
 gui.statusbar.sim_ownloads = عدد التحميلات فى نفس الوقت
 gui.statusbar.speed = السرعة
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.plugin_activity.column_plugin = الموديلات
 gui.tab.plugin_activity.column_progress = تقدم
 gui.table.contextmenu.browselink = فتح فى المتصفح
@@ -661,7 +661,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">تنبيه : جهازك 
 interaction.simpleexecute.cmd = الأمر
 interaction.simpleexecute.executein = بدء فى (المجلد)
 interaction.simpleexecute.extended = خيارات متقدمة
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = طلب برنامج أو سكربت
 interaction.simpleexecute.parameter = Parameter(1 parameter/line)
 interaction.simpleexecute.test = تنفيذ الآن
@@ -731,7 +731,7 @@ main.start.logwarning.title = التحذيرات
 main.status.active = on
 main.status.inactive = off
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.packagemanager.downloadednewpackage.title2 = <p>تم تثبيت التحديثات . يتوجب إعادة تشغيل البرنامج .<br/>إعادة تشغيل البرنامج الآن ؟<hr>%s</p>
 modules.packagemanager.loadednewpackage.more = More Information & Installnotes
 modules.packagemanager.loadednewpackage.title = تم تثبيت حزمة التحديث
@@ -856,7 +856,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = الموديل؟ (مث�
 plugins.optional.httpliveheaderscripter.gui.title = إنشاء سكربت HTTP Live Header
 plugins.optional.httpliveheaderscripter.gui.validate.error = السكربت غير صحيح
 plugins.optional.httpliveheaderscripter.gui.validate.ok = السكربت صحيح
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-scripter
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugins.optional.infofilewriter.content = Content:
 plugins.optional.infofilewriter.filename = إسم الملف:
@@ -997,7 +997,7 @@ plugins.optional.streamsharingtool.gui.savefile = حفظ القائمة
 plugins.optional.streamsharingtool.gui.title = StreamShare إنشاء رابط
 plugins.optional.streamsharingtool.name = StreamingShare مولد روابط
 plugins.optional.streamsharingtool.textarea.inittext = أدخل الروابط هنا
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = ذاكرة النصوص
 plugins.optional.trayicon.configuration = الإعدادات
 plugins.optional.trayicon.dnd = الجر و الإسقاط 
@@ -1077,7 +1077,7 @@ system.download.errors.linkisblocked = البدائل %s قيد التحميل
 system.download.triggerfileexists = لو كان الملف موجود مسبقا:
 system.download.triggerfileexists.overwrite = أستبدال
 system.download.triggerfileexists.skip = إلغاء التحميل
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Installing updates FAILED for this packages:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>معلومات</a><br/>
 system.update.message.title = تحديث إلى النسخة %s

@@ -277,7 +277,7 @@ gui.config.fengshui.expertview = Zaawansowana konfiguracja
 gui.config.fengshui.fritzbox.title = Wykryto Fritz!Box
 gui.config.fengshui.fritzbox.upnp.checkbox = Komunikacja niedostępna
 gui.config.fengshui.fritzbox.upnpactive = Posiadasz Fritz!Box. Istnieje możliwość nawiązywania ponownego połączenia przez UPnP. Czy chcesz użyć tej funkcji?
-gui.config.fengshui.fritzbox.upnpinactive = Proszę aktywować UPnP w Fritz!Boxie <br><a href=\"http://%s\">do Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Artykuł: Fritz!Box UPnP</a>
+gui.config.fengshui.fritzbox.upnpinactive = Proszę aktywować UPnP w Fritz!Boxie <br><a href=\"http://%s\">do Fritz!Box</a><br><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp\">Artykuł: Fritz!Box UPnP</a>
 gui.config.fengshui.password = Hasło:
 gui.config.fengshui.rdautomatic = Automatyczne
 gui.config.fengshui.rdmanual = Ręczne
@@ -398,7 +398,7 @@ gui.config.jac.name = jAntiCaptcha
 gui.config.jac.status.auto = Automatyczna detekcja
 gui.config.jac.status.noauto = Ustawienia ręczne
 gui.config.jdrr.close = Zamknij
-gui.config.jdrr.infolable = <span color=\"#4682B4\">Sprawdź adres IP routera, a następnie kliknij Start.<br>W przeglądarce otworzy się strona domowa konfiguracji routera<br>po naciśnięciu przycisku ponownego połączenia.<br>Więcej informacji </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">tutaj</a>.
+gui.config.jdrr.infolable = <span color=\"#4682B4\">Sprawdź adres IP routera, a następnie kliknij Start.<br>W przeglądarce otworzy się strona domowa konfiguracji routera<br>po naciśnięciu przycisku ponownego połączenia.<br>Więcej informacji </span><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\">tutaj</a>.
 gui.config.jdrr.popup.title = Nagrywanie akcji ponownego naw. poł.
 gui.config.jdrr.reconnectfaild = Rozłączanie nieudane
 gui.config.jdrr.savereconnect = Ponowne nawiązanie połączenia powiodło się. Czy chcesz zapisać akcję?
@@ -430,7 +430,7 @@ gui.config.liveheader.waittimeforipcheck = Interwał sprawdzania zmiany adresu I
 gui.config.liveheader.warning.experimental = Czy chcesz przetestować niestabilne eksperymentalne metody ponownego nawiązywania połączenia?\r\n Metody te mogą zmienić ustawienia Twojego routera.
 gui.config.liveheader.warning.nocurlconvert = JD nie może skonwertować skryptu CURL. Aby uzyskać pomoc, skontaktuj się z Ekipą Wsparcia Techniczjego JD!
 gui.config.liveheader.warning.notfound = JDownloader nie może wykryć ustawień twojego routera.
-gui.config.liveheader.warning.upnpinactive = Włącz obsługę Upnp w ustawieniach swojego routera.<br><a href=\"http://%s\">Do Rutera</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Router_Upnp\">Wiki: Upnp w routerze</a><br>Klknij OK, gdy Upnp zostanie włączone lub anuluj by przejść dalej!
+gui.config.liveheader.warning.upnpinactive = Włącz obsługę Upnp w ustawieniach swojego routera.<br><a href=\"http://%s\">Do Rutera</a><br><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/upnp\">Wiki: Upnp w routerze</a><br>Klknij OK, gdy Upnp zostanie włączone lub anuluj by przejść dalej!
 gui.config.liveheader.warning.wizard = Wyszukiwanie ustawień może chwilę potrwać. Wprowadź dane do logowania. Gotowe?
 gui.config.liveheader.warning.wizard.checkall = Wszytkie routery sprawdzono.
 gui.config.liveheader.warning.wizard.title = Czy chcesz uruchomić teraz wykrywanie routerów?
@@ -488,7 +488,7 @@ gui.config.plugin.optional.column_plugin = Plugin
 gui.config.plugin.optional.column_status = Status
 gui.config.plugin.optional.column_version = Wersja
 gui.config.plugin.optional.forcedactive = Wtyczka %s nie mogła zostać wyłączona.
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = Pomoc
 gui.config.plugin.optional.name = Opcjonalne wtyczki
 gui.config.plugin.optional.statusactive = Wł
@@ -570,7 +570,7 @@ gui.dialog.about.chat = Czat
 gui.dialog.about.chaturl = http://wiki.jdownloader.org/pl/knowledge/chat
 gui.dialog.about.email = Email
 gui.dialog.about.forum = Forum wsparcia technicznego
-gui.dialog.about.forumurl = http://www.the-lounge.org/viewforum.php?f=340
+gui.dialog.about.forumurl = http://jdownloader.org/knowledge/forum
 gui.dialog.about.homepage = Strona domowa
 gui.dialog.about.homeurl = http://www.jdownloader.org/pl/home/index
 gui.dialog.about.jddevteam = Twórcy JDownloadera
@@ -651,7 +651,7 @@ gui.frame.packageinfo.entrypackagesize = Rozmiar pakietu
 gui.frame.packageinfo.entrypassword = Hasło
 gui.helplocale.title = Wsparcie bardzo pomaga!
 gui.images.jd_logo = gui.images.jd_logo
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Używasz niewłaściwej wersji Javy. Najlepiej używać najnowszej wersji Javy firmy Sun. Czy mimo to chcesz spróbować uruchomić JDownloadera?<table width='100%%'><tr><th colspan='2'>Twoja wersja Javy:</th></tr><tr><th>Nazwa wykonawcza</th><td>%s</td></tr><tr><th>Wersja uruchomieniowa</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>Używasz niewłaściwej wersji Javy. Najlepiej używać najnowszej wersji Javy firmy Sun. Czy mimo to chcesz spróbować uruchomić JDownloadera?<table width='100%%'><tr><th colspan='2'>Twoja wersja Javy:</th></tr><tr><th>Nazwa wykonawcza</th><td>%s</td></tr><tr><th>Wersja uruchomieniowa</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Niewłaściwa wersja Javy
 gui.linkgrabber.bar.title = Zbieracz informacji
 gui.linkgrabber.btn.accept = Akceptuj link
@@ -960,7 +960,7 @@ gui.status.timeoutdetected = Czas upłynął
 gui.statusbar.premium = Konto Premium
 gui.statusbar.sim_ownloads = Pobieraj maks.
 gui.statusbar.speed = Prędkość
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=340
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
 gui.support.wikiurl = http://www.jdownloader.org/pl/knowledge/wiki/start
 gui.tab.download.column_host = Host
 gui.tab.download.column_index = ID
@@ -1150,7 +1150,7 @@ interaction.shutdown.name = Zamykanie systemu
 interaction.simpleexecute.cmd = Polecenie
 interaction.simpleexecute.executein = Wykonaj w (folder)
 interaction.simpleexecute.extended = Ustawienia zaawansowane
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Porgram/skryp, który ma być wykonany
 interaction.simpleexecute.parameter = Parametry (jeden na linię)
 interaction.simpleexecute.test = Uruchom teraz
@@ -1333,7 +1333,7 @@ plugins.host.fastload.browsererror = Nie udało się otworzyć linku w przegląd
 plugins.host.fastload.errors = Uruchamianie przeglądarki jest nieprawidłowo skonfigurowane
 plugins.host.fastload.getticketmsg = Zdobądź bilet do Fast-load!
 plugins.host.fastload.info = Pierwszy raz próbujesz pobrać z fast-load.net.\r\nTa wtyczka ma pewien dodatek: Aby zacząć pobieranie, trzeba wpisać kod Captcha w przeglądarce.\r\nJD otworzy teraz odpowiednią stronę WWW.
-plugins.host.fastload.infourl = http://wiki.jdownloader.org?title=Fast-load.net
+
 plugins.host.fastload.overload.long = Przeciążenie Fast-load.net! Pobieranie z pełną prędkością możliwe tylko przez przeglądarkę!
 plugins.host.fastload.overload.short = Przeciążenie Fast-load.net
 plugins.host.fastload.prepare = Zaczekaj na potwierdzenie linku
@@ -1480,7 +1480,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Model? (np. Gigaset 555
 plugins.optional.httpliveheaderscripter.gui.title = Edytor skryptów HTTP Live Header
 plugins.optional.httpliveheaderscripter.gui.validate.error = Skrypt niepoprawny.
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Skrypt poprawny.
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = Edytor skryptów HTTP Live Header
 plugins.optional.infofilewriter.content = Zawartość:
 plugins.optional.infofilewriter.filename = Nazwa pliku:
@@ -1674,7 +1674,7 @@ plugins.optional.streamsharingtool.gui.savefile = Zapisz listę
 plugins.optional.streamsharingtool.gui.title = Kreator linków StreamShare
 plugins.optional.streamsharingtool.name = Generator linków StreamShare
 plugins.optional.streamsharingtool.textarea.inittext = Wprowadź swoje linki
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Schowek
 plugins.optional.trayicon.configuration = Konfiguracja
 plugins.optional.trayicon.dnd = Przeciągnij i upuść

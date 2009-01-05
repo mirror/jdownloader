@@ -164,7 +164,7 @@ gui.config.fengshui.expertview = 進階設定
 gui.config.fengshui.fritzbox.title = 偵測到分享器/路由器
 gui.config.fengshui.fritzbox.upnp.checkbox = 不再次顯示訊息
 gui.config.fengshui.fritzbox.upnpactive = 偵測到您的分享器/路由器有支援UPnP. 請開啟 UPnP 設定.
-gui.config.fengshui.fritzbox.upnpinactive = 請在您的分享器/路由器中開啟 UPnP 設定 <br><a href="http://%s">to Fritz!Box 網頁介面</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wiki: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = 請在您的分享器/路由器中開啟 UPnP 設定 <br><a href="http://%s">to Fritz!Box 網頁介面</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wiki: Fritz!Box Upnp</a>
 gui.config.fengshui.rdautomatic = 自動
 gui.config.fengshui.rdmanual = 手動
 gui.config.fengshui.rdname = 偵測
@@ -251,7 +251,7 @@ gui.config.plugin.host.desc = 注意!!\r\njD團隊不負責主機的TOS的條約
 gui.config.plugin.host.name = 主機插件
 gui.config.plugin.host.readagb = 閱讀 TOS
 gui.config.plugin.optional.forcedactive = 插件 %s 無法關閉.
-gui.config.plugin.optional.link_help = http://www.wiki.jdownloader.org/index.php?title=Uninstalling_Add-ons
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/addons/uninstall
 gui.config.plugin.optional.linktext_help = 幫助
 gui.config.popup.title = 設定
 gui.config.reconnect.name = 重新連線
@@ -263,7 +263,7 @@ log.msg = <b>為了使[自動偵測分享器/路由器和重新連接]之功能�
 gui.config.routeripfinder.featchip = 偵測分享器/路由器 IP
 gui.config.routeripfinder.ready = IP 找到: %s
 gui.config.showcontaineronloadinfo = 讀取時，顯示詳細的視窗訊息!
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.addons = 插件管理器
 gui.config.tablables.containerplugin = 連結裝置
 gui.config.tablables.decryptplugin = 解密
@@ -286,7 +286,7 @@ gui.config.unrar.subpath = 次層目錄路徑
 gui.config.unrar.subpath_minnum = 僅在當檔案數量超過X數量時，使用次層目錄路徑!
 gui.config.unrar.use_extractto = 使用自訂解壓縮路徑
 gui.config.unrar.use_subpath = 使用次層目錄路徑
-gui.configdialog.wikilink.theconfigurationmenu = http://wiki.jdownloader.org/index.php?title=Konfig_en:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.chat = 聊天
 gui.dialog.about.email = Email
 gui.dialog.about.forum = 求助的論壇
@@ -339,8 +339,8 @@ gui.fengshuiconfig.routername = 名稱
 gui.fengshuiconfig.routerpassword = 密碼
 gui.fengshuiconfig.testsettings = 檢查設定
 gui.fengshuiconfig.username = 帳號
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>你使用了錯誤的 Java 版本. 請使用原始的 Sun Java. 無論如何都要啟動 jDownloader 嗎?<table width='100%%'><tr><th colspan='2'>你的 Java 版本:</th></tr><tr><th>Runtime 名稱</th><td>%s</td></tr><tr><th>Runtime 版本</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>你使用了錯誤的 Java 版本. 請使用原始的 Sun Java. 無論如何都要啟動 jDownloader 嗎?<table width='100%%'><tr><th colspan='2'>你的 Java 版本:</th></tr><tr><th>Runtime 名稱</th><td>%s</td></tr><tr><th>Runtime 版本</th><td>%s</td></tr></table></div>
 gui.javacheck.title = 錯誤的 Java 版本
 gui.linkgrabber.bar.title = 收集訊息
 gui.linkgrabber.btn.accept = 同意任務
@@ -566,8 +566,8 @@ gui.splash.text.webupdate = 檢查更新
 gui.statusbar.premium = 白金帳號
 gui.statusbar.sim_ownloads = 最大下載數
 gui.statusbar.speed = 速度
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.plugin_activity.column_plugin = 模組
 gui.tab.plugin_activity.column_progress = 進度
 gui.table.contextmenu.browselink = 在瀏覽器中開啟
@@ -686,7 +686,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">注意! 你的作業系�
 interaction.simpleexecute.cmd = 命令
 interaction.simpleexecute.executein = 執行中 (資料夾)
 interaction.simpleexecute.extended = 進階設定
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = 執行程式/腳本
 interaction.simpleexecute.parameter = 參數(1 行1組參數)
 interaction.simpleexecute.test = 現在執行
@@ -724,7 +724,7 @@ interaction.trigger.package_finished.desc = 在任務完成後執行
 interaction.trigger.single_download_failed = 下載失敗
 interaction.trigger.single_download_failed.desc = 在下載失敗後執行
 jd.plugins.decrypt.bestmovies.captchainputwrong = 輸入錯誤，請輸入時間(例: 4:30):
-jdownloader.localnewsurl = http://jdownloader.org/news?lng=en
+jdownloader.localnewsurl = http://jdownloader.org/news/index
 jdownloader.org = jDownloader.org
 linkinformation.available.error = 錯誤!
 linkinformation.download.aborted = 中止
@@ -758,7 +758,7 @@ main.start.logwarning.title = 日誌警告中
 main.status.active = 開
 main.status.inactive = 關
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+main.urls.faq = http://jdownloader.org/knowledge/wiki/start
 modules.packagemanager.downloadednewpackage.title2 = <p>更新已載入. JD 需要重新啟動.<br/> 現在要重新啟動嗎?<hr>%s</p>
 modules.packagemanager.packagename = JD-更新
 modules.reconnect.pleaseselect = 程序:
@@ -813,7 +813,7 @@ plugins.host.enterlinkpassword = 請輸入連結密碼
 plugins.host.fastload.browsererror = 無法在瀏覽器中開啟連結
 plugins.host.fastload.errors = 瀏覽器，已遺失設定!
 plugins.host.fastload.info = 你第一次試著從 fast-load.net 下載.\r\n這個插件有一些特別: 需要從瀏覽器輸入驗證碼.\r\nJD 現在將幫你打開網址
-plugins.host.fastload.infourl = http://wiki.jdownloader.org?title=Fast-load.net
+
 plugins.host.fastload.prepare = 等待確認連結
 plugins.host.meinupload.serverdefect = 伺服器無法使用
 plugins.host.premium.info.cash = 現金
@@ -889,7 +889,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = 型號? (e.g. Gigaset 5
 plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header 腳本產生器
 plugins.optional.httpliveheaderscripter.gui.validate.error = 腳本無效
 plugins.optional.httpliveheaderscripter.gui.validate.ok = 腳本有效.
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugins.optional.infofilewriter.content = 內容:
 plugins.optional.infofilewriter.filename = 檔案名稱:
@@ -1053,7 +1053,7 @@ plugins.optional.streamsharingtool.gui.savefile = 儲存清單
 plugins.optional.streamsharingtool.gui.title = 批次下載
 plugins.optional.streamsharingtool.name = 批次分享連結產生器
 plugins.optional.streamsharingtool.textarea.inittext = 這裡插入連結
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = 剪貼簿
 plugins.optional.trayicon.configuration = 設定
 plugins.optional.trayicon.dnd = 拖放
@@ -1133,7 +1133,7 @@ system.download.errors.linkisblocked = 鏡像 %s 讀取中
 system.download.triggerfileexists = 如果檔案已經存在:
 system.download.triggerfileexists.overwrite = 覆寫
 system.download.triggerfileexists.skip = 略過連結
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = 這次升級失敗:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>詳細資料</a><br/>
 system.update.message.title = 更新版本 %s

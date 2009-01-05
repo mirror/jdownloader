@@ -265,7 +265,7 @@ gui.config.fengshui.expertview = Geavanceerde Configutatie
 gui.config.fengshui.fritzbox.title = Fritz!Box herkent
 gui.config.fengshui.fritzbox.upnp.checkbox = Bericht niet meer tonen
 gui.config.fengshui.fritzbox.upnpactive = U heeft geen Fritz!Box
-gui.config.fengshui.fritzbox.upnpinactive = Gelieve Upnp activeren voor uw Fritz!Box <br><a href=\"http://%s\">naar Fritz!Box</a><br><a href=\"http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp\">Wikiartikel: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Gelieve Upnp activeren voor uw Fritz!Box <br><a href=\"http://%s\">naar Fritz!Box</a><br><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp\">Wikiartikel: Fritz!Box Upnp</a>
 gui.config.fengshui.password = Paswoord:
 gui.config.fengshui.rdautomatic = Automatisch
 gui.config.fengshui.rdmanual = Manueel
@@ -469,7 +469,7 @@ gui.config.plugin.optional.column_plugin = Plugin
 gui.config.plugin.optional.column_status = Status
 gui.config.plugin.optional.column_version = Versie
 gui.config.plugin.optional.forcedactive = De add-on %s kan niet worden gedeactiveerd.
-gui.config.plugin.optional.link_help = http://jdownloader.org/page.php?id=122
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/start
 gui.config.plugin.optional.linktext_help = Help
 gui.config.plugin.optional.name = Optional Plugins
 gui.config.plugin.optional.statusactive = Aan
@@ -616,7 +616,7 @@ gui.fengshuiconfig.routername = Routernaam
 gui.fengshuiconfig.routerpassword = Paswoord
 gui.fengshuiconfig.testsettings = Instellingen testen
 gui.fengshuiconfig.username = Gebruikersnaam
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
 gui.frame.packageinfo.entrycomment = Commentaar
 gui.frame.packageinfo.entrydldirectory = Downloadmap
 gui.frame.packageinfo.entrylinks = Links
@@ -626,7 +626,7 @@ gui.frame.packageinfo.entrypackagesize = Pakketgrootte
 gui.frame.packageinfo.entrypassword = Paswoord
 gui.helplocale.title = Support helpt veel!
 gui.images.jd_logo = gui.images.jd_logo
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>U gebruikt een verkeerde versie van Java. Gebruik het origineel van Sun Java.  jDownloader toch starten?<table width='100%%'><tr><th colspan='2'>Uw Java Versie:</th></tr><tr><th>Runtime Naam</th><td>%s</td></tr><tr><th>Runtime Versie</th><td>%s</td></tr></table></div>
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>U gebruikt een verkeerde versie van Java. Gebruik het origineel van Sun Java.  jDownloader toch starten?<table width='100%%'><tr><th colspan='2'>Uw Java Versie:</th></tr><tr><th>Runtime Naam</th><td>%s</td></tr><tr><th>Runtime Versie</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Verkeerde Java Version
 gui.linkgrabber.bar.title = Infoverzamelaar
 gui.linkgrabber.btn.accept = Pakket overnemen
@@ -939,8 +939,8 @@ gui.status.timeoutdetected = Timeout
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Snelh.
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
+gui.support.wikiurl = http://jdownloader.org/knowledge/wiki/start
 gui.tab.download.column_host = Host
 gui.tab.download.column_index = Nº
 gui.tab.download.column_link = Bestand
@@ -1450,7 +1450,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Model (z.B. Gigaset 555
 plugins.optional.httpliveheaderscripter.gui.title = HTTP Live Header Script creater
 plugins.optional.httpliveheaderscripter.gui.validate.error = Skript is niet correct
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Skript is geldig
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugins.optional.infofilewriter.content = Inhoud:
 plugins.optional.infofilewriter.filename = Bestandsnaam:
@@ -1631,7 +1631,7 @@ plugins.optional.streamsharingtool.gui.savefile = Bewaar Lijst
 plugins.optional.streamsharingtool.gui.title = StreamShare Link Creator
 plugins.optional.streamsharingtool.name = StreamingShare Link-Generator
 plugins.optional.streamsharingtool.textarea.inittext = Voeg uw links hier in
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Klembord
 plugins.optional.trayicon.configuration = Configuratie
 plugins.optional.trayicon.dnd = Drag'n Drop
@@ -1751,7 +1751,7 @@ system.download.errors.linkisblocked = Data word al van %s geladen
 system.download.triggerfileexists = Wanneer een bestand reeds bestaat:
 system.download.triggerfileexists.overwrite = Bestand overschrijven
 system.download.triggerfileexists.skip = Link conroleren
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Installatie van volgende Pakketten is fout gelopen:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFO</a><br/>
 system.update.message.title = Update naar Versie %s

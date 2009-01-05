@@ -116,7 +116,7 @@ gui.config.btn_fengshui = Vereinfachte Ansicht
 gui.config.btn_restart = Speichern und neu starten
 gui.config.captcha.jac_disable = Automatische Bilderkennung abschalten
 gui.config.captcha.train.level = Anzeigeschwelle
-gui.config.captcha.train.level.instanthelp = http://jdownloader.org/page.php?id=3
+gui.config.captcha.train.level.instanthelp = http://jdownloader.org/knowledge/wiki/start
 gui.config.captcha.train.show_timeout = Anzeigedauer des Eingabefensters
 gui.config.clr.script = CLR Script
 gui.config.download.autoresume = Reconnect darf weiterführbare Downloads unterbrechen
@@ -161,7 +161,7 @@ gui.config.fengshui.expertview = Erweiterte Ansicht
 gui.config.fengshui.fritzbox.title = Fritz!Box erkannt
 gui.config.fengshui.fritzbox.upnp.checkbox = Mitteilung nicht mehr zeigen
 gui.config.fengshui.fritzbox.upnpactive = Sie haben eine Fritz!Box, der Reconnect läuft über Upnp.<br> Sie brauchen keinen Reconnecteinstellungen zu tätigen.
-gui.config.fengshui.fritzbox.upnpinactive = Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href="http://%s">zur Fritz!Box</a><br><a href="http://wiki.jdownloader.org/index.php?title=Fritz!Box_Upnp">Wikiartikel: Fritz!Box Upnp</a>
+gui.config.fengshui.fritzbox.upnpinactive = Bitte aktivieren sie Upnp bei ihrer Fritz!Box <br><a href="http://%s">zur Fritz!Box</a><br><a href="http://jdownloader.org/knowledge/wiki/reconnect/FritzBox_Upnp">Wikiartikel: Fritz!Box Upnp</a>
 gui.config.fengshui.rdautomatic = Automatisch
 gui.config.fengshui.rdmanual = Manuell
 gui.config.fengshui.rdname = Router-Erkennung
@@ -208,7 +208,7 @@ gui.config.jac.column.use = Verwenden
 gui.config.jac.status.auto = Automatische Erkennung
 gui.config.jac.status.noauto = Manuelle Eingabe
 gui.config.jdrr.close = Schließen
-gui.config.jdrr.infolable = <span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://wiki.jdownloader.org/index.php?title=Recorder\">hier</a>
+gui.config.jdrr.infolable = <span color=\"#4682B4\">Überprüfe die IP-Adresse des Routers und drück auf Start,<br>ein Browserfenster mit der Startseite des Routers öffnet sich,<br>nach dem Reconnect drückst du auf Stop und speicherst.<br>Mehr Informationen gibt es </span><a href=\"http://jdownloader.org/knowledge/wiki/reconnect/reconnect-recorder\">hier</a>
 gui.config.jdrr.popup.title = JDRRPopup
 gui.config.jdrr.reconnectfaild = Reconnect fehlgeschlagen
 gui.config.jdrr.savereconnect = Der Reconnect war erfolgreich möchten sie jetzt speichern?
@@ -251,7 +251,7 @@ gui.config.plugin.host.desc = ACHTUNG!!! Das JD Team übernimmt keine Verantwort
 gui.config.plugin.host.name = Host Plugins
 gui.config.plugin.host.readagb = AGB
 gui.config.plugin.optional.forcedactive = Das Addon %s kann nicht abgeschaltet werden.
-gui.config.plugin.optional.link_help = http://jdownloader.org/page.php?id=122
+gui.config.plugin.optional.link_help = http://jdownloader.org/knowledge/wiki/start
 gui.config.plugin.optional.linktext_help = Hilfe
 gui.config.popup.title = Konfiguration
 gui.config.reconnect.name = Reconnect
@@ -261,7 +261,7 @@ gui.config.routeripfinder.close = Fenster schließen
 gui.config.routeripfinder.featchip = Suche nach Router IP...
 gui.config.routeripfinder.ready = IP gefunden: %s
 gui.config.showcontaineronloadinfo = Detailierte Containerinformationen beim Öffnen anzeigen
-gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/page.php?id=102
+gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/knowledge/wiki/start
 gui.config.tablables.addons = Addon-Manager
 gui.config.tablables.containerplugin = Link-Container
 gui.config.tablables.decryptplugin = Decrypter Plugins
@@ -337,8 +337,8 @@ gui.fengshuiconfig.routername = Routername
 gui.fengshuiconfig.routerpassword = Passwort
 gui.fengshuiconfig.testsettings = Einstellungen testen
 gui.fengshuiconfig.username = Benutzername
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
-gui.javacheck.html = <link href='http://jdownloader.org/jdcss.css' rel='stylesheet' type='text/css' /><div style='width:534px;height;200px'><h2>Sie verwenden eine falsche Javaversion. Bitte das original Sun-Java verwenden. JDownloader trotzdem starten?<table width='100%%'><tr><th colspan='2'>Ihre Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
+gui.fengshuiconfig.wikiurl = http://jdownloader.org/knowledge/wiki/gui/configuration/feng-shui-config
+gui.javacheck.html = <div style='width:534px;height;200px'><h2>Sie verwenden eine falsche Javaversion. Bitte das original Sun-Java verwenden. JDownloader trotzdem starten?<table width='100%%'><tr><th colspan='2'>Ihre Java Version:</th></tr><tr><th>Runtime Name</th><td>%s</td></tr><tr><th>Runtime Version</th><td>%s</td></tr></table></div>
 gui.javacheck.title = Falsche Javaversion
 gui.linkgrabber.bar.title = Infosammler
 gui.linkgrabber.btn.accept = Paket übernehmen
@@ -556,7 +556,7 @@ gui.splash.text.webupdate = Prüfe auf Updates
 gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Geschw.
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
+gui.support.forumurl = http://jdownloader.org/knowledge/forum
 gui.support.wikiurl = http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal_English
 gui.tab.plugin_activity.column_plugin = Module
 gui.tab.plugin_activity.column_progress = Fortschritt
@@ -675,7 +675,7 @@ interaction.shutdown.dialog.msg = <h2><font color="red">Achtung Ihr Betriebssyst
 interaction.simpleexecute.cmd = Befehl
 interaction.simpleexecute.executein = Ausführen in (Ordner)
 interaction.simpleexecute.extended = Erweiterte Einstellungen
-interaction.simpleexecute.helplink = http://jdownloader.org/page.php?id=119
+interaction.simpleexecute.helplink = http://jdownloader.org/knowledge/wiki/start
 interaction.simpleexecute.name = Programm/Script ausführen
 interaction.simpleexecute.parameter = Parameter (1 Parameter pro Zeile)
 interaction.simpleexecute.test = Jetzt ausführen
@@ -874,7 +874,7 @@ plugins.optional.httpliveheaderscripter.gui.save.model = Modell (z.B. Gigaset 55
 plugins.optional.httpliveheaderscripter.gui.title = HTTP LiveHeader Skript Ersteller
 plugins.optional.httpliveheaderscripter.gui.validate.error = Skript nicht korrekt
 plugins.optional.httpliveheaderscripter.gui.validate.ok = Skript ist gültig
-plugins.optional.httpliveheaderscripter.gui.wikilink = http://wiki.jdownloader.org/index.php?title=HTTPLiveHeader_reconnect_Script_erstellen
+plugins.optional.httpliveheaderscripter.gui.wikilink = http://jdownloader.org/knowledge/wiki/addons/jd-liveheader-reconnect-scripter
 plugins.optional.httpliveheaderscripter.name = HTTPLiveHeaderScripter
 plugins.optional.infofilewriter.content = Inhalt:
 plugins.optional.infofilewriter.filename = Dateiname:
@@ -1034,7 +1034,7 @@ plugins.optional.streamsharingtool.gui.savefile = Liste speichern
 plugins.optional.streamsharingtool.gui.title = StreamShare Link Ersteller
 plugins.optional.streamsharingtool.name = StreamingShare Link-Generator
 plugins.optional.streamsharingtool.textarea.inittext = Links hier einfügen
-plugins.optional.streamsharingtool.wikiurl = http://wiki.jdownloader.org/index.php?title=StreamingShare
+plugins.optional.streamsharingtool.wikiurl = http://jdownloader.org/knowledge/wiki/addons/streamingshare
 plugins.optional.trayicon.clipboard = Zwischenablage
 plugins.optional.trayicon.configuration = Konfiguration
 plugins.optional.trayicon.dnd = Drag'n Drop
@@ -1115,7 +1115,7 @@ system.download.errors.linkisblocked = Datei wird schon von %s geladen
 system.download.triggerfileexists = Wenn eine Datei schon vorhanden ist:
 system.download.triggerfileexists.overwrite = Datei überschreiben
 system.download.triggerfileexists.skip = Link überspringen
-system.update.changelogurl = http://jdownloader.org/changes?toolmode=1
+system.update.changelogurl = http://jdownloader.org/changes/index
 system.update.error.message = Installation der folgende Pakete fehlgeschlagen:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFO</a><br/>
 system.update.message.title = Update zur Version %s
