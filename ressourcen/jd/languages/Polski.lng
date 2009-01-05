@@ -641,7 +641,7 @@ gui.fengshuiconfig.routername = Router
 gui.fengshuiconfig.routerpassword = Hasło
 gui.fengshuiconfig.testsettings = Test ustawień
 gui.fengshuiconfig.username = Nazwa użytkownika
-gui.fengshuiconfig.wikiurl = http://wiki.jdownloader.org/index.php?title=DE:fengshui:
+gui.fengshuiconfig.wikiurl = http://www.jdownloader.org/pl/knowledge/wiki/gui/configuration/feng-shui-config
 gui.frame.packageinfo.entrycomment = Komentarz
 gui.frame.packageinfo.entrydldirectory = Katalog pobierania
 gui.frame.packageinfo.entrylinks = Linki
@@ -960,8 +960,8 @@ gui.status.timeoutdetected = Czas upłynął
 gui.statusbar.premium = Konto Premium
 gui.statusbar.sim_ownloads = Pobieraj maks.
 gui.statusbar.speed = Prędkość
-gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=291
-gui.support.wikiurl = http://wiki.jdownloader.org/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.forumurl = http://www.the-lounge.org/viewforum.php?f=340
+gui.support.wikiurl = http://www.jdownloader.org/pl/knowledge/wiki/start
 gui.tab.download.column_host = Host
 gui.tab.download.column_index = ID
 gui.tab.download.column_link = Link
@@ -1203,7 +1203,7 @@ jac.ces.login.pass = Hasło:
 jac.ces.login.title = CaptchaExchangeServer Login
 jac.ces.login.user = Nazwa użytkownika:
 jd.plugins.decrypt.bestmovies.captchainputwrong = Niepoprawny format. Czas powinien wyglądać tak: 4:30
-jdownloader.localnewsurl = http://jdownloader.org/news?lng=pl
+jdownloader.localnewsurl = http://www.jdownloader.org/pl/news/index
 jdownloader.org = JDownloader.org
 linkinformation.available.error = Błąd!
 linkinformation.available.name = Dostępny
@@ -1254,7 +1254,7 @@ main.start.logwarning.title = Ostrzeżenie
 main.status.active = aktywny
 main.status.inactive = nieaktywny
 main.twitter.url = http://twitter.com/statuses/user_timeline/jdownloader.xml
-main.urls.faq = http://jdownloader.org/faq.php?lng=polish
+main.urls.faq = http://www.jdownloader.org/pl/knowledge/wiki/start
 modules.container.dlc.containerinfo = <div style="width:450px;font-family:Geneva, Arial, Helvetica, sans-serif; font-size: 9px;"><font color="#0066FF"><strong>Pojemnik DLC załadowany pomyślnie.</strong></font><br/><hr/><table style="width:450px"><tr><td>Utworzony z </td><td>%s</td></tr><tr><td>Utworzony z </td><td>%s</td></tr><tr><td>Pakiety </td><td>%s</td></tr><tr><td>Kategoria </td><td>%s</td></tr><tr ><td colspan="2">%s</td></tr></table></div>
 modules.container.dlc.loadedmessage = Pojemnik Linków Pobierania załadowany
 modules.packagemanager.downloadednewpackage.title2 = <p>Aktualizacje zostały pobrane. Potrzebne jest ponowne uruchomienie JD.<br/> Czy chcesz zrobić to teraz?<hr>%s</p>
