@@ -32,7 +32,7 @@ public class GetExplorer {
         if (OSDetector.isWindows()) {
             return new Object[] { "Explorer", "explorer", new String[] { "%%path%%" } };
         } else if (OSDetector.isMac()) {
-            return new Object[] { "Open", "open", new String[] { "'%%path%%'" } };
+            return new Object[] { "Open", "/usr/bin/open", new String[] { "%%path%%" } };
         } else {
             Object[][] programms = new Object[][] { { "dolphin", new String[] { "%%path%%" } }, { "konqueror", new String[] { "%%path%%" } }, { "nautilus", new String[] { "--browser", "--no-desktop", "%%path%%" } } };
             try {
@@ -84,11 +84,11 @@ public class GetExplorer {
             String[] finalParams = new String[paramsArray.length];
 
             for (int i = 0; i < paramsArray.length; i++) {
-
+                
                 finalParams[i] = paramsArray[i].replace("%%path%%", spath);
-
+                
             }
-
+         
             JDUtilities.runCommand((String) explorer[1], finalParams, null, 0);
 
             return true;
