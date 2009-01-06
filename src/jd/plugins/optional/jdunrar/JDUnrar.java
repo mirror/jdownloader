@@ -807,11 +807,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         return found;
     }
 
-    private void chmodLinuxUnrar() {
+    private void chmodUnrar(String path) {
         Executer exec = new Executer("chmod");
         exec.addParameter("+x");
         exec.addParameter("unrar");
-        exec.setRunin(JDUtilities.getResourceFile("tools/Linux/unrar/").getAbsolutePath());
+        exec.setRunin(path);
         exec.setWaitTimeout(2);
         exec.start();
         exec.waitTimeout();
@@ -825,15 +825,24 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         if (path == null || !isUnrarCommandValid(path)) {
             if (OSDetector.isWindows()) {
-                path = JDUtilities.getResourceFile("tools\\Windows\\unrarw32\\unrar.exe").getAbsolutePath();
+                path = JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath();
                 this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                 this.getPluginConfig().save();
                 return;
             } else {
                 if (OSDetector.isLinux()) {
-                    chmodLinuxUnrar();
-                    if (isUnrarCommandValid(JDUtilities.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath())) {
-                        path = JDUtilities.getResourceFile("tools/Linux/unrar/unrar").getAbsolutePath();
+                    chmodUnrar(JDUtilities.getResourceFile("tools/linux/unrar/").getAbsolutePath());
+                    if (isUnrarCommandValid(JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath())) {
+                        path = JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath();
+                        this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
+                        this.getPluginConfig().save();
+                        return;
+                    }
+                }
+                if (OSDetector.isMac()) {
+                    chmodUnrar(JDUtilities.getResourceFile("tools/mac/unrar/").getAbsolutePath());
+                    if (isUnrarCommandValid(JDUtilities.getResourceFile("tools/mac/unrar/unrar").getAbsolutePath())) {
+                        path = JDUtilities.getResourceFile("tools/mac/unrar/unrar").getAbsolutePath();
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;
