@@ -22,7 +22,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
@@ -348,7 +347,7 @@ public abstract class Plugin implements ActionListener {
         String filename = null;
         for (int i = 0; i < 2; i++) {
             if (contentdisposition.contains("filename*")) {
-                /* Codierung */
+                /* Codierung default */
                 contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
                 String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
                 if (format == null) {
@@ -366,7 +365,23 @@ public abstract class Plugin implements ActionListener {
                 } else {
                     try {
                         filename = URLDecoder.decode(filename, format);
-                    } catch (UnsupportedEncodingException e) {
+                    } catch (Exception e) {
+                        logger.severe("Content-Disposition: could not decode filename: " + header);
+                        filename = null;
+                        return filename;
+                    }
+                }
+            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?.*?\\?=").matches()) {
+                /*
+                 * Codierung Encoded Words, TODO: Q-Encoding und mehrfach
+                 * tokens, aber noch nicht in freier Wildbahn gesehen
+                 */
+                String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?(.*?)\\?=").getMatches();
+                if (tokens.length == 1 && tokens[0].length == 3 && tokens[0][1].trim().equalsIgnoreCase("B")) {
+                    /* Base64 Encoded */
+                    try {
+                        filename = URLDecoder.decode(Encoding.Base64Decode(tokens[0][2].trim()), tokens[0][0].trim());
+                    } catch (Exception e) {
                         logger.severe("Content-Disposition: could not decode filename: " + header);
                         filename = null;
                         return filename;

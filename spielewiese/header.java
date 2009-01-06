@@ -62,12 +62,12 @@ public class header {
         // System.out.println("Right Java Version");
         // }
         // }
-        if (false) {
+        if (true) {
             // System.out.println(new Regex(
             // "<p style=\"color:red;\">You have reached the download limit for free-users. Would you like more?</p>"
             // , ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches() +
             // "");
-            String l[] = { "filename==?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?=" };
+            String l[] = {"filename= \"=?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?=\"","filename==?UTF-8?B?YWlhZGNhZGlnMWR4bi5wYXJ0Mi5yYXI=?=" };
             // String l[] = {
             // "filename==?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?="
             // ,
@@ -104,13 +104,16 @@ public class header {
                 System.out.println(Plugin.getFileNameFromDispositionHeader(kk));
             }
         }
-//        String k = "Test : ö & üä ! \" § $ & / ( ) = ? ~ ^ ° ¬æ " + Encoding.urlEncode("%");
-//        System.out.println(k);
-//        System.out.println((k = Encoding.urlEncode_light(k)));
-//        System.out.println((k = Encoding.urlEncode_light(k)));
-//        System.out.println(Encoding.urlDecode(k, false));
-        System.out.println(new Regex("http://ftp.fernuni-hagen.de/ftp-dir/pub/mirrors/www.openoffice.org/localized/de/3.0.0/OOo_3.0.0_Win32Intel_install_de.exe","httpviajd://[\\w\\.:-]*/.*?\\.(3gp|7z|aif|aiff|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip)").getMatch(-1));
-        System.out.println(HTMLParser.getHttpLinkList("httpviajd://ftp.fernuni-hagen.de/ftp-dir/pub/mirrors/www.openoffice.org/localized/de/3.0.0/OOo_3.0.0_Win32Intel_install_de.exe"));
+        // String k = "Test : ö & üä ! \" § $ & / ( ) = ? ~ ^ ° ¬æ " +
+        // Encoding.urlEncode("%");
+        // System.out.println(k);
+        // System.out.println((k = Encoding.urlEncode_light(k)));
+        // System.out.println((k = Encoding.urlEncode_light(k)));
+        // System.out.println(Encoding.urlDecode(k, false));
+        if (false) {
+            System.out.println(new Regex("http://ftp.fernuni-hagen.de/ftp-dir/pub/mirrors/www.openoffice.org/localized/de/3.0.0/OOo_3.0.0_Win32Intel_install_de.exe", "httpviajd://[\\w\\.:-]*/.*?\\.(3gp|7z|aif|aiff|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip)").getMatch(-1));
+            System.out.println(HTMLParser.getHttpLinkList("httpviajd://ftp.fernuni-hagen.de/ftp-dir/pub/mirrors/www.openoffice.org/localized/de/3.0.0/OOo_3.0.0_Win32Intel_install_de.exe"));
+        }
         //        
         // System.out.println(Encoding.urlEncode(
         // "http://srv2.shragle.com/dl/free/UjdV0050/Der KÃ¶nig der LÃ¶wen.part1.rar?v=1"

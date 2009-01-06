@@ -24,13 +24,14 @@ import jd.http.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class Zippysharecom extends PluginForHost {
 
     public Zippysharecom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(5000l);
     }
 
     @Override
@@ -39,43 +40,30 @@ public class Zippysharecom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        String url = downloadLink.getDownloadURL();
-        for (int i = 1; i < 3; i++) {
-
-            br.getPage(url);
-            if (!br.containsHTML("File does not exist")) {
-                downloadLink.setName(Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0)));
-                downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getMatch(0).replaceAll(",", "\\.")) * 1024 * 1024));
-                return true;
-            }
-            Thread.sleep(250);
-        }
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("<title>Zippyshare.com - File does not exist</title>")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<strong>Name: </strong>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String filesize = br.getRegex(Pattern.compile("<strong>Size: </strong>(.*?)MB</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setName(filename);
+        downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
     }
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-
-        /* Link holen */
+        getFileInformation(downloadLink);
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("downloadlink = unescape\\(\\'(.*?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        /* Datei herunterladen */
-        dl = RAFDownload.download(downloadLink, br.createRequest(linkurl));
-
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
     }
 
