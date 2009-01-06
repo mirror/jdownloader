@@ -706,7 +706,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             subConfig.setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath());
             subConfig.save();
         }
-        if (this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null) == null || this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, "").trim().length() == 0) {
+        String unrar = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
+        if (unrar == null || !isUnrarCommandValid(unrar)) {
             checkUnrarCommand();
         }
         if (!OSDetector.isWindows()) config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
