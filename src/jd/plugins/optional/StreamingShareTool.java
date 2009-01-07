@@ -292,8 +292,8 @@ public class StreamingShareTool extends PluginOptional {
 
     private Vector<DownloadLink> GetValid(String text, boolean showcount) {
         String script = Encoding.htmlDecode(text);
-        ConvertDialog.setKeepformat(false);
-        ConvertDialog.setKeepineverycase(true);
+        //ConvertDialog.setKeepformat(false);
+        //ConvertDialog.setKeepineverycase(true);
         Vector<DownloadLink> toReturn = new Vector<DownloadLink>();
         Vector<DownloadLink> links = new DistributeData(script).findLinks(false);
 
@@ -325,8 +325,8 @@ public class StreamingShareTool extends PluginOptional {
             }
         }
 
-        ConvertDialog.setKeepformat(false);
-        ConvertDialog.setKeepineverycase(false);
+        //ConvertDialog.setKeepformat(false);
+        //ConvertDialog.setKeepineverycase(false);
         if (showcount) {
             JDUtilities.getGUI().showCountdownConfirmDialog(String.valueOf(links.size()) + " " + JDLocale.L("plugins.optional.streamsharingtool.action.validate.linksfound", "Link(s) gefunden!"), 60);
         }

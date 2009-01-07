@@ -458,7 +458,17 @@ public class Main {
         init.checkUpdate();
      
         Level level = JDUtilities.getLogger().getLevel();
-        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !debug) {
+        //logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false).toString());
+        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) &&
+            (
+                    JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || 
+                    level.equals(Level.ALL) || 
+                    level.equals(Level.FINER) || 
+                    level.equals(Level.FINE)
+            ) && 
+            !debug && 
+            (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false))) 
+        {
             JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), JDLocale.LF("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.", level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), true, JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);
         }
 
