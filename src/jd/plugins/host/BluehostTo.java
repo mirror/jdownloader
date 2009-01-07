@@ -72,10 +72,13 @@ public class BluehostTo extends PluginForHost {
         double traffic = Double.parseDouble(trafficLeft) * 1000 * 1024 * 1024;
         ai.setTrafficLeft((long) traffic);
         ArrayList<String> matches = path.getMatches();
-        ai.setPremiumPoints(JDUtilities.filterInt(matches.get(0)));
+        try {
+            ai.setPremiumPoints(JDUtilities.filterInt(matches.get(0)));
+        } catch (Exception e) {
+        }
         ai.setAccountBalance((int) (Float.parseFloat(Encoding.filterString(matches.get(1), "1234567890.,").replaceAll("\\,", ".")) * 100.0));
         ai.setExpired(false);
-        ai.setValidUntil(System.currentTimeMillis() + 60 * 60 * 1000);
+        ai.setValidUntil(-1);
         return ai;
     }
 
@@ -86,12 +89,11 @@ public class BluehostTo extends PluginForHost {
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
         if (dl.getConnection().getContentType().contains("text")) {
-            String page = br.loadConnection(dl.getConnection());
-            br.getRequest().setHtmlCode(page);
-            Form download = br.getFormbyName("download");
-            if (download == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error"); }
-            dl = br.openDownload(downloadLink, download, true, 0);
-            if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error"); }
+            dl.getConnection().disconnect();
+            login(account);
+            String trafficLeft = br.getXPathElement("/html/body/div/div/ul[2]/div/div").trim();
+            if (trafficLeft != null && trafficLeft.trim().equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
         dl.startDownload();
     }
