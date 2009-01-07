@@ -14,6 +14,7 @@ public class UploadingCom extends PluginForHost {
 
     public UploadingCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(5000l);
     }
 
     @Override
@@ -23,10 +24,10 @@ public class UploadingCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
-        setBrowserExclusive();        
+        setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String filesize = br.getRegex("File size:(.*?)<br/>").getMatch(0);
-        String filename = br.getRegex("<h3>Download file  <b>(.*?)</b></h3>").getMatch(0);
+        String filename = br.getRegex("<h3>Download file.*?<b>(.*?)</b>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
