@@ -42,11 +42,11 @@ public class MeinUpload extends PluginForHost {
         super(wrapper);
         enablePremium("http://meinupload.com/register.php?g=2");
     }
-
     @SuppressWarnings("unchecked")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
+
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
@@ -57,6 +57,12 @@ public class MeinUpload extends PluginForHost {
         if (form != null) {
             form.remove("method_premium");
             br.submitForm(form);
+            if(br.toString().contains("(Or wait"))
+            {
+                String[] timestr = br.getRegex("\\(Or wait (\\d+) minutes, (\\d+) seconds\\)").getRow(0);
+                long waitTime = (Long.parseLong(timestr[0])*60000)+(Long.parseLong(timestr[1])*1000);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+            }
             String[][] Str = br.getRegex("position:absolute;padding-left:(\\d+)[^>]+>(\\d+)").getMatches();
             HashMap<Integer, Integer> gr = new HashMap<Integer, Integer>();
             for (String[] strings : Str) {
@@ -75,7 +81,7 @@ public class MeinUpload extends PluginForHost {
             Form captcha = br.getForms()[1];      
             captcha.put("code", code);
             captcha.put("down_script", "1");
-            this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0))*1000), downloadLink);
+            this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0))*1000),downloadLink );
             br.openDownload(downloadLink, captcha);
         }
    
@@ -168,16 +174,14 @@ public class MeinUpload extends PluginForHost {
             return false;
 
         }
-        String filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String filename = br.getRegex("Datei: <font color=\"#\\d+\">([^<]*)</font>").getMatch(0);
         downloadLink.setName(filename);
-
-        Form form = br.getFormbyValue("Free");
-        if (form != null) br.submitForm(form);
         try {
-            String s = br.getRegex("Dateigr.*e:</b></td>.*<td align=left>(.*?[MB|KB|B])</td>").getMatch(0);
+            String s = br.getRegex("Datei: <font color=\"#\\d+\">[^<]*</font> \\(([^\\)]*)\\)").getMatch(0);
             long size = Regex.getSize(s);
             if (size > 0) downloadLink.setDownloadSize(size);
         } catch (Exception e) {
+            e.printStackTrace();
         }
         return true;
     }

@@ -370,10 +370,7 @@ public class Rapidshare extends PluginForHost {
         {
             downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
             logger.warning("All free slots in use: try to download again after 2 minutes");
-            this.sleep(120000, downloadLink);
-            downloadLink.getLinkStatus().setStatusText("");
-            handleFree(downloadLink);
-            return;
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120000);
         }
         String postTarget = getDownloadTarget(downloadLink, ticketCode);
 
