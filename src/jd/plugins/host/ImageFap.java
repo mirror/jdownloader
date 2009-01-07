@@ -27,12 +27,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class ImageFap extends PluginForHost {
 
     public ImageFap(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(500l);
+        br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
+        br.set_WAIT_BETWEEN_PAGE_ACCESS(200l);
     }
 
     private String DecryptLink(String code) {
@@ -77,7 +79,7 @@ public class ImageFap extends PluginForHost {
         try {
             br.getPage(downloadLink.getDownloadURL());
             String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            String gallery_name = new Regex(br, Pattern.compile("<a href=\"gallery\\.php\\?gid=\\d+\"><font face=verdana size=3>(.*?)uploaded", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             String uploader_name = new Regex(br, Pattern.compile("<a href=\"/profile\\.php\\?user=(.*?)\" style=\"text-decoration: none;\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (gallery_name != null) {
                 gallery_name = gallery_name.trim();
@@ -85,7 +87,11 @@ public class ImageFap extends PluginForHost {
             if (picture_name != null) {
                 FilePackage fp = new FilePackage();
                 fp.setName(uploader_name);
-                downloadLink.setName(gallery_name + " + " + picture_name);
+                if (gallery_name != null) {
+                    downloadLink.setName(gallery_name + " + " + picture_name);
+                } else {
+                    downloadLink.setName(picture_name);
+                }
                 downloadLink.setFilePackage(fp);
                 return true;
             }
@@ -97,7 +103,6 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
@@ -105,9 +110,10 @@ public class ImageFap extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
+        br.setDebug(true);
         String picture_name = new Regex(br, Pattern.compile("<td bgcolor='#FCFFE0' width=\"100\">Filename</td>.*?<td bgcolor='#FCFFE0'>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (picture_name == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String gallery_name = new Regex(br, Pattern.compile("size=4>(.*?)</font>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (picture_name == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String gallery_name = new Regex(br, Pattern.compile("<a href=\"gallery\\.php\\?gid=\\d+\"><font face=verdana size=3>(.*?)uploaded", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (gallery_name != null) {
             gallery_name = gallery_name.trim();
         }
@@ -117,16 +123,17 @@ public class ImageFap extends PluginForHost {
 
         String filename = Plugin.extractFileNameFromURL(imagelink);
         downloadLink.setFinalFileName(filename);
-        downloadLink.addSubdirectory(gallery_name);
-        dl = new RAFDownload(this, downloadLink, br.createGetRequest(imagelink));
-        dl.setResume(false);
-        dl.setChunkNum(1);
+        if (gallery_name != null) downloadLink.addSubdirectory(gallery_name);
+        dl = br.openDownload(downloadLink, imagelink);
+        if (dl.getConnection().getResponseCode() == 404) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         dl.startDownload();
-        return;
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 15;
+        return 10;
     }
 
     @Override

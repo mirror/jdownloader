@@ -173,6 +173,7 @@ public class FilePackage extends Property implements Serializable {
     /**
      * Gibt die vorraussichtlich verbleibende Downloadzeit für dieses paket
      * zurück
+     * 
      * @return
      */
     public int getETA() {
@@ -315,6 +316,7 @@ public class FilePackage extends Property implements Serializable {
 
     /**
      * Gibt die geschätzte Gesamtgröße des Pakets zurück
+     * 
      * @return
      */
     public int getTotalEstimatedPackageSize() {
@@ -392,7 +394,10 @@ public class FilePackage extends Property implements Serializable {
     }
 
     public void setName(String name) {
-        this.name = JDUtilities.removeEndingPoints(name);
+        if (name == null || name.length() == 0) {
+            this.name = JDUtilities.removeEndingPoints(FP.name);
+        } else
+            this.name = JDUtilities.removeEndingPoints(name);
     }
 
     public void setPassword(String password) {
