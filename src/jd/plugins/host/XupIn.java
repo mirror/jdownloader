@@ -42,21 +42,19 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-
-        String filename = br.getXPathElement("/html/body/div/div/div/form/div/fieldset[2]/legend/b").substring(10).trim();
-        long size = Regex.getSize(br.getXPathElement("/html/body/div/div/div/form/div/div/fieldset/div/ul/li"));
-        downloadLink.setDownloadSize(size);
-        downloadLink.setName(filename);
-
+        String filename = br.getRegex("<legend>.*?<b>Download:(.*?)</b>").getMatch(0);
+        String filesize = br.getRegex("File Size:(.*?)</li>").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
+        downloadLink.setName(filename.trim());
         return true;
     }
 
     @Override
     public String getVersion() {
-        
         return getVersion("$Revision$");
     }
 
@@ -66,18 +64,27 @@ public class XupIn extends PluginForHost {
         this.getFileInformation(downloadLink);
 
         Form download = br.getForm(0);
-
+        String passCode = null;
         if (download.getVars().containsKey("vpass")) {
-            download.put("vpass", Plugin.getUserInput(JDLocale.L("plugins.host.enterlinkpassword", "Please enter Linkpassword"), downloadLink));
+            if (downloadLink.getStringProperty("pass", null) == null) {
+                passCode = Plugin.getUserInput(null, downloadLink);
+            } else {
+                /* gespeicherten PassCode holen */
+                passCode = downloadLink.getStringProperty("pass", null);
+            }
+            download.put("vpass", passCode);
         }
         br.openDownload(downloadLink, download);
 
         if (!dl.getConnection().isContentDisposition()) {
             String page = br.loadConnection(dl.getConnection());
-            if (page.contains("richtige Passwort erneut ein")) { throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.host.xup", "Password wrong")); }
+            if (page.contains("richtige Passwort erneut ein")) {
+                downloadLink.setProperty("pass", null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, JDLocale.L("plugins.host.xup", "Password wrong"));
+            }
             throw new PluginException(LinkStatus.ERROR_FATAL);
         }
-
+        downloadLink.setProperty("pass", passCode);
         dl.startDownload();
 
     }
