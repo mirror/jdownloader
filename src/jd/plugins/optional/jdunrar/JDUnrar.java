@@ -727,15 +727,12 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         ConfigEntry ce;
         ConfigEntry conditionEntry;
-        if (OSDetector.isWindows()) {
-            subConfig.setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath());
-            subConfig.save();
-        }
         String unrar = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
         if (unrar == null || !isUnrarCommandValid(unrar)) {
             checkUnrarCommand();
+            unrar = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
         }
-        if (!OSDetector.isWindows()) config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
+        if (unrar == null || !isUnrarCommandValid(unrar)) config.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, JDLocale.L("gui.config.unrar.cmd", "UnRAR command")));
 
         config.addEntry(conditionEntry = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, JDUnrarConstants.CONFIG_KEY_USE_EXTRACT_PATH, JDLocale.L("gui.config.unrar.use_extractto", "Use customized extract path")));
         conditionEntry.setDefaultValue(false);
@@ -847,7 +844,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      * Überprüft den eingestellten UNrarbefehl und setzt ihn notfalls neu.
      */
     private void checkUnrarCommand() {
-        String path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND);
+        String path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
 
         if (path == null || !isUnrarCommandValid(path)) {
             if (OSDetector.isWindows()) {
