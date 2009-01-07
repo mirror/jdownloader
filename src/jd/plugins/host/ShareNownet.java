@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -44,34 +45,22 @@ public class ShareNownet extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
         br.setFollowRedirects(false);
         downloadurl = downloadLink.getDownloadURL();
-        try {
-            br.getPage(downloadurl);
-            if (!br.containsHTML("Datei existiert nicht oder wurde gel&ouml;scht!")) {
-                String[] linkinfo = null;
-                try {
-                    linkinfo = new Regex(br.getRequest().getHtmlCode(), Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getRow(0);
-                } catch (Exception e) {
-                    // TODO: handle exception
-                }
+        br.getPage(downloadurl);
+        if (br.containsHTML("Datei existiert nicht oder")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String[] linkinfo = null;
+        linkinfo = br.getRegex(Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getRow(0);
 
-                if (linkinfo == null || linkinfo.length <1) {
-                    linkinfo = new Regex(br.getRequest().getHtmlCode(), "<p><span class=\"style\\d+\">\\s*(.*?)</span>.*?<span class=\"style\\d+\">(.*?)</span>").getRow(0);
-                }
-                downloadLink.setDownloadSize(Regex.getSize(linkinfo[1]));
-
-                downloadLink.setName(linkinfo[0]);
-                return true;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (linkinfo == null || linkinfo.length < 2) {
+            linkinfo = br.getRegex("<p><span class=\"style\\d+\">\\s*(.*?)</span>.*?<span class=\"style\\d+\">(.*?)</span>").getRow(0);
         }
-        downloadLink.setAvailable(false);
-        return false;
+        if (linkinfo == null || linkinfo.length < 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        downloadLink.setDownloadSize(Regex.getSize(linkinfo[1]));
+        downloadLink.setName(linkinfo[0].trim());
+        return true;
     }
 
     @Override
@@ -81,28 +70,21 @@ public class ShareNownet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
-        /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-
+        getFileInformation(downloadLink);
         Form form = br.getForm(1);
         br.setDebug(true);
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */
             captchaFile = getLocalCaptchaFile(this);
-
             br.downloadFile(captchaFile, "http://share-now.net/captcha.php?id=" + form.getVars().get("download").getValue());
-
             /* CaptchaCode holen */
             captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
             form.put("Submit", "Download+Now");
             form.put("captcha", captchaCode);
         }
-
         /* DownloadLink holen/Captcha check */
         dl = br.openDownload(downloadLink, form);
-
         if (!dl.getConnection().isContentDisposition() || dl.getRequest().getLocation() != null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         if (dl.getConnection().isContentDisposition() && dl.getConnection().getContentLength() == 0) throw new PluginException(LinkStatus.ERROR_FATAL, "Server Error");
         /* Datei herunterladen */
