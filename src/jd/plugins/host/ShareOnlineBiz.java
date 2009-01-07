@@ -100,30 +100,18 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) {
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         url = downloadLink.getDownloadURL() + "&setlang=en";
         this.setBrowserExclusive();
         br.setAcceptLanguage("en, en-gb;q=0.8");
-        for (int i = 1; i < 3; i++) {
-            try {
-                Thread.sleep(1000);/*
-                                    * Sicherheitspause, sonst gibts 403 Response
-                                    */
-                String page = br.getPage(url);
-                if (page != null && br.getRedirectLocation() == null) {
-                    String filename = br.getRegex(Pattern.compile("<b>File.name:</b></td>.*?<td align=left width=150px><div style=.*?><b>(.*?)</b></div></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-                    String sizev = br.getRegex(Pattern.compile("You have requested <font.*?</font>(.*?).</b>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String id = new Regex(url, "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id);
+        String infos[][] = br.getRegex("(.*?);(.*?);(.*?);(.+)").getMatches();
+        if (infos.length != 1 && infos[0].length != 4 && !infos[0][1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
-                    if (filename == null || sizev == null) return false;
-                    downloadLink.setDownloadSize(Regex.getSize(sizev.trim()));
-                    downloadLink.setName(filename.trim());
-                    return true;
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return false;
+        downloadLink.setDownloadSize(Long.parseLong(infos[0][3].trim()));
+        downloadLink.setName(infos[0][2].trim());
+        return true;
     }
 
     @Override
