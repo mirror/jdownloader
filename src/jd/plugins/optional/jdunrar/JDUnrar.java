@@ -304,11 +304,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         String filename = null;
         if (type == JDUnrarConstants.MULTIPART_START_PART) {
             filename = new Regex(link.getFileOutput(), "(.*)\\.part[0-9]+.rar$").getMatch(0);
-            if (!(file = new File(filename + ".part1.rar")).exists()) {
-            } else if (!(file = new File(filename + ".part01.rar")).exists()) {
-            } else if (!(file = new File(filename + ".part001.rar")).exists()) {
-            } else if (!(file = new File(filename + ".part0001.rar")).exists()) {
-            } else if (!(file = new File(filename + ".part000.rar")).exists()) {
+            if ((file = new File(filename + ".part1.rar")).exists()) {
+            } else if ((file = new File(filename + ".part01.rar")).exists()) {
+            } else if ((file = new File(filename + ".part001.rar")).exists()) {
+            } else if ((file = new File(filename + ".part0001.rar")).exists()) {
+            } else if ((file = new File(filename + ".part000.rar")).exists()) {
             } else {
                 return null;
             }
