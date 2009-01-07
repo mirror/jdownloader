@@ -366,6 +366,15 @@ public class Rapidshare extends PluginForHost {
         }
 
         waitTicketTime(downloadLink, pendingTime);
+        if(ticketCode.contains("Leider sind derzeit keine freien Slots "))
+        {
+            downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
+            logger.warning("All free slots in use: try to download again after 2 minutes");
+            this.sleep(120000, downloadLink);
+            downloadLink.getLinkStatus().setStatusText("");
+            handleFree(downloadLink);
+            return;
+        }
         String postTarget = getDownloadTarget(downloadLink, ticketCode);
 
         // Falls Serverauswahl fehlerhaft war
@@ -560,7 +569,7 @@ public class Rapidshare extends PluginForHost {
         // String endServerAbb = "";
         boolean telekom = getPluginConfig().getBooleanProperty(PROPERTY_USE_TELEKOMSERVER, false);
         boolean preselected = getPluginConfig().getBooleanProperty(PROPERTY_USE_PRESELECTED, true);
-
+        
         if (postTarget == null) {
             logger.severe("postTarget not found:");
             reportUnknownError(ticketCode, 4);
