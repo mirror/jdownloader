@@ -52,17 +52,19 @@ public class ShareNownet extends PluginForHost {
         try {
             br.getPage(downloadurl);
             if (!br.containsHTML("Datei existiert nicht oder wurde gel&ouml;scht!")) {
+                String[] linkinfo = null;
+                try {
+                    linkinfo = new Regex(br.getRequest().getHtmlCode(), Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getRow(0);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
 
-                String linkinfo[][] = new Regex(br.getRequest().getHtmlCode(), Pattern.compile("<h3 align=\"center\"><strong>(.*?)</strong> \\(\\s*([0-9\\.]*)\\s([GKMB]*)\\s*\\) </h3>", Pattern.CASE_INSENSITIVE)).getMatches();
-                if (linkinfo.length != 1) {
-                    linkinfo = br.getRegex("<span class=\"style1\">(.*?)\\(([0-9\\.]*)\\s*([GKMB]*)\\) </span>").getMatches();
+                if (linkinfo == null || linkinfo.length <1) {
+                    linkinfo = new Regex(br.getRequest().getHtmlCode(), "<p><span class=\"style\\d+\">\\s*(.*?)</span>.*?<span class=\"style\\d+\">(.*?)</span>").getRow(0);
                 }
-                if (linkinfo[0][2].matches("MB")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1]) * 1024 * 1024));
-                } else if (linkinfo[0][2].matches("KB")) {
-                    downloadLink.setDownloadSize((int) Math.round(Double.parseDouble(linkinfo[0][1]) * 1024));
-                }
-                downloadLink.setName(linkinfo[0][0]);
+                downloadLink.setDownloadSize(Regex.getSize(linkinfo[1]));
+
+                downloadLink.setName(linkinfo[0]);
                 return true;
             }
         } catch (Exception e) {
@@ -84,7 +86,7 @@ public class ShareNownet extends PluginForHost {
         if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
         Form form = br.getForm(1);
-br.setDebug(true);
+        br.setDebug(true);
         /* gibts nen captcha? */
         if (br.containsHTML("Sicherheitscode eingeben")) {
             /* Captcha File holen */
