@@ -348,6 +348,10 @@ public abstract class Plugin implements ActionListener {
         for (int i = 0; i < 2; i++) {
             if (contentdisposition.contains("filename*")) {
                 /* Codierung default */
+                /*
+                 * Content-Disposition: attachment; filename==?UTF-8?B?RGF2aWQgR3VldHRhIC0gSnVzdCBBIExpdHRsZSBNb3JlIExvdmUgW2FMYnlsb3ZlciBYLUNsdXNpdiBSZW1peF0uTVAz?=
+                 * 
+                 */
                 contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
                 String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
                 if (format == null) {

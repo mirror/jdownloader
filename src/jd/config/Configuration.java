@@ -151,6 +151,8 @@ public class Configuration extends Property implements Serializable {
      */
     private static final long serialVersionUID = -2709887320616014389L;
 
+    public static final String PARAM_WEBUPDATE_AUTO_SHOW_CHANGELOG = "WEBUPDATE_AUTO_SHOW_CHANGELOG";
+
     /**
      * Die unterschiedlichen Interaktionen. (ZB Reconnect nach einem Download)
      */

@@ -111,7 +111,7 @@ public class TextAreaDialog extends JDialog implements ActionListener {
         addWindowListener(new LocationListener());
 
         setMaximumSize(Toolkit.getDefaultToolkit().getScreenSize());
-        SimpleGUI.restoreWindow(null, this);
+      if(SimpleGUI.CURRENTGUI!=null)  SimpleGUI.restoreWindow(null, this);
         setModal(true);
         setVisible(true);
 
