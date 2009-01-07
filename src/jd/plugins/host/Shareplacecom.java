@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 public class Shareplacecom extends PluginForHost {
@@ -68,11 +69,11 @@ public class Shareplacecom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();       
-        
+        LinkStatus linkStatus = downloadLink.getLinkStatus();
+
         /* Nochmals das File überprüfen */
         if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);            
+            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
         /* Link holen */
@@ -80,7 +81,14 @@ public class Shareplacecom extends PluginForHost {
 
         /* Zwangswarten, 20seks */
         sleep(20000, downloadLink);
+        br.setDebug(true);
+        br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);
+        if (dl.getConnection().isContentDisposition()) {
+            /* Workaround für fehlerhaften Filename Header */
+            String name = Plugin.getFileNameFormHeader(dl.getConnection());
+            if (name != null) downloadLink.setFinalFileName(Encoding.urlDecode(name, false));
+        }
         dl.startDownload();
     }
 
