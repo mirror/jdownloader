@@ -16,18 +16,19 @@
 
 package jd.plugins.host;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map.Entry;
+
+import jd.utils.JDUtilities;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.RAFDownload;
@@ -42,6 +43,7 @@ public class MeinUpload extends PluginForHost {
         enablePremium("http://meinupload.com/register.php?g=2");
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         br.getPage(downloadLink.getDownloadURL());
@@ -50,29 +52,32 @@ public class MeinUpload extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
         }
         br.setDebug(true);
-        Form form = br.getFormbyValue("Free");
+        Form form = br.getFormbyValue("Free Download");
 
         if (form != null) {
-            // Old version 1.9.08
+            form.remove("method_premium");
             br.submitForm(form);
-
-            Form captcha = br.getForms()[1];
-            
-            File captchaFile = this.getLocalCaptchaFile(this);
-            try {
-                Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://meinupload.com/captcha.php"));
-            } catch (Exception e) {
-           
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            String[][] Str = br.getRegex("position:absolute;padding-left:(\\d+)[^>]+>(\\d+)").getMatches();
+            HashMap<Integer, Integer> gr = new HashMap<Integer, Integer>();
+            for (String[] strings : Str) {
+                try {
+                    gr.put(Integer.parseInt(strings[0]), Integer.parseInt(strings[1]));
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
             }
-            String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
-           
-            captcha.put("captchacode", captchaCode);
-            br.submitForm(captcha);
-        }
-        String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
+            gr = (HashMap<Integer, Integer>) JDUtilities.revSortByKey(gr);
+            String code = "";
+            for (Entry<Integer, Integer> entry : gr.entrySet()) {
+                code+=entry.getValue();
+            }
 
-        br.openDownload(downloadLink, url);
+            Form captcha = br.getForms()[1];      
+            captcha.put("code", code);
+            captcha.put("down_script", "1");
+            this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0))*1000), downloadLink);
+            br.openDownload(downloadLink, captcha);
+        }
    
 
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
