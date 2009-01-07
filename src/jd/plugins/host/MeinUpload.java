@@ -37,6 +37,7 @@ import jd.utils.JDLocale;
 public class MeinUpload extends PluginForHost {
 
     private static final String AGB_LINK = "http://meinupload.com/#help.html";
+    private int premMax = 1;
 
     public MeinUpload(PluginWrapper wrapper) {
         super(wrapper);
@@ -107,6 +108,18 @@ public class MeinUpload extends PluginForHost {
         login.put("login", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);
+        String expire = br.getRegex("<td><strong>G&uuml;ltig bis:</strong>(.*?)</td>").getMatch(0);
+        if (expire == null) {
+            account.setEnabled(false);
+            account.setStatus("Account invalid. Logins wrong?");
+            return;
+        }
+        expire = expire.trim();
+        if (!expire.equals("")) {
+            premMax = 20;
+        } else
+            premMax = 1;
+
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -120,22 +133,32 @@ public class MeinUpload extends PluginForHost {
             ai.setStatus("Account invalid. Logins wrong?");
             return ai;
         }
-        expire=expire.trim();
-
+        expire = expire.trim();
 
         String points = br.getRegex("<strong>Gesammelte Premium-Punkte:</strong> (\\d+)</td>").getMatch(0);
-//        String cash = br.getRegex("Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t").getMatch(1);
-//        String files = br.getRegex("Hosted Files</b></td>.*?<td align=.*?>(.*?)  <a href").getMatch(0);
+        // String cash = br.getRegex(
+        // "Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t"
+        // ).getMatch(1);
+        // String files =
+        // br.getRegex("Hosted Files</b></td>.*?<td align=.*?>(.*?)  <a href"
+        // ).getMatch(0);
 
         ai.setStatus("Account is ok.");
-        if(!expire.equals(""))
-        ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
+        if (!expire.equals("")) {
+            premMax = 20;
+            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
+        } else
+            premMax = 1;
 
         ai.setPremiumPoints(Integer.parseInt(points));
-//        ai.setAccountBalance(Integer.parseInt(cash.replaceAll("\\.", "")));
-//        ai.setFilesNum(Integer.parseInt(files));
+        // ai.setAccountBalance(Integer.parseInt(cash.replaceAll("\\.", "")));
+        // ai.setFilesNum(Integer.parseInt(files));
 
         return ai;
+    }
+
+    public int getMaxSimultanPremiumDownloadNum() {
+        return premMax;
     }
 
     @Override
@@ -199,10 +222,6 @@ public class MeinUpload extends PluginForHost {
     public String getVersion() {
 
         return getVersion("$Revision$");
-    }
-
-    public int getMaxSimultanFreeDownloadNum() {
-        return 2;
     }
 
     @Override
