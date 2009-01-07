@@ -23,7 +23,6 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
-import jd.parser.Regex;
 import jd.parser.XPath;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -84,24 +83,20 @@ public class BluehostTo extends PluginForHost {
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage("http://bluehost.to");
-        
-        Form login= br.getForm(5);
-        login.put("loginname",account.getUser());
-        login.put("loginpass",account.getPass());
-       br.submitForm(login);
-       
-       dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
-        if (dl.getConnection().getContentType().contains("text")) {           
-            String page=br.loadConnection(dl.getConnection());
+
+        Form login = br.getForm(5);
+        login.put("loginname", account.getUser());
+        login.put("loginpass", account.getPass());
+        br.submitForm(login);
+
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
+        if (dl.getConnection().getContentType().contains("text")) {
+            String page = br.loadConnection(dl.getConnection());
             br.getRequest().setHtmlCode(page);
             Form download = br.getFormbyName("download");
-            if(download==null){
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error");
-            }
-            dl =  br.openDownload(downloadLink, download,true,0);
-            if (dl.getConnection().getContentType().contains("text")) {  
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error");
-            }
+            if (download == null) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error"); }
+            dl = br.openDownload(downloadLink, download, true, 0);
+            if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_FATAL, "Premium Error"); }
         }
         dl.startDownload();
     }
@@ -113,30 +108,25 @@ public class BluehostTo extends PluginForHost {
 
         String[] dat = page.split("\\, ");
 
-       
-            downloadLink.setName(dat[0]);
-            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
-           if( Integer.parseInt(dat[3])>0){
-               throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,Integer.parseInt(dat[3])*1000l);
-           }
-        
+        downloadLink.setName(dat[0]);
+        downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
+        if (Integer.parseInt(dat[3]) > 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[3]) * 1000l); }
+
         br.getPage(downloadLink.getDownloadURL());
-     
+
         Form[] forms = br.getForms();
 
-         //   br.cloneBrowser().getPage("http://bluehost.to/style.css");
-           // br.cloneBrowser().getPage("http://bluehost.to/css/autosuggest_inquisitor.css");
-            
-        
-        
-     Form dlForm=forms[2];
-     dlForm.remove("UPLOADSCRIPT_LOGSESSION");
-     br.clearCookies("bluehost.to");
-     br.submitForm(dlForm);
-     br.getPage(downloadLink.getDownloadURL());
-   forms=br.getForms();  
- // String url = br.getRegex("var url=\\'(.*?)\\'\\;").getMatch(0);
-  br.openDownload(downloadLink, forms[1]);
+        // br.cloneBrowser().getPage("http://bluehost.to/style.css");
+        // br.cloneBrowser().getPage("http://bluehost.to/css/autosuggest_inquisitor.css");
+
+        Form dlForm = forms[2];
+        dlForm.remove("UPLOADSCRIPT_LOGSESSION");
+        br.clearCookies("bluehost.to");
+        br.submitForm(dlForm);
+        br.getPage(downloadLink.getDownloadURL());
+        forms = br.getForms();
+        // String url = br.getRegex("var url=\\'(.*?)\\'\\;").getMatch(0);
+        br.openDownload(downloadLink, forms[1]);
         dl.startDownload();
     }
 
@@ -156,13 +146,11 @@ public class BluehostTo extends PluginForHost {
 
         String[] dat = page.split("\\, ");
 
-       downloadLink.setMD5Hash(dat[5].trim());
-            downloadLink.setName(dat[0]);
-            downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
-           if( Integer.parseInt(dat[3])>0){
-               throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,Integer.parseInt(dat[3]));
-           }
-        
+        downloadLink.setMD5Hash(dat[5].trim());
+        downloadLink.setName(dat[0]);
+        downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
+        if (Integer.parseInt(dat[3]) > 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[3])); }
+
         return true;
     }
 
