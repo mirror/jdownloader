@@ -175,16 +175,18 @@ public class JDInit {
 
             Interaction.handleInteraction(Interaction.INTERACTION_APPSTART, false);
         }
+        if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) {
+            String old = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "");
+            if (!old.equals(JDUtilities.getRevision())) {
+                logger.info("Returned from Update");
 
-        if (!JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_UPDATE_VERSION, "").equals(JDUtilities.getRevision())) {
-            logger.info("Returned from Update");
+                if (splashScreen != null) {
+                    splashScreen.finish();
+                }
 
-            if (splashScreen != null) {
-                splashScreen.finish();
+                SimpleGUI.showChangelogDialog();
+
             }
-
-            SimpleGUI.showChangelogDialog();
-
         }
         submitVersion();
     }
@@ -674,7 +676,9 @@ public class JDInit {
 
         new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
-       // new HostPluginWrapper("fast-load.net", "FastLoadNet", "http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
+        // new HostPluginWrapper("fast-load.net", "FastLoadNet",
+        // "http://[\\w\\.]*?fast-load\\.net(/|//)index\\.php\\?pid=[a-zA-Z0-9]+"
+        // , PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("FileFactory.com", "FileFactory", "sjdp://filefactory\\.com.*|http://[\\w\\.]*?filefactory\\.com(/|//)file/[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Filer.net", "Filer", "http://[\\w\\.]*?filer.net/(file[\\d]+|get)/.*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Freakshare.net", "Freaksharenet", "http://[\\w\\.]*?freakshare\\.net/files/\\d+/(.*)", PluginWrapper.LOAD_ON_INIT);
