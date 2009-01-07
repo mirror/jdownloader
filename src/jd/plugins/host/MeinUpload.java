@@ -42,25 +42,30 @@ public class MeinUpload extends PluginForHost {
         super(wrapper);
         enablePremium("http://meinupload.com/register.php?g=2");
     }
-    @SuppressWarnings("unchecked")
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
-
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
         }
         br.setDebug(true);
+        downloadFree(downloadLink);
+
+    }
+
+    @SuppressWarnings("unchecked")
+    public void downloadFree(DownloadLink downloadLink) throws Exception {
         Form form = br.getFormbyValue("Free Download");
 
         if (form != null) {
             form.remove("method_premium");
             br.submitForm(form);
-            if(br.toString().contains("(Or wait"))
-            {
+            if (br.toString().contains("(Or wait")) {
                 String[] timestr = br.getRegex("\\(Or wait (\\d+) minutes, (\\d+) seconds\\)").getRow(0);
-                long waitTime = (Long.parseLong(timestr[0])*60000)+(Long.parseLong(timestr[1])*1000);
+                long waitTime = (Long.parseLong(timestr[0]) * 60000) + (Long.parseLong(timestr[1]) * 1000);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
             }
             String[][] Str = br.getRegex("position:absolute;padding-left:(\\d+)[^>]+>(\\d+)").getMatches();
@@ -75,16 +80,14 @@ public class MeinUpload extends PluginForHost {
             gr = (HashMap<Integer, Integer>) JDUtilities.revSortByKey(gr);
             String code = "";
             for (Entry<Integer, Integer> entry : gr.entrySet()) {
-                code+=entry.getValue();
+                code += entry.getValue();
             }
-
-            Form captcha = br.getForms()[1];      
+            Form captcha = br.getFormbyName("F1");
             captcha.put("code", code);
             captcha.put("down_script", "1");
-            this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0))*1000),downloadLink );
+            this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0)) * 1000), downloadLink);
             br.openDownload(downloadLink, captcha);
         }
-   
 
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
@@ -99,11 +102,10 @@ public class MeinUpload extends PluginForHost {
         br.setFollowRedirects(true);
         br.clearCookies(getHost());
 
-        br.getPage("http://meinupload.com/index.php");
-        Form login = br.getFormbyValue("Login");
-        login.put("act", "login");
-        login.put("user", account.getUser());
-        login.put("pass", account.getPass());
+        br.getPage("http://www.mein-upload.com/");
+        Form login = br.getForm(0);
+        login.put("login", account.getUser());
+        login.put("password", account.getPass());
         br.submitForm(login);
     }
 
@@ -111,24 +113,27 @@ public class MeinUpload extends PluginForHost {
         AccountInfo ai = new AccountInfo(this, account);
 
         login(account);
-        br.getPage("http://meinupload.com/members.php");
-        String expire = br.getRegex("<b>Packet runs out on</b></td>.*?<td align=.*?>(.*?)</td>").getMatch(0);
+        br.getPage("http://www.mein-upload.com/?op=my_account");
+        String expire = br.getRegex("<td><strong>G&uuml;ltig bis:</strong>(.*?)</td>").getMatch(0);
         if (expire == null) {
             ai.setValid(false);
             ai.setStatus("Account invalid. Logins wrong?");
             return ai;
         }
+        expire=expire.trim();
 
-        String points = br.getRegex("Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t").getMatch(0);
-        String cash = br.getRegex("Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t").getMatch(1);
-        String files = br.getRegex("Hosted Files</b></td>.*?<td align=.*?>(.*?)  <a href").getMatch(0);
+
+        String points = br.getRegex("<strong>Gesammelte Premium-Punkte:</strong> (\\d+)</td>").getMatch(0);
+//        String cash = br.getRegex("Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t").getMatch(1);
+//        String files = br.getRegex("Hosted Files</b></td>.*?<td align=.*?>(.*?)  <a href").getMatch(0);
 
         ai.setStatus("Account is ok.");
+        if(!expire.equals(""))
         ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
 
         ai.setPremiumPoints(Integer.parseInt(points));
-        ai.setAccountBalance(Integer.parseInt(cash.replaceAll("\\.", "")));
-        ai.setFilesNum(Integer.parseInt(files));
+//        ai.setAccountBalance(Integer.parseInt(cash.replaceAll("\\.", "")));
+//        ai.setFilesNum(Integer.parseInt(files));
 
         return ai;
     }
@@ -145,6 +150,10 @@ public class MeinUpload extends PluginForHost {
         }
 
         String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
+        if (url == null) {
+            downloadFree(downloadLink);
+            return;
+        }
 
         dl = new RAFDownload(this, downloadLink, br.createRequest(url));
         dl.setChunkNum(1);
@@ -188,7 +197,7 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 
