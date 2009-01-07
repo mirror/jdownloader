@@ -900,6 +900,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * um den Speichernamen anzugeben.
      */
     public void setFinalFileName(String newfinalFileName) {
+        setName(newfinalFileName);
         if (newfinalFileName != null && newfinalFileName.length() > 0) {
             finalFileName = JDUtilities.removeEndingPoints(JDIO.validateFileandPathName(newfinalFileName));
             updatePartID();

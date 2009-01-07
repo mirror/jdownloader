@@ -17,15 +17,12 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.nutils.JDHash;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -37,10 +34,14 @@ import jd.plugins.PluginForHost;
 
 public class ShragleCom extends PluginForHost {
 
+    static String apikey = "078e5ca290d728fd874121030efb4a0d";
+
     public ShragleCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://www.shragle.com/index.php?p=accounts");
         setStartIntervall(5000l);
+        br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
+        br.set_WAIT_BETWEEN_PAGE_ACCESS(800l);
     }
 
     @Override
@@ -77,33 +78,21 @@ public class ShragleCom extends PluginForHost {
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        try {
-            login(account);
-        } catch (PluginException e) {
+        this.setBrowserExclusive();
+        br.getPage("http://www.shragle.com/api.php?key=" + apikey + "&action=checkUser&useMD5=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(JDHash.getMD5(account.getPass())));
+        String accountinfos[] = br.getRegex("(.*?)\\|(.*?)\\|(.+)").getRow(0);
+        if (accountinfos == null) {
             ai.setValid(false);
             return ai;
         }
-        br.getPage("http://www.shragle.com/?cat=user");
-        if (br.containsHTML(">Premium-Upgrade<")) {
-            ai.setStatus("This is no Premium Account!");
+        ai.setPremiumPoints(Integer.parseInt(accountinfos[2].trim()));
+        if (accountinfos[0].trim().equalsIgnoreCase("1")) {
             ai.setValid(false);
-            return ai;
+            ai.setStatus("No Premium Account");
+        } else if (accountinfos[0].trim().equalsIgnoreCase("2")) {
+            ai.setValid(true);
         }
-        String premPoints = br.getRegex(Pattern.compile("<td>Premium-Punkte:</td>.*?<td>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (premPoints != null) ai.setPremiumPoints(premPoints);
-
-        String expires = br.getRegex(Pattern.compile("<b>Ihr Premium-Account ist gültig bis zum (.*?) Uhr</b>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (expires == null) {
-            ai.setValid(false);
-            return ai;
-        }
-
-        SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy  hh:mm", Locale.UK);
-        try {
-            Date date = dateFormat.parse(expires.replaceAll("um", ""));
-            ai.setValidUntil(date.getTime());
-        } catch (ParseException e) {
-        }
+        ai.setValidUntil(Long.parseLong(accountinfos[1]) * 1000l);
         return ai;
     }
 
@@ -114,10 +103,8 @@ public class ShragleCom extends PluginForHost {
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         login(account);
-        Thread.sleep(500);/* sonst kommen serverfehler */
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
-        Thread.sleep(500);/* sonst kommen serverfehler */
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
@@ -139,17 +126,14 @@ public class ShragleCom extends PluginForHost {
         setBrowserExclusive();
         correctUrl(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);
-
-        String[] data = Regex.getLines(br.getPage("http://www.shragle.com/api.php?key=078e5ca290d728fd874121030efb4a0d&action=getStatus&fileID=" + id));
-        if (data.length != 4) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String[] data = Regex.getLines(br.getPage("http://www.shragle.com/api.php?key=" + apikey + "&action=getStatus&fileID=" + id));
+        if (data.length != 4) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String name = data[0];
         String size = data[1];
         String md5 = data[2];
         // status 0: all ok 1: abused
         String status = data[3];
-
-        if (!status.equals("0")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-
+        if (!status.equals("0")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setFinalFileName(name.trim());
         downloadLink.setDownloadSize(Long.parseLong(size));
         downloadLink.setMD5Hash(md5.trim());
