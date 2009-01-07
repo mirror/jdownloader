@@ -335,7 +335,7 @@ public abstract class Plugin implements ActionListener {
      * @throws Exception
      */
     static public String getFileNameFormHeader(HTTPConnection urlConnection) {
-        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename=") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
+        if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
         return getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
     }
 

@@ -2,28 +2,85 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class EasyShareCom extends PluginForHost {
 
     public EasyShareCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.easy-share.com/cgi-bin/premium.cgi");
     }
 
     @Override
     public String getAGBLink() {
         return "http://www.easy-share.com/tos.html";
+    }
+
+    private void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setFollowRedirects(true);
+        br.getPage("http://www.easy-share.com/");
+        br.getPage("http://www.easy-share.com/cgi-bin/owner.cgi?action=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    private void isexpired(Account account) throws MalformedURLException, PluginException {
+        if (br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS") == null || !br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS").equalsIgnoreCase("ACTIVE")) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        try {
+            isexpired(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            ai.setExpired(true);
+            return ai;
+        }
+        String expires = br.getRegex(Pattern.compile("<b>Expires on:  </b>(.*?)<br>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (expires == null) {
+            ai.setValid(false);
+            return ai;
+        }
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
+        try {
+            Date date = dateFormat.parse(expires);
+            ai.setValidUntil(date.getTime());
+        } catch (ParseException e) {
+        }
+        return ai;
     }
 
     @Override
@@ -70,11 +127,18 @@ public class EasyShareCom extends PluginForHost {
         String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
         form.put("captcha", captchaCode);
         /* Datei herunterladen */
-        dl = RAFDownload.download(downloadLink, br.createFormRequest(form), true, 1);
-        if (!dl.connect(br).isContentDisposition()) {
-            dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
-        }
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, form, true, 1);
+        if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_CAPTCHA); }
+        dl.startDownload();
+    }
+
+    public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        login(account);
+        isexpired(account);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
         dl.startDownload();
     }
 
