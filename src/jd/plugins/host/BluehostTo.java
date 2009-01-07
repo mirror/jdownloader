@@ -23,6 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
+import jd.parser.Regex;
 import jd.parser.XPath;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -79,7 +80,7 @@ public class BluehostTo extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
-        br.forceDebug(true);
+   
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
         br.getPage("http://bluehost.to");
@@ -90,6 +91,7 @@ public class BluehostTo extends PluginForHost {
         br.submitForm(login);
 
         dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
+      
         if (dl.getConnection().getContentType().contains("text")) {
             String page = br.loadConnection(dl.getConnection());
             br.getRequest().setHtmlCode(page);
@@ -110,14 +112,14 @@ public class BluehostTo extends PluginForHost {
 
         downloadLink.setName(dat[0]);
         downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
-        if (Integer.parseInt(dat[3]) > 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[3]) * 1000l); }
+       if (Integer.parseInt(dat[4]) > 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[4]) * 1000l); }
 
         br.getPage(downloadLink.getDownloadURL());
 
         Form[] forms = br.getForms();
 
-        // br.cloneBrowser().getPage("http://bluehost.to/style.css");
-        // br.cloneBrowser().getPage("http://bluehost.to/css/autosuggest_inquisitor.css");
+         br.cloneBrowser().getPage("http://bluehost.to/style.css");
+        br.cloneBrowser().getPage( "http://bluehost.to/css/autosuggest_inquisitor.css");
 
         Form dlForm = forms[2];
         dlForm.remove("UPLOADSCRIPT_LOGSESSION");
@@ -135,6 +137,42 @@ public class BluehostTo extends PluginForHost {
         return "http://bluehost.to/agb.php";
     }
 
+    public boolean[] checkLinks(DownloadLink[] urls) {
+        try {
+            if (urls == null) { return null; }
+            boolean[] ret = new boolean[urls.length];
+            logger.finest("Checked Links with one request: "+urls.length);
+            StringBuilder sb = new StringBuilder();
+            sb.append("http://bluehost.to/fileinfo/urls=");
+            for (int i = 0; i < urls.length; i++) {
+                sb.append(urls[i].getDownloadURL());
+                sb.append(',');
+            }
+            br.getPage(sb + "");
+
+            String[] lines = Regex.getLines(br + "");
+
+            for (int i = 0; i < urls.length; i++) {
+                String[] dat = lines[i].split("\\, ");
+                try {
+                    urls[i].setMD5Hash(dat[5].trim());
+                    urls[i].setName(dat[0]);
+                    urls[i].setDownloadSize(Integer.parseInt(dat[2]));
+                    ret[i] = true;
+                } catch (Exception e) {
+                    ret[i] = false;
+                }
+            }
+            return ret;
+
+        } catch (Exception e) {
+            System.gc();
+            e.printStackTrace();
+            return null;
+        }
+
+    }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         correctUrl(downloadLink);
@@ -149,7 +187,7 @@ public class BluehostTo extends PluginForHost {
         downloadLink.setMD5Hash(dat[5].trim());
         downloadLink.setName(dat[0]);
         downloadLink.setDownloadSize(Integer.parseInt(dat[2]));
-        if (Integer.parseInt(dat[3]) > 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[3])); }
+       // if (Integer.parseInt(dat[4]) > 0) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[4])); }
 
         return true;
     }
