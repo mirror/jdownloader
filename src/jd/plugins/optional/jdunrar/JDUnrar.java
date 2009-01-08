@@ -969,7 +969,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 String pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()));
                 if (pass == null) {
                     ls.addStatus(LinkStatus.ERROR_POST_PROCESS);
-                    ls.setStatusText("Extract failed(password)");
+                    ls.setStatusText(JDLocale.L("plugins.optional.jdunrar.status.extractfailedpass","Extract failed (password)"));
                     this.onFinished(wrapper);
                     break;
                 }
@@ -982,7 +982,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
             // ": " + "Cracking password");
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Crack password");
+            wrapper.getDownloadLink().getLinkStatus().setStatusText(JDLocale.L("plugins.optional.jdunrar.status.crackingpass","Cracking password"));
             wrapper.getDownloadLink().requestGuiUpdate();
             break;
         case JDUnrarConstants.WRAPPER_NEW_STATUS:
@@ -990,7 +990,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             // ": " + "New status " + wrapper.getStatus());
             break;
         case JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE:
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Open archive");
+            wrapper.getDownloadLink().getLinkStatus().setStatusText(JDLocale.L("plugins.optional.jdunrar.status.openingarchive","Opening archive"));
             wrapper.getDownloadLink().requestGuiUpdate();
             // progress.get(wrapper).setStatusText(wrapper.getFile().getName() +
             // ": " + "Start opening archive");
@@ -1000,7 +1000,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
         case JDUnrarConstants.WRAPPER_PASSWORD_FOUND:
             // progress.get(wrapper).setColor(Color.GREEN);
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Password found");
+            wrapper.getDownloadLink().getLinkStatus().setStatusText(JDLocale.L("plugins.optional.jdunrar.status.passfound","Password found"));
             wrapper.getDownloadLink().requestGuiUpdate();
             wrapper.getDownloadLink().setPluginProgress(null);
 
@@ -1009,7 +1009,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
 
         case JDUnrarConstants.WRAPPER_PASSWORT_CRACKING:
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Cracking password");
+            wrapper.getDownloadLink().getLinkStatus().setStatusText(JDLocale.L("plugins.optional.jdunrar.status.crackingpass","Cracking password"));
 
             if (wrapper.getDownloadLink().getPluginProgress() == null) {
                 wrapper.getDownloadLink().setPluginProgress(new PluginProgress(wrapper.getCrackProgress(), 100, Color.GREEN.darker()));
@@ -1024,7 +1024,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         case JDUnrarConstants.WRAPPER_ON_PROGRESS:
             // progress.get(wrapper).setRange(wrapper.getTotalSize());
             // progress.get(wrapper).setStatus(wrapper.getExtractedSize());
-            wrapper.getDownloadLink().getLinkStatus().setStatusText("Extracting");
+            wrapper.getDownloadLink().getLinkStatus().setStatusText(JDLocale.L("plugins.optional.jdunrar.status.extracting","Extracting")););
 
             if (wrapper.getDownloadLink().getPluginProgress() == null) {
                 wrapper.getDownloadLink().setPluginProgress(new PluginProgress(wrapper.getExtractedSize(), wrapper.getTotalSize(), Color.YELLOW.darker()));
@@ -1061,14 +1061,14 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 // crc.reset();
                 crc.getLinkStatus().removeStatus(LinkStatus.FINISHED);
                 crc.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
-                crc.getLinkStatus().setErrorMessage(JDLocale.LF("plugins.optional.jdunrar.crcerrorin", "Extract: failed(CRC in %s)", crc.getName()));
+                crc.getLinkStatus().setErrorMessage(JDLocale.LF("plugins.optional.jdunrar.crcerrorin", "Extract: failed (CRC in %s)", crc.getName()));
 
                 crc.requestGuiUpdate();
 
             } else {
                 for (DownloadLink link : list) {
                     if (link == null) continue;
-                    link.getLinkStatus().setErrorMessage("Extract: failed(CRC in unknown file)");
+                    link.getLinkStatus().setErrorMessage(JDLocale.L("plugins.optional.jdunrar.error.extrfailedcrc","Extract: failed (CRC in unknown file)"));
                     link.requestGuiUpdate();
                 }
             }
@@ -1103,7 +1103,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 if (link == null) continue;
                 link.getLinkStatus().addStatus(LinkStatus.FINISHED);
                 link.getLinkStatus().removeStatus(LinkStatus.ERROR_POST_PROCESS);
-                link.getLinkStatus().setStatusText("Extract: OK");
+                link.getLinkStatus().setStatusText(FFFFFFFFFFFFFFFFFf);
                 link.requestGuiUpdate();
             }
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
@@ -1177,11 +1177,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             if (wrapper.getException() != null) {
 
-                pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract failed: " + wrapper.getException().getMessage());
+                pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.extractfailed","Extract failed") +": " + wrapper.getException().getMessage());
 
             } else {
 
-                pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract failed");
+                pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.extractfailed","Extract failed")
 
             }
 
@@ -1190,7 +1190,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
         case JDUnrarConstants.WRAPPER_PASSWORD_NEEDED_TO_CONTINUE:
 
-            pc.setStatusText("Extract failed(password)");
+            pc.setStatusText+ JDLocale.L("plugins.optional.jdunrar.status.extractfailedpass","Extract failed (password)");
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_ASK_UNKNOWN_PASS, true)) {
                 String pass = JDUtilities.getGUI().showUserInputDialog(JDLocale.LF("plugins.optional.jdunrar.askForPassword", "Password for %s?", wrapper.getDownloadLink().getName()));
@@ -1203,7 +1203,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             break;
         case JDUnrarConstants.WRAPPER_PASSWORT_CRACKING:
-            pc.setStatusText(wrapper.getFile().getName() + ": " + "Cracking password");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.crackingpass","Cracking password"));
             pc.setRange(100);
             pc.setStatus(wrapper.getCrackProgress());
 
@@ -1214,7 +1214,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
             break;
         case JDUnrarConstants.WRAPPER_START_OPEN_ARCHIVE:
-            pc.setStatusText(wrapper.getFile().getName() + ": " + "Open archive");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.openingarchive","Opening archive"));
 
             break;
         case JDUnrarConstants.WRAPPER_OPEN_ARCHIVE_SUCCESS:
@@ -1223,11 +1223,11 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         case JDUnrarConstants.WRAPPER_PASSWORD_FOUND:
 
-            pc.setStatusText(wrapper.getFile().getName() + ": " + "Password found");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.passfound","Password found")););
             break;
         case JDUnrarConstants.WRAPPER_ON_PROGRESS:
 
-            pc.setStatusText(wrapper.getFile().getName() + ": " + "Extracting");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.extracting","Extracting"));
             pc.setRange(wrapper.getTotalSize());
             pc.setStatus(wrapper.getExtractedSize());
 
@@ -1240,7 +1240,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             break;
         case JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC:
 
-            pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract: failed(CRC)");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.extractfailedcrc","Extract failed (CRC error)")););
 
             this.onFinished(wrapper);
 
@@ -1258,7 +1258,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(wrapper, ControlEvent.CONTROL_ON_FILEOUTPUT, files));
 
-            pc.setStatusText(wrapper.getFile().getName() + ": " + "Extract: OK");
+            pc.setStatusText(wrapper.getFile().getName() + ": " + JDLocale.L("plugins.optional.jdunrar.status.extractok","Extract OK"));
 
             if (this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_REMOVE_INFO_FILE, false)) {
                 File fileOutput = new File(wrapper.getDownloadLink().getFileOutput());
