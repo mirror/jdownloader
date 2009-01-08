@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 public class LetitBitNet extends PluginForHost {
 
     public LetitBitNet(PluginWrapper wrapper) {
-        super(wrapper);
+        super(wrapper);        
     }
 
     @Override
@@ -51,9 +51,8 @@ public class LetitBitNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(size));
-
         return true;
     }
 
@@ -64,20 +63,24 @@ public class LetitBitNet extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-
         getFileInformation(downloadLink);
         Form free = br.getForm(4);
         free.put("fix", "1");
         br.setDebug(true);
         br.submitForm(free);
         String url = br.getRegex("link=(.*?)\"").getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         this.sleep(60000, downloadLink);
-        br.openDownload(downloadLink, url, true, 1).startDownload();
-
+        dl = br.openDownload(downloadLink, url, true, 1);
+        if (dl.getConnection().getResponseCode() == 404) {
+            dl.getConnection().disconnect();
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        }
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 1;
     }
 
     @Override
