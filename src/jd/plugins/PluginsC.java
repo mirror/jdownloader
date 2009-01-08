@@ -61,7 +61,7 @@ public abstract class PluginsC extends Plugin {
 
     protected Vector<DownloadLink> cls = new Vector<DownloadLink>();
 
-    private ContainerStatus containerStatus;
+    private ContainerStatus containerStatus = null;
 
     protected Vector<String> dlU;
 
@@ -304,13 +304,15 @@ public abstract class PluginsC extends Plugin {
             if (cls == null || cls.size() == 0) {
                 CONTAINER.put(filename, null);
                 CONTAINERLINKS.put(filename, null);
-
             } else {
-
                 CONTAINER.put(filename, cls);
                 CONTAINERLINKS.put(filename, dlU);
             }
-            if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
+            if (this.containerStatus == null) {
+                progress.setColor(Color.RED);
+                progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s", "Container not found!"));
+                progress.finalize(500);
+            } else if (!this.containerStatus.hasStatus(ContainerStatus.STATUS_FINISHED)) {
                 progress.setColor(Color.RED);
                 progress.setStatusText(JDLocale.LF("plugins.container.exit.error", "Container error: %s", containerStatus.getStatusText()));
                 progress.finalize(5000);

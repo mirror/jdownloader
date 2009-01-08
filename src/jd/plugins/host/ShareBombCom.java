@@ -44,8 +44,7 @@ public class ShareBombCom extends PluginForHost {
         this.setBrowserExclusive();
         br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
         br.set_PAGE_ACCESS_exclusive(false);
-        br.set_WAIT_BETWEEN_PAGE_ACCESS(500l);
-        br.setDebug(true);
+        br.set_WAIT_BETWEEN_PAGE_ACCESS(500l);        
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;

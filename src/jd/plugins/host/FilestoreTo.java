@@ -43,8 +43,7 @@ public class FilestoreTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();
-        br.setDebug(true);
+        this.setBrowserExclusive();        
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
