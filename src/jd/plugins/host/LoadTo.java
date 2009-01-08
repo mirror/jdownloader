@@ -27,24 +27,24 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class ShareBombCom extends PluginForHost {
+public class LoadTo extends PluginForHost {
 
-    public ShareBombCom(PluginWrapper wrapper) {
+    public LoadTo(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(2000l);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www1.sharebomb.com/tos";
+        br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
+        br.set_PAGE_ACCESS_exclusive(false);
+        br.set_WAIT_BETWEEN_PAGE_ACCESS(500l);
+        this.setStartIntervall(2000l);
+        return "http://www.load.to/terms.php";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
-        br.set_PAGE_ACCESS_exclusive(false);
-        br.set_WAIT_BETWEEN_PAGE_ACCESS(500l);
         br.setDebug(true);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
@@ -55,13 +55,14 @@ public class ShareBombCom extends PluginForHost {
             } catch (Exception e) {
                 continue;
             }
-            downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("Name:</strong> (.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0));
-            downloadSize = br.getRegex(Pattern.compile("Size:</strong> (.*?)<", Pattern.CASE_INSENSITIVE)).getMatch(0);
-            if (!(downloadName == null || downloadSize == null)) {
-                if (downloadName.length() == 0) downloadName = br.getRegex("<title>sharebomb.com.*?Download(.*?)</title>").getMatch(0);
-                downloadLink.setName(downloadName.trim());
-                downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                return true;
+            if (!br.containsHTML("Can't find file")) {
+                downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<b>(.*?)</b></a><br /><br /><table", Pattern.CASE_INSENSITIVE)).getMatch(0));
+                downloadSize = (br.getRegex(Pattern.compile(">([0-9]*? Bytes)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
+                if (!(downloadName == null || downloadSize == null)) {
+                    downloadLink.setName(downloadName);
+                    downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+                    return true;
+                }
             }
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -69,37 +70,24 @@ public class ShareBombCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 3397 $");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
+        /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         /* Link holen */
-        String url = new Regex(br, Pattern.compile("<a href=\"/?(files/.*)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        String linkurl = "http://www1.sharebomb.com/" + Encoding.htmlDecode(url);
-        /* Datei herunterladen */
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("action=\"(http.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        int chunks = 0;
-        if (downloadLink.getDownloadSize() < 2097152) {
-            chunks = 1;
-        } else {
-            chunks = -2;
-        }
-        dl = br.openDownload(downloadLink, linkurl, true, chunks);
+        dl = br.openDownload(downloadLink, linkurl, true, 1);
         HTTPConnection con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
         }
         dl.startDownload();
-
-    }
-
-    @Override
-    public int getMaxRetries() {
-        return 1;
     }
 
     @Override
@@ -109,7 +97,7 @@ public class ShareBombCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 8;
     }
 
     @Override

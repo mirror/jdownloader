@@ -757,6 +757,8 @@ public class JDInit {
         new HostPluginWrapper("uploading.com", "UploadingCom", "http://[\\w\\.]*?uploading\\.com/files/.*?/.+");
         new HostPluginWrapper("kewlshare.com", "KewlshareCom", "http://[\\w\\.]*?kewlshare\\.com/dl/[a-zA-Z0-9]+/.*");
         new HostPluginWrapper("sharebomb.com", "ShareBombCom", "http://[\\w\\.]*?sharebomb\\.com/[0-9]+.*");
+        new HostPluginWrapper("load.to", "LoadTo", "http://[\\w\\.]*?load\\.to/[\\?d=]?[a-zA-Z0-9]+.*");
+        new HostPluginWrapper("filestore.to", "FilestoreTo", "http://[\\w\\.]*?filestore\\.to/\\?d=[a-zA-Z0-9]+");
     }
 
     public void loadPluginOptional() {
