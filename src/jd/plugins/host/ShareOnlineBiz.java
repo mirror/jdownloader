@@ -116,7 +116,6 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -124,9 +123,10 @@ public class ShareOnlineBiz extends PluginForHost {
         DownloadLink downloadLink = (DownloadLink) parameter;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(parameter);
+        url = downloadLink.getDownloadURL() + "&setlang=en";
         login(account);
         if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-        br.getPage(downloadLink.getDownloadURL());
+        br.getPage(url);
         Form form = br.getForm(1);
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -166,7 +166,7 @@ public class ShareOnlineBiz extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-
+        br.getPage(url);
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.share-online.biz/captcha.php"));
@@ -174,7 +174,7 @@ public class ShareOnlineBiz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         /* CaptchaCode holen */
-        captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);        
         Form form = br.getForm(1);
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
