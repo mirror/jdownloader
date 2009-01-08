@@ -241,8 +241,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getContainerFile() {
-        String Filename=new File(containerFile).getName();
-        return JDUtilities.getResourceFile("container/"+Filename).getAbsolutePath();
+        String Filename = new File(containerFile).getName();
+        return JDUtilities.getResourceFile("container/" + Filename).getAbsolutePath();
     }
 
     public int getContainerIndex() {
