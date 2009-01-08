@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.XPath;
@@ -87,7 +88,16 @@ public class BluehostTo extends PluginForHost {
         getFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
+        HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
+        if (con.getContentType().contains("text")) {
+            br.followConnection();
+            Form download = br.getFormbyName("download");
+            if (download == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+            dl = br.openDownload(downloadLink, download, true, 0);
+        } else {
+            con.disconnect();
+            dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
+        }
         if (dl.getConnection().getContentType().contains("text")) {
             dl.getConnection().disconnect();
             login(account);
