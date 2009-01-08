@@ -74,7 +74,7 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_FIND_MIRROR_URL = Pattern.compile("<form *action *= *\"([^\\n\"]*)\"");
 
-    private static final Pattern PATTERN_FIND_MIRROR_URLS = Pattern.compile("<input.*?type=\"radio\" name=\"mirror\" onclick=\"document.dlf?.action=\\\\'(.*)\\\\';\" /> (.*?)<br />'");
+    private static final Pattern PATTERN_FIND_MIRROR_URLS = Pattern.compile("<input.*?type=\"radio\" name=\"mirror\" onclick=\"document\\.dlf?\\.action=[\\\\]?'(.*?)[\\\\]?';\" /> (.*?)<br />", Pattern.DOTALL|Pattern.CASE_INSENSITIVE);
 
     private static final Pattern PATTERN_FIND_PRESELECTED_SERVER = Pattern.compile("<form name=\"dlf?\" action=\"(.*?)\" method=\"post\">");
 
@@ -343,6 +343,12 @@ public class Rapidshare extends PluginForHost {
         String code = Context.toString(result);
         if (tt != null) ticketCode = code;
         Context.exit();
+        if(ticketCode.contains("Leider sind derzeit keine freien Slots "))
+        {
+            downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
+            logger.warning("All free slots in use: try to download again after 2 minutes");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120000);
+        }
         if (new Regex(ticketCode, ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches()) {
             String waitfor = new Regex(ticketCode, "Or try again in about(.*?)minutes").getMatch(0);
             long waitTime = 60 * 60 * 1000l;
@@ -366,12 +372,7 @@ public class Rapidshare extends PluginForHost {
         }
 
         waitTicketTime(downloadLink, pendingTime);
-        if(ticketCode.contains("Leider sind derzeit keine freien Slots "))
-        {
-            downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
-            logger.warning("All free slots in use: try to download again after 2 minutes");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120000);
-        }
+
         String postTarget = getDownloadTarget(downloadLink, ticketCode);
 
         // Falls Serverauswahl fehlerhaft war
@@ -573,9 +574,7 @@ public class Rapidshare extends PluginForHost {
             downloadLink.getLinkStatus().addStatus(LinkStatus.ERROR_RETRY);
             return null;
         }
-
         String[] serverstrings = new Regex(ticketCode, PATTERN_FIND_MIRROR_URLS).getColumn(0);
-
         logger.info("wished Mirror #1 Server " + serverAbb);
         logger.info("wished Mirror #2 Server " + server2Abb);
         logger.info("wished Mirror #3 Server " + server3Abb);
