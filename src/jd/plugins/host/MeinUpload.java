@@ -18,11 +18,14 @@ package jd.plugins.host;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import jd.utils.JDUtilities;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -31,13 +34,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 import jd.utils.JDLocale;
 
 public class MeinUpload extends PluginForHost {
 
-    private static final String AGB_LINK = "http://meinupload.com/#help.html";
-    private int premMax = 1;
+    private static final String AGB_LINK = "http://meinupload.com/tos.html";
+    private int simultanpremium = 1;
 
     public MeinUpload(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,19 +48,22 @@ public class MeinUpload extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        br.clearCookies(getHost());
-        br.getPage(downloadLink.getDownloadURL());
+        getFileInformation(downloadLink);
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
         }
-        br.setDebug(true);
-        downloadFree(downloadLink);
+        handleFree0(downloadLink);
+    }
 
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
     @SuppressWarnings("unchecked")
-    public void downloadFree(DownloadLink downloadLink) throws Exception {
+    public void handleFree0(DownloadLink downloadLink) throws Exception {
+        br.getPage(downloadLink.getDownloadURL());
         Form form = br.getFormbyValue("Free Download");
 
         if (form != null) {
@@ -74,8 +79,7 @@ public class MeinUpload extends PluginForHost {
             for (String[] strings : Str) {
                 try {
                     gr.put(Integer.parseInt(strings[0]), Integer.parseInt(strings[1]));
-                } catch (Exception e) {
-                    // TODO: handle exception
+                } catch (Exception e) {                    
                 }
             }
             gr = (HashMap<Integer, Integer>) JDUtilities.revSortByKey(gr);
@@ -87,105 +91,92 @@ public class MeinUpload extends PluginForHost {
             captcha.put("code", code);
             captcha.put("down_script", "1");
             this.sleep((Integer.parseInt(br.getRegex("(\\d+)</span> Sekunden</span>").getMatch(0)) * 1000), downloadLink);
+            br.setDebug(true);
             br.openDownload(downloadLink, captcha);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         }
-
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
-
         }
         dl.startDownload();
     }
 
-    private void login(Account account) throws IOException {
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        br.clearCookies(getHost());
-
+    private void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.clearCookies("mein-upload.com");
         br.getPage("http://www.mein-upload.com/");
         Form login = br.getForm(0);
-        login.put("login", account.getUser());
-        login.put("password", account.getPass());
+        login.put("login", Encoding.urlEncode(account.getUser()));
+        login.put("password", Encoding.urlEncode(account.getPass()));
         br.submitForm(login);
-        String expire = br.getRegex("<td><strong>G&uuml;ltig bis:</strong>(.*?)</td>").getMatch(0);
-        if (expire == null) {
-            account.setEnabled(false);
-            account.setStatus("Account invalid. Logins wrong?");
-            return;
-        }
-        expire = expire.trim();
-        if (!expire.equals("")) {
-            premMax = 20;
-        } else
-            premMax = 1;
+        String cookie = br.getCookie("http://www.mein-upload.com/", "xfss");
+        if (cookie == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        br.setCookie("http://www.meinupload.com/", "xfss", cookie);
+    }
 
+    private boolean isPremium() throws IOException {
+        br.getPage("http://www.mein-upload.com/?op=my_account");
+        if (br.containsHTML("Kein Premium Account")) return false;
+        return true;
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-
-        login(account);
-        br.getPage("http://www.mein-upload.com/?op=my_account");
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        if (!isPremium()) {
+            ai.setStatus("Free Member Account");
+            ai.setValid(true);
+            return ai;
+        }
         String expire = br.getRegex("<td><strong>G&uuml;ltig bis:</strong>(.*?)</td>").getMatch(0);
         if (expire == null) {
             ai.setValid(false);
-            ai.setStatus("Account invalid. Logins wrong?");
+            ai.setStatus("Expired?");
             return ai;
         }
         expire = expire.trim();
-
         String points = br.getRegex("<strong>Gesammelte Premium-Punkte:</strong> (\\d+)</td>").getMatch(0);
-        // String cash = br.getRegex(
-        // "Bonuspoints overall</b></td>.*?<td align=.*?>(\\d+?)&nbsp;\\(([\\d\\.]+?)&#x80;\\)</t"
-        // ).getMatch(1);
-        // String files =
-        // br.getRegex("Hosted Files</b></td>.*?<td align=.*?>(.*?)  <a href"
-        // ).getMatch(0);
-
-        ai.setStatus("Account is ok.");
-        if (!expire.equals("")) {
-            premMax = 20;
-            ai.setValidUntil(Regex.getMilliSeconds(expire, "MM/dd/yy", null));
-        } else
-            premMax = 1;
-
+        ai.setValidUntil(Regex.getMilliSeconds(expire, "dd MMMM yyyy", Locale.UK));
         ai.setPremiumPoints(Integer.parseInt(points));
-        // ai.setAccountBalance(Integer.parseInt(cash.replaceAll("\\.", "")));
-        // ai.setFilesNum(Integer.parseInt(files));
-
         return ai;
     }
 
     public int getMaxSimultanPremiumDownloadNum() {
-        return premMax;
+        return simultanpremium;
     }
 
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
+        getFileInformation(downloadLink);
         login(account);
-        br.setDebug(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.getRedirectLocation() != null) {
-            String error = br.getRegex("code=(.*)").getMatch(0);
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.host.meinupload.error." + error, error));
-
-        }
-
-        String url = br.getRegex("document\\.location=\"(.*?)\"").getMatch(0);
-        if (url == null) {
-            downloadFree(downloadLink);
+        if (!this.isPremium()) {
+            simultanpremium = 1;
+            handleFree0(downloadLink);
             return;
+        } else {
+            if (simultanpremium + 1 > 20) {
+                simultanpremium = 20;
+            } else {
+                simultanpremium++;
+            }
         }
-
-        dl = new RAFDownload(this, downloadLink, br.createRequest(url));
-        dl.setChunkNum(1);
-        dl.setResume(true);
-        dl.connect();
+        br.getPage(downloadLink.getDownloadURL());
+        Form form = br.getForm(0);
+        br.submitForm(form);
+        String url = br.getRegex(Pattern.compile("Dieser Direktlink.*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, url, true, 0);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.meinupload.serverdefect", "Serivce not available"), 10 * 60 * 1000l);
-
         }
         dl.startDownload();
     }
@@ -196,31 +187,25 @@ public class MeinUpload extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-
+    public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.clearCookies("mein-upload.com");
         br.getPage(downloadLink.getDownloadURL());
-
         if (br.getRedirectLocation() != null) {
             String error = br.getRegex("code=(.*)").getMatch(0);
             downloadLink.getLinkStatus().setErrorMessage(error);
-            return false;
-
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("Datei: <font color=\"#\\d+\">([^<]*)</font>").getMatch(0);
+        String filesize = br.getRegex("Datei: <font color=\"#\\d+\">[^<]*</font> \\(([^\\)]*)\\)").getMatch(0);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename);
-        try {
-            String s = br.getRegex("Datei: <font color=\"#\\d+\">[^<]*</font> \\(([^\\)]*)\\)").getMatch(0);
-            long size = Regex.getSize(s);
-            if (size > 0) downloadLink.setDownloadSize(size);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
         return true;
     }
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 

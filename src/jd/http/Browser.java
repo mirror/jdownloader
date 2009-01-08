@@ -117,9 +117,22 @@ public class Browser {
         put_LAST_PAGE_ACCESS(System.currentTimeMillis());
     }
 
-    public void clearCookies(String string) {
-        getCookies().put(string, null);
+    public void clearCookies(String url) {
+        String host = url;
+        try {
+            host = Browser.getHost(url);
+        } catch (MalformedURLException e) {
+        }
+        Iterator<String> it = getCookies().keySet().iterator();
+        String check = null;
+        while (it.hasNext()) {
+            check = it.next();
+            if (check.contains(host)) {
+                cookies.remove(check);
+                break;
+            }
 
+        }
     }
 
     public void forwardCookies(Request request) throws MalformedURLException {
