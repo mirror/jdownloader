@@ -112,7 +112,7 @@ public class UPnPInfo {
                         String hostport = new Regex(SCPDs.keySet().iterator().next(), ".*(\\:[\\d]+)").getMatch(0);
                         mett += "Host: %%%routerip%%%" + hostport + "\r\n";
                         mett += "Content-Type: text/xml; charset=\"utf-8\"\r\n";
-                        mett += "SoapAction:" + meth.get("serviceType") + "#ForceTermination\r\n";
+                        mett += "SoapAction:" + meth.get("serviceType") + "#ForceTermination\r\n\r\n";
                         mett += "<?xml version='1.0' encoding='utf-8'?> <s:Envelope s:encodingStyle='http://schemas.xmlsoap.org/soap/encoding/' xmlns:s='http://schemas.xmlsoap.org/soap/envelope/'> <s:Body> <u:ForceTermination xmlns:u='" + meth.get("serviceType") + "' /> </s:Body> </s:Envelope>\r\n";
                         mett += "[[[/REQUEST]]]\r\n[[[/STEP]]]\r\n[[[/HSRC]]]";
                         ret.add(mett);
