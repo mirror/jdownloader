@@ -107,7 +107,7 @@ public class ShragleCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.getRedirectLocation() != null) {
             br.setFollowRedirects(true);
-            dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, 0);
+            dl = br.openDownload(downloadLink, br.getRedirectLocation(), true, -4);
         } else {
             Form form = br.getFormbyName("download");
             br.setFollowRedirects(true);
