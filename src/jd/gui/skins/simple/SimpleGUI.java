@@ -1,4 +1,4 @@
-//    jDownloader - Downloadmanager
+﻿//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team jdownloader@freenet.de
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -1022,8 +1022,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Aktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction start. ");
-                        setStatusBarText("Interaction: " + ((Interaction) event.getSource()).getInteractionName());
-                        frame.setTitle(JDUtilities.JD_TITLE + " | Aktion: " + ((Interaction) event.getSource()).getInteractionName());
+                        setStatusBarText(JDLocale.L("gui.statusbar.interaction","Interaction:") + " " + ((Interaction) event.getSource()).getInteractionName());
+                        frame.setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction","Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
                     }
                     break;
                 case ControlEvent.CONTROL_SYSTEM_EXIT:
