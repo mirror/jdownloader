@@ -18,6 +18,7 @@ package jd.plugins.optional.hjsplit;
 
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.filechooser.FileFilter;
@@ -55,6 +56,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     private static final int ARCHIVE_TYPE_NORMAL = 0;
     private static final int ARCHIVE_TYPE_UNIX = 1;
     private static final int ARCHIVE_TYPE_7Z = 2;
+    private static final int ARCHIVE_TYPE_RAR = 2;
     private static final String CONFIG_KEY_OVERWRITE = "OVERWRITE";
 
     // Wird als reihe für anstehende extracthjobs verwendet
@@ -475,10 +477,32 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      */
     private int getArchiveType(File file) {
         String name = file.getName();
+
         if (name.matches("(?is).*\\.7z\\.[\\d]+$")) return ARCHIVE_TYPE_7Z;
-        if (name.matches(".*\\.\\a.$")) return ARCHIVE_TYPE_UNIX;
+        if (name.matches(".*\\.\\a.$")) {
+            try {
+                Signature fs = FileSignatures.getFileSignature(file);
+                if (fs.getId().equals("RAR"))
+                    return ARCHIVE_TYPE_RAR;
+                else if (fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
+            } catch (IOException e) {
+            }
+
+            return ARCHIVE_TYPE_UNIX;
+
+        }
         if (name.matches(".*\\.[\\d]+($|\\..*)")) return ARCHIVE_TYPE_NORMAL;
-        return ARCHIVE_TYPE_NONE;
+        {
+            try {
+                Signature fs = FileSignatures.getFileSignature(file);
+                if (fs.getId().equals("RAR"))
+                    return ARCHIVE_TYPE_RAR;
+                else if (fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
+            } catch (IOException e) {
+            }
+
+            return ARCHIVE_TYPE_NONE;
+        }
     }
 
     /**
