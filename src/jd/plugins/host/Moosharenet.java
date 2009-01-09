@@ -117,6 +117,7 @@ public class Moosharenet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(false);
         br.getPage(downloadLink.getDownloadURL());
+        
         Form form = br.getForm(2);
         if (form == null) {
             if (br.containsHTML("Sie haben Ihr Downloadlimit für den Moment erreicht!")) {
@@ -127,7 +128,7 @@ public class Moosharenet extends PluginForHost {
         }
         br.submitForm(form);
         String filename = br.getRegex(Pattern.compile(">Datei</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        String filesize = br.getRegex(Pattern.compile(">Gr..e</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String filesize = br.getRegex(Pattern.compile(">Gr.*?e</td>.*?<td.*?>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(filesize));
