@@ -231,6 +231,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
     public DownloadLink getNextDownloadLink() {
 
         DownloadLink nextDownloadLink = null;
+        DownloadLink returnDownloadLink = null;
         try {
             for (FilePackage filePackage : controller.getPackages()) {
                 for (Iterator<DownloadLink> it2 = filePackage.getDownloadLinks().iterator(); it2.hasNext();) {
@@ -252,8 +253,12 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                                         if (maxPerHost == 0) maxPerHost = Integer.MAX_VALUE;
 
                                         if (getDownloadNumByHost(nextDownloadLink.getPlugin()) < (nextDownloadLink.getPlugin()).getMaxSimultanDownloadNum(nextDownloadLink) && getDownloadNumByHost(nextDownloadLink.getPlugin()) < maxPerHost && nextDownloadLink.getPlugin().getWrapper().usePlugin()) {
-
-                                        return nextDownloadLink; }
+                                            if (returnDownloadLink == null) {
+                                                returnDownloadLink = nextDownloadLink;
+                                            } else {
+                                                if (nextDownloadLink.getPriority() > returnDownloadLink.getPriority()) returnDownloadLink = nextDownloadLink;
+                                            }
+                                        }
 
                                     }
                                 }
@@ -264,9 +269,10 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                 }
             }
         } catch (Exception e) {
+            // e.printStackTrace();
             // Fängt concurrentmodification Exceptions ab
         }
-        return null;
+        return returnDownloadLink;
     }
 
     /**

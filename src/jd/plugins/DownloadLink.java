@@ -151,6 +151,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     private String sha1Hash;
 
+    private int priority = 0;
+
     /**
      * Erzeugt einen neuen DownloadLink
      * 
@@ -168,6 +170,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     public DownloadLink(PluginForHost plugin, String name, String host, String urlDownload, boolean isEnabled) {
         this.plugin = plugin;
         this.dupecheckallowed = false;
+        priority = 0;
         setName(name);
         sourcePluginPasswords = new Vector<String>();
 
@@ -205,6 +208,17 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
 
     public void setDupecheckAllowed(boolean b) {
         dupecheckallowed = b;
+    }
+
+    public int getPriority() {
+        return this.priority;
+    }
+
+    public void setPriority(int pr) {
+        if (pr <= 4 && pr >= -4) {
+            this.priority = pr;
+        } else
+            this.priority = 0;
     }
 
     /**
@@ -658,7 +672,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
             }
         }
         downloadMax = 0;
-
+        priority = 0;
         chunksProgress = null;
         downloadLinkController = null;
         downloadCurrent = 0;

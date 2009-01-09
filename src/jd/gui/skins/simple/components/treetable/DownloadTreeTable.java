@@ -260,6 +260,15 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
             break;
+        case TreeTableAction.DOWNLOAD_PRIO:
+            HashMap<String, Object> prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
+            links = (Vector<DownloadLink>) prop.get("downloadlinks");
+            Integer prio = (Integer) prop.get("prio");
+            for (int i = 0; i < links.size(); i++) {
+                links.elementAt(i).setPriority(prio);
+            }
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+            break;
         case TreeTableAction.DOWNLOAD_RESUME:
             links = (Vector<DownloadLink>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlinks");
             for (int i = 0; i < links.size(); i++) {
@@ -809,6 +818,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
 
+                popup.add(buildpriomenu((DownloadLink) obj));
+
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DOWNLOAD_DIR, new Property("downloadlink", obj))));
                 popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.browseLink", "im Browser öffnen"), TreeTableAction.DOWNLOAD_BROWSE_LINK, new Property("downloadlink", obj))));
@@ -843,6 +854,25 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             }
             popup.show(this, point.x, point.y);
         }
+    }
+
+    private JMenu buildpriomenu(DownloadLink link) {
+        JMenuItem tmp;
+        JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority"));
+        int prio = link.getPriority();
+        HashMap<String, Object> prop = null;
+        Vector<DownloadLink> links = getSelectedDownloadLinks();
+        for (int i = 4; i >= -4; i--) {
+            prop = new HashMap<String, Object>();
+            prop.put("downloadlinks", links);
+            prop.put("prio", new Integer(i));
+            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(this, Integer.toString(i), TreeTableAction.DOWNLOAD_PRIO, new Property("infos", prop))));
+            if (i == prio) {
+                tmp.setEnabled(false);
+            } else
+                tmp.setEnabled(true);
+        }
+        return prioPopup;
     }
 
     private Vector<Component> createPackageMenu(FilePackage fp, Vector<FilePackage> fps) {

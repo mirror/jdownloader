@@ -39,6 +39,7 @@ public class TreeTableAction extends AbstractAction {
     public static final int DOWNLOAD_NEW_PACKAGE = 8;
     public static final int DOWNLOAD_RESET = 4;
     public static final int DOWNLOAD_RESUME = 22;
+    public static final int DOWNLOAD_PRIO = 666;
     public static final int PACKAGE_ABORT = 19;
     // public static final int PACKAGE_CHECK_AVAILABILITY = 25;
     public static final int PACKAGE_COPY_PASSWORD = 23;
