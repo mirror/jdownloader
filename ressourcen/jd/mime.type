@@ -1,5 +1,5 @@
 ﻿7Z:::377a0000271c.*:::7-Zip Archiv:::.*\.7z
-RAR:::526172211a07.*:::Rar Archiv:::.*\.rar
+RAR:::526172211a07.*:::Rar Archiv:::.((.*\.rar)|(.*\.cbr))
 AVI:::52494646.*:::AVI Video Container:::((.*\.divx)|(.*\.avi)|(.*\.xvid))
 BZ2:::425a68363141.*::::::.*\.bz2
 DOC:::d0cf11e0a1b1.*:::Document Format:::.*\.doc
@@ -38,6 +38,6 @@ MP3:::fffb904.*:::Mp3 Audio:::.+\.mp3
 MP3:::fffba0040000.*:::Mp3 Audio:::.+\.mp3
 EXE:::4d5a[a-f0-9]{2}000[a-f0-9]{1}00.*:::Windows executable:::.+\.exe
 GIF:::474946383961.*:::Gif Image:::.+\.gif
-ISO:::000000000000000000000000.*:::ISO:::.+\.iso
+ISO:::000000000000000000000000.*?[^0]{1,}:::ISO:::.+\.iso
 FLV:::464c56.*:::Flv Video:::.+\.flv
 CSO:::4349534f.*:::Compressed ISO Image:::.+\.cso

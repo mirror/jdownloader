@@ -254,6 +254,10 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     JDUtilities.getLogger().warning("Non fatal error(s) occurred");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
                     break;
+                default:
+                    JDUtilities.getLogger().warning("Unknown Error");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
                 }
                 return;
             }
@@ -549,22 +553,11 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
                 if (signature != null) {
                     if (signature.getExtension().matcher(smallestFile.getFilepath()).matches()) {
-                        // signatur passt zur extension
+                        // signatur und extension passen
                         this.password = pass;
                         crackProgress = 100;
                         fireEvent(JDUnrarConstants.WRAPPER_PASSWORT_CRACKING);
-
                         return;
-                    } else {
-                        // signatur passt nicht zur extension.... Es wird
-                        // weitergesucht.
-
-                        if (!signature.getDesc().equals("Plaintext")) {
-                            this.password = pass;
-                        } else {
-                            if (password == null) password = pass;
-                        }
-
                     }
                 }
 
