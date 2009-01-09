@@ -215,28 +215,45 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                     fireEvent(JDUnrarConstants.WRAPPER_FINISHED_SUCCESSFULL);
                     break;
                 case EXIT_CODE_CRC_ERROR:
-                    System.err.println("A CRC error occurred when unpacking");
+                    JDUtilities.getLogger().warning("A CRC error occurred when unpacking");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED_CRC);
                     break;
                 case EXIT_CODE_USER_BREAK:
-                    System.err.println(" User interrupted extraction");
-                case EXIT_CODE_CREATE_ERROR:
-                    System.err.println("Could not create Outputfile");
-                case EXIT_CODE_MEMORY_ERROR:
-                    System.err.println("Not enough memory for operation");
-                case EXIT_CODE_USER_ERROR:
-                    System.err.println("Command line option error");
-                case EXIT_CODE_OPEN_ERROR:
-                    System.err.println("Open file error");
-                case EXIT_CODE_WRITE_ERROR:
-                    System.err.println("Write to disk error");
-                case EXIT_CODE_LOCKED_ARCHIVE:
-                    System.err.println("Attempt to modify an archive previously locked by the 'k' command");
-                case EXIT_CODE_FATAL_ERROR:
-                    System.err.println("A fatal error occurred");
-                case EXIT_CODE_WARNING:
-                    System.err.println("Non fatal error(s) occurred");
+                    JDUtilities.getLogger().warning(" User interrupted extraction");
                     fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_CREATE_ERROR:
+                    JDUtilities.getLogger().warning("Could not create Outputfile");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_MEMORY_ERROR:
+                    JDUtilities.getLogger().warning("Not enough memory for operation");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_USER_ERROR:
+                    JDUtilities.getLogger().warning("Command line option error");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_OPEN_ERROR:
+                    JDUtilities.getLogger().warning("Open file error");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_WRITE_ERROR:
+                    JDUtilities.getLogger().warning("Write to disk error");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_LOCKED_ARCHIVE:
+                    JDUtilities.getLogger().warning("Attempt to modify an archive previously locked by the 'k' command");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_FATAL_ERROR:
+                    JDUtilities.getLogger().warning("A fatal error occurred");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
+                case EXIT_CODE_WARNING:
+                    JDUtilities.getLogger().warning("Non fatal error(s) occurred");
+                    fireEvent(JDUnrarConstants.WRAPPER_EXTRACTION_FAILED);
+                    break;
                 }
                 return;
             }
@@ -841,14 +858,25 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     }
 
     public class ExtractListener extends ProcessListener {
+        private int lastLinePosition = 0;
 
         @Override
-        public void onBufferChanged(Executer exec, DynByteBuffer totalBuffer, int latestReadNum) {
+        public void onBufferChanged(Executer exec, DynByteBuffer buffer, int latestReadNum) {
+            String lastLine;
+            try {
+                lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition), JDUnrar.CODEPAGE);
+            } catch (Exception e) {
+                e.printStackTrace();
+                lastLine = new String(buffer.getLast(buffer.position() - lastLinePosition));
+            }
+            if (new Regex(lastLine, Pattern.compile("Write error.*?bort ", Pattern.CASE_INSENSITIVE)).matches()) {
+                exec.writetoOutputStream("A");
+            }
         }
 
         @Override
         public void onProcess(Executer exec, String latestLine, DynByteBuffer totalBuffer) {
-
+            this.lastLinePosition = totalBuffer.position();
             String match = null;
             if (latestLine.length() > 0) {
                 // Neue Datei wurde angefangen
@@ -875,7 +903,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                         exactProgress = true;
                         currentlyWorkingOn.setPercent(Integer.parseInt(match));
                         fireEvent(JDUnrarConstants.WRAPPER_ON_PROGRESS);
-
                     }
                     return;
                 }
@@ -941,7 +968,6 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
             }
         }
-
     }
 
     public void go() throws Exception {
