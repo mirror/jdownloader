@@ -92,10 +92,10 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     }
 
     public CountdownConfirmDialog(final Frame owner, final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
-        this(owner, title, countdown, defaultResult, style, msg);
+        this(owner, title, countdown, defaultResult,null, style, msg);
     }
 
-    public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult, final int style, final String... msg) {
+    public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult,final Dimension size, final int style, final String... msg) {
         super(owner);
         this.titleText = title;
 
@@ -151,7 +151,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                 while (--c >= 0) {
                     if (countdownThread == null) { return; }
                     if (titleText != null) {
-                        setTitle(titleText+">>"+JDUtilities.formatSeconds(c) + " mm:ss");
+                        setTitle(JDUtilities.formatSeconds(c) + ">>"+titleText);
                     } else {
                         setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
                     }
@@ -187,7 +187,15 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         }
         }
         if ((style & STYLE_INPUTFIELD) != 0) {
-            inputField = new JTextField();
+            if(msg!=null)
+            {
+            if((style & STYLE_NO_MSGLABLE) != 0)
+            inputField = new JTextField(msg[0]);
+            else if(msg.length>1)
+                inputField = new JTextField(msg[1]);
+            }
+            if(inputField==null)
+                inputField = new JTextField();
             inputField.addKeyListener(new KeyListener() {
 
                 public void keyPressed(KeyEvent e) {
@@ -264,8 +272,17 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         }
 
         pack();
-        if(title!=null)
-        setSize(getWidth()+title.length()*10, getHeight());
+        if(size!=null)
+        {
+            int width = size.width;
+            int hight = size.height;
+            if(width<0 || getWidth()>width)
+                width=getWidth();
+            if(hight<0 || getHeight()>hight)
+                hight=getHeight();
+            
+            setSize(width, hight);
+        }
         setLocation(JDUtilities.getCenterOfComponent(null, this));
         countdownThread.start();
         setVisible(true);
@@ -301,13 +318,13 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         }
     }
 
-    public static String getInputDialog(Frame owner, String title, int countdown) {
-        CountdownConfirmDialog dia = new CountdownConfirmDialog(new JFrame(),title, null, countdown, false, STYLE_OK | STYLE_CANCEL | STYLE_INPUTFIELD| STYLE_NO_MSGLABLE);
+    public static String getInputDialog(Frame owner,String value, String title, int countdown) {
+        CountdownConfirmDialog dia = new CountdownConfirmDialog(new JFrame(),title, countdown, false,new Dimension(300, -1), STYLE_OK | STYLE_CANCEL | STYLE_INPUTFIELD| STYLE_NO_MSGLABLE, value);
         return dia.input;
     }
 
     public static void main(String[] args) {
-        System.out.println(getInputDialog(new JFrame(), "this is a test", 30));
+        System.out.println(getInputDialog(new JFrame(),"Your name is ...", "this is a test", 30));
         System.exit(0);
     }
 }
