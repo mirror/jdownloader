@@ -13,6 +13,7 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
-        this.setBrowserExclusive();        
+        this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
@@ -69,7 +70,7 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 3397 $");
+        return getVersion("$Revision$");
     }
 
     @Override

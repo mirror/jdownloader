@@ -37,7 +37,6 @@ import jd.JDFileFilter;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
 import jd.controlling.DistributeData;
-import jd.gui.skins.simple.ConvertDialog;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;
@@ -149,11 +148,14 @@ public class StreamingShareTool extends PluginOptional {
 
     public ArrayList<MenuItem> createMenuitems() {
         ArrayList<MenuItem> menu = new ArrayList<MenuItem>();
-        /*if (frame == null || !frame.isVisible()) {
-            menu.add(new MenuItem(JDLocale.L("plugins.optional.streamsharingtool.action.start", "Start"), 0).setActionListener(this));
-        } else {
-            menu.add(new MenuItem(JDLocale.L("plugins.optional.streamsharingtool.action.end", "Exit"), 0).setActionListener(this));
-        }*/
+        /*
+         * if (frame == null || !frame.isVisible()) { menu.add(new
+         * MenuItem(JDLocale
+         * .L("plugins.optional.streamsharingtool.action.start", "Start"),
+         * 0).setActionListener(this)); } else { menu.add(new
+         * MenuItem(JDLocale.L("plugins.optional.streamsharingtool.action.end",
+         * "Exit"), 0).setActionListener(this)); }
+         */
         menu.add(new MenuItem(getHost(), 0).setActionListener(this));
         return menu;
     }
@@ -292,8 +294,8 @@ public class StreamingShareTool extends PluginOptional {
 
     private Vector<DownloadLink> GetValid(String text, boolean showcount) {
         String script = Encoding.htmlDecode(text);
-        //ConvertDialog.setKeepformat(false);
-        //ConvertDialog.setKeepineverycase(true);
+        // ConvertDialog.setKeepformat(false);
+        // ConvertDialog.setKeepineverycase(true);
         Vector<DownloadLink> toReturn = new Vector<DownloadLink>();
         Vector<DownloadLink> links = new DistributeData(script).findLinks(false);
 
@@ -325,8 +327,8 @@ public class StreamingShareTool extends PluginOptional {
             }
         }
 
-        //ConvertDialog.setKeepformat(false);
-        //ConvertDialog.setKeepineverycase(false);
+        // ConvertDialog.setKeepformat(false);
+        // ConvertDialog.setKeepineverycase(false);
         if (showcount) {
             JDUtilities.getGUI().showCountdownConfirmDialog(String.valueOf(links.size()) + " " + JDLocale.L("plugins.optional.streamsharingtool.action.validate.linksfound", "Link(s) gefunden!"), 60);
         }

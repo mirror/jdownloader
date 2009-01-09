@@ -22,8 +22,6 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import jd.utils.JDUtilities;
-
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.parser.Form;
@@ -35,6 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class MeinUpload extends PluginForHost {
 
@@ -79,7 +78,7 @@ public class MeinUpload extends PluginForHost {
             for (String[] strings : Str) {
                 try {
                     gr.put(Integer.parseInt(strings[0]), Integer.parseInt(strings[1]));
-                } catch (Exception e) {                    
+                } catch (Exception e) {
                 }
             }
             gr = (HashMap<Integer, Integer>) JDUtilities.revSortByKey(gr);
