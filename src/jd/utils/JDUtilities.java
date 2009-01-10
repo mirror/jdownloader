@@ -1385,7 +1385,7 @@ public class JDUtilities {
             }
         }
         return ret;
-    }
+    } 
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
         if (dbconnect == null) {
