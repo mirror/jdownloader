@@ -1391,7 +1391,7 @@ public class JDUtilities {
         if (dbconnect == null) {
             dbconnect = new DatabaseConnector();
         }
-        return dbconnect;
+        return dbconnect; 
     }
 
     /**

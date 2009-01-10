@@ -430,6 +430,19 @@ public class JDInit {
             JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
 
         } else {
+            
+            File cfg = JDUtilities.getResourceFile("config");
+            if(!cfg.exists()){
+                
+                if(!cfg.mkdirs()){
+                    System.err.println("Could not create configdir");
+                    return null;
+                }
+                if(!cfg.canWrite()){
+                    System.err.println("Cannot write to configdir");
+                    return null;
+                }
+            }
             Configuration configuration = new Configuration();
             JDUtilities.setConfiguration(configuration);
             JDUtilities.getLogger().setLevel((Level) configuration.getProperty(Configuration.PARAM_LOGGER_LEVEL, Level.WARNING));

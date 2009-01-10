@@ -37,6 +37,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
@@ -385,7 +386,10 @@ public class Main {
 
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
-        init.loadConfiguration();
+        if(init.loadConfiguration()==null){
+            
+            JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
+        }
         if (debug) {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
