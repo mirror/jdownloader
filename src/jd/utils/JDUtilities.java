@@ -1131,7 +1131,7 @@ public class JDUtilities {
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
-                if (plgs.get(b).getHost() == null) {
+                if (plgs.get(b).getHost() == null) { 
                     logger.info("OO");
                 }
                 if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
