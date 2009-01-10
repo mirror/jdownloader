@@ -260,7 +260,7 @@ abstract public class DownloadInterface {
                 if (endByte > 0 && bufferSize > endByte - getCurrentBytesPosition() + 1) {
                     bufferSize = (int) (endByte - getCurrentBytesPosition() + 1);
                 }
-                // logger.finer(bufferSize+" - "+this.getTimeInterval());
+                bufferSize=Math.max((int)bufferSize, 1);
                 /* max 2gb buffer */
                 buffer = ByteBuffer.allocateDirect((int) bufferSize);
 

@@ -374,7 +374,7 @@ public class RAFDownload extends DownloadInterface {
     private void setupResume() throws FileNotFoundException {
 
         long parts = fileSize / getChunkNum();
-        logger.info("Resume: " + fileSize + " parts: " + parts);
+        logger.info("Resume: " + fileSize + " partsize: " + parts);
         Chunk chunk;
         this.createOutputChannel();
         addToChunksInProgress(getChunkNum());

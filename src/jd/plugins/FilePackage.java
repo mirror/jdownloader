@@ -395,7 +395,7 @@ public class FilePackage extends Property implements Serializable {
 
     public void setName(String name) {
         if (name == null || name.length() == 0) {
-            this.name = JDUtilities.removeEndingPoints(FP.name);
+            this.name = JDUtilities.removeEndingPoints(getDefaultFilePackage().name);
         } else
             this.name = JDUtilities.removeEndingPoints(name);
     }

@@ -85,6 +85,7 @@ public class BluehostTo extends PluginForHost {
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         this.setBrowserExclusive();
+        br.forceDebug(true);
         getFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(true);
