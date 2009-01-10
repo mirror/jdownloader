@@ -25,6 +25,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
+
 public class MediafireCom extends PluginForHost {
 
     static private final String offlinelink = "tos_aup_violation";
@@ -79,16 +82,15 @@ public class MediafireCom extends PluginForHost {
         br.getPage("http://www.mediafire.com/dynamic/download.php?qk=" + para[0][0] + "&pk=" + para[0][1] + "&r=" + para[0][2]);
         String error = br.getRegex("var et=(.*?);").getMatch(0);
         if (error != null && !error.trim().equalsIgnoreCase("15")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 60 * 1000l);
-        String url = br.getRegex("http\\:\\/\\/\"(.*?)'\"").getMatch(0);
-        url = "http://" + url.replaceAll("'(.*?)'", "$1");
+        String url = br.getRegex("(\"http\\:\\/\\/\".*?)\\+'\"").getMatch(0);
+        String js = br.getRegex("<script language=\"Javascript\">.*?\\<\\!\\-\\-(.*?)function").getMatch(0);
+        String fnc = "function f(){" + js + "\r\nreturn " + url + ";}f();";
+        Context cx = Context.enter();
+        Scriptable scope = cx.initStandardObjects();
+        url = Context.toString(cx.evaluateString(scope, fnc, "<cnd>", 1, null));
 
-        String[] vars = new Regex(url, "\\+ ?([a-z0-9]*?) ?\\+").getColumn(0);
+        Context.exit();
 
-        for (String var : vars) {
-            String value = br.getRegex(var + " ?= ?\\'(.*?)\\'").getMatch(0);
-            url = url.replaceAll("\\+ ?" + var + " ?\\+", value);
-
-        }
         dl = br.openDownload(downloadLink, url, true, 0);
         dl.startDownload();
     }
