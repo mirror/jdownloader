@@ -242,7 +242,7 @@ gui.config.packagemanager.column_name = Paket
 gui.config.packagemanager.column_select = Auswählen
 gui.config.packagemanager.reset = Addons neu herunterladen
 gui.config.packagemanager.supportjd = Unterstützte JD durch das Herunterladen von aufgepumpten Addons
-gui.config.packagemanager.supportjd.instanthelp = http://wiki.jdownloader.org/index.php?title=Addon-Manager
+gui.config.packagemanager.supportjd.instanthelp = http://jdownloader.org/knowledge/wiki/addons/install-and-update
 gui.config.packagemanager.table.info = Info
 gui.config.plugin.abg_confirm = Ich habe die AGB/TOS/FAQ von %s gelesen und erkläre mich damit einverstanden
 gui.config.plugin.decrypt.btn_load = Lade Plugin
@@ -284,7 +284,7 @@ gui.config.unrar.subpath = Unterordner
 gui.config.unrar.subpath_minnum = Benutze Unterordner nur, wenn das Archiv mehr als x Dateien enthält
 gui.config.unrar.use_extractto = Benutze spezifischen Entpackungspfad
 gui.config.unrar.use_subpath = Benutze Unterordner
-gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/wiki/index.php?title=Konfig:
+gui.configdialog.wikilink.theconfigurationmenu = http://jdownloader.org/de/knowledge/wiki/gui/configuration/advanced-view/overview
 gui.dialog.about.chat = Chat
 gui.dialog.about.email = Email
 gui.dialog.about.forum = Support Board
@@ -557,7 +557,7 @@ gui.statusbar.premium = Premium
 gui.statusbar.sim_ownloads = Max.Dls.
 gui.statusbar.speed = Geschw.
 gui.support.forumurl = http://jdownloader.org/knowledge/forum
-gui.support.wikiurl = http://jdownloader.org/wiki/index.php?title=JDownloader_Wiki:Portal_English
+gui.support.wikiurl = http://jdownloader.org/de/knowledge/wiki/start
 gui.tab.plugin_activity.column_plugin = Module
 gui.tab.plugin_activity.column_progress = Fortschritt
 gui.table.contextmenu.browselink = im Browser öffnen

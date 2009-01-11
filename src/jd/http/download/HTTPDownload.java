@@ -103,7 +103,7 @@ public class HTTPDownload {
             Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.test");
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
-            dl.setBandwidthlimit(10 * 512 * 1000);
+            dl.setBandwidthlimit(1024*100);
             dl.setChunkNum(150);
 
             try {

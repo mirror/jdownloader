@@ -123,7 +123,6 @@ gui.config.btn_fengshui = Basit Görünüm
 gui.config.btn_restart = Kaydet ve Yeniden Başlat
 gui.config.captcha.jac_disable = Otomatik captcha algılamayı devre dışı bırak
 gui.config.captcha.train.level = Karar Eşiği
-gui.config.captcha.train.level.instanthelp = http://ns2.km32221.keymachine.de/jdownloader/web/page.php?id=3
 gui.config.captcha.train.show_timeout = Captcha penceresi geri sayım (san) 
 gui.config.clr.script = CLR Script
 gui.config.download.autoresume = Tekrar bağlan sürdürebilen indirmeleri kesebilsin

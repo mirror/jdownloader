@@ -734,16 +734,23 @@ public class Rapidshare extends PluginForHost {
             br.setCookie("http://rapidshare.com", "user", cookie);
             return br;
         }
-        br.setAcceptLanguage("en, en-gb;q=0.8");
-        br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-        cookie = br.getCookie("http://rapidshare.com", "user");
-        account.setProperty("premcookie", cookie);
+        
+        
+        String c = account.getUser().trim()+"-"+Encoding.urlTotalEncode(account.getPass());
+        account.setProperty("premcookie", c);
+        br.setCookie("http://ssl.rapidshare.com", "user", c);
+        br.setCookie("http://rapidshare.com", "user", c);
+        br.setAcceptLanguage("en-gb;q=0.8, en;q=0.7");
         return br;
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         br = login(account, false);
+        br.setDebug(true);
+
+        br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi");
+        
         if (account.getStringProperty("premcookie", null) == null || account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
 
             String error = findError("" + br);

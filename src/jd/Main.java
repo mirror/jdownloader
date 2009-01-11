@@ -70,7 +70,7 @@ public class Main {
     private static SplashScreen splashScreen;
 
     public static String getCaptcha(String path, String host) {
-
+       
         boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
 
         if (hasMethod) {

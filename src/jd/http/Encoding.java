@@ -256,4 +256,18 @@ public class Encoding {
         return tmp;
     }
 
+    public static String urlTotalEncode(String string) {
+        byte[] org = string.getBytes();
+        StringBuilder sb= new StringBuilder();
+        String code;
+        for (int i = 0; i < org.length; i++) {
+          
+            sb.append('%');
+            code=Integer.toHexString(org[i]);
+            sb.append(code.substring(code.length()-2));
+            
+        }
+        return sb+"";
+    }
+
 }
