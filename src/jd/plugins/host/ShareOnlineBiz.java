@@ -105,7 +105,15 @@ public class ShareOnlineBiz extends PluginForHost {
         this.setBrowserExclusive();
         br.setAcceptLanguage("en, en-gb;q=0.8");
         String id = new Regex(url, "id\\=([a-zA-Z0-9]+)").getMatch(0);
-        br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id);
+        if(br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id).matches("\\s*"))
+        {
+            
+        br.getPage("http://www.share-online.biz/download.php?id=11uoc2y05");
+        String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
+        downloadLink.setDownloadSize(Regex.getSize(strings[0].trim()));
+        downloadLink.setName(strings[1].trim());
+        return true;
+        }
         String infos[][] = br.getRegex("(.*?);(.*?);(.*?);(.+)").getMatches();
         if (infos.length != 1 && infos[0].length != 4 && !infos[0][1].equalsIgnoreCase("OK")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 
