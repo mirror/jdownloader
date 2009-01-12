@@ -52,6 +52,7 @@ public class ShareOnlineBiz extends PluginForHost {
     }
 
     public void login(Account account) throws IOException, PluginException {
+        br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.postPage("http://www.share-online.biz/login.php", "act=login&location=service.php&dieseid=&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()) + "&login=Log+me+in&folder_autologin=1");
         String cookie = br.getCookie("http://www.share-online.biz", "king_passhash");
         if (cookie == null) {
@@ -70,7 +71,8 @@ public class ShareOnlineBiz extends PluginForHost {
         if (br.getURL() == null || !br.getURL().equalsIgnoreCase("http://www.share-online.biz/members.php") || br.toString().startsWith("Not HTML Code.")) {
             br.getPage("http://www.share-online.biz/members.php");
         }
-        if (br.containsHTML("<b>Premium account</b>")) { return true; }
+        if (br.containsHTML("<b>Premium account</b>")) return true;
+        if (br.containsHTML("<b>VIP account</b>")) return true;
         return false;
     }
 
@@ -103,6 +105,7 @@ public class ShareOnlineBiz extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         url = downloadLink.getDownloadURL() + "&setlang=en";
         this.setBrowserExclusive();
+        br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.setAcceptLanguage("en, en-gb;q=0.8");
         String id = new Regex(url, "id\\=([a-zA-Z0-9]+)").getMatch(0);
         if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id).matches("\\s*")) {
@@ -150,7 +153,6 @@ public class ShareOnlineBiz extends PluginForHost {
                 linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);
                 return;
             }
-
             /* PassCode war richtig, also Speichern */
             downloadLink.setProperty("pass", passCode);
         }
@@ -168,11 +170,7 @@ public class ShareOnlineBiz extends PluginForHost {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
         url = downloadLink.getDownloadURL() + "&?setlang=en";
-        /* Nochmals das File überprüfen */
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
+        getFileInformation(downloadLink);
         br.getPage(url);
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
