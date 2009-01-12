@@ -275,7 +275,6 @@ public class Executer extends Thread {
                 };
                 timeoutThread.start();
             }
-            if (waitTimeout == 0) return;
 
             try {
                 process.waitFor();

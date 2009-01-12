@@ -66,7 +66,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     private String container;
 
     // Dateiname des Containers
-    private String containerFile;
+    private String containerFile = null;
 
     // Index dieses DownloadLinks innerhalb der Containerdatei
     private int containerIndex = -1;
@@ -255,6 +255,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public String getContainerFile() {
+        if (containerFile == null) return null;
         String Filename = new File(containerFile).getName();
         return JDUtilities.getResourceFile("container/" + Filename).getAbsolutePath();
     }

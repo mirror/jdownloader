@@ -832,7 +832,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         exec.addParameter("+x");
         exec.addParameter("unrar");
         exec.setRunin(path);
-        exec.setWaitTimeout(2);
+        exec.setWaitTimeout(-1);
         exec.start();
         exec.waitTimeout();
     }
@@ -842,7 +842,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
      */
     private void checkUnrarCommand() {
         String path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, null);
-
         if (path == null || !isUnrarCommandValid(path)) {
             if (OSDetector.isWindows()) {
                 path = JDUtilities.getResourceFile("tools\\windows\\unrarw32\\unrar.exe").getAbsolutePath();
