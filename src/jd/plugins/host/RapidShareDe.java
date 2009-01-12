@@ -39,11 +39,8 @@ import jd.utils.JDLocale;
 
 public class RapidShareDe extends PluginForHost {
 
-    //
-
     public RapidShareDe(PluginWrapper wrapper) {
         super(wrapper);
-
         this.enablePremium("http://rapidshare.de/en/premium.html");
     }
 
@@ -54,7 +51,6 @@ public class RapidShareDe extends PluginForHost {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
         }
-        checkMirrorsInProgress(downloadLink);
 
         LinkStatus linkStatus = downloadLink.getLinkStatus();
 
@@ -137,11 +133,9 @@ public class RapidShareDe extends PluginForHost {
         br.clearCookies(getHost());
         br.setFollowRedirects(false);
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        checkMirrorsInProgress(downloadLink);
         String formatPass = "";
         for (int i = 0; i < pass.length(); i++) {
             formatPass += "%" + Integer.toString(pass.charAt(i), 16);
-
         }
 
         String path = new URI(downloadLink.getDownloadURL()).getPath();
@@ -174,14 +168,12 @@ public class RapidShareDe extends PluginForHost {
         dl.connect(br);
         urlConnection = req.getHttpConnection();
         if (urlConnection.getHeaderField("content-disposition") == null) {
-
             page = req.read();
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(page);
 
         }
         dl.startDownload();
-
     }
 
     @Override
@@ -215,7 +207,7 @@ public class RapidShareDe extends PluginForHost {
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

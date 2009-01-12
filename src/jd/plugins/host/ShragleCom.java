@@ -122,7 +122,7 @@ public class ShragleCom extends PluginForHost {
     }
 
     @Override
-    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
+    public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {        
         setBrowserExclusive();
         correctUrl(downloadLink);
         String id = new Regex(downloadLink.getDownloadURL(), "shragle.com/files/(.*?)/").getMatch(0);

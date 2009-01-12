@@ -44,6 +44,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.http.XTrustProvider;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -372,6 +373,7 @@ public class JDInit {
 
     void init() {
         CookieHandler.setDefault(null);
+        XTrustProvider.install();
     }
 
     public JDController initController() {

@@ -100,6 +100,8 @@ public class Rapidshare extends PluginForHost {
 
     private static String[] serverList3;
 
+    private static Integer loginlock = 0;
+
     private static HashMap<String, String> serverMap = new HashMap<String, String>();
 
     public static void correctURL(DownloadLink downloadLink) {
@@ -408,14 +410,14 @@ public class Rapidshare extends PluginForHost {
         Request request = null;
         String error = null;
         Rapidshare.correctURL(downloadLink);
-     
-        br.setAuth(null, account.getUser().trim(), account.getPass().trim());
+        br = login(account, true);
         br.setFollowRedirects(false);
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.getPage(downloadLink.getDownloadURL());
         String directurl = br.getRedirectLocation();
         if (directurl == null) {
             logger.finest("InDirect-Download: Server-Selection available!");
+            if (account.getStringProperty("premcookie", null) == null) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
             if ((error = findError(br.toString())) != null) {
                 logger.warning(error);
                 if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
@@ -725,16 +727,30 @@ public class Rapidshare extends PluginForHost {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), PROPERTY_INCREASE_TICKET, JDLocale.L("plugins.hoster.rapidshare.com.increaseTicketTime", "Ticketwartezeit verlängern (0%-500%)"), 0, 500).setDefaultValue(0).setStep(1));
     }
 
-
+    public Browser login(Account account, boolean usesavedcookie) throws IOException, PluginException {
+        synchronized (loginlock) {
+            Browser br = new Browser();
+            br.setCookiesExclusive(true);
+            br.clearCookies(this.getHost());
+            String cookie = account.getStringProperty("premcookie", null);
+            if (usesavedcookie && cookie != null) {
+                br.setCookie("http://rapidshare.com", "user", cookie);
+                logger.finer("Cookie Login");
+                return br;
+            }
+            logger.finer("HTTPS Login");
+            br.setAcceptLanguage("en, en-gb;q=0.8");
+            br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            cookie = br.getCookie("http://rapidshare.com", "user");
+            account.setProperty("premcookie", cookie);
+            return br;
+        }
+    }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
-        br.setAuth(null, account.getUser().trim(), account.getPass().trim());
-        br.setDebug(true);
-br.setAcceptLanguage(ACCEPT_LANGUAGE);
-        br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + account.getUser() + "&password=" + account.getPass());
-        
-        if ( account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
+        br = login(account, false);
+        if (account.getStringProperty("premcookie", null) == null || account.getUser().equals("") || account.getPass().equals("") || br.getRegex("(wurde nicht gefunden|Your Premium Account has not been found)").matches() || br.getRegex("but the password is incorrect").matches() || br.getRegex("Fraud detected, Account").matches()) {
 
             String error = findError("" + br);
             if (error != null) {
@@ -745,7 +761,7 @@ br.setAcceptLanguage(ACCEPT_LANGUAGE);
                 }
             }
             ai.setValid(false);
-        
+            account.setProperty("premcookie", null);
             return ai;
         }
 
@@ -783,7 +799,7 @@ br.setAcceptLanguage(ACCEPT_LANGUAGE);
 
         if (br.containsHTML("expired") && br.containsHTML("if (1)")) {
             ai.setExpired(true);
-           
+            account.setProperty("premcookie", null);
         }
 
         return ai;
