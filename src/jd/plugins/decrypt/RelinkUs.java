@@ -42,7 +42,7 @@ public class RelinkUs extends PluginForDecrypt {
     }
 
     private boolean add_relinkus_container(String page, String cryptedLink, String containerFormat, ArrayList<DownloadLink> decryptedLinks) throws IOException {
-        String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=\\'([^\\']*?)\\'><img src=\\'.*?" + containerFormat + "\\.gif\\'", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=('|\")(.*?)('|\")><img src=('|\").*?" + containerFormat + "\\.(gif|jpg)", Pattern.CASE_INSENSITIVE)).getMatch(1);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
             URL container_url = new URL("http://relink.us/" + Encoding.htmlDecode(container_link));
