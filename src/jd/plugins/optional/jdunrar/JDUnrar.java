@@ -830,8 +830,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private void chmodUnrar(String path) {
         Executer exec = new Executer("chmod");
         exec.addParameter("+x");
-        exec.addParameter("unrar");
-        exec.setRunin(path);
+        exec.addParameter(path);        
         exec.setWaitTimeout(-1);
         exec.start();
         exec.waitTimeout();
@@ -850,18 +849,18 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 return;
             } else {
                 if (OSDetector.isLinux()) {
-                    chmodUnrar(JDUtilities.getResourceFile("tools/linux/unrar/").getAbsolutePath());
-                    if (isUnrarCommandValid(JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath())) {
-                        path = JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath();
+                    path = JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath();
+                    chmodUnrar(path);
+                    if (isUnrarCommandValid(path)) {                        
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;
                     }
                 }
                 if (OSDetector.isMac()) {
-                    chmodUnrar(JDUtilities.getResourceFile("tools/mac/unrar/").getAbsolutePath());
-                    if (isUnrarCommandValid(JDUtilities.getResourceFile("tools/mac/unrar/unrar").getAbsolutePath())) {
-                        path = JDUtilities.getResourceFile("tools/mac/unrar/unrar").getAbsolutePath();
+                    path = JDUtilities.getResourceFile("tools/mac/unrar/unrar").getAbsolutePath();
+                    chmodUnrar(path);
+                    if (isUnrarCommandValid(path)) {                        
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;
