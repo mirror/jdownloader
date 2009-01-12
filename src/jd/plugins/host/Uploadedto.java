@@ -53,6 +53,7 @@ public class Uploadedto extends PluginForHost {
         String link = parameter.getDownloadURL();
         link = link.replace("/?id=", "/file/");
         link = link.replace("?id=", "file/");
+        link = link.replaceFirst("/\\?.*?&id=", "/file/");
         String[] parts = link.split("\\/");
         String newLink = "";
         for (int t = 0; t < Math.min(parts.length, 5); t++) {

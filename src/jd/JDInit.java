@@ -430,15 +430,15 @@ public class JDInit {
             JDSounds.setSoundTheme(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty(JDSounds.PARAM_CURRENTTHEME, "noSounds"));
 
         } else {
-            
+
             File cfg = JDUtilities.getResourceFile("config");
-            if(!cfg.exists()){
-                
-                if(!cfg.mkdirs()){
+            if (!cfg.exists()) {
+
+                if (!cfg.mkdirs()) {
                     System.err.println("Could not create configdir");
                     return null;
                 }
-                if(!cfg.canWrite()){
+                if (!cfg.canWrite()) {
                     System.err.println("Cannot write to configdir");
                     return null;
                 }
@@ -685,7 +685,7 @@ public class JDInit {
     public void loadPluginForHost() {
 
         new HostPluginWrapper("RapidShare.com", "Rapidshare", "sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("Uploaded.to", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/(file/|\\?id\\=)[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("Uploaded.to", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
 
         new HostPluginWrapper("bluehost.to", "BluehostTo", "http://[\\w\\.]*?bluehost\\.to/(\\?dl=|dl=|file/).*", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("depositfiles.com", "DepositFiles", "http://[\\w\\.]*?depositfiles\\.com(/\\w{1,3})?/files/[a-zA-Z0-9]+", PluginWrapper.LOAD_ON_INIT);
