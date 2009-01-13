@@ -32,6 +32,7 @@ import javax.swing.JOptionPane;
 
 import jd.config.CFGConfig;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.nutils.JDHash;
 import jd.nutils.SimpleFTP;
 import jd.nutils.io.JDIO;
@@ -275,7 +276,7 @@ public class JDUpdater {
     }
 
     private boolean update() {
-//        if (true) return true;
+        if (true) return true;
         ftp = new SimpleFTP();
         try {
             ftp.connect("78.143.20.68", 1200, "jd", JOptionPane.showInputDialog("Bluehost Updateserver Passwort"));
@@ -330,8 +331,8 @@ public class JDUpdater {
             logger.info("update ok");
             Browser br = new Browser();
             HashMap<String, String> map = new HashMap<String, String>();
-            map.put("hashlist", list);
-            map.put("addonlist", JDIO.getLocalFile(new File(dir, "addonlist.lst")));
+            map.put("hashlist", Encoding.Base64Encode(list));
+            map.put("addonlist", Encoding.Base64Encode(JDIO.getLocalFile(new File(dir, "addonlist.lst"))));
             map.put("pw", JOptionPane.showInputDialog("Enter update password"));
             br.postPage("http://service.jdownloader.net/update/updatelist.php", map);
 
