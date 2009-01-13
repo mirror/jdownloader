@@ -65,7 +65,7 @@ public class JDUpdater {
         if (!file.isDirectory()) return secureUploadFile(file, root, test);
         boolean ret = true;
         for (File f : file.listFiles()) {
-            if (f.getName().contains("svn")) continue;
+            if (f.getName().contains("svn") || f.getName().contains("addonlist.lst")) continue;
             if (!secureUploadFolder(f, root, test)) ret = false;
         }
         return ret;
@@ -275,7 +275,7 @@ public class JDUpdater {
     }
 
     private boolean update() {
-      
+//        if (true) return true;
         ftp = new SimpleFTP();
         try {
             ftp.connect("78.143.20.68", 1200, "jd", JOptionPane.showInputDialog("Bluehost Updateserver Passwort"));
@@ -309,24 +309,33 @@ public class JDUpdater {
     private void upload(String list) throws Exception {
         try {
             logger.info("connect to ftp");
-            SimpleFTP ftp = new SimpleFTP();
-            ftp.connect("jdownloader.org", 2121, JOptionPane.showInputDialog("USER jdownloader.org"), JOptionPane.showInputDialog("PASS jdownloader.org"));
-            ftp.bin();
-            ftp.cwd("/http/update/");
-            logger.info("write list.php");
-            JDIO.writeLocalFile(JDUtilities.getResourceFile("list.php"), list);
-            ftp.remove("list.php");
-            if(!ftp.stor(JDUtilities.getResourceFile("list.php"))){
-                logger.warning("LIstUpdate failed");
-            }
-            System.out.println(list);
-           
+            // SimpleFTP ftp = new SimpleFTP();
+            // ftp.connect("jdownloader.org", 2121,
+            // JOptionPane.showInputDialog("USER jdownloader.org"),
+            // JOptionPane.showInputDialog("PASS jdownloader.org"));
+            // ftp.bin();
+            // ftp.cwd("/http/update/");
+            // logger.info("write list.php");
+            // JDIO.writeLocalFile(JDUtilities.getResourceFile("list.php"),
+            // list);
+            // ftp.remove("list.php");
+            // if(!ftp.stor(JDUtilities.getResourceFile("list.php"))){
+            // logger.warning("LIstUpdate failed");
+            // }
+            // System.out.println(list);
+            //           
             // Quit from the FTP server.
-            ftp.disconnect();
+            // ftp.disconnect();
             JOptionPane.showConfirmDialog(null, "continue?");
             logger.info("update ok");
+            Browser br = new Browser();
+            HashMap<String, String> map = new HashMap<String, String>();
+            map.put("hashlist", list);
+            map.put("addonlist", JDIO.getLocalFile(new File(dir, "addonlist.lst")));
+            map.put("pw", JOptionPane.showInputDialog("Enter update password"));
+            br.postPage("http://service.jdownloader.net/update/updatelist.php", map);
 
-            System.out.println(new Browser().getPage("http://service.jdownloader.net/dlcrypt/configs/updatelist.php"));
+            System.out.println(br + "");
 
         } catch (IOException e) {
             e.printStackTrace();
