@@ -44,7 +44,6 @@ import java.util.zip.GZIPInputStream;
 
 import javax.swing.JProgressBar;
 
-
 import sun.misc.BASE64Encoder;
 
 /**
@@ -444,7 +443,7 @@ public class WebUpdater implements Serializable {
      *            the listPath to set
      */
     public void setListPath(String listPath) {
-        this.listPath = listPath + "jdupdate.zip";
+        this.listPath = listPath + "update.zip";
         JDUpdateUtils.setUpdateUrl(this.listPath);
         onlinePath = listPath + "/bin";
         log("Update from " + listPath);

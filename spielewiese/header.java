@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Plugin;
+import jd.update.JDUpdateUtils;
 
 public class header {
 
@@ -62,7 +63,13 @@ public class header {
         // System.out.println("Right Java Version");
         // }
         // }
-        if (true) {
+        if (true){
+            JDUpdateUtils.setUpdateUrl("http://service.jdownloader.org/update/update.zip");
+            String jj=JDUpdateUtils.get_AddonList();
+            String kk=JDUpdateUtils.get_UpdateList();
+            kk=kk;
+        }
+        if (false) {
             // System.out.println(new Regex(
             // "<p style=\"color:red;\">You have reached the download limit for free-users. Would you like more?</p>"
             // , ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches() +

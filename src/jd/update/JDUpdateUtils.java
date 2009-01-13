@@ -18,7 +18,7 @@ public class JDUpdateUtils {
     private static String addonlist = null;
     private static String updatelist = null;
 
-    private static String listpath = "http://service.jdownloader.net/update/jdupdate.zip";
+    private static String listpath = "http://service.jdownloader.net/update/update.zip";
 
     private static Integer lock = 1;
 
@@ -32,9 +32,9 @@ public class JDUpdateUtils {
             ZipEntry ze = null;
             synchronized (lock) {
                 while ((ze = ZipStream.getNextEntry()) != null) {
-                    if (ze.getName().equalsIgnoreCase("update.lst")) {
+                    if (ze.getName().equalsIgnoreCase("hashlist.lst")) {
                         updatelist = readfromZip(ZipStream);
-                    } else if (ze.getName().equalsIgnoreCase("addon.lst")) {
+                    } else if (ze.getName().equalsIgnoreCase("addonlist.lst")) {
                         addonlist = readfromZip(ZipStream);
                     }
                 }
@@ -83,7 +83,8 @@ public class JDUpdateUtils {
         bigbuffer.flip();
         byte[] b = new byte[bigbuffer.limit()];
         bigbuffer.get(b);
-        return new String(b, "UTF-8");
+        String ret = new String(b, "UTF-8");
+        return ret;
     }
 
     private static InputStream InputStreamfromByteBuffer(final ByteBuffer buf) {
