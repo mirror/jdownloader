@@ -29,7 +29,7 @@ import jd.plugins.PluginForHost;
 public class LetitBitNet extends PluginForHost {
 
     public LetitBitNet(PluginWrapper wrapper) {
-        super(wrapper);        
+        super(wrapper);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class LetitBitNet extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     @Override
