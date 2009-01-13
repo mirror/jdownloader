@@ -44,6 +44,7 @@ import java.util.zip.GZIPInputStream;
 
 import javax.swing.JProgressBar;
 
+
 import sun.misc.BASE64Encoder;
 
 /**
@@ -250,80 +251,76 @@ public class WebUpdater implements Serializable {
         HashMap<String, Vector<String>> plugins = new HashMap<String, Vector<String>>();
         Vector<Vector<String>> ret = new Vector<Vector<String>>();
 
-        try {
-            if (progresslist != null) {
-                progresslist.setValue(20);
-            }
-
-            source = getRequest(new URL(listPath));
-
-            if (progresslist != null) {
-                progresslist.setValue(80);
-            }
-            String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;";
-
-            if (source == null) {
-                log(listPath + " nicht verfüpgbar");
-                return new Vector<Vector<String>>();
-            }
-            Vector<String> entry;
-            String tmp;
-            String[] os = new String[] { "windows", "mac", "linux" };
-            ArrayList<Byte> sum = new ArrayList<Byte>();
-            for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
-                entry = new Vector<String>();
-                String tmp2 = "";
-                for (int x = 1; x <= r.groupCount(); x++) {
-                    if ((tmp = r.group(x).trim()).length() > 0) {
-                        entry.add(UTF8Decode(tmp));
-                        if (tmp.length() == 32) {
-                            sum.add((byte) tmp.charAt(0));
-                        }
-                        tmp2 += WebUpdater.htmlDecode(UTF8Decode(tmp)) + " ";
-
-                    }
-                }
-                String file = entry.get(0).split("\\?")[0];
-
-                if (file.endsWith(".class")) {
-                    plugins.put(file, entry);
-                }
-
-                if (!file.endsWith(".class") || !this.ignorePlugins) {
-                    boolean osFound = false;
-                    boolean correctOS = false;
-                    for (String element : os) {
-                        if (tmp2.toLowerCase().indexOf(element) >= 0) {
-                            osFound = true;
-                            if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
-                                correctOS = true;
-                            }
-                        }
-
-                    }
-                    if (this.OSFilter == true) {
-                        if (!osFound || osFound && correctOS) {
-                            ret.add(entry);
-                        } else {
-                            log("OS Filter: " + tmp2);
-
-                        }
-                    } else {
-                        ret.add(entry);
-                    }
-                }
-
-            }
-            this.sum = new byte[sum.size()];
-            int i = 0;
-            for (byte b : sum) {
-                this.sum[i++] = b;
-            }
-
-            WebUpdater.PLUGIN_LIST = plugins;
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+        if (progresslist != null) {
+            progresslist.setValue(20);
         }
+
+        source = JDUpdateUtils.get_UpdateList();
+
+        if (progresslist != null) {
+            progresslist.setValue(80);
+        }
+        String pattern = "\\$(.*?)\\=\\\"(.*?)\\\"\\;";
+
+        if (source == null) {
+            log(this.getListPath() + " nicht verfüpgbar");
+            return new Vector<Vector<String>>();
+        }
+        Vector<String> entry;
+        String tmp;
+        String[] os = new String[] { "windows", "mac", "linux" };
+        ArrayList<Byte> sum = new ArrayList<Byte>();
+        for (Matcher r = Pattern.compile(pattern, Pattern.DOTALL).matcher(source); r.find();) {
+            entry = new Vector<String>();
+            String tmp2 = "";
+            for (int x = 1; x <= r.groupCount(); x++) {
+                if ((tmp = r.group(x).trim()).length() > 0) {
+                    entry.add(UTF8Decode(tmp));
+                    if (tmp.length() == 32) {
+                        sum.add((byte) tmp.charAt(0));
+                    }
+                    tmp2 += WebUpdater.htmlDecode(UTF8Decode(tmp)) + " ";
+
+                }
+            }
+            String file = entry.get(0).split("\\?")[0];
+
+            if (file.endsWith(".class")) {
+                plugins.put(file, entry);
+            }
+
+            if (!file.endsWith(".class") || !this.ignorePlugins) {
+                boolean osFound = false;
+                boolean correctOS = false;
+                for (String element : os) {
+                    if (tmp2.toLowerCase().indexOf(element) >= 0) {
+                        osFound = true;
+                        if (System.getProperty("os.name").toLowerCase().indexOf(element) >= 0) {
+                            correctOS = true;
+                        }
+                    }
+
+                }
+                if (this.OSFilter == true) {
+                    if (!osFound || osFound && correctOS) {
+                        ret.add(entry);
+                    } else {
+                        log("OS Filter: " + tmp2);
+
+                    }
+                } else {
+                    ret.add(entry);
+                }
+            }
+
+        }
+        this.sum = new byte[sum.size()];
+        int i = 0;
+        for (byte b : sum) {
+            this.sum[i++] = b;
+        }
+
+        WebUpdater.PLUGIN_LIST = plugins;
         if (progresslist != null) {
             progresslist.setValue(100);
         }
@@ -334,7 +331,7 @@ public class WebUpdater implements Serializable {
      * @return the listPath
      */
     public String getListPath() {
-        return listPath;
+        return JDUpdateUtils.getUpdateUrl();
     }
 
     public String getLocalHash(File f) {
@@ -447,7 +444,8 @@ public class WebUpdater implements Serializable {
      *            the listPath to set
      */
     public void setListPath(String listPath) {
-        this.listPath = listPath + "/list.php?&r=" + System.currentTimeMillis();
+        this.listPath = listPath + "jdupdate.zip";
+        JDUpdateUtils.setUpdateUrl(this.listPath);
         onlinePath = listPath + "/bin";
         log("Update from " + listPath);
 
@@ -558,7 +556,7 @@ public class WebUpdater implements Serializable {
     }
 
     public static String htmlDecode(String str) {
-        // http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
+        //http://rs218.rapidshare.com/files/&#0052;&#x0037;&#0052;&#x0034;&#0049
         // ;&#x0032;&#0057;&#x0031;/STE_S04E04.Borderland.German.dTV.XviD-2
         // Br0th3rs.part1.rar
         if (str == null) { return null; }

@@ -30,8 +30,10 @@ import jd.config.CFGConfig;
 import jd.controlling.DistributeData;
 import jd.event.ControlEvent;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.update.JDUpdateUtils;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -167,9 +169,9 @@ public class PackageManager extends Interaction implements Serializable {
         config.setProperty("PACKAGEDATA", data);
 
         try {
-            br.getPage("http://service.jdownloader.net/addonmanager/list.php?jd=" + JDUtilities.getRevision() + "&r=" + System.currentTimeMillis());
+            String list = JDUpdateUtils.get_AddonList();
 
-            String xml = br.getRegex("<packages>(.*?)</packages>").getMatch(-1);
+            String xml = new Regex(list, "<packages>(.*?)</packages>").getMatch(-1);
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setValidating(false);
@@ -281,9 +283,9 @@ public class PackageManager extends Interaction implements Serializable {
                                 StringBuilder list = new StringBuilder();
                                 for (PackageData pa : getDownloadedPackages()) {
                                     list.append(pa.getStringProperty("name"));
-                                    list.append(new char[] {' ', 'v', '.'});
+                                    list.append(new char[] { ' ', 'v', '.' });
                                     list.append(pa.getStringProperty("version"));
-                                    list.append(new char[] {'<', 'b', 'r', '/', '>'});
+                                    list.append(new char[] { '<', 'b', 'r', '/', '>' });
                                 }
                                 String message = JDLocale.LF("modules.packagemanager.downloadednewpackage.title2", "<p>Updates loaded. A JD restart is required.<br/> RESTART NOW?<hr>%s</p>", list.toString());
                                 boolean ret = JDUtilities.getGUI().showCountdownConfirmDialog(message, 15);
