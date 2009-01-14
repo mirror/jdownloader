@@ -58,6 +58,7 @@ import jd.update.WebUpdater;
  * 
  */
 public class JDUpdater {
+    private static boolean SKIP_UPLOAD = false;
     private static Logger logger = JDUtilities.getLogger();
     private static CFGConfig CONFIG;
 
@@ -132,7 +133,7 @@ public class JDUpdater {
             logger.severe("ABBRUCH");
             return;
         }
-
+        SKIP_UPLOAD=(JOptionPane.showConfirmDialog(null, "Skip upload?")==JOptionPane.OK_OPTION);
         workingdir = fc.getSelectedFile();
         if (workingdir == null) {
             logger.severe("ABBRUCH");
@@ -192,9 +193,16 @@ public class JDUpdater {
         }
 
         System.out.println("Working dir überprüfen");
+        
+        ArrayList<String> hashlist = new ArrayList<String>();
         for (File f : localfiles) {
+            if(f.getName().endsWith(".jar")){
+                hashlist.add(JDHash.getMD5(f));
+                }
             if (!webupdaterfiles.containsKey(f.getAbsolutePath())) {
                 if (!f.isDirectory()) {
+                    
+             
                     int answer = JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " ist im Workingdir, aber nicht in der Updatelist. entfernen?");
                     if (answer == JOptionPane.CANCEL_OPTION) break;
                     if (answer == JOptionPane.OK_OPTION) {
@@ -208,6 +216,8 @@ public class JDUpdater {
             }
 
         }
+        
+        System.out.println(hashlist);
         System.out.println("Workingdir aktualisieren");
         // boolean success = false;
         if (files != null) {
@@ -276,7 +286,7 @@ public class JDUpdater {
     }
 
     private boolean update() {
-        if (true) return true;
+        if (SKIP_UPLOAD) return true;
         ftp = new SimpleFTP();
         try {
             ftp.connect("78.143.20.68", 1200, "jd", JOptionPane.showInputDialog("Bluehost Updateserver Passwort"));
@@ -331,9 +341,13 @@ public class JDUpdater {
             logger.info("update ok");
             Browser br = new Browser();
             HashMap<String, String> map = new HashMap<String, String>();
-            map.put("hashlist", Encoding.Base64Encode(list));
-            map.put("addonlist", Encoding.Base64Encode(JDIO.getLocalFile(new File(dir, "addonlist.lst"))));
+            map.put("hashlist", Encoding.urlEncode(list));
+            File file = new File(dir, "addonlist.lst");
+
+            String addonlist = JDIO.getLocalFile(file);
+            map.put("addonlist", Encoding.urlEncode(addonlist));
             map.put("pw", JOptionPane.showInputDialog("Enter update password"));
+            br.setDebug(true);
             br.postPage("http://service.jdownloader.net/update/updatelist.php", map);
 
             System.out.println(br + "");

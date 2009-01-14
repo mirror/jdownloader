@@ -76,7 +76,7 @@ public class JDHash {
         }
     }
 
-    private static String byteArrayToHex(byte[] digest) {
+    public static String byteArrayToHex(byte[] digest) {
         StringBuilder ret = new StringBuilder();
         String tmp;
         for (byte d : digest) {
