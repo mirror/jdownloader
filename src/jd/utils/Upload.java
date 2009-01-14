@@ -32,7 +32,7 @@ public class Upload {
         try {
             Browser br = new Browser();
             String ret=br.postPage("http://service.jdownloader.net/tools/log.php", "upload=1&desc=" + Encoding.urlEncode(desc) + "&log=" + Encoding.urlEncode(str));
-            return "http://service.jdownloader.net/tools/log.php?id=" + ret;
+            return "http://www.jdownloader.org/pastebin/" + ret;
         } catch (IOException e) {
             e.printStackTrace();
         }
