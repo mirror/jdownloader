@@ -1394,7 +1394,7 @@ public class JDUtilities {
         return dbconnect; 
     }
 
-    /**
+    /**  
      * The format describing an http date.
      */
     private static SimpleDateFormat dateFormat;
