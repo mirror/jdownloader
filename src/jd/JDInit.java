@@ -779,7 +779,7 @@ public class JDInit {
         new HostPluginWrapper("filestore.to", "FilestoreTo", "http://[\\w\\.]*?filestore\\.to/\\?d=[a-zA-Z0-9]+");
         new HostPluginWrapper("zetshare.com", "ZetshareCom", "http://[\\w\\.]*?zetshare\\.com/(download/|url/)?download\\.php\\?file=[0-9a-zA-Z]+");
         new HostPluginWrapper("filezzz.com", "FilezzzCom", "http://[\\w\\.]*?filezzz\\.com/download/[0-9]+/.*");
-
+        new HostPluginWrapper("savefile.com", "SavefileCom", "http://[\\w\\.]*?savefile\\.com/files/[0-9]+");
     }
 
     public void loadPluginOptional() {

@@ -17,7 +17,6 @@ package jd.plugins.host;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
-
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -27,49 +26,42 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-public class FilestoreTo extends PluginForHost {
+public class SavefileCom extends PluginForHost {
 
-    public FilestoreTo(PluginWrapper wrapper) {
+    public SavefileCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.setStartIntervall(2000l);
+        this.setStartIntervall(1000l);
     }
 
     @Override
     public String getAGBLink() {
-        return "http://www.filestore.to/rules.php?setlang=en";
+        return "http://www.savefile.com/tos.php";
     }
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
-        br.set_PAGE_ACCESS_exclusive(false);
-        br.set_WAIT_BETWEEN_PAGE_ACCESS(500l);
+        br.setDebug(true);
         String url = downloadLink.getDownloadURL();
         String downloadName = null;
         String downloadSize = null;
-        for (int i = 1; i < 3; i++) {
-            try {
-                br.getPage(url);
-            } catch (Exception e) {
-                continue;
-            }
-            if (!br.containsHTML("Your requested file is not found")) {
-                downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("Download: (.*)</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                downloadSize = (br.getRegex(Pattern.compile("<td align=left width=\"76%\">(.*? [\\w]{2,})</td>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                if (!(downloadName == null || downloadSize == null)) {
-                    downloadLink.setName(downloadName);
-                    downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
-                    return true;
-                }
+        br.getPage(url);
+        if (!br.containsHTML("File not found")) {
+            downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("Filename: (.*?)	<br /> ", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            downloadSize = (br.getRegex(Pattern.compile("Filesize: (.*?)	<br />", Pattern.CASE_INSENSITIVE)).getMatch(0));
+            if (!(downloadName == null || downloadSize == null)) {
+                downloadLink.setName(downloadName);
+                downloadLink.setDownloadSize(Regex.getSize(downloadSize.replaceAll(",", "\\.")));
+                return true;
             }
         }
+
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision$");
+        return getVersion("$Revision: 4227 $");
     }
 
     @Override
@@ -77,27 +69,33 @@ public class FilestoreTo extends PluginForHost {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         /* Link holen */
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(http://.*?)\" onmouseout", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String[][] ids = new Regex(br, Pattern.compile("ShowDownloadDialog\\('([0-9]+)', '([0-9a-zA-Z]+)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
+        String fileID = ids[0][0];
+        String sessionID = ids[0][1];
+        if (fileID == null | sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+
+        br.getPage("http://www.savefile.com/downloadmax/" + fileID + "?PHPSESSID=" + sessionID);
+        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">Download file now", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, linkurl, true, -2);
+        dl = br.openDownload(downloadLink, linkurl, true, 0);
         HTTPConnection con = dl.getConnection();
-        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
+        if (con.getResponseCode() == 416) {
+            // HTTP/1.1 416 Requested Range Not Satisfiable
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);
+        }
+        if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
+            con.disconnect();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
         dl.startDownload();
     }
 
     @Override
-    public int getTimegapBetweenConnections() {
-        return 2000;
-    }
-
-    @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return 3;
+        return 20;
     }
 
     @Override
