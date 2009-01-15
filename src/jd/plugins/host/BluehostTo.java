@@ -112,9 +112,10 @@ public class BluehostTo extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         this.setBrowserExclusive();
-        getFileInformation(downloadLink);
+        getFileInformation(downloadLink);        
         String page = br.getPage("http://bluehost.to/fileinfo/urls=" + downloadLink.getDownloadURL());
         String[] dat = page.split("\\, ");
+
         if (Integer.parseInt(dat[4]) > 0) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, Integer.parseInt(dat[4]) * 1000l);
 
         br.getPage(downloadLink.getDownloadURL());
@@ -125,8 +126,7 @@ public class BluehostTo extends PluginForHost {
         // br.cloneBrowser().getPage(
         // "http://bluehost.to/css/autosuggest_inquisitor.css");
 
-        Form dlForm = forms[2];
-        dlForm.remove("UPLOADSCRIPT_LOGSESSION");
+        Form dlForm = forms[3];        
         br.clearCookies("bluehost.to");
         br.submitForm(dlForm);
         br.getPage(downloadLink.getDownloadURL());
