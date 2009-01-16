@@ -430,8 +430,10 @@ public class Rapidshare extends PluginForHost {
                 } else if (Regex.matches(error, Pattern.compile("IP"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
+                    account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else {
+                    account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
                 }
             }
@@ -496,16 +498,16 @@ public class Rapidshare extends PluginForHost {
                 if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("(You have exceeded the download limit|Sie haben heute das Limit überschritten)"))) {
-
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.limitexeeded", "You have exceeded the download limit."), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("Passwort ist falsch"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-
                 } else if (Regex.matches(error, Pattern.compile("IP"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, dynTranslate(error), LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE);
                 } else if (Regex.matches(error, Pattern.compile("(Account wurde nicht gefunden|Your Premium Account has not been found)"))) {
+                    account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.accountnotfound", "Your Premium Account has not been found."), LinkStatus.VALUE_ID_PREMIUM_DISABLE);
                 } else {
+                    account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
                 }
             } else {
@@ -740,7 +742,7 @@ public class Rapidshare extends PluginForHost {
             }
             logger.finer("HTTPS Login");
             br.setAcceptLanguage("en, en-gb;q=0.8");
-            br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));            
+            br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             cookie = br.getCookie("http://rapidshare.com", "user");
             account.setProperty("premcookie", cookie);
             return br;
