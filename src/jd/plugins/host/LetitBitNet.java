@@ -42,12 +42,12 @@ public class LetitBitNet extends PluginForHost {
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
         br.getPage(downloadLink.getDownloadURL());
-        String filename;
-        String size;
+        String filename = null;
+        String size = null;
         try {
             filename = br.getXPathElement("/html/body/div[2]/div[3]/div/h1[1]").trim();
             size = br.getXPathElement("/html/body/div[2]/div[3]/div/h1[2]").trim();
-        } catch (NullPointerException e) {
+        } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null || size == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

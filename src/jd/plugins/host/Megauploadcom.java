@@ -174,8 +174,14 @@ public class Megauploadcom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML(">Dieser Link ist leider nicht verfügbar.<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
-        String filename = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div").trim();
-        String size = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div[2]").trim();
+        String filename = null;
+        String size = null;
+        try {
+            filename = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div").trim();
+            size = br.getXPathElement("/html/body/center/center/div/div[13]/div[2]/div[2]/table/tbody/tr/td/div[2]").trim();
+        } catch (Exception e) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (filename == null || filename.length() == 0) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename);
         downloadLink.setDownloadSize(Regex.getSize(size));

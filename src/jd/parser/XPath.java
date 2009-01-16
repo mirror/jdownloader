@@ -91,7 +91,7 @@ public class XPath {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 
     /**
@@ -149,7 +149,7 @@ public class XPath {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 
     /**
@@ -162,7 +162,7 @@ public class XPath {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 
     /**
@@ -175,7 +175,7 @@ public class XPath {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 
     /**
@@ -205,6 +205,6 @@ public class XPath {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 }
