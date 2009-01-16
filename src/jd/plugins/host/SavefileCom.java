@@ -13,10 +13,12 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.plugins.host;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -69,13 +71,13 @@ public class SavefileCom extends PluginForHost {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         /* Link holen */
-        String[][] ids = new Regex(br, Pattern.compile("ShowDownloadDialog\\('([0-9]+)', '([0-9a-zA-Z]+)'\\);", Pattern.CASE_INSENSITIVE)).getMatches();
-        String fileID = ids[0][0];
-        String sessionID = ids[0][1];
-        if (fileID == null | sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String[] ids = br.getRegex(Pattern.compile("ShowDownloadDialog\\('([0-9]+)', '([0-9a-zA-Z]+)'\\);", Pattern.CASE_INSENSITIVE)).getRow(0);
+        String fileID = ids[0];
+        String sessionID = ids[1];
+        if (fileID == null || sessionID == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
 
         br.getPage("http://www.savefile.com/downloadmax/" + fileID + "?PHPSESSID=" + sessionID);
-        String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">Download file now", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String linkurl = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(.*?)\">Download file now", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
