@@ -470,11 +470,13 @@ public class JDInit {
                     try {
                         Browser.download(new File(home, "webupdater.jar"), "http://service.jdownloader.org/update/webupdater.jar");
                         JDUtilities.getConfiguration().save();
+                        JDUtilities.getDatabaseConnector().shutdownDatabase();
                         logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.RUNTYPE_LOCAL_JARED }, home.getAbsolutePath(), 0));
                         System.exit(0);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         // TODO Auto-generated catch block
                         e.printStackTrace();
+                        System.exit(0);
                     }
 
                 }
