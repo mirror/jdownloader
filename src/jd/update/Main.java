@@ -195,7 +195,6 @@ public class Main {
                 updater.filterAvailableUpdates(files);
                 updater.updateFiles(files);
             }
-            Main.trace(updater.getLogger().toString());
             Main.trace("End Webupdate with " + updater.getErrors() + " Errors");
             if (new File("webcheck.tmp").exists()) {
                 new File("webcheck.tmp").delete();
