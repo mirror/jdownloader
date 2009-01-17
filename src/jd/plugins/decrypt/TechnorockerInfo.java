@@ -36,7 +36,7 @@ public class TechnorockerInfo extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-        String link = br.getRegex("<a href=\"(.*?)\"><b>here</b>").getMatch(0);
+        String link = br.getRegex("href = '(.*?)';").getMatch(0);
         if (link == null) return null;
         DownloadLink dl_link = createDownloadlink(link);
         dl_link.addSourcePluginPassword("technorocker");

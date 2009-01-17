@@ -687,6 +687,7 @@ public class JDInit {
         new DecryptPluginWrapper("youtube.com", "YouTubeCom", "http://[\\w\\.]*?youtube\\.com/watch\\?v=[a-z-_A-Z0-9]+|\\< streamingshare=\"youtube\\.com\" name=\".*?\" dlurl=\".*?\" brurl=\".*?\" convertto=\".*?\" comment=\".*?\" \\>");
         new DecryptPluginWrapper("megaupload.com folder", "MegauploadComFolder", "http://[\\w\\.]*?megaupload\\.com/\\?f=[a-zA-Z0-9]+");
         new DecryptPluginWrapper("rsmonkey.com", "RsMonkeyCom", "http://[\\w\\.]*?rsmonkey\\.com/\\d+");
+        new DecryptPluginWrapper("savefile.com Project", "SavefileComProject", "http://[\\w\\.]*?savefile\\.com/projects/[0-9]+");
     }
 
     public void loadPluginForHost() {
@@ -782,7 +783,9 @@ public class JDInit {
         new HostPluginWrapper("zetshare.com", "ZetshareCom", "http://[\\w\\.]*?zetshare\\.com/(download/|url/)?download\\.php\\?file=[0-9a-zA-Z]+");
         new HostPluginWrapper("filezzz.com", "FilezzzCom", "http://[\\w\\.]*?filezzz\\.com/download/[0-9]+/.*");
         new HostPluginWrapper("savefile.com", "SavefileCom", "http://[\\w\\.]*?savefile\\.com/files/[0-9]+");
-    }
+        new HostPluginWrapper("sendspace.com", "SendspaceCom", "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+");
+//        new HostPluginWrapper("remixshare.com","RemixshareCom","http://[\\w\\.]*?remixshare\\.com/\\?file=[0-9a-zA-Z]+");
+    }                                                                     
 
     public void loadPluginOptional() {
 
