@@ -143,12 +143,69 @@ public class Main {
     public static void main(String args[]) {
         final StringBuilder log = new StringBuilder();
         boolean OSFilter = true;
+        boolean IgnorePlugins = true;
+        boolean clone = false;
+        String clonePrefix = null;        
 
+        for (String p : args) {
+            if (p.trim().equalsIgnoreCase("-noosfilter")) {
+                OSFilter = false;
+            } else if (p.trim().equalsIgnoreCase("-allplugins")) {
+                IgnorePlugins = false;
+            } else if (p.trim().equalsIgnoreCase("-full")) {
+                IgnorePlugins = false;
+                OSFilter = false;
+            } else if (p.trim().equalsIgnoreCase("-clone")) {
+                IgnorePlugins = false;
+                OSFilter = false;
+                clone = true;
+            } else if (p.trim().equalsIgnoreCase("/nofilter")) {
+                OSFilter = false;
+            } else if (clone) {
+                clonePrefix = p.trim();
+            }
+        }
+
+        if (clone && clonePrefix != null) {
+            Main.log(log, "Starting...");
+            for (int i = 0; i < args.length; i++) {
+                Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
+            }
+            WebUpdater updater = new WebUpdater();
+            updater.setOSFilter(OSFilter);
+            updater.ignorePlugins(IgnorePlugins);
+            updater.setprimaryUpdatePrefix(clonePrefix);
+            updater.setsecondaryUpdatePrefix(clonePrefix);
+            updater.setLogger(log);
+            Main.trace("Start Webupdate");
+            Vector<Vector<String>> files;
+            try {
+                files = updater.getAvailableFiles();
+            } catch (Exception e) {
+                Main.trace("Update failed");
+                Main.log(log, "Update failed");
+                try {
+                    Thread.sleep(5000);
+                } catch (InterruptedException e1) {
+                }
+                files = new Vector<Vector<String>>();
+            }
+
+            if (files != null) {
+                updater.filterAvailableUpdates(files);
+                updater.updateFiles(files);
+            }
+            Main.trace(updater.getLogger().toString());
+            Main.trace("End Webupdate with " + updater.getErrors() + " Errors");
+            if (new File("webcheck.tmp").exists()) {
+                new File("webcheck.tmp").delete();
+            }
+            System.exit(updater.getErrors());
+        }
         UIManager.LookAndFeelInfo[] info = UIManager.getInstalledLookAndFeels();
         SubConfiguration guiConfig = SubConfiguration.getSubConfig("WEBUPDATE");
         String paf = guiConfig.getStringProperty("PLAF", null);
         boolean plafisSet = false;
-        // log.append("Webupdater 13.8.2008 21:42 started\r\n\r\n");
 
         log.append(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
         System.out.println(SubConfiguration.getSubConfig("WEBUPDATE").getProperties() + "\r\n");
@@ -279,10 +336,6 @@ public class Main {
         frame.setVisible(true);
 
         for (int i = 0; i < args.length; i++) {
-
-            if (args[i].trim().equalsIgnoreCase("/nofilter")) {
-                OSFilter = false;
-            }
             Main.log(log, "Parameter " + i + " " + args[i] + " " + System.getProperty("line.separator"));
             logWindow.setText(log.toString());
         }
@@ -299,9 +352,10 @@ public class Main {
         }.start();
         WebUpdater updater = new WebUpdater();
         updater.setOSFilter(OSFilter);
+        updater.ignorePlugins(IgnorePlugins);
         String warnHash = updater.getLocalHash(new File("updatewarnings.html"));
 
-        updater.downloadBinary("updatewarnings.html", "http://service.jdownloader.org/messages/updatewarning.html");
+        updater.downloadBinary("updatewarnings.html", "http://service.jdownloader.org/messages/updatewarning.html", null);
         String hash2 = updater.getLocalHash(new File("updatewarnings.html"));
         if (hash2 != null && !hash2.equals(warnHash)) {
             String str;
@@ -317,7 +371,6 @@ public class Main {
                 Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
 
                 Main.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
-                // }
 
                 logWindow.setText(log.toString());
                 Main.writeLocalFile(new File("updateLog.txt"), log.toString());
@@ -346,10 +399,7 @@ public class Main {
             files = new Vector<Vector<String>>();
         }
 
-        // boolean success = false;
         if (files != null) {
-            // int totalFiles = files.size();
-
             updater.filterAvailableUpdates(files);
             progresslist.setValue(100);
             updater.updateFiles(files);

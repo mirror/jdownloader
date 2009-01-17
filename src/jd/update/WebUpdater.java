@@ -76,6 +76,13 @@ public class WebUpdater implements Serializable {
 
     private JProgressBar progressload = null;
 
+    private String primaryUpdatePrefix;
+    private String secondaryUpdatePrefix;
+
+    private Integer switchtosecondary = 0;
+
+    private Integer errors = 0;
+
     public byte[] sum;
 
     /**
@@ -85,6 +92,10 @@ public class WebUpdater implements Serializable {
     public WebUpdater() {
         logger = new StringBuilder();
         setListPath("http://service.jdownloader.net/update/");
+        setprimaryUpdatePrefix("http://78.143.20.68/update/jd/");
+        setsecondaryUpdatePrefix("http://212.117.163.148/update/jd/");
+        switchtosecondary = 0;
+        errors = 0;
     }
 
     /**
@@ -94,10 +105,98 @@ public class WebUpdater implements Serializable {
      * @param fileurl
      * @return true/False
      */
-    public boolean downloadBinary(String filepath, String fileurl) {
+    public boolean downloadBinary(String filepath, String fileurl, String Hash) {
+        String finalurl = fileurl;
+        boolean useprefixes = false;
+        boolean returnval = false;
+        boolean primaryfirst = true;
+        synchronized (switchtosecondary) {
+            if (switchtosecondary > 10) primaryfirst = false;
+        }
+        String localhash;
+        try {
+            /* wurde komplette url oder nur relativ angegeben? */
+            try {
+                new URL(fileurl);
+            } catch (Exception e1) {
+                /* primary update server */
+                if (primaryfirst) {
+                    finalurl = this.getprimaryUpdatePrefix() + fileurl;
+                } else {
+                    finalurl = this.getsecondaryUpdatePrefix() + fileurl;
+                }
+                useprefixes = true;
+            }
+            /* von absolut oder primary laden */
+            returnval = downloadBinaryIntern(filepath, finalurl);
+
+            /* hashcheck 1 */
+            if (Hash != null) {
+                localhash = getLocalHash(new File(filepath));
+                if (localhash != null && localhash.equalsIgnoreCase(Hash)) {
+                    if (useprefixes) {
+                        synchronized (switchtosecondary) {
+                            if (primaryfirst) switchtosecondary--;
+                        }
+                    }
+                    return true;
+                }
+            }
+            /* falls von absolut geladen wurde, dann hier stop */
+            if (!useprefixes) {
+                if (returnval == false) {
+                    synchronized (errors) {
+                        errors++;
+                    }
+                }
+                return returnval;
+            }
+            synchronized (switchtosecondary) {
+                if (primaryfirst) switchtosecondary++;
+            }
+            /* secondary update server */
+            if (!primaryfirst) {
+                finalurl = this.getprimaryUpdatePrefix() + fileurl;
+            } else {
+                finalurl = this.getsecondaryUpdatePrefix() + fileurl;
+            }
+            returnval = downloadBinaryIntern(filepath, finalurl);
+            if (Hash != null) {
+                localhash = getLocalHash(new File(filepath));
+                if (localhash != null && localhash.equalsIgnoreCase(Hash)) {
+                    if (useprefixes) {
+                        synchronized (switchtosecondary) {
+                            if (!primaryfirst) switchtosecondary = 0;
+                        }
+                    }
+                    return true;
+                }
+            }
+        } catch (Exception e2) {
+            log(e2.toString());
+            log("Fehler beim laden von " + finalurl);
+        }
+        synchronized (errors) {
+            errors++;
+        }
+        return false;
+    }
+
+    public int getErrors() {
+        synchronized (errors) {
+            return errors;
+        }
+    }
+
+    public void resetErrors() {
+        synchronized (errors) {
+            errors = 0;
+        }
+    }
+
+    public boolean downloadBinaryIntern(String filepath, String fileurl) {
 
         try {
-
             log("downloading... You must NOT close the window!");
             fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
             String org = filepath;
@@ -123,6 +222,7 @@ public class WebUpdater implements Serializable {
             URLConnection con = url.openConnection();
             con.setReadTimeout(10000);
             con.setReadTimeout(10000);
+            con.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
             if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
                 String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
                 String pass = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_PASS", "");
@@ -372,6 +472,22 @@ public class WebUpdater implements Serializable {
         return this.OSFilter;
     }
 
+    public String getprimaryUpdatePrefix() {
+        return this.primaryUpdatePrefix;
+    }
+
+    public String getsecondaryUpdatePrefix() {
+        return this.secondaryUpdatePrefix;
+    }
+
+    public void setprimaryUpdatePrefix(String prefix) {
+        this.primaryUpdatePrefix = prefix;
+    }
+
+    public void setsecondaryUpdatePrefix(String prefix) {
+        this.secondaryUpdatePrefix = prefix;
+    }
+
     /**
      * LIest eine webseite ein und gibt deren source zurück
      * 
@@ -466,7 +582,7 @@ public class WebUpdater implements Serializable {
 
         String[] tmp = file.elementAt(0).split("\\?");
         log("Webupdater: download " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
-        downloadBinary(tmp[0], tmp[1]);
+        downloadBinary(tmp[0], tmp[0], file.elementAt(1));
 
     }
 
@@ -488,10 +604,10 @@ public class WebUpdater implements Serializable {
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
                     log("Webupdater: download " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
-                    downloadBinary(tmp[0], tmp[1]);
+                    downloadBinary(tmp[0], tmp[0], files.elementAt(i).elementAt(1));
                 } else {
                     log("Webupdater:  download " + onlinePath + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
-                    downloadBinary(akt, onlinePath + "/" + files.elementAt(i).elementAt(0));
+                    downloadBinary(akt, onlinePath + "/" + files.elementAt(i).elementAt(0), null);
                 }
                 log("Webupdater: ready");
             }
