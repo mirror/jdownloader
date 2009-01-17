@@ -145,7 +145,7 @@ public class Main {
         boolean OSFilter = true;
         boolean IgnorePlugins = true;
         boolean clone = false;
-        String clonePrefix = null;        
+        String clonePrefix = null;
 
         for (String p : args) {
             if (p.trim().equalsIgnoreCase("-noosfilter")) {

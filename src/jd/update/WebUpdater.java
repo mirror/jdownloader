@@ -220,8 +220,8 @@ public class WebUpdater implements Serializable {
             fileurl += (fileurl.contains("?") ? "&" : "?") + System.currentTimeMillis();
             URL url = new URL(fileurl);
             URLConnection con = url.openConnection();
-            con.setReadTimeout(10000);
-            con.setReadTimeout(10000);
+            con.setReadTimeout(20000);
+            con.setConnectTimeout(20000);
             con.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
             if (SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("USE_PROXY", false)) {
                 String user = SubConfiguration.getSubConfig("WEBUPDATE").getStringProperty("PROXY_USER", "");
@@ -516,7 +516,7 @@ public class WebUpdater implements Serializable {
         }
 
         httpConnection.setReadTimeout(20000);
-        httpConnection.setReadTimeout(20000);
+        httpConnection.setConnectTimeout(20000);
         httpConnection.setInstanceFollowRedirects(true);
         httpConnection.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
         // Content-Encoding: gzip
