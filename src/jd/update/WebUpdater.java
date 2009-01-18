@@ -58,11 +58,6 @@ public class WebUpdater implements Serializable {
 
     private boolean ignorePlugins = true;
 
-    /**
-     * Pfad zur lis.php auf dem updateserver
-     */
-    public String listPath;
-
     private StringBuilder logger;
 
     /**
@@ -91,7 +86,7 @@ public class WebUpdater implements Serializable {
      */
     public WebUpdater() {
         logger = new StringBuilder();
-        setListPath("http://service.jdownloader.net/update/");
+        setUrls("http://212.117.163.148/update/");
         setprimaryUpdatePrefix("http://78.143.20.68/update/jd/");
         setsecondaryUpdatePrefix("http://212.117.163.148/update/jd/");
         switchtosecondary = 0;
@@ -558,12 +553,10 @@ public class WebUpdater implements Serializable {
      * @param listPath
      *            the listPath to set
      */
-    public void setListPath(String listPath) {
-        this.listPath = listPath + "update.zip";
-        JDUpdateUtils.setUpdateUrl(this.listPath);
-        onlinePath = listPath + "/bin";
+    public void setUrls(String listPath) {
+        JDUpdateUtils.setUpdateUrl(listPath);
+        onlinePath = listPath + "jd";
         log("Update from " + listPath);
-
     }
 
     public void setListProgress(JProgressBar progresslist) {

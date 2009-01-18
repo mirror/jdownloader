@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -13,22 +14,41 @@ import java.util.zip.ZipInputStream;
 public class JDUpdateUtils {
 
     private static long last_updateLists_Internal = 0;
-    private static long interval_updateLists_Internal = 1000 * 60 * 5;
+    private static long interval_updateLists_Internal = 1000 * 60 * 1;
 
     private static String addonlist = null;
     private static String updatelist = null;
 
-    private static String listpath = "http://service.jdownloader.net/update/update.zip";
+    private static String listpath = "http://212.117.163.148/update/";
+
+    private static String oldhash = null;
 
     private static Integer lock = 1;
 
     private static synchronized void updateLists_Internal() {
         if (System.currentTimeMillis() - last_updateLists_Internal < interval_updateLists_Internal) return;
-        System.out.println("Initialize UpdateList");
-        ByteBuffer updateLists_Internal = null;
+        String newhash = null;
+        /* update.md5 holen */
+        System.out.println("Fetch Update Hash");
         try {
-            updateLists_Internal = download(listpath, -1);
-            ZipInputStream ZipStream = new ZipInputStream(InputStreamfromByteBuffer(updateLists_Internal));
+            ByteBuffer hashfile = download(listpath + "update.md5", -1);
+            byte[] b = new byte[hashfile.limit()];
+            hashfile.get(b);
+            newhash = new String(b, "UTF-8").trim();
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.out.println("Could not fetch Update Hash!");
+        }
+        if (oldhash != null && newhash != null && oldhash.equalsIgnoreCase(newhash)) {
+            System.out.println("Update Hash has not changed! No need to fetch new UpdateList!");
+            last_updateLists_Internal = System.currentTimeMillis();
+            return;
+        }
+        /* update.zip holen */
+        System.out.println("Fetch UpdateList");
+        try {
+            ByteBuffer updateLists_Internal = download(listpath + "update.zip", -1);
+            ZipInputStream ZipStream = new ZipInputStream(InputStreamfromByteBuffer(updateLists_Internal.duplicate()));
             ZipEntry ze = null;
             synchronized (lock) {
                 while ((ze = ZipStream.getNextEntry()) != null) {
@@ -39,9 +59,31 @@ public class JDUpdateUtils {
                     }
                 }
             }
+            try {
+                MessageDigest md;
+                md = MessageDigest.getInstance("md5");
+                byte[] b = new byte[1024];
+                InputStream in = InputStreamfromByteBuffer(updateLists_Internal.duplicate());
+                for (int n = 0; (n = in.read(b)) > -1;) {
+                    md.update(b, 0, n);
+                }
+                byte[] digest = md.digest();
+                String ret = "";
+                for (byte element : digest) {
+                    String tmp = Integer.toHexString(element & 0xFF);
+                    if (tmp.length() < 2) {
+                        tmp = "0" + tmp;
+                    }
+                    ret += tmp;
+                }
+                oldhash = ret.trim();
+            } catch (Exception e3) {
+                e3.printStackTrace();
+                System.out.println("Could not create Hash for UpdateList");
+            }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("UpdateList: failed!");
+            System.out.println("Could not fetch UpdateList");
             last_updateLists_Internal = System.currentTimeMillis();
             return;
         }
