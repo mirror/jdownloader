@@ -1,4 +1,4 @@
-//    jDownloader - Downloadmanager
+﻿//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -270,7 +270,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
         }
 
         if (downloadLink.getLinkStatus().getRemainingWaittime() > 0) {
-            addEntry("waittime", JDLocale.L("gui.linkinfo.waittime", "Wartezeit"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
+            addEntry("waittime", JDLocale.L("gui.linkinfo.waittime", "Wait time"), downloadLink.getLinkStatus().getRemainingWaittime() + " sek");
         } else {
             removeEntry("waittime");
         }
@@ -287,7 +287,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
             addEntry("enabled", JDLocale.L("gui.linkinfo.download", "Download"), JDLocale.L("gui.linkinfo.download.activated", "ist aktiviert"));
         }
 
-        addEntry("dlstatus", "download.status", downloadLink.getLinkStatus().getStatusString());
+        addEntry("dlstatus", JDLocale.L("gui.linkinfo.downloadstatus", "Download status"), downloadLink.getLinkStatus().getStatusString());
 
         DownloadInterface dl = downloadLink.getDownloadInstance();
         if (downloadLink.getLinkStatus().isPluginActive() && dl != null) {
