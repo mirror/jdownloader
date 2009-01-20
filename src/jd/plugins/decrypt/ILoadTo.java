@@ -28,7 +28,7 @@ import jd.plugins.PluginForDecrypt;
 
 public class ILoadTo extends PluginForDecrypt {
 
-    private String patternSupported_Info = "http://iload\\.to/view/.*?/";
+    private String patternSupported_Info = "http://iload\\.to/(view|title|release)/.*?/";
 
     public ILoadTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -41,12 +41,12 @@ public class ILoadTo extends PluginForDecrypt {
 
         if (parameter.matches(patternSupported_Info)) {
             br.getPage(parameter);
-            String password = br.getRegex("class='Value Password'>(.*?)<").getMatch(0);
-            String links_page = br.getRegex(Pattern.compile("Head'>OneClick-Hoster<(.+)(class='Head'>Sample)?", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            String links[] = new Regex(links_page, Pattern.compile("href='/go/(\\d+)/'", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            if (links == null) return null;
-            for (String link : links) {
-                DownloadLink dl_link = createDownloadlink("http://iload.to/go/" + link + "/");
+            String password = br.getRegex("Passwort:</td><td><input.*?value='(.*?)'").getMatch(0);
+            String links_page[] = br.getRegex(Pattern.compile("<div class='Link'>(.*?)target='_blank'.*?div class='Clicks'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getColumn(0);
+            if (links_page == null) return null;
+            for (String link : links_page) {
+                String dllink = new Regex(link, Pattern.compile("href='/go/(\\d+)/'", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                DownloadLink dl_link = createDownloadlink("http://iload.to/go/" + dllink + "/");
                 dl_link.addSourcePluginPassword(password);
                 decryptedLinks.add(dl_link);
             }

@@ -30,8 +30,6 @@ public class FileshakerCom extends PluginForHost {
 
     public FileshakerCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setFollowRedirects(true);
-        br.setDebug(true);
     }
 
     @Override
@@ -43,8 +41,8 @@ public class FileshakerCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         String url = downloadLink.getDownloadURL();
+        br.setFollowRedirects(true);
         br.getPage(url);
-        System.out.println("URL: " + br.getURL());
         if (!br.getURL().equals("http://www.fileshaker.com/")) {
             String downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<br><br>File: (.*)<br><br>", Pattern.CASE_INSENSITIVE)).getMatch(0));
             if (downloadName == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
