@@ -789,6 +789,7 @@ public class JDInit {
         // "http://[\\w\\.]*?remixshare\\.com/\\?file=[0-9a-zA-Z]+");
         new HostPluginWrapper("speedyshare.com", "SpeedyShareCom", "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*");
         new HostPluginWrapper("badongo.com", "BadongoCom", "httpviajd\\d+://[\\w\\.]*?badongo\\.com/.*file/[0-9]+");
+        new HostPluginWrapper("fileshaker.com", "FileshakerCom", "http://[\\w\\.]*?fileshaker\\.com/.+");
     }
 
     public void loadPluginOptional() {
