@@ -17,6 +17,27 @@ public class header {
      * @throws UnsupportedEncodingException
      * @throws java.text.ParseException
      */
+    public static String base64totext(String t) {
+        String b64s = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_\"";
+        int m = 0;
+        int a = 0;
+        String r = "";
+        for (int n = 0; n < t.length(); n++) {
+            int c = b64s.indexOf(t.charAt(n));
+            if (c >= 0) {
+                if (m != 0) {
+                    int ch = (c << (8 - m)) & 255 | a;
+                    char s = (char) ch;
+                    r += s;
+                }
+                a = c >> m;
+                m = m + 2;
+                if (m == 8) m = 0;
+            }
+        }
+        return r;
+    }
+
     public static void main(String[] args) throws UnsupportedEncodingException {
         // TODO Auto-generated method stub
 
@@ -63,18 +84,21 @@ public class header {
         // System.out.println("Right Java Version");
         // }
         // }
-        if (true){
+        if (false) {
             JDUpdateUtils.setUpdateUrl("http://service.jdownloader.org/update/update.zip");
-            String jj=JDUpdateUtils.get_AddonList();
-            String kk=JDUpdateUtils.get_UpdateList();
-            kk=kk;
+            String jj = JDUpdateUtils.get_AddonList();
+            String kk = JDUpdateUtils.get_UpdateList();
+            kk = kk;
+        }
+        if (true) {
+            System.out.println(base64totext("kALaLX9NF0SfcVSf99CsZ5umsHeyg4tGhJ\"ePoCNNxv6\"mIeln34L0YRoEGBwB6lB3snQVhp1yCSznAgpjFWa\"oC_P5bc0dNsFTc6sw3YqNfRD\"hJ_RZTmQD\"s\"CwGUnTxxDPQ3zfGW8Z0A9mqLP95Qg9zwr4YLuhSIC9gOHf7TawDE\"vDUs_jI36\"CbIy\"n1I3o03BD05k6mOx3nr6C9b8tqBwhgbxV17MnrGRO0IRX2WD06r8eQndm5q9Yt8I1qRNeKMUpKIqrpGj"));
         }
         if (false) {
             // System.out.println(new Regex(
             // "<p style=\"color:red;\">You have reached the download limit for free-users. Would you like more?</p>"
             // , ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches() +
             // "");
-            String l[] = {"filename= \"=?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?=\"","filename==?UTF-8?B?YWlhZGNhZGlnMWR4bi5wYXJ0Mi5yYXI=?=" };
+            String l[] = { "filename= \"=?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?=\"", "filename==?UTF-8?B?YWlhZGNhZGlnMWR4bi5wYXJ0Mi5yYXI=?=" };
             // String l[] = {
             // "filename==?UTF-8?B?WmZyIFByb2plY3QgLSBBZGRpY3RlZCBNZiAoT3JpZ2luYWwgTWl4KS0tLXd3dy50ZWNobm9yb2NrZXIuaW5mby5tcDM=?="
             // ,
@@ -134,4 +158,5 @@ public class header {
         //System.out.println(Encoding.urlEncode("die ist ein test und / hallöle"
         // ));
     }
+
 }

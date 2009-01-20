@@ -675,6 +675,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
                 return false;
             }
             if (res.contains("Cannot open ") || res.contains("Das System kann die angegebene Datei nicht finden")) { throw new UnrarException("File not found " + file.getAbsolutePath()); }
+            if (res.contains("is not RAR archive")) return false;
             if (res.indexOf(" (password incorrect") != -1 || res.contains("the file header is corrupt")) {
                 JDUtilities.getLogger().finest("Password incorrect: " + file.getName() + " pw: " + pass);
                 continue;

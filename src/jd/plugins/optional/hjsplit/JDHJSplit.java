@@ -482,9 +482,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         if (name.matches(".*\\.\\a.$")) {
             try {
                 Signature fs = FileSignatures.getFileSignature(file);
-                if (fs.getId().equals("RAR"))
+                if (fs != null && fs.getId().equals("RAR"))
                     return ARCHIVE_TYPE_RAR;
-                else if (fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
+                else if (fs != null && fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
             } catch (IOException e) {
             }
 
@@ -495,9 +495,9 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         {
             try {
                 Signature fs = FileSignatures.getFileSignature(file);
-                if (fs.getId().equals("RAR"))
+                if (fs != null && fs.getId().equals("RAR"))
                     return ARCHIVE_TYPE_RAR;
-                else if (fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
+                else if (fs != null && fs.getId().equals("﻿7Z")) return ARCHIVE_TYPE_7Z;
             } catch (IOException e) {
             }
 
