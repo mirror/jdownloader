@@ -1337,20 +1337,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         fp.setComment(tab.getComment());
         fp.setPassword(tab.getPassword());
         fp.setExtractAfterDownload(tab.isExtract());
-        // UnrarPassword.addToPasswordlist(tab.getPassword());
-        // UnrarPassword.pushPasswordToTop(tab.getPassword());
         addToDownloadDirs(tab.getDownloadDirectory(), tab.getPackageName());
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
             File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
-            if (!file.exists()) {
-                file.mkdirs();
-            }
-            if (file.exists()) {
-                fp.setDownloadDirectory(file.getAbsolutePath());
-            } else {
-                fp.setDownloadDirectory(tab.getDownloadDirectory());
-            }
+            fp.setDownloadDirectory(file.getAbsolutePath());
         } else {
             fp.setDownloadDirectory(tab.getDownloadDirectory());
         }

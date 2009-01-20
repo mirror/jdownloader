@@ -17,6 +17,7 @@
 package jd.controlling;
 
 import java.io.File;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
@@ -141,8 +142,12 @@ public class SingleDownloadController extends Thread {
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (SocketTimeoutException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage("Hoster offline");
-                linkStatus.setValue(20 * 60 * 1000l);
+                linkStatus.setErrorMessage("Hoster offline?");
+                linkStatus.setValue(10 * 60 * 1000l);
+            } catch (SocketException e) {
+                linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
+                linkStatus.setErrorMessage("Disconnect?");
+                linkStatus.setValue(5 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 e.printStackTrace();
@@ -153,7 +158,6 @@ public class SingleDownloadController extends Thread {
                 e.printStackTrace();
                 linkStatus.addStatus(LinkStatus.ERROR_PLUGIN_DEFEKT);
                 linkStatus.setErrorMessage(JDLocale.L("plugins.errors.error", "Error: ") + JDUtilities.convertExceptionReadable(e));
-
             } catch (Exception e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
                 e.printStackTrace();

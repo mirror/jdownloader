@@ -345,6 +345,12 @@ div.ladebalken div.finished {
 tr.downloadfinished td {
   	 background-color:#aaffaa;
 }
+tr.downloadonline td {
+  	 background-color:#228B22;
+}
+tr.downloadoffline td {
+  	 background-color:#8B0000;
+}
 tr.downloadrunning td {
   	 background-color:#e9e9ff;
 }

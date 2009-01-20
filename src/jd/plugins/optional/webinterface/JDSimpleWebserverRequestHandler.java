@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -33,6 +34,8 @@ import jd.event.UIEvent;
 import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Encoding;
+import jd.nutils.jobber.JDRunnable;
+import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -50,51 +53,181 @@ public class JDSimpleWebserverRequestHandler {
     private Logger logger = JDUtilities.getLogger();
     private JDSimpleWebserverResponseCreator response;
 
+    private static ArrayList<DownloadLink> totalLinkList = new ArrayList<DownloadLink>();
+
+    private static HashMap<String, Vector<DownloadLink>> waitingLinkList = new HashMap<String, Vector<DownloadLink>>();
+
+    private static Vector<DownloadLink> addingLinkList = new Vector<DownloadLink>();
+
+    private static Thread gatherer;
+    private static Jobber decryptJobbers;
+
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
         this.response = response;
         this.headers = headers;
     }
 
-    private void addLinkstoWaitingList(Vector<DownloadLink> waitingLinkList) {
-        DownloadLink link;
-        DownloadLink next;
-        while (waitingLinkList.size() > 0) {
-            link = waitingLinkList.remove(0);
-            if (!guiConfig.getBooleanProperty(LinkGrabber.PROPERTY_ONLINE_CHECK, true)) {
-                attachLinkTopackage(link);
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                }
-            } else {
-                if (!link.isAvailabilityChecked()) {
-                    Iterator<DownloadLink> it = waitingLinkList.iterator();
-                    Vector<DownloadLink> links = new Vector<DownloadLink>();
-                    Vector<DownloadLink> dlLinks = new Vector<DownloadLink>();
-                    links.add(link);
-                    dlLinks.add(link);
-                    while (it.hasNext()) {
-                        next = it.next();
-                        if (next.getPlugin().getClass() == link.getPlugin().getClass()) {
-                            dlLinks.add(next);
-                            links.add(next);
-                        }
-                    }
-                    if (links.size() > 1) {
-                        boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(links.toArray(new DownloadLink[] {}));
-                        if (ret != null) {
-                            for (int ii = 0; ii < links.size(); ii++) {
-                                dlLinks.get(ii).setAvailable(ret[ii]);
-                            }
-                        }
-                    }
-                }
-                attachLinkTopackage(link);
+    private boolean isDupe(DownloadLink link) {
+        for (DownloadLink l : totalLinkList) {
+            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL())) { return true; }
+        }
+        return false;
+    }
+
+    public synchronized void addLinks(Vector<DownloadLink> linkList) {
+
+        for (DownloadLink element : linkList) {
+            if (isDupe(element)) {
+                continue;
             }
+            totalLinkList.add(element);
+            addtowaitinglist(element);
+        }
+        if (waitingLinkList.size() > 0) {
+            startLinkGatherer();
         }
     }
 
-    private void attachLinkTopackage(DownloadLink link) {
+    public synchronized void addtowaitinglist(DownloadLink element) {
+        String name = element.getPlugin().getHost();
+        if (waitingLinkList.containsKey(name)) {
+            waitingLinkList.get(name).add(element);
+        } else {
+            Vector<DownloadLink> dllinks = new Vector<DownloadLink>();
+            dllinks.add(element);
+            waitingLinkList.put(name, dllinks);
+        }
+    }
+
+    private void startLinkGatherer() {
+        class DThread extends Thread implements JDRunnable {
+            private Vector<DownloadLink> links = null;
+
+            public DThread(Vector<DownloadLink> links) {
+                this.links = links;
+            }
+
+            public void run() {
+                while (links.size() > 0 && JDWebinterface.gathererrunning == true) {
+                    DownloadLink link = links.remove(0);
+                    if (!guiConfig.getBooleanProperty(LinkGrabber.PROPERTY_ONLINE_CHECK, true)) {
+                        addingLinkList.add(link);
+                        try {
+                            Thread.sleep(5);
+                        } catch (InterruptedException e) {
+                        }
+                    } else {
+                        if (!link.isAvailabilityChecked()) {
+                            Vector<DownloadLink> dlinks = new Vector<DownloadLink>();
+                            dlinks.add(link);
+                            dlinks.addAll(links);
+                            if (dlinks.size() > 1) {
+                                boolean[] ret = ((PluginForHost) link.getPlugin()).checkLinks(dlinks.toArray(new DownloadLink[] {}));
+                                if (ret != null) {
+                                    for (int i = 0; i < dlinks.size(); i++) {
+                                        dlinks.get(i).setAvailable(ret[i]);
+                                    }
+                                }
+                            }
+                        }
+                        link.isAvailable();
+                        addingLinkList.add(link);
+                    }
+                }
+            }
+
+            public void go() throws Exception {
+                run();
+            }
+        }
+        class AThread extends Thread {
+            public AThread() {
+            }
+
+            public void run() {
+                while (JDWebinterface.gathererrunning == true) {
+                    while (addingLinkList.size() > 0 && JDWebinterface.gathererrunning == true) {
+                        DownloadLink link = addingLinkList.remove(0);
+                        attachLinkTopackage(link);
+                    }
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+                /* restlichen adden */
+                while (addingLinkList.size() > 0) {
+                    DownloadLink link = addingLinkList.remove(0);
+                    attachLinkTopackage(link);
+                }
+            }
+        }
+        if (gatherer != null && gatherer.isAlive()) { return; }
+        gatherer = new Thread() {
+
+            public synchronized void run() {
+                JDWebinterface.gathererrunning = true;
+                AThread athread = new AThread();
+                athread.start();
+                decryptJobbers = new Jobber(4);
+                int maxperjob = 20;
+                while (waitingLinkList.size() > 0 && JDWebinterface.gathererrunning == true) {
+                    if (waitingLinkList.size() == 1) {
+                        maxperjob = 4;
+                    } else {
+                        maxperjob = 20;
+                    }
+                    Set<String> ks = waitingLinkList.keySet();
+                    String it = ks.iterator().next();
+                    Vector<DownloadLink> links = waitingLinkList.remove(it);
+                    Vector<DownloadLink> links2 = new Vector<DownloadLink>();
+                    while (links.size() > 0) {
+                        links2.add(links.remove(0));
+                        if (links2.size() > maxperjob) {
+                            DThread dthread = new DThread(links2);
+                            decryptJobbers.add(dthread);
+                            links2 = new Vector<DownloadLink>();
+                            break;
+                        }
+                    }
+                    links.addAll(links2);
+                    if (links.size() > maxperjob) {
+                        /* zufall dran, damit die hoster durchgewechselt werden */
+                        waitingLinkList.put(it + System.currentTimeMillis(), links);
+                    } else {
+                        DThread dthread = new DThread(links);
+                        decryptJobbers.add(dthread);
+                    }
+                    if (!decryptJobbers.isAlive() && decryptJobbers.getJobsAdded() != decryptJobbers.getJobsFinished()) {
+                        decryptJobbers.start();
+                    }
+                }
+                int todo = decryptJobbers.getJobsAdded();
+                while (decryptJobbers.getJobsFinished() != todo) {
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        break;
+                    }
+                }
+                decryptJobbers.stop();
+                JDWebinterface.gathererrunning = false;
+            }
+        };
+        gatherer.start();
+    }
+
+    public void stopGatherer() {
+        if (gatherer != null && gatherer.isAlive()) {
+            decryptJobbers.stop();
+            JDWebinterface.gathererrunning = false;
+            gatherer.interrupt();
+            gatherer = null;
+        }
+    }
+
+    private synchronized void attachLinkTopackage(DownloadLink link) {
         String packageName;
         boolean autoPackage = false;
         if (link.getFilePackage() != FilePackage.getDefaultFilePackage()) {
@@ -293,14 +426,9 @@ public class JDSimpleWebserverRequestHandler {
                                         /* use packagename as subfolder */
                                         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
                                             File file = new File(new File(fp.getDownloadDirectory()), fp.getName());
-                                            if (!file.exists()) {
-                                                file.mkdirs();
-                                            }
-                                            if (file.exists()) {
-                                                fp.setDownloadDirectory(file.getAbsolutePath());
-                                            } else {
-                                                fp.setDownloadDirectory(fp.getDownloadDirectory());
-                                            }
+                                            fp.setDownloadDirectory(file.getAbsolutePath());
+                                        } else {
+                                            fp.setDownloadDirectory(fp.getDownloadDirectory());
                                         }
                                     }
                                     fp.add(link);
@@ -470,13 +598,13 @@ public class JDSimpleWebserverRequestHandler {
                 if (requestParameter.containsKey("addlinks")) {
                     String AddLinks = Encoding.htmlDecode(requestParameter.get("addlinks"));
                     Vector<DownloadLink> waitingLinkList = new DistributeData(AddLinks).findLinks();
-                    addLinkstoWaitingList(waitingLinkList);
+                    addLinks(waitingLinkList);
                 }
             } else if (requestParameter.get("do").compareToIgnoreCase("upload") == 0) {
                 if (requestParameter.containsKey("file")) {
                     File container = JDUtilities.getResourceFile("container/" + requestParameter.get("file"));
                     Vector<DownloadLink> waitingLinkList = loadContainerFile(container);
-                    addLinkstoWaitingList(waitingLinkList);
+                    addLinks(waitingLinkList);
                 }
             }
         }
@@ -561,15 +689,15 @@ public class JDSimpleWebserverRequestHandler {
         a = a.replaceAll("\\.part([0-9]+)", "");
         a = a.replaceAll("\\.html", "");
         a = a.replaceAll("\\.htm", "");
+
         int i = a.lastIndexOf(".");
         String ret;
         if (i <= 1 || a.length() - i > 5) {
-            ret = a.toLowerCase().trim();
+            ret = a.trim();
         } else {
-            ret = a.substring(0, i).toLowerCase().trim();
+            ret = a.substring(0, i).trim();
         }
 
-        if (a.equals(ret)) { return ret; }
-        return ret;
+        return JDUtilities.removeEndingPoints(ret);
     }
 }

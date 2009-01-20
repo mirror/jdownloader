@@ -339,18 +339,8 @@ public class JDController implements ControlListener, UIListener {
             String downloadDir = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
 
             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
-
                 File file = new File(new File(downloadDir), packages.get(i));
-                if (!file.exists()) {
-                    file.mkdirs();
-                }
-
-                if (file.exists()) {
-                    fp.setDownloadDirectory(file.getAbsolutePath());
-                } else {
-                    fp.setDownloadDirectory(downloadDir);
-                }
-
+                fp.setDownloadDirectory(file.getAbsolutePath());
             } else {
                 fp.setDownloadDirectory(downloadDir);
             }

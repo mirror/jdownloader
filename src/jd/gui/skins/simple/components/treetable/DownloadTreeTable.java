@@ -207,6 +207,9 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         FilePackage fp;
         Vector<DownloadLink> links;
         Vector<FilePackage> fps;
+        FilePackage next;
+        HashMap<String, Object> prop;
+        Integer prio;
         // boolean[] res;
 
         switch (e.getID()) {
@@ -261,9 +264,9 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
             break;
         case TreeTableAction.DOWNLOAD_PRIO:
-            HashMap<String, Object> prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
+            prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
             links = (Vector<DownloadLink>) prop.get("downloadlinks");
-            Integer prio = (Integer) prop.get("prio");
+            prio = (Integer) prop.get("prio");
             for (int i = 0; i < links.size(); i++) {
                 links.elementAt(i).setPriority(prio);
             }
@@ -389,11 +392,23 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
             break;
         case TreeTableAction.PACKAGE_ENABLE:
             fps = (Vector<FilePackage>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("packages");
-            FilePackage next;
+
             for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
                 next = it.next();
                 for (int i = 0; i < next.size(); i++) {
                     next.get(i).setEnabled(true);
+                }
+            }
+            JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
+            break;
+        case TreeTableAction.PACKAGE_PRIO:
+            prop = (HashMap<String, Object>) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("infos");
+            fps = (Vector<FilePackage>) prop.get("packages");
+            prio = (Integer) prop.get("prio");
+            for (Iterator<FilePackage> it = fps.iterator(); it.hasNext();) {
+                next = it.next();
+                for (int i = 0; i < next.size(); i++) {
+                    next.get(i).setPriority(prio);
                 }
             }
             JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_ALL_DOWNLOADLINKS_DATA_CHANGED, this));
@@ -818,7 +833,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
 
-                popup.add(buildpriomenu((DownloadLink) obj));
+                popup.add(buildpriomenuDownloadLink((DownloadLink) obj));
 
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.downloadDir", "Zielordner öffnen"), TreeTableAction.DOWNLOAD_DOWNLOAD_DIR, new Property("downloadlink", obj))));
@@ -856,7 +871,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         }
     }
 
-    private JMenu buildpriomenu(DownloadLink link) {
+    private JMenu buildpriomenuDownloadLink(DownloadLink link) {
         JMenuItem tmp;
         JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority"));
         int prio = link.getPriority();
@@ -871,6 +886,20 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 tmp.setEnabled(false);
             } else
                 tmp.setEnabled(true);
+        }
+        return prioPopup;
+    }
+
+    private JMenu buildpriomenuFilePackage(Vector<FilePackage> fps) {
+        JMenuItem tmp;
+        JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority"));
+        HashMap<String, Object> prop = null;
+        for (int i = 4; i >= -4; i--) {
+            prop = new HashMap<String, Object>();
+            prop.put("packages", fps);
+            prop.put("prio", new Integer(i));
+            prioPopup.add(tmp = new JMenuItem(new TreeTableAction(this, Integer.toString(i), TreeTableAction.PACKAGE_PRIO, new Property("infos", prop))));
+            tmp.setEnabled(true);
         }
         return prioPopup;
     }
@@ -896,7 +925,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         }
 
         res.add(pluginPopup);
-
+        res.add(buildpriomenuFilePackage(fps));
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.PACKAGE_SORT, new Property("package", fp))));
 
         res.add(new JSeparator());

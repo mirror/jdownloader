@@ -36,6 +36,7 @@ import jd.utils.JDUtilities;
 public class JDWebinterface extends PluginOptional {
     static public JDWebinterface instance;
     static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
+    static public boolean gathererrunning = false;
     static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
     static final String PROPERTY_LOGIN = "PARAM_LOGIN";

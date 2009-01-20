@@ -139,6 +139,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                 h2.put("package_id", Package_ID.toString());
                 h2.put("download_id", Download_ID.toString());
                 h2.put("download_name", dLink.getName());
+                if (dLink.isAvailabilityChecked() && dLink.isAvailable()) {
+                    h2.put("download_status", "online");
+                } else {
+                    h2.put("download_status", "offline");
+                }
 
                 h2.put("download_hoster", dLink.getHost());
 
@@ -150,6 +155,11 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
         // t.setParam("message_status", "show");
         // t.setParam("message", "great work");
         t.setParam("pakete", v);
+        if (JDWebinterface.gathererrunning) {
+            t.setParam("message_status", "show");
+            t.setParam("message", "LinkGrabber still Running! Please Reload Page in few Secs!");
+        }
+
     }
 
     @SuppressWarnings("unchecked")
@@ -325,9 +335,16 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
 
                 h2.put("download_hoster", dLink.getHost());
 
-                if (dLink.isEnabled()) {
+                if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
+                    status[0] = 1;
+                    h2.put("download_status", "offline");
+                } else if (dLink.isEnabled()) {
 
                     switch (dLink.getLinkStatus().getLatestStatus()) {
+                    case LinkStatus.ERROR_FILE_NOT_FOUND:
+                        status[0] = 1;
+                        h2.put("download_status", "offline");
+                        break;
                     case LinkStatus.FINISHED:
                         status[3] = 1;
                         h2.put("download_status", "finished");
@@ -342,7 +359,6 @@ public class JDSimpleWebserverTemplateFileRequestHandler {
                         status[1] = 1;
                         h2.put("download_status", "activated");
                     }
-                    ;
                 } else {
                     status[0] = 1;
                     h2.put("download_status", "deactivated");
