@@ -24,7 +24,6 @@ import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Logger;
 
-import jd.CPluginWrapper;
 import jd.OptionalPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
@@ -41,7 +40,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
 import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
@@ -603,7 +601,7 @@ public class JDSimpleWebserverRequestHandler {
             } else if (requestParameter.get("do").compareToIgnoreCase("upload") == 0) {
                 if (requestParameter.containsKey("file")) {
                     File container = JDUtilities.getResourceFile("container/" + requestParameter.get("file"));
-                    Vector<DownloadLink> waitingLinkList = loadContainerFile(container);
+                    Vector<DownloadLink> waitingLinkList = JDUtilities.getController().getContainerLinks(container);
                     addLinks(waitingLinkList);
                 }
             }
@@ -657,31 +655,6 @@ public class JDSimpleWebserverRequestHandler {
                 filerequest.handleRequest(url, requestParameter);
             }
         }
-    }
-
-    private Vector<DownloadLink> loadContainerFile(final File file) {
-
-        ArrayList<CPluginWrapper> pluginsForContainer = CPluginWrapper.getCWrapper();
-        Vector<DownloadLink> downloadLinks = new Vector<DownloadLink>();
-        PluginsC pContainer;
-        CPluginWrapper wrapper;
-        for (int i = 0; i < pluginsForContainer.size(); i++) {
-            wrapper = pluginsForContainer.get(i);
-            if (wrapper.canHandle(file.getName())) {
-                try {
-                    pContainer = (PluginsC) wrapper.getNewPluginInstance();
-                    pContainer.initContainer(file.getAbsolutePath());
-                    Vector<DownloadLink> links = pContainer.getContainedDownloadlinks();
-                    if (links != null && links.size() != 0) {
-                        downloadLinks = links;
-                        break;
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-        return downloadLinks;
     }
 
     private String removeExtension(String a) {
