@@ -106,7 +106,7 @@ public class JDUtilities {
      * Parametername für den Konfigpath
      */
     public static final String CONFIG_PATH = "jDownloader.config";
- 
+
     /**
      * Die Konfiguration
      */
@@ -179,6 +179,7 @@ public class JDUtilities {
         }
         return ret.toString();
     }
+
     @SuppressWarnings("unchecked")
     public static Map revSortByKey(Map map) {
         List list = new LinkedList(map.entrySet());
@@ -195,6 +196,7 @@ public class JDUtilities {
         }
         return result;
     }
+
     @SuppressWarnings("unchecked")
     public static Map sortByKey(Map map) {
         List list = new LinkedList(map.entrySet());
@@ -211,6 +213,7 @@ public class JDUtilities {
         }
         return result;
     }
+
     public static void acquireUserIO_Semaphore() throws InterruptedException {
         try {
             userio_sem.acquire();
@@ -433,8 +436,8 @@ public class JDUtilities {
             return Integer.parseInt(Encoding.filterString(src, "1234567890"));
         } catch (NumberFormatException e) {
             return 0;
-        } 
-    }  
+        }
+    }
 
     public static long filterLong(String src) {
         try {
@@ -442,8 +445,8 @@ public class JDUtilities {
         } catch (NumberFormatException e) {
             return 0;
         }
-    } 
-  
+    }
+
     /**
      * Formatiert Byes in einen MB String [MM.MM MB]
      * 
@@ -1131,7 +1134,7 @@ public class JDUtilities {
         Vector<String> priority = (Vector<String>) configuration.getProperty(Configuration.PARAM_HOST_PRIORITY, new Vector<String>());
         for (int i = 0; i < priority.size(); i++) {
             for (int b = plgs.size() - 1; b >= 0; b--) {
-                if (plgs.get(b).getHost() == null) { 
+                if (plgs.get(b).getHost() == null) {
                     logger.info("OO");
                 }
                 if (plgs.get(b).getHost().equalsIgnoreCase(priority.get(i))) {
@@ -1246,7 +1249,7 @@ public class JDUtilities {
      * @author JD-Team
      * @param resource
      *            Ressource, die geladen werden soll
-     * @return File zu arg 
+     * @return File zu arg
      */
     public static File getResourceFile(String resource) {
         JDClassLoader cl = JDUtilities.getJDClassLoader();
@@ -1264,7 +1267,7 @@ public class JDUtilities {
         }
         return null;
     }
- 
+
     public static void restartJD(String[] jdArgs) {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
         String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
@@ -1309,6 +1312,7 @@ public class JDUtilities {
         out.close();
         return new String(ba.toByteArray());
     }
+
     public static Object xmlStringToObjekt(String in) throws IOException {
         Object objectLoaded = null;
         ByteArrayInputStream ba = new ByteArrayInputStream(in.getBytes());
@@ -1318,6 +1322,7 @@ public class JDUtilities {
         ba.close();
         return objectLoaded;
     }
+
     /**
      * Setzt die Konfigurations instanz
      * 
@@ -1385,16 +1390,16 @@ public class JDUtilities {
             }
         }
         return ret;
-    } 
+    }
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
         if (dbconnect == null) {
             dbconnect = new DatabaseConnector();
         }
-        return dbconnect; 
+        return dbconnect;
     }
 
-    /**  
+    /**
      * The format describing an http date.
      */
     private static SimpleDateFormat dateFormat;
@@ -1447,14 +1452,14 @@ public class JDUtilities {
 
         int l = passwords.length - 1;
         StringBuilder ret = new StringBuilder();
-        ret.append(new char[] {'{','"'});
+        ret.append(new char[] { '{', '"' });
         for (int i = 0; i < passwords.length; i++) {
             if (!passwords[i].matches("[\\s]*")) {
                 ret.append(passwords[i]);
-                if(i == l)
-                    ret.append(new char[] {'"', '}'});
+                if (i == l)
+                    ret.append(new char[] { '"', '}' });
                 else
-                    ret.append(new char[] {'"', ',', '"'});
+                    ret.append(new char[] { '"', ',', '"' });
             }
         }
         return ret.toString();

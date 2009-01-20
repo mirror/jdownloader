@@ -22,7 +22,7 @@ import java.io.OutputStream;
 import jd.nutils.Executer;
 
 public class JDSimpleWebserverResponseCreator {
-    
+
     // The body
     private StringBuilder body;
 
@@ -42,9 +42,9 @@ public class JDSimpleWebserverResponseCreator {
     }
 
     /*
-     * Append the given string to the body so far 
-     * @param content
-     *            content
+     * Append the given string to the body so far
+     * 
+     * @param content content
      */
     public void addContent(String content) {
         body.append(content);
@@ -61,7 +61,8 @@ public class JDSimpleWebserverResponseCreator {
     }
 
     /**
-     * Set binary content 
+     * Set binary content
+     * 
      * @param bytes
      */
     public void setBinaryContent(byte[] bytes) {
@@ -94,6 +95,7 @@ public class JDSimpleWebserverResponseCreator {
 
     /**
      * Set a 404 not found
+     * 
      * @param url
      *            url
      */
@@ -129,6 +131,7 @@ public class JDSimpleWebserverResponseCreator {
 
     /**
      * Set a redirect
+     * 
      * @param url
      *            url to redirect to
      */
