@@ -508,6 +508,7 @@ gui.config.reloadcontainer = Odświeżaj listę plików
 gui.config.routeripfinder = Wyszukiwanie IP routera.
 gui.config.routeripfinder.close = Zamknij okno
 gui.config.routeripfinder.featchip = Wyszukiwanie IP routera...
+gui.config.routeripfinder.notfound = Nie można odnaleźć nazwy hosta twojego routera
 gui.config.routeripfinder.ready = Znalezione IP: %s
 gui.config.showcontaineronloadinfo = Pokazuj dodatkowe informacje przy wczytywaniu
 gui.config.showcontaineronloadinfo.helpurl = http://jdownloader.org/wiki/index.php?title=Konfiguration_der_Benutzeroberfl%C3%A4che
@@ -1022,7 +1023,7 @@ gui.textcomponent.context.selectall.acc = ctrl A
 gui.titleaddaction = Teraz trwa:
 gui.tooltip.plugin_decrypt = Rozszyfrowywanie wtyczek
 gui.tooltip.plugin_host = Hostuj wtyczki
-gui.tooltip.statusbar.premium = Wł/Wył Pobierania Premium
+gui.tooltip.statusbar.premium = Wł/Wył pobieranie przy użyciu kont Premium
 gui.tooltip.statusbar.simultan_downloads = Maks. il. równoczesnych transferów
 gui.tooltip.statusbar.speedlimiter = Limit prędkości pobierania (kb/s) [0=brak limitu]
 gui.treetable.header_1.tree = Pakiety
@@ -1328,7 +1329,10 @@ plugins.decrypt.shareonall.ignorelist = Lista ignorowanych hostów (jeden na lin
 plugins.decrypt.speedysharecom.password = Wprowadź hasło:
 plugins.decrypt.stealthto.captcha = Kliknij na kółko ze szczeliną
 plugins.error.downloadfailed = Pobieranie nie powiodło się
+plugins.errors.disconnect = Połączenie utracone.
 plugins.errors.error = Błąd: 
+plugins.errors.hosteroffline = Serwis hostingowy jest offline.
+plugins.errors.nointernetconn = Brak połączenia z internetem.
 plugins.errors.pluginerror = Błąd wtyczki. Powiadom Wsparcie Techniczne.
 plugins.errors.uploadedto.premiumtrafficreached = Osiągnięto limit ruchu
 plugins.errors.wrongpassword = Błędne hasło
@@ -1811,7 +1815,7 @@ system.download.errors.linkisblocked = Mirror %s wczytywany
 system.download.triggerfileexists = Jeśli plik już istnieje:
 system.download.triggerfileexists.overwrite = Zastąp
 system.download.triggerfileexists.skip = Pomiń
-system.update.changelogurl = http://jdownloader.org/changes?lng=pl
+system.update.changelogurl = http://www.jdownloader.org/changes/index
 system.update.error.message = Instalacja tych pakietów NIE POWIODŁA się:<hr>%s
 system.update.error.message.infolink = %s v.%s <a href='%s'>INFORMACJE</a><br/>
 system.update.message.title = Aktualizacja do wersji %s

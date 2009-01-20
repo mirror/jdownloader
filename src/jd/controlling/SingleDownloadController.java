@@ -1,4 +1,4 @@
-//    jDownloader - Downloadmanager
+﻿//    jDownloader - Downloadmanager
 //    Copyright (C) 2008  JD-Team support@jdownloader.org
 //
 //    This program is free software: you can redistribute it and/or modify
@@ -117,8 +117,8 @@ public class SingleDownloadController extends Thread {
         try {
             if (downloadLink.getDownloadURL() == null) {
 
-                downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Fehler"));
-                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.containererror", "Container Fehler"));
+                downloadLink.getLinkStatus().setStatusText(JDLocale.L("controller.status.containererror", "Container Error"));
+                downloadLink.getLinkStatus().setErrorMessage(JDLocale.L("controller.status.containererror", "Container Error"));
 
                 downloadLink.setEnabled(false);
                 // linkStatus.addStatus(LinkStatus.ERROR_SECURITY);
@@ -138,15 +138,15 @@ public class SingleDownloadController extends Thread {
                 currentPlugin.handle(downloadLink);
             } catch (UnknownHostException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage("No InternetConnection?");
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.nointernetconn","No Internet connection?"));
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (SocketTimeoutException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage("Hoster offline?");
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.hosteroffline","Hoster offline?"));
                 linkStatus.setValue(10 * 60 * 1000l);
             } catch (SocketException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage("Disconnect?");
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.disconnect","Disconnect?"));
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
@@ -289,7 +289,7 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorAGBNotSigned(DownloadLink downloadLink2, PluginForHost plugin) throws InterruptedException {
 
-        downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "AGB nicht akzeptiert"));
+        downloadLink2.getLinkStatus().setStatusText(JDLocale.L("controller.status.agb_tos", "TOS haven't been accepted."));
 
         JDUtilities.acquireUserIO_Semaphore();
         if (!plugin.isAGBChecked()) {
@@ -366,7 +366,7 @@ public class SingleDownloadController extends Thread {
 
         if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
             downloadLink.setEnabled(false);
-            status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "Datei schon vorhanden"));
+            status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "File already exists."));
 
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
         } else {
@@ -403,7 +403,7 @@ public class SingleDownloadController extends Thread {
 
     private void onErrorNoConnection(DownloadLink downloadLink, PluginForHost plugin) {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-        logger.severe("Error occurred: No Serverconnection");
+        logger.severe("Error occurred: No Server connection");
         long milliSeconds = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(WAIT_TIME_ON_CONNECTION_LOSS, 5 * 60) * 1000;
         linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         linkStatus.setWaitTime(milliSeconds);
@@ -489,7 +489,7 @@ public class SingleDownloadController extends Thread {
         if (milliSeconds <= 0) {
             logger.severe("Es wurde vom PLugin keine Wartezeit übergeben");
             logger.severe("Nutze Default-Wartezeit: 60 mins");
-            logger.severe(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Inform Support"));
+            logger.severe(JDLocale.L("plugins.errors.pluginerror", "Plugin error. Please inform Support"));
             milliSeconds = 3600000l;
         }
         status.setWaitTime(milliSeconds);
