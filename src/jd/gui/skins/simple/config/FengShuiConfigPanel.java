@@ -251,7 +251,10 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             final Vector<RInfo> scripts = new Vector<RInfo>();
             Thread th = new Thread(new Runnable() {
                 public void run() {
-                    scripts.addAll(GetRouterInfo.getRouters());
+                    Vector<RInfo> routers = GetRouterInfo.getRouters();
+                    for (RInfo info : routers) {
+                        scripts.add(info);
+                    }
                     synchronized (this) {
                         notify();
                     }
@@ -288,17 +291,22 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                     }
                 }
             }
+            final String[] d = new String[scripts.size()+scripts2.size()];
+            for (int i = 0; i < scripts.size(); i++) {
+                RInfo sc = (RInfo) scripts.get(i);
+                d[i] = i + ". ODB:" + Encoding.htmlDecode(sc.getRouterName());
+            }
+            int i = scripts.size();
             for (String[] strings : scripts2) {
                 RInfo sc = new RInfo();
                 sc.setReconnectMethode(strings[2]);
                 sc.setRouterName(Encoding.htmlDecode(strings[0] + " : " + strings[1]));
                 scripts.add(sc);
-            }
-            final String[] d = new String[scripts.size()];
-            for (int i = 0; i < d.length; i++) {
-                RInfo sc = (RInfo) scripts.get(i);
                 d[i] = i + ". " + Encoding.htmlDecode(sc.getRouterName());
+                i++;
             }
+
+
 
             JPanel panel = new JPanel(new BorderLayout(10, 10));
             final DefaultListModel defaultListModel = new DefaultListModel();

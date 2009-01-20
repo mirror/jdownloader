@@ -560,8 +560,9 @@ public class GetRouterInfo {
                     } catch (Exception e) {
                         return;
                     }
+                    if(ra!=null)
+                    {
                     for (RInfo info : ra) {
-                        // System.out.println(info.getReconnectMethode());
                         if (info.isHaveUpnpReconnect()) upnp++;
 
                         if (info.getReconnectMethodeClr() != null) {
@@ -578,6 +579,7 @@ public class GetRouterInfo {
                                 experimentalRouters.put(info, b);
                             }*/
                         }
+                    }
                     }
                     routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
                     HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
@@ -611,7 +613,7 @@ public class GetRouterInfo {
                             tempinfo.setRouterIP(infos.getRouterIP());
                             tempinfo.setUPnPSCPDs(isalv.SCPDs);
                             tempinfo.setReconnectMethode(info);
-                            tempinfo.setRouterName("UPNP: "+tempinfo.getRouterName());
+                            tempinfo.setRouterName("UPNP:"+tempinfo.getRouterName());
                             retmeths.add(tempinfo);
                         }
                         
@@ -804,6 +806,7 @@ public class GetRouterInfo {
                             tempinfo.setRouterIP(infos.getRouterIP());
                             tempinfo.setUPnPSCPDs(isalv.SCPDs);
                             tempinfo.setReconnectMethode(info);
+                            tempinfo.setRouterName("UPNP:"+tempinfo.getRouterName());
                             upnprouters.put(tempinfo, 1);
                         }
                         router = checkrouters(upnprouters);
