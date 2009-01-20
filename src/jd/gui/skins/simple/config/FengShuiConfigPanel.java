@@ -248,10 +248,15 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         } else if (e.getSource() == btnAutoConfig) {
             GetRouterInfo.autoConfig(password, username, ip, this);
         } else if (e.getSource() == btnSelectRouter) {
+            new Thread(new Runnable() {
+                public void run() {
+                    
+
             final Vector<RInfo> scripts = new Vector<RInfo>();
+            
             Thread th = new Thread(new Runnable() {
                 public void run() {
-                    Vector<RInfo> routers = GetRouterInfo.getRouters();
+                    Vector<RInfo> routers = new GetRouterInfo(showProgressbar()).getRouterInfos();
                     scripts.addAll(routers);
                     synchronized (this) {
                         notify();
@@ -395,7 +400,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             panel.setBorder(new EmptyBorder(n, n, n, n));
 
             JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
-            JDialog dialog = op.createDialog(this, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
+            JDialog dialog = op.createDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
             dialog.add(op);
             dialog.setModal(true);
             dialog.setPreferredSize(new Dimension(400, 500));
@@ -412,6 +417,9 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                 ReconnectmethodeClr = info.getReconnectMethodeClr();
 
             }
+
+                }
+            }).start();
         }
     }
 

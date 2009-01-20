@@ -477,9 +477,11 @@ public class GetRouterInfo {
         }
         return null;
     }
-    public static Vector<RInfo> getRouters()
+    public Vector<RInfo> getRouterInfos()
     {
+        setProgressText("collect routerinformations");
         final RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
+        setProgress(25);
         infos.setReconnectMethode(null);
         infos.setReconnectMethodeClr(null);
         final Threader th2 = new Threader();
@@ -550,7 +552,10 @@ public class GetRouterInfo {
                     he.put("HTMLTagCount", "" + infos.countHtmlTags());
                     ArrayList<RInfo> ra;
                     try {
+                        setProgressText("download similar routermethods");
+                        setProgress(45);
                         String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+                        setProgress(70);
                         // String st =
                         // br.postPage("http://localhost/router/getRouters.php",
                         // he);
@@ -562,6 +567,7 @@ public class GetRouterInfo {
                     }
                     if(ra!=null)
                     {
+                        setProgressText("sort routermethods");
                     for (RInfo info : ra) {
                         if (info.isHaveUpnpReconnect()) upnp++;
 
@@ -581,6 +587,7 @@ public class GetRouterInfo {
                         }
                     }
                     }
+                    setProgress(80);
                     routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
                     HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
                     Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
@@ -595,6 +602,7 @@ public class GetRouterInfo {
                     }
                     routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
                     if (upnp > 0) {
+                        setProgressText("search for upnp");
                         while (isalv.isAlv) {
                             try {
                                 wait();
@@ -604,6 +612,7 @@ public class GetRouterInfo {
 
                         }
                     }
+                    setProgress(90);
                     if (isalv.meths != null)
                     {
                         for (String info : isalv.meths) {
@@ -621,6 +630,7 @@ public class GetRouterInfo {
                     for (Entry<RInfo, Integer> info : routers.entrySet()) {
                         retmeths.add(info.getKey());
                     }
+                    setProgress(100);
                         
             }});
         th2.startAndWait();
@@ -931,7 +941,7 @@ public class GetRouterInfo {
     }
 
     public static void main(String[] args) {
-        Vector<RInfo> r = getRouters();
+        Vector<RInfo> r = new GetRouterInfo(null).getRouterInfos();
         System.out.println(r.size());
         for (RInfo info : r) {
             System.out.println(info.getRouterName());
