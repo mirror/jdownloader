@@ -21,10 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.net.Authenticator;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.net.PasswordAuthentication;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -45,7 +43,6 @@ import java.util.regex.Pattern;
 import javax.swing.JTextField;
 
 import jd.config.Configuration;
-import jd.controlling.interaction.HTTPLiveHeader;
 import jd.gui.skins.simple.ProgressDialog;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
@@ -62,19 +59,6 @@ import jd.utils.JDUtilities;
 import jd.utils.Reconnecter;
 
 public class GetRouterInfo {
-    private class InternalAuthenticator extends Authenticator {
-        private String username, password;
-
-        public InternalAuthenticator(String user, String pass) {
-            username = user;
-            password = pass;
-        }
-
-        @Override
-        protected PasswordAuthentication getPasswordAuthentication() {
-            return new PasswordAuthentication(username, password.toCharArray());
-        }
-    }
 
     private Threader threader = null;
     private Threader th2 = null;
@@ -177,15 +161,9 @@ public class GetRouterInfo {
 
     private Logger logger = JDUtilities.getLogger();
 
-    private String loginPass;
-
-    private String loginUser;
-
     public String password = null;
 
     private Progressor progressBar;
-
-    private Vector<String[]> routerDatas = null;
 
     public String username = null;
 
@@ -499,7 +477,153 @@ public class GetRouterInfo {
         }
         return null;
     }
+    public static Vector<RInfo> getRouters()
+    {
+        final RInfo infos = RouterInfoCollector.getRInfo(RouterInfoCollector.RInfo_ROUTERSEARCH);
+        infos.setReconnectMethode(null);
+        infos.setReconnectMethodeClr(null);
+        final Threader th2 = new Threader();
+        final Vector<RInfo> retmeths = new Vector<RInfo>();
+        final class isalvs {
+            boolean isAlv = true;
+            ArrayList<String> meths = null;
+            HashMap<String, String> SCPDs = null;
+        }
+        final isalvs isalv = new isalvs();
+        final JDRunnable jupnp = new JDRunnable() {
 
+            public void go() throws Exception {
+
+                try {
+                    UPnPInfo upnp = new UPnPInfo(InetAddress.getByName(infos.getRouterHost()));
+                    if (upnp.met != null && upnp.met.size()!=0) {
+                        isalv.SCPDs=upnp.SCPDs;
+                        isalv.meths=upnp.met;
+
+                    }
+                } catch (Exception e) {
+                    // TODO: handle exception
+                }
+                isalv.isAlv = false;
+            }
+
+        };
+        th2.getBroadcaster().addListener(th2.new WorkerListener() {
+
+            @Override
+            public void onThreadException(Threader th, JDRunnable job, Exception e) {
+                // TODO Auto-generated method stub
+                
+            }
+
+            @Override
+            public void onThreadFinished(Threader th, JDRunnable runnable) {
+                if (runnable == jupnp) {
+                    isalv.isAlv = false;
+                    th2.notify();
+                }
+                
+            }
+
+            @Override
+            public void onThreadStarts(Threader threader, JDRunnable runnable) {
+                // TODO Auto-generated method stub
+                
+            }
+
+        });
+        th2.add(jupnp);
+        th2.add(new JDRunnable() {
+
+            @SuppressWarnings("unchecked")
+            public void go() throws Exception {
+
+                    HashMap<RInfo, Integer> routers = new HashMap<RInfo, Integer>();
+//                    HashMap<RInfo, Integer> experimentalRouters = new HashMap<RInfo, Integer>();
+                    int upnp = 0;
+                    Browser br = new Browser();
+                    HashMap<String, String> he = new HashMap<String, String>();
+                    if (infos.getRouterHost() != null) he.put("RouterHost", infos.getRouterHost());
+                    if (infos.getRouterHost() != null) he.put("RouterMAC", infos.getRouterMAC());
+                    if (infos.getPageHeader() != null) he.put("PageHeader", SQLRouterData.replaceTimeStamps(infos.getPageHeader()));
+                    if (infos.getRouterErrorPage() != null) he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
+                    he.put("HTMLTagCount", "" + infos.countHtmlTags());
+                    ArrayList<RInfo> ra;
+                    try {
+                        String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+                        // String st =
+                        // br.postPage("http://localhost/router/getRouters.php",
+                        // he);
+                        // System.out.println(st);
+                        ra = (ArrayList<RInfo>) JDUtilities.xmlStringToObjekt(st);
+
+                    } catch (Exception e) {
+                        return;
+                    }
+                    for (RInfo info : ra) {
+                        // System.out.println(info.getReconnectMethode());
+                        if (info.isHaveUpnpReconnect()) upnp++;
+
+                        if (info.getReconnectMethodeClr() != null) {
+                            Integer b = info.compare(infos);
+                            info.setIntegrety(200);
+                            routers.put(info, b);
+                        } else if (info.getReconnectMethode() != null) {
+                            Integer b = info.compare(infos);
+                            // System.out.println(info.getRouterName());
+                            if (info.getIntegrety() > 3) {
+                                routers.put(info, b);
+                            }
+                            /*else {
+                                experimentalRouters.put(info, b);
+                            }*/
+                        }
+                    }
+                    routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    HashMap<String, RInfo> methodes = new HashMap<String, RInfo>();
+                    Iterator<Entry<RInfo, Integer>> inter = routers.entrySet().iterator();
+                    while (inter.hasNext()) {
+                        Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
+                        RInfo meth = methodes.get(entry.getKey().getReconnectMethode());
+                        if (meth != null) {
+                            meth.setIntegrety(meth.getIntegrety() + entry.getKey().getIntegrety());
+                            inter.remove();
+                        } else
+                            methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
+                    }
+                    routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
+                    if (upnp > 0) {
+                        while (isalv.isAlv) {
+                            try {
+                                wait();
+                            } catch (Exception e) {
+                                // TODO: handle exception
+                            }
+
+                        }
+                    }
+                    if (isalv.meths != null)
+                    {
+                        for (String info : isalv.meths) {
+                            RInfo tempinfo = new RInfo();
+
+                            tempinfo.setRouterHost(infos.getRouterHost());
+                            tempinfo.setRouterIP(infos.getRouterIP());
+                            tempinfo.setUPnPSCPDs(isalv.SCPDs);
+                            tempinfo.setReconnectMethode(info);
+                            tempinfo.setRouterName("UPNP: "+tempinfo.getRouterName());
+                            retmeths.add(tempinfo);
+                        }
+                        
+                    }
+                    for (Entry<RInfo, Integer> info : routers.entrySet()) {
+                        retmeths.add(info.getKey());
+                    }
+                        
+            }});
+        th2.startAndWait();
+        return retmeths;
+    }
     @SuppressWarnings("unchecked")
     public RInfo getRouterData() {
 
@@ -564,7 +688,7 @@ public class GetRouterInfo {
                 try {
 
                     HashMap<RInfo, Integer> routers = new HashMap<RInfo, Integer>();
-                    HashMap<RInfo, Integer> experimentalRouters = new HashMap<RInfo, Integer>();
+//                    HashMap<RInfo, Integer> experimentalRouters = new HashMap<RInfo, Integer>();
                     int upnp = 0;
                     Browser br = new Browser();
                     HashMap<String, String> he = new HashMap<String, String>();
@@ -600,9 +724,10 @@ public class GetRouterInfo {
                             // System.out.println(info.getRouterName());
                             if (info.getIntegrety() > 3) {
                                 routers.put(info, b);
-                            } else {
-                                experimentalRouters.put(info, b);
                             }
+                            /*else {
+                                experimentalRouters.put(info, b);
+                            }*/
                         }
                     }
 
@@ -619,8 +744,9 @@ public class GetRouterInfo {
                             methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
                     }
                     routers = (HashMap<RInfo, Integer>) sortByIntegrety(routers);
-                    experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
+                    /*                  experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
                     methodes = new HashMap<String, RInfo>();
+
                     inter = experimentalRouters.entrySet().iterator();
                     while (inter.hasNext()) {
                         Map.Entry<jd.router.RInfo, java.lang.Integer> entry = (Map.Entry<jd.router.RInfo, java.lang.Integer>) inter.next();
@@ -632,6 +758,7 @@ public class GetRouterInfo {
                             methodes.put(entry.getKey().getReconnectMethode(), entry.getKey());
                     }
                     experimentalRouters = (HashMap<RInfo, Integer>) sortByIntegrety(experimentalRouters);
+                    */
                     if (upnp > 0) {
                         while (isalv.isAlv) {
                             try {
@@ -685,12 +812,14 @@ public class GetRouterInfo {
                     if(router==null)
                     {
                     router = checkrouters(routers);
+                    /*
                     if (router == null && !cancel) {
                         if (experimentalRouters.size() > 0) {
                             boolean conf = JDUtilities.getGUI().showConfirmDialog(JDLocale.L("gui.config.liveHeader.warning.experimental", "Möchten sie experimentelle Reconnectmethoden testen?\r\nExperimentelle Reconnectmethoden sind nicht so zuverlässig\r\nund beeinflussen möglicherweise die Routereinstellungen"));
                             if (conf) router = checkrouters(experimentalRouters);
                         }
                     }
+                    */
                     }
                     setProgress(100);
                     if (router != null) {
@@ -710,45 +839,6 @@ public class GetRouterInfo {
             return infos;
         else
             return null;
-    }
-
-    public Vector<String[]> getRouterDatas() {
-        if (routerDatas != null) return routerDatas;
-        if (getAdress() == null) return null;
-
-        try {
-            // progress.setStatusText("Load possible RouterDatas");
-            Authenticator.setDefault(new InternalAuthenticator(loginUser, loginPass));
-
-            Browser br = new Browser();
-            String html = br.getPage("http://" + adress).toLowerCase();
-            Vector<String[]> routerData = new HTTPLiveHeader().getLHScripts();
-            Vector<String[]> retRouterData = new Vector<String[]>();
-            for (int i = 0; i < routerData.size(); i++) {
-                String[] dat = routerData.get(i);
-                if (dat.length > 3) if (html.contains(dat[0].toLowerCase()) || html.contains(dat[1].toLowerCase()) || html.matches(dat[3])) {
-                    retRouterData.add(dat);
-                } else {
-                    if (html.contains(dat[0].toLowerCase()) || html.contains(dat[1].toLowerCase())) {
-                        retRouterData.add(dat);
-                    }
-                }
-            }
-            routerDatas = retRouterData;
-            return retRouterData;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
-
-    public void setLoginPass(String text) {
-        loginPass = text;
-    }
-
-    public void setLoginUser(String text) {
-        loginUser = text;
     }
 
     private void setProgress(int val) {
@@ -788,9 +878,6 @@ public class GetRouterInfo {
                     ipadresse = (String) ((JTextField) ip).getText();
                 }
                 if (ipadresse != null && !ipadresse.matches("\\s*")) JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, ipadresse);
-
-                routerInfo.setLoginPass(pw);
-                routerInfo.setLoginUser(username);
                 if (username != null && !username.matches("[\\s]*")) {
                     routerInfo.username = username;
                 }
@@ -841,6 +928,11 @@ public class GetRouterInfo {
     }
 
     public static void main(String[] args) {
-        System.out.println(new GetRouterInfo(null).getAdress());
+        Vector<RInfo> r = getRouters();
+        System.out.println(r.size());
+        for (RInfo info : r) {
+            System.out.println(info.getRouterName());
+        }
+        System.exit(0);
     }
 }

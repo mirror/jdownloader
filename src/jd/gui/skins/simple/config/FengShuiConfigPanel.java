@@ -65,6 +65,8 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
+import jd.router.RInfo;
+
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -137,7 +139,6 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         this.setResizable(false);
         this.setVisible(true);
     }
-
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnCancel)
             dispose();
@@ -247,9 +248,19 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         } else if (e.getSource() == btnAutoConfig) {
             GetRouterInfo.autoConfig(password, username, ip, this);
         } else if (e.getSource() == btnSelectRouter) {
-            Vector<String[]> scripts = new HTTPLiveHeader().getLHScripts();
+            final Vector<RInfo> scripts = new Vector<RInfo>();
+            Thread th = new Thread(new Runnable() {
+                public void run() {
+                    scripts.addAll(GetRouterInfo.getRouters());
+                    synchronized (this) {
+                        notify();
+                    }
+                }
+            });
+            th.start();
+            Vector<String[]> scripts2 = new HTTPLiveHeader().getLHScripts();
 
-            Collections.sort(scripts, new Comparator<String[]>() {
+            Collections.sort(scripts2, new Comparator<String[]>() {
                 public int compare(String[] a, String[] b) {
                     return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
                 }
@@ -257,18 +268,36 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             });
 
             HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
-            for (int i = scripts.size() - 1; i >= 0; i--) {
-                if (ch.containsKey(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2])) {
-                    scripts.remove(i);
+            for (int i = scripts2.size() - 1; i >= 0; i--) {
+                String[] sc = scripts2.get(i);
+                if (ch.containsKey(sc[0] + sc[1] + sc[2])) {
+                    scripts2.remove(i);
                 } else {
 
-                    ch.put(scripts.get(i)[0] + scripts.get(i)[1] + scripts.get(i)[2], true);
+                    ch.put(sc[0] + sc[1] + sc[2], true);
                 }
             }
             ch.clear();
+            if (th.isAlive()) {
+                synchronized (th) {
+                    try {
+                        th.wait(15000);
+                    } catch (InterruptedException e1) {
+                        // TODO Auto-generated catch block
+                        e1.printStackTrace();
+                    }
+                }
+            }
+            for (String[] strings : scripts2) {
+                RInfo sc = new RInfo();
+                sc.setReconnectMethode(strings[2]);
+                sc.setRouterName(Encoding.htmlDecode(strings[0] + " : " + strings[1]));
+                scripts.add(sc);
+            }
             final String[] d = new String[scripts.size()];
             for (int i = 0; i < d.length; i++) {
-                d[i] = i + ". " + Encoding.htmlDecode(scripts.get(i)[0] + " : " + scripts.get(i)[1]);
+                RInfo sc = (RInfo) scripts.get(i);
+                d[i] = i + ". " + Encoding.htmlDecode(sc.getRouterName());
             }
 
             JPanel panel = new JPanel(new BorderLayout(10, 10));
@@ -358,6 +387,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             panel.setPreferredSize(new Dimension(400, 500));
             int n = 10;
             panel.setBorder(new EmptyBorder(n, n, n, n));
+
             JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
             JDialog dialog = op.createDialog(this, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
             dialog.add(op);
@@ -370,20 +400,10 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
                 String selected = (String) list.getSelectedValue();
                 int id = Integer.parseInt(selected.split("\\.")[0]);
-                String[] data = scripts.get(id);
-                if (data[2].toLowerCase().indexOf("curl") >= 0) {
-                    JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.liveHeader.warning.noCURLConvert", "JD could not convert this curl-batch to a Live-Header Script. Please consult your JD-Support Team!"));
-                }
-                routername.setText(data[1]);
-                Reconnectmethode = data[2];
-                String user = (String) username.getText();
-                if (user == null || user.matches("[\\s]*")) {
-                    username.setText(data[4]);
-                }
-                String pw = (String) password.getText();
-                if (pw == null || pw.matches("[\\s]*")) {
-                    password.setText(data[5]);
-                }
+                RInfo info = scripts.get(id);
+                routername.setText(info.getRouterName());
+                Reconnectmethode = info.getReconnectMethode();
+                ReconnectmethodeClr = info.getReconnectMethodeClr();
 
             }
         }
@@ -623,8 +643,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
                     if (routerIp == null || routerIp.matches("[\\s]*") || !reachable) {
                         // System.out.println(routerIp);
                         InetAddress ia = new GetRouterInfo(prog).getAdress();
-                        if(ia!=null)
-                        ip.setText(ia.getHostName());
+                        if (ia != null) ip.setText(ia.getHostName());
 
                     }
                     if (Reconnectmethode == null || Reconnectmethode.matches("[\\s]*")) {
