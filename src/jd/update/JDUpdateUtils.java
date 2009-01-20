@@ -92,7 +92,6 @@ public class JDUpdateUtils {
     }
 
     public static String get_AddonList() {
-        System.out.println("fetch Addons");
         if (last_updateLists_Internal == 0) updateLists_Internal();
         synchronized (lock) {
             if (addonlist == null) return "";
@@ -101,7 +100,6 @@ public class JDUpdateUtils {
     }
 
     public static String get_UpdateList() {
-        System.out.println("fetch Updates");
         updateLists_Internal();
         synchronized (lock) {
             if (updatelist == null) return "";
