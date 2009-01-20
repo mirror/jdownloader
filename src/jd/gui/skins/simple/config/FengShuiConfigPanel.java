@@ -252,9 +252,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
             Thread th = new Thread(new Runnable() {
                 public void run() {
                     Vector<RInfo> routers = GetRouterInfo.getRouters();
-                    for (RInfo info : routers) {
-                        scripts.add(info);
-                    }
+                    scripts.addAll(routers);
                     synchronized (this) {
                         notify();
                     }
