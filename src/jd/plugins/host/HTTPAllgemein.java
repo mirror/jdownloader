@@ -19,6 +19,7 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -43,18 +44,52 @@ public class HTTPAllgemein extends PluginForHost {
         return "(" + contentType + ")" + parameter.getName();
     }
 
+    private String getBasicAuth(DownloadLink link) {
+        String username = null;
+        String password = null;
+        try {
+            username = getUserInput("Username(BasicAuth)", link);
+            password = getUserInput("Password(BasicAuth)", link);
+        } catch (Exception e) {
+            return null;
+        }
+        return "Basic " + Encoding.Base64Encode(username + ":" + password);
+    }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
         String linkurl;
         downloadLink.setUrlDownload(linkurl = downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
-
+        String basicauth = (String) downloadLink.getProperty("basicauth", null);
+        if (basicauth != null) {
+            br.getHeaders().put("Authorization", basicauth);
+        }
         if (linkurl != null) {
             br.setFollowRedirects(true);
-
             HTTPConnection urlConnection;
             try {
                 urlConnection = br.openGetConnection(linkurl);
-                if (!urlConnection.isOK()) return false;
+                if (urlConnection.getResponseCode() == 401) {
+                    if (basicauth != null) {
+                        downloadLink.setProperty("basicauth", null);
+                    }
+                    urlConnection.disconnect();
+                    basicauth = getBasicAuth(downloadLink);
+                    if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
+                    br.getHeaders().put("Authorization", basicauth);
+                    urlConnection = br.openGetConnection(linkurl);
+                    if (urlConnection.getResponseCode() == 401) {
+                        urlConnection.disconnect();
+                        downloadLink.setProperty("basicauth", null);
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
+                    } else {
+                        downloadLink.setProperty("basicauth", basicauth);
+                    }
+                }
+                if (!urlConnection.isOK()) {
+                    urlConnection.disconnect();
+                    return false;
+                }
                 downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
                 downloadLink.setBrowserUrl(linkurl);
                 downloadLink.setDownloadSize(urlConnection.getContentLength());
@@ -70,7 +105,6 @@ public class HTTPAllgemein extends PluginForHost {
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
@@ -79,8 +113,31 @@ public class HTTPAllgemein extends PluginForHost {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), true, 0);
-        dl.startDownload();
+        boolean resume = true;
+        int chunks = 0;
+
+        if (downloadLink.getBooleanProperty("nochunkload", false) == true) resume = false;
+        if (downloadLink.getBooleanProperty("nochunk", false) == true || resume == false) {
+            chunks = 1;
+        }
+        dl = br.openDownload(downloadLink, downloadLink.getDownloadURL(), resume, chunks);
+
+        if (!dl.startDownload()) {
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().contains("rangeheader")) {
+                if (downloadLink.getBooleanProperty("nochunk", false) == false) {
+                    downloadLink.setProperty("nochunk", new Boolean(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+            if (downloadLink.getLinkStatus().getErrorMessage() != null && downloadLink.getLinkStatus().getErrorMessage().contains("chunkload")) {
+                if (downloadLink.getBooleanProperty("nochunkload", false) == false) {
+                    downloadLink.setChunksProgress(null);
+                    downloadLink.setProperty("nochunkload", new Boolean(true));
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                }
+            }
+        }
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -89,6 +146,13 @@ public class HTTPAllgemein extends PluginForHost {
 
     @Override
     public void reset() {
+    }
+
+    @Override
+    public void reset_downloadlink(DownloadLink link) {
+        link.setProperty("nochunkload", false);
+        link.setProperty("nochunk", false);
+        link.setProperty("basicauth", null);
     }
 
     @Override
