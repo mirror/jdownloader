@@ -17,8 +17,8 @@
 package jd.router;
 
 import java.io.IOException;
-import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -63,10 +63,16 @@ public class RouterInfoCollector {
         return (isLiveheader() || isClr());
     }
 
-    public static String getRouterIP() {
+    public static InetAddress getRouterIP() {
         String routerIp = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null);
-        if (routerIp == null || routerIp.matches("\\s*")) routerIp = new GetRouterInfo(null).getAdress();
-        return routerIp;
+        if (routerIp == null || routerIp.matches("\\s*")) return new GetRouterInfo(null).getAdress();
+        try {
+            return InetAddress.getByName(routerIp);
+        } catch (UnknownHostException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static void showDialog() {
@@ -103,8 +109,9 @@ public class RouterInfoCollector {
     public static RInfo getRInfo(final int infoToCollect) {
         final RInfo info = new RInfo();
         final Browser br = new Browser();
+        final InetAddress ia  = getRouterIP();
         try {
-            info.setRouterIP(getRouterIP());
+            info.setRouterIP(getRouterIP().getHostAddress());
         } catch (Exception e) {
         }
         Threader th = new Threader();
@@ -114,7 +121,7 @@ public class RouterInfoCollector {
                 public void go() throws Exception {
 
                     try {
-                        UPnPInfo up = new UPnPInfo(info.getRouterIP());
+                        UPnPInfo up = new UPnPInfo(ia);
                         info.setUPnPSCPDs(up.SCPDs);
                     } catch (Exception e) {
                     }
@@ -127,7 +134,6 @@ public class RouterInfoCollector {
 
             public void go() throws Exception {
                 try {
-                    InetAddress ia = Inet4Address.getByName(info.getRouterIP());
                     info.setRouterIP(ia.getHostAddress());
                     info.setRouterHost(ia.getHostName());
                 } catch (Exception e) {
@@ -141,7 +147,7 @@ public class RouterInfoCollector {
 
             public void go() throws Exception {
                 try {
-                    info.setRouterErrorPage(br.getPage("http://" + info.getRouterIP() + "/error404"));
+                    info.setRouterErrorPage(br.getPage("http://" + ia.getHostName() + "/error404"));
                 } catch (IOException e) {
                 }
             }
@@ -152,7 +158,7 @@ public class RouterInfoCollector {
 
             public void go() throws Exception {
                 try {
-                    info.setRouterMAC(new GetMacAdress().getMacAddress(info.getRouterIP()));
+                    info.setRouterMAC(new GetMacAdress().getMacAddress(ia));
                 } catch (Exception e) {
                 }
             }
@@ -163,7 +169,7 @@ public class RouterInfoCollector {
             public void go() throws Exception {
                 if ((infoToCollect & RInfo_ROUTERPAGE) != 0) {
                 try {
-                    info.setRouterPage(br.getPage("http://" + info.getRouterIP()));
+                    info.setRouterPage(br.getPage("http://" + ia.getHostName()));
 
                     StringBuilder pageHeader = new StringBuilder();
                     Map<String, List<String>> he = br.getHttpConnection().getHeaderFields();

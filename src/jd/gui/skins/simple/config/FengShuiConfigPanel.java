@@ -622,7 +622,9 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
                     if (routerIp == null || routerIp.matches("[\\s]*") || !reachable) {
                         // System.out.println(routerIp);
-                        ip.setText(new GetRouterInfo(prog).getAdress());
+                        InetAddress ia = new GetRouterInfo(prog).getAdress();
+                        if(ia!=null)
+                        ip.setText(ia.getHostName());
 
                     }
                     if (Reconnectmethode == null || Reconnectmethode.matches("[\\s]*")) {

@@ -148,7 +148,7 @@ public class GetRouterInfo {
         return false;
     }
 
-    public String adress = null;
+    public InetAddress adress = null;
 
     public boolean testAll = false;
 
@@ -213,8 +213,8 @@ public class GetRouterInfo {
         return checkport(host, 80);
     }
 
-    public String getAdress() {
-        if (adress != null && !adress.matches("\\s*")) {
+    public InetAddress getAdress() {
+        if (adress != null) {
             setProgress(100);
             return adress;
         }
@@ -234,7 +234,12 @@ public class GetRouterInfo {
                 Matcher m = pat.matcher(line);
                 if (m.matches()) {
                     setProgress(100);
-                    return m.group(1);
+                    InetAddress ia = InetAddress.getByName(m.group(1));
+                    if(ia.isReachable(1500))
+                    {
+                        adress=ia;
+                        return adress;
+                    }
                 }
             }
         } catch (Exception e) {
@@ -251,9 +256,10 @@ public class GetRouterInfo {
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             setProgressText("testing " + hostname);
                             try {
-                                if (InetAddress.getByName(hostname).isReachable(1500)) {
+                                InetAddress ia = InetAddress.getByName(hostname);
+                                if (ia.isReachable(1500)) {
                                     if (checkport80(hostname)) {
-                                        adress = hostname;
+                                        adress = ia;
                                         setProgress(100);
                                         return adress;
                                     }
@@ -277,9 +283,10 @@ public class GetRouterInfo {
                         if (!hostname.matches("[\\s]*\\*[\\s]*")) {
                             setProgressText("testing " + hostname);
                             try {
-                                if (InetAddress.getByName(hostname).isReachable(1500)) {
+                                InetAddress ia = InetAddress.getByName(hostname);
+                                if (ia.isReachable(1500)) {
                                     if (checkport80(hostname)) {
-                                        adress = hostname;
+                                        adress = ia;
                                         setProgress(100);
                                         return adress;
                                     }
@@ -417,9 +424,10 @@ public class GetRouterInfo {
                     final String hostname = hosts.get(d);
                     setProgressText("testing " + hostname);
                     try {
-                        if (InetAddress.getByName(hostname).isReachable(1500)) {
+                        InetAddress ia = InetAddress.getByName(hostname);
+                        if (ia.isReachable(1500)) {
                             if (checkport80(hostname)) {
-                                adress = hostname;
+                                adress = ia;
                                 setProgress(100);
                                 threader.interrupt();
                             }
@@ -512,7 +520,7 @@ public class GetRouterInfo {
             public void go() throws Exception {
 
                 try {
-                    UPnPInfo upnp = new UPnPInfo(infos.getRouterIP());
+                    UPnPInfo upnp = new UPnPInfo(InetAddress.getByName(infos.getRouterHost()));
                     if (upnp.met != null && upnp.met.size()!=0) {
                         isalv.SCPDs=upnp.SCPDs;
                         isalv.meths=upnp.met;
@@ -641,7 +649,7 @@ public class GetRouterInfo {
                                     setProgressText("testing upnp");
                                     for (int i = 0; i < 30 && !cancel; i++) {
                                         setProgress(i++ * 100 / 30);
-                                        UPnPInfo upnpd = new UPnPInfo(infos.getRouterIP(), 10000);
+                                        UPnPInfo upnpd = new UPnPInfo(InetAddress.getByName(infos.getRouterHost()), 10000);
                                         if (upnpd.met != null) {
                                             infos.setUPnPSCPDs(upnpd.SCPDs);
                                             if (upnpd.met != null && upnpd.met.size()!=0) {

@@ -14,19 +14,15 @@ public class GetMacAdress {
     { 
     try {
         return new GetMacAdress().getMacAddress(RouterInfoCollector.getRouterIP());
-    } catch (IOException e) {
+    } catch (Exception e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
-    } catch (InterruptedException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-    } 
+    }
     return null;
      
     }
-    public String getMacAddress ( String host ) throws UnknownHostException, IOException, InterruptedException
+    public String getMacAddress ( InetAddress hostAddress ) throws UnknownHostException, IOException, InterruptedException
     {
-        InetAddress hostAddress = InetAddress.getByName( host );
         String resultLine = callArpTool ( hostAddress.getHostAddress() );
         String rd = new Regex(resultLine, "..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?[:\\-]..?").getMatch(-1).replaceAll("-", ":");
         if(rd==null)return null;
@@ -114,7 +110,7 @@ public class GetMacAdress {
      }
     public static void main(String[] args) {
         try {
-            System.out.println(new GetMacAdress().getMacAddress("10.11.12.5"));
+            System.out.println(new GetMacAdress().getMacAddress(new GetRouterInfo(null).getAdress()));
         } catch (SocketException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

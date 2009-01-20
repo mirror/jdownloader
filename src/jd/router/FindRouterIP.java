@@ -18,6 +18,7 @@ package jd.router;
 
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.logging.LogRecord;
 
@@ -45,17 +46,20 @@ public class FindRouterIP implements ControlListener, WindowListener {
         new Thread() {
             @Override
             public void run() {
-                ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Suche nach RouterIP..."));
+                ip.setData(JDLocale.L("gui.config.routeripfinder.featchIP", "Search for routers hostname..."));
                 mld.getProgress().setValue(60);
                 GetRouterInfo rinfo = new GetRouterInfo(null);
                 mld.getProgress().setValue(80);
-                String ipAdress = rinfo.getAdress();
-                ip.setData(ipAdress);
+                InetAddress ia = rinfo.getAdress();
+                if(ia!=null)
+                ip.setData(ia.getHostAddress());
                 mld.getProgress().setValue(100);
-
-                mld.setTitle(JDLocale.LF("gui.config.routeripfinder.ready", "IP found: %s", ipAdress));
+                if(ia!=null)
+                    mld.setTitle(JDLocale.LF("gui.config.routeripfinder.ready", "Hostname found: %s", ia.getHostAddress()));
+                else
+                    mld.setTitle(JDLocale.LF("gui.config.routeripfinder.notfound", "Can't find your routers hostname"));
                 mld.getBtnOK().setEnabled(true);
-                mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "Fenster schließen"));
+                mld.getBtnOK().setText(JDLocale.L("gui.config.routeripfinder.close", "close"));
             }
         }.start();
     }

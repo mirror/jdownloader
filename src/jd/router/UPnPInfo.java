@@ -43,7 +43,7 @@ import org.xml.sax.SAXParseException;
 
 public class UPnPInfo {
 
-    private String host = null;
+    private InetAddress host = null;
     private SSDPPacket ssdpP = null;
     public ArrayList<String> met = new ArrayList<String>();
     public HashMap<String, String> SCPDs = null;
@@ -66,7 +66,7 @@ public class UPnPInfo {
         }
     }
 
-    public UPnPInfo(String ipadress) {
+    public UPnPInfo(InetAddress ipadress) {
         this(ipadress, 10000);
     }
 
@@ -133,8 +133,10 @@ public class UPnPInfo {
         return null;
     }
 
-    public UPnPInfo(String ipadress, final long waittime) {
-        this.host = ipadress;
+    public UPnPInfo(InetAddress ipaddress, final long waittime) {
+        this.host = ipaddress;
+        if(host==null)host=RouterInfoCollector.getRouterIP();
+        if(host==null)return;
         final ControlPoint c = new ControlPoint();
         c.start();
         final Threader th = new Threader();
@@ -154,7 +156,7 @@ public class UPnPInfo {
 
             public void deviceSearchResponseReceived(SSDPPacket ssdpPacket) {
                 InetAddress ia = ssdpPacket.getRemoteInetAddress();
-                if (ia.getHostAddress().endsWith(host) || ia.getHostName().endsWith(host)) {
+                if (ia.getHostAddress().equals(host.getHostAddress())) {
                     ssdpP = ssdpPacket;
                     c.stop();
                     th.interrupt();
