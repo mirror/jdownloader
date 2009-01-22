@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -460,91 +459,71 @@ public class Serienjunkies extends PluginForHost {
             logger.warning("SJ returned no Downloadlinks");
             return null;
         }
-
-        // int index = fp.indexOf(downloadLink);
-        // fp.remove(downloadLink);
-        Vector<Integer> down = new Vector<Integer>();
-        Vector<DownloadLink> ret = new Vector<DownloadLink>();
-        ArrayList<DownloadLink> fp = new ArrayList<DownloadLink>();
-        for (int i = dls.size() - 1; i >= 0; i--) {
-            DistributeData distributeData = new DistributeData(dls.get(i).getDownloadURL());
-            Vector<DownloadLink> links = distributeData.findLinks();
-            boolean online = false;
-            DownloadLink[] it2 = links.toArray(new DownloadLink[links.size()]);
-            if (it2.length > 0) {
-                boolean[] re = it2[0].getPlugin().checkLinks(it2);
-                if (re == null || re.length != it2.length) {
-                    re = new boolean[it2.length];
-                    for (int j = 0; j < re.length; j++) {
-                        re[j] = it2[j].isAvailable();
+        ArrayList<DownloadLink> finaldls = new ArrayList<DownloadLink>();
+        
+        for (DownloadLink dls2 : dls) {
+            DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
+            finaldls.addAll(distributeData.findLinks());
+        }
+        if(finaldls.size()>0)
+        {
+            try {
+                DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
+                linksar[0].getPlugin().checkLinks(linksar);
+                for (DownloadLink downloadLink2 : linksar) {
+                    if(!downloadLink2.isAvailable())
+                    {
+                        finaldls=null;
+                        break;
                     }
                 }
-                for (int j = 0; j < it2.length; j++) {
-                    if (re[j]) {
-                        fp.add(it2[j]);
-                        online = true;
-                    } else
-                        down.add(j);
-                }
-                if (online) {
-                    ret.addAll(links);
-                }
+            } catch (Exception e) {
+                finaldls=null;
             }
         }
 
-        if (mirrors != null) {
+        if (mirrors != null && finaldls == null) {
             for (String element : mirrors) {
-                if (down.size() > 0) {
                     try {
                         dls = getDLinks(element);
-
-                        Iterator<Integer> iter = down.iterator();
-                        while (iter.hasNext()) {
-                            Integer integer = (Integer) iter.next();
-                            DistributeData distributeData = new DistributeData(dls.get(integer).getDownloadURL());
-                            Vector<DownloadLink> links = distributeData.findLinks();
-                            DownloadLink[] it2 = links.toArray(new DownloadLink[links.size()]);
-                            if (it2.length > 0) {
-                                boolean online = false;
-                                boolean[] re = it2[0].getPlugin().checkLinks(it2);
-                                if (re == null || re.length != it2.length) {
-                                    re = new boolean[it2.length];
-                                    for (int j = 0; j < re.length; j++) {
-                                        re[j] = it2[j].isAvailable();
+                        finaldls = new ArrayList<DownloadLink>();
+                        
+                        for (DownloadLink dls2 : dls) {
+                            DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
+                            finaldls.addAll(distributeData.findLinks());
+                        }
+                        if(finaldls.size()>0)
+                        {
+                            try {
+                                DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
+                                linksar[0].getPlugin().checkLinks(linksar);
+                                for (DownloadLink downloadLink2 : linksar) {
+                                    if(!downloadLink2.isAvailable())
+                                    {
+                                        finaldls=null;
+                                        break;
                                     }
                                 }
-                                for (int i = 0; i < it2.length; i++) {
-                                    if (re[i]) {
-                                        fp.add(it2[i]);
-                                        online = true;
-                                        iter.remove();
-                                    }
-                                }
-                                if (online) {
-                                    ret.addAll(links);
-                                }
+                            } catch (Exception e) {
+                                finaldls=null;
                             }
-
                         }
                     } catch (Exception e) {
+                        finaldls=null;
                         e.printStackTrace();
                     }
-
-                } else {
-                    break;
-                }
+                    if(finaldls!=null)break;
             }
         }
-        if (down.size() > 0) {
+        if (finaldls==null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
             return null;
         }
-        Iterator<DownloadLink> fpi = fp.iterator();
-        while (fpi.hasNext()) {
-            fpi.next().addSourcePluginPasswords(passwords);
+        for (DownloadLink downloadLink2 : finaldls) {
+            downloadLink2.addSourcePluginPasswords(passwords);
         }
-        return fp;
+        return finaldls;
     }
 
     public void handle0(DownloadLink downloadLink) throws Exception {
