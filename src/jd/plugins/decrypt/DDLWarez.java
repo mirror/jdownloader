@@ -16,6 +16,7 @@
 
 package jd.plugins.decrypt;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -25,6 +26,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -112,13 +114,12 @@ public class DDLWarez extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
+        br.setCookiesExclusive(true);
+        br.setReadTimeout(5 * 60 * 1000);
+        br.setConnectTimeout(5 * 60 * 1000);
         for (int retry = 1; retry <= 10; retry++) {
             try {
-
-                br.setReadTimeout(5 * 60 * 1000);
-
-                br.setConnectTimeout(5 * 60 * 1000);
+                br.clearCookies(this.getHost());
                 br.getPage(parameter);
 
                 String pass = br.getRegex(Pattern.compile("<td>Passwort:</td>.*?<td style=\"padding-left:10px;\">(.*?)</td>.*?</tr>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
@@ -126,6 +127,16 @@ public class DDLWarez extends PluginForDecrypt {
                 passwords.add("ddl-warez");
                 if (pass != null && !pass.equals("kein Passwort")) {
                     passwords.add(pass);
+                }
+
+                Form form = br.getForm(1);
+                if (form != null && form.containsHTML("AnimCaptcha")) {
+                    File file = this.getLocalCaptchaFile(this);
+                    Browser.download(file, br.cloneBrowser().openGetConnection("http://www.ddl-warez.org/captcha2/captcha.inc.php"));
+                    String captcha = getCaptchaCode(file, this, param);
+                    form.put("AnimCaptcha", captcha);
+                    br.submitForm(form);
+                    if (br.containsHTML("Captcha-Fehler")) continue;
                 }
 
                 Form[] forms = br.getForms();
@@ -152,6 +163,8 @@ public class DDLWarez extends PluginForDecrypt {
                     }
                 }
                 return decryptedLinks;
+            } catch (DecrypterException e2) {
+                throw e2;
             } catch (Exception e) {
                 logger.finest("DDLWarez: PostRequest-Error, try again!");
             }
