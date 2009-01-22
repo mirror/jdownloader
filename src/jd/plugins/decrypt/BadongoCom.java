@@ -24,17 +24,20 @@ public class BadongoCom extends PluginForDecrypt {
         br.clearCookies(host);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
         br.getPage(parameter);
+        parameter=parameter.replaceFirst("badongo.com", "badongo.viajd");
         if (!br.containsHTML("Diese Datei wurde gesplittet")) {
-            DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter.replaceFirst("http", "httpviajd")));
+            DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter));
             dlLink.setProperty("type", "single");
             decryptedLinks.add(dlLink);
         } else {
             String[] links = br.getRegex("<div class=\"m\">Download Teil(.*?)</div>").getColumn(0);
             progress.setRange(links.length);
-            for (Integer part = 0; part < links.length; part++) {
-                DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter.replaceFirst("http", "httpviajd" + Integer.toString(part))));
+           for(String partId: links){               
+              
+                DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter)+"?"+partId.trim());
+                dlLink.setName(dlLink.getName()+"."+partId.trim());
                 dlLink.setProperty("type", "split");
-                dlLink.setProperty("part", part);
+                dlLink.setProperty("part", Integer.parseInt(partId.trim()));
                 dlLink.setProperty("parts", links.length);
                 decryptedLinks.add(dlLink);
                 progress.increase(1);

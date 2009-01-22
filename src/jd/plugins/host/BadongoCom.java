@@ -17,9 +17,12 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -42,19 +45,26 @@ public class BadongoCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         br.setCookiesExclusive(true);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
-        br.getPage(downloadLink.getDownloadURL().replaceAll("httpviajd\\d+", "http"));
+        br.getPage(downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com"));
 
         String filesize = br.getRegex(Pattern.compile("<div class=\"ffileinfo\">Ansichten.*?\\| Dateig.*?:(.*?)</div>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         String filename = br.getRegex("<div class=\"finfo\">(.*?)</div>").getMatch(0);
+
+        long bytes = Regex.getSize(filesize);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("single")) {
             downloadLink.setName(filename.trim());
             downloadLink.setDownloadSize(Regex.getSize(filesize.trim()));
         } else {
 
-            String parts = Integer.toString(downloadLink.getIntegerProperty("parts", 1));
-            if (parts.length() < 2) parts = "01";
-            downloadLink.setName(filename.trim() + "." + JDUtilities.fillString(Integer.toString(downloadLink.getIntegerProperty("part", 0)) + "", "0", "", parts.length()));
+            String parts = JDUtilities.fillString(downloadLink.getIntegerProperty("part", 1) + "", "0", "", 3);
+
+            downloadLink.setName(filename.trim() + "." + parts);
+            if (downloadLink.getIntegerProperty("part", 1) == downloadLink.getIntegerProperty("parts", 1)) {
+                downloadLink.setDownloadSize(bytes - (downloadLink.getIntegerProperty("parts", 1) - 1) * 100 * 1024 * 1024);
+            } else {
+                downloadLink.setDownloadSize(100 * 1024 * 1024);
+            }
         }
         return true;
     }
@@ -68,8 +78,9 @@ public class BadongoCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         String link = null;
+        String realURL = downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com");
         getFileInformation(downloadLink);
-        sleep(7000l, downloadLink);
+        // sleep(7000l, downloadLink);
         br.setDebug(true);
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             String downloadLinks[] = br.getRegex("<a href=\"#\" onclick=\"return doDownload\\('(.*?)'\\);\">").getColumn(0);
@@ -83,12 +94,33 @@ public class BadongoCom extends PluginForHost {
             if (br.containsHTML("Du hast Deine Download Quote überschritten")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
             link = br.getRegex(Pattern.compile("beginDownload.*?window.location.href.*?'(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
             link = "http://www.badongo.com" + link;
+            br.setFollowRedirects(true);
+            br.setDebug(true);
+            if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL);
+            dl = br.openDownload(downloadLink, link, true, 1);
+            dl.startDownload();
+        } else {
+
+            Browser ajax = br.cloneBrowser();
+            ajax.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + new Date().getTime());
+            String cid = ajax.getRegex("cid\\=(\\d+)").getMatch(0);
+            String code = this.getCaptchaCode("http://www.badongo.com/ccaptcha.php?cid=" + cid, downloadLink);
+            Form captchaForm = ajax.getForm(0);
+            captchaForm.remove(null);
+            captchaForm.put("user_code", code);
+            ajax.setFollowRedirects(true);
+            captchaForm.action = ajax.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/\\w{2}\\/cfile\\/\\d+)").getMatch(0);
+            ajax.submitForm(captchaForm);
+            String url = null;
+            this.sleep(15000, downloadLink);
+            ajax.getPage(realURL + "?rs=getFileLink&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
+            url = ajax.getRegex("doDownload\\(\\\\\'(.*?)\\\\\'\\)").getMatch(0);
+            ajax.getPage(url + "/ifr?pr=1&zenc=");
+            dl = br.openDownload(downloadLink, url + "/loc?pr=1", true, 1);
+            dl.startDownload();
+
         }
-        br.setFollowRedirects(true);
-        br.setDebug(true);
-        if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-        dl = br.openDownload(downloadLink, link, true, 1);
-        dl.startDownload();
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {

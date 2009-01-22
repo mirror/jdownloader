@@ -1587,7 +1587,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private boolean isDupe(DownloadLink link) {
         for (DownloadLink l : totalLinkList) {
-            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL())) { return true; }
+            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL())&&l.toString().equals(link.toString())) { return true; }
         }
         return false;
     }

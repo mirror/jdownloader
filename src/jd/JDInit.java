@@ -692,7 +692,7 @@ public class JDInit {
     }
 
     public void loadPluginForHost() {
-
+        new HostPluginWrapper("badongo.viajd", "BadongoCom", "http://[\\w\\.]*?badongo\\.viajd.*/.*file/[0-9]+\\??[0-9]*");
         new HostPluginWrapper("RapidShare.com", "Rapidshare", "sjdp://rapidshare\\.com.*|http://[\\w\\.]*?rapidshare\\.com/files/[\\d]{3,9}/?.+", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("Uploaded.to", "Uploadedto", "sjdp://uploaded\\.to.*|http://[\\w\\.]*?uploaded\\.to/.*?(file/|\\?id=|&id=)[a-zA-Z0-9]+/?", PluginWrapper.LOAD_ON_INIT);
 
@@ -788,7 +788,8 @@ public class JDInit {
         // new HostPluginWrapper("remixshare.com","RemixshareCom",
         // "http://[\\w\\.]*?remixshare\\.com/\\?file=[0-9a-zA-Z]+");
         new HostPluginWrapper("speedyshare.com", "SpeedyShareCom", "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*");
-        new HostPluginWrapper("badongo.com", "BadongoCom", "httpviajd\\d+://[\\w\\.]*?badongo\\.com/.*file/[0-9]+");
+     
+                                                                //http://www.badongo.com/file/13014704
         new HostPluginWrapper("fileshaker.com", "FileshakerCom", "http://[\\w\\.]*?fileshaker\\.com/.+");
     }
 
