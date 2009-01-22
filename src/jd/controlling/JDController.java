@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import jd.CPluginWrapper;
 import jd.JDInit;
@@ -41,6 +42,7 @@ import jd.gui.skins.simple.LinkGrabber;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.nutils.io.JDIO;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -1863,7 +1865,8 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (new File(nextDownloadLink.getFileOutput()).getName().matches(matcher)) {
+                    String name = new File(nextDownloadLink.getFileOutput()).getName();
+                    if (new Regex(name, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
 
@@ -1886,7 +1889,8 @@ public class JDController implements ControlListener, UIListener {
                 Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
                 while (it2.hasNext()) {
                     nextDownloadLink = it2.next();
-                    if (nextDownloadLink.getFileOutput().matches(matcher)) {
+                    String path = nextDownloadLink.getFileOutput();
+                    if (new Regex(path, matcher, Pattern.CASE_INSENSITIVE).matches()) {
                         ret.add(nextDownloadLink);
                     }
 
