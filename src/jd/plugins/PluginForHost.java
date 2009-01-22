@@ -557,8 +557,8 @@ public abstract class PluginForHost extends Plugin {
      * etc)
      */
     public abstract void reset();
-    
-    public void reset_downloadlink(DownloadLink link){        
+
+    public void reset_downloadlink(DownloadLink link) {
     }
 
     public void resetHosterWaitTime() {

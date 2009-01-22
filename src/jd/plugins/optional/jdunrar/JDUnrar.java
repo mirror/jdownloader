@@ -830,7 +830,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     private void chmodUnrar(String path) {
         Executer exec = new Executer("chmod");
         exec.addParameter("+x");
-        exec.addParameter(path);        
+        exec.addParameter(path);
         exec.setWaitTimeout(-1);
         exec.start();
         exec.waitTimeout();
@@ -851,7 +851,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 if (OSDetector.isLinux()) {
                     path = JDUtilities.getResourceFile("tools/linux/unrar/unrar").getAbsolutePath();
                     chmodUnrar(path);
-                    if (isUnrarCommandValid(path)) {                        
+                    if (isUnrarCommandValid(path)) {
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;
@@ -860,7 +860,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 if (OSDetector.isMac()) {
                     path = JDUtilities.getResourceFile("tools/mac/unrar").getAbsolutePath();
                     chmodUnrar(path);
-                    if (isUnrarCommandValid(path)) {                        
+                    if (isUnrarCommandValid(path)) {
                         this.getPluginConfig().setProperty(JDUnrarConstants.CONFIG_KEY_UNRARCOMMAND, path);
                         this.getPluginConfig().save();
                         return;
@@ -1056,6 +1056,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
                 // crc.reset();
                 crc.getLinkStatus().removeStatus(LinkStatus.FINISHED);
                 crc.getLinkStatus().addStatus(LinkStatus.ERROR_DOWNLOAD_FAILED);
+                crc.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
                 crc.getLinkStatus().setErrorMessage(JDLocale.LF("plugins.optional.jdunrar.crcerrorin", "Extract: failed (CRC in %s)", crc.getName()));
 
                 crc.requestGuiUpdate();

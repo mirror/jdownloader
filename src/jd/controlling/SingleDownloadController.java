@@ -138,15 +138,15 @@ public class SingleDownloadController extends Thread {
                 currentPlugin.handle(downloadLink);
             } catch (UnknownHostException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.nointernetconn","No Internet connection?"));
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.nointernetconn", "No Internet connection?"));
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (SocketTimeoutException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.hosteroffline","Hoster offline?"));
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.hosteroffline", "Hoster offline?"));
                 linkStatus.setValue(10 * 60 * 1000l);
             } catch (SocketException e) {
                 linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.disconnect","Disconnect?"));
+                linkStatus.setErrorMessage(JDLocale.L("plugins.errors.disconnect", "Disconnect?"));
                 linkStatus.setValue(5 * 60 * 1000l);
             } catch (InterruptedException e) {
                 logger.severe("Hoster Plugin Version: " + downloadLink.getPlugin().getVersion());
@@ -347,13 +347,15 @@ public class SingleDownloadController extends Thread {
         if (linkStatus.getErrorMessage() == null) {
             linkStatus.setErrorMessage(JDLocale.L("plugins.error.downloadfailed", "Download failed"));
         }
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+        if (linkStatus.getValue() != LinkStatus.VALUE_FAILED_HASH) {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            retry(downloadLink, plugin);
         }
-        retry(downloadLink, plugin);
     }
 
     private void onErrorFatal(DownloadLink downloadLink, PluginForHost currentPlugin) {

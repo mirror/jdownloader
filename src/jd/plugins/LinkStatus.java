@@ -124,6 +124,8 @@ public class LinkStatus implements Serializable {
     public final static int TODO = 1 << 0;
     public static final int VALUE_ID_PREMIUM_TEMP_DISABLE = 0;
     public static final int VALUE_ID_PREMIUM_DISABLE = 1;
+    public static final int VALUE_FAILED_CHUNK = 1 << 26;
+    public static final int VALUE_FAILED_HASH = 1 << 27;
 
     private DownloadLink downloadLink;
     private String errorMessage;

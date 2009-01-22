@@ -771,7 +771,7 @@ public class JDInit {
         new HostPluginWrapper("dl.free.fr", "DlFreeFr", "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[a-zA-Z0-9]+|[a-zA-Z0-9]+/?)");
         new HostPluginWrapper("dosyakaydet.com", "DosyakaydetCom", "http://[\\w\\.]*?dosyakaydet\\.com/(download/[a-zA-Z0-9]+/?|index/p_download/hash_[a-zA-Z0-9]+/)");
         new HostPluginWrapper("egoshare.com", "EgoshareCom", "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[a-zA-Z0-9]+");
-        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://w\\d{2}\\.easy-share\\.com/\\d+\\.html", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/\\d+\\.html");
         new HostPluginWrapper("speedshare.org", "SpeedShareOrg", "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[a-zA-Z0-9]+");
         new HostPluginWrapper("vimeo.com", "VimeoCom", "http://[\\w\\.]*?vimeo\\.com/[0-9]+");
         new HostPluginWrapper("self-load.com", "SelfLoadCom", "http://[\\w\\.]*?self-load\\.com/\\d+/.+");

@@ -26,7 +26,8 @@ public class EasyShareCom extends PluginForHost {
 
     public EasyShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.easy-share.com/cgi-bin/premium.cgi");
+        // this.enablePremium("http://www.easy-share.com/cgi-bin/premium.cgi");
+        /* brauche neuen prem account zum einbauen und testen */
     }
 
     @Override
@@ -85,15 +86,12 @@ public class EasyShareCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        String filename = br.getRegex(Pattern.compile("<title>Download(.*?), upload your files and earn money.</title>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filename == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        br.setCookie("http://www.easy-share.com", "language", "en");
+        String filename = br.getRegex(Pattern.compile("You are requesting<strong>(.*?)</strong>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String filesize = br.getRegex("You are requesting<strong>.*?</strong>(.*?)<").getMatch(0);
+        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         downloadLink.setName(filename.trim());
-        String followurl = br.getRegex(Pattern.compile("<div id=\"dwait\">.*?<br>.*?<script type=\"text/javascript\">.*?u='(.*?)'", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (followurl == null) {
-            String filesize = br.getRegex("File size:(.*?)\\.").getMatch(0);
-            if (filesize != null) downloadLink.setDownloadSize(Regex.getSize(filesize));
-            return true;
-        }
+        downloadLink.setDownloadSize(Regex.getSize(filesize));
         return true;
     }
 
@@ -106,16 +104,21 @@ public class EasyShareCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
-        if (!br.getRegex("File size:(.*?)\\.").matches()) {
-            String wait = br.getRegex(Pattern.compile("<script type=\"text/javascript\">.*?u='.*?';.*?w='(.*?)';.*?setTimeout", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            long waitfor = new Long(wait) * 1000;
-            if (waitfor > 40000l) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitfor); }
-            sleep(waitfor, downloadLink);
-            br.getPage(downloadLink.getDownloadURL());
+        String wait = br.getRegex("id=\"freeButton\" value=\" Seconds to wait:(.*?)\"").getMatch(0);
+        int waittime = 0;
+        if (wait != null) waittime = Integer.parseInt(wait.trim());
+        if (waittime > 60) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waittime * 1000l);
+        } else {
+            sleep(waittime * 1000l, downloadLink);
         }
-        if (br.containsHTML("Hourly traffic exceeded")) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l); }
-        Form form = br.getForm(0);
-        String captchaUrl = br.getRegex("<form action=\".*?\".*?method=\"POST\">.*?<br>.*?<img src=\"(.*?)\">").getMatch(0);
+        br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+        String id = new Regex(downloadLink.getDownloadURL(), "/(\\d+)\\.html").getMatch(0);
+        br.getPage("http://www.easy-share.com/c/" + id);
+
+        Form form = br.getForm(3);
+        String captchaUrl = form.getRegex("<img src=\"(.*?)\">").getMatch(0);
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));

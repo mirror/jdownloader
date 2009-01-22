@@ -226,7 +226,9 @@ public class RAFDownload extends DownloadInterface {
                             downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", "CRC32"));
                             downloadLink.requestGuiUpdate();
                         } else {
+                            downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
                             downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
+                            downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
                             downloadLink.requestGuiUpdate();
                             error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", "CRC32"));
 
@@ -260,7 +262,9 @@ public class RAFDownload extends DownloadInterface {
                         downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.success", "CRC-Check OK(%s)", hashType));
                         downloadLink.requestGuiUpdate();
                     } else {
+                        downloadLink.getLinkStatus().removeStatus(LinkStatus.FINISHED);
                         downloadLink.getLinkStatus().setStatusText(JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
+                        downloadLink.getLinkStatus().setValue(LinkStatus.VALUE_FAILED_HASH);
                         downloadLink.requestGuiUpdate();
                         error(LinkStatus.ERROR_DOWNLOAD_FAILED, JDLocale.LF("system.download.doCRC2.failed", "CRC-Check FAILED(%s)", hashType));
                     }
