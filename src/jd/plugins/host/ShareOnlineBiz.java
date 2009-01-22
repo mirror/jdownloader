@@ -43,7 +43,7 @@ public class ShareOnlineBiz extends PluginForHost {
 
     public ShareOnlineBiz(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://www.share-online.biz/service.php");
+        this.enablePremium("http://www.share-online.biz/service.php?p=31353834353B4A44616363");
     }
 
     @Override
