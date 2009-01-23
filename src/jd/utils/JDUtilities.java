@@ -1033,7 +1033,7 @@ public class JDUtilities {
             };
             System.setErr(new PrintStream(os));
         }
-        return logger;
+        return logger; 
     }
 
     /**
