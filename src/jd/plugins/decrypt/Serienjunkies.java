@@ -195,14 +195,18 @@ public class Serienjunkies extends PluginForDecrypt {
         SerienjunkiesThread[] threads = new SerienjunkiesThread[ar.size()];
         for (int i = 0; i < threads.length; i++) {
             DownloadLink downloadLink = ar.get(i);
-            threads[i] = new SerienjunkiesThread(((jd.plugins.host.Serienjunkies) JDUtilities.getNewPluginForHostInstanz("serienjunkies.org")), downloadLink);
+            threads[i] = new SerienjunkiesThread(((jd.plugins.host.Serienjunkies) JDUtilities.getNewPluginForHostInstanz("serienjunkies.org")), downloadLink, progress);
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
+
             if (ar.get(i) != null) {
-                while (threads[i].result == null) {
-                    Thread.sleep(20);
+                while (threads[i].isAlive()) {
+                    synchronized (threads[i]) {
+                        threads[i].wait();
+                    }
                 }
+                if(threads[i].result!=null)
                 decryptedLinks.addAll(threads[i].result);
             }
         }
@@ -652,16 +656,17 @@ public class Serienjunkies extends PluginForDecrypt {
         private jd.plugins.host.Serienjunkies pl;
         private DownloadLink downloadLink;
         public ArrayList<DownloadLink> result = null;
-
-        public SerienjunkiesThread(jd.plugins.host.Serienjunkies pl, DownloadLink downloadLink) {
+        private ProgressController progress;
+        public SerienjunkiesThread(jd.plugins.host.Serienjunkies pl, DownloadLink downloadLink, ProgressController progress) {
             this.pl = pl;
             this.downloadLink = downloadLink;
+            this.progress=progress;
         }
 
         @Override
         public void run() {
             try {
-                result = pl.getAvailableDownloads(downloadLink, 2);
+                result = pl.getAvailableDownloads(downloadLink, 2, progress);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -669,6 +674,9 @@ public class Serienjunkies extends PluginForDecrypt {
                 ArrayList<DownloadLink> ar = new ArrayList<DownloadLink>();
                 ar.add(downloadLink);
                 result = ar;
+            }
+            synchronized (this) {
+                this.notify();
             }
 
         }

@@ -16,6 +16,7 @@
 
 package jd.plugins.host;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -23,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jd.controlling.ProgressController;
 
 import jd.PluginWrapper;
 import jd.captcha.LetterComperator;
@@ -52,6 +55,7 @@ public class Serienjunkies extends PluginForHost {
     private DownloadLink downloadLink;
     private static Vector<String> passwords = new Vector<String>();
     private static int active = 0;
+    private ProgressController progress;
 
     public Serienjunkies(PluginWrapper wrapper) {
         super(wrapper);
@@ -66,7 +70,7 @@ public class Serienjunkies extends PluginForHost {
     // Für Links die bei denen die Parts angezeigt werden
     private Vector<String> ContainerLinks(String url) throws PluginException {
         final Vector<String> links = new Vector<String>();
-        Browser br = new Browser();
+        final Browser br = new Browser();
         if (url.matches("http://[\\w\\.]*?.serienjunkies.org/..\\-.*")) {
             url = url.replaceFirst("serienjunkies.org", "serienjunkies.org/frame");
         }
@@ -99,7 +103,39 @@ public class Serienjunkies extends PluginForHost {
 
                     }
                     if (con.getContentLength() < 1000) {
-                        if (!Reconnecter.waitForNewIP(5 * 60l)) { return null; }
+                        logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                        downloadLink.getLinkStatus().setStatusText("Reconnect required");
+                        downloadLink.requestGuiUpdate();
+                        progress.setProgressText("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                        new Thread(new Runnable() {
+                            public void run() {
+                                for (int i = 0; i < 100; i++) {
+                                    try {
+                                        Thread.sleep(1200);
+                                    } catch (InterruptedException e) {
+                                        // TODO Auto-generated catch block
+                                        e.printStackTrace();
+                                    }
+                                    progress.increase(1);
+                                }
+                            }
+                        }).start();
+                        if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
+                            progress.setColor(Color.red);
+                            progress.setStatus(0);
+                            progress.setProgressText("Error: SerienJunkies Downloadlimit");
+                            for (int i = 0; i < 100; i++) {
+                                try {
+                                    Thread.sleep(100);
+                                } catch (InterruptedException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                                progress.increase(1);
+                            }
+
+                            return null;
+                        }
 
                         htmlcode = br.getPage(url);
 
@@ -144,50 +180,88 @@ public class Serienjunkies extends PluginForHost {
             }
             Form[] forms = br.getForms();
             Vector<Thread> threads = new Vector<Thread>();
-            for (int i = 0; i < forms.length; i++) {
-                if (forms[i].action.contains("download.serienjunkies.org") && !forms[i].action.contains("firstload") && !forms[i].action.equals("http://mirror.serienjunkies.org")) {
-                    try {
-                        final String action = forms[i].action;
+            final Browser[] br2 = new Browser[] { br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser(), br.cloneBrowser() };
+            progress.setProgressText("getLinks");
+            progress.setStatus(0);
 
+            ArrayList<String> actions  = new ArrayList<String>();
+            for (Form form : forms) {
+                if (form.action.contains("download.serienjunkies.org") && !form.action.contains("firstload") && !form.action.equals("http://mirror.serienjunkies.org")) {
+                    actions.add(form.action);
+                }
+            }
+            final int inc = 100 / actions.size();
+            for (int i = 0; i < actions.size(); i++) {
+                    try {
+                        final String action = actions.get(i);
+                        final int bd = i%4;
                         Thread t = new Thread(new Runnable() {
                             public void run() {
-                                for (int j = 0; j < 4; j++) {
+                                String action2 = action;
+                                Browser brd = br2[bd];
+                                for (int j = 0; j < 10; j++) {
                                     try {
-                                        Thread.sleep(1000 * j);
+                                        Thread.sleep(100 * j);
                                     } catch (InterruptedException e) {
                                         // TODO Auto-generated catch block
                                         e.printStackTrace();
                                     }
-                                    Browser br = new Browser();
                                     try {
-                                        br.getPage(action);
-                                        br.getPage(new Regex(br.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0));
-                                        String loc = br.getRedirectLocation();
-                                        if (loc != null) {
 
-                                            links.add(loc);
-                                            break;
+                                        String tx = null;
+                                        synchronized (brd) {
+                                            try {
+                                                tx = brd.getPage(action2);
+                                            } catch (Exception e) {
+
+                                            }
+
+                                            if (tx != null) {
+                                                String link = new Regex(brd.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                                                if (link != null) {
+                                                    try {
+                                                        brd.getPage(link);
+                                                    } catch (Exception e) {
+
+                                                    }
+                                                }
+
+                                                String loc = brd.getRedirectLocation();
+                                                if (loc != null) {
+                                                    links.add(loc);
+                                                    synchronized (this) {
+                                                        notify();
+                                                    }
+                                                    progress.increase(inc);
+                                                    return;
+                                                }
+                                            }
                                         }
-                                    } catch (IOException e) {
+
+                                    } catch (Exception e) {
                                         // TODO Auto-generated catch block
                                         e.printStackTrace();
                                     }
 
                                 }
+
                             }
                         });
                         t.start();
                         threads.add(t);
                     } catch (Exception e) {
                     }
-                    for (Thread t : threads) {
-                        while (t.isAlive()) {
-                            try {
-                                Thread.sleep(10);
-                            } catch (InterruptedException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            }
+
+            }
+
+            for (Thread t : threads) {
+                while (t.isAlive()) {
+                    synchronized (t) {
+                        try {
+                            t.wait();
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -347,6 +421,21 @@ public class Serienjunkies extends PluginForHost {
                 logger.info("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
                 downloadLink.getLinkStatus().setStatusText("Reconnect required");
                 downloadLink.requestGuiUpdate();
+                progress.setProgressText("Sj Downloadlimit(decryptlimit) reached. Wait for reconnect(max 2 min)");
+                new Thread(new Runnable() {
+                    public void run() {
+                        for (int i = 0; i < 100; i++) {
+                            try {
+                                Thread.sleep(1200);
+                            } catch (InterruptedException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                            progress.increase(1);
+                        }
+                    }
+                }).start();
+
                 if (Reconnecter.waitForNewIP(2 * 60 * 1000l)) {
                     logger.info("Reconnect successfull. try again");
                     br.setFollowRedirects(true);
@@ -358,6 +447,18 @@ public class Serienjunkies extends PluginForHost {
                     downloadLink.getLinkStatus().setStatusText("Decrypt");
                     downloadLink.requestGuiUpdate();
                 } else {
+                    progress.setColor(Color.red);
+                    progress.setStatus(0);
+                    progress.setProgressText("Error: SerienJunkies Downloadlimit");
+                    for (int i = 0; i < 100; i++) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                        progress.increase(1);
+                    }
                     downloadLink.getLinkStatus().setErrorMessage("Error Reconnect failed");
                     logger.severe("Reconnect failed. abort.");
                     return decryptedLinks;
@@ -434,8 +535,8 @@ public class Serienjunkies extends PluginForHost {
         return;
     }
 
-    public ArrayList<DownloadLink> getAvailableDownloads(DownloadLink downloadLink, int activeCaptchas) throws Exception {
-
+    public ArrayList<DownloadLink> getAvailableDownloads(DownloadLink downloadLink, int activeCaptchas, ProgressController progress) throws Exception {
+        this.progress = progress;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         this.downloadLink = downloadLink;
         String link = (String) downloadLink.getProperty("link");
@@ -460,62 +561,66 @@ public class Serienjunkies extends PluginForHost {
             return null;
         }
         ArrayList<DownloadLink> finaldls = new ArrayList<DownloadLink>();
-        
+
         for (DownloadLink dls2 : dls) {
             DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
             finaldls.addAll(distributeData.findLinks());
         }
-        if(finaldls.size()>0)
-        {
+        if (finaldls.size() > 0) {
             try {
                 DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
+                progress.setProgressText("check links");
+                progress.setStatus(0);
+                int inc = 100 / linksar.length;
                 linksar[0].getPlugin().checkLinks(linksar);
                 for (DownloadLink downloadLink2 : linksar) {
-                    if(!downloadLink2.isAvailable())
-                    {
-                        finaldls=null;
+                    if (!downloadLink2.isAvailable()) {
+                        finaldls = null;
                         break;
                     }
+                    progress.increase(inc);
                 }
             } catch (Exception e) {
-                finaldls=null;
+                finaldls = null;
             }
         }
 
         if (mirrors != null && finaldls == null) {
             for (String element : mirrors) {
-                    try {
-                        dls = getDLinks(element);
-                        finaldls = new ArrayList<DownloadLink>();
-                        
-                        for (DownloadLink dls2 : dls) {
-                            DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
-                            finaldls.addAll(distributeData.findLinks());
-                        }
-                        if(finaldls.size()>0)
-                        {
-                            try {
-                                DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
-                                linksar[0].getPlugin().checkLinks(linksar);
-                                for (DownloadLink downloadLink2 : linksar) {
-                                    if(!downloadLink2.isAvailable())
-                                    {
-                                        finaldls=null;
-                                        break;
-                                    }
-                                }
-                            } catch (Exception e) {
-                                finaldls=null;
-                            }
-                        }
-                    } catch (Exception e) {
-                        finaldls=null;
-                        e.printStackTrace();
+                try {
+                    dls = getDLinks(element);
+                    finaldls = new ArrayList<DownloadLink>();
+
+                    for (DownloadLink dls2 : dls) {
+                        DistributeData distributeData = new DistributeData(dls2.getDownloadURL());
+                        finaldls.addAll(distributeData.findLinks());
                     }
-                    if(finaldls!=null)break;
+                    if (finaldls.size() > 0) {
+                        try {
+                            DownloadLink[] linksar = finaldls.toArray(new DownloadLink[finaldls.size()]);
+                            progress.setProgressText("check mirror");
+                            progress.setStatus(0);
+                            int inc = 100 / linksar.length;
+                            linksar[0].getPlugin().checkLinks(linksar);
+                            for (DownloadLink downloadLink2 : linksar) {
+                                if (!downloadLink2.isAvailable()) {
+                                    finaldls = null;
+                                    break;
+                                }
+                                progress.increase(inc);
+                            }
+                        } catch (Exception e) {
+                            finaldls = null;
+                        }
+                    }
+                } catch (Exception e) {
+                    finaldls = null;
+                    e.printStackTrace();
+                }
+                if (finaldls != null) break;
             }
         }
-        if (finaldls==null) {
+        if (finaldls == null) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             linkStatus.setErrorMessage(JDLocale.L("plugin.serienjunkies.archiveincomplete", "Archiv nicht komplett"));
             return null;
