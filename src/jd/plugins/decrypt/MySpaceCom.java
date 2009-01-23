@@ -26,6 +26,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -36,68 +37,15 @@ import jd.utils.JDUtilities;
 
 public class MySpaceCom extends PluginForDecrypt {
 
-    // private static final String ANY_ATTRIBUTE = "[^\"]+";
-    private static final String ANY_URL = "[\\w~\\.\\!\\*'\\(\\);:@&=\\+$,/\\?%#\\[\\]-]*?";
-
-    // private static final String DOWNLOAD_INFORMATIONS =
-    // "<song bsid=\"\\d+\" title=\"("
-    // +ANY_ATTRIBUTE+")\" songid=\"\\d+\" plays=\"\\d+\" comments=\""
-    // +ANY_ATTRIBUTE+"\" rate=\""+ANY_ATTRIBUTE+"\" downloadable=\"("+ANY_URL+
-    // ")\" imagename=\""
-    // +ANY_URL+"\" imagedesc=\""+ANY_ATTRIBUTE+"\" filename=\""
-    // +ANY_ATTRIBUTE+"\" url=\""
-    // +ANY_URL+"\" durl=\"("+ANY_URL+")\" token=\""+ANY_ATTRIBUTE
-    // +"\" curl=\""+ANY_URL+"\"/>";
-
-    // Pattern.compile("<title>$\\s+?^\\s+?.+?www.myspace.com/(.+)$",Pattern.
-    // MULTILINE);
-    // private static final String MYSPACEURL =
-    // "<td><div align=\"left\">&nbsp;&nbsp;<span class=\"searchMonkey-displayURL\">http://www.myspace.com/.+?</span>&nbsp;&nbsp;</div></td>"
-    // ;
-
-    // Benötigt das Flag Pattern.MULTILINE
-    private static final String NICK_NAME = "<title>$\\s+?^\\s+?.+?www.myspace.com/(.+)$";
-
-    // private static final String FLASH_PLAYER_MINI =
-    // "\"http://lads\\.myspace\\.com/mini/mini.swf\\?b=.+?\"";
     private static final String FLASH_PLAYER_MINI = "http://musicservices\\.myspace\\.com/Modules/MusicServices/Services/Embed\\.ashx/ptype=\\d+,ap=\\d+,plid=(\\d+),skinid=\\d+,profid=(\\d+)";
-    // private static final String FLASH_PLAYER_MUSIC =
-    // "\"http://lads\\.myspace\\.com/music/musicplayer.swf\\?n=.+?\"";
-    // private static final String FLASH_PLAYER_MUSIC =
-    // "profid=\\d+\", \"shell\",";
-    private static final String FLASH_PLAYER_MUSIC = "http://musicservices\\.myspace\\.com/Modules/MusicServices/Services/Embed\\.ashx/ptype=\\d+,ap=\\d+,plid=\\d+,artid=\\d+,skinid=\\d+,profid=\\d+";
-
+    private static final String FLASH_PLAYER_MUSIC = "<param name=\"flashvars\" value=\"uid(.*?)\" \\/\\>";
     private static final String FLASH_PLAYER_MUSICPLAYLIST_US = "http://www\\.musicplaylist\\.us/loadplaylist\\.php\\?playlist=\\d+";
-
     private static final String FLASH_PLAYER_MP3_ASSET_COM = "(?s)http://www\\.mp3asset\\.com/swf/mp3/myflashfetish-mp3-player\\.swf.+?<param name=\"flashvars\" value=\"myid=\\d+&path=\\d+/\\d+/\\d+&";
 
-    private static final Pattern PATTERN_PAGE_INFOS = Pattern.compile("(" + NICK_NAME + "|" + FLASH_PLAYER_MINI + "|" + FLASH_PLAYER_MUSIC + "|" + FLASH_PLAYER_MUSICPLAYLIST_US + "|" + FLASH_PLAYER_MP3_ASSET_COM + ")", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern PATTERN_PAGE_INFOS = Pattern.compile("(" + FLASH_PLAYER_MINI + "|" + FLASH_PLAYER_MUSIC + "|" + FLASH_PLAYER_MUSICPLAYLIST_US + "|" + FLASH_PLAYER_MP3_ASSET_COM + ")", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
     private static final Pattern PATTERN_INVALID_ID = Pattern.compile(" <span id=\"ctl00_ctl00_cpMain_cpMain_Unavailable1_ErrorMessageLabel\">Ungültige FriendID.<br>Dieser Nutzer hat entweder seine Mitgliedschaft beendet oder der Account wurde wegen Verstoßes gegen unsere Nutzungsbedingungen gelöscht.</span>");
-    // Weiterverarbeitung der Matches
+
     private static final String FLASH_PLAYER_MP3_ASSET_COM_UID = "<param name=\"flashvars\" value=\"myid=(\\d+)&path=(\\d+/\\d+/\\d+)&";
-    private static final String FLASH_PLAYER_2_PLID_UID = "http://musicservices\\.myspace\\.com/Modules/MusicServices/Services/Embed\\.ashx/ptype=\\d+,ap=\\d+,plid=(\\d+),(artid=(\\d+),)?skinid=\\d+,profid=(\\d+)";
-
-    // Regex für XML Attribute
-
-    /*
-     * //myspace standard private static final String TITEL =
-     * "title=\"([^\"]+)\""; private static final String DURLS = "durl=\"(" +
-     * ANY_URL + ")\"";
-     * 
-     * USED FOR HIGH QUALLITY DOWNLOADS
-     * 
-     * private static final String DOWNLOADABLE = "downloadable=\"(.+)\"";
-     */
-    // myspace music & myspace standard 2.0
-    private static final String MYSPACE_2_SONGID = "songId=\"(\\d+)\"";
-    private static final String TITEL_MYSPACE_2 = "<title>(.+?)</title>";
-    private static final String DURLS_MYSPACE_2 = "<link>(.+?)</link>";
-    // musicplaylist.us
-    private static final String TITEL_MUSICPLAYLIST_US = "<annotation>(.+?)</annotation>";
-    private static final String DURLS_MUSICPLAYLIST_US = "<originallocation>(" + ANY_URL + ")</originallocation>";
-    // mp3assest.com myspace.com/eminem
-    private static final String TITEL_MP3_ASSEST = "name=\"([^\"]+)\"";
-    private static final String DURLS_MP3_ASSEST = "path=\"([^\"]+)\"";
 
     // Keys für die Config
     /**
@@ -110,11 +58,11 @@ public class MySpaceCom extends PluginForDecrypt {
      * zusätzlicher Ordner erstellt werden soll
      */
     private static final String ENABLE_SUBFOLDERS2 = "MYSPACE_ENABLE_SUBFOLDERS2";
+
     /**
      * Configuarations-Property: Gibt an ob für Dateinamen
      * "[myspaceusername]-filename" und das genannte prefix hinzugefügt wird
      */
-    private static final String ENABLE_DL_NAME_MODIFICATION = "MYSPACE_ENABLE_DL_NAME_MODIFICATION";
 
     /**
      * Downloadmodus bzgl Quallität
@@ -127,19 +75,15 @@ public class MySpaceCom extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink,ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(CryptedLink cryptedLink, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCookiesExclusive(true);
         br.clearCookies(getHost());
-        // Ermittle nickname und playerurl
+        // Ermittle nickname und playerdata
         br.getPage(cryptedLink.getCryptedUrl());
-        String[][] matches = br.getRegex(PATTERN_PAGE_INFOS).getMatches();
-        String nick = "";
-        String playerUrl = null;
-        for (int i = 0; i < matches.length && i < 2; i++) {
-            nick = i == 0 ? matches[i][1] : nick;
-            playerUrl = i == 1 ? matches[i][0] : playerUrl;
-        }
+        String playerUrl = br.getRegex(PATTERN_PAGE_INFOS).getMatch(0);
+        String nick = br.getRegex("\\>www\\.myspace\\.com\\/(.*?)\\<").getMatch(0);
+
         nick = Encoding.deepHtmlDecode(nick);
         String[] titles = null;
         String[] dUrls = null;
@@ -152,19 +96,22 @@ public class MySpaceCom extends PluginForDecrypt {
             logger.severe("player nicht gefunden!");
             return null;
         } else if (new Regex(playerUrl, FLASH_PLAYER_MINI, Pattern.CASE_INSENSITIVE).matches()) {
-            Regex infos = new Regex(playerUrl, FLASH_PLAYER_2_PLID_UID);
-            String plid, profid;
-            plid = infos.getMatch(0);
-            profid = infos.getMatch(3);
+
+            //=\\d+,ap=\\d+,plid=(\\d+),(artid=(\\d+),)?skinid=\\d+,profid=(\\d+
+            // )";
+            String plid = new Regex(playerUrl, "plid=(\\d+)").getMatch(0).trim();
+            String profid = new Regex(playerUrl, "profid=(\\d+)").getMatch(0).trim();
+
             String[][] data = parseXmlMyspaceStadardPlayer(profid, plid);
             titles = data[0];
             dUrls = data[1];
         } else if (new Regex(playerUrl, FLASH_PLAYER_MUSIC, Pattern.CASE_INSENSITIVE).matches()) {
-            Regex infos = new Regex(playerUrl, FLASH_PLAYER_2_PLID_UID);
-            String plid, artid, profid;
-            plid = infos.getMatch(0);
-            artid = infos.getMatch(2);
-            profid = infos.getMatch(3);
+            //=\\d+,ap=\\d+,plid=(\\d+),(artid=(\\d+),)?skinid=\\d+,profid=(\\d+
+            // )";
+            String plid = new Regex(playerUrl, "plid=(\\d+)").getMatch(0).trim();
+            String profid = new Regex(playerUrl, "profid=(\\d+)").getMatch(0).trim();
+            String artid = new Regex(playerUrl, "artid=(\\d+)").getMatch(0).trim();
+
             String[][] data = parseXmlMySpaceMusicPlayer(plid, artid, profid);
             titles = data[0];
             dUrls = data[1];
@@ -188,18 +135,19 @@ public class MySpaceCom extends PluginForDecrypt {
         if (titles.length != dUrls.length) logger.warning("Fehler Anzahl-Titel und Anzahl-Downloads stimmen nicht überein!");
         // Erstelle DownloadLinks
         FilePackage filePackage = new FilePackage();
-        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {
-            filePackage.setName("myspace.com - " + nick);
-        } else {
-            filePackage.setName("myspace.com");
-        }
+        filePackage.setName(nick);
+
+        FilePackage filePackagehq = new FilePackage();
+        filePackagehq.setName(nick + "[HQ]");
 
         for (int i = 0; i < titles.length; i++) {
             String title = Encoding.deepHtmlDecode(titles[i]);
 
             String link = dUrls[i];
             DownloadLink dl_link = createDownloadlink("myspace://" + link);
-
+            HTTPConnection c = br.openGetConnection(link);
+            long lng = c.getContentLength();
+            c.disconnect();
             if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS1)) {
                 if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {
                     dl_link.addSubdirectory("myspace.com");
@@ -208,17 +156,41 @@ public class MySpaceCom extends PluginForDecrypt {
             if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS2)) {
                 dl_link.addSubdirectory(nick);
             }
-            if (getPluginConfig().getBooleanProperty(ENABLE_DL_NAME_MODIFICATION)) {
-                dl_link.setFinalFileName(nick + " - " + title + ".mp3");
-                dl_link.setName(nick + " - " + title + ".mp3");
-            } else {
-                dl_link.setFinalFileName(title + ".mp3");
-                dl_link.setName(title + ".mp3");
-            }
+
+            dl_link.setFinalFileName(nick + " - " + title + ".mp3");
+            dl_link.setName(nick + " - " + title + ".mp3");
+
             dl_link.setName(title);
             dl_link.setFilePackage(filePackage);
             dl_link.setBrowserUrl(cryptedLink.toString());
             decryptedLinks.add(dl_link);
+
+            link = link.replaceAll("std_", "full_");
+
+            c = br.openGetConnection(link);
+            long lng2 = c.getContentLength();
+            c.disconnect();
+            if (lng2 > lng) {
+                dl_link = createDownloadlink("myspace://" + link);
+
+                if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS1)) {
+                    if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false) == false) {
+                        dl_link.addSubdirectory("myspace.com");
+                    }
+                }
+                if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS2)) {
+                    dl_link.addSubdirectory(nick);
+                }
+
+                dl_link.setFinalFileName(nick + " - " + title + "[HQ].mp3");
+                dl_link.setName(nick + " - " + title + "[HQ].mp3");
+
+                dl_link.setName(title);
+                dl_link.setFilePackage(filePackagehq);
+                dl_link.setBrowserUrl(cryptedLink.toString());
+                decryptedLinks.add(dl_link);
+            }
+
         }
         return decryptedLinks;
     }
@@ -249,13 +221,13 @@ public class MySpaceCom extends PluginForDecrypt {
     private String[][] parseXmlMyspaceStadardPlayer(String friendId, String playlistId) throws IOException {
         br.setFollowRedirects(true);
         String page = br.getPage("http://www.myspace.com/Modules/MusicServices/Services/MusicPlayerService.ashx?friendId=" + friendId + "&action=getPlaylist&playlistId=" + playlistId);
-        return parseMyspace2SongIds(new Regex(page, Pattern.compile(MYSPACE_2_SONGID)).getColumn(0));
+        return parseMyspace2SongIds(new Regex(page, "songId=\"(\\d+)\"").getColumn(0));
     }
 
     private String[][] parseXmlMySpaceMusicPlayer(String plid, String artid, String profid) throws IOException {
         br.setFollowRedirects(true);
         String page = br.getPage("http://myspace.com/Modules/MusicServices/Services/MusicPlayerService.ashx?action=getArtistPlaylist&artistId=" + artid + "&artistUserId=" + profid + "&playlistId=" + plid);
-        String[] songIds = new Regex(page, Pattern.compile(MYSPACE_2_SONGID)).getColumn(0);
+        String[] songIds = new Regex(page, "songId=\"(\\d+)\"").getColumn(0);
         return parseMyspace2SongIds(songIds);
     }
 
@@ -273,8 +245,8 @@ public class MySpaceCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         String[] ret = new String[2];
         String page = br.getPage("http://myspace.com/Modules/MusicServices/Services/MusicPlayerService.ashx?action=getSong&songId=" + songId);
-        ret[0] = new Regex(page, TITEL_MYSPACE_2).getMatch(0);
-        ret[1] = new Regex(page, DURLS_MYSPACE_2).getMatch(0);
+        ret[0] = new Regex(page, "<title>(.+?)</title>").getMatch(0);
+        ret[1] = new Regex(page, "<link>(.+?)</link>").getMatch(0);
         return ret;
     }
 
@@ -283,9 +255,9 @@ public class MySpaceCom extends PluginForDecrypt {
         String page = br.getPage(url);
         String[][] ret = new String[2][];
         // Titel
-        ret[0] = new Regex(page, TITEL_MUSICPLAYLIST_US, Pattern.CASE_INSENSITIVE).getColumn(0);
+        ret[0] = new Regex(page, "<annotation>(.+?)</annotation>", Pattern.CASE_INSENSITIVE).getColumn(0);
         // Durls
-        ret[1] = new Regex(page, DURLS_MUSICPLAYLIST_US, Pattern.CASE_INSENSITIVE).getColumn(0);
+        ret[1] = new Regex(page, "<originallocation>([\\w~\\.\\!\\*'\\(\\);:@&=\\+$,/\\?%#\\[\\]-]*?)</originallocation>", Pattern.CASE_INSENSITIVE).getColumn(0);
         return ret;
     }
 
@@ -293,9 +265,9 @@ public class MySpaceCom extends PluginForDecrypt {
         String[][] ret = new String[2][];
         String page = br.getPage("http://www.mp3asset.com/xml/" + path + "/" + userid + ".xml");
         // Titel
-        ret[0] = new Regex(page, TITEL_MP3_ASSEST, Pattern.CASE_INSENSITIVE).getColumn(0);
+        ret[0] = new Regex(page, "name=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
         // Durls
-        ret[1] = new Regex(page, DURLS_MP3_ASSEST, Pattern.CASE_INSENSITIVE).getColumn(0);
+        ret[1] = new Regex(page, "path=\"([^\"]+)\"", Pattern.CASE_INSENSITIVE).getColumn(0);
         return ret;
     }
 
@@ -311,7 +283,6 @@ public class MySpaceCom extends PluginForDecrypt {
         // downloadModes.add("Bei jedem Download erneut nachfragen.");
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS1, JDLocale.L("plugins.decrypt.myspacecom0", "Load all downloads into 'myspace.com/'")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_SUBFOLDERS2, JDLocale.L("plugins.decrypt.myspacecom1", "Create a subfolder for each artist")).setDefaultValue(false));
-        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), ENABLE_DL_NAME_MODIFICATION, JDLocale.L("plugins.decrypt.myspacecom2", "Put the myspace username as prefix to the filename of all downloads")).setDefaultValue(true));
         // config.addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX,
         // getPluginConfig(), COMBOBOX_DLMODE, downloadModes.toArray(new
         // String[3]),"Download-Qualität"));
