@@ -479,7 +479,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         String name = file.getName();
 
         if (name.matches("(?is).*\\.7z\\.[\\d]+$")) return ARCHIVE_TYPE_7Z;
-        if (name.matches(".*\\.\\a.$")) {
+        if (name.matches(".*\\.a.$")) {
             try {
                 Signature fs = FileSignatures.getFileSignature(file);
                 if (fs != null && fs.getId().equals("RAR"))
