@@ -82,22 +82,20 @@ public class BadongoCom extends PluginForHost {
         getFileInformation(downloadLink);
         // sleep(7000l, downloadLink);
         br.setDebug(true);
+
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
-            String downloadLinks[] = br.getRegex("<a href=\"#\" onclick=\"return doDownload\\('(.*?)'\\);\">").getColumn(0);
-            link = downloadLinks[downloadLink.getIntegerProperty("part", 0)];
-            br.setCookie("http://www.badongo.com", "bdgDL_f", "4005384");
-            br.setCookie("http://www.badongo.com", "uAhist", "23%3A872%7C1%3A170%2C113");
-            br.setCookie("http://www.badongo.com", "uAchist", "142%2C2%2C9");
-            br.setCookie("http://www.badongo.com", "adF4005384", "yellow");
+            String downloadLinks[] = br.getRegex("doDownload\\(\\'(.*?)\\'\\)").getColumn(0);
+            link = downloadLinks[downloadLink.getIntegerProperty("part", 1) - 1];
+            sleep(15000, downloadLink);
             br.getPage(link + "/ifr?pr=1&zenc=");
-            if (br.containsHTML("Gratis Mitglied Wartezeit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
-            if (br.containsHTML("Du hast Deine Download Quote überschritten")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-            link = br.getRegex(Pattern.compile("beginDownload.*?window.location.href.*?'(.*?)'", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-            link = "http://www.badongo.com" + link;
-            br.setFollowRedirects(true);
-            br.setDebug(true);
-            if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL);
-            dl = br.openDownload(downloadLink, link, true, 1);
+            handleErrors(br);
+            dl = br.openDownload(downloadLink, link + "/loc?pr=1", true, 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                String page = br.loadConnection(dl.getConnection());
+                br.getRequest().setHtmlCode(page);
+                handleErrors(br);
+            }
+
             dl.startDownload();
         } else {
 
@@ -116,10 +114,22 @@ public class BadongoCom extends PluginForHost {
             ajax.getPage(realURL + "?rs=getFileLink&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
             url = ajax.getRegex("doDownload\\(\\\\\'(.*?)\\\\\'\\)").getMatch(0);
             ajax.getPage(url + "/ifr?pr=1&zenc=");
-            dl = br.openDownload(downloadLink, url + "/loc?pr=1", true, 1);
+            handleErrors(ajax);
+            dl = ajax.openDownload(downloadLink, url + "/loc?pr=1", true, 1);
+            if (!dl.getConnection().isContentDisposition()) {
+                String page = ajax.loadConnection(dl.getConnection());
+                ajax.getRequest().setHtmlCode(page);
+                handleErrors(ajax);
+            }
             dl.startDownload();
 
         }
+
+    }
+
+    private void handleErrors(Browser br) throws PluginException {
+        if (br.containsHTML("Gratis Mitglied Wartezeit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l);
+        if (br.containsHTML("Du hast Deine Download Quote überschritten")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
 
     }
 
