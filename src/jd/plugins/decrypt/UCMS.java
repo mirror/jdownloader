@@ -26,6 +26,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
+import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -118,9 +119,15 @@ public class UCMS extends PluginForDecrypt {
                  * DLC-Container angeboten! Workaround für diese Seite
                  */
                 if (br.containsHTML("ACTION=\"/download\\.php\"")) {
-                    File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-                    Browser.download(container, br.openFormConnection(0));
-                    decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                    Form forms2[] = br.getForms();
+                    for (Form form : forms2) {
+                        if (form.containsHTML("dlc")) {
+                            File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
+                            Browser.download(container, br.openFormConnection(form));
+                            decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
+                            break;
+                        }
+                    }
                 } else {
                     String links[] = null;
                     if (br.containsHTML("unescape\\(unescape\\(unescape")) {
