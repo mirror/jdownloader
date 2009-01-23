@@ -89,6 +89,10 @@ public class BadongoCom extends PluginForHost {
             sleep(15000, downloadLink);
             br.getPage(link + "/ifr?pr=1&zenc=");
             handleErrors(br);
+            
+            
+            
+            
             dl = br.openDownload(downloadLink, link + "/loc?pr=1", true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 String page = br.loadConnection(dl.getConnection());
