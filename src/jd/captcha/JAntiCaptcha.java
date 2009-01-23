@@ -910,7 +910,12 @@ public class JAntiCaptcha {
 
         Document doc;
         File f = JDUtilities.getResourceFile("jd/captcha/methods/" + methodDirName + "/" + "jacinfo.xml");
-
+if(!f.exists()){
+    if (JAntiCaptcha.isLoggerActive()) {
+        logger.severe("" + "jacinfo.xml" + " is missing2");
+    }
+    return;
+}
         doc = UTILITIES.parseXmlString(JDIO.getLocalFile(f), false);
         if (doc == null) {
             if (JAntiCaptcha.isLoggerActive()) {

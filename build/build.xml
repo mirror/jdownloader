@@ -5,7 +5,7 @@
 	<property name="dist" value="dist" />
 	<property name="res" value="ressourcen" />
 	<property name="keystore" value="G:\jDownloader.keystore" />
-	<property name="class-path" value="libs/clink170.jar libs/svnkit.jar libs/mail.jar libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.jar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/jl1.0.jar libs/savemytube.jar" />
+	<property name="class-path" value="libs/cobra.jar libs/clink170.jar libs/svnkit.jar libs/mail.jar libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.jar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.jar libs/jl1.0.jar libs/savemytube.jar" />
 	<target name="compile">
 		<javac srcdir="${src}" destdir="${cls}" encoding="UTF-8" source="1.5" />
 	</target>

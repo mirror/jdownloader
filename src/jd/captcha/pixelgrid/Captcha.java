@@ -1702,4 +1702,14 @@ public class Captcha extends PixelGrid {
 
     }
 
+    public void addAt(int xx, int yy, Captcha tmp) {
+        for( int x=0; x<tmp.getWidth();x++){
+            for(int y=0; y<tmp.getHeight();y++){
+               if(this.getWidth()>x+xx&&this.getHeight()>y+yy)this.setPixelValue(x+xx, y+yy, tmp.getPixelValue(x, y)) ;
+            }
+            
+        }
+        
+    }
+
 }
