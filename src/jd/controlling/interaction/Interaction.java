@@ -71,7 +71,7 @@ public abstract class Interaction extends Property implements Serializable {
      */
     public transient final static int INTERACTION_CALL_RUNNING = 3;
 
-    private static int interactionsRunning = 0;
+    private static Integer interactionsRunning = 0;
 
     protected static Logger logger = JDUtilities.getLogger();
 
@@ -84,7 +84,7 @@ public abstract class Interaction extends Property implements Serializable {
      * @return Liste mit allen Interactionen
      */
     public static Interaction[] getInteractionList() {
-        return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink()};
+        return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink() };
     }
 
     /**
@@ -107,7 +107,7 @@ public abstract class Interaction extends Property implements Serializable {
         return ret.toArray(new Interaction[] {});
     }
 
-    public static int getInteractionsRunning() {
+    public synchronized static int getInteractionsRunning() {
         return interactionsRunning;
     }
 
@@ -115,7 +115,7 @@ public abstract class Interaction extends Property implements Serializable {
      * 
      * @return Anzahl der gerade aktiven Interactionen
      */
-    public static int getRunningInteractionsNum() {
+    public synchronized static int getRunningInteractionsNum() {
         return interactionsRunning;
     }
 
@@ -158,7 +158,7 @@ public abstract class Interaction extends Property implements Serializable {
 
             }
         }
-        if (interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED) && interactionsRunning == 0 && JDUtilities.getController().getFinishedLinks().size() > 0) {
+        if (interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED) && getInteractionsRunning() == 0 && JDUtilities.getController().getFinishedLinks().size() > 0) {
 
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
@@ -306,7 +306,9 @@ public abstract class Interaction extends Property implements Serializable {
      * @return
      */
     public boolean interact(Object arg) {
-        interactionsRunning++;
+        synchronized (interactionsRunning) {
+            interactionsRunning++;
+        }
         logger.finer("Interactions(start) running: " + interactionsRunning + " - " + this);
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_ACTIVE, arg);
         resetInteraction();
@@ -314,13 +316,15 @@ public abstract class Interaction extends Property implements Serializable {
         boolean success = doInteraction(arg);
         if (!isAlive()) {
             fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, arg);
-
-            interactionsRunning--;
+            synchronized (interactionsRunning) {
+                interactionsRunning--;
+            }
             logger.info("Interaction finished: " + interactionsRunning + " - " + this);
 
         } else if (!getWaitForTermination()) {
-
-            interactionsRunning--;
+            synchronized (interactionsRunning) {
+                interactionsRunning--;
+            }
             logger.info("Interaction finished: " + interactionsRunning + " - " + this);
         }
 
@@ -356,10 +360,12 @@ public abstract class Interaction extends Property implements Serializable {
         run();
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, null);
         if (getWaitForTermination()) {
+            synchronized (interactionsRunning) {
             interactionsRunning--;
+            }
             logger.finer("Interaction finaly finished: " + interactionsRunning + " - " + this);
         }
-        if (interactionsRunning == 0 && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING && JDUtilities.getController().getFinishedLinks().size() > 0) {
+        if (getInteractionsRunning()== 0 && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING && JDUtilities.getController().getFinishedLinks().size() > 0) {
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
 

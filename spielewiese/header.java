@@ -90,10 +90,10 @@ public class header {
             String kk = JDUpdateUtils.get_UpdateList();
             kk = kk;
         }
-        if (true) {
+        if (false) {
             System.out.println(base64totext("kALaLX9NF0SfcVSf99CsZ5umsHeyg4tGhJ\"ePoCNNxv6\"mIeln34L0YRoEGBwB6lB3snQVhp1yCSznAgpjFWa\"oC_P5bc0dNsFTc6sw3YqNfRD\"hJ_RZTmQD\"s\"CwGUnTxxDPQ3zfGW8Z0A9mqLP95Qg9zwr4YLuhSIC9gOHf7TawDE\"vDUs_jI36\"CbIy\"n1I3o03BD05k6mOx3nr6C9b8tqBwhgbxV17MnrGRO0IRX2WD06r8eQndm5q9Yt8I1qRNeKMUpKIqrpGj"));
         }
-        if (false) {
+        if (true) {
             // System.out.println(new Regex(
             // "<p style=\"color:red;\">You have reached the download limit for free-users. Would you like more?</p>"
             // , ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches() +

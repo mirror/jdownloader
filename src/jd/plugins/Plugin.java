@@ -349,8 +349,9 @@ public abstract class Plugin implements ActionListener {
             if (contentdisposition.contains("filename*")) {
                 /* Codierung default */
                 /*
-                 * Content-Disposition: attachment; filename==?UTF-8?B?RGF2aWQgR3VldHRhIC0gSnVzdCBBIExpdHRsZSBNb3JlIExvdmUgW2FMYnlsb3ZlciBYLUNsdXNpdiBSZW1peF0uTVAz?=
-                 * 
+                 * Content-Disposition: attachment;filename==?UTF-8?B?
+                 * RGF2aWQgR3VldHRhIC0gSnVzdCBBIExpdHRsZSBNb3JlIExvdmUgW2FMYnlsb3ZlciBYLUNsdXNpdiBSZW1peF0uTVAz
+                 * ?=
                  */
                 contentdisposition = contentdisposition.replaceAll("filename\\*", "filename");
                 String format = new Regex(contentdisposition, ".*?=[ \"']*(.+)''").getMatch(0);
@@ -385,6 +386,19 @@ public abstract class Plugin implements ActionListener {
                     /* Base64 Encoded */
                     try {
                         filename = URLDecoder.decode(Encoding.Base64Decode(tokens[0][2].trim()), tokens[0][0].trim());
+                    } catch (Exception e) {
+                        logger.severe("Content-Disposition: could not decode filename: " + header);
+                        filename = null;
+                        return filename;
+                    }
+                }
+            } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?=").matches()) {
+                /*Unicode Format wie es 4Shared nutzt*/
+                String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?=").getMatches();
+                if (tokens.length == 1 && tokens[0].length == 2) {                    
+                    try {
+                        contentdisposition = new String(tokens[0][1].trim().getBytes("ISO-8859-1"), tokens[0][0].trim());
+                        continue;
                     } catch (Exception e) {
                         logger.severe("Content-Disposition: could not decode filename: " + header);
                         filename = null;

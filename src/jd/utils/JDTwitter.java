@@ -51,7 +51,7 @@ public class JDTwitter {
             status = status.substring(0, 70) + "...";
         }
 
-        SimpleGUI.CURRENTGUI.setStatusBarText(status);
+        //SimpleGUI.CURRENTGUI.setStatusBarText(status);
     }
 
 }

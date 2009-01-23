@@ -190,6 +190,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
             lblMessage.setIcon(statusIcon);
+            statusBarHandler = new LabelHandler(lblMessage, JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
 
             chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
             chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
@@ -277,10 +278,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         public void setSpinnerSpeed(Integer speed) {
             spMax.setValue(speed);
             colorizeSpinnerSpeed();
-        }
-
-        public void setText(String text) {
-            lblMessage.setText((text == null) ? JDLocale.L("sys.message.welcome", "Welcome to JDownloader") : text);
         }
 
         public void stateChanged(ChangeEvent e) {
@@ -619,6 +616,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * Die Statusleiste für Meldungen
      */
     private StatusBar statusBar;
+
+    public LabelHandler statusBarHandler;
 
     /**
      * Toolleiste für Knöpfe
@@ -1022,7 +1021,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Aktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction start. ");
-                        setStatusBarText(JDLocale.L("gui.statusbar.interaction", "Interaction:") + " " + ((Interaction) event.getSource()).getInteractionName());
+                        statusBarHandler.changeTxt(JDLocale.L("gui.statusbar.interaction", "Interaction:") + " " + ((Interaction) event.getSource()).getInteractionName(), 30000, true);
                         frame.setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction", "Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
                     }
                     break;
@@ -1034,12 +1033,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Deaktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction zu Ende. Rest status");
-                        new Thread("twitterinit") {
-                            public void run() {
-                                JDTwitter.refreshTwitterMessage();
-                            }
-                        }.start();
-                        frame.setTitle(JDUtilities.getJDTitle());
+                        if (Interaction.getRunningInteractionsNum() == 0) {
+                            statusBarHandler.changeTxt(null, 0, false);
+                            frame.setTitle(JDUtilities.getJDTitle());
+                        }
                     }
                     break;
                 case ControlEvent.CONTROL_ON_PROGRESS:
@@ -1771,14 +1768,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public SubConfiguration getGuiConfig() {
         return guiConfig;
-    }
-
-    public void setStatusBarText(final String text) {
-        EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                statusBar.setText(text);
-            }
-        });
     }
 
     public void dragEnter(DropTargetDragEvent dtde) {
