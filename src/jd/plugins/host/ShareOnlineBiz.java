@@ -103,13 +103,12 @@ public class ShareOnlineBiz extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        url = downloadLink.getDownloadURL() + "&setlang=en";
         this.setBrowserExclusive();
         br.setCookie("http://www.share-online.biz", "king_mylang", "en");
         br.setAcceptLanguage("en, en-gb;q=0.8");
-        String id = new Regex(url, "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
         if (br.postPage("http://www.share-online.biz/linkcheck/linkcheck.php", "links=" + id).matches("\\s*")) {
-            br.getPage("http://www.share-online.biz/download.php?id=" + id);
+            br.getPage("http://www.share-online.biz/download.php?id=" + id + "&setlang=en");
             String[] strings = br.getRegex("</font> \\((.*?)\\) \\.</b></div></td>.*?<b>File name:</b>.*?<b>(.*?)</b></div></td>").getRow(0);
             if (strings.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             downloadLink.setDownloadSize(Regex.getSize(strings[0].trim()));
@@ -133,10 +132,10 @@ public class ShareOnlineBiz extends PluginForHost {
         DownloadLink downloadLink = (DownloadLink) parameter;
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(parameter);
-        url = downloadLink.getDownloadURL() + "&setlang=en";
         login(account);
         if (!this.isPremium()) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
-        br.getPage(url);
+        String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
         Form form = br.getForm(1);
         if (form.containsHTML("name=downloadpw")) {
             if (downloadLink.getStringProperty("pass", null) == null) {
@@ -168,10 +167,9 @@ public class ShareOnlineBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        url = downloadLink.getDownloadURL() + "&?setlang=en";
         getFileInformation(downloadLink);
-        br.getPage(url);
+        String id = new Regex(downloadLink.getDownloadURL(), "id\\=([a-zA-Z0-9]+)").getMatch(0);
+        br.getPage("http://www.share-online.biz/download.php?id=" + id + "&?setlang=en");
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://www.share-online.biz/captcha.php"));
