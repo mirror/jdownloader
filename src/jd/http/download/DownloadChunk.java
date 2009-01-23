@@ -185,6 +185,10 @@ public class DownloadChunk implements JDRunnable {
 
     }
 
+    public boolean isConnectionRequested() {
+        return connectionRequested;
+    }
+
     public void setRange(long start, long end) {
         this.chunkStart = start;
         this.chunkEnd = end;

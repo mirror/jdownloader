@@ -42,11 +42,12 @@ public class HTTPDownload {
      * indicates, that the stored filesize is correct.
      */
     private static final int FLAG_FILESIZE_CORRECT = 1 << 1;
+   
 
     private Request orgRequest;
 
     private File outputFile;
-    private int chunkNum;
+    private int desiredChunkNum;
     private Threader chunks;
     private int flags = 0;
     private long fileSize;
@@ -103,8 +104,8 @@ public class HTTPDownload {
             Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.test");
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
-            dl.setBandwidthlimit(1024*100);
-            dl.setChunkNum(150);
+          //  dl.setBandwidthlimit(1024*100);
+            dl.setDesiredChunkNum(4);
 
             try {
                 new Thread() {
@@ -148,16 +149,40 @@ public class HTTPDownload {
 
     }
 
-    private void setChunkNum(int i) throws BrowserException, InterruptedException {
-        if (i == chunkNum) return;
-        if (chunks != null && chunks.isHasStarted()) {
-            int tmp = chunkNum;
-            this.chunkNum = i;
-            if (i > tmp) addChunksDyn(i - tmp);
-            if (i < tmp) removeChunksDyn(tmp - i);
-        }
-        this.chunkNum = i;
+    private void setDesiredChunkNum(int i) throws BrowserException, InterruptedException {
+        if (i == desiredChunkNum) return;
+     
+  
+        this.desiredChunkNum = i;
+        updateChunks();
 
+    }
+/**
+ * Tries to start enough chunks to fullfill the desiredChunkNum.
+ * @throws BrowserException 
+ * @throws InterruptedException 
+ */
+    private void updateChunks() throws BrowserException, InterruptedException {
+        // TODO Auto-generated method stub
+        if (chunks == null ||!chunks.isHasStarted())return;
+        int num = getActiveChunks();
+        if(num==desiredChunkNum)return;
+        for (int i = chunks.size() - 1; i >= 0; i--) {
+            DownloadChunk dc = (DownloadChunk) chunks.get(i);
+            if (!dc.isConnectionRequested()) {
+              return;
+            }
+        }
+            
+            if (num < desiredChunkNum){
+                System.out.println("AddChunk");
+                addChunksDyn(1);
+            }
+            if (num > desiredChunkNum){
+                System.out.println("RemoveChunk");
+                removeChunksDyn(1);
+            }
+        
     }
 
     private void removeChunksDyn(int i) throws InterruptedException {
@@ -202,6 +227,13 @@ public class HTTPDownload {
             if (biggestRemaining == null || biggestRemaining.getRemainingChunkBytes() < ((DownloadChunk) chunks.get(i)).getRemainingChunkBytes()) {
                 biggestRemaining = ((DownloadChunk) chunks.get(i));
             }
+        }
+        /*
+         *Started abhängig vonm aktuellen downloadspeed einen neuen chunk oder nicht.
+         */
+        if(biggestRemaining.getRemainingChunkBytes()<Math.max(512*1024*1024l, this.getSpeed()*10)){
+            System.out.println(biggestRemaining + " New size(to small)");
+            return;
         }
         long newSize = biggestRemaining.getRemainingChunkBytes() / 2;
         System.out.println(biggestRemaining + " New size: " + newSize);
@@ -329,7 +361,7 @@ public class HTTPDownload {
             System.out.println("Missing: " + missing.get(i)[0] + "-" + missing.get(i)[1]);
         }
         int i = 0;
-        while (activeChunks < this.chunkNum && missing.size() > i) {
+        while (activeChunks < this.desiredChunkNum && missing.size() > i) {
             DownloadChunk newChunk = new DownloadChunk(this, missing.get(i)[0], missing.get(i)[1]);
             System.out.println("New chunk: " + newChunk);
             chunks.add(newChunk);
@@ -398,8 +430,20 @@ public class HTTPDownload {
 
             @Override
             public void onThreadFinished(Threader th, JDRunnable job) {
-                updateActiveChunkCount(-1);
+                updateActiveChunkCount(-1); 
                 checkForMissingParts();
+//                if(activeChunks<chunkNum)
+//                    
+//                    addChunksDyn(i - tmp);
+                try {
+                    updateChunks();
+                } catch (BrowserException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
                 updateSpeedMeters();
             }
 
@@ -414,6 +458,15 @@ public class HTTPDownload {
             @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
                 updateActiveChunkCount(+1);
+                try {
+                    updateChunks();
+                } catch (BrowserException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } catch (InterruptedException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
 
             }
 
@@ -430,12 +483,12 @@ public class HTTPDownload {
             this.addStatus(FLAG_FILESIZE_CORRECT);
         }
 
-        chunk.setRange(0l, fileSize / chunkNum);
+        chunk.setRange(0l, fileSize / desiredChunkNum);
         chunks.add(chunk);
 
-        for (int i = 1; i < chunkNum; i++) {
-            if (i < chunkNum - 1) {
-                chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, fileSize * (i + 1) / chunkNum);
+        for (int i = 1; i < desiredChunkNum; i++) {
+            if (i < desiredChunkNum - 1) {
+                chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, fileSize * (i + 1) / desiredChunkNum);
             } else {
                 chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, -1);
 
@@ -451,6 +504,7 @@ public class HTTPDownload {
 
     protected synchronized void updateActiveChunkCount(int i) {
         this.activeChunks += i;
+        System.out.println("Active CHunks "+activeChunks+"("+i+")");
 
     }
 
