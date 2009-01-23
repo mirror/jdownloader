@@ -19,7 +19,6 @@ package jd.plugins.decrypt;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -30,13 +29,11 @@ import jd.parser.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ProtectBoxIn extends PluginForDecrypt {
-
 
     public ProtectBoxIn(PluginWrapper wrapper) {
         super(wrapper);
@@ -47,36 +44,31 @@ public class ProtectBoxIn extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-     
+
         File file = this.getLocalCaptchaFile(this);
-   
-    
+
         Form form = br.getForm(1);
         Browser.download(file, br.cloneBrowser().openGetConnection("http://www.protectbox.in/captcha/imagecreate.php"));
         JDUtilities.acquireUserIO_Semaphore();
         ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", JDLocale.L("plugins.decrypt.charts4you.captcha", "Please click on the Circle with a gap"), 20, null);
-        if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
         JDUtilities.releaseUserIO_Semaphore();
+        if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
         Point p = d.result;
         form.remove("x");
         form.remove("y");
         form.put("button.x", p.x + "");
         form.put("button.y", p.y + "");
         br.submitForm(form);
-       String[] links = br.getRegex("Link\\.php\\?url\\=(.*?)\"").getColumn(0);
-
-     
-       for(int i=0; i<links.length;i++){
-           decryptedLinks.add(createDownloadlink(links[i]));
-       
-       }
+        String[] links = br.getRegex("Link\\.php\\?url\\=(.*?)\"").getColumn(0);
+        for (int i = 0; i < links.length; i++) {
+            decryptedLinks.add(createDownloadlink(links[i]));
+        }
         return decryptedLinks;
     }
 
-
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4227 $");
+        return getVersion("$Revision$");
     }
 
 }

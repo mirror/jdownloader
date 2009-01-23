@@ -19,8 +19,6 @@ package jd.plugins.decrypt;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;
@@ -37,7 +35,6 @@ import jd.utils.JDUtilities;
 
 public class Charts4You extends PluginForDecrypt {
 
-
     public Charts4You(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,37 +44,36 @@ public class Charts4You extends PluginForDecrypt {
         String parameter = param.toString();
 
         br.getPage(parameter);
-     
+
         File file = this.getLocalCaptchaFile(this);
-        String name=br.getRegex("Details zum Download von (.*?) \\- Charts4you").getMatch(0);
-    
+        String name = br.getRegex("Details zum Download von (.*?) \\- Charts4you").getMatch(0);
+
         Form form = br.getForm(2);
         Browser.download(file, br.cloneBrowser().openGetConnection("captcha/imagecreate.php"));
         JDUtilities.acquireUserIO_Semaphore();
         ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", JDLocale.L("plugins.decrypt.charts4you.captcha", "Please click on the Circle with a gap"), 20, null);
-        if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
         JDUtilities.releaseUserIO_Semaphore();
+        if (d.abort == true) throw new DecrypterException(DecrypterException.CAPTCHA);
         Point p = d.result;
         form.remove("x");
         form.remove("y");
         form.put("button.x", p.x + "");
         form.put("button.y", p.y + "");
         br.submitForm(form);
-       String[] links = br.getRegex("url=(.*?)\"").getColumn(0);
-       FilePackage fp= new FilePackage();
-       fp.setName(name);
-       for(int i=0; i<links.length;i++){
-         DownloadLink link = this.createDownloadlink(links[i]);
-         link.setFilePackage(fp);
-         decryptedLinks.add(link);
-       }
+        String[] links = br.getRegex("url=(.*?)\"").getColumn(0);
+        FilePackage fp = new FilePackage();
+        fp.setName(name);
+        for (int i = 0; i < links.length; i++) {
+            DownloadLink link = this.createDownloadlink(links[i]);
+            link.setFilePackage(fp);
+            decryptedLinks.add(link);
+        }
         return decryptedLinks;
     }
 
-
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4227 $");
+        return getVersion("$Revision$");
     }
 
 }

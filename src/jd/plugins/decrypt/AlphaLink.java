@@ -50,16 +50,12 @@ public class AlphaLink extends PluginForDecrypt {
 
             decryptedLinks.add(createDownloadlink(link));
         }
-        // for(int i=0; i<links.length;i++){
-        // DownloadLink link = this.createDownloadlink(links[i]);
-        //     
-        // }
         return decryptedLinks;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4227 $");
+        return getVersion("$Revision$");
     }
 
 }

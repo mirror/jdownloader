@@ -21,7 +21,6 @@ import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.PixelGrabber;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.regex.Pattern;
@@ -30,7 +29,6 @@ import javax.imageio.ImageIO;
 
 import jd.PluginWrapper;
 import jd.captcha.JAntiCaptcha;
-import jd.captcha.gui.BasicWindow;
 import jd.captcha.pixelgrid.Captcha;
 import jd.captcha.utils.GifDecoder;
 import jd.controlling.ProgressController;
