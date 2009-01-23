@@ -120,7 +120,6 @@ import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
-import jd.utils.JDTwitter;
 import jd.utils.JDUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -697,20 +696,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 }
             }
         }.start();
-
-        new Thread("twitter") {
-            public void run() {
-                while (true) {
-                    JDTwitter.refreshTwitterMessage();
-                    try {
-                        Thread.sleep(300000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }.start();
-
     }
 
     /**
@@ -1021,7 +1006,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Aktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction start. ");
-                        statusBarHandler.changeTxt(JDLocale.L("gui.statusbar.interaction", "Interaction:") + " " + ((Interaction) event.getSource()).getInteractionName(), 30000, true);
+                        statusBarHandler.changeTxt(JDLocale.L("gui.statusbar.interaction", "Interaction:") + " " + ((Interaction) event.getSource()).getInteractionName(), 10000, true);
                         frame.setTitle(JDUtilities.JD_TITLE + " | " + JDLocale.L("gui.titleaddaction", "Action: ") + " " + ((Interaction) event.getSource()).getInteractionName());
                     }
                     break;
