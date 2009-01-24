@@ -36,9 +36,9 @@ public class LoadTo extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
-        br.set_PAGE_ACCESS_exclusive(false);
-        br.set_WAIT_BETWEEN_PAGE_ACCESS(500l);
+        br.setLatestReqTimeCtrlID(this.getHost());
+        br.setReqTimeCtrlExclusive(false);
+        br.setWaittimeBetweenPageRequests(500l);
         this.setStartIntervall(2000l);
         return "http://www.load.to/terms.php";
     }

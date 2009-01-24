@@ -33,8 +33,8 @@ public class ImageFap extends PluginForHost {
     public ImageFap(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(500l);
-        br.set_LAST_PAGE_ACCESS_identifier(this.getHost());
-        br.set_WAIT_BETWEEN_PAGE_ACCESS(200l);
+        br.setLatestReqTimeCtrlID(this.getHost());
+        br.setWaittimeBetweenPageRequests(200l);
     }
 
     private String DecryptLink(String code) {

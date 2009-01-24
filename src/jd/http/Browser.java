@@ -59,48 +59,52 @@ public class Browser {
     private HashMap<String, Auth> auths = new HashMap<String, Auth>();
     private boolean debug = false;
 
-    private static HashMap<String, Long> LAST_PAGE_ACCESS = new HashMap<String, Long>();
-    private HashMap<String, Long> last_page_access = new HashMap<String, Long>();
-    private String LAST_PAGE_ACCESS_identifier = null;
-    private long WAIT_BETWEEN_PAGE_ACCESS = 0L;
-    private boolean exclusive_PAGE_ACCESS = true;
+    private static HashMap<String, Long> LATEST_PAGE_REQUESTS = new HashMap<String, Long>();
+    private HashMap<String, Long> latestRequestTimes = new HashMap<String, Long>();
+    private String latestReqTimeCtrlID = null;
+    private long waittimeBetweenRequests = 0L;
+    private boolean exclusiveReqTimeCtrl = true;
 
-    private synchronized long get_LAST_PAGE_ACCESS() {
-        if (LAST_PAGE_ACCESS_identifier == null) return 0L;
-        if (!exclusive_PAGE_ACCESS) {
-            if (LAST_PAGE_ACCESS.containsKey(LAST_PAGE_ACCESS_identifier)) { return LAST_PAGE_ACCESS.get(LAST_PAGE_ACCESS_identifier); }
+    private synchronized long getLastestRequestTime() {
+        if (latestReqTimeCtrlID == null) return 0L;
+        if (!exclusiveReqTimeCtrl) {
+            if (LATEST_PAGE_REQUESTS.containsKey(latestReqTimeCtrlID)) { return LATEST_PAGE_REQUESTS.get(latestReqTimeCtrlID); }
         } else {
-            if (last_page_access.containsKey(LAST_PAGE_ACCESS_identifier)) { return last_page_access.get(LAST_PAGE_ACCESS_identifier); }
+            if (latestRequestTimes.containsKey(latestReqTimeCtrlID)) { return latestRequestTimes.get(latestReqTimeCtrlID); }
         }
         return 0L;
     }
 
-    private synchronized void put_LAST_PAGE_ACCESS(long time) {
-        if (LAST_PAGE_ACCESS_identifier == null) return;
-        if (!exclusive_PAGE_ACCESS) {
-            LAST_PAGE_ACCESS.put(LAST_PAGE_ACCESS_identifier, time);
+    private synchronized void setLatestRequestTime(long time) {
+        if (latestReqTimeCtrlID == null) return;
+        if (!exclusiveReqTimeCtrl) {
+            LATEST_PAGE_REQUESTS.put(latestReqTimeCtrlID, time);
         } else {
-            last_page_access.put(LAST_PAGE_ACCESS_identifier, time);
+            latestRequestTimes.put(latestReqTimeCtrlID, time);
         }
     }
 
-    public void set_PAGE_ACCESS_exclusive(boolean value) {
-        exclusive_PAGE_ACCESS = value;
+    public String getLatestReqTimeCtrlID() {
+        return latestReqTimeCtrlID;
+    }
+
+    public void setLatestReqTimeCtrlID(String latestReqTimeCtrlID) {
+        this.latestReqTimeCtrlID = latestReqTimeCtrlID;
+    }
+
+    public void setReqTimeCtrlExclusive(boolean value) {
+        exclusiveReqTimeCtrl = value;
 
     }
 
-    public void set_LAST_PAGE_ACCESS_identifier(String value) {
-        LAST_PAGE_ACCESS_identifier = value;
-    }
-
-    public void set_WAIT_BETWEEN_PAGE_ACCESS(long value) {
-        WAIT_BETWEEN_PAGE_ACCESS = value;
+    public void setWaittimeBetweenPageRequests(long value) {
+        waittimeBetweenRequests = value;
     }
 
     private void waitForPageAccess() {
-        if (LAST_PAGE_ACCESS_identifier == null) return;
+        if (latestReqTimeCtrlID == null) return;
         while (true) {
-            long time = Math.max(0, WAIT_BETWEEN_PAGE_ACCESS - (System.currentTimeMillis() - get_LAST_PAGE_ACCESS()));
+            long time = Math.max(0, waittimeBetweenRequests - (System.currentTimeMillis() - getLastestRequestTime()));
             if (time > 0) {
                 try {
                     Thread.sleep(time);
@@ -112,7 +116,7 @@ public class Browser {
                 break;
             }
         }
-        put_LAST_PAGE_ACCESS(System.currentTimeMillis());
+        setLatestRequestTime(System.currentTimeMillis());
     }
 
     public void clearCookies(String url) {
@@ -1118,10 +1122,10 @@ public class Browser {
 
     public Browser cloneBrowser() {
         Browser br = new Browser();
-        br.exclusive_PAGE_ACCESS = exclusive_PAGE_ACCESS;
-        br.WAIT_BETWEEN_PAGE_ACCESS = WAIT_BETWEEN_PAGE_ACCESS;
-        br.last_page_access = last_page_access;
-        br.LAST_PAGE_ACCESS_identifier = LAST_PAGE_ACCESS_identifier;
+        br.exclusiveReqTimeCtrl = exclusiveReqTimeCtrl;
+        br.waittimeBetweenRequests = waittimeBetweenRequests;
+        br.latestRequestTimes = latestRequestTimes;
+        br.latestReqTimeCtrlID = latestReqTimeCtrlID;
         br.acceptLanguage = acceptLanguage;
         br.connectTimeout = connectTimeout;
         br.currentURL = currentURL;
@@ -1396,7 +1400,10 @@ public class Browser {
         }
         return dl;
     }
-
+/**
+ * Zeigt debuginformationen auch im Hauptprogramm an
+ * @param b
+ */
     public void forceDebug(boolean b) {
         this.debug = b;
 

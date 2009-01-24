@@ -48,8 +48,8 @@ public class YouTubeCom extends PluginForDecrypt {
 
     public YouTubeCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.set_LAST_PAGE_ACCESS_identifier("youtube");
-        br.set_WAIT_BETWEEN_PAGE_ACCESS(100l);
+        br.setLatestReqTimeCtrlID("youtube");
+        br.setWaittimeBetweenPageRequests(100l);
     }
 
     private String clean(String s) {
