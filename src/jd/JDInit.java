@@ -551,7 +551,14 @@ public class JDInit {
     }
 
     public void loadPluginForDecrypt() {
-
+    	
+    	
+    	
+    	
+       
+    	new DecryptPluginWrapper("linkmize.com", "LinkMizeCom", "http://[\\w\\.]*?linkmize\\.com\\/.+");
+        
+    	
         new DecryptPluginWrapper("charts4you.org", "Charts4You", "http://[\\w\\.]*?charts4you\\.org\\/\\?id=\\d+");
         new DecryptPluginWrapper("alpha-link.eu", "AlphaLink", "http://[\\w\\.]*?alpha\\-link\\.eu\\/\\?id=[a-fA-F0-9]+");
         new DecryptPluginWrapper("protectbox.in", "ProtectBoxIn", "http://[\\w\\.]*?protectbox\\.in\\/\\?id=[a-fA-F0-9]+");
