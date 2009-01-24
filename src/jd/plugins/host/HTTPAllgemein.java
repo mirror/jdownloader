@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
@@ -56,49 +57,61 @@ public class HTTPAllgemein extends PluginForHost {
         return "Basic " + Encoding.Base64Encode(username + ":" + password);
     }
 
+    private String removeBasicAuthfromURL(DownloadLink link) {
+        String url = link.getDownloadURL();
+        String basicauth = new Regex(url, "http.*?/([^/]{1}.*?)@").getMatch(0);
+        if (basicauth != null && basicauth.contains(":")) {
+            url = new Regex(url, "http.*?@(.+)").getMatch(0);
+            if (url != null) link.setUrlDownload("http://" + url);
+            return "Basic " + Encoding.Base64Encode(basicauth);
+        }
+        return null;
+    }
+
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException {
-        String linkurl;
-        downloadLink.setUrlDownload(linkurl = downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
-        String basicauth = (String) downloadLink.getProperty("basicauth", null);
+        this.setBrowserExclusive();
+        downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("httpviajd://", "http://"));
+        String basicauth = removeBasicAuthfromURL(downloadLink);
+        if (basicauth == null) basicauth = (String) downloadLink.getProperty("basicauth", null);
         if (basicauth != null) {
             br.getHeaders().put("Authorization", basicauth);
         }
-        if (linkurl != null) {
-            br.setFollowRedirects(true);
-            HTTPConnection urlConnection;
-            try {
-                urlConnection = br.openGetConnection(linkurl);
-                if (urlConnection.getResponseCode() == 401) {
-                    if (basicauth != null) {
-                        downloadLink.setProperty("basicauth", null);
-                    }
-                    urlConnection.disconnect();
-                    basicauth = getBasicAuth(downloadLink);
-                    if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
-                    br.getHeaders().put("Authorization", basicauth);
-                    urlConnection = br.openGetConnection(linkurl);
-                    if (urlConnection.getResponseCode() == 401) {
-                        urlConnection.disconnect();
-                        downloadLink.setProperty("basicauth", null);
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
-                    } else {
-                        downloadLink.setProperty("basicauth", basicauth);
-                    }
+        br.setFollowRedirects(true);
+        HTTPConnection urlConnection = null;
+        try {
+            urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+            if (urlConnection.getResponseCode() == 401) {
+                if (basicauth != null) {
+                    downloadLink.setProperty("basicauth", null);
                 }
-                if (!urlConnection.isOK()) {
-                    urlConnection.disconnect();
-                    return false;
-                }
-                downloadLink.setName(Plugin.getFileNameFormHeader(urlConnection));
-                downloadLink.setBrowserUrl(linkurl);
-                downloadLink.setDownloadSize(urlConnection.getContentLength());
                 urlConnection.disconnect();
-                this.contentType = urlConnection.getContentType();
-                return true;
-            } catch (IOException e) {
-                e.printStackTrace();
+                basicauth = getBasicAuth(downloadLink);
+                if (basicauth == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
+                br.getHeaders().put("Authorization", basicauth);
+                urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+                if (urlConnection.getResponseCode() == 401) {
+                    urlConnection.disconnect();
+                    downloadLink.setProperty("basicauth", null);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "BasicAuth is needed!");
+                } else {
+                    downloadLink.setProperty("basicauth", basicauth);
+                }
             }
+            if (urlConnection.getResponseCode() == 404 || !urlConnection.isOK()) {
+                urlConnection.disconnect();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(urlConnection));
+            downloadLink.setBrowserUrl(downloadLink.getDownloadURL());
+            downloadLink.setDownloadSize(urlConnection.getContentLength());
+            downloadLink.setDupecheckAllowed(true);
+            this.contentType = urlConnection.getContentType();
+            urlConnection.disconnect();
+            return true;
+        } catch (IOException e) {
+            if (urlConnection != null && urlConnection.isConnected() == true) urlConnection.disconnect();
+            e.printStackTrace();
         }
         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
     }
