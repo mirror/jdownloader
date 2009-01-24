@@ -116,6 +116,8 @@ public class Configuration extends Property implements Serializable {
     public static final String PARAM_USE_GLOBAL_PREMIUM = "USE_PREMIUM";
 
     public static final String PARAM_USE_PACKETNAME_AS_SUBFOLDER = "USE_PACKETNAME_AS_SUBFOLDER";
+    
+    public static final String PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD = "CREATE_SUBFOLDER_BEFORE_DOWNLOAD";
 
     public static final String PARAM_WEBUPDATE_AUTO_RESTART = "WEBUPDATE_AUTO_RESTART";
 

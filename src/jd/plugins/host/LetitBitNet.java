@@ -65,6 +65,7 @@ public class LetitBitNet extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         Form free = br.getForm(4);
+        if (free == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free-Download not possible from your Country");
         free.put("fix", "1");
         br.setDebug(true);
         br.submitForm(free);

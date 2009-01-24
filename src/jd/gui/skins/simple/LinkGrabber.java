@@ -1341,7 +1341,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
             File file = new File(new File(tab.getDownloadDirectory()), tab.getPackageName());
-            fp.setDownloadDirectory(file.getAbsolutePath());
+            if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
+                if (!file.exists()) {
+                    file.mkdirs();
+                }
+            } else
+                fp.setDownloadDirectory(file.getAbsolutePath());
         } else {
             fp.setDownloadDirectory(tab.getDownloadDirectory());
         }
@@ -1587,7 +1592,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
     private boolean isDupe(DownloadLink link) {
         for (DownloadLink l : totalLinkList) {
-            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL())&&l.toString().equals(link.toString())) { return true; }
+            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()) && l.toString().equals(link.toString())) { return true; }
         }
         return false;
     }
