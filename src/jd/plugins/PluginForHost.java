@@ -117,18 +117,6 @@ public abstract class PluginForHost extends Plugin {
 
     }
 
-    /**
-     * wirft eien PLuginExceptionwe nn der übergebene downloadlink bereits von
-     * einer anderen quelle geladen wird (mirror)
-     * 
-     * @param downloadLink
-     * @throws PluginException
-     */
-    protected void checkMirrorsInProgress(DownloadLink downloadLink) throws PluginException {
-        DownloadLink blocker;
-        if ((blocker = JDUtilities.getController().getLinkThatBlocks(downloadLink)) != null) throw new PluginException(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), blocker.getPlugin().getHost()));
-    }
-
     public String getCaptchaCode(String captchaAddress, DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         File captchaFile = this.getLocalCaptchaFile(this);
         try {

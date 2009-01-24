@@ -126,7 +126,7 @@ public class AccountInfo extends Property {
      * 
      * @return
      */
-    public long getValidUntil() {
+    public long getValidUntil() {        
         return validUntil;
     }
 
@@ -163,7 +163,7 @@ public class AccountInfo extends Property {
 
     public void setExpired(boolean b) {
         this.expired = b;
-        if (b) this.setTrafficLeft(0);
+        if (b) this.setTrafficLeft(-1);
     }
 
     public void setFilesNum(int parseInt) {

@@ -1695,13 +1695,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     return;
                 }
                 if (ai == null) {
-
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.error", "The %s plugin does not support the Accountinfo feature yet.", pluginForHost.getHost()));
                     return;
                 }
                 if (!ai.isValid()) {
                     account.setEnabled(false);
                     SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.notValid", "The account for '%s' isn't valid! Please check username and password!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
+                    return;
+                }
+                if (ai.isExpired()) {
+                    account.setEnabled(false);
+                    SimpleGUI.this.showMessageDialog(JDLocale.LF("plugins.host.premium.info.expired", "The account for '%s' is expired! Please extend the account or buy a new one!\r\n%s", account.getUser(), ai.getStatus() != null ? ai.getStatus() : ""));
                     return;
                 }
                 JPanel panel = new JPanel(new MigLayout("ins 22", "[right]10[grow,fill]40"));
