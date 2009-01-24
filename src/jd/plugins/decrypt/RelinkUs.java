@@ -27,8 +27,10 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
+import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
@@ -77,6 +79,20 @@ public class RelinkUs extends PluginForDecrypt {
         String parameter = param.toString();
         br.setFollowRedirects(true);
         String page = br.getPage(parameter);
+        boolean okay = true;
+        for (int i = 0; i < 4; i++) {
+            if (br.containsHTML("Dieser Ordner ist passwort")) {
+                okay = false;
+                Form form = br.getForm(0);
+                String pw = getUserInput("Password?", param);
+                form.put("passwort", pw);
+                page = br.submitForm(form);
+            } else {
+                okay = true;
+                break;
+            }
+        }
+        if (okay == false) throw new DecrypterException(DecrypterException.CAPTCHA);
         progress.setRange(0);
         add_relinkus_links(page, decryptedLinks);
         String more_links[] = new Regex(page, Pattern.compile("<a href=\"(go\\.php\\?id=[a-zA-Z0-9]+\\&seite=\\d+)\">", Pattern.CASE_INSENSITIVE)).getColumn(0);
