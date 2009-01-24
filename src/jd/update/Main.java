@@ -161,7 +161,7 @@ public class Main {
                 clone = true;
             } else if (p.trim().equalsIgnoreCase("/nofilter")) {
                 OSFilter = false;
-            } else if (clone) {
+            } else if (clone && clonePrefix == null) {
                 clonePrefix = p.trim();
             }
         }
