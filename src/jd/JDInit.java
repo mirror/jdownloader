@@ -414,6 +414,7 @@ public class JDInit {
         Object obj = JDUtilities.getDatabaseConnector().getData("jdownloaderconfig");
 
         if (obj == null) {
+            System.out.println("Fresh install?");
             File file = JDUtilities.getResourceFile(JDUtilities.CONFIG_PATH);
             if (file.exists()) {
                 logger.info("Wrapping jdownloader.config");

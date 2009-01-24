@@ -25,6 +25,20 @@ public class JDUpdateUtils {
 
     private static Integer lock = 1;
 
+    private static void updateLists_ParseZip(ByteBuffer updateLists_Internal) throws IOException {
+        ZipInputStream ZipStream = new ZipInputStream(InputStreamfromByteBuffer(updateLists_Internal));
+        ZipEntry ze = null;
+        synchronized (lock) {
+            while ((ze = ZipStream.getNextEntry()) != null) {
+                if (ze.getName().equalsIgnoreCase("hashlist.lst")) {
+                    updatelist = readfromZip(ZipStream);
+                } else if (ze.getName().equalsIgnoreCase("addonlist.lst")) {
+                    addonlist = readfromZip(ZipStream);
+                }
+            }
+        }
+    }
+
     private static synchronized void updateLists_Internal() {
         if (System.currentTimeMillis() - last_updateLists_Internal < interval_updateLists_Internal) return;
         String newhash = null;
@@ -39,49 +53,35 @@ public class JDUpdateUtils {
             e.printStackTrace();
             System.out.println("Could not fetch Update Hash!");
         }
+        /* mal schaun ob wir eine Update.zip in der ConfigFile habe */
+        if (newhash != null && oldhash == null) {
+            ByteBuffer updateList_cached = ByteArraytoByteBuffer((byte[]) SubConfiguration.getSubConfig("WEBUPDATE").getProperty("update.zip", null));
+            if (updateList_cached != null) {
+                System.out.println("Fetch UpdateList from ConfigFile");
+                try {
+                    updateLists_ParseZip(updateList_cached.duplicate());
+                    oldhash = getMD5fromByteBuffer(updateList_cached.duplicate());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.out.println("Could not fetch UpdateList from ConfigFile");
+                }
+            }
+        }
+        /* Sind die Hashes gleich */
         if (oldhash != null && newhash != null && oldhash.equalsIgnoreCase(newhash)) {
             System.out.println("Update Hash has not changed! No need to fetch new UpdateList!");
             last_updateLists_Internal = System.currentTimeMillis();
             return;
         }
         /* update.zip holen */
-        System.out.println("Fetch UpdateList");
+        System.out.println("Fetch UpdateList from Server");
         try {
-            ByteBuffer updateLists_Internal = download(listpath + "update.zip", -1);
-            ZipInputStream ZipStream = new ZipInputStream(InputStreamfromByteBuffer(updateLists_Internal.duplicate()));
-            ZipEntry ze = null;
-            synchronized (lock) {
-                while ((ze = ZipStream.getNextEntry()) != null) {
-                    if (ze.getName().equalsIgnoreCase("hashlist.lst")) {
-                        updatelist = readfromZip(ZipStream);
-                    } else if (ze.getName().equalsIgnoreCase("addonlist.lst")) {
-                        addonlist = readfromZip(ZipStream);
-                    }
-                }
-            }
-            try {
-                MessageDigest md;
-                md = MessageDigest.getInstance("md5");
-                byte[] b = new byte[1024];
-                InputStream in = InputStreamfromByteBuffer(updateLists_Internal.duplicate());
-                for (int n = 0; (n = in.read(b)) > -1;) {
-                    md.update(b, 0, n);
-                }
-                byte[] digest = md.digest();
-                String ret = "";
-                for (byte element : digest) {
-                    String tmp = Integer.toHexString(element & 0xFF);
-                    if (tmp.length() < 2) {
-                        tmp = "0" + tmp;
-                    }
-                    ret += tmp;
-                }
-                oldhash = ret.trim();
-            } catch (Exception e3) {
-                e3.printStackTrace();
-                System.out.println("Could not create Hash for UpdateList");
-            }
-        } catch (IOException e) {
+            ByteBuffer updateList_downloaded = download(listpath + "update.zip", -1);
+            updateLists_ParseZip(updateList_downloaded.duplicate());
+            SubConfiguration.getSubConfig("WEBUPDATE").setProperty("update.zip", ByteBuffertoByteArray(updateList_downloaded.duplicate()));
+            SubConfiguration.getSubConfig("WEBUPDATE").save();
+            oldhash = getMD5fromByteBuffer(updateList_downloaded.duplicate());
+        } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Could not fetch UpdateList");
             last_updateLists_Internal = System.currentTimeMillis();
@@ -89,6 +89,49 @@ public class JDUpdateUtils {
         }
         last_updateLists_Internal = System.currentTimeMillis();
         System.out.println("UpdateList: ok!");
+    }
+
+    private static byte[] ByteBuffertoByteArray(ByteBuffer buffer) {
+        if (buffer == null) return null;
+        byte[] b = new byte[buffer.limit()];
+        buffer.get(b);
+        return b;
+    }
+
+    private static ByteBuffer ByteArraytoByteBuffer(byte[] b) {
+        if (b == null) return null;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(b.length);
+        buffer.put(b);
+        buffer.flip();
+        return buffer;
+    }
+
+    private static String getMD5fromByteBuffer(ByteBuffer buffer) {
+        if (buffer == null) return null;
+        String md5 = null;
+        try {
+            MessageDigest md;
+            md = MessageDigest.getInstance("md5");
+            byte[] b = new byte[1024];
+            InputStream in = InputStreamfromByteBuffer(buffer);
+            for (int n = 0; (n = in.read(b)) > -1;) {
+                md.update(b, 0, n);
+            }
+            byte[] digest = md.digest();
+            String ret = "";
+            for (byte element : digest) {
+                String tmp = Integer.toHexString(element & 0xFF);
+                if (tmp.length() < 2) {
+                    tmp = "0" + tmp;
+                }
+                ret += tmp;
+            }
+            md5 = ret.trim();
+        } catch (Exception e3) {
+            e3.printStackTrace();
+            System.out.println("Could not create Hash");
+        }
+        return md5;
     }
 
     public static String get_AddonList() {
