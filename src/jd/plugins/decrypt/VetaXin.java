@@ -45,11 +45,22 @@ public class VetaXin extends PluginForDecrypt {
         br.getPage(parameter);
         if (parameter.matches(patternSupported_Download)) {
             String links[] = br.getRegex(Pattern.compile("<input name=\"feld.*?\" value=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getColumn(0);
-            if (links == null) { return null; }
-            progress.setRange(links.length);
-            for (String element : links) {
-                decryptedLinks.add(createDownloadlink(element));
-                progress.increase(1);
+            if (links != null) {
+                progress.setRange(links.length);
+                for (String element : links) {
+                    decryptedLinks.add(createDownloadlink(element));
+                    progress.increase(1);
+                }
+            }
+            if (decryptedLinks.size() == 0) {
+                links = br.getRegex(Pattern.compile("target=_blank href=(.*?)style", Pattern.CASE_INSENSITIVE)).getColumn(0);
+                if (links != null) {
+                    progress.setRange(links.length);
+                    for (String element : links) {
+                        decryptedLinks.add(createDownloadlink(element.trim()));
+                        progress.increase(1);
+                    }
+                }
             }
         } else {
             String pw = br.getRegex(Pattern.compile("<strong>Passwort:</strong></td>.*?<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);

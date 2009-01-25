@@ -42,7 +42,6 @@ import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
-import jd.http.JDProxy;
 import jd.http.PostRequest;
 import jd.http.Request;
 import jd.nutils.JDHash;

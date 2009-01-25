@@ -24,7 +24,6 @@ import java.util.regex.Pattern;
 import jd.PluginPattern;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;

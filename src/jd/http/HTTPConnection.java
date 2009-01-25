@@ -32,9 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import jd.config.Configuration;
 import jd.parser.Regex;
-import jd.utils.JDUtilities;
 
 public class HTTPConnection {
 

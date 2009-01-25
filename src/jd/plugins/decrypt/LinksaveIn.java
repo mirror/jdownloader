@@ -17,13 +17,10 @@
 package jd.plugins.decrypt;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
-import jd.http.HTTPConnection;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;

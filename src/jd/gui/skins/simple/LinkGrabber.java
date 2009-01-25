@@ -34,6 +34,8 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -105,6 +107,33 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener, WindowListener {
+
+    class AutoSelectTextField extends JTextField implements FocusListener {
+        /**
+         * 
+         */
+        private static final long serialVersionUID = -4013847546677327448L;
+
+        AutoSelectTextField(String text) {
+            super(text);
+            addFocusListener(this);
+        }
+
+        AutoSelectTextField() {
+            super();
+            addFocusListener(this);
+        }
+
+        public void focusLost(FocusEvent fe) {
+        }
+
+        public void focusGained(FocusEvent fe) {
+            setCaretPosition(0);
+            if (getText() != null) {
+                moveCaretPosition(getText().length());
+            }
+        }
+    }
 
     /**
      * 
@@ -238,7 +267,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private JTextField txtComment;
 
-        private JTextField txtName;
+        private AutoSelectTextField txtName;
 
         private JTextField txtPassword;
 
@@ -365,7 +394,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private void buildGui() {
             setLayout(new GridBagLayout());
 
-            txtName = new JTextField();
+            txtName = new AutoSelectTextField();
             txtPassword = new JTextField();
             txtComment = new JTextField();
 
