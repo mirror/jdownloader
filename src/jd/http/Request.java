@@ -95,7 +95,7 @@ public abstract class Request {
     private long requestTime = -1;
 
     private URL url;
-    private Proxy proxy;
+    private JDProxy proxy;
 
     public Request(String url) throws MalformedURLException {
 
@@ -109,12 +109,12 @@ public abstract class Request {
 
     }
 
-    public void setProxy(Proxy proxy) {
+    public void setProxy(JDProxy proxy) {
         this.proxy = proxy;
 
     }
 
-    public Proxy getProxy() {
+    public JDProxy getProxy() {
         return proxy;
     }
 

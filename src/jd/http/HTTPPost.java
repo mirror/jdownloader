@@ -104,7 +104,7 @@ public class HTTPPost {
     private boolean upload = false;
     private URL url;
 
-    private Proxy proxy;
+    private JDProxy proxy;
 
     public HTTPPost(String urlString, boolean followRedirects) {
         boundary = "--------------------" + Long.toString(System.currentTimeMillis(), 16);
@@ -555,12 +555,12 @@ public class HTTPPost {
         }
     }
 
-    public void setProxy(Proxy proxy) {
+    public void setProxy(JDProxy proxy) {
         this.proxy = proxy;
 
     }
 
-    public Proxy getProxy() {
+    public JDProxy getProxy() {
         return proxy;
     }
 

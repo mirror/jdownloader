@@ -241,7 +241,7 @@ public class Browser {
     private Request request;
     private boolean snifferDetection = false;
     private boolean cookiesExclusive = true;
-    private Proxy proxy;
+    private JDProxy proxy;
 
     public Browser() {
 
@@ -1414,11 +1414,11 @@ public class Browser {
         return dl;
     }
 
-    public void setProxy(Proxy proxy) {
+    public void setProxy(JDProxy proxy) {
         this.proxy = proxy;
     }
 
-    public Proxy getProxy() {
+    public JDProxy getProxy() {
         return proxy;
     }
 
