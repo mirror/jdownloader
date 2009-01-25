@@ -49,6 +49,7 @@ public class MySpaceCom extends PluginForHost {
             urlConnection.disconnect();
             return false;
         }
+      
         downloadLink.setDownloadSize(urlConnection.getContentLength());
         urlConnection.disconnect();
         return true;
@@ -76,5 +77,9 @@ public class MySpaceCom extends PluginForHost {
         dl = RAFDownload.download(downloadLink, br.createRequest(getDownloadUrl(downloadLink)), true, 0);
 
         dl.startDownload();
+    }
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return 20;
     }
 }
