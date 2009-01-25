@@ -88,8 +88,7 @@ public abstract class Request {
     private HashMap<String, String> headers;
     private String htmlCode;
     protected HTTPConnection httpConnection;
-    private String proxyip;
-    private String proxyport;
+ 
     private long readTime = -1;
     private int readTimeout;
     private boolean requested = false;
@@ -442,9 +441,10 @@ public abstract class Request {
         long tima = System.currentTimeMillis();
         // der aufruf ist ohne proxy
         // der hier mit proxy..
-        // da könnte man sich mal schlauch machen.. welche proxy typen da
-        // unterstützt werden
+        // da kï¿½nnte man sich mal schlauch machen.. welche proxy typen da
+        // unterstï¿½tzt werden
         if (proxy != null) {
+          
             httpConnection = new HTTPConnection(url.openConnection(proxy));
 
         } else {
@@ -518,21 +518,15 @@ public abstract class Request {
         this.followRedirects = followRedirects;
     }
 
-    public void setProxy(String ip, String port) throws NumberFormatException, MalformedURLException {
-        proxyip = ip;
-        proxyport = port;
-        if (ip == null || port == null) return;
-        url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
+//    public void setProxy(String ip, String port) throws NumberFormatException, MalformedURLException {
+//        proxyip = ip;
+//        proxyport = port;
+//        if (ip == null || port == null) return;
+//        url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
+//
+//    }
 
-    }
-
-    public String getProxyip() {
-        return proxyip;
-    }
-
-    public String getProxyport() {
-        return proxyport;
-    }
+ 
 
     public void setReadTimeout(int readTimeout) {
         this.readTimeout = readTimeout;
@@ -571,7 +565,7 @@ public abstract class Request {
         ret.cookies = (ArrayList<Cookie>) this.getCookies().clone();
         ret.followRedirects = this.followRedirects;
         ret.headers = (HashMap<String, String>) this.getHeaders().clone();
-        ret.setProxy(proxyip, proxyport);
+        ret.setProxy(proxy);
         ret.readTime = this.readTimeout;
 
         ret.httpConnection = this.httpConnection;
