@@ -38,11 +38,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import jd.plugins.PluginForPasswordProtectedHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class Megauploadcom extends PluginForHost {
+public class Megauploadcom extends PluginForPasswordProtectedHost {
 
     static private final String ERROR_FILENOTFOUND = "Die Datei konnte leider nicht gefunden werden";
 
