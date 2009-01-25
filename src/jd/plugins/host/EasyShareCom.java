@@ -10,6 +10,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookie;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,14 +35,13 @@ public class EasyShareCom extends PluginForHost {
     }
 
     private void login(Account account) throws IOException, PluginException {
-
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.easy-share.com/");
         br.setDebug(true);
         Form login = br.getForm(0);
-        login.put("login", account.getUser());
-        login.put("password", account.getPass());
+        login.put("login", Encoding.urlEncode(account.getUser()));
+        login.put("password", Encoding.urlEncode(account.getPass()));
         login.action = "http://www.easy-share.com/accounts/login";
 
         br.submitForm(login);
@@ -55,10 +55,9 @@ public class EasyShareCom extends PluginForHost {
     }
 
     private Date isexpired(Account account) throws MalformedURLException, PluginException {
-      
         HashMap<String, Cookie> cookies = br.getCookies().get("easy-share.com");
         Cookie premstatus = cookies.get("PREMIUMSTATUS");
-        if (premstatus == null||!premstatus.getValue().equalsIgnoreCase("ACTIVE")) {
+        if (premstatus == null || !premstatus.getValue().equalsIgnoreCase("ACTIVE")) {
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
@@ -81,7 +80,6 @@ public class EasyShareCom extends PluginForHost {
             ai.setExpired(true);
             return ai;
         }
-
         return ai;
     }
 

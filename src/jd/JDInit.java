@@ -551,14 +551,9 @@ public class JDInit {
     }
 
     public void loadPluginForDecrypt() {
-    	
-    	
-    	
-    	
-       
-    	new DecryptPluginWrapper("linkmize.com", "LinkMizeCom", "http://[\\w\\.]*?linkmize\\.com\\/.+");
-        
-    	
+
+        new DecryptPluginWrapper("linkmize.com", "LinkMizeCom", "http://[\\w\\.]*?linkmize\\.com\\/.+");
+
         new DecryptPluginWrapper("charts4you.org", "Charts4You", "http://[\\w\\.]*?charts4you\\.org\\/\\?id=\\d+");
         new DecryptPluginWrapper("alpha-link.eu", "AlphaLink", "http://[\\w\\.]*?alpha\\-link\\.eu\\/\\?id=[a-fA-F0-9]+");
         new DecryptPluginWrapper("protectbox.in", "ProtectBoxIn", "http://[\\w\\.]*?protectbox\\.in\\/\\?id=[a-fA-F0-9]+");
@@ -783,11 +778,10 @@ public class JDInit {
         new HostPluginWrapper("dl.free.fr", "DlFreeFr", "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[a-zA-Z0-9]+|[a-zA-Z0-9]+/?)");
         new HostPluginWrapper("dosyakaydet.com", "DosyakaydetCom", "http://[\\w\\.]*?dosyakaydet\\.com/(download/[a-zA-Z0-9]+/?|index/p_download/hash_[a-zA-Z0-9]+/)");
         new HostPluginWrapper("egoshare.com", "EgoshareCom", "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[a-zA-Z0-9]+");
-        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy\\-share\\.com/(\\d+\\.html|\\d+/.+)", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/(\\d+\\.html|\\d+/.+)", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("speedshare.org", "SpeedShareOrg", "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[a-zA-Z0-9]+");
         new HostPluginWrapper("vimeo.com", "VimeoCom", "http://[\\w\\.]*?vimeo\\.com/[0-9]+");
         new HostPluginWrapper("self-load.com", "SelfLoadCom", "http://[\\w\\.]*?self-load\\.com/\\d+/.+");
-        //http://www.easy-share.com/1903391146/httrack-3.43-2.exe
         new HostPluginWrapper("plikus.pl", "PlikusPl", "http://[\\w\\.]*?plikus\\.pl/zobacz_plik-.*?-\\d+\\.html");
         new HostPluginWrapper("uploading.com", "UploadingCom", "http://[\\w\\.]*?uploading\\.com/files/.*?/.+");
         new HostPluginWrapper("kewlshare.com", "KewlshareCom", "http://[\\w\\.]*?kewlshare\\.com/dl/[a-zA-Z0-9]+/.*");
@@ -801,8 +795,6 @@ public class JDInit {
         // new HostPluginWrapper("remixshare.com","RemixshareCom",
         // "http://[\\w\\.]*?remixshare\\.com/\\?file=[0-9a-zA-Z]+");
         new HostPluginWrapper("speedyshare.com", "SpeedyShareCom", "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*");
-
-        // http://www.badongo.com/file/13014704
         new HostPluginWrapper("fileshaker.com", "FileshakerCom", "http://[\\w\\.]*?fileshaker\\.com/.+");
     }
 
