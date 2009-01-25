@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.Scanner;
 import java.util.logging.Logger;
@@ -43,7 +44,6 @@ public class HTTPPost {
      * Deliminator für post parameter
      */
     private String boundary = "-----------------------------333227e09c";
-    
 
     /**
      * Gibt an ob eine Veribindung aufgebaut ist.
@@ -104,8 +104,10 @@ public class HTTPPost {
     private boolean upload = false;
     private URL url;
 
+    private Proxy proxy;
+
     public HTTPPost(String urlString, boolean followRedirects) {
-        boundary="--------------------" + Long.toString(System.currentTimeMillis(), 16);
+        boundary = "--------------------" + Long.toString(System.currentTimeMillis(), 16);
         URL u;
         try {
             logger.info(urlString);
@@ -121,9 +123,16 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(followRedirects);
             url = u;
             logger.fine("POST " + url);
-            connection = new HTTPConnection(url.openConnection());
+            if (proxy != null) {
+                connection = new HTTPConnection(url.openConnection(proxy));
+
+            } else {
+                connection = new HTTPConnection(url.openConnection());
+
+            }
             connection.setRequestMethod("POST");
-            // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
+            // Wird wieder zurückgestellt weil der Static Wert beim
+            // instanzieren
             // in die INstanz übernommen wird
             HttpURLConnection.setFollowRedirects(follow);
 
@@ -157,9 +166,14 @@ public class HTTPPost {
             HttpURLConnection.setFollowRedirects(followRedirects);
             url = new URL("http://" + ip + ":" + port + path + query);
             logger.fine("POST " + url);
-            connection = new HTTPConnection(url.openConnection());
+            if (proxy != null) {
+                connection = new HTTPConnection(url.openConnection(proxy));
+            } else {
+                connection = new HTTPConnection(url.openConnection());
+            }
             connection.setRequestMethod("POST");
-            // Wird wieder zurückgestellt weil der Static Wert beim instanzieren
+            // Wird wieder zurückgestellt weil der Static Wert beim
+            // instanzieren
             // in die INstanz übernommen wird
             HttpURLConnection.setFollowRedirects(follow);
 
@@ -303,8 +317,6 @@ public class HTTPPost {
     public int getReadTimeout() {
         return readTimeout;
     }
-
-
 
     /**
      * @return the requestTimeout
@@ -541,6 +553,15 @@ public class HTTPPost {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setProxy(Proxy proxy) {
+        this.proxy = proxy;
+
+    }
+
+    public Proxy getProxy() {
+        return proxy;
     }
 
 }

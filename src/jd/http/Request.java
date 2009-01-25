@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -95,6 +96,7 @@ public abstract class Request {
     private long requestTime = -1;
 
     private URL url;
+    private Proxy proxy;
 
     public Request(String url) throws MalformedURLException {
 
@@ -106,6 +108,15 @@ public abstract class Request {
 
         initDefaultHeader();
 
+    }
+
+    public void setProxy(Proxy proxy) {
+        this.proxy = proxy;
+
+    }
+
+    public Proxy getProxy() {
+        return proxy;
     }
 
     public String printHeaders() {
@@ -429,7 +440,17 @@ public abstract class Request {
     public void openConnection() throws IOException {
 
         long tima = System.currentTimeMillis();
-        httpConnection = new HTTPConnection(url.openConnection());
+        // der aufruf ist ohne proxy
+        // der hier mit proxy..
+        // da könnte man sich mal schlauch machen.. welche proxy typen da
+        // unterstützt werden
+        if (proxy != null) {
+            httpConnection = new HTTPConnection(url.openConnection(proxy));
+
+        } else {
+            httpConnection = new HTTPConnection(url.openConnection());
+
+        }
         httpConnection.setInstanceFollowRedirects(followRedirects);
         requestTime = System.currentTimeMillis() - tima;
         httpConnection.setReadTimeout(readTimeout);

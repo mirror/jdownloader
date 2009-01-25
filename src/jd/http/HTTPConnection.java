@@ -85,6 +85,7 @@ public class HTTPConnection {
     public void connect() throws IOException {
         this.connected = true;
         connection.connect();
+        
 
     }
 

@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -240,6 +241,7 @@ public class Browser {
     private Request request;
     private boolean snifferDetection = false;
     private boolean cookiesExclusive = true;
+    private Proxy proxy;
 
     public Browser() {
 
@@ -308,6 +310,7 @@ public class Browser {
             // throw new SnifferException();
         }
         GetRequest request = new GetRequest(string);
+        if(proxy!=null)request.setProxy(proxy);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         doAuth(request);
         // request.setFollowRedirects(doRedirects);
@@ -475,6 +478,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest(string);
+        if(proxy!=null)request.setProxy(proxy);
         doAuth(request);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -516,6 +520,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest(string);
+        if(proxy!=null)request.setProxy(proxy);
         doAuth(request);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
@@ -552,6 +557,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         GetRequest request = new GetRequest(string);
+        if(proxy!=null)request.setProxy(proxy);
         request.setCookies(oldrequest.getCookies());
         doAuth(request);
         if (connectTimeout > 0) {
@@ -610,6 +616,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
+        if(proxy!=null)request.setProxy(proxy);
         doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
@@ -653,6 +660,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
+        if(proxy!=null)request.setProxy(proxy);
         request.setCookies(oldrequest.getCookies());
         doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -686,6 +694,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
+        if(proxy!=null)request.setProxy(proxy);
         doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
@@ -728,6 +737,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
+        if(proxy!=null)request.setProxy(proxy);
         doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
@@ -783,6 +793,7 @@ public class Browser {
             // throw new IOException("Sniffer found");
         }
         PostRequest request = new PostRequest(url);
+        if(proxy!=null)request.setProxy(proxy);
         doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
@@ -912,6 +923,7 @@ public class Browser {
         case Form.METHOD_FILEPOST:
 
             HTTPPost up = new HTTPPost(action, doRedirects);
+            if(proxy!=null)up.setProxy(proxy);
             up.doUpload();
 
             up.getConnection().setRequestProperty("Accept", "*/*");
@@ -947,6 +959,7 @@ public class Browser {
                 }
 
             };
+            if(proxy!=null)request.setProxy(proxy);
             if (request.getHeaders() != null && headers != null) {
                 request.getHeaders().putAll(headers);
             }
@@ -1400,10 +1413,20 @@ public class Browser {
         }
         return dl;
     }
-/**
- * Zeigt debuginformationen auch im Hauptprogramm an
- * @param b
- */
+
+    public void setProxy(Proxy proxy) {
+        this.proxy = proxy;
+    }
+
+    public Proxy getProxy() {
+        return proxy;
+    }
+
+    /**
+     * Zeigt debuginformationen auch im Hauptprogramm an
+     * 
+     * @param b
+     */
     public void forceDebug(boolean b) {
         this.debug = b;
 
