@@ -499,7 +499,6 @@ public abstract class Request {
             htmlCode.append(line + "\r\n");
         }
         rd.close();
-
         return htmlCode.toString();
     }
 

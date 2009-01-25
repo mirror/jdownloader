@@ -182,7 +182,7 @@ public class Netloadin extends PluginForHost {
 
     private void checkPassword(DownloadLink downloadLink) throws IOException, PluginException, InterruptedException {
         if (!br.containsHTML("download_password")) return;
-        String pass = downloadLink.getStringProperty("LINK_PASSWORD", LINK_PASS);
+        String pass = downloadLink.getStringProperty("pass", LINK_PASS);
 
         // falls das pw schon gesetzt und gespeichert wurde.. versucht er es
         // damit
@@ -206,7 +206,7 @@ public class Netloadin extends PluginForHost {
         }
         // richtiges pw... wird gesoeichert
         if (pass != null) {
-            downloadLink.setProperty("LINK_PASSWORD", pass);
+            downloadLink.setProperty("pass", pass);
             LINK_PASS = pass;
         }
     }

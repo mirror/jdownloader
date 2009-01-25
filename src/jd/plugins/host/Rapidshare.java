@@ -73,9 +73,9 @@ public class Rapidshare extends PluginForHost {
 
     private static final Pattern PATTERN_FIND_DOWNLOAD_POST_URL = Pattern.compile("<form name=\"dl[f]?\" action=\"(.*?)\" method=\"post\"");
 
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?download the following file:.*?<p>(.*?)<", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?herunterladen:.*?<p>(.*?)<", Pattern.DOTALL);
 
-    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p.*?>(.*?)<", Pattern.DOTALL);
+    private static final Pattern PATTERN_FIND_ERROR_MESSAGE_1 = Pattern.compile("<h1>Fehler</h1>.*?<div class=\"klappbox\">.*?<p>(.*?)<", Pattern.DOTALL);
 
     private static final Pattern PATTERN_FIND_ERROR_MESSAGE_2 = Pattern.compile("<!-- E#[\\d]{1,2} -->(.*?)<", Pattern.DOTALL);
 
@@ -88,8 +88,6 @@ public class Rapidshare extends PluginForHost {
     private static final Pattern PATTERN_FIND_PRESELECTED_SERVER = Pattern.compile("<form name=\"dlf?\" action=\"(.*?)\" method=\"post\">");
 
     private static final Pattern PATTERN_FIND_TICKET_WAITTIME = Pattern.compile("var c=([\\d]*?);");
-
-    private static final Pattern PATTERN_MATCHER_TOO_MANY_USERS = Pattern.compile("(in 2 Minuten)");
 
     private static final String PROPERTY_INCREASE_TICKET = "INCREASE_TICKET";
 
@@ -134,7 +132,6 @@ public class Rapidshare extends PluginForHost {
 
     public Rapidshare(PluginWrapper wrapper) {
         super(wrapper);
-
         serverMap.put("Cogent", "cg");
         serverMap.put("Cogent #2", "cg2");
         serverMap.put("Deutsche Telekom", "dt");
@@ -275,7 +272,7 @@ public class Rapidshare extends PluginForHost {
         // req.load();
         br.getPage(link);
         if (br.getRedirectLocation() != null) {
-            logger.info("Direct Download");
+            logger.info("Direct Download for Free Users");
             this.handlePremium(downloadLink, new Account("dummy", "dummy"));
             return;
         }
@@ -300,6 +297,7 @@ public class Rapidshare extends PluginForHost {
         String error = null;
 
         if ((error = findError(br + "")) != null) {
+            if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000l); }
             if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
             if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             // für java 1.5
@@ -322,12 +320,7 @@ public class Rapidshare extends PluginForHost {
         }
 
         // Fehlersuche
-        if (Regex.matches(br, PATTERN_MATCHER_TOO_MANY_USERS)) {
-            logger.warning("Too many users are currently downloading this file. Wait 2 Minutes and try again");
-            {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l);
-            }
-        } else if (new Regex(br, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
+        if (new Regex(br, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
             logger.severe("Already downloading. Wait 2 min. or reconnect");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 120 * 1000l);
         } else if ((error = findError(br + "")) != null) {
@@ -360,7 +353,7 @@ public class Rapidshare extends PluginForHost {
         if (ticketCode.contains("Leider sind derzeit keine freien Slots ")) {
             downloadLink.getLinkStatus().setStatusText("All free slots in use: try to download again after 2 minutes");
             logger.warning("All free slots in use: try to download again after 2 minutes");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120000);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000);
         }
         if (new Regex(ticketCode, ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches()) {
             String waitfor = new Regex(ticketCode, "Or try again in about(.*?)minutes").getMatch(0);

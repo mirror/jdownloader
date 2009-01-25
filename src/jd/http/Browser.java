@@ -358,7 +358,10 @@ public class Browser {
 
     private void checkContentLengthLimit(Request request) throws BrowserException {
         if (request == null || request.getHttpConnection() == null || request.getHttpConnection().getHeaderField("Content-Length") == null) return;
-        if (Integer.parseInt(request.getHttpConnection().getHeaderField("Content-Length")) > limit) throw new BrowserException("Content-length too big");
+        if (Long.parseLong(request.getHttpConnection().getHeaderField("Content-Length")) > limit) {
+            JDUtilities.getLogger().severe(request.getHttpConnection().toString());
+            throw new BrowserException("Content-length too big");
+        }
     }
 
     public int getReadTimeout() {

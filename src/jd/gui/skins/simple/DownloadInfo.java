@@ -225,6 +225,14 @@ public class DownloadInfo extends JFrame implements ChangeListener {
             removeEntry("pass");
         }
 
+        if (downloadLink.getStringProperty("pass", null) != null) {
+            JTextField pw = new JTextField(downloadLink.getStringProperty("pass", null));
+            pw.setEditable(false);
+            addEntry("pwdl", JDLocale.L("gui.linkinfo.pwdl", "Password for download"), pw);
+        } else {
+            removeEntry("pwdl");
+        }
+
         if (downloadLink.getFilePackage() != null && downloadLink.getFilePackage().hasComment()) {
             JTextField comment = new JTextField(downloadLink.getFilePackage().getComment());
             comment.setEditable(false);
