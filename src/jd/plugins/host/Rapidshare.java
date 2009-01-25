@@ -300,7 +300,7 @@ public class Rapidshare extends PluginForHost {
         String error = null;
 
         if ((error = findError(br + "")) != null) {
-            if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120 * 1000l); }
+            if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
             if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             // für java 1.5
             if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
@@ -324,7 +324,9 @@ public class Rapidshare extends PluginForHost {
         // Fehlersuche
         if (Regex.matches(br, PATTERN_MATCHER_TOO_MANY_USERS)) {
             logger.warning("Too many users are currently downloading this file. Wait 2 Minutes and try again");
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120 * 1000l);
+            {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l);
+            }
         } else if (new Regex(br, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
             logger.severe("Already downloading. Wait 2 min. or reconnect");
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 120 * 1000l);
@@ -385,7 +387,7 @@ public class Rapidshare extends PluginForHost {
         waitTicketTime(downloadLink, pendingTime);
 
         String postTarget = getDownloadTarget(downloadLink, ticketCode);
-System.out.println(postTarget);
+        System.out.println(postTarget);
         // Falls Serverauswahl fehlerhaft war
         if (linkStatus.isFailed()) return;
 
@@ -399,31 +401,31 @@ System.out.println(postTarget);
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
-        downloadLink.setProperty("REQUEST_TIME",(System.currentTimeMillis()-startTime));
+        downloadLink.setProperty("REQUEST_TIME", (System.currentTimeMillis() - startTime));
         dl.startDownload();
-        downloadLink.setProperty("DOWNLOAD_TIME",(System.currentTimeMillis()-startTime));
-        int dif = (int)((System.currentTimeMillis()-startTime)/1000);
-        if(dif>0)  downloadLink.setProperty("DOWNLOAD_SPEED",(downloadLink.getDownloadSize()/dif)/1024);
-        if(downloadLink.getStringProperty("USE_SERVER")!=null){
+        downloadLink.setProperty("DOWNLOAD_TIME", (System.currentTimeMillis() - startTime));
+        int dif = (int) ((System.currentTimeMillis() - startTime) / 1000);
+        if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED", (downloadLink.getDownloadSize() / dif) / 1024);
+        if (downloadLink.getStringProperty("USE_SERVER") != null) {
             new File(downloadLink.getFileOutput()).delete();
-          downloadLink.getLinkStatus().setStatusText(" | SRV: "+ downloadLink.getStringProperty("USE_SERVER")+" Speed: "+downloadLink.getProperty("DOWNLOAD_SPEED")+" kb/s");
-          
-           ArrayList<DownloadLink> ret= new  ArrayList<DownloadLink>();
-           String msg="";
-           for(DownloadLink dLink:downloadLink.getFilePackage().getDownloadLinks()){
-               if(dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)){
-                   ret.add(dLink);
-                 
-                  msg+="Server: "+dLink.getStringProperty("USE_SERVER")+" : Speed: "+dLink.getProperty("DOWNLOAD_SPEED")+" kb/s\r\n";
-               }else  if(dLink.getLinkStatus().isFailed()){
-                   ret.add(dLink);
-                  
-                  msg+="Server: "+dLink.getStringProperty("USE_SERVER")+" not available\r\n";
-               }else{
-                   return;
-               }
-           }
-           TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), "Speedtest result", "Your speedtest results", msg); 
+            downloadLink.getLinkStatus().setStatusText(" | SRV: " + downloadLink.getStringProperty("USE_SERVER") + " Speed: " + downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
+
+            ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            String msg = "";
+            for (DownloadLink dLink : downloadLink.getFilePackage().getDownloadLinks()) {
+                if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    ret.add(dLink);
+
+                    msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
+                } else if (dLink.getLinkStatus().isFailed()) {
+                    ret.add(dLink);
+
+                    msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " not available\r\n";
+                } else {
+                    return;
+                }
+            }
+            TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), "Speedtest result", "Your speedtest results", msg);
         }
     }
 
@@ -461,7 +463,7 @@ System.out.println(postTarget);
                     account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120 * 1000l); }
+                if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
                 if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
                 if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
@@ -520,7 +522,7 @@ System.out.println(postTarget);
             dl.setResume(true);
             // Premiumdownloads erlauben chunkload
             dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-           
+
             urlConnection = dl.connect(br);
         }
         // Download starten
@@ -542,7 +544,7 @@ System.out.println(postTarget);
                     account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 120 * 1000l); }
+                if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
                 if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
                 if (Regex.matches(error, Pattern.compile("(expired|abgelaufen)"))) {
@@ -567,31 +569,31 @@ System.out.println(postTarget);
 
         }
 
-        downloadLink.setProperty("REQUEST_TIME",(System.currentTimeMillis()-startTime));
+        downloadLink.setProperty("REQUEST_TIME", (System.currentTimeMillis() - startTime));
         dl.startDownload();
-        downloadLink.setProperty("DOWNLOAD_TIME",(System.currentTimeMillis()-startTime));
-        int dif = (int)((System.currentTimeMillis()-startTime)/1000);
-        if(dif>0)  downloadLink.setProperty("DOWNLOAD_SPEED",(downloadLink.getDownloadSize()/dif)/1024);
-        if(downloadLink.getStringProperty("USE_SERVER")!=null){
+        downloadLink.setProperty("DOWNLOAD_TIME", (System.currentTimeMillis() - startTime));
+        int dif = (int) ((System.currentTimeMillis() - startTime) / 1000);
+        if (dif > 0) downloadLink.setProperty("DOWNLOAD_SPEED", (downloadLink.getDownloadSize() / dif) / 1024);
+        if (downloadLink.getStringProperty("USE_SERVER") != null) {
             new File(downloadLink.getFileOutput()).delete();
-          downloadLink.getLinkStatus().setStatusText(" | SRV: "+ downloadLink.getStringProperty("USE_SERVER")+" Speed: "+downloadLink.getProperty("DOWNLOAD_SPEED")+" kb/s");
-          
-           ArrayList<DownloadLink> ret= new  ArrayList<DownloadLink>();
-           String msg="";
-           for(DownloadLink dLink:downloadLink.getFilePackage().getDownloadLinks()){
-               if(dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)){
-                   ret.add(dLink);
-                 
-                  msg+="Server: "+dLink.getStringProperty("USE_SERVER")+" : Speed: "+dLink.getProperty("DOWNLOAD_SPEED")+" kb/s\r\n";
-               }else  if(dLink.getLinkStatus().isFailed()){
-                   ret.add(dLink);
-                  
-                  msg+="Server: "+dLink.getStringProperty("USE_SERVER")+" not available\r\n";
-               }else{
-                   return;
-               }
-           }
-           TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), "Speedtest result", "Your speedtest results", msg); 
+            downloadLink.getLinkStatus().setStatusText(" | SRV: " + downloadLink.getStringProperty("USE_SERVER") + " Speed: " + downloadLink.getProperty("DOWNLOAD_SPEED") + " kb/s");
+
+            ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            String msg = "";
+            for (DownloadLink dLink : downloadLink.getFilePackage().getDownloadLinks()) {
+                if (dLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    ret.add(dLink);
+
+                    msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " : Speed: " + dLink.getProperty("DOWNLOAD_SPEED") + " kb/s\r\n";
+                } else if (dLink.getLinkStatus().isFailed()) {
+                    ret.add(dLink);
+
+                    msg += "Server: " + dLink.getStringProperty("USE_SERVER") + " not available\r\n";
+                } else {
+                    return;
+                }
+            }
+            TextAreaDialog.showDialog(SimpleGUI.CURRENTGUI.getFrame(), "Speedtest result", "Your speedtest results", msg);
         }
 
     }
@@ -641,7 +643,7 @@ System.out.println(postTarget);
      * @param downloadLink
      * @param ticketCode
      * @return
-     * @throws PluginException 
+     * @throws PluginException
      */
     private String getDownloadTarget(DownloadLink downloadLink, String ticketCode) throws PluginException {
 
@@ -651,11 +653,11 @@ System.out.println(postTarget);
         String server2 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER2, "TeliaSonera");
         String server3 = getPluginConfig().getStringProperty(PROPERTY_SELECTED_SERVER3, "TeliaSonera");
         boolean serverTest = false;
-        if(downloadLink.getProperty("USE_SERVER")!=null){
-            serverTest=true;
-            server1=server2=server3= downloadLink.getStringProperty("USE_SERVER");
-            logger.finer("Speedtest detected. use Server: "+server1);
-            
+        if (downloadLink.getProperty("USE_SERVER") != null) {
+            serverTest = true;
+            server1 = server2 = server3 = downloadLink.getStringProperty("USE_SERVER");
+            logger.finer("Speedtest detected. use Server: " + server1);
+
         }
 
         String serverAbb = serverMap.get(server1);
@@ -689,10 +691,10 @@ System.out.println(postTarget);
         logger.info("wished Mirror #3 Server " + server3Abb);
         String selected = new Regex(ticketCode, PATTERN_FIND_PRESELECTED_SERVER).getMatch(0);
         logger.info("Preselected Server: " + selected.substring(0, 30));
-        if (preselected&&!serverTest) {
+        if (preselected && !serverTest) {
             logger.info("RS.com Use preselected : " + selected.substring(0, 30));
             postTarget = selected;
-        } else if (!serverTest&&telekom && ticketCode.indexOf("td.rapidshare.com") >= 0) {
+        } else if (!serverTest && telekom && ticketCode.indexOf("td.rapidshare.com") >= 0) {
             logger.info("RS.com Use Telekom Server");
             postTarget = getURL(serverstrings, "Deutsche Telekom", postTarget);
         } else if (ticketCode.indexOf(serverAbb + ".rapidshare.com") >= 0) {
@@ -706,18 +708,18 @@ System.out.println(postTarget);
             postTarget = getURL(serverstrings, getServerName(server3Abb), postTarget);
         } else if (serverstrings.length > 0) {
             logger.severe("Kein Server gefunden 1");
-            if(serverTest)throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND," Server not available");
+            if (serverTest) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, " Server not available");
         } else {
             logger.severe("Kein Server gefunden 2");
-            if(serverTest)throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND," Server not available");
+            if (serverTest) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, " Server not available");
         }
 
         return postTarget;
     }
-  
+
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) return false;
-      
+
         if (System.currentTimeMillis() - LAST_FILE_CHECK < 250) {
             try {
                 Thread.sleep(System.currentTimeMillis() - LAST_FILE_CHECK);
@@ -815,7 +817,7 @@ System.out.println(postTarget);
                 PackageData dat = all.get((int) (Math.random() * (all.size() - 1)));
                 String url = dat.getStringProperty("url");
                 String link = JDUtilities.getGUI().showUserInputDialog(JDLocale.L("plugins.host.rapidshare.speedtest.link", "Enter a Rapidshare.com Link"), url);
-                if(link==null)return;
+                if (link == null) return;
                 if (!canHandle(link)) {
                     link = url;
                 }
@@ -825,14 +827,14 @@ System.out.println(postTarget);
                     Entry<String, String> n = it.next();
                     DownloadLink dlink = new DownloadLink((PluginForHost) getWrapper().getNewPluginInstance(), link.substring(link.lastIndexOf("/") + 1), getHost(), link, true);
                     dlink.setProperty("USE_SERVER", n.getKey());
-                    dlink.setFinalFileName("Speedtest_svr_"+n.getKey()+".test");
+                    dlink.setFinalFileName("Speedtest_svr_" + n.getKey() + ".test");
                     dlink.setFilePackage(fp);
-                    dlink.getLinkStatus().setStatusText("Server: "+n.getKey());
-                   
+                    dlink.getLinkStatus().setStatusText("Server: " + n.getKey());
+
                 }
                 JDUtilities.getController().addPackageAt(fp, 0);
                 JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-                
+
             }
 
         }, JDLocale.L("plugins.host.rapidshare.speedtest", "SpeedTest")));

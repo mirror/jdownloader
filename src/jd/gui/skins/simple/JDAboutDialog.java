@@ -82,8 +82,8 @@ public class JDAboutDialog {
         // space. This improves the way the entries look in the table
         // (without fiddleing with the tablecellrenderer)
 
-        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins and Support,Bugfixing" }, { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" }, { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" }, { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
-                { " Execute", " ---", " hoster, decrypter, addons, ..." }, { " gocsp", "gocsp@jdownloader.org", " Mac Developer" }, { " DellCapone", " ---", " Bugsearch " },
+        String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" }, { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" }, { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" }, { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
+                { " Execute", " ---", " hoster, decrypter, addons, ..." }, { " gocsp", "gocsp@jdownloader.org", " Mac Developer" },
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
 
@@ -95,11 +95,11 @@ public class JDAboutDialog {
         JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel();
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl","http://www.jdownloader.org/home?lng=en"))));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en"))));
         links.add(new JSeparator());
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl","http://www.the-lounge.org/viewforum.php?f=340"))));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://www.the-lounge.org/viewforum.php?f=340"))));
         links.add(new JSeparator());
-        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl","http://www.jdownloader.org/support?lng=en"))));
+        links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en"))));
 
         JPanel s = new JPanel(new BorderLayout(n, n));
         s.add(new JScrollPane(table), BorderLayout.CENTER);
