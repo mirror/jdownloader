@@ -190,6 +190,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         setAutoscrolls(false);
         addTreeExpansionListener(this);
         addTreeSelectionListener(this);
+        setToggleClickCount(2);
         addMouseListener(this);
         addKeyListener(this);
         addMouseMotionListener(this);
@@ -798,10 +799,6 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         Point point = e.getPoint();
         int row = rowAtPoint(point);
 
-        if (!isRowSelected(row)) {
-            getTreeSelectionModel().clearSelection();
-            getTreeSelectionModel().addSelectionPath(getPathForRow(row));
-        }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
             if (getPathForRow(row) == null) { return; }

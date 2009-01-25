@@ -37,7 +37,7 @@ public class DownloadLinksTreeTablePanel extends DownloadLinksView {
 
     public DownloadLinksTreeTablePanel(SimpleGUI parent) {
         super(parent, new BorderLayout());
-        setVisible(false);
+        setVisible(false);        
         internalTreeTable = new DownloadTreeTable(new DownloadTreeTableModel(this));
         JScrollPane scrollPane = new JScrollPane(internalTreeTable);
         scrollPane.setPreferredSize(new Dimension(800, 450));
