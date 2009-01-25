@@ -55,9 +55,10 @@ public class EasyShareCom extends PluginForHost {
     }
 
     private Date isexpired(Account account) throws MalformedURLException, PluginException {
+      
         HashMap<String, Cookie> cookies = br.getCookies().get("easy-share.com");
         Cookie premstatus = cookies.get("PREMIUMSTATUS");
-        if (premstatus == null) {
+        if (premstatus == null||!premstatus.getValue().equalsIgnoreCase("ACTIVE")) {
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
