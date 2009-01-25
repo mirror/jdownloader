@@ -30,6 +30,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Encoding;
+
 import org.lobobrowser.html.io.WritableLineReader;
 import org.lobobrowser.html.js.Executor;
 import org.lobobrowser.html.test.SimpleUserAgentContext;
@@ -37,10 +40,6 @@ import org.lobobrowser.js.JavaFunctionObject;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.xml.sax.SAXException;
-
-import jd.http.Encoding;
-
-import jd.http.Cookie;
 
 public final class JavaScript {
     public String javaScript;
@@ -51,7 +50,8 @@ public final class JavaScript {
     private Context cx;
     private Scriptable scope;
     private Document d;
-    public JavaScript( Browser br) {
+
+    public JavaScript(Browser br) {
         this.br = br;
     }
 
@@ -86,101 +86,97 @@ public final class JavaScript {
     }
 
     private void runString(String data) throws IOException {
-        {
-            data = data.replaceAll("(?s)<!--.*?-->", "");
-            String url = br.getURL().toString();
-            String basename = "";
-            String host = "";
-            Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?base[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE), };
-            Matcher m;
-            for (Pattern element : basePattern) {
-                m = element.matcher(data);
-                if (m.find()) {
-                    url = Encoding.htmlDecode(m.group(1));
-                    break;
-                }
+        data = data.replaceAll("(?s)<!--.*?-->", "");
+        String url = br.getURL().toString();
+        String basename = "";
+        String host = "";
+        Pattern[] basePattern = new Pattern[] { Pattern.compile("(?s)<[ ]?base[^>]*?href='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile("(?s)<[ ]?base[^>]*?href=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE), };
+        Matcher m;
+        for (Pattern element : basePattern) {
+            m = element.matcher(data);
+            if (m.find()) {
+                url = Encoding.htmlDecode(m.group(1));
+                break;
             }
-            if (url != null) {
-                url = url.replace("http://", "");
-                int dot = url.lastIndexOf('/');
-                if (dot != -1) {
-                    basename = url.substring(0, dot + 1);
-                } else {
-                    basename = "http://" + url + "/";
-                }
-                dot = url.indexOf('/');
-                if (dot != -1) {
-                    host = "http://" + url.substring(0, dot);
-                } else {
-                    host = "http://" + url;
-                }
-                url = "http://" + url;
+        }
+        if (url != null) {
+            url = url.replace("http://", "");
+            int dot = url.lastIndexOf('/');
+            if (dot != -1) {
+                basename = url.substring(0, dot + 1);
             } else {
-                url = "";
+                basename = "http://" + url + "/";
             }
-            String[][] reg = new Regex(data, "<[ ]?script(.*?)(/>|>(.*?)<[ ]?/script>)").getMatches();
-            // buff.append("var document[];\r\n");
-            for (int i = 0; i < reg.length; i++) {
-                if (reg[i][0].toLowerCase().contains("javascript")) {
-                    if (reg[i].length == 3 && reg[i][2] != null && reg[i][2].length() > 0 && !executed.contains(reg[i][2])) {
-                        try {
-                           cx.evaluateString(scope, parseJS(reg[i][2]), "<cmd>", 1, null);
-                        } catch (Exception e) {
-                            if(debug)
-                            {
-                                e.printStackTrace();
-                                System.err.println(reg[i][2]);
-                            }
-                        }
-
-                        String data2 = d.getInnerHTML().replaceAll("(?s)<!--.*?-->", "");
-                        executed.add(reg[i][2]);
-                        runString(d.content.toString());
-                        // System.out.println(data2);
-                        if (!data2.equals(data) && !d.content.toString().equals(data)) {
-                            runString(data2);
-                            return;
+            dot = url.indexOf('/');
+            if (dot != -1) {
+                host = "http://" + url.substring(0, dot);
+            } else {
+                host = "http://" + url;
+            }
+            url = "http://" + url;
+        } else {
+            url = "";
+        }
+        String[][] reg = new Regex(data, "<[ ]?script(.*?)(/>|>(.*?)<[ ]?/script>)").getMatches();
+        // buff.append("var document[];\r\n");
+        for (int i = 0; i < reg.length; i++) {
+            if (reg[i][0].toLowerCase().contains("javascript")) {
+                if (reg[i].length == 3 && reg[i][2] != null && reg[i][2].length() > 0 && !executed.contains(reg[i][2])) {
+                    try {
+                        cx.evaluateString(scope, parseJS(reg[i][2]), "<cmd>", 1, null);
+                    } catch (Exception e) {
+                        if (debug) {
+                            e.printStackTrace();
+                            System.err.println(reg[i][2]);
                         }
                     }
-                    Pattern[] linkAndFormPattern = new Pattern[] { Pattern.compile(".*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile(".*?src='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile(".*?src=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
-                    for (Pattern element : linkAndFormPattern) {
-                        m = element.matcher(reg[i][0]);
-                        while (m.find()) {
-                            String link = Encoding.htmlDecode(m.group(1));
-                            if (!(link.length() > 6 && link.matches("(?is)https?://.*")) && link.length() > 0) {
-                                if (link.length() > 2 && link.substring(0, 3).equals("www")) {
-                                    link = "http://" + link;
-                                }
-                                if (link.charAt(0) == '/') {
-                                    link = host + link;
-                                } else if (link.charAt(0) == '#') {
-                                    link = url + link;
-                                } else {
-                                    link = basename + link;
+
+                    String data2 = d.getInnerHTML().replaceAll("(?s)<!--.*?-->", "");
+                    executed.add(reg[i][2]);
+                    runString(d.content.toString());
+                    // System.out.println(data2);
+                    if (!data2.equals(data) && !d.content.toString().equals(data)) {
+                        runString(data2);
+                        return;
+                    }
+                }
+                Pattern[] linkAndFormPattern = new Pattern[] { Pattern.compile(".*?src=\"(.*?)\"", Pattern.CASE_INSENSITIVE), Pattern.compile(".*?src='(.*?)'", Pattern.CASE_INSENSITIVE), Pattern.compile(".*?src=([^'\"][^\\s]*)", Pattern.CASE_INSENSITIVE) };
+                for (Pattern element : linkAndFormPattern) {
+                    m = element.matcher(reg[i][0]);
+                    while (m.find()) {
+                        String link = Encoding.htmlDecode(m.group(1));
+                        if (!(link.length() > 6 && link.matches("(?is)https?://.*")) && link.length() > 0) {
+                            if (link.length() > 2 && link.substring(0, 3).equals("www")) {
+                                link = "http://" + link;
+                            }
+                            if (link.charAt(0) == '/') {
+                                link = host + link;
+                            } else if (link.charAt(0) == '#') {
+                                link = url + link;
+                            } else {
+                                link = basename + link;
+                            }
+                        }
+                        if (!executed.contains(link)) {
+                            // set.add(link);runString(String data, Context
+                            // cx, Scriptable scope, HTMLDocumentImpl d) {
+                            String page = br.cloneBrowser().getPage(link);
+                            executed.add(link);
+                            try {
+                                cx.evaluateString(scope, parseJS(page), "<cmd>", 1, null);
+                            } catch (Exception e) {
+                                if (debug) {
+                                    e.printStackTrace();
+                                    System.err.println(link);
                                 }
                             }
-                            if (!executed.contains(link)) {
-                                // set.add(link);runString(String data, Context
-                                // cx, Scriptable scope, HTMLDocumentImpl d) {
-                                String page = br.cloneBrowser().getPage(link);
-                                executed.add(link);
-                                try {
-                                    cx.evaluateString(scope, parseJS(page), "<cmd>", 1, null);
-                                } catch (Exception e) {
-                                    if(debug)
-                                    {
-                                        e.printStackTrace();
-                                        System.err.println(link);
-                                    }
-                                }
-                                String data2 = d.getInnerHTML().replaceAll("(?s)<!--.*?-->", "");
+                            String data2 = d.getInnerHTML().replaceAll("(?s)<!--.*?-->", "");
 
-                                runString(d.content.toString());
-                                // System.out.println(data2);
-                                if (!data2.equals(data) && !d.content.toString().equals(data)) {
-                                    runString(data2);
-                                    return;
-                                }
+                            runString(d.content.toString());
+                            // System.out.println(data2);
+                            if (!data2.equals(data) && !d.content.toString().equals(data)) {
+                                runString(data2);
+                                return;
                             }
                         }
                     }
@@ -191,11 +187,11 @@ public final class JavaScript {
     }
 
     private void runPage() throws SAXException, IOException {
-        if(cx!=null)return;
+        if (cx != null) return;
         if (br == null) return;
         String data = br.toString();
-//        Logger.getLogger(HTMLDocumentImpl.class.getName()).setLevel(Level.OFF);
-        if(debug)
+        // Logger.getLogger(HTMLDocumentImpl.class.getName()).setLevel(Level.OFF);
+        if (debug)
             Logger.getLogger(JavaFunctionObject.class.getName()).setLevel(Level.WARNING);
         else
             Logger.getLogger(JavaFunctionObject.class.getName()).setLevel(Level.OFF);
@@ -219,7 +215,7 @@ public final class JavaScript {
         uacontext.setCookie(new URL(br.getURL()), c.toString());
         Reader reader = new InputStreamReader(ba);
         wis = new WritableLineReader(reader);
-        
+
         d = new Document(uacontext, null, wis, br.getURL());
         d.load();
         d.setCookie(c.toString());
@@ -231,14 +227,14 @@ public final class JavaScript {
         // TODO document ersetzen
         // ret.replaceAll("document\\.([^\\s;=]*)", "");
     }
-    public String getVar(String varname) throws SAXException, IOException
-    {
+
+    public String getVar(String varname) throws SAXException, IOException {
         runPage();
         String result = (String) scope.get(varname, scope);
         return result;
     }
-    public String runJavaScript() throws SAXException, IOException {
 
+    public String runJavaScript() throws SAXException, IOException {
         runPage();
         Object result = cx.evaluateString(scope, javaScript, "<cmd>", 1, null);
         String ret = Context.toString(result);

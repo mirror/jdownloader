@@ -18,7 +18,6 @@ package jd.http;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.Proxy;
 
 public class GetRequest extends Request {
 
@@ -37,9 +36,5 @@ public class GetRequest extends Request {
         httpConnection.setRequestMethod("GET");
 
     }
-
- 
-
-  
 
 }

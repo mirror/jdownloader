@@ -65,8 +65,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import jd.router.RInfo;
-
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -84,6 +82,7 @@ import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
+import jd.router.RInfo;
 import jd.router.RouterInfoCollector;
 import jd.router.reconnectrecorder.JDRRGui;
 import jd.utils.JDLocale;
@@ -139,6 +138,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         this.setResizable(false);
         this.setVisible(true);
     }
+
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == btnCancel)
             dispose();
@@ -250,173 +250,170 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         } else if (e.getSource() == btnSelectRouter) {
             new Thread(new Runnable() {
                 public void run() {
-                    
 
-            final Vector<RInfo> scripts = new Vector<RInfo>();
-            
-            Thread th = new Thread(new Runnable() {
-                public void run() {
-                    Vector<RInfo> routers = new GetRouterInfo(showProgressbar()).getRouterInfos();
-                    scripts.addAll(routers);
-                    synchronized (this) {
-                        notify();
-                    }
-                }
-            });
-            th.start();
-            Vector<String[]> scripts2 = new HTTPLiveHeader().getLHScripts();
+                    final Vector<RInfo> scripts = new Vector<RInfo>();
 
-            Collections.sort(scripts2, new Comparator<String[]>() {
-                public int compare(String[] a, String[] b) {
-                    return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
-                }
-
-            });
-
-            HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
-            for (int i = scripts2.size() - 1; i >= 0; i--) {
-                String[] sc = scripts2.get(i);
-                if (ch.containsKey(sc[0] + sc[1] + sc[2])) {
-                    scripts2.remove(i);
-                } else {
-
-                    ch.put(sc[0] + sc[1] + sc[2], true);
-                }
-            }
-            ch.clear();
-            if (th.isAlive()) {
-                synchronized (th) {
-                    try {
-                        th.wait(15000);
-                    } catch (InterruptedException e1) {
-                        // TODO Auto-generated catch block
-                        e1.printStackTrace();
-                    }
-                }
-            }
-            final String[] d = new String[scripts.size()+scripts2.size()];
-            for (int i = 0; i < scripts.size(); i++) {
-                RInfo sc = (RInfo) scripts.get(i);
-                d[i] = i + ". ODB:" + Encoding.htmlDecode(sc.getRouterName());
-            }
-            int i = scripts.size();
-            for (String[] strings : scripts2) {
-                RInfo sc = new RInfo();
-                sc.setReconnectMethode(strings[2]);
-                sc.setRouterName(Encoding.htmlDecode(strings[0] + " : " + strings[1]));
-                scripts.add(sc);
-                d[i] = i + ". " + Encoding.htmlDecode(sc.getRouterName());
-                i++;
-            }
-
-
-
-            JPanel panel = new JPanel(new BorderLayout(10, 10));
-            final DefaultListModel defaultListModel = new DefaultListModel();
-            final String text = "Search Router Model";
-            final JTextField searchField = new JTextField();
-            searchField.setForeground(Color.lightGray);
-            final JList list = new JList(defaultListModel);
-            searchField.getDocument().addDocumentListener(new DocumentListener() {
-                public void changedUpdate(DocumentEvent e) {
-                }
-
-                public void insertUpdate(DocumentEvent e) {
-                    refreshList();
-                }
-
-                private void refreshList() {
-                    String search = searchField.getText().toLowerCase();
-                    String[] hits = search.split(" ");
-                    defaultListModel.removeAllElements();
-                    for (int i = 0; i < d.length; i++) {
-                        for (int j = 0; j < hits.length; j++) {
-                            if (!d[i].toLowerCase().contains(hits[j])) {
-                                break;
+                    Thread th = new Thread(new Runnable() {
+                        public void run() {
+                            Vector<RInfo> routers = new GetRouterInfo(showProgressbar()).getRouterInfos();
+                            scripts.addAll(routers);
+                            synchronized (this) {
+                                notify();
                             }
-                            if (j == hits.length - 1) {
-                                defaultListModel.addElement(d[i]);
+                        }
+                    });
+                    th.start();
+                    Vector<String[]> scripts2 = new HTTPLiveHeader().getLHScripts();
+
+                    Collections.sort(scripts2, new Comparator<String[]>() {
+                        public int compare(String[] a, String[] b) {
+                            return (a[0] + " " + a[1]).compareToIgnoreCase(b[0] + " " + b[1]);
+                        }
+
+                    });
+
+                    HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
+                    for (int i = scripts2.size() - 1; i >= 0; i--) {
+                        String[] sc = scripts2.get(i);
+                        if (ch.containsKey(sc[0] + sc[1] + sc[2])) {
+                            scripts2.remove(i);
+                        } else {
+
+                            ch.put(sc[0] + sc[1] + sc[2], true);
+                        }
+                    }
+                    ch.clear();
+                    if (th.isAlive()) {
+                        synchronized (th) {
+                            try {
+                                th.wait(15000);
+                            } catch (InterruptedException e1) {
+                                // TODO Auto-generated catch block
+                                e1.printStackTrace();
                             }
                         }
                     }
-                    list.setModel(defaultListModel);
-                }
-
-                public void removeUpdate(DocumentEvent e) {
-                    refreshList();
-                }
-            });
-            searchField.addFocusListener(new FocusAdapter() {
-                boolean onInit = true;
-
-                @Override
-                public void focusGained(FocusEvent e) {
-                    if (onInit) {
-                        onInit = !onInit;
-                        return;
+                    final String[] d = new String[scripts.size() + scripts2.size()];
+                    for (int i = 0; i < scripts.size(); i++) {
+                        RInfo sc = (RInfo) scripts.get(i);
+                        d[i] = i + ". ODB:" + Encoding.htmlDecode(sc.getRouterName());
                     }
-                    searchField.setForeground(Color.black);
-                    if (searchField.getText().equals(text)) {
-                        searchField.setText("");
+                    int i = scripts.size();
+                    for (String[] strings : scripts2) {
+                        RInfo sc = new RInfo();
+                        sc.setReconnectMethode(strings[2]);
+                        sc.setRouterName(Encoding.htmlDecode(strings[0] + " : " + strings[1]));
+                        scripts.add(sc);
+                        d[i] = i + ". " + Encoding.htmlDecode(sc.getRouterName());
+                        i++;
                     }
-                }
-            });
 
-            // Eclipse Clear Console Icon should be used
-            ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
-            imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
-            JButton reset = new JButton(imageIcon);
-            reset.setBorder(null);
-            reset.setOpaque(false);
-            reset.setContentAreaFilled(false);
-            reset.setBorderPainted(false);
-            reset.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
+                    JPanel panel = new JPanel(new BorderLayout(10, 10));
+                    final DefaultListModel defaultListModel = new DefaultListModel();
+                    final String text = "Search Router Model";
+                    final JTextField searchField = new JTextField();
                     searchField.setForeground(Color.lightGray);
+                    final JList list = new JList(defaultListModel);
+                    searchField.getDocument().addDocumentListener(new DocumentListener() {
+                        public void changedUpdate(DocumentEvent e) {
+                        }
+
+                        public void insertUpdate(DocumentEvent e) {
+                            refreshList();
+                        }
+
+                        private void refreshList() {
+                            String search = searchField.getText().toLowerCase();
+                            String[] hits = search.split(" ");
+                            defaultListModel.removeAllElements();
+                            for (int i = 0; i < d.length; i++) {
+                                for (int j = 0; j < hits.length; j++) {
+                                    if (!d[i].toLowerCase().contains(hits[j])) {
+                                        break;
+                                    }
+                                    if (j == hits.length - 1) {
+                                        defaultListModel.addElement(d[i]);
+                                    }
+                                }
+                            }
+                            list.setModel(defaultListModel);
+                        }
+
+                        public void removeUpdate(DocumentEvent e) {
+                            refreshList();
+                        }
+                    });
+                    searchField.addFocusListener(new FocusAdapter() {
+                        boolean onInit = true;
+
+                        @Override
+                        public void focusGained(FocusEvent e) {
+                            if (onInit) {
+                                onInit = !onInit;
+                                return;
+                            }
+                            searchField.setForeground(Color.black);
+                            if (searchField.getText().equals(text)) {
+                                searchField.setText("");
+                            }
+                        }
+                    });
+
+                    // Eclipse Clear Console Icon should be used
+                    ImageIcon imageIcon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.exit")));
+                    imageIcon = new ImageIcon(imageIcon.getImage().getScaledInstance(16, -1, Image.SCALE_SMOOTH));
+                    JButton reset = new JButton(imageIcon);
+                    reset.setBorder(null);
+                    reset.setOpaque(false);
+                    reset.setContentAreaFilled(false);
+                    reset.setBorderPainted(false);
+                    reset.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            searchField.setForeground(Color.lightGray);
+                            searchField.setText(text);
+                            for (String element : d) {
+                                defaultListModel.addElement(element);
+                            }
+                        }
+                    });
                     searchField.setText(text);
+                    // !!! Lupen-Icon should be used
+                    Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
+                    JPanel p = new JPanel(new BorderLayout(5, 5));
+                    p.add(searchField, BorderLayout.CENTER);
+                    p.add(reset, BorderLayout.EAST);
+                    JLabel example = new JLabel("Example: 3Com ADSL");
+                    example.setForeground(Color.gray);
+                    p.add(example, BorderLayout.SOUTH);
                     for (String element : d) {
                         defaultListModel.addElement(element);
                     }
-                }
-            });
-            searchField.setText(text);
-            // !!! Lupen-Icon should be used
-            Icon icon = new ImageIcon(JDUtilities.getImage(JDTheme.V("gui.images.update_manager")));
-            JPanel p = new JPanel(new BorderLayout(5, 5));
-            p.add(searchField, BorderLayout.CENTER);
-            p.add(reset, BorderLayout.EAST);
-            JLabel example = new JLabel("Example: 3Com ADSL");
-            example.setForeground(Color.gray);
-            p.add(example, BorderLayout.SOUTH);
-            for (String element : d) {
-                defaultListModel.addElement(element);
-            }
 
-            JScrollPane scrollPane = new JScrollPane(list);
-            panel.add(p, BorderLayout.NORTH);
-            panel.add(scrollPane, BorderLayout.CENTER);
-            panel.setPreferredSize(new Dimension(400, 500));
-            int n = 10;
-            panel.setBorder(new EmptyBorder(n, n, n, n));
+                    JScrollPane scrollPane = new JScrollPane(list);
+                    panel.add(p, BorderLayout.NORTH);
+                    panel.add(scrollPane, BorderLayout.CENTER);
+                    panel.setPreferredSize(new Dimension(400, 500));
+                    int n = 10;
+                    panel.setBorder(new EmptyBorder(n, n, n, n));
 
-            JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
-            JDialog dialog = op.createDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
-            dialog.add(op);
-            dialog.setModal(true);
-            dialog.setPreferredSize(new Dimension(400, 500));
-            dialog.pack();
-            dialog.setLocationRelativeTo(null);
-            dialog.setVisible(true);
-            int answer = ((Integer) op.getValue()).intValue();
-            if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
-                String selected = (String) list.getSelectedValue();
-                int id = Integer.parseInt(selected.split("\\.")[0]);
-                RInfo info = scripts.get(id);
-                routername.setText(info.getRouterName());
-                Reconnectmethode = info.getReconnectMethode();
-                ReconnectmethodeClr = info.getReconnectMethodeClr();
+                    JOptionPane op = new JOptionPane(panel, JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION, icon);
+                    JDialog dialog = op.createDialog(ConfigurationDialog.PARENTFRAME, JDLocale.L("gui.config.liveHeader.dialog.importRouter", "Router importieren"));
+                    dialog.add(op);
+                    dialog.setModal(true);
+                    dialog.setPreferredSize(new Dimension(400, 500));
+                    dialog.pack();
+                    dialog.setLocationRelativeTo(null);
+                    dialog.setVisible(true);
+                    int answer = ((Integer) op.getValue()).intValue();
+                    if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
+                        String selected = (String) list.getSelectedValue();
+                        int id = Integer.parseInt(selected.split("\\.")[0]);
+                        RInfo info = scripts.get(id);
+                        routername.setText(info.getRouterName());
+                        Reconnectmethode = info.getReconnectMethode();
+                        ReconnectmethodeClr = info.getReconnectMethodeClr();
 
-            }
+                    }
 
                 }
             }).start();

@@ -20,7 +20,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,7 +87,7 @@ public abstract class Request {
     private HashMap<String, String> headers;
     private String htmlCode;
     protected HTTPConnection httpConnection;
- 
+
     private long readTime = -1;
     private int readTimeout;
     private boolean requested = false;
@@ -444,7 +443,7 @@ public abstract class Request {
         // da k�nnte man sich mal schlauch machen.. welche proxy typen da
         // unterst�tzt werden
         if (proxy != null) {
-          
+
             httpConnection = new HTTPConnection(url.openConnection(proxy));
 
         } else {
@@ -518,15 +517,15 @@ public abstract class Request {
         this.followRedirects = followRedirects;
     }
 
-//    public void setProxy(String ip, String port) throws NumberFormatException, MalformedURLException {
-//        proxyip = ip;
-//        proxyport = port;
-//        if (ip == null || port == null) return;
-//        url = new URL("http", proxyip, Integer.parseInt(proxyport), url.toString());
-//
-//    }
-
- 
+    // public void setProxy(String ip, String port) throws
+    // NumberFormatException, MalformedURLException {
+    // proxyip = ip;
+    // proxyport = port;
+    // if (ip == null || port == null) return;
+    // url = new URL("http", proxyip, Integer.parseInt(proxyport),
+    // url.toString());
+    //
+    // }
 
     public void setReadTimeout(int readTimeout) {
         this.readTimeout = readTimeout;

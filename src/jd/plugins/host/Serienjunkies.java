@@ -25,13 +25,12 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.ProgressController;
-
 import jd.PluginWrapper;
 import jd.captcha.LetterComperator;
 import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.controlling.DistributeData;
+import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -184,7 +183,7 @@ public class Serienjunkies extends PluginForHost {
             progress.setProgressText("getLinks");
             progress.setStatus(0);
 
-            ArrayList<String> actions  = new ArrayList<String>();
+            ArrayList<String> actions = new ArrayList<String>();
             for (Form form : forms) {
                 if (form.action.contains("download.serienjunkies.org") && !form.action.contains("firstload") && !form.action.equals("http://mirror.serienjunkies.org")) {
                     actions.add(form.action);
@@ -192,65 +191,65 @@ public class Serienjunkies extends PluginForHost {
             }
             final int inc = 100 / actions.size();
             for (int i = 0; i < actions.size(); i++) {
-                    try {
-                        final String action = actions.get(i);
-                        final int bd = i%4;
-                        Thread t = new Thread(new Runnable() {
-                            public void run() {
-                                String action2 = action;
-                                Browser brd = br2[bd];
-                                for (int j = 0; j < 10; j++) {
-                                    try {
-                                        Thread.sleep(100 * j);
-                                    } catch (InterruptedException e) {
-                                        // TODO Auto-generated catch block
-                                        e.printStackTrace();
-                                    }
-                                    try {
+                try {
+                    final String action = actions.get(i);
+                    final int bd = i % 4;
+                    Thread t = new Thread(new Runnable() {
+                        public void run() {
+                            String action2 = action;
+                            Browser brd = br2[bd];
+                            for (int j = 0; j < 10; j++) {
+                                try {
+                                    Thread.sleep(100 * j);
+                                } catch (InterruptedException e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
+                                }
+                                try {
 
-                                        String tx = null;
-                                        synchronized (brd) {
-                                            try {
-                                                tx = brd.getPage(action2);
-                                            } catch (Exception e) {
+                                    String tx = null;
+                                    synchronized (brd) {
+                                        try {
+                                            tx = brd.getPage(action2);
+                                        } catch (Exception e) {
 
-                                            }
-
-                                            if (tx != null) {
-                                                String link = new Regex(brd.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
-                                                if (link != null) {
-                                                    try {
-                                                        brd.getPage(link);
-                                                    } catch (Exception e) {
-
-                                                    }
-                                                }
-
-                                                String loc = brd.getRedirectLocation();
-                                                if (loc != null) {
-                                                    links.add(loc);
-                                                    synchronized (this) {
-                                                        notify();
-                                                    }
-                                                    progress.increase(inc);
-                                                    return;
-                                                }
-                                            }
                                         }
 
-                                    } catch (Exception e) {
-                                        // TODO Auto-generated catch block
-                                        e.printStackTrace();
+                                        if (tx != null) {
+                                            String link = new Regex(brd.toString(), Pattern.compile("SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                                            if (link != null) {
+                                                try {
+                                                    brd.getPage(link);
+                                                } catch (Exception e) {
+
+                                                }
+                                            }
+
+                                            String loc = brd.getRedirectLocation();
+                                            if (loc != null) {
+                                                links.add(loc);
+                                                synchronized (this) {
+                                                    notify();
+                                                }
+                                                progress.increase(inc);
+                                                return;
+                                            }
+                                        }
                                     }
 
+                                } catch (Exception e) {
+                                    // TODO Auto-generated catch block
+                                    e.printStackTrace();
                                 }
 
                             }
-                        });
-                        t.start();
-                        threads.add(t);
-                    } catch (Exception e) {
-                    }
+
+                        }
+                    });
+                    t.start();
+                    threads.add(t);
+                } catch (Exception e) {
+                }
 
             }
 
@@ -545,7 +544,7 @@ public class Serienjunkies extends PluginForHost {
         while (active > activeCaptchas) {
             if (c++ == 120) break;
 
-            //downloadLink.getLinkStatus().setStatusText("waiting for decryption"
+            // downloadLink.getLinkStatus().setStatusText("waiting for decryption"
             // );
             Thread.sleep(100);
 

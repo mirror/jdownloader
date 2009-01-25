@@ -1,6 +1,7 @@
 package jd.plugins.decrypt;
 
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
@@ -25,7 +26,7 @@ public class BadongoCom extends PluginForDecrypt {
         br.clearCookies(host);
         br.setCookie("http://www.badongo.com", "badongoL", "de");
         br.getPage(parameter);
-        parameter=parameter.replaceFirst("badongo.com", "badongo.viajd");
+        parameter = parameter.replaceFirst("badongo.com", "badongo.viajd");
         if (!br.containsHTML("Diese Datei wurde gesplittet")) {
             DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter));
             dlLink.setProperty("type", "single");
@@ -33,29 +34,29 @@ public class BadongoCom extends PluginForDecrypt {
         } else {
             String[] links = br.getRegex("<div class=\"m\">Download Teil(.*?)</div>").getColumn(0);
             progress.setRange(links.length);
-           for(String partId: links){               
-              
-                DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter)+"?"+partId.trim());
-                dlLink.setName(dlLink.getName()+"."+partId.trim());
+            for (String partId : links) {
+
+                DownloadLink dlLink = createDownloadlink(Encoding.htmlDecode(parameter) + "?" + partId.trim());
+                dlLink.setName(dlLink.getName() + "." + partId.trim());
                 dlLink.setProperty("type", "split");
                 dlLink.setProperty("part", Integer.parseInt(partId.trim()));
                 dlLink.setProperty("parts", links.length);
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
             }
-           
-           if(OSDetector.isWindows()){
-           String bat=br.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/fm\\/\\d+\\/bat)").getMatch(0);
-           DownloadLink dlLink = createDownloadlink(bat.replaceAll("http://","httpviajd://")+"#dummy.zip");
-   
-           decryptedLinks.add(dlLink);
-           }else{
-               String bat=br.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/fm\\/\\d+\\/sh)").getMatch(0);
-               DownloadLink dlLink = createDownloadlink(bat.replaceAll("http://","httpviajd://")+"#dummy.zip");
-       
-               decryptedLinks.add(dlLink); 
-           }
-          
+
+            if (OSDetector.isWindows()) {
+                String bat = br.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/fm\\/\\d+\\/bat)").getMatch(0);
+                DownloadLink dlLink = createDownloadlink(bat.replaceAll("http://", "httpviajd://") + "#dummy.zip");
+
+                decryptedLinks.add(dlLink);
+            } else {
+                String bat = br.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/fm\\/\\d+\\/sh)").getMatch(0);
+                DownloadLink dlLink = createDownloadlink(bat.replaceAll("http://", "httpviajd://") + "#dummy.zip");
+
+                decryptedLinks.add(dlLink);
+            }
+
         }
 
         return decryptedLinks;

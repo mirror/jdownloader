@@ -19,6 +19,7 @@ package jd.plugins.decrypt;
 import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;

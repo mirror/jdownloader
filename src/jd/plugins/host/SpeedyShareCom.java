@@ -17,6 +17,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;
@@ -46,9 +47,7 @@ public class SpeedyShareCom extends PluginForHost {
         String downloadSize = null;
 
         br.getPage(url);
-        if (br.containsHTML("This file has been deleted for the following reason")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        if (br.containsHTML("This file has been deleted for the following reason")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         if (!br.containsHTML("File not found")) {
             downloadName = Encoding.htmlDecode(br.getRegex(Pattern.compile("<title>(.*?)</title>", Pattern.CASE_INSENSITIVE)).getMatch(0));
             downloadSize = (br.getRegex(Pattern.compile("<BR>File size (.*?),", Pattern.CASE_INSENSITIVE)).getMatch(0));

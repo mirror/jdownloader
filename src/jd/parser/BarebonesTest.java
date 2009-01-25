@@ -1,29 +1,31 @@
 package jd.parser;
 
+import java.awt.EventQueue;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.awt.*;
-import java.util.logging.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import javax.swing.*;
+import javax.swing.JFrame;
 
+import org.lobobrowser.html.HtmlRendererContext;
+import org.lobobrowser.html.UserAgentContext;
+import org.lobobrowser.html.gui.HtmlPanel;
+import org.lobobrowser.html.parser.DocumentBuilderImpl;
+import org.lobobrowser.html.parser.InputSourceImpl;
+import org.lobobrowser.html.test.SimpleHtmlRendererContext;
+import org.lobobrowser.html.test.SimpleUserAgentContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.html2.HTMLElement;
-
 import org.xml.sax.InputSource;
-import org.lobobrowser.html.*;
-import org.lobobrowser.html.gui.*;
-import org.lobobrowser.html.parser.*;
-import org.lobobrowser.html.test.*;
 
 public class BarebonesTest {
     public static void main(String[] args) throws Exception {
         // Initialize logging so only Cobra warnings are seen.
-        Logger.getLogger("org.lobobrowser")
-            .setLevel(Level.WARNING);
+        Logger.getLogger("org.lobobrowser").setLevel(Level.WARNING);
 
         // Open a connection on the URL we want to render first.
         String uri = "http://www.jdownloader.org";
@@ -41,24 +43,20 @@ public class BarebonesTest {
         InputSource is = new InputSourceImpl(reader, uri);
         HtmlPanel htmlPanel = new HtmlPanel();
         UserAgentContext ucontext = new LocalUserAgentContext();
-        HtmlRendererContext rendererContext = 
-            new LocalHtmlRendererContext(htmlPanel, ucontext);
-        
+        HtmlRendererContext rendererContext = new LocalHtmlRendererContext(htmlPanel, ucontext);
+
         // Set a preferred width for the HtmlPanel,
         // which will allow getPreferredSize() to
         // be calculated according to block content.
-        // We do this here to illustrate the 
+        // We do this here to illustrate the
         // feature, but is generally not
         // recommended for performance reasons.
         htmlPanel.setPreferredWidth(800);
-        
+
         // Note: This example does not perform incremental
         // rendering while loading the initial document.
-        DocumentBuilderImpl builder = 
-            new DocumentBuilderImpl(
-                rendererContext.getUserAgentContext(), 
-                rendererContext);
-        
+        DocumentBuilderImpl builder = new DocumentBuilderImpl(rendererContext.getUserAgentContext(), rendererContext);
+
         Document document = builder.parse(is);
         in.close();
 
@@ -70,12 +68,12 @@ public class BarebonesTest {
         // Create a JFrame and add the HtmlPanel to it.
         final JFrame frame = new JFrame();
         frame.getContentPane().add(htmlPanel);
-        
+
         // We pack the JFrame to demonstrate the
         // validity of HtmlPanel's preferred size.
         // Normally you would want to set a specific
         // JFrame size instead.
-        
+
         // pack() should be called in the GUI dispatch
         // thread since the document is scheduled to
         // be rendered in that thread, and is required
@@ -88,11 +86,10 @@ public class BarebonesTest {
         });
     }
 
-    private static class LocalUserAgentContext 
-        extends SimpleUserAgentContext {
+    private static class LocalUserAgentContext extends SimpleUserAgentContext {
         // Override methods from SimpleUserAgentContext to
         // provide more accurate information about application.
-        
+
         public LocalUserAgentContext() {
         }
 
@@ -113,26 +110,21 @@ public class BarebonesTest {
         }
     }
 
-    private static class LocalHtmlRendererContext 
-        extends SimpleHtmlRendererContext {
-        // Override methods from SimpleHtmlRendererContext 
+    private static class LocalHtmlRendererContext extends SimpleHtmlRendererContext {
+        // Override methods from SimpleHtmlRendererContext
         // to provide browser functionality to the renderer.
-        
-        public LocalHtmlRendererContext(HtmlPanel contextComponent, 
-            UserAgentContext ucontext) {
+
+        public LocalHtmlRendererContext(HtmlPanel contextComponent, UserAgentContext ucontext) {
             super(contextComponent, ucontext);
         }
 
-        public void linkClicked(HTMLElement linkNode, 
-            URL url, String target) {
+        public void linkClicked(HTMLElement linkNode, URL url, String target) {
             super.linkClicked(linkNode, url, target);
-            // This may be removed: 
+            // This may be removed:
             System.out.println("## Link clicked: " + linkNode);
         }
 
-        public HtmlRendererContext open(URL url, 
-            String windowName, String windowFeatures, 
-            boolean replace) {
+        public HtmlRendererContext open(URL url, String windowName, String windowFeatures, boolean replace) {
             // This is called on window.open().
             HtmlPanel newPanel = new HtmlPanel();
             JFrame frame = new JFrame();
