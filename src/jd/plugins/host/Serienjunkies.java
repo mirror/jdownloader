@@ -144,7 +144,8 @@ public class Serienjunkies extends PluginForHost {
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
 
                     try {
-                        Browser.download(captchaFile, con);
+                        br.downloadConnection(captchaFile,con);
+                  
                     } catch (Exception e) {
 
                         try {

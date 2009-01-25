@@ -61,19 +61,7 @@ import sun.misc.BASE64Encoder;
  */
 public class HTTPLiveHeader extends Interaction {
 
-    private class InternalAuthenticator extends Authenticator {
-        private String username, password;
-
-        public InternalAuthenticator(String user, String pass) {
-            username = user;
-            password = pass;
-        }
-
-        protected PasswordAuthentication getPasswordAuthentication() {
-            return new PasswordAuthentication(username, password.toCharArray());
-        }
-    }
-
+  
     /**
      * serialVersionUID
      */
@@ -381,9 +369,7 @@ public class HTTPLiveHeader extends Interaction {
         logger.info("Starting  #" + retries);
         ProgressController progress = new ProgressController(JDLocale.L("interaction.liveHeader.progress.0_title", "HTTPLiveHeader Reconnect"), 10);
         progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry", "HTTPLiveHeader #") + retries);
-        if (user != null || pass != null) {
-            Authenticator.setDefault(new InternalAuthenticator(user, pass));
-        }
+    
 
         if (script == null || script.length() == 0) {
             progress.finalize();

@@ -182,7 +182,8 @@ public class SingleDownloadController extends Thread {
                 onErrorLocalIO(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_IP_BLOCKED:
-                onErrorWaittime(downloadLink, currentPlugin);
+                this.retry(downloadLink, currentPlugin);
+//                onErrorWaittime(downloadLink, currentPlugin);
                 break;
             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
                 onErrorTemporarilyUnavailable(downloadLink, currentPlugin);

@@ -47,10 +47,14 @@ public class RelinkUs extends PluginForDecrypt {
         String container_link = new Regex(page, Pattern.compile("<a target=\"blank\" href=('|\")(.*?)('|\")><img src=('|\").*?" + containerFormat + "\\.(gif|jpg)", Pattern.CASE_INSENSITIVE)).getMatch(1);
         if (container_link != null) {
             File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + "." + containerFormat);
-            URL container_url = new URL("http://relink.us/" + Encoding.htmlDecode(container_link));
-            HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
-            container_con.setRequestProperty("Referer", cryptedLink);
-            Browser.download(container, container_con);
+//            URL container_url = new URL("http://relink.us/" + Encoding.htmlDecode(container_link));
+//            HTTPConnection container_con = new HTTPConnection(container_url.openConnection());
+//            container_con.setRequestProperty("Referer", cryptedLink);
+            Browser browser = br.cloneBrowser();
+            //sollte eigentlich nicht nötig sein
+            browser.getHeaders().put("Referer", cryptedLink);
+            browser.getDownload(container, "http://relink.us/" + Encoding.htmlDecode(container_link));
+     
             decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
             container.delete();
             return true;

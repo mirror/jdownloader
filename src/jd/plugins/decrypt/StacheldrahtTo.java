@@ -21,6 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.HTTPConnecter;
 import jd.http.HTTPConnection;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -42,7 +43,7 @@ public class StacheldrahtTo extends PluginForDecrypt {
 
         progress.setRange(links.length / 2);
         for (int i = 0; i < links.length; i = i + 2) {
-            HTTPConnection httpConnection = new HTTPConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links[i]).openConnection());
+            HTTPConnection httpConnection = new HTTPConnection(HTTPConnecter.openConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links[i])));
             httpConnection.setRequestMethod("GET");
             httpConnection.setInstanceFollowRedirects(true);
             httpConnection.setRequestProperty("Host", "stacheldraht.to");

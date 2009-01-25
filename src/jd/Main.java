@@ -70,7 +70,7 @@ public class Main {
     private static SplashScreen splashScreen;
 
     public static String getCaptcha(String path, String host) {
-       
+
         boolean hasMethod = JAntiCaptcha.hasMethod(JDUtilities.getJACMethodsDirectory(), host);
 
         if (hasMethod) {
@@ -78,33 +78,27 @@ public class Main {
             File file;
 
             if (path.contains("http://")) {
-
-                HTTPConnection httpConnection;
-
                 try {
-                    httpConnection = new HTTPConnection(new URL(path).openConnection());
-                } catch (MalformedURLException e) {
-                    return e.getStackTrace().toString();
-                } catch (IOException e) {
-                    return e.getStackTrace().toString();
-                }
+                    Browser br = new Browser();
+                    HTTPConnection httpConnection;
+                    httpConnection = br.openGetConnection(path);
 
-                if (httpConnection.getContentLength() == -1 || httpConnection.getContentLength() == 0) {
+                    if (httpConnection.getContentLength() == -1 || httpConnection.getContentLength() == 0) {
 
-                return "Could not download captcha image";
+                    return "Could not download captcha image";
 
-                }
+                    }
 
-                String seperator = "/";
+                    String seperator = "/";
 
-                if (System.getProperty("os.name").toLowerCase().contains("win") || System.getProperty("os.name").toLowerCase().contains("nt")) {
-                    seperator = "\\";
-                }
+                    if (System.getProperty("os.name").toLowerCase().contains("win") || System.getProperty("os.name").toLowerCase().contains("nt")) {
+                        seperator = "\\";
+                    }
 
-                String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
-                file = new File(filepath);
-                try {
-                    Browser.download(file, path);
+                    String filepath = System.getProperty("user.dir") + seperator + "jac_captcha.img";
+                    file = new File(filepath);
+
+                    br.downloadConnection(file, httpConnection);
                 } catch (IOException e) {
                     return "Downloaderror";
                 }
@@ -144,7 +138,7 @@ public class Main {
     }
 
     public static void main(String args[]) {
-        System.setProperty("file.encoding","UTF-8");
+        System.setProperty("file.encoding", "UTF-8");
         // Mac specific //
         if (System.getProperty("os.name").toLowerCase().indexOf("mac") >= 0) {
             logger.info("apple.laf.useScreenMenuBar=true");
@@ -386,8 +380,8 @@ public class Main {
 
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.configLoaded", "Lade Konfiguration"));
 
-        if(init.loadConfiguration()==null){
-            
+        if (init.loadConfiguration() == null) {
+
             JOptionPane.showMessageDialog(null, "JDownloader cannot create the config files. Make sure, that JD_HOME/config/ exists and is writeable");
         }
         if (debug) {
@@ -460,19 +454,12 @@ public class Main {
             // TODO: handle exception
         }
         init.checkUpdate();
-     
+
         Level level = JDUtilities.getLogger().getLevel();
-        //logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false).toString());
-        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) &&
-            (
-                    JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || 
-                    level.equals(Level.ALL) || 
-                    level.equals(Level.FINER) || 
-                    level.equals(Level.FINE)
-            ) && 
-            !debug && 
-            (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false))) 
-        {
+        // logger.info(JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).
+        // getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS,
+        // false).toString());
+        if ((JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED) && (JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) || level.equals(Level.ALL) || level.equals(Level.FINER) || level.equals(Level.FINE)) && !debug && (!JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty(SimpleGUI.PARAM_DISABLE_CONFIRM_DIALOGS, false))) {
             JDUtilities.getGUI().showHelpMessage(JDLocale.L("main.start.logwarning.title", "Logwarnung"), JDLocale.LF("main.start.logwarning.body", "ACHTUNG. Das Loglevel steht auf %s und der Dateischreiber ist %s. \r\nDiese Einstellungen belasten das System und sind nur zur Fehlersuche geeignet.", level.getName(), JDUtilities.getConfiguration().getBooleanProperty(Configuration.LOGGER_FILELOG, false) ? JDLocale.L("main.status.active", "an") : JDLocale.L("main.status.inactive", "aus")), true, JDLocale.L("main.urls.faq", "http://jdownloader.org/faq.php?lng=deutsch"), null, 10);
         }
 

@@ -1016,14 +1016,21 @@ public class Browser {
     public boolean containsHTML(String regex) {
         return new Regex(this, regex).matches();
     }
-
+/**
+ * Reads teh contents behind con and returns them.
+ * Note: if con==null, the current request is read. This is usefull for redirects.
+ * Note #2: if a connection is loaded, data is  not stored in the browser instance.
+ * @param con
+ * @return
+ * @throws IOException
+ */
     public String loadConnection(HTTPConnection con) throws IOException {
         checkContentLengthLimit(request);
         if (con == null) return request.read();
         return Request.read(con);
 
     }
-
+  
     public HTTPConnection getHttpConnection() {
         if (request == null) return null;
         return request.getHttpConnection();
@@ -1039,87 +1046,45 @@ public class Browser {
      */
     public static void download(File file, HTTPConnection con) throws IOException {
 
-        if (file.isFile()) {
-            if (!file.delete()) {
-                System.out.println("Konnte Datei nicht überschreiben " + file);
-                throw new IOException("Could not overwrite file: " + file);
-            }
-        }
-        if (!file.getParentFile().exists()) {
-            file.getParentFile().mkdirs();
-        }
-        file.createNewFile();
-        BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-        BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-        byte[] b = new byte[1024];
-        int len;
-        while ((len = input.read(b)) != -1) {
-            output.write(b, 0, len);
-        }
-        output.close();
-        input.close();
+       new Browser().downloadConnection(file, con);
 
     }
 
-    public static void downloadBinary(String filepath, String fileurl) throws IOException {
-        fileurl = Encoding.urlEncode_light(fileurl.replaceAll("\\\\", "/"));
-        File file = new File(filepath);
-        if (file.isFile()) {
-            if (!file.delete()) {
-                System.out.println("Konnte Datei nicht löschen " + file);
-                throw new IOException("Could not overwrite file: " + file);
-            }
+  
 
-        }
-
-        if (file.getParentFile() != null && !file.getParentFile().exists()) {
-            file.getParentFile().mkdirs();
-        }
-        file.createNewFile();
-
-        BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
-        fileurl = URLDecoder.decode(fileurl, "UTF-8");
-
-        URL url = new URL(fileurl);
-        HTTPConnection con = new HTTPConnection(url.openConnection());
-
-        BufferedInputStream input = new BufferedInputStream(con.getInputStream());
-
-        byte[] b = new byte[1024];
-        int len;
-        while ((len = input.read(b)) != -1) {
-            output.write(b, 0, len);
-        }
-        output.close();
-        input.close();
-
-    }
-
-    public void downloadFile(File file, String urlString) throws IOException {
+    public void getDownload(File file, String urlString) throws IOException {
 
         urlString = URLDecoder.decode(urlString, "UTF-8");
 
         HTTPConnection con = this.openGetConnection(urlString);
         con.setInstanceFollowRedirects(true);
-        Browser.download(file, con);
+        download(file, con);
 
     }
-
     /**
-     * Lädt eine url lokal herunter
+     * Downloads the contents behind con to file.
+     * if(con ==null), the latest request is downloaded. Usefull for redirects
+     * @param file
+     * @param con
+     * @throws IOException
+     */
+    public void downloadConnection(File file, HTTPConnection con) throws IOException {
+        if (con == null) con=request.getHttpConnection();
+        con.setInstanceFollowRedirects(true);
+        download(file, con);
+        
+    }
+    /**
+     * Downloads url to file. 
      * 
      * @param file
      * @param urlString
      * @return Erfolg true/false
      * @throws IOException
      */
-    public static void download(File file, String urlString) throws IOException {
-
-        urlString = URLDecoder.decode(urlString, "UTF-8");
-        URL url = new URL(urlString);
-        HTTPConnection con = new HTTPConnection(url.openConnection());
-        con.setInstanceFollowRedirects(true);
-        Browser.download(file, con);
+    public static void download(File file, String url) throws IOException {
+  
+        new Browser().getDownload(file, url);
 
     }
 
@@ -1433,5 +1398,7 @@ public class Browser {
         this.debug = b;
 
     }
+
+  
 
 }

@@ -444,10 +444,10 @@ public abstract class Request {
         // unterst�tzt werden
         if (proxy != null) {
 
-            httpConnection = new HTTPConnection(url.openConnection(proxy));
+            httpConnection = new HTTPConnection(HTTPConnecter.openConnection(url, proxy));
 
         } else {
-            httpConnection = new HTTPConnection(url.openConnection());
+            httpConnection = new HTTPConnection(HTTPConnecter.openConnection(url));
 
         }
         httpConnection.setInstanceFollowRedirects(followRedirects);

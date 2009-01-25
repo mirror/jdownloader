@@ -37,6 +37,7 @@ public class BluehostTo extends PluginForHost {
 
     public BluehostTo(PluginWrapper wrapper) {
         super(wrapper);
+        this.
         enablePremium("http://bluehost.to/premium.php");
     }
 
@@ -44,6 +45,7 @@ public class BluehostTo extends PluginForHost {
         String url = downloadLink.getDownloadURL();
         url = url.replaceFirst("\\?dl=", "dl=");
         downloadLink.setUrlDownload(url);
+       
     }
 
     private void login(Account account) throws PluginException, IOException {

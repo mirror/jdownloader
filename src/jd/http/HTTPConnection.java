@@ -51,27 +51,10 @@ public class HTTPConnection {
     }
 
     public HTTPConnection(URLConnection openConnection) {
-        connection = (HttpURLConnection) openConnection;
+  
         requestProperties = new HashMap<String, List<String>>();
-        connection.setRequestProperty("Connection", "close");
-
-        connection.setRequestProperty("User-Agent", "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.0.4) Gecko/2008111317 Ubuntu/8.04 (hardy) Firefox/3.0.4");
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER, "");
-            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS, "");
-
-            connection.setRequestProperty("Proxy-Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
-
-        }
-
-        if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-
-            String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
-            String pass = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_PASS_SOCKS, "");
-
-            connection.setRequestProperty("Proxy-Authorization", "Basic " + Encoding.Base64Encode(user + ":" + pass));
-
-        }
+        connection = (HttpURLConnection) openConnection;
+        
 
         Map<String, List<String>> tmp = connection.getRequestProperties();
         Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();

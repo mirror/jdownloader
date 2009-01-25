@@ -93,7 +93,7 @@ public class RapidShareDe extends PluginForHost {
         File captchaFile = Plugin.getLocalCaptchaFile(this, ".png");
         String captchaAdress = new Regex(ticketCode, "<img src=\"(.*?)\">").getMatch(0);
         logger.info("CaptchaAdress:" + captchaAdress);
-        br.downloadFile(captchaFile, captchaAdress);
+        br.getDownload(captchaFile, captchaAdress);
         if (!captchaFile.exists() || captchaFile.length() == 0) {
             logger.severe("Captcha not found");
             linkStatus.addStatus(LinkStatus.ERROR_CAPTCHA);

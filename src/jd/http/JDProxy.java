@@ -16,13 +16,43 @@
 
 package jd.http;
 
+import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
 
 public class JDProxy extends Proxy {
+    private String user = null;
+
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = user;
+    }
+
+    public String getPass() {
+        return pass;
+    }
+
+    public void setPass(String pass) {
+        this.pass = pass;
+    }
+
+    private String pass = null;
 
     public JDProxy(Type type, SocketAddress sa) {
         super(type, sa);
+    }
+
+    public JDProxy(Type type, String host, int port) {
+        super(type,new InetSocketAddress(host, port));
+    
+       
+    }
+
+    public JDProxy(String host_port) {
+        super(JDProxy.Type.HTTP,new InetSocketAddress(host_port.split("\\:")[0], Integer.parseInt(host_port.split("\\:")[1])));
     }
 
 }

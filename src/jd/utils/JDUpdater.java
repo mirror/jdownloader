@@ -96,7 +96,8 @@ public class JDUpdater {
         ftp.stor(new FileInputStream(file), filename);
         // testFile = new File(cw);
         if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
-        Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" + filename);
+       // Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" + filename);
+        new Browser().getDownload(testFile, test + cw + "/" + filename);
         String hash2 = JDHash.getMD5(testFile);
         ftp.remove(file.getName());
         ftp.rename(ftp.getDir() + filename, ftp.getDir() + file.getName());

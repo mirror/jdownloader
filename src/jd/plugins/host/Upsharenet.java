@@ -95,7 +95,7 @@ public class Upsharenet extends PluginForHost {
         /* Captcha File holen */
         captchaFile = getLocalCaptchaFile(this);
 
-        br.downloadFile(captchaFile, "http://www.upshare.net/captcha.php");
+        br.getDownload(captchaFile, "http://www.upshare.net/captcha.php");
 
         /* CaptchaCode holen */
         captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);

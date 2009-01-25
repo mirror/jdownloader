@@ -123,10 +123,10 @@ public class HTTPPost {
             url = u;
             logger.fine("POST " + url);
             if (proxy != null) {
-                connection = new HTTPConnection(url.openConnection(proxy));
+                connection = new HTTPConnection(HTTPConnecter.openConnection(url,proxy));
 
             } else {
-                connection = new HTTPConnection(url.openConnection());
+                connection = new HTTPConnection(HTTPConnecter.openConnection(url));
 
             }
             connection.setRequestMethod("POST");
@@ -166,9 +166,9 @@ public class HTTPPost {
             url = new URL("http://" + ip + ":" + port + path + query);
             logger.fine("POST " + url);
             if (proxy != null) {
-                connection = new HTTPConnection(url.openConnection(proxy));
+                connection = new HTTPConnection(HTTPConnecter.openConnection(url,proxy));
             } else {
-                connection = new HTTPConnection(url.openConnection());
+                connection = new HTTPConnection(HTTPConnecter.openConnection(url));
             }
             connection.setRequestMethod("POST");
             // Wird wieder zurückgestellt weil der Static Wert beim
