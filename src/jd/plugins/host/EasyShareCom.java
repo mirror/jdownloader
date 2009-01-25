@@ -3,15 +3,13 @@ package jd.plugins.host;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Locale;
+import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Encoding;
+import jd.http.Cookie;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -26,7 +24,7 @@ public class EasyShareCom extends PluginForHost {
 
     public EasyShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("http://www.easy-share.com/cgi-bin/premium.cgi");
+        this.enablePremium("http://www.easy-share.com/cgi-bin/premium.cgi");
         /* brauche neuen prem account zum einbauen und testen */
     }
 
@@ -36,21 +34,34 @@ public class EasyShareCom extends PluginForHost {
     }
 
     private void login(Account account) throws IOException, PluginException {
+
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("http://www.easy-share.com/");
-        br.getPage("http://www.easy-share.com/cgi-bin/owner.cgi?action=login&user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+        br.setDebug(true);
+        Form login = br.getForm(0);
+        login.put("login", account.getUser());
+        login.put("password", account.getPass());
+        login.action = "http://www.easy-share.com/accounts/login";
+
+        br.submitForm(login);
+
         if (br.getCookie("http://www.easy-share.com/", "PREMIUM") == null) {
             account.setEnabled(false);
+
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
+
     }
 
-    private void isexpired(Account account) throws MalformedURLException, PluginException {
-        if (br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS") == null || !br.getCookie("http://www.easy-share.com/", "PREMIUMSTATUS").equalsIgnoreCase("ACTIVE")) {
+    private Date isexpired(Account account) throws MalformedURLException, PluginException {
+        HashMap<String, Cookie> cookies = br.getCookies().get("easy-share.com");
+        Cookie premstatus = cookies.get("PREMIUMSTATUS");
+        if (premstatus == null) {
             account.setEnabled(false);
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
+        return premstatus.getExpires();
     }
 
     public AccountInfo getAccountInformation(Account account) throws Exception {
@@ -62,23 +73,14 @@ public class EasyShareCom extends PluginForHost {
             return ai;
         }
         try {
-            isexpired(account);
+            ai.setValidUntil(isexpired(account).getTime());
         } catch (PluginException e) {
+            e.printStackTrace();
             ai.setValid(false);
             ai.setExpired(true);
             return ai;
         }
-        String expires = br.getRegex(Pattern.compile("<b>Expires on:  </b>(.*?)<br>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
-        if (expires == null) {
-            ai.setValid(false);
-            return ai;
-        }
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss", Locale.UK);
-        try {
-            Date date = dateFormat.parse(expires);
-            ai.setValidUntil(date.getTime());
-        } catch (ParseException e) {
-        }
+
         return ai;
     }
 
@@ -115,6 +117,7 @@ public class EasyShareCom extends PluginForHost {
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
         String id = new Regex(downloadLink.getDownloadURL(), "/(\\d+)\\.html").getMatch(0);
+        if (id == null) id = new Regex(downloadLink.getDownloadURL(), "/(\\d+)/.+").getMatch(0);
         br.getPage("http://www.easy-share.com/c/" + id);
 
         Form form = br.getForm(3);
