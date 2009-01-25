@@ -783,10 +783,11 @@ public class JDInit {
         new HostPluginWrapper("dl.free.fr", "DlFreeFr", "http://[\\w\\.]*?dl\\.free\\.fr/(getfile\\.pl\\?file=/[a-zA-Z0-9]+|[a-zA-Z0-9]+/?)");
         new HostPluginWrapper("dosyakaydet.com", "DosyakaydetCom", "http://[\\w\\.]*?dosyakaydet\\.com/(download/[a-zA-Z0-9]+/?|index/p_download/hash_[a-zA-Z0-9]+/)");
         new HostPluginWrapper("egoshare.com", "EgoshareCom", "http://[\\w\\.]*?egoshare\\.com/download\\.php\\?id=[a-zA-Z0-9]+");
-        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy-share\\.com/(\\d+\\.html|\\d+/.+)");
+        new HostPluginWrapper("easy-share.com", "EasyShareCom", "http://[\\w\\d\\.]*?easy\\-share\\.com/(\\d+\\.html|\\d+/.+)", PluginWrapper.LOAD_ON_INIT);
         new HostPluginWrapper("speedshare.org", "SpeedShareOrg", "http://[\\w\\.]*?speedshare\\.org/download\\.php\\?id=[a-zA-Z0-9]+");
         new HostPluginWrapper("vimeo.com", "VimeoCom", "http://[\\w\\.]*?vimeo\\.com/[0-9]+");
         new HostPluginWrapper("self-load.com", "SelfLoadCom", "http://[\\w\\.]*?self-load\\.com/\\d+/.+");
+        //http://www.easy-share.com/1903391146/httrack-3.43-2.exe
         new HostPluginWrapper("plikus.pl", "PlikusPl", "http://[\\w\\.]*?plikus\\.pl/zobacz_plik-.*?-\\d+\\.html");
         new HostPluginWrapper("uploading.com", "UploadingCom", "http://[\\w\\.]*?uploading\\.com/files/.*?/.+");
         new HostPluginWrapper("kewlshare.com", "KewlshareCom", "http://[\\w\\.]*?kewlshare\\.com/dl/[a-zA-Z0-9]+/.*");
