@@ -67,10 +67,10 @@ public class JDInit {
 
     public static void setupProxy() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_PROXY, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
             // für evtl authentifizierung:
-            //http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
+            // http://www.softonaut.com/2008/06/09/using-javanetauthenticator-for
             // -proxy-authentication/
             // nonProxy Liste ist unnötig, da ja eh kein reconnect möglich
             // wäre
@@ -105,7 +105,7 @@ public class JDInit {
 
     public static void setupSocks() {
         if (JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty(Configuration.USE_SOCKS, false)) {
-            //http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
+            // http://java.sun.com/javase/6/docs/technotes/guides/net/proxies.html
             // http://java.sun.com/j2se/1.5.0/docs/guide/net/properties.html
 
             String user = JDUtilities.getSubConfig("DOWNLOAD").getStringProperty(Configuration.PROXY_USER_SOCKS, "");
@@ -551,13 +551,9 @@ public class JDInit {
     }
 
     public void loadPluginForDecrypt() {
-
-        new DecryptPluginWrapper("linkmize.com", "LinkMizeCom", "http://[\\w\\.]*?linkmize\\.com\\/.+");
-
         new DecryptPluginWrapper("charts4you.org", "Charts4You", "http://[\\w\\.]*?charts4you\\.org\\/\\?id=\\d+");
         new DecryptPluginWrapper("alpha-link.eu", "AlphaLink", "http://[\\w\\.]*?alpha\\-link\\.eu\\/\\?id=[a-fA-F0-9]+");
         new DecryptPluginWrapper("protectbox.in", "ProtectBoxIn", "http://[\\w\\.]*?protectbox\\.in\\/\\?id=[a-fA-F0-9]+");
-
         new DecryptPluginWrapper("animea.net", "AnimeANet", PluginPattern.decrypterPattern_AnimeANet_Plugin);
         new DecryptPluginWrapper("anime-loads.org", "AnimeLoadsorg", "http://[\\w\\.]*?anime-loads\\.org/Crypt-it/([^/]*)/[a-zA-Z0-9]+\\.html");
         new DecryptPluginWrapper("baberepublic.com", "LinkBucks", "http://[\\w\\.]*?baberepublic\\.com/link/[0-9a-zA-Z]+(/\\d+)?");
