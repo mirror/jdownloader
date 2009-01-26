@@ -140,10 +140,26 @@ public class DDLWarez extends PluginForDecrypt {
 
                 Form form = br.getForm(1);
                 if (form != null && form.containsHTML("AnimCaptcha")) {
-                    File file = this.getLocalCaptchaFile(this);
-                    Browser.download(file, br.cloneBrowser().openGetConnection("http://www.ddl-warez.org/captcha2/captcha.inc.php"));
-                    File f = convert(file);
-                    if (f != null && f.exists()) file = f;
+                    File file;
+                    int i=10;
+                    while (true) {
+                        i--;
+                        if(i<=0){
+                            logger.severe("Could not download Captcha");
+                            return null;
+                        }
+                        file = this.getLocalCaptchaFile(this);
+                        Browser.download(file, br.cloneBrowser().openGetConnection("http://www.ddl-warez.org/captcha2/captcha.inc.php"));
+                        try {
+                            File f = convert(file);
+                            if (f == null || !f.exists()) continue;
+                            file=f;
+                            break;
+                        } catch (Exception e) {
+                            continue;
+                        }
+
+                    }
                     String captcha = getCaptchaCode(file, this, param);
                     form.put("AnimCaptcha", captcha);
                     br.submitForm(form);
@@ -216,22 +232,22 @@ public class DDLWarez extends PluginForDecrypt {
                 } else {
                     tmp.setPixel((byte[]) pg.getPixels());
                 }
-//                BasicWindow.showImage(tmp.getFullImage(), "img " + i);
+                // BasicWindow.showImage(tmp.getFullImage(), "img " + i);
             }
-
+if(n<4)return null;
             frames[n - 4].crop(10, 20, 10, 10);
             frames[n - 3].crop(10, 20, 10, 10);
             frames[n - 2].crop(10, 20, 10, 10);
             frames[n - 1].crop(10, 20, 10, 10);
 
-            Captcha merged = new Captcha(frames[n - 4].getWidth() * 4+3, frames[n - 4].getHeight());
+            Captcha merged = new Captcha(frames[n - 4].getWidth() * 4 + 3, frames[n - 4].getHeight());
             merged.setOwner(jas);
             merged.addAt(0, 0, frames[n - 4]);
-            merged.addAt(frames[n - 4].getWidth()+1, 0, frames[n - 3]);
-            merged.addAt(frames[n - 4].getWidth() * 2+2, 0, frames[n - 2]);
-            merged.addAt(frames[n - 4].getWidth() * 3+3, 0, frames[n - 1]);
+            merged.addAt(frames[n - 4].getWidth() + 1, 0, frames[n - 3]);
+            merged.addAt(frames[n - 4].getWidth() * 2 + 2, 0, frames[n - 2]);
+            merged.addAt(frames[n - 4].getWidth() * 3 + 3, 0, frames[n - 1]);
             // merged.toBlackAndWhite(0.01);
-//            BasicWindow.showImage(merged.getImage());
+            // BasicWindow.showImage(merged.getImage());
             ImageIO.write((BufferedImage) merged.getImage(), "png", new File(file.getAbsoluteFile() + ".png"));
             return new File(file.getAbsoluteFile() + ".png");
         } catch (Exception e) {
