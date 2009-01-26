@@ -783,7 +783,7 @@ public class Rapidshare extends PluginForHost {
 
     public int getMaxSimultanFreeDownloadNum() {
         /* TODO: Wert nachprüfen */
-        return 30;
+        return 1;
     }
 
     public void reset() {

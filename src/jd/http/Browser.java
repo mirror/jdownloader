@@ -16,7 +16,10 @@
 
 package jd.http;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -1013,21 +1016,23 @@ public class Browser {
     public boolean containsHTML(String regex) {
         return new Regex(this, regex).matches();
     }
-/**
- * Reads teh contents behind con and returns them.
- * Note: if con==null, the current request is read. This is usefull for redirects.
- * Note #2: if a connection is loaded, data is  not stored in the browser instance.
- * @param con
- * @return
- * @throws IOException
- */
+
+    /**
+     * Reads teh contents behind con and returns them. Note: if con==null, the
+     * current request is read. This is usefull for redirects. Note #2: if a
+     * connection is loaded, data is not stored in the browser instance.
+     * 
+     * @param con
+     * @return
+     * @throws IOException
+     */
     public String loadConnection(HTTPConnection con) throws IOException {
         checkContentLengthLimit(request);
         if (con == null) return request.read();
         return Request.read(con);
 
     }
-  
+
     public HTTPConnection getHttpConnection() {
         if (request == null) return null;
         return request.getHttpConnection();
@@ -1043,11 +1048,32 @@ public class Browser {
      */
     public static void download(File file, HTTPConnection con) throws IOException {
 
-       new Browser().downloadConnection(file, con);
+        if (file.isFile()) {
+            if (!file.delete()) {
+                System.out.println("Konnte Datei nicht löschen " + file);
+                throw new IOException("Could not overwrite file: " + file);
+            }
+
+        }
+
+        if (file.getParentFile() != null && !file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        file.createNewFile();
+
+        BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file, true));
+
+        BufferedInputStream input = new BufferedInputStream(con.getInputStream());
+
+        byte[] b = new byte[1024];
+        int len;
+        while ((len = input.read(b)) != -1) {
+            output.write(b, 0, len);
+        }
+        output.close();
+        input.close();
 
     }
-
-  
 
     public void getDownload(File file, String urlString) throws IOException {
 
@@ -1058,21 +1084,24 @@ public class Browser {
         download(file, con);
 
     }
+
     /**
-     * Downloads the contents behind con to file.
-     * if(con ==null), the latest request is downloaded. Usefull for redirects
+     * Downloads the contents behind con to file. if(con ==null), the latest
+     * request is downloaded. Usefull for redirects
+     * 
      * @param file
      * @param con
      * @throws IOException
      */
     public void downloadConnection(File file, HTTPConnection con) throws IOException {
-        if (con == null) con=request.getHttpConnection();
+        if (con == null) con = request.getHttpConnection();
         con.setInstanceFollowRedirects(true);
         download(file, con);
-        
+
     }
+
     /**
-     * Downloads url to file. 
+     * Downloads url to file.
      * 
      * @param file
      * @param urlString
@@ -1080,7 +1109,7 @@ public class Browser {
      * @throws IOException
      */
     public static void download(File file, String url) throws IOException {
-  
+
         new Browser().getDownload(file, url);
 
     }
@@ -1395,7 +1424,5 @@ public class Browser {
         this.debug = b;
 
     }
-
-  
 
 }
