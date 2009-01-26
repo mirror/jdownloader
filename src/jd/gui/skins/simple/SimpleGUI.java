@@ -635,7 +635,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JLabel warning;
 
-    private Thread warningWorker;    
+    private Thread warningWorker;
 
     /**
      * Das Hauptfenster wird erstellt
