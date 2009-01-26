@@ -18,7 +18,6 @@ package jd.plugins.host;
 
 import jd.PluginWrapper;
 import jd.parser.Form;
-import jd.parser.JavaScript;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -71,12 +70,11 @@ public class ZShareNet extends PluginForHost {
         download.put("imageField", null);
         // Form abschicken
         br.submitForm(download);
-        // Javascript für link
-        String fnc = br.getRegex("(var link\\_enc\\=.*link\\_enc\\[i\\]\\;\\})").getMatch(0);
-        // JS ausführen
-        String link = new JavaScript(fnc).runJavaScript();
-        // Link laden
-        dl = br.openDownload(downloadLink, link, true, 1);
+
+        String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
+        fnc = fnc.replaceAll("\\'\\,\\'", "");
+
+        dl = br.openDownload(downloadLink, fnc, true, 1);
         // Möglicherweise serverfehler...
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();
