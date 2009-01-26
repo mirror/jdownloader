@@ -604,6 +604,7 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
                 available = false;
                 break;
             } catch (PluginException e) {
+                e.fillLinkStatus(this.getLinkStatus());
                 logger.severe("Hoster Plugin Version: " + getPlugin().getVersion());
                 break;
             } catch (IOException e) {

@@ -171,9 +171,17 @@ public class Megauploadcom extends PluginForHost {
 
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        String link = downloadLink.getDownloadURL().replaceAll("/de", "");
+        String id = Request.parseQuery(link).get("d");
+        br.setCookie(downloadLink.getDownloadURL(), "l", "de");
+        br.setCookie(downloadLink.getDownloadURL(), "v", "1");
+        br.setCookie(downloadLink.getDownloadURL(), "ve_view", "1");
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML(">Dieser Link ist leider nicht verfügbar.<")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        String dlUrl = "http://megaupload.com/?d=" + id;
+        br.getPage(dlUrl);
+        if (br.containsHTML(">Dieser Link ist leider nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
+        if (br.containsHTML(ERROR_FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = null;
         String size = null;
         try {
@@ -221,12 +229,13 @@ public class Megauploadcom extends PluginForHost {
         LinkStatus linkStatus = parameter.getLinkStatus();
         DownloadLink downloadLink = (DownloadLink) parameter;
         String link = downloadLink.getDownloadURL().replaceAll("/de", "");
+        String id = Request.parseQuery(link).get("d");
+        br.setCookie(downloadLink.getDownloadURL(), "l", "de");
+        br.setCookie(downloadLink.getDownloadURL(), "v", "1");
+        br.setCookie(downloadLink.getDownloadURL(), "ve_view", "1");
         br.setFollowRedirects(true);
-
-        br.setCookie(parameter.getDownloadURL(), "l", "de");
-        br.setCookie(parameter.getDownloadURL(), "v", "1");
-        br.setCookie(parameter.getDownloadURL(), "ve_view", "1");
-        br.getPage(link);
+        String dlUrl = "http://megaupload.com/?d=" + id;
+        br.getPage(dlUrl);
         if (br.containsHTML(ERROR_TEMP_NOT_AVAILABLE)) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 20 * 60 * 1000l);
         if (br.containsHTML(ERROR_FILENOTFOUND)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
 

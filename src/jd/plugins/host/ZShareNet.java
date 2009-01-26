@@ -70,11 +70,10 @@ public class ZShareNet extends PluginForHost {
         download.put("imageField", null);
         // Form abschicken
         br.submitForm(download);
-
         String fnc = br.getRegex("var link_enc\\=new Array\\(\\'(.*?)\\'\\)").getMatch(0);
         fnc = fnc.replaceAll("\\'\\,\\'", "");
-
         dl = br.openDownload(downloadLink, fnc, true, 1);
+
         // Möglicherweise serverfehler...
         if (!dl.getConnection().isContentDisposition()) {
             dl.getConnection().disconnect();

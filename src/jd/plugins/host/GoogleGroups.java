@@ -23,12 +23,11 @@ import java.util.HashMap;
 import java.util.Map.Entry;
 
 import jd.PluginWrapper;
-import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.RAFDownload;
 
 public class GoogleGroups extends PluginForHost {
 
@@ -39,7 +38,6 @@ public class GoogleGroups extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-
         return "http://groups.google.com/intl/de/googlegroups/terms_of_service3.html";
     }
 
@@ -68,8 +66,8 @@ public class GoogleGroups extends PluginForHost {
                 br.getPage("http://groups.google.com/group/" + entry.getKey() + "/files");
                 String[][] infos = br.getRegex("<td class=\"namecol\">.*?<a.*?href=\"(.*?)\">(.*?)</a>.*?<td class=\"sizecol\">(.*?)</td>").getMatches();
                 for (DownloadLink downloadLink : entry.getValue()) {
-                    String na= downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
-                    na=na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/")+URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
+                    String na = downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
+                    na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
                     for (String[] strings : infos) {
                         if (strings[0].contains(na) || downloadLink.getName().equals(strings[1])) {
                             for (int i = 0; i < ret.length; i++) {
@@ -83,8 +81,7 @@ public class GoogleGroups extends PluginForHost {
                             break;
                         }
                     }
-                    if(downloadLink.getDownloadSize()<1)
-                    downloadLink.setName(downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "").replaceFirst("googlegroups.com/web/", ""));
+                    if (downloadLink.getDownloadSize() < 1) downloadLink.setName(downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "").replaceFirst("googlegroups.com/web/", ""));
                 }
             } catch (IOException e) {
                 // TODO Auto-generated catch block
@@ -96,32 +93,23 @@ public class GoogleGroups extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        return checkLinks(new DownloadLink[] {downloadLink})[0];
+        return checkLinks(new DownloadLink[] { downloadLink })[0];
     }
 
     @Override
     public String getVersion() {
-
-        return getVersion("$Revision: 4334 $");
+        return getVersion("$Revision$");
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        LinkStatus linkStatus = downloadLink.getLinkStatus();
-        br.setCookiesExclusive(true);
-        br.clearCookies(getHost());
-        if (!getFileInformation(downloadLink)) {
-            linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
-            return;
-        }
-        //.googlegroups.com/web/
-        String na= downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
-        na=na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/")+URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
-        Request request = br.createGetRequest(na);
-        dl = new RAFDownload(this, downloadLink, request);
+    public void handleFree(DownloadLink downloadLink) throws Exception, PluginException {
+        if (!getFileInformation(downloadLink)) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // .googlegroups.com/web/
+        String na = downloadLink.getDownloadURL().replaceFirst("\\?gda=.*", "");
+        na = na.replaceFirst("googlegroups.com/web/.*", "googlegroups.com/web/") + URLEncoder.encode(na.replaceFirst("http://.*?\\.googlegroups.com/web/", ""), "UTF-8");
+        dl = br.openDownload(downloadLink, na);
         dl.setFilesizeCheck(false);
         dl.startDownload();
-        
     }
 
     public int getMaxSimultanFreeDownloadNum() {

@@ -130,7 +130,7 @@ public class Rapidshare extends PluginForHost {
         return "http://rapidshare.com/files/" + fileid + "/" + filename;
     }
 
-    private static int I=0;
+    // private static int I = 0;
 
     public Rapidshare(PluginWrapper wrapper) {
         super(wrapper);
@@ -248,15 +248,118 @@ public class Rapidshare extends PluginForHost {
     }
 
     public void handleFree(DownloadLink downloadLink) throws Exception {
-        
-//       JDProxy[] list = new JDProxy[]{new JDProxy("200.110.145.33:3128"),new JDProxy("202.107.231.157:8080"),new JDProxy("125.167.177.233:8080"),new JDProxy("76.107.94.147:9090"),new JDProxy("218.248.33.12:3128"),new JDProxy("24.126.147.186:9090"),new JDProxy("189.77.7.130:3128"),new JDProxy("118.142.8.62:3128"),new JDProxy("60.191.61.162:80"),new JDProxy("207.157.9.166:9090"),new JDProxy("201.54.234.11:8080"),new JDProxy("216.114.194.19:7212"),new JDProxy("87.120.57.8:8080"),new JDProxy("222.239.222.40:8080"),new JDProxy("85.238.102.14:3128"),new JDProxy("24.255.219.247:9090"),new JDProxy("89.16.173.180:80"),new JDProxy("69.65.55.213:80"),new JDProxy("72.219.18.179:9090"),new JDProxy("72.9.72.148:9090"),new JDProxy("216.164.170.134:9090"),new JDProxy("71.236.126.53:9090"),new JDProxy("71.205.59.3:9090"),new JDProxy("68.111.231.178:9090"),new JDProxy("66.168.31.52:9090"),new JDProxy("65.190.207.153:9090"),new JDProxy("62.193.246.10:6654"),new JDProxy("61.238.104.200:808"),new JDProxy("82.16.112.129:9090"),new JDProxy("96.3.152.82:9090"),new JDProxy("68.118.245.35:9090"),new JDProxy("76.236.53.243:9090"),new JDProxy("76.123.145.161:9090"),new JDProxy("74.77.117.65:9090"),new JDProxy("68.11.155.121:9090"),new JDProxy("68.104.28.45:9090"),new JDProxy("24.191.241.154:9090"),new JDProxy("68.63.27.57:9090"),new JDProxy("68.105.2.18:9090"),new JDProxy("67.186.21.32:9090"),new JDProxy("24.20.45.101:9090"),new JDProxy("77.101.55.240:9090"),new JDProxy("71.82.59.206:9090"),new JDProxy("98.150.85.174:9090"),new JDProxy("75.83.57.219:9090"),new JDProxy("75.64.252.237:9090"),new JDProxy("212.247.103.171:80"),new JDProxy("76.167.197.53:9090"),new JDProxy("70.162.244.181:9090"),new JDProxy("69.138.47.42:9090"),new JDProxy("65.190.82.22:9090"),new JDProxy("67.174.68.94:9090"),new JDProxy("24.12.214.237:9090"),new JDProxy("99.253.185.5:9090"),new JDProxy("99.243.108.199:9090"),new JDProxy("96.28.198.244:9090"),new JDProxy("74.72.115.208:9090"),new JDProxy("70.64.250.176:9090"),new JDProxy("69.242.176.42:9090"),new JDProxy("97.86.124.33:9090"),new JDProxy("217.147.235.105:3128"),new JDProxy("123.238.35.104:6588"),new JDProxy("203.89.182.248:8080"),new JDProxy("202.155.10.131:8080"),new JDProxy("195.101.42.25:80"),new JDProxy("220.224.224.66:3128"),new JDProxy("209.137.151.229:8080"),new JDProxy("91.121.13.127:8080"),new JDProxy("221.120.121.122:80"),new JDProxy("69.127.115.255:9090"),new JDProxy("68.114.255.3:9090"),new JDProxy("68.100.221.146:9090"),new JDProxy("76.123.18.157:9090"),new JDProxy("74.53.11.83:80"),new JDProxy("200.138.135.12:6588"),new JDProxy("92.22.97.188:9090"),new JDProxy("86.14.253.190:2301"),new JDProxy("12.205.135.91:9090"),new JDProxy("75.37.214.224:9090"),new JDProxy("202.52.243.206:80"),new JDProxy("85.219.198.217:8080"),new JDProxy("200.21.232.130:8080"),new JDProxy("65.110.62.11:80"),new JDProxy("68.118.147.60:9090"),new JDProxy("194.180.252.35:80"),new JDProxy("203.206.128.19:8080"),new JDProxy("91.194.85.198:6654"),new JDProxy("69.47.165.83:9090"),new JDProxy("69.14.142.185:9090"),new JDProxy("66.165.197.37:9090"),new JDProxy("65.25.149.228:9090"),new JDProxy("65.190.253.101:9090"),new JDProxy("24.9.22.230:9090"),new JDProxy("24.34.60.98:9090"),new JDProxy("211.154.133.210:80"),new JDProxy("80.250.70.111:3128"),new JDProxy("70.67.220.27:9090"),new JDProxy("24.70.56.39:9090"),new JDProxy("198.164.83.28:9090"),new JDProxy("88.80.208.22:80"),new JDProxy("12.183.216.12:80"),new JDProxy("212.108.250.70:8080"),new JDProxy("217.151.231.34:3128"),new JDProxy("212.20.115.100:80"),new JDProxy("202.29.137.145:80"),new JDProxy("203.70.96.9:80"),new JDProxy("195.113.207.43:80"),new JDProxy("202.168.193.131:80"),new JDProxy("89.162.237.22:80"),new JDProxy("66.253.168.169:9090"),new JDProxy("75.139.62.247:9090"),new JDProxy("75.126.232.52:9090"),new JDProxy("195.180.11.231:8080"),new JDProxy("189.19.10.115:3128"),new JDProxy("74.142.142.57:9090"),new JDProxy("72.205.59.135:9090"),new JDProxy("201.210.49.219:3128"),new JDProxy("222.123.215.201:3128"),new JDProxy("220.225.245.229:3128"),new JDProxy("200.110.130.129:3128"),new JDProxy("98.197.249.24:9090"),new JDProxy("69.22.123.154:9090"),new JDProxy("24.230.182.225:9090"),new JDProxy("24.224.230.126:9090"),new JDProxy("68.225.96.18:9090"),new JDProxy("71.199.135.108:9090"),new JDProxy("89.248.239.59:3128"),new JDProxy("89.188.238.98:8080"),new JDProxy("203.109.125.252:6588"),new JDProxy("90.157.37.216:8000"),new JDProxy("202.32.9.157:80"),new JDProxy("190.199.249.254:8080"),new JDProxy("59.120.164.148:80"),new JDProxy("76.170.85.232:9090"),new JDProxy("76.106.234.173:9090"),new JDProxy("69.161.78.160:9090"),new JDProxy("66.31.108.157:9090"),new JDProxy("71.9.6.233:9090"),new JDProxy("24.78.86.89:9090"),new JDProxy("67.182.84.133:9090"),new JDProxy("66.67.106.227:9090"),new JDProxy("201.52.73.13:6588"),new JDProxy("82.22.138.43:9090"),new JDProxy("75.85.136.141:9090"),new JDProxy("69.118.237.19:9090"),new JDProxy("24.25.164.214:9090"),new JDProxy("189.54.169.42:6588"),new JDProxy("24.8.14.155:9090"),new JDProxy("66.196.86.219:80"),new JDProxy("12.130.107.115:80"),new JDProxy("75.132.25.184:9090"),new JDProxy("96.28.160.240:9090"),new JDProxy("66.167.228.62:9090"),new JDProxy("24.34.160.245:9090"),new JDProxy("24.14.112.139:9090"),new JDProxy("24.125.64.236:9090"),new JDProxy("69.15.128.20:80"),new JDProxy("201.229.208.2:80"),new JDProxy("66.145.194.101:80"),new JDProxy("98.192.124.144:9090"),new JDProxy("98.192.114.62:9090"),new JDProxy("62.49.119.178:8080"),new JDProxy("60.217.227.211:808"),new JDProxy("24.129.120.19:8090"),new JDProxy("222.171.28.246:808"),new JDProxy("222.141.136.61:8080"),new JDProxy("201.80.62.254:6588"),new JDProxy("200.163.7.182:8080"),new JDProxy("212.24.237.49:8080"),new JDProxy("96.28.116.40:9090"),new JDProxy("92.23.152.189:9090"),new JDProxy("88.165.169.130:9090"),new JDProxy("84.193.238.116:9090"),new JDProxy("82.234.51.250:9090"),new JDProxy("81.237.233.253:9090"),new JDProxy("77.97.55.155:9090"),new JDProxy("76.182.53.239:9090"),new JDProxy("76.127.163.18:9090"),new JDProxy("76.116.89.184:9090"),new JDProxy("75.39.132.200:9090"),new JDProxy("75.147.125.182:9090"),new JDProxy("71.237.98.13:9090"),new JDProxy("71.194.0.41:9090"),new JDProxy("70.237.142.249:9090"),new JDProxy("69.122.222.90:9090"),new JDProxy("69.119.243.192:9090"),new JDProxy("68.60.189.199:9090"),new JDProxy("68.57.62.200:9090"),new JDProxy("68.52.143.160:9090"),new JDProxy("24.79.173.214:9090"),new JDProxy("24.238.197.103:9090"),new JDProxy("24.117.213.220:9090"),new JDProxy("204.210.116.65:9090"),new JDProxy("85.105.144.28:8088"),new JDProxy("79.133.224.249:80"),new JDProxy("66.61.69.94:9090"),new JDProxy("128.42.197.35:49400"),new JDProxy("74.206.198.14:3128"),new JDProxy("202.102.75.230:80"),new JDProxy("210.245.52.192:8088")};
-//       
-//       
-//       I++;
-//       if(I>=list.length)I=0;
-//       
-//       br.setProxy(list[I]);
-//       System.out.println("Proxy: "+list[I]);
+
+        // JDProxy[] list = new JDProxy[]{new JDProxy("200.110.145.33:3128"),new
+        // JDProxy("202.107.231.157:8080"),new
+        // JDProxy("125.167.177.233:8080"),new JDProxy("76.107.94.147:9090"),new
+        // JDProxy("218.248.33.12:3128"),new JDProxy("24.126.147.186:9090"),new
+        // JDProxy("189.77.7.130:3128"),new JDProxy("118.142.8.62:3128"),new
+        // JDProxy("60.191.61.162:80"),new JDProxy("207.157.9.166:9090"),new
+        // JDProxy("201.54.234.11:8080"),new JDProxy("216.114.194.19:7212"),new
+        // JDProxy("87.120.57.8:8080"),new JDProxy("222.239.222.40:8080"),new
+        // JDProxy("85.238.102.14:3128"),new JDProxy("24.255.219.247:9090"),new
+        // JDProxy("89.16.173.180:80"),new JDProxy("69.65.55.213:80"),new
+        // JDProxy("72.219.18.179:9090"),new JDProxy("72.9.72.148:9090"),new
+        // JDProxy("216.164.170.134:9090"),new JDProxy("71.236.126.53:9090"),new
+        // JDProxy("71.205.59.3:9090"),new JDProxy("68.111.231.178:9090"),new
+        // JDProxy("66.168.31.52:9090"),new JDProxy("65.190.207.153:9090"),new
+        // JDProxy("62.193.246.10:6654"),new JDProxy("61.238.104.200:808"),new
+        // JDProxy("82.16.112.129:9090"),new JDProxy("96.3.152.82:9090"),new
+        // JDProxy("68.118.245.35:9090"),new JDProxy("76.236.53.243:9090"),new
+        // JDProxy("76.123.145.161:9090"),new JDProxy("74.77.117.65:9090"),new
+        // JDProxy("68.11.155.121:9090"),new JDProxy("68.104.28.45:9090"),new
+        // JDProxy("24.191.241.154:9090"),new JDProxy("68.63.27.57:9090"),new
+        // JDProxy("68.105.2.18:9090"),new JDProxy("67.186.21.32:9090"),new
+        // JDProxy("24.20.45.101:9090"),new JDProxy("77.101.55.240:9090"),new
+        // JDProxy("71.82.59.206:9090"),new JDProxy("98.150.85.174:9090"),new
+        // JDProxy("75.83.57.219:9090"),new JDProxy("75.64.252.237:9090"),new
+        // JDProxy("212.247.103.171:80"),new JDProxy("76.167.197.53:9090"),new
+        // JDProxy("70.162.244.181:9090"),new JDProxy("69.138.47.42:9090"),new
+        // JDProxy("65.190.82.22:9090"),new JDProxy("67.174.68.94:9090"),new
+        // JDProxy("24.12.214.237:9090"),new JDProxy("99.253.185.5:9090"),new
+        // JDProxy("99.243.108.199:9090"),new JDProxy("96.28.198.244:9090"),new
+        // JDProxy("74.72.115.208:9090"),new JDProxy("70.64.250.176:9090"),new
+        // JDProxy("69.242.176.42:9090"),new JDProxy("97.86.124.33:9090"),new
+        // JDProxy("217.147.235.105:3128"),new
+        // JDProxy("123.238.35.104:6588"),new JDProxy("203.89.182.248:8080"),new
+        // JDProxy("202.155.10.131:8080"),new JDProxy("195.101.42.25:80"),new
+        // JDProxy("220.224.224.66:3128"),new
+        // JDProxy("209.137.151.229:8080"),new JDProxy("91.121.13.127:8080"),new
+        // JDProxy("221.120.121.122:80"),new JDProxy("69.127.115.255:9090"),new
+        // JDProxy("68.114.255.3:9090"),new JDProxy("68.100.221.146:9090"),new
+        // JDProxy("76.123.18.157:9090"),new JDProxy("74.53.11.83:80"),new
+        // JDProxy("200.138.135.12:6588"),new JDProxy("92.22.97.188:9090"),new
+        // JDProxy("86.14.253.190:2301"),new JDProxy("12.205.135.91:9090"),new
+        // JDProxy("75.37.214.224:9090"),new JDProxy("202.52.243.206:80"),new
+        // JDProxy("85.219.198.217:8080"),new JDProxy("200.21.232.130:8080"),new
+        // JDProxy("65.110.62.11:80"),new JDProxy("68.118.147.60:9090"),new
+        // JDProxy("194.180.252.35:80"),new JDProxy("203.206.128.19:8080"),new
+        // JDProxy("91.194.85.198:6654"),new JDProxy("69.47.165.83:9090"),new
+        // JDProxy("69.14.142.185:9090"),new JDProxy("66.165.197.37:9090"),new
+        // JDProxy("65.25.149.228:9090"),new JDProxy("65.190.253.101:9090"),new
+        // JDProxy("24.9.22.230:9090"),new JDProxy("24.34.60.98:9090"),new
+        // JDProxy("211.154.133.210:80"),new JDProxy("80.250.70.111:3128"),new
+        // JDProxy("70.67.220.27:9090"),new JDProxy("24.70.56.39:9090"),new
+        // JDProxy("198.164.83.28:9090"),new JDProxy("88.80.208.22:80"),new
+        // JDProxy("12.183.216.12:80"),new JDProxy("212.108.250.70:8080"),new
+        // JDProxy("217.151.231.34:3128"),new JDProxy("212.20.115.100:80"),new
+        // JDProxy("202.29.137.145:80"),new JDProxy("203.70.96.9:80"),new
+        // JDProxy("195.113.207.43:80"),new JDProxy("202.168.193.131:80"),new
+        // JDProxy("89.162.237.22:80"),new JDProxy("66.253.168.169:9090"),new
+        // JDProxy("75.139.62.247:9090"),new JDProxy("75.126.232.52:9090"),new
+        // JDProxy("195.180.11.231:8080"),new JDProxy("189.19.10.115:3128"),new
+        // JDProxy("74.142.142.57:9090"),new JDProxy("72.205.59.135:9090"),new
+        // JDProxy("201.210.49.219:3128"),new
+        // JDProxy("222.123.215.201:3128"),new
+        // JDProxy("220.225.245.229:3128"),new
+        // JDProxy("200.110.130.129:3128"),new JDProxy("98.197.249.24:9090"),new
+        // JDProxy("69.22.123.154:9090"),new JDProxy("24.230.182.225:9090"),new
+        // JDProxy("24.224.230.126:9090"),new JDProxy("68.225.96.18:9090"),new
+        // JDProxy("71.199.135.108:9090"),new JDProxy("89.248.239.59:3128"),new
+        // JDProxy("89.188.238.98:8080"),new JDProxy("203.109.125.252:6588"),new
+        // JDProxy("90.157.37.216:8000"),new JDProxy("202.32.9.157:80"),new
+        // JDProxy("190.199.249.254:8080"),new JDProxy("59.120.164.148:80"),new
+        // JDProxy("76.170.85.232:9090"),new JDProxy("76.106.234.173:9090"),new
+        // JDProxy("69.161.78.160:9090"),new JDProxy("66.31.108.157:9090"),new
+        // JDProxy("71.9.6.233:9090"),new JDProxy("24.78.86.89:9090"),new
+        // JDProxy("67.182.84.133:9090"),new JDProxy("66.67.106.227:9090"),new
+        // JDProxy("201.52.73.13:6588"),new JDProxy("82.22.138.43:9090"),new
+        // JDProxy("75.85.136.141:9090"),new JDProxy("69.118.237.19:9090"),new
+        // JDProxy("24.25.164.214:9090"),new JDProxy("189.54.169.42:6588"),new
+        // JDProxy("24.8.14.155:9090"),new JDProxy("66.196.86.219:80"),new
+        // JDProxy("12.130.107.115:80"),new JDProxy("75.132.25.184:9090"),new
+        // JDProxy("96.28.160.240:9090"),new JDProxy("66.167.228.62:9090"),new
+        // JDProxy("24.34.160.245:9090"),new JDProxy("24.14.112.139:9090"),new
+        // JDProxy("24.125.64.236:9090"),new JDProxy("69.15.128.20:80"),new
+        // JDProxy("201.229.208.2:80"),new JDProxy("66.145.194.101:80"),new
+        // JDProxy("98.192.124.144:9090"),new JDProxy("98.192.114.62:9090"),new
+        // JDProxy("62.49.119.178:8080"),new JDProxy("60.217.227.211:808"),new
+        // JDProxy("24.129.120.19:8090"),new JDProxy("222.171.28.246:808"),new
+        // JDProxy("222.141.136.61:8080"),new JDProxy("201.80.62.254:6588"),new
+        // JDProxy("200.163.7.182:8080"),new JDProxy("212.24.237.49:8080"),new
+        // JDProxy("96.28.116.40:9090"),new JDProxy("92.23.152.189:9090"),new
+        // JDProxy("88.165.169.130:9090"),new JDProxy("84.193.238.116:9090"),new
+        // JDProxy("82.234.51.250:9090"),new JDProxy("81.237.233.253:9090"),new
+        // JDProxy("77.97.55.155:9090"),new JDProxy("76.182.53.239:9090"),new
+        // JDProxy("76.127.163.18:9090"),new JDProxy("76.116.89.184:9090"),new
+        // JDProxy("75.39.132.200:9090"),new JDProxy("75.147.125.182:9090"),new
+        // JDProxy("71.237.98.13:9090"),new JDProxy("71.194.0.41:9090"),new
+        // JDProxy("70.237.142.249:9090"),new JDProxy("69.122.222.90:9090"),new
+        // JDProxy("69.119.243.192:9090"),new JDProxy("68.60.189.199:9090"),new
+        // JDProxy("68.57.62.200:9090"),new JDProxy("68.52.143.160:9090"),new
+        // JDProxy("24.79.173.214:9090"),new JDProxy("24.238.197.103:9090"),new
+        // JDProxy("24.117.213.220:9090"),new JDProxy("204.210.116.65:9090"),new
+        // JDProxy("85.105.144.28:8088"),new JDProxy("79.133.224.249:80"),new
+        // JDProxy("66.61.69.94:9090"),new JDProxy("128.42.197.35:49400"),new
+        // JDProxy("74.206.198.14:3128"),new JDProxy("202.102.75.230:80"),new
+        // JDProxy("210.245.52.192:8088")};
+        //       
+        //       
+        // I++;
+        // if(I>=list.length)I=0;
+        //       
+        // br.setProxy(list[I]);
+        // System.out.println("Proxy: "+list[I]);
         if (downloadLink.getDownloadURL().matches("sjdp://.*")) {
             ((PluginForHost) PluginWrapper.getNewInstance("jd.plugins.host.Serienjunkies")).handleFree(downloadLink);
             return;
@@ -271,7 +374,6 @@ public class Rapidshare extends PluginForHost {
         // if (getRemainingWaittime() > 0) { return
         // handleDownloadLimit(downloadLink); }
         String freeOrPremiumSelectPostURL = null;
-     
 
         br.setAcceptLanguage(ACCEPT_LANGUAGE);
         br.setFollowRedirects(false);
@@ -308,6 +410,7 @@ public class Rapidshare extends PluginForHost {
         String error = null;
 
         if ((error = findError(br + "")) != null) {
+            if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000l); }
             if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
             if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
@@ -467,6 +570,7 @@ public class Rapidshare extends PluginForHost {
                     account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+                if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
                 if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }
@@ -548,6 +652,7 @@ public class Rapidshare extends PluginForHost {
                     account.setProperty("premcookie", null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
+                if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
                 if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
                 if (Regex.matches(error, Pattern.compile("(Betrugserkennung)"))) { throw new PluginException(LinkStatus.ERROR_PREMIUM, JDLocale.L("plugin.rapidshare.error.fraud", "Fraud detected: This Account has been illegally used by several users."), LinkStatus.VALUE_ID_PREMIUM_DISABLE); }

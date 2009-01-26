@@ -257,18 +257,17 @@ public class DistributeData extends ControlBroadcaster {
                         Vector<DownloadLink> dLinks = pHost.getPlugin().getDownloadLinks(decrypted.getDownloadURL(), decrypted.getFilePackage() != FilePackage.getDefaultFilePackage() ? decrypted.getFilePackage() : null);
 
                         for (int c = 0; c < dLinks.size(); c++) {
-
                             dLinks.get(c).addSourcePluginPasswords(foundPasswords);
                             dLinks.get(c).addSourcePluginPasswords(decrypted.getSourcePluginPasswords());
                             dLinks.get(c).setSourcePluginComment(decrypted.getSourcePluginComment());
                             dLinks.get(c).setName(decrypted.getName());
                             dLinks.get(c).setFinalFileName(decrypted.getFinalFileName());
                             dLinks.get(c).setBrowserUrl(decrypted.getBrowserUrl());
+                            if (decrypted.isAvailabilityChecked()) dLinks.get(c).setAvailable(decrypted.isAvailable());
                             dLinks.get(c).setProperties(decrypted.getProperties());
                             dLinks.get(c).getLinkStatus().setStatusText(decrypted.getLinkStatus().getStatusString());
                             dLinks.get(c).setDownloadSize(decrypted.getDownloadSize());
                             dLinks.get(c).setSubdirectory(decrypted);
-
                         }
                         links.addAll(dLinks);
                     }
@@ -334,7 +333,7 @@ public class DistributeData extends ControlBroadcaster {
             if (pDecrypt.usePlugin() && pDecrypt.canHandle(pDecrypt.isAcceptOnlyURIs() ? data : orgData)) {
 
                 try {
-                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();                    
+                    PluginForDecrypt plg = (PluginForDecrypt) pDecrypt.getNewPluginInstance();
 
                     CryptedLink[] decryptableLinks = plg.getDecryptableLinks(plg.isAcceptOnlyURIs() ? data : orgData);
                     if (plg.isAcceptOnlyURIs()) {
