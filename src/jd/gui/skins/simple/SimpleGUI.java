@@ -257,7 +257,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                 } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
                     chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
                 } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
-                	btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
+                    btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
                     btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
                 }
             }
@@ -635,7 +635,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JLabel warning;
 
-    private Thread warningWorker;
+    private Thread warningWorker;    
 
     /**
      * Das Hauptfenster wird erstellt
@@ -707,6 +707,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      * @param e
      *            Die erwünschte Aktion
      */
+
     public void actionPerformed(ActionEvent e) {
         JDSounds.PT("sound.gui.clickToolbar");
         switch (e.getID()) {

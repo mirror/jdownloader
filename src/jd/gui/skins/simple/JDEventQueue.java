@@ -35,6 +35,7 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
+import jd.gui.skins.simple.components.JUndoManager;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
@@ -73,7 +74,7 @@ public class JDEventQueue extends EventQueue {
         Component c = SwingUtilities.getDeepestComponentAt(e.getComponent(), e.getX(), e.getY());
         if (!(c instanceof JTextComponent)) { return; }
         if (MenuSelectionManager.defaultManager().getSelectedPath().length > 0) { return; }
-        JTextComponent t = (JTextComponent) c;
+        final JTextComponent t = (JTextComponent) c;
         JPopupMenu menu = new JPopupMenu();
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.cut", "Ausschneiden"), JDTheme.II("gui.icons.cut", 16, 16), JDLocale.L("gui.textcomponent.context.cut.acc", "ctrl X")) {
             /**
@@ -130,6 +131,13 @@ public class JDEventQueue extends EventQueue {
                 c.replaceSelection(null);
             }
         });
+        menu.addSeparator();
+        if (JUndoManager.canUndo(t)) {
+            menu.add(JUndoManager.Undo(t));
+        }
+        if (JUndoManager.canRedo(t)) {
+            menu.add(JUndoManager.Redo(t));
+        }
         menu.addSeparator();
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall", "Alles auswählen"), JDTheme.II("gui.icons.select_all", 16, 16), JDLocale.L("gui.textcomponent.context.selectall.acc", "ctrl A")) {
             /**

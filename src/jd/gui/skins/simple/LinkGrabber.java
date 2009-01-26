@@ -83,13 +83,13 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.text.PlainDocument;
-
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
+import jd.gui.skins.simple.components.JUndoManager;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
@@ -290,8 +290,14 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
-
             buildGui();
+        }
+
+        protected void finalize() throws Throwable {
+            JUndoManager.delManager(txtName);
+            JUndoManager.delManager(txtPassword);
+            JUndoManager.delManager(txtComment);
+            super.finalize(); // not necessary if extending Object.
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -395,8 +401,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             setLayout(new GridBagLayout());
 
             txtName = new AutoSelectTextField();
+            JUndoManager.addManager(txtName);
             txtPassword = new JTextField();
+            JUndoManager.addManager(txtPassword);
             txtComment = new JTextField();
+            JUndoManager.addManager(txtComment);
 
             chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
             chbExtract.setSelected(true);
