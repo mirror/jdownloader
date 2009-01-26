@@ -759,7 +759,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         });
         passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", Regex.getLines(JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST).getStringProperty("LIST", "")).length + "")));
-
+        
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
 

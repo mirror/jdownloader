@@ -286,8 +286,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         // wurde.
         private boolean changedDir = false;
 
-        private String lastName;
-
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
             buildGui();
@@ -440,19 +438,16 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             doc.addDocumentListener(new DocumentListener() {
                 public void changedUpdate(DocumentEvent e) {
                     onPackageNameChanged(PackageTab.this);
-                    autoDownloadDir(PackageTab.this.getPackageName());
                 }
 
                 public void insertUpdate(DocumentEvent e) {
 
                     onPackageNameChanged(PackageTab.this);
-                    autoDownloadDir(PackageTab.this.getPackageName());
                 }
 
                 public void removeUpdate(DocumentEvent e) {
 
                     onPackageNameChanged(PackageTab.this);
-                    autoDownloadDir(PackageTab.this.getPackageName());
                 }
             });
 
@@ -703,39 +698,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         public synchronized void setPackageName(String name) {
             txtName.setText(JDUtilities.removeEndingPoints(name));
-
             if (this.changedDir) return;
-            autoDownloadDir(name);
-
-        }
-
-        private void autoDownloadDir(String name) {
-            if (name == null || name.equals(lastName) || name.length() < 3) return;
-            this.lastName = name;
-            ArrayList<String[]> list = getDownloadDirList();
-            String[] best = null;
-            int bestValue = Integer.MAX_VALUE;
-            for (String[] entry : list) {
-                if (entry[0] == null || entry[0].equalsIgnoreCase(JDUtilities.getConfiguration().getDefaultDownloadDirectory())) continue;
-                int value = JDUtilities.getLevenshteinDistance(entry[1], name);
-                if (name.startsWith(entry[1]) || name.endsWith(entry[1]) || entry[1].startsWith(name) || entry[1].endsWith(name)) value -= 3;
-
-                if (value < bestValue || best == null) {
-                    best = entry;
-                    bestValue = value;
-                }
-            }
-
-            if (bestValue < 4) {
-                final String newdir = best[0];
-                SwingUtilities.invokeLater(new Runnable() {
-                    public void run() {
-
-                        setDownloadDirectory(newdir);
-                    }
-
-                });
-            }
 
         }
 
