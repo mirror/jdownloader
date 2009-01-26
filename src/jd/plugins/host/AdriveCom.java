@@ -30,7 +30,6 @@ public class AdriveCom extends PluginForHost {
 
     public AdriveCom(PluginWrapper wrapper) {
         super(wrapper);
-        br.setDebug(true);
     }
 
     @Override
@@ -41,12 +40,11 @@ public class AdriveCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
-        String url = downloadLink.getDownloadURL();
-        br.getPage(url);
+        br.getPage(downloadLink.getDownloadURL());
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         HTTPConnection con = br.openGetConnection(linkurl);
         if (!con.isContentDisposition()) {
-            br.getPage(linkurl);
+            br.followConnection();
             if (br.containsHTML("File overlimit")) {
                 con.disconnect();
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Public File Busy", 10 * 60 * 1000l);
@@ -55,10 +53,10 @@ public class AdriveCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        downloadLink.setName(AdriveCom.getFileNameFormHeader(con));
+        downloadLink.setFinalFileName(AdriveCom.getFileNameFormHeader(con));
         downloadLink.setDownloadSize(con.getContentLength());
+        downloadLink.setDupecheckAllowed(true);
         con.disconnect();
-        br.getPage(url);
         return true;
     }
 
@@ -71,18 +69,24 @@ public class AdriveCom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
+        br.getPage(downloadLink.getDownloadURL());
         /* Link holen */
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        if (linkurl == null)
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
         dl = br.openDownload(downloadLink, linkurl, true, 1);
         HTTPConnection con = dl.getConnection();
+        if (!con.isContentDisposition()) {
+            br.followConnection();
+            if (br.containsHTML("File overlimit")) {
+                con.disconnect();
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Public File Busy", 10 * 60 * 1000l);
+            }
+        }
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
         }
-
         dl.startDownload();
     }
 
