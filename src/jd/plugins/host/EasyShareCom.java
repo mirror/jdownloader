@@ -88,9 +88,10 @@ public class EasyShareCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         br.setCookie("http://www.easy-share.com", "language", "en");
+        if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex(Pattern.compile("You are requesting<strong>(.*?)</strong>", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
         String filesize = br.getRegex("You are requesting<strong>.*?</strong>(.*?)<").getMatch(0);
-        if (filename == null || filesize == null) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize));
         return true;
@@ -137,7 +138,7 @@ public class EasyShareCom extends PluginForHost {
     }
 
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
-        if (!getFileInformation(downloadLink)) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
+        getFileInformation(downloadLink);
         login(account);
         isexpired(account);
         br.setFollowRedirects(true);
