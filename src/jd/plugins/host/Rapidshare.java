@@ -390,6 +390,10 @@ public class Rapidshare extends PluginForHost {
             return;
         }
         // posturl für auswahl free7premium wird gesucht
+        if(br.toString().contains("Diese Datei ist grösser als 200 Megabyte"))
+        {
+            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugin.rapidshare.error.filetolarge","This file is larger than 200 MB, you need a premium-account to download this file."));
+        }
         freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getMatch(0);
         // Fehlerbehandlung auf der ersten Seite
         if (freeOrPremiumSelectPostURL == null) {
