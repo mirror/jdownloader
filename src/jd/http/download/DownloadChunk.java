@@ -33,27 +33,20 @@ import jd.http.Request;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
 
-public class DownloadChunk implements JDRunnable {
+public class DownloadChunk extends DownloadChunkInterface implements JDRunnable {
 
     private static final int MAXBUFFER_SIZE = 1024 * 128;
     private static final int TIMEOUT_READ = 20000;
     private static final int TIMEOUT_CONNECT = 20000;
     private static final int SPEEDMETER_INTERVAL = 3000;
     private Request request;
-    /**
-     * chunkStart. The first Byte that contains to the chunk. border included
-     */
-    private long chunkStart = 0;
-    /**
-     * The last Byte that contains to the chunk. Border included
-     */
-    private long chunkEnd = 0;
+
     private HTTPConnection connection;
     private InputStream inputStream;
     private long writePosition = 0;
 
     public long getWritePosition() {
-        return this.chunkStart + writePosition;
+        return this.getChunkStart() + writePosition;
     }
 
     public InputStream getInputStream() {
@@ -65,7 +58,7 @@ public class DownloadChunk implements JDRunnable {
     }
 
     public String toString() {
-        return "Chunk [" + this.chunkStart + " - " + this.chunkEnd + "]";
+        return "Chunk [" + this.getChunkStart() + " - " + this.getChunkEnd() + "]";
     }
 
     private ReadableByteChannel channel;
@@ -87,8 +80,8 @@ public class DownloadChunk implements JDRunnable {
 
     public DownloadChunk(HTTPDownload owner, long start, long end) throws BrowserException {
         this.owner = owner;
-        this.chunkStart = start;
-        this.chunkEnd = end;
+        this.setChunkStart(start);
+        this.setChunkEnd(end);
         chunkProgress = new ChunkProgress();
         if (start > end && end > 0) {
 
@@ -102,22 +95,6 @@ public class DownloadChunk implements JDRunnable {
         chunkProgress = new ChunkProgress();
     }
 
-    public long getChunkStart() {
-        return chunkStart;
-    }
-
-    public void setChunkStart(long chunkStart) {
-        this.chunkStart = chunkStart;
-    }
-
-    public long getChunkEnd() {
-        return chunkEnd;
-    }
-
-    public void setChunkEnd(long chunkEnd) {
-        System.out.println(this + " Chunkend to " + chunkEnd);
-        this.chunkEnd = chunkEnd;
-    }
 
     public void connect() throws IOException, BrowserException {
         if (connectionRequested) throw new IllegalStateException("Already Connected");
@@ -128,7 +105,7 @@ public class DownloadChunk implements JDRunnable {
         } else {
             HTTPConnection connection = request.getHttpConnection();
 
-            Browser br = new Browser();
+            Browser br = owner.getBrowser().cloneBrowser();
 
             br.setDebug(true);
             br.setReadTimeout(request.getReadTimeout());
@@ -147,10 +124,10 @@ public class DownloadChunk implements JDRunnable {
                     br.getHeaders().put(next.getKey(), value.substring(1, value.length() - 1));
                 }
             }
-            if (chunkEnd < 0) {
-                br.getHeaders().put("Range", "bytes=" + chunkStart + "-");
+            if (getChunkEnd() < 0) {
+                br.getHeaders().put("Range", "bytes=" + getChunkStart() + "-");
             } else {
-                br.getHeaders().put("Range", "bytes=" + chunkStart + "-" + this.chunkEnd);
+                br.getHeaders().put("Range", "bytes=" + getChunkStart() + "-" + this.getChunkEnd());
             }
             HTTPConnection con;
             if (connection.getHTTPURLConnection().getDoOutput()) {
@@ -168,11 +145,11 @@ public class DownloadChunk implements JDRunnable {
 
             long[] range = this.connection.getRange();
 
-            if (range[0] != this.chunkStart) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
+            if (range[0] != this.getChunkStart()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
 
             }
 
-            if (chunkEnd > 0 && range[1] < this.chunkEnd) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
+            if (getChunkEnd() > 0 && range[1] < this.getChunkEnd()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.rangeerror", "Chunkload error"), BrowserException.TYPE_RANGE);
 
             }
 
@@ -192,8 +169,8 @@ public class DownloadChunk implements JDRunnable {
     }
 
     public void setRange(long start, long end) {
-        this.chunkStart = start;
-        this.chunkEnd = end;
+     setChunkStart(start);
+        setChunkEnd(end);
 
     }
 
@@ -202,12 +179,12 @@ public class DownloadChunk implements JDRunnable {
     }
 
     public long getRemainingChunkBytes() {
-        long end = chunkEnd;
+        long end = getChunkEnd();
         if (end < 0) {
             end = owner.getFileSize() - 1;
             System.out.println("FIlesize: " + end);
         }
-        return Math.max(0, end - this.chunkStart - bytesLoaded + 1);
+        return Math.max(0, end - this.getChunkStart() - bytesLoaded + 1);
 
     }
 
@@ -375,7 +352,7 @@ public class DownloadChunk implements JDRunnable {
     }
 
     protected ChunkProgress getChunkProgress() {
-        chunkProgress.setStart(this.chunkStart);
+        chunkProgress.setStart(this.getChunkStart());
         chunkProgress.setEnd(this.getWritePosition());
         return chunkProgress;
     }

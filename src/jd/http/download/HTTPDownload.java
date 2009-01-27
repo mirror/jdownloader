@@ -20,7 +20,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -33,7 +32,7 @@ import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class HTTPDownload {
+public class HTTPDownload extends DownloadInterface {
     /**
      * Flag indicates, that the server allows resuming
      */
@@ -42,26 +41,33 @@ public class HTTPDownload {
      * indicates, that the stored filesize is correct.
      */
     private static final int FLAG_FILESIZE_CORRECT = 1 << 1;
-   
 
     private Request orgRequest;
 
-    private File outputFile;
     private int desiredChunkNum;
     private Threader chunks;
-    private int flags = 0;
+
     private long fileSize;
     private RandomAccessFile outputRAF;
     private FileChannel outputChannel;
-//    private long byteCounter;
+    // private long byteCounter;
     private long bandwidthLimit;
     private int activeChunks = 0;
 
-//    private Thread writer;
-   // private DownloadChunk chunkToWrite = null;
+    // private Thread writer;
+    // private DownloadChunk chunkToWrite = null;
     private DownloadProgress downloadProgress;
+    private Browser browser;
 
-    //private static int STATUS = 0;
+    // private static int STATUS = 0;
+
+    public Browser getBrowser() {
+        return browser;
+    }
+
+    public void setBrowser(Browser browser) {
+        this.browser = browser;
+    }
 
     public synchronized int getActiveChunks() {
         return activeChunks;
@@ -75,19 +81,20 @@ public class HTTPDownload {
         this.fileSize = fileSize;
     }
 
- 
-    public HTTPDownload(Request request, File file, int flags) {
+    public HTTPDownload(Request request, Browser br, File file, int flags) {
+        super(flags, file);
         this.orgRequest = request;
-        this.flags = flags;
+        this.browser = br;
         downloadProgress = new DownloadProgress(file);
-        this.outputFile = file;
 
     }
 
-    public HTTPDownload(Request request, File file) {
+    public HTTPDownload(Request request, Browser br, File file) {
+        super(0, file);
         this.orgRequest = request;
+        this.browser = br;
         downloadProgress = new DownloadProgress(file);
-        this.outputFile = file;
+
     }
 
     public static void debug(String msg) {
@@ -103,13 +110,20 @@ public class HTTPDownload {
 
             String destPath = "c:/test.download";
             Browser br = new Browser();
-br.setDebug(true);
+            br.setDebug(true);
             Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.zip");
 
-            final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
-          //  dl.setBandwidthlimit(1024*100);
-            dl.setDesiredChunkNum(500);
+            final HTTPDownload dl = new HTTPDownload(request, br, new File(destPath), HTTPDownload.FLAG_RESUME);
+            // dl.setBandwidthlimit(1024*100);
+            dl.setDesiredChunkNum(5);
+            dl.addDownloadListener(new DownloadListener() {
 
+                public void onStatus(DownloadEvent downloadEvent) {
+                    System.out.print("New eventid: " + downloadEvent.getId());
+
+                }
+
+            });
             try {
                 new Thread() {
                     public void run() {
@@ -148,45 +162,44 @@ br.setDebug(true);
         }
     }
 
-    public void setBandwidthlimit(long bytesPerSecond) {
+    public void setBandwidthLimit(long bytesPerSecond) {
         this.bandwidthLimit = bytesPerSecond;
 
     }
 
     private void setDesiredChunkNum(int i) throws BrowserException, InterruptedException {
         if (i == desiredChunkNum) return;
-     
-  
+
         this.desiredChunkNum = i;
         updateChunks();
 
     }
-/**
- * Tries to start enough chunks to fullfill the desiredChunkNum.
- * @throws BrowserException 
- * @throws InterruptedException 
- */
+
+    /**
+     * Tries to start enough chunks to fullfill the desiredChunkNum.
+     * 
+     * @throws BrowserException
+     * @throws InterruptedException
+     */
     private void updateChunks() throws BrowserException, InterruptedException {
         // TODO Auto-generated method stub
-        if (chunks == null ||!chunks.isHasStarted())return;
+        if (chunks == null || !chunks.isHasStarted()) return;
         int num = getActiveChunks();
-        if(num==desiredChunkNum)return;
+        if (num == desiredChunkNum) return;
         for (int i = chunks.size() - 1; i >= 0; i--) {
             DownloadChunk dc = (DownloadChunk) chunks.get(i);
-            if (!dc.isConnectionRequested()) {
-              return;
-            }
+            if (!dc.isConnectionRequested()) { return; }
         }
-            
-            if (num < desiredChunkNum){
-                System.out.println("AddChunk");
-                addChunksDyn(1);
-            }
-            if (num > desiredChunkNum){
-                System.out.println("RemoveChunk");
-                removeChunksDyn(1);
-            }
-        
+
+        if (num < desiredChunkNum) {
+            System.out.println("AddChunk");
+            addChunksDyn(1);
+        }
+        if (num > desiredChunkNum) {
+            System.out.println("RemoveChunk");
+            removeChunksDyn(1);
+        }
+
     }
 
     private void removeChunksDyn(int i) throws InterruptedException {
@@ -233,9 +246,10 @@ br.setDebug(true);
             }
         }
         /*
-         *Started abhängig vonm aktuellen downloadspeed einen neuen chunk oder nicht.
+         * Started abhängig vonm aktuellen downloadspeed einen neuen chunk oder
+         * nicht.
          */
-        if(biggestRemaining.getRemainingChunkBytes()<Math.max(512*1024*1024l, this.getSpeed()*10)){
+        if (biggestRemaining.getRemainingChunkBytes() < Math.max(512 * 1024 * 1024l, this.getSpeed() * 10)) {
             System.out.println(biggestRemaining + " New size(to small)");
             return;
         }
@@ -254,46 +268,50 @@ br.setDebug(true);
 
         // If resumeFlag is set and ResumInfo Import fails, initiate the Default
         // ChunkSetup
+        this.fireEvent(DownloadEvent.STATUS_STARTED);
         this.initOutputChannel();
         if (hasStatus(FLAG_RESUME) || !importResumeInfos()) {
 
             this.initChunks();
 
         }
-//        this.byteCounter = 0l;
-//        this.startWriter();
+        this.fireEvent(DownloadEvent.STATUS_CONNECTED);
+        // this.byteCounter = 0l;
+        // this.startWriter();
         this.download();
+        this.fireEvent(DownloadEvent.STATUS_DOWNLOAD_FISNISHED);
         System.out.println("Close and UNlock file");
         this.closeFileDiscriptors();
         this.clean();
+        this.fireEvent(DownloadEvent.STATUS_FINISHED);
 
     }
 
-//    private void startWriter() {
-//        this.writer = new Thread() {
-//            public void run() {
-//
-//                while (!this.isInterrupted()) {
-//
-//                    if (chunks.isHasStarted() && chunks.isHasDied()) return;
-//
-//                    try {
-//                        writeWaitingChunk();
-//                    } catch (InterruptedException e) {
-//                        // TODO Auto-generated catch block
-//                        e.printStackTrace();
-//                    } catch (IOException e) {
-//                        // TODO Auto-generated catch block
-//                        e.printStackTrace();
-//                    }
-//
-//                }
-//            }
-//
-//        };
-//
-//        writer.start();
-//    }
+    // private void startWriter() {
+    // this.writer = new Thread() {
+    // public void run() {
+    //
+    // while (!this.isInterrupted()) {
+    //
+    // if (chunks.isHasStarted() && chunks.isHasDied()) return;
+    //
+    // try {
+    // writeWaitingChunk();
+    // } catch (InterruptedException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // } catch (IOException e) {
+    // // TODO Auto-generated catch block
+    // e.printStackTrace();
+    // }
+    //
+    // }
+    // }
+    //
+    // };
+    //
+    // writer.start();
+    // }
 
     private void closeFileDiscriptors() {
         try {
@@ -320,11 +338,11 @@ br.setDebug(true);
      * @throws BrowserException
      */
     private void clean() throws BrowserException {
-        if (!new File(outputFile.getAbsolutePath() + ".part").renameTo(outputFile)) { throw new BrowserException(JDLocale.L("exceptions.browserexception.couldnotrenam", "Could not rename outputfile"), BrowserException.TYPE_LOCAL_IO);
+        if (!new File(getOutputFile().getAbsolutePath() + ".part").renameTo(getOutputFile())) { throw new BrowserException(JDLocale.L("exceptions.browserexception.couldnotrenam", "Could not rename getOutputFile()"), BrowserException.TYPE_LOCAL_IO);
 
         }
-        if (!new File(outputFile.getAbsolutePath() + ".jdp").delete()) {
-            new File(outputFile.getAbsolutePath() + ".jdp").deleteOnExit();
+        if (!new File(getOutputFile().getAbsolutePath() + ".jdp").delete()) {
+            new File(getOutputFile().getAbsolutePath() + ".jdp").deleteOnExit();
         }
     }
 
@@ -334,18 +352,18 @@ br.setDebug(true);
     }
 
     private void initOutputChannel() throws FileNotFoundException, BrowserException {
-        if (outputFile.exists()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.alreadyexists", "Outputfile already exists"), BrowserException.TYPE_LOCAL_IO);
+        if (getOutputFile().exists()) { throw new BrowserException(JDLocale.L("exceptions.browserexception.alreadyexists", "getOutputFile() already exists"), BrowserException.TYPE_LOCAL_IO);
 
         }
 
-        if (new File(outputFile.getAbsolutePath() + ".part").exists() && !this.hasStatus(FLAG_RESUME)) {
-            if (!new File(outputFile.getAbsolutePath() + ".part").delete()) { throw new BrowserException("Could not delete *.part file", BrowserException.TYPE_LOCAL_IO); }
+        if (new File(getOutputFile().getAbsolutePath() + ".part").exists() && !this.hasStatus(FLAG_RESUME)) {
+            if (!new File(getOutputFile().getAbsolutePath() + ".part").delete()) { throw new BrowserException("Could not delete *.part file", BrowserException.TYPE_LOCAL_IO); }
         }
-        if (!outputFile.getParentFile().exists()) {
-            outputFile.getParentFile().mkdirs();
+        if (!getOutputFile().getParentFile().exists()) {
+            getOutputFile().getParentFile().mkdirs();
         }
 
-        outputRAF = new RandomAccessFile(outputFile.getAbsolutePath() + ".part", "rw");
+        outputRAF = new RandomAccessFile(getOutputFile().getAbsolutePath() + ".part", "rw");
         outputChannel = outputRAF.getChannel();
 
     }
@@ -353,7 +371,8 @@ br.setDebug(true);
     /**
      * Funktion überprüft ob eventl noch chunks hinzugefügt werden müssen um die
      * datei zu ende zu laden. z.B. wenn chunks abgebrochen wurden.
-     * @throws BrowserException 
+     * 
+     * @throws BrowserException
      */
     private synchronized void checkForMissingParts() throws BrowserException {
         ArrayList<Long[]> missing = getMissingParts();
@@ -434,14 +453,16 @@ br.setDebug(true);
             }
 
             @Override
-            public void onThreadFinished(Threader th, JDRunnable job)  {
-                try{
-                updateActiveChunkCount(-1); 
-                checkForMissingParts();
-//                if(activeChunks<chunkNum)
-//                    
-//                    addChunksDyn(i - tmp);
-                
+            public void onThreadFinished(Threader th, JDRunnable job) {
+                try {
+                    updateActiveChunkCount(-1);
+                    fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_FINISHED, HTTPDownload.this, (DownloadChunk) job));
+
+                    checkForMissingParts();
+                    // if(activeChunks<chunkNum)
+                    //                    
+                    // addChunksDyn(i - tmp);
+
                     updateChunks();
                 } catch (BrowserException e) {
                     // TODO Auto-generated catch block
@@ -464,6 +485,8 @@ br.setDebug(true);
             @Override
             public void onThreadStarts(Threader threader, JDRunnable runnable) {
                 updateActiveChunkCount(+1);
+                fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_STARTED, HTTPDownload.this, (DownloadChunk) runnable));
+
                 try {
                     updateChunks();
                 } catch (BrowserException e) {
@@ -510,7 +533,7 @@ br.setDebug(true);
 
     protected synchronized void updateActiveChunkCount(int i) {
         this.activeChunks += i;
-        System.out.println("Active CHunks "+activeChunks+"("+i+")");
+        System.out.println("Active CHunks " + activeChunks + "(" + i + ")");
 
     }
 
@@ -523,96 +546,86 @@ br.setDebug(true);
 
     }
 
-    public void addStatus(int status) {
-        this.flags |= status;
-
-    }
-
-    public boolean hasStatus(int status) {
-        return (this.flags & status) > 0;
-    }
-
-    public void removeStatus(int status) {
-        int mask = 0xffffffff;
-        mask &= ~status;
-        this.flags &= mask;
-    }
-//
-//    public synchronized void writeWaitingChunk() throws InterruptedException, IOException {
-//        // Warte bis chunk zu schreiben anliegt
-//        while (STATUS != 1) {
-//            System.out.println("Nothing to write");
-//            wait();
-//
-//        }
-//
-//        // Schreibe Chunk
-//
-//        ByteBuffer buffer = chunkToWrite.getBuffer();
-//        buffer.flip();
-//
-//        outputRAF.seek(chunkToWrite.getWritePosition());
-//       // System.out.println(chunkToWrite + "Write " + chunkToWrite.getWritePosition() + "-" + (chunkToWrite.getWritePosition() + buffer.limit()) + " : " + this.getSpeed() + " " + buffer.limit());
-//        byteCounter += buffer.limit();
-//
-//        outputChannel.write(buffer);
-//
-//        // benachrichtige gib chunkwarteplatz wieder frei
-//        STATUS = 2;
-//        // debug("STATUS = " + STATUS);
-//        notifyAll();
-//
-//    }
+    //
+    // public synchronized void writeWaitingChunk() throws InterruptedException,
+    // IOException {
+    // // Warte bis chunk zu schreiben anliegt
+    // while (STATUS != 1) {
+    // System.out.println("Nothing to write");
+    // wait();
+    //
+    // }
+    //
+    // // Schreibe Chunk
+    //
+    // ByteBuffer buffer = chunkToWrite.getBuffer();
+    // buffer.flip();
+    //
+    // outputRAF.seek(chunkToWrite.getWritePosition());
+    // // System.out.println(chunkToWrite + "Write " +
+    // chunkToWrite.getWritePosition() + "-" + (chunkToWrite.getWritePosition()
+    // + buffer.limit()) + " : " + this.getSpeed() + " " + buffer.limit());
+    // byteCounter += buffer.limit();
+    //
+    // outputChannel.write(buffer);
+    //
+    // // benachrichtige gib chunkwarteplatz wieder frei
+    // STATUS = 2;
+    // // debug("STATUS = " + STATUS);
+    // notifyAll();
+    //
+    // }
 
     public synchronized void saveChunkStatus() {
-      
-       
+
         downloadProgress.reset(chunks.size());
-        
+
         for (int i = 0; i < chunks.size(); i++) {
             DownloadChunk chunk = (DownloadChunk) chunks.get(i);
-            ChunkProgress cp=   chunk.getChunkProgress();
+            ChunkProgress cp = chunk.getChunkProgress();
             downloadProgress.add(cp);
         }
-      
-       
-    System.out.println(downloadProgress+"");
+
+        System.out.println(downloadProgress + "");
     }
 
     public FileChannel getOutputChannel() {
         return outputChannel;
     }
 
-//    public synchronized void setChunkToWrite(DownloadChunk downloadChunk) throws InterruptedException {
-//        // warten bis schreibslot frei ist
-//        while (STATUS != 0) {
-//            System.out.println("No free Slot for " + downloadChunk);
-//
-//            this.wait();
-//
-//        }
-//        // schreibslot belegen
-//        System.out.println("Queued to write next: " + downloadChunk + " " + downloadChunk.getBuffer().position());
-//        chunkToWrite = downloadChunk;
-//
-//        STATUS = 1;
-//        // debug("STATUS = " + STATUS);
-//        notifyAll();
-//
-//    }
+    // public synchronized void setChunkToWrite(DownloadChunk downloadChunk)
+    // throws InterruptedException {
+    // // warten bis schreibslot frei ist
+    // while (STATUS != 0) {
+    // System.out.println("No free Slot for " + downloadChunk);
+    //
+    // this.wait();
+    //
+    // }
+    // // schreibslot belegen
+    // System.out.println("Queued to write next: " + downloadChunk + " " +
+    // downloadChunk.getBuffer().position());
+    // chunkToWrite = downloadChunk;
+    //
+    // STATUS = 1;
+    // // debug("STATUS = " + STATUS);
+    // notifyAll();
+    //
+    // }
 
-//    public synchronized void waitForWriter(DownloadChunk downloadChunk) throws InterruptedException {
-//        // warten bis schreibslot gelöscht
-//        while (STATUS != 2) {
-//            System.out.println("Waiting :" + downloadChunk);
-//            this.wait();
-//
-//        }
-//        STATUS = 0;
-//        // debug("STATUS = " + STATUS);
-//        notifyAll();
-//
-//    }
+    // public synchronized void waitForWriter(DownloadChunk downloadChunk)
+    // throws InterruptedException {
+    // // warten bis schreibslot gelöscht
+    // while (STATUS != 2) {
+    // System.out.println("Waiting :" + downloadChunk);
+    // this.wait();
+    //
+    // }
+    // STATUS = 0;
+    // // debug("STATUS = " + STATUS);
+    // notifyAll();
+    //
+    // }
 
     public Request getRequest() {
 
@@ -625,6 +638,11 @@ br.setDebug(true);
 
     }
 
+    protected void onBufferWritten(DownloadChunk downloadChunk) {
+        fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_BUFFERWRITTEN, this, (DownloadChunk) downloadChunk));
+
+    }
+
     public long getSpeed() {
         long speed = 0;
         if (chunks == null || this.activeChunks == 0) return 0;
@@ -633,6 +651,12 @@ br.setDebug(true);
         }
 
         return speed;
+    }
+
+    @Override
+    public long getBandwidthLimit() {
+        // TODO Auto-generated method stub
+        return this.bandwidthLimit;
     }
 
 }

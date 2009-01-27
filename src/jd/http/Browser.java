@@ -1144,6 +1144,7 @@ public class Browser {
         br.auths = auths;
         br.cookiesExclusive = cookiesExclusive;
         br.debug = debug;
+        br.proxy=proxy;
         return br;
     }
 

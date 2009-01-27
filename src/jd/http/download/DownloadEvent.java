@@ -18,7 +18,54 @@ package jd.http.download;
 
 public class DownloadEvent {
 
-    public static final int UPDATE_CONNECTION_PROPERTY_CONTENTLENGTH = 1 << 0;
-    public static final int UPDATE_CONNECTION_PROPERTY_FILENAME = 1 << 1;
+    private int id;
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public DownloadInterface getSource() {
+        return source;
+    }
+
+    public void setSource(DownloadInterface source) {
+        this.source = source;
+    }
+
+    private DownloadInterface source;
+    private DownloadChunk chunk;
+
+    public DownloadEvent(int eventID, DownloadInterface download) {
+        this.id = eventID;
+        this.source = download;
+    }
+
+    public DownloadEvent(int eventID, DownloadInterface download, DownloadChunk job) {
+        this(eventID, download);
+        this.chunk = job;
+    }
+
+    public DownloadChunk getChunk() {
+        return chunk;
+    }
+
+    public void setChunk(DownloadChunk chunk) {
+        this.chunk = chunk;
+    }
+
+    // public static final int UPDATE_CONNECTION_PROPERTY_CONTENTLENGTH = 1 <<
+    // 0;
+    // public static final int UPDATE_CONNECTION_PROPERTY_FILENAME = 1 << 1;
+    public static final int STATUS_CONNECTED = 1 << 0;
+    public static final int STATUS_STARTED = 1 << 2;
+    public static final int STATUS_DOWNLOAD_FISNISHED = 1 << 1;
+    public static final int STATUS_FINISHED = 1 << 3;
+    protected static final int PROGRESS_CHUNK_FINISHED = 1 << 4;
+    protected static final int PROGRESS_CHUNK_STARTED = 1 << 5;
+    public static final int PROGRESS_CHUNK_BUFFERWRITTEN = 1<<6;
 
 }
