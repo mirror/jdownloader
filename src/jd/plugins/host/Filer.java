@@ -85,16 +85,12 @@ public class Filer extends PluginForHost {
         br.setFollowRedirects(false);
         String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
         if (wait != null) {
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            linkStatus.setValue(new Long(wait) * 1000 * 60l);
-            return;
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(wait) * 1000 * 60l);
 
         }
         Form[] forms = br.getForms();
         if (forms.length < 2) {
-            linkStatus.addStatus(LinkStatus.ERROR_IP_BLOCKED);
-            return;
-
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l);
         }
         page = br.submitForm(forms[1]);
         sleep(61000, downloadLink);
