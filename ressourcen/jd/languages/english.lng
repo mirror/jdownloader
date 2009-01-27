@@ -1173,3 +1173,4 @@ train.choose.folder = Select a folder
 train.chooser.title = jDownloader :: TrainAll
 train.method = Select a Captchamethod
 wrapper.webupdate.updatefile = Update plugin %s
+plugin.rapidshare.error.serverunavailable = The Server %s is currently unavailable.
