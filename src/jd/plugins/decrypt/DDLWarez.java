@@ -131,7 +131,7 @@ public class DDLWarez extends PluginForDecrypt {
                 br.clearCookies(this.getHost());
                 br.getPage(parameter);
 
-                String pass = br.getRegex(Pattern.compile("<td>Passwort:</td>.*?<td style=\"padding-left:10px;\">(.*?)</td>.*?</tr>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+                String pass = br.getRegex(Pattern.compile("<td>Passwort:</td>\\s*<td style=\"padding-left:10px;\">(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
                 Vector<String> passwords = new Vector<String>();
                 passwords.add("ddl-warez");
                 if (pass != null && !pass.equals("kein Passwort")) {
@@ -139,7 +139,7 @@ public class DDLWarez extends PluginForDecrypt {
                 }
 
                 Form form = br.getForm(1);
-                if (form != null && form.containsHTML("AnimCaptcha")) {
+                if (form != null && form.containsHTML("captchaO")) {
                     File file;
                     int i=10;
                     while (true) {
@@ -149,7 +149,7 @@ public class DDLWarez extends PluginForDecrypt {
                             return null;
                         }
                         file = this.getLocalCaptchaFile(this);
-                        Browser.download(file, br.cloneBrowser().openGetConnection("http://www.ddl-warez.org/captcha2/captcha.inc.php"));
+                        Browser.download(file, br.cloneBrowser().openGetConnection("http://"+br.getHost()+"/"+br.getRegex("<img src=\"(images/captcha/[^\"]*)\" style=\"border: 0px;\">").getMatch(0)));
                         try {
                             File f = convert(file);
                             if (f == null || !f.exists()) continue;
@@ -161,7 +161,7 @@ public class DDLWarez extends PluginForDecrypt {
 
                     }
                     String captcha = getCaptchaCode(file, this, param);
-                    form.put("AnimCaptcha", captcha);
+                    form.put("captchaO", captcha);
                     br.submitForm(form);
                     if (br.containsHTML("Captcha-Fehler")) continue;
                 }
