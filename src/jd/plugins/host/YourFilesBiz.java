@@ -58,9 +58,9 @@ public class YourFilesBiz extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String url = br.getRegex(Pattern.compile("value='http://(.*?)'>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        String url = br.getRegex(Pattern.compile("return false;}document.location=\"(.*?)\"'", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
-        dl = br.openDownload(downloadLink, "http://" + url);
+        dl = br.openDownload(downloadLink, url);
         HTTPConnection con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();
