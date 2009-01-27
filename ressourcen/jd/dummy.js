@@ -117,8 +117,22 @@ Document.prototype.writeln=function(line) {
 	this.content+=line+"\r\n";
 }
 
+/*
+Dummy von Window
+*/
+function Window()  {
+	this.onLoad=function() {
+	};
+}
+
+function setInterval ( e,  t){
+	eval(e);
+}
+
 
 //INIT
 navigator= new Navigator();
 document= new Document();
 location= new Location();
+window=new Window();
+document.write(window.onLoad());
