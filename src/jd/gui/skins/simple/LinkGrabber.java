@@ -34,8 +34,6 @@ import java.awt.dnd.DropTargetEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -68,7 +66,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
@@ -83,13 +80,14 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableColumn;
 import javax.swing.text.PlainDocument;
+
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.event.UIEvent;
 import jd.gui.skins.simple.components.ComboBrowseFile;
 import jd.gui.skins.simple.components.JDFileChooser;
-import jd.gui.skins.simple.components.JUndoManager;
+import jd.gui.skins.simple.components.JDTextField;
 import jd.nutils.jobber.JDRunnable;
 import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
@@ -107,33 +105,6 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class LinkGrabber extends JFrame implements ActionListener, DropTargetListener, MouseListener, KeyListener, ChangeListener, WindowListener {
-
-    class AutoSelectTextField extends JTextField implements FocusListener {
-        /**
-         * 
-         */
-        private static final long serialVersionUID = -4013847546677327448L;
-
-        AutoSelectTextField(String text) {
-            super(text);
-            addFocusListener(this);
-        }
-
-        AutoSelectTextField() {
-            super();
-            addFocusListener(this);
-        }
-
-        public void focusLost(FocusEvent fe) {
-        }
-
-        public void focusGained(FocusEvent fe) {
-            setCaretPosition(0);
-            if (getText() != null) {
-                moveCaretPosition(getText().length());
-            }
-        }
-    }
 
     /**
      * 
@@ -265,11 +236,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
         private JTable table;
 
-        private JTextField txtComment;
+        private JDTextField txtComment;
 
-        private AutoSelectTextField txtName;
+        private JDTextField txtName;
 
-        private JTextField txtPassword;
+        private JDTextField txtPassword;
 
         private JPopupMenu mContextTabPopup;
 
@@ -289,13 +260,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         public PackageTab() {
             linkList = new Vector<DownloadLink>();
             buildGui();
-        }
-
-        protected void finalize() throws Throwable {
-            JUndoManager.delManager(txtName);
-            JUndoManager.delManager(txtPassword);
-            JUndoManager.delManager(txtComment);
-            super.finalize(); // not necessary if extending Object.
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -398,12 +362,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         private void buildGui() {
             setLayout(new GridBagLayout());
 
-            txtName = new AutoSelectTextField();
-            JUndoManager.addManager(txtName);
-            txtPassword = new JTextField();
-            JUndoManager.addManager(txtPassword);
-            txtComment = new JTextField();
-            JUndoManager.addManager(txtComment);
+            txtName = new JDTextField();
+            txtName.setAutoSelect(true);
+            txtPassword = new JDTextField();
+            txtComment = new JDTextField();
 
             chbExtract = new JCheckBox(JDLocale.L("gui.linkgrabber.packagetab.chb.extractAfterdownload", "Extract"));
             chbExtract.setSelected(true);

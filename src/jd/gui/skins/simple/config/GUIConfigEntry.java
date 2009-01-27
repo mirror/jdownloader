@@ -42,8 +42,6 @@ import javax.swing.JRadioButton;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JSpinner;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
@@ -55,6 +53,8 @@ import javax.swing.text.PlainDocument;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.gui.skins.simple.components.BrowseFile;
+import jd.gui.skins.simple.components.JDTextArea;
+import jd.gui.skins.simple.components.JDTextField;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.gui.skins.simple.config.panels.PremiumPanel;
 import jd.utils.JDTheme;
@@ -150,11 +150,11 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
 
             JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             addInstantHelpLink();
-            input[0] = new JTextField();
-            doc = (PlainDocument) ((JTextField) input[0]).getDocument();
+            input[0] = new JDTextField();
+            doc = (PlainDocument) ((JDTextField) input[0]).getDocument();
             doc.addDocumentListener(this);
             input[0].setEnabled(configEntry.isEnabled());
-            ((JTextField) input[0]).setHorizontalAlignment(SwingConstants.RIGHT);
+            ((JDTextField) input[0]).setHorizontalAlignment(SwingConstants.RIGHT);
             JDUtilities.addToGridBag(this, right = input[0], 2, 0, 1, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
 
             break;
@@ -162,9 +162,9 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
 
             JDUtilities.addToGridBag(this, left = new JLabel(configEntry.getLabel()), 0, 0, 1, 1, 0, 0, insets, GridBagConstraints.NONE, GridBagConstraints.WEST);
             addInstantHelpLink();
-            input[0] = new JTextArea(10, 10);
+            input[0] = new JDTextArea(10, 10);
             input[0].setEnabled(configEntry.isEnabled());
-            doc = (PlainDocument) ((JTextArea) input[0]).getDocument();
+            doc = (PlainDocument) ((JDTextArea) input[0]).getDocument();
             doc.addDocumentListener(this);
             JDUtilities.addToGridBag(this, total = new JScrollPane(input[0]), 0, 1, 3, 1, 1, 1, insets, GridBagConstraints.BOTH, GridBagConstraints.EAST);
             // total.setMinimumSize(new Dimension(200, 200));
@@ -371,9 +371,9 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
         case ConfigContainer.TYPE_PASSWORDFIELD:
             return new String(((JPasswordField) input[0]).getPassword());
         case ConfigContainer.TYPE_TEXTFIELD:
-            return ((JTextField) input[0]).getText();
+            return ((JDTextField) input[0]).getText();
         case ConfigContainer.TYPE_TEXTAREA:
-            return ((JTextArea) input[0]).getText();
+            return ((JDTextArea) input[0]).getText();
         case ConfigContainer.TYPE_CHECKBOX:
             return ((JCheckBox) input[0]).isSelected();
         case ConfigContainer.TYPE_PREMIUMPANEL:
@@ -479,10 +479,10 @@ public class GUIConfigEntry extends JPanel implements ActionListener, ChangeList
             ((JPasswordField) input[0]).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_TEXTFIELD:
-            ((JTextField) input[0]).setText(text == null ? "" : text.toString());
+            ((JDTextField) input[0]).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_TEXTAREA:
-            ((JTextArea) input[0]).setText(text == null ? "" : text.toString());
+            ((JDTextArea) input[0]).setText(text == null ? "" : text.toString());
             break;
         case ConfigContainer.TYPE_PREMIUMPANEL:
             ((PremiumPanel) input[0]).setAccounts(text);

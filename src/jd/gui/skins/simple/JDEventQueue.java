@@ -35,7 +35,8 @@ import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.text.JTextComponent;
 
-import jd.gui.skins.simple.components.JUndoManager;
+import jd.gui.skins.simple.components.JDTextArea;
+import jd.gui.skins.simple.components.JDTextField;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 
@@ -131,14 +132,26 @@ public class JDEventQueue extends EventQueue {
                 c.replaceSelection(null);
             }
         });
-        menu.addSeparator();
-        if (JUndoManager.canUndo(t)) {
-            menu.add(JUndoManager.Undo(t));
+        if ((c instanceof JDTextField) || (c instanceof JDTextArea)) {
+            menu.addSeparator();
+            if ((c instanceof JDTextField)) {
+                if (((JDTextField) c).getUndoManager().canUndo()) {
+                    menu.add(((JDTextField) c).getUndoManager().getUndoAction());
+                }
+                if (((JDTextField) c).getUndoManager().canRedo()) {
+                    menu.add(((JDTextField) c).getUndoManager().getRedoAction());
+                }
+            } else if ((c instanceof JDTextArea)) {
+                if (((JDTextArea) c).getUndoManager().canUndo()) {
+                    menu.add(((JDTextArea) c).getUndoManager().getUndoAction());
+                }
+                if (((JDTextArea) c).getUndoManager().canRedo()) {
+                    menu.add(((JDTextArea) c).getUndoManager().getRedoAction());
+                }
+            }
+            menu.addSeparator();
         }
-        if (JUndoManager.canRedo(t)) {
-            menu.add(JUndoManager.Redo(t));
-        }
-        menu.addSeparator();
+
         menu.add(new MenuAbstractAction(t, JDLocale.L("gui.textcomponent.context.selectall", "Alles auswählen"), JDTheme.II("gui.icons.select_all", 16, 16), JDLocale.L("gui.textcomponent.context.selectall.acc", "ctrl A")) {
             /**
              * 
