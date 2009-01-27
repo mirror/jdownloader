@@ -107,6 +107,6 @@ public class ProtectorIT extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4265 $");
+        return getVersion("$Revision: 4360 $");
     }
 }
