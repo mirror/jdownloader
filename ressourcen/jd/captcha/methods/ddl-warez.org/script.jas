@@ -1,0 +1,36 @@
+#####-------------------------------------JAC-Script------------------------------------#####
+##### Dieses Script beinhaltet alle Parameter und Funktioenen die für die captcha #####
+##### erkennung nötig sind #####
+#####################################---ddl-warez.com---####################################
+##############Set parameter
+param.trainOnlyUnknown=true;
+param.colorType = RGB;
+param.useLetterFilter=MultiThreadDetection.multiCore;
+############Scanner parameter
+param.borderVarianceX=8;
+param.borderVarianceY=8;
+param.scanVarianceX=8;
+param.scanVarianceY=8;
+param.overlayNoiseSize=3;
+param.intersectionDimensionWeight=6.0;
+param.minCleftSize=4;
+param.scanAngleLeft=-15;
+param.scanAngleRight=15;
+param.scanAngleSteps=5;
+param.errorAWeight=4;
+param.errorBWeight=4;
+
+param.coverageFaktorAWeight=1;
+param.coverageFaktorBWeight=0.2;
+param.gaps={101,203,305,406};
+param.cleftFaktor=0;
+param.splitGapsOverlap=0;param.LetterSearchLimitPerfectPercent=0;
+param.quickScanReliabilityLimit=3.0;
+param.quickScanValityLimit=2.0;
+param.preScanFilter=80;
+param.preScanFaktor=3;
+
+##################Prepare captcha
+
+
+captcha.prepare.toBlackAndWhite(0.98);
