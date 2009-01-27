@@ -65,8 +65,6 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
 
-import jd.router.RInfo;
-
 import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
@@ -84,6 +82,7 @@ import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.http.Encoding;
 import jd.plugins.PluginForHost;
 import jd.router.GetRouterInfo;
+import jd.router.RInfo;
 import jd.router.RouterInfoCollector;
 import jd.router.reconnectrecorder.JDRRGui;
 import jd.utils.JDLocale;
@@ -532,7 +531,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
         progresspanel.invalidate();
         progresspanel.repaint();
 
-        //progresspanel.add(new JSeparator());
+        // progresspanel.add(new JSeparator());
 
         progresspanel.validate();
     }

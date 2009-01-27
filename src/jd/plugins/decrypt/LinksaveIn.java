@@ -43,12 +43,12 @@ public class LinksaveIn extends PluginForDecrypt {
             return decryptedLinks;
         }
         parameter = parameter + ".dlc";
-    
+
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".dlc");
-    
+
         br.getHeaders().put("Referer", "jdownloader.org");
-     br.getDownload(container, parameter);
-    
+        br.getDownload(container, parameter);
+
         decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
         container.delete();
 

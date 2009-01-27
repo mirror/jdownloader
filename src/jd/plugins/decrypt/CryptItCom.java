@@ -80,7 +80,7 @@ public class CryptItCom extends PluginForDecrypt {
 
         File container = JDUtilities.getResourceFile("container/" + System.currentTimeMillis() + ".ccf");
         br.downloadConnection(container, con);
-      
+
         decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
         container.delete();
 

@@ -89,9 +89,7 @@ public class ProtectorIT extends PluginForDecrypt {
                 decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));
                 container.delete();
             } catch (Exception e) {
-                // TODO: handle exception
             }
-
         }
         if (decryptedLinks.size() == 0) {
             String[] matches = br.getRegex("(http://protect-it.org//?\\?de=[^\"']*)[\"']").getColumn(0);
@@ -106,6 +104,6 @@ public class ProtectorIT extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4360 $");
+        return getVersion("$Revision$");
     }
 }

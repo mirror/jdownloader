@@ -106,7 +106,7 @@ public class UrlShieldnet extends PluginForDecrypt {
                     form = br.getForm(0);
                     /* Captcha zu verarbeiten */
                     captchaFile = getLocalCaptchaFile(this);
-            
+
                     br.cloneBrowser().getDownload(captchaFile, "http://www.urlshield.net" + captchaurl);
                     /* CaptchaCode holen */
                     captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
