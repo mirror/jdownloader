@@ -100,7 +100,6 @@ public class ProtectorIT extends PluginForDecrypt {
                 decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
             }
-            return decryptedLinks;
         }
         return decryptedLinks;
     }
