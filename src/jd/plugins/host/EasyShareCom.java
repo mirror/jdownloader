@@ -116,12 +116,11 @@ public class EasyShareCom extends PluginForHost {
         }
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Please wait or buy a Premium membership")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-        String id = new Regex(downloadLink.getDownloadURL(), "/(\\d+)\\.html").getMatch(0);
-        if (id == null) id = new Regex(downloadLink.getDownloadURL(), "/(\\d+)/.+").getMatch(0);
+        String id = new Regex(downloadLink.getDownloadURL(), "/(\\d+)").getMatch(0);
         br.getPage("http://www.easy-share.com/c/" + id);
 
         Form form = br.getForm(3);
-        String captchaUrl = form.getRegex("<img src=\"(.*?)\">").getMatch(0);
+        String captchaUrl = "http://"+br.getHost()+"/"+br.getRegex("<p><img src=\"(.*?)\"").getMatch(0);
         File captchaFile = this.getLocalCaptchaFile(this);
         try {
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection(captchaUrl));
@@ -129,6 +128,7 @@ public class EasyShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String captchaCode = Plugin.getCaptchaCode(captchaFile, this, downloadLink);
+        
         form.put("captcha", captchaCode);
         /* Datei herunterladen */
         br.setFollowRedirects(true);
