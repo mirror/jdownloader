@@ -83,19 +83,13 @@ public class Filer extends PluginForHost {
         }
 
         br.setFollowRedirects(false);
-        if(br.toString().contains("Momentan sind die Limits f&uuml;r Free-Downloads erreicht, bitte versuchen"))
-        {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000 * 60l);
-        }
+        if (br.toString().contains("Momentan sind die Limits f")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 1000 * 60l);
         String wait = new Regex(br, "Bitte warten Sie ([\\d]*?) Min bis zum").getMatch(0);
-        if (wait != null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(wait) * 1000 * 60l);
+        if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, new Long(wait) * 1000 * 60l);
 
         }
         Form[] forms = br.getForms();
-        if (forms.length < 2) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l);
-        }
+        if (forms.length < 2) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000 * 60l); }
         page = br.submitForm(forms[1]);
         sleep(61000, downloadLink);
 
@@ -114,7 +108,7 @@ public class Filer extends PluginForHost {
         String cookie = br.getCookie("http://filer.net", "filer_net");
         if (cookie == null) {
             account.setEnabled(false);
-            throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
     }
 
@@ -156,7 +150,7 @@ public class Filer extends PluginForHost {
         if (url == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url, true, 0);
-        if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM,LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
+        if (dl.getConnection().getContentType().contains("text")) { throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_TEMP_DISABLE); }
         dl.startDownload();
     }
 

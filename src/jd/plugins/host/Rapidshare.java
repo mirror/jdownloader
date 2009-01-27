@@ -389,11 +389,7 @@ public class Rapidshare extends PluginForHost {
             this.handlePremium(downloadLink, new Account("dummy", "dummy"));
             return;
         }
-        // posturl für auswahl free7premium wird gesucht
-        if(br.toString().contains("Diese Datei ist grösser als 200 Megabyte"))
-        {
-            throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugin.rapidshare.error.filetolarge","This file is larger than 200 MB, you need a premium-account to download this file."));
-        }
+        // posturl für auswahl free7premium wird gesucht        
         freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getMatch(0);
         // Fehlerbehandlung auf der ersten Seite
         if (freeOrPremiumSelectPostURL == null) {
@@ -414,6 +410,7 @@ public class Rapidshare extends PluginForHost {
         String error = null;
 
         if ((error = findError(br + "")) != null) {
+            if (Regex.matches(error, Pattern.compile("(als 200 Megabyte)"))) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugin.rapidshare.error.filetolarge", "This file is larger than 200 MB, you need a premium-account to download this file."));
             if (Regex.matches(error, Pattern.compile("(weder einem Premiumaccount)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("(keine freien Slots)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All free slots in use", 120000l); }
             if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }

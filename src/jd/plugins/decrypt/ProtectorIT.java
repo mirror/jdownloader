@@ -49,6 +49,7 @@ public class ProtectorIT extends PluginForDecrypt {
         if (parameter.matches("http://[\\w.]*?protect-it.org//?\\?de=.*")) {
             br.openGetConnection(parameter);
             decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
+            br.getHttpConnection().disconnect();
             return decryptedLinks;
         }
         if (!parameter.matches("http://[\\w.]*?protect-it.org//?\\?id=.*")) throw new DecrypterException(JDLocale.L("downloadlink.status.error.file_not_found", "File not found"));
@@ -60,7 +61,6 @@ public class ProtectorIT extends PluginForDecrypt {
                 valid = false;
                 File file = this.getLocalCaptchaFile(this);
                 Form form = br.getForm(0);
-
                 Browser.download(file, br.cloneBrowser().openGetConnection("http://" + br.getHost() + br.getRegex("<input type=\"image\" src=\"\\.([^\"]*)\" name=\"captcha\" alt=\"Captcha\">").getMatch(0)));
                 JDUtilities.acquireUserIO_Semaphore();
                 ClickPositionDialog d = new ClickPositionDialog(SimpleGUI.CURRENTGUI.getFrame(), file, "Captcha", "", 20, null);
@@ -96,7 +96,7 @@ public class ProtectorIT extends PluginForDecrypt {
             for (String string : matches) {
                 br.openGetConnection(string);
                 decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
-
+                br.getHttpConnection().disconnect();
             }
         }
         return decryptedLinks;
