@@ -161,7 +161,14 @@ public class DDLWarez extends PluginForDecrypt {
 
                     }
                     String captcha = getCaptchaCode(file, this, param);
-                    form.put("captchaO", captcha);
+                    int erg= Integer.parseInt(captcha.substring(0, 1));
+                    if(captcha.charAt(1)=='p')
+                        erg+=Integer.parseInt(captcha.substring(2, 3));
+                    else if (captcha.charAt(1)=='m')
+                        erg-=Integer.parseInt(captcha.substring(2, 3));
+                    else if (captcha.charAt(1)=='x')
+                        erg*=Integer.parseInt(captcha.substring(2, 3));
+                    form.put("captchaO", ""+erg);
                     br.submitForm(form);
                     if (br.containsHTML("Captcha-Fehler")) continue;
                 }
