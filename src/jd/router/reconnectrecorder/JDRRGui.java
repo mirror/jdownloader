@@ -147,7 +147,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             JDRR.startServer(JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_IP, null));
 
             try {
-                JLinkButton.openURL("http://localhost:" + JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
+                JLinkButton.openURL("http://localhost:" + (JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972)));
 
             } catch (Exception e1) {
                 // TODO Auto-generated catch block
@@ -280,6 +280,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             if (!ip_after.contains("offline") && !ip_after.equalsIgnoreCase(ip_before)) {
                 save();
             } else {
+                // save(); /*zu debugzwecken*/
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("gui.config.jdrr.reconnectfaild", "Reconnect failed"));
             }
             dispose();

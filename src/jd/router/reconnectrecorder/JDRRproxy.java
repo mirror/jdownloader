@@ -24,6 +24,9 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Vector;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
+
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 
@@ -36,33 +39,49 @@ public class JDRRproxy extends Thread {
     private Socket Current_Socket;
     public Vector<String> steps = null;
     String serverip;
+    int port;
+    boolean ishttps = false;
 
-    public JDRRproxy(Socket Client_Socket, Vector<String> steps, String serverip) {
+    public JDRRproxy(Socket Client_Socket, Vector<String> steps, String serverip, int port, boolean ishttps) {
         Current_Socket = Client_Socket;
         this.steps = steps;
         this.serverip = serverip;
         this.setName("JDDProxy");
+        this.port = port;
+        this.ishttps = ishttps;
     }
 
     public void run() {
-
         Socket incoming = Current_Socket;
-
         Socket outgoing = null;
         try {
-            outgoing = new Socket(serverip, 80);
-            ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps);
+            if (!ishttps) {
+                outgoing = new Socket(serverip, port);
+            } else {
+                SocketFactory socketFactory = SSLSocketFactory.getDefault();
+                outgoing = socketFactory.createSocket(serverip, port);
+            }
+            ProxyThread thread1 = new ProxyThread(incoming, outgoing, CHANGE_HEADER | RECORD_HEADER, steps, ishttps);
             thread1.setName("Client2Router");
             thread1.start();
 
-            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER, steps);
+            ProxyThread thread2 = new ProxyThread(outgoing, incoming, CHANGE_HEADER, steps, ishttps);
             thread2.setName("Router2Client");
             thread2.start();
             thread2.join();
             try {
                 outgoing.shutdownInput();
+            } catch (Exception e) {
+            }
+            try {
                 incoming.shutdownInput();
+            } catch (Exception e) {
+            }
+            try {
                 outgoing.shutdownOutput();
+            } catch (Exception e) {
+            }
+            try {
                 incoming.shutdownOutput();
             } catch (Exception e) {
             }
@@ -79,13 +98,15 @@ class ProxyThread extends Thread {
     boolean renewbuffer = false;
     String buffer;
     ProxyThread instance;
+    boolean ishttps = false;
 
-    public ProxyThread(Socket in, Socket out, int dowhat, Vector<String> steps) {
+    public ProxyThread(Socket in, Socket out, int dowhat, Vector<String> steps, boolean ishttps) {
         incoming = in;
         outgoing = out;
         this.dowhat = dowhat;
         this.steps = steps;
         this.instance = this;
+        this.ishttps = ishttps;
     }
 
     public boolean dothis(int dothis) {
@@ -150,10 +171,9 @@ class ProxyThread extends Thread {
 
                         }
                     }
-                    JDUtilities.getLogger().info(headers + "");
-                    JDRRUtils.createStep(headers, postdata, steps);
+                    JDUtilities.getLogger().info("before: " + headers + "");
+                    JDRRUtils.createStep(headers, postdata, steps, ishttps);
                 } catch (Exception e) {
-                    e.printStackTrace();
                 }
             }
 
@@ -174,6 +194,29 @@ class ProxyThread extends Thread {
                 } else {
                     headerbuffer = ByteBuffer.wrap(b);
                 }
+
+                try {
+                    InputStream k = JDRRUtils.newInputStream(headerbuffer.duplicate());
+                    BufferedInputStream reader2 = new BufferedInputStream(k);
+                    String line = null;
+                    HashMap<String, String> headers = new HashMap<String, String>();
+
+                    while ((line = JDRRUtils.readline(reader2)) != null && line.trim().length() > 0) {
+                        String key = null;
+                        String value = null;
+                        if (line.indexOf(": ") > 0) {
+                            key = line.substring(0, line.indexOf(": ")).toLowerCase();
+                            value = line.substring(line.indexOf(": ") + 2);
+                        } else {
+                            key = null;
+                            value = line;
+                        }
+                        headers.put(key, value);
+                    }
+                    JDUtilities.getLogger().info("after: " + headers + "");
+                } catch (Exception e) {
+                }
+
                 InputStream fromClient2 = JDRRUtils.newInputStream(headerbuffer);
                 while (true) {
                     numberRead = fromClient2.read(minibuffer, 0, 2000);
@@ -203,11 +246,9 @@ class ProxyThread extends Thread {
                     toClient.write(minibuffer, 0, numberRead);
                 }
             } catch (Exception e) {
-                e.printStackTrace();
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 }

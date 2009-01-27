@@ -26,7 +26,8 @@ public class JDRR {
 
     static public Vector<String> steps;
     static boolean running = false;
-    static ServerSocket Server_Socket;
+    static ServerSocket Server_Socket_HTTP;
+    static ServerSocket Server_Socket_HTTPS;
     static final String PROPERTY_PORT = "PARAM_PORT";
     static String auth;
 
@@ -36,8 +37,10 @@ public class JDRR {
         running = true;
         steps.add("[[[HSRC]]]");
         try {
-            Server_Socket = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
-            new JDRRServer(Server_Socket, serverip).start();
+            Server_Socket_HTTP = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972));
+            Server_Socket_HTTPS = new ServerSocket(JDUtilities.getSubConfig("JDRR").getIntegerProperty(JDRR.PROPERTY_PORT, 8972) + 1);
+            new JDRRServer(Server_Socket_HTTP, serverip, 80, false).start();
+            new JDRRServer(Server_Socket_HTTPS, serverip, 443, true).start();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -47,7 +50,12 @@ public class JDRR {
         running = false;
         if (steps != null) steps.add("[[[/HSRC]]]");
         try {
-            Server_Socket.close();
+            Server_Socket_HTTP.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            Server_Socket_HTTPS.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,11 +64,15 @@ public class JDRR {
     static public class JDRRServer extends Thread {
         ServerSocket Server_Socket = null;
         String serverip;
+        int port;
+        boolean ishttps = false;
 
-        public JDRRServer(ServerSocket Server_Socket, String serverip) {
+        public JDRRServer(ServerSocket Server_Socket, String server, int port, boolean ishttps) {
             this.Server_Socket = Server_Socket;
-            this.serverip = serverip;
-            this.setName("JDRRServer");
+            this.serverip = server;
+            this.setName("JDRRServer " + port + " " + server);
+            this.port = port;
+            this.ishttps = ishttps;
         }
 
         public void run() {
@@ -72,7 +84,7 @@ public class JDRR {
                     break;
                 }
                 if (running) {
-                    JDRRproxy record = new JDRRproxy(Client_Socket, steps, serverip);
+                    JDRRproxy record = new JDRRproxy(Client_Socket, steps, serverip, port, ishttps);
                     record.start();
                 }
             }
@@ -83,7 +95,6 @@ public class JDRR {
                 e.printStackTrace();
             }
         }
-
     }
 
 }

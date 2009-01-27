@@ -59,7 +59,6 @@ import sun.misc.BASE64Encoder;
  */
 public class HTTPLiveHeader extends Interaction {
 
-  
     /**
      * serialVersionUID
      */
@@ -202,7 +201,7 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     public static String getScriptFromCURL(String code, String name) {
-        char[] SEPARATOR = new char[] {'\r','\n'};
+        char[] SEPARATOR = new char[] { '\r', '\n' };
         StringBuilder ret = new StringBuilder("[[[HSRC]]]");
         ret.append(SEPARATOR);
         try {
@@ -367,7 +366,6 @@ public class HTTPLiveHeader extends Interaction {
         logger.info("Starting  #" + retries);
         ProgressController progress = new ProgressController(JDLocale.L("interaction.liveHeader.progress.0_title", "HTTPLiveHeader Reconnect"), 10);
         progress.setStatusText(JDLocale.L("interaction.liveHeader.progress.1_retry", "HTTPLiveHeader #") + retries);
-    
 
         if (script == null || script.length() == 0) {
             progress.finalize();
@@ -435,7 +433,7 @@ public class HTTPLiveHeader extends Interaction {
                             if (params.length > 0) {
                                 StringBuilder req;
                                 if (value.startsWith(params[0])) {
-                                    req= new StringBuilder();
+                                    req = new StringBuilder();
                                     logger.finer("Variables: " + variables);
                                     logger.finer("Headerproperties: " + headerProperties);
                                     for (int i = 0; i <= tmp.length; i++) {
@@ -447,7 +445,7 @@ public class HTTPLiveHeader extends Interaction {
                                         }
                                     }
                                 } else {
-                                    req= new StringBuilder(tmp[0]);
+                                    req = new StringBuilder(tmp[0]);
                                     logger.finer("Variables: " + variables);
                                     logger.finer("Headerproperties: " + headerProperties);
                                     for (int i = 1; i <= tmp.length; i++) {
@@ -492,13 +490,18 @@ public class HTTPLiveHeader extends Interaction {
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("REQUEST")) {
+                        boolean ishttps = false;
                         if (toDo.getChildNodes().getLength() != 1) {
                             progress.finalize();
                             return parseError("A REQUEST Tag is not allowed to have childTags.");
                         }
+                        NamedNodeMap attributes = toDo.getAttributes();
+                        if (attributes.getNamedItem("https") != null) {
+                            ishttps = true;
+                        }
                         Browser retbr = null;
                         try {
-                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br);
+                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps);
                         } catch (Exception e2) {
                             retbr = null;
                         }
@@ -649,12 +652,14 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
-    private Browser doRequest(String request, Browser br) {
+    private Browser doRequest(String request, Browser br, boolean ishttps) {
         try {
             String requestType;
             String path;
             StringBuilder post = new StringBuilder();
             String host = null;
+            String http = "http://";
+            if (ishttps) http = "https://";
 
             HashMap<String, String> requestProperties = new HashMap<String, String>();
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
@@ -715,7 +720,7 @@ public class HTTPLiveHeader extends Interaction {
 
                 if (headersEnd) {
                     post.append(requestLines[li]);
-                    post.append(new char[] {'\r','\n'});
+                    post.append(new char[] { '\r', '\n' });
                     continue;
                 }
                 if (requestLines[li].trim().length() == 0) {
@@ -750,15 +755,15 @@ public class HTTPLiveHeader extends Interaction {
                 if (requestType.equalsIgnoreCase("GET")) {
                     logger.finer("GET " + "http://" + host + path);
 
-                    br.getPage("http://" + host + path);
+                    br.getPage(http + host + path);
 
                 } else if (requestType.equalsIgnoreCase("POST")) {
                     String poster = post.toString().trim();
                     logger.finer("POST " + "http://" + host + path + " " + poster);
-                    br.postPageRaw("http://" + host + path, poster);
+                    br.postPageRaw(http + host + path, poster);
                 } else if (requestType.equalsIgnoreCase("AUTH")) {
                     logger.finer("Convert AUTH->GET");
-                    br.getPage("http://" + host + path);
+                    br.getPage(http + host + path);
                 } else {
                     logger.severe("Unknown requesttyp: " + requestType);
                     return null;
