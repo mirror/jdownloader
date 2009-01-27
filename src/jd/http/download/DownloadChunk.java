@@ -75,6 +75,7 @@ public class DownloadChunk implements JDRunnable {
     private boolean alive;
     private TwoLayerSpeedMeter speedmeter;
     private ByteBuffer buffer;
+    private ChunkProgress chunkProgress;
 
     public HTTPDownload getOwner() {
         return owner;
@@ -84,20 +85,21 @@ public class DownloadChunk implements JDRunnable {
         return channel;
     }
 
-    public DownloadChunk(HTTPDownload owner, long start, long end) {
+    public DownloadChunk(HTTPDownload owner, long start, long end) throws BrowserException {
         this.owner = owner;
         this.chunkStart = start;
         this.chunkEnd = end;
-        if (start > end) {
-            System.out.println("HUHUHU");
-            // throw new BrowserException("range error");
-        }
+        chunkProgress = new ChunkProgress();
+        if (start > end && end > 0) {
+
+        throw new BrowserException("range error " + start + " - " + end); }
         request = owner.getRequest();
     }
 
     public DownloadChunk(HTTPDownload owner) {
         this.owner = owner;
         request = owner.getRequest();
+        chunkProgress = new ChunkProgress();
     }
 
     public long getChunkStart() {
@@ -297,16 +299,20 @@ public class DownloadChunk implements JDRunnable {
 
                 // deltaTime = Math.max(System.currentTimeMillis() - startTime,
                 // 1);
-                
-                //Hier werden alle CHunks mit dem writer synchronisiert. Die Schreibfunktionen kann jeweils nur 1 Chunk betreten. Alle anderen Warten,
+
+                // Hier werden alle CHunks mit dem writer synchronisiert. Die
+                // Schreibfunktionen kann jeweils nur 1 Chunk betreten. Alle
+                // anderen Warten,
                 System.out.println("write " + this + " " + buffer.position());
-                //owner.setChunkToWrite(this);
-                HDWriter.getWriter().writeAndWait(this.getBuffer(),this.owner.getOutputChannel(),this.getWritePosition());
-               // owner.waitForWriter(this);
-                System.out.println("Buffer written.. continue " + this);
+                // owner.setChunkToWrite(this);
+                HDWriter.getWriter().writeAndWait(this.getBuffer(), this.owner.getOutputChannel(), this.getWritePosition());
+
+                // owner.waitForWriter(this);
+                // System.out.println("Buffer written.. continue " + this);
 
                 // owner.writeBytes(this, buffer);
                 this.writePosition += buffer.limit();
+                owner.saveChunkStatus();
                 buffer.clear();
                 if (miniRead == -1) break main;
                 if (this.getChunkEnd() > 0 && this.getWritePosition() > this.getChunkEnd()) {
@@ -325,14 +331,12 @@ public class DownloadChunk implements JDRunnable {
 
             miniRead = 0;
         } finally {
-            System.out.println("F1 " + this);
-            if (buffer.position() > 0) {
-                try {
-                    owner.setChunkToWrite(this);
 
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+            if (buffer.position() > 0) {
+                System.out.println("F1 " + this);
+                HDWriter.getWriter().writeAndWait(this.getBuffer(), this.owner.getOutputChannel(), this.getWritePosition());
+                owner.saveChunkStatus();
+            
                 this.writePosition += buffer.limit();
                 buffer.clear();
             }
@@ -368,6 +372,12 @@ public class DownloadChunk implements JDRunnable {
 
         this.speedmeter = new TwoLayerSpeedMeter(SPEEDMETER_INTERVAL);
 
+    }
+
+    protected ChunkProgress getChunkProgress() {
+        chunkProgress.setStart(this.chunkStart);
+        chunkProgress.setEnd(this.getWritePosition());
+        return chunkProgress;
     }
 
 }

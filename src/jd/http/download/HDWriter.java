@@ -77,7 +77,7 @@ public class HDWriter extends Thread {
         // buffer.limit()) + " :  " + buffer.limit());
 
         channel.write(buffer);
-
+        
         // benachrichtige gib chunkwarteplatz wieder frei
         currentStatus = STATUS.FREE;
         // debug("STATUS = " + STATUS);

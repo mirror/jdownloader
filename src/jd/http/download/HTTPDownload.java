@@ -53,14 +53,15 @@ public class HTTPDownload {
     private long fileSize;
     private RandomAccessFile outputRAF;
     private FileChannel outputChannel;
-    private long byteCounter;
+//    private long byteCounter;
     private long bandwidthLimit;
     private int activeChunks = 0;
 
-    private Thread writer;
-    private DownloadChunk chunkToWrite = null;
+//    private Thread writer;
+   // private DownloadChunk chunkToWrite = null;
+    private DownloadProgress downloadProgress;
 
-    private static int STATUS = 0;
+    //private static int STATUS = 0;
 
     public synchronized int getActiveChunks() {
         return activeChunks;
@@ -74,16 +75,18 @@ public class HTTPDownload {
         this.fileSize = fileSize;
     }
 
+ 
     public HTTPDownload(Request request, File file, int flags) {
         this.orgRequest = request;
         this.flags = flags;
+        downloadProgress = new DownloadProgress(file);
         this.outputFile = file;
 
     }
 
     public HTTPDownload(Request request, File file) {
         this.orgRequest = request;
-
+        downloadProgress = new DownloadProgress(file);
         this.outputFile = file;
     }
 
@@ -100,12 +103,12 @@ public class HTTPDownload {
 
             String destPath = "c:/test.download";
             Browser br = new Browser();
-
-            Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.test");
+br.setDebug(true);
+            Request request = br.createGetRequest("http://service.jdownloader.net/testfiles/25bmtest.zip");
 
             final HTTPDownload dl = new HTTPDownload(request, new File(destPath), HTTPDownload.FLAG_RESUME);
           //  dl.setBandwidthlimit(1024*100);
-            dl.setDesiredChunkNum(4);
+            dl.setDesiredChunkNum(500);
 
             try {
                 new Thread() {
@@ -133,6 +136,7 @@ public class HTTPDownload {
                     System.out.println("CRC FAULT");
                 }
             } catch (BrowserException e) {
+                e.printStackTrace();
                 if (e.getType() == BrowserException.TYPE_LOCAL_IO) {
                     new File(destPath).delete();
                     e.printStackTrace();
@@ -144,7 +148,7 @@ public class HTTPDownload {
         }
     }
 
-    private void setBandwidthlimit(long bytesPerSecond) {
+    public void setBandwidthlimit(long bytesPerSecond) {
         this.bandwidthLimit = bytesPerSecond;
 
     }
@@ -256,8 +260,8 @@ public class HTTPDownload {
             this.initChunks();
 
         }
-        this.byteCounter = 0l;
-        this.startWriter();
+//        this.byteCounter = 0l;
+//        this.startWriter();
         this.download();
         System.out.println("Close and UNlock file");
         this.closeFileDiscriptors();
@@ -265,31 +269,31 @@ public class HTTPDownload {
 
     }
 
-    private void startWriter() {
-        this.writer = new Thread() {
-            public void run() {
-
-                while (!this.isInterrupted()) {
-
-                    if (chunks.isHasStarted() && chunks.isHasDied()) return;
-
-                    try {
-                        writeWaitingChunk();
-                    } catch (InterruptedException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    } catch (IOException e) {
-                        // TODO Auto-generated catch block
-                        e.printStackTrace();
-                    }
-
-                }
-            }
-
-        };
-
-        writer.start();
-    }
+//    private void startWriter() {
+//        this.writer = new Thread() {
+//            public void run() {
+//
+//                while (!this.isInterrupted()) {
+//
+//                    if (chunks.isHasStarted() && chunks.isHasDied()) return;
+//
+//                    try {
+//                        writeWaitingChunk();
+//                    } catch (InterruptedException e) {
+//                        // TODO Auto-generated catch block
+//                        e.printStackTrace();
+//                    } catch (IOException e) {
+//                        // TODO Auto-generated catch block
+//                        e.printStackTrace();
+//                    }
+//
+//                }
+//            }
+//
+//        };
+//
+//        writer.start();
+//    }
 
     private void closeFileDiscriptors() {
         try {
@@ -349,8 +353,9 @@ public class HTTPDownload {
     /**
      * Funktion überprüft ob eventl noch chunks hinzugefügt werden müssen um die
      * datei zu ende zu laden. z.B. wenn chunks abgebrochen wurden.
+     * @throws BrowserException 
      */
-    private synchronized void checkForMissingParts() {
+    private synchronized void checkForMissingParts() throws BrowserException {
         ArrayList<Long[]> missing = getMissingParts();
         if (missing.size() == 0) return;
         int activeChunks = chunks.getAlive().size();
@@ -429,13 +434,14 @@ public class HTTPDownload {
             }
 
             @Override
-            public void onThreadFinished(Threader th, JDRunnable job) {
+            public void onThreadFinished(Threader th, JDRunnable job)  {
+                try{
                 updateActiveChunkCount(-1); 
                 checkForMissingParts();
 //                if(activeChunks<chunkNum)
 //                    
 //                    addChunksDyn(i - tmp);
-                try {
+                
                     updateChunks();
                 } catch (BrowserException e) {
                     // TODO Auto-generated catch block
@@ -531,67 +537,82 @@ public class HTTPDownload {
         mask &= ~status;
         this.flags &= mask;
     }
+//
+//    public synchronized void writeWaitingChunk() throws InterruptedException, IOException {
+//        // Warte bis chunk zu schreiben anliegt
+//        while (STATUS != 1) {
+//            System.out.println("Nothing to write");
+//            wait();
+//
+//        }
+//
+//        // Schreibe Chunk
+//
+//        ByteBuffer buffer = chunkToWrite.getBuffer();
+//        buffer.flip();
+//
+//        outputRAF.seek(chunkToWrite.getWritePosition());
+//       // System.out.println(chunkToWrite + "Write " + chunkToWrite.getWritePosition() + "-" + (chunkToWrite.getWritePosition() + buffer.limit()) + " : " + this.getSpeed() + " " + buffer.limit());
+//        byteCounter += buffer.limit();
+//
+//        outputChannel.write(buffer);
+//
+//        // benachrichtige gib chunkwarteplatz wieder frei
+//        STATUS = 2;
+//        // debug("STATUS = " + STATUS);
+//        notifyAll();
+//
+//    }
 
-    public synchronized void writeWaitingChunk() throws InterruptedException, IOException {
-        // Warte bis chunk zu schreiben anliegt
-        while (STATUS != 1) {
-            System.out.println("Nothing to write");
-            wait();
-
+    public synchronized void saveChunkStatus() {
+      
+       
+        downloadProgress.reset(chunks.size());
+        
+        for (int i = 0; i < chunks.size(); i++) {
+            DownloadChunk chunk = (DownloadChunk) chunks.get(i);
+            ChunkProgress cp=   chunk.getChunkProgress();
+            downloadProgress.add(cp);
         }
-
-        // Schreibe Chunk
-
-        ByteBuffer buffer = chunkToWrite.getBuffer();
-        buffer.flip();
-
-        outputRAF.seek(chunkToWrite.getWritePosition());
-        System.out.println(chunkToWrite + "Write " + chunkToWrite.getWritePosition() + "-" + (chunkToWrite.getWritePosition() + buffer.limit()) + " : " + this.getSpeed() + " " + buffer.limit());
-        byteCounter += buffer.limit();
-
-        outputChannel.write(buffer);
-
-        // benachrichtige gib chunkwarteplatz wieder frei
-        STATUS = 2;
-        // debug("STATUS = " + STATUS);
-        notifyAll();
-
+      
+       
+    System.out.println(downloadProgress+"");
     }
 
     public FileChannel getOutputChannel() {
         return outputChannel;
     }
 
-    public synchronized void setChunkToWrite(DownloadChunk downloadChunk) throws InterruptedException {
-        // warten bis schreibslot frei ist
-        while (STATUS != 0) {
-            System.out.println("No free Slot for " + downloadChunk);
+//    public synchronized void setChunkToWrite(DownloadChunk downloadChunk) throws InterruptedException {
+//        // warten bis schreibslot frei ist
+//        while (STATUS != 0) {
+//            System.out.println("No free Slot for " + downloadChunk);
+//
+//            this.wait();
+//
+//        }
+//        // schreibslot belegen
+//        System.out.println("Queued to write next: " + downloadChunk + " " + downloadChunk.getBuffer().position());
+//        chunkToWrite = downloadChunk;
+//
+//        STATUS = 1;
+//        // debug("STATUS = " + STATUS);
+//        notifyAll();
+//
+//    }
 
-            this.wait();
-
-        }
-        // schreibslot belegen
-        System.out.println("Queued to write next: " + downloadChunk + " " + downloadChunk.getBuffer().position());
-        chunkToWrite = downloadChunk;
-
-        STATUS = 1;
-        // debug("STATUS = " + STATUS);
-        notifyAll();
-
-    }
-
-    public synchronized void waitForWriter(DownloadChunk downloadChunk) throws InterruptedException {
-        // warten bis schreibslot gelöscht
-        while (STATUS != 2) {
-            System.out.println("Waiting :" + downloadChunk);
-            this.wait();
-
-        }
-        STATUS = 0;
-        // debug("STATUS = " + STATUS);
-        notifyAll();
-
-    }
+//    public synchronized void waitForWriter(DownloadChunk downloadChunk) throws InterruptedException {
+//        // warten bis schreibslot gelöscht
+//        while (STATUS != 2) {
+//            System.out.println("Waiting :" + downloadChunk);
+//            this.wait();
+//
+//        }
+//        STATUS = 0;
+//        // debug("STATUS = " + STATUS);
+//        notifyAll();
+//
+//    }
 
     public Request getRequest() {
 
