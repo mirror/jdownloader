@@ -1285,6 +1285,7 @@ plugin.optional.jdchat.teamviewer.yourtvdata = Twoje dane Teamviewer:
 plugin.rapidshare.error.accountnotfound = Konto Premium nie zostało odnalezione
 plugin.rapidshare.error.fraud = Wykryto wyłudzenie: konto było nielegalnie wykorzystywane
 plugin.rapidshare.error.limitexeeded = Limit pobierania osiągnięty.
+plugin.rapidshare.error.serverunavailable = Serwer %s jest chwilowo niedostępny.
 plugin.rapidshare.tickettime = Oczekiwanie %s min. na bilet
 plugin.serienjunkies.archiveincomplete = Archiwum niekompletne
 plugin.serienjunkies.pageerror = SJ nie wspiera linków pobierania
