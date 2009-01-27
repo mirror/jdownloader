@@ -1127,3 +1127,4 @@ train.chooser.title = jDownloader - Train All
 train.method = Wählen Sie eine Methode aus:
 wrapper.webupdate.updatefile = Plugin %s aktualisieren
 plugin.rapidshare.error.serverunavailable = Der Server %s ist momentan nicht verfügbar.
+plugin.rapidshare.error.filetolarge = Diese Datei ist grösser als 200 MB, sie benötigen einen Premium-Account um sie runterzuladen.

@@ -1174,3 +1174,4 @@ train.chooser.title = jDownloader :: TrainAll
 train.method = Select a Captchamethod
 wrapper.webupdate.updatefile = Update plugin %s
 plugin.rapidshare.error.serverunavailable = The Server %s is currently unavailable.
+plugin.rapidshare.error.filetolarge = This file is larger than 200 MB, you need a premium-account to download this file.
