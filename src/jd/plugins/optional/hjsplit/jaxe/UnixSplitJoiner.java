@@ -74,7 +74,7 @@ public class UnixSplitJoiner extends JAxeJoiner {
         ca[0] = (char) ('a' + n / 26);
         ca[1] = (char) ('a' + n % 26);
 
-        return new String(ca);
+        return "." + new String(ca);
     }
 
     @Override

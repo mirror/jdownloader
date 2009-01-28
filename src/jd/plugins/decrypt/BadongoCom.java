@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
-import jd.nutils.OSDetector;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -44,19 +43,6 @@ public class BadongoCom extends PluginForDecrypt {
                 decryptedLinks.add(dlLink);
                 progress.increase(1);
             }
-
-            if (OSDetector.isWindows()) {
-                String bat = br.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/fm\\/\\d+\\/bat)").getMatch(0);
-                DownloadLink dlLink = createDownloadlink(bat.replaceAll("http://", "httpviajd://") + "#dummy.zip");
-
-                decryptedLinks.add(dlLink);
-            } else {
-                String bat = br.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/fm\\/\\d+\\/sh)").getMatch(0);
-                DownloadLink dlLink = createDownloadlink(bat.replaceAll("http://", "httpviajd://") + "#dummy.zip");
-
-                decryptedLinks.add(dlLink);
-            }
-
         }
 
         return decryptedLinks;

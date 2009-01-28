@@ -88,21 +88,22 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         switch (event.getID()) {
         case ControlEvent.CONTROL_PLUGIN_INACTIVE:
             if (!(event.getSource() instanceof PluginForHost)) { return; }
-            link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
-            File file = new File(link.getFileOutput());
+            if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
+                link = ((SingleDownloadController) event.getParameter()).getDownloadLink();
+                File file = new File(link.getFileOutput());
 
-            if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                if (link.getFilePackage().isExtractAfterDownload()) {
-                    file = this.getStartFile(file);
-                    if (file == null) return;
-                    if (this.validateArchive(file)) {
-                        addFileList(new File[] { file });
+                if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                    if (link.getFilePackage().isExtractAfterDownload()) {
+                        file = this.getStartFile(file);
+                        if (file == null) return;
+                        if (this.validateArchive(file)) {
+                            addFileList(new File[] { file });
+                        }
                     }
                 }
             }
             break;
         case ControlEvent.CONTROL_ON_FILEOUTPUT:
-
             addFileList((File[]) event.getParameter());
             break;
 
@@ -148,7 +149,6 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() instanceof MenuItem) {
             menuitemActionPerformed(e, (MenuItem) e.getSource());
         }
@@ -158,13 +158,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         SubConfiguration cfg = this.getPluginConfig();
         switch (source.getActionID()) {
         case 1:
-            boolean newValue;
-            cfg.setProperty("ACTIVATED", newValue = !cfg.getBooleanProperty("ACTIVATED", true));
-            if (newValue) {
-                JDUtilities.getController().addControlListener(this);
-            } else {
-                JDUtilities.getController().removeControlListener(this);
-            }
+            cfg.setProperty("ACTIVATED", !cfg.getBooleanProperty("ACTIVATED", true));
             cfg.save();
             break;
         case 21:
@@ -539,9 +533,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
     @Override
     public boolean initAddon() {
-        if (this.getPluginConfig().getBooleanProperty("ACTIVATED", true)) {
-            JDUtilities.getController().addControlListener(this);
-        }
+        JDUtilities.getController().addControlListener(this);
         return true;
     }
 

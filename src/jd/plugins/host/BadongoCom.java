@@ -22,8 +22,11 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Encoding;
 import jd.parser.Form;
 import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -34,6 +37,7 @@ public class BadongoCom extends PluginForHost {
 
     public BadongoCom(PluginWrapper wrapper) {
         super(wrapper);
+        this.enablePremium("http://www.badongo.com/compare");
     }
 
     @Override
@@ -74,35 +78,51 @@ public class BadongoCom extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    public void handlePremium(DownloadLink parameter, Account account) throws Exception {
+        DownloadLink downloadLink = (DownloadLink) parameter;
+        getFileInformation(parameter);
+        login(account);
+        isPremium();
+        String link = null;
+        br.getPage(downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com"));
+        if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
+            String downloadLinks[] = br.getRegex("doDownload\\(\\'(.*?)\\'\\)").getColumn(0);
+            link = downloadLinks[downloadLink.getIntegerProperty("part", 1) - 1];
+            br.getPage(link + "/ifr?pr=1&zenc=");
+            link = link + "/loc?pr=1";
+        } else {
+            link = br.getRegex("onclick=\"return doDownload\\('(.*?)'\\)").getMatch(0);
+        }
+        if (link == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        dl = br.openDownload(downloadLink, link, true, 0);
+        if (!dl.getConnection().isContentDisposition()) {
+            String page = br.loadConnection(dl.getConnection());
+            br.getRequest().setHtmlCode(page);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        }
+        dl.startDownload();
+    }
+
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         /* Nochmals das File überprüfen */
         String link = null;
         String realURL = downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com");
         getFileInformation(downloadLink);
-        // sleep(7000l, downloadLink);
-        br.setDebug(true);
-
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             String downloadLinks[] = br.getRegex("doDownload\\(\\'(.*?)\\'\\)").getColumn(0);
             link = downloadLinks[downloadLink.getIntegerProperty("part", 1) - 1];
             sleep(15000, downloadLink);
             br.getPage(link + "/ifr?pr=1&zenc=");
             handleErrors(br);
-            
-            
-            
-            
             dl = br.openDownload(downloadLink, link + "/loc?pr=1", true, 1);
             if (!dl.getConnection().isContentDisposition()) {
                 String page = br.loadConnection(dl.getConnection());
                 br.getRequest().setHtmlCode(page);
                 handleErrors(br);
             }
-
             dl.startDownload();
         } else {
-
             Browser ajax = br.cloneBrowser();
             ajax.getPage(realURL + "?rs=refreshImage&rst=&rsrnd=" + new Date().getTime());
             String cid = ajax.getRegex("cid\\=(\\d+)").getMatch(0);
@@ -113,10 +133,12 @@ public class BadongoCom extends PluginForHost {
             ajax.setFollowRedirects(true);
             captchaForm.action = ajax.getRegex("(http\\:\\/\\/www\\.badongo\\.com\\/\\w{2}\\/cfile\\/\\d+)").getMatch(0);
             ajax.submitForm(captchaForm);
+            captchaForm = ajax.getForm(0);
             String url = null;
             this.sleep(15000, downloadLink);
             ajax.getPage(realURL + "?rs=getFileLink&rst=&rsrnd=" + new Date().getTime() + "&rsargs[]=yellow");
             url = ajax.getRegex("doDownload\\(\\\\\'(.*?)\\\\\'\\)").getMatch(0);
+            if (url == null) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             ajax.getPage(url + "/ifr?pr=1&zenc=");
             handleErrors(ajax);
             dl = ajax.openDownload(downloadLink, url + "/loc?pr=1", true, 1);
@@ -126,15 +148,13 @@ public class BadongoCom extends PluginForHost {
                 handleErrors(ajax);
             }
             dl.startDownload();
-
         }
-
     }
 
     private void handleErrors(Browser br) throws PluginException {
         if (br.containsHTML("Gratis Mitglied Wartezeit")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 30 * 1000l);
         if (br.containsHTML("Du hast Deine Download Quote überschritten")) throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
-
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
     }
 
     public int getMaxSimultanFreeDownloadNum() {
@@ -147,6 +167,49 @@ public class BadongoCom extends PluginForHost {
 
     @Override
     public void resetPluginGlobals() {
+    }
+
+    public boolean isPremium() throws PluginException, IOException {
+        br.getPage("http://www.badongo.com/de/");
+        String type = br.getRegex("Du bist zur Zeit als <b>(.*?)</b> eingeloggt").getMatch(0);
+        if (type == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        if (new Regex(type, Pattern.compile("premium", Pattern.CASE_INSENSITIVE)).matches()) return true;
+        throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+    }
+
+    public void login(Account account) throws IOException, PluginException {
+        this.setBrowserExclusive();
+        br.setCookie("http://www.badongo.com", "badongoL", "de");
+        br.getPage("http://www.badongo.com");
+        br.getPage("http://www.badongo.com/de/login");
+        Form form = br.getForm(0);
+        form.put("username", Encoding.urlEncode(account.getUser()));
+        form.put("password", Encoding.urlEncode(account.getPass()));
+        br.submitForm(form);
+        if (br.getCookie("http://www.badongo.com", "badongoU") == null || br.getCookie("http://www.badongo.com", "badongoP") == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        try {
+            isPremium();
+        } catch (PluginException e) {
+            ai.setStatus("Not Premium Membership");
+            ai.setValid(false);
+            return ai;
+        }
+        ai.setStatus("Account ok");
+        ai.setValid(true);
+        return ai;
     }
 
 }

@@ -500,11 +500,9 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
     }
 
     public void actionPerformed(ActionEvent e) {
-
         if (e.getSource() instanceof MenuItem) {
             actionPerformedOnMenuItem(e, (MenuItem) e.getSource());
         }
-
     }
 
     private void actionPerformedOnMenuItem(ActionEvent e, MenuItem source) {
@@ -512,13 +510,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         DownloadLink link;
         switch (source.getActionID()) {
         case 1:
-            // boolean newValue;
-            cfg.setProperty("ACTIVATED", /* newValue = */!cfg.getBooleanProperty("ACTIVATED", true));
-            // if (newValue) {
-            // JDUtilities.getController().addControlListener(this);
-            // } else {
-            // JDUtilities.getController().removeControlListener(this);
-            // }
+            cfg.setProperty("ACTIVATED", !cfg.getBooleanProperty("ACTIVATED", true));
             cfg.save();
             break;
         case 21:
@@ -584,7 +576,6 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
             System.out.print("queued to extract: " + link);
             new Thread() {
                 public void run() {
-
                     addToQueue(finalLink);
                 }
             }.start();
@@ -710,13 +701,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
     @Override
     public boolean initAddon() {
-
-        // JDUtilities.getConfiguration().setProperty(Unrar.PROPERTY_ENABLED,
-        // false);
         JDUtilities.getController().addControlListener(this);
-
         return true;
-
     }
 
     public void initConfig() {
@@ -759,7 +745,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
 
         });
         passwordConfig.addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTAREA, JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST), "LIST", JDLocale.LF("plugins.optional.jdunrar.config.passwordlist2", "List of all passwords. Each line one password. Available passwords: %s", Regex.getLines(JDUtilities.getSubConfig(PasswordList.PROPERTY_PASSWORDLIST).getStringProperty("LIST", "")).length + "")));
-        
+
         ConfigContainer ext = new ConfigContainer(this, JDLocale.L("plugins.optional.jdunrar.config.advanced", "Advanced settings"));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CONTAINER, ext));
 
