@@ -1033,7 +1033,7 @@ public class JDUtilities {
             };
             System.setErr(new PrintStream(os));
         }
-        return logger; 
+        return logger;
     }
 
     /**
@@ -1238,7 +1238,7 @@ public class JDUtilities {
 
     public static void restartJD() {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
 
     }
@@ -1270,7 +1270,7 @@ public class JDUtilities {
 
     public static void restartJD(String[] jdArgs) {
         if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
-        String[] javaArgs = new String[] { "-jar", "-Xmx512m", "JDownloader.jar" };
+        String[] javaArgs = new String[] { "-Xmx512m", "-jar", "JDownloader.jar" };
         String[] finalArgs = new String[jdArgs.length + javaArgs.length];
         System.arraycopy(javaArgs, 0, finalArgs, 0, javaArgs.length);
         System.arraycopy(jdArgs, 0, finalArgs, javaArgs.length, jdArgs.length);

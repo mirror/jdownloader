@@ -696,7 +696,7 @@ public class JDController implements ControlListener, UIListener {
      */
     public void restart() {
         prepareShutdown();
-        logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+        logger.info(JDUtilities.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar", }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
         System.exit(0);
     }
 

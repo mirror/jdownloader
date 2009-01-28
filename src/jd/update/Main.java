@@ -369,7 +369,7 @@ public class Main {
                 Main.log(log, "Local: " + new File("").getAbsolutePath());
                 Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
 
-                Main.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
 
                 logWindow.setText(log.toString());
                 Main.writeLocalFile(new File("updateLog.txt"), log.toString());
@@ -478,7 +478,7 @@ public class Main {
         Main.log(log, "Local: " + new File("").getAbsolutePath());
 
         Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
-        Main.runCommand("java", new String[] { "-jar", "-Xmx512m", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
 
         logWindow.setText(log.toString());
         Main.writeLocalFile(new File("updateLog.txt"), log.toString());
