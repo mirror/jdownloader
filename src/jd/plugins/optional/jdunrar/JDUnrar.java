@@ -492,8 +492,8 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         // menu.add(queue);
 
         menu.add(new MenuItem(MenuItem.SEPARATOR));
-        menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.pwList", "Passwordlist"), 5).setActionListener(this));
-
+        menu.add(m = new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.pwList", "Passwordlist"), 5).setActionListener(this));
+        m.setAccelerator("F3");
         menu.add(new MenuItem(MenuItem.NORMAL, JDLocale.L("plugins.optional.jdunrar.menu.config", "Settings"), 4).setActionListener(this));
 
         return menu;

@@ -38,6 +38,7 @@ public class MenuItem extends Property {
     private Plugin plugin;
     private boolean selected;
     private String title;
+    String accelerator = null;
 
     public MenuItem(int id) {
         this(id, null, -1);
@@ -51,6 +52,14 @@ public class MenuItem extends Property {
 
     public MenuItem(String title, int actionID) {
         this(NORMAL, title, actionID);
+    }
+
+    public void setAccelerator(String accelerator) {
+        this.accelerator = accelerator;
+    }
+
+    public String getAccelerator() {
+        return this.accelerator;
     }
 
     public void addMenuItem(MenuItem m) {

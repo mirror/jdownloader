@@ -68,6 +68,7 @@ import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
@@ -377,24 +378,34 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public static JMenuItem getJMenuItem(final MenuItem mi) {
+        JMenuItem m;
         switch (mi.getID()) {
         case MenuItem.SEPARATOR:
             return null;
         case MenuItem.NORMAL:
-            return new JMenuItem(new JDMenuAction(mi));
+            m = new JMenuItem(new JDMenuAction(mi));
+            if (mi.getAccelerator() != null) m.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
+            return m;
         case MenuItem.TOGGLE:
             JCheckBoxMenuItem m2 = new JCheckBoxMenuItem(new JDMenuAction(mi));
-
             if (mi.isSelected()) {
                 m2.setIcon(JDTheme.II("gui.images.selected"));
             } else {
                 m2.setIcon(JDTheme.II("gui.images.unselected"));
             }
-
+            if (mi.getAccelerator() != null) m2.setAccelerator(KeyStroke.getKeyStroke(mi.getAccelerator()));
             return m2;
         case MenuItem.CONTAINER:
             JMenu m3 = new JMenu(mi.getTitle());
-
+            JMenuItem c;
+            if (mi.getSize() > 0) for (int i = 0; i < mi.getSize(); i++) {
+                c = SimpleGUI.getJMenuItem(mi.get(i));
+                if (c == null) {
+                    m3.addSeparator();
+                } else {
+                    m3.add(c);
+                }
+            }
             m3.addMenuListener(new MenuListener() {
 
                 public void menuCanceled(MenuEvent e) {
