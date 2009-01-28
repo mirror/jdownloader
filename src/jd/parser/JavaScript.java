@@ -77,7 +77,6 @@ public final class JavaScript {
         String fun = "function f(){ " + javaScript + "\nreturn " + functionName + "(" + parameter.toString() + ")} f()";
         Object result = cx.evaluateString(scope, fun, "<cmd>", 1, null);
         String ret = Context.toString(result);
-        Context.exit();
         return ret;
     }
 
@@ -86,7 +85,7 @@ public final class JavaScript {
     }
 
     private void runString(String data) throws IOException {
-        data = data.replaceAll("(?s)<!--.*?-->", "");
+        data = data.replaceAll("(?is)((?<!<script [^>]{0,100}>\\s{0,30})<!--.*?-->)", "");
         String url = br.getURL().toString();
         String basename = "";
         String host = "";
@@ -130,8 +129,7 @@ public final class JavaScript {
                             System.err.println(reg[i][2]);
                         }
                     }
-
-                    String data2 = d.getInnerHTML().replaceAll("(?s)<!--.*?-->", "");
+                    String data2 = d.getInnerHTML().replaceAll("(?is)((?<!<script [^>]{0,100}>\\s{0,30})<!--.*?-->)", "");
                     executed.add(reg[i][2]);
                     runString(d.content.toString());
                     // System.out.println(data2);
@@ -170,7 +168,7 @@ public final class JavaScript {
                                     System.err.println(link);
                                 }
                             }
-                            String data2 = d.getInnerHTML().replaceAll("(?s)<!--.*?-->", "");
+                            String data2 = d.getInnerHTML().replaceAll("(?is)((?<!<script [^>]{0,100}>\\s{0,30})<!--.*?-->)", "");
 
                             runString(d.content.toString());
                             // System.out.println(data2);
@@ -187,7 +185,7 @@ public final class JavaScript {
     }
 
     private void runPage() throws SAXException, IOException {
-        if (cx != null) return;
+        if (cx != null && scope!=null) return;
         if (br == null) return;
         String data = br.toString();
         // Logger.getLogger(HTMLDocumentImpl.class.getName()).setLevel(Level.OFF);
@@ -199,6 +197,7 @@ public final class JavaScript {
         SimpleUserAgentContext uacontext = new SimpleUserAgentContext();
         uacontext.setExternalCSSEnabled(false);
         uacontext.setScriptingEnabled(false);
+        uacontext.setScriptingOptimizationLevel(9);
         String host2 = br.getHost();
 
         if (host2.matches(".*\\..*\\..*")) host2 = host2.replaceFirst(".*?\\.", "");
@@ -223,7 +222,7 @@ public final class JavaScript {
         scope = (Scriptable) d.getUserData(Executor.SCOPE_KEY);
         if (scope == null) { throw new IllegalStateException("Scriptable (scope) instance was expected to be keyed as UserData to document using " + Executor.SCOPE_KEY); }
         // System.out.println(data);
-        runString(d.getInnerHTML());
+        runString(br.toString());
         // TODO document ersetzen
         // ret.replaceAll("document\\.([^\\s;=]*)", "");
     }
@@ -259,9 +258,11 @@ public final class JavaScript {
     public static void main(String[] args) {
         try {
             Browser b = new Browser();
-            b.getPage("http://www.sendspace.com/file/ueknde");
+            b.getPage("http://rapidshare.com/files/157971450/Om_Jai_Laxmi_Mata.pdf ");
+            b.submitForm(b.getForm(0));
             JavaScript js = b.getJavaScript();
-            System.out.println(b.getJavaScript().getVar("link_dec"));
+            js.javaScript="function f() {return document.getElementsByName(\"dlf\")[0].action;} f();";
+            System.out.println(js.runJavaScript());
             System.out.println("----------");
             b.getPage("http://dwdhome.ath.cx/test.html");
             System.out.println(b);
