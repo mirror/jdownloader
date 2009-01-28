@@ -17,7 +17,6 @@
 package jd.plugins.host;
 
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -34,8 +33,6 @@ import jd.utils.JDLocale;
 
 public class ShareBaseTo extends PluginForHost {
 
-    private static final Pattern FILEINFO = Pattern.compile("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>", Pattern.CASE_INSENSITIVE);
-
     public ShareBaseTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("http://sharebase.to/premium/");
@@ -51,13 +48,15 @@ public class ShareBaseTo extends PluginForHost {
         /* damit neue links mit .de als .to in die liste kommen */
         setBrowserExclusive();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
-        String[] infos = new Regex(br.getPage(downloadLink.getDownloadURL()), FILEINFO).getRow(0);
-        if (infos.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        br.getPage(downloadLink.getDownloadURL());
+        String[] infos = br.getRegex("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>").getRow(0);
+        if (infos == null || infos.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(infos[0].trim());
         downloadLink.setDownloadSize(Regex.getSize(infos[1].trim()));
         return true;
     }
 
+    @Override
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         setBrowserExclusive();
@@ -76,6 +75,7 @@ public class ShareBaseTo extends PluginForHost {
         return getVersion("$Revision$");
     }
 
+    @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
         br.setCookie("http://" + getHost(), "memm", account.getUser());
@@ -96,8 +96,7 @@ public class ShareBaseTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
         }
 
-        Form[] form = br.getForms();
-        dl = br.openDownload(downloadLink, form[1]);
+        dl = br.openDownload(downloadLink, br.getForm(1));
         if (dl.getConnection() == null) {
             logger.severe("ServerError");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.L("plugins.host.sharebaseto.servererror", "Service not available"), 10 * 60 * 1000l);
@@ -117,7 +116,6 @@ public class ShareBaseTo extends PluginForHost {
         }
 
         Form form = br.getFormbyValue("Please Activate Javascript");
-
         form.setVariable(1, Encoding.urlEncode("Download Now !"));
         br.submitForm(form);
 
@@ -145,6 +143,7 @@ public class ShareBaseTo extends PluginForHost {
         dl.startDownload();
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 1;
     }
