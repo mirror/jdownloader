@@ -77,6 +77,11 @@ public class MeinUpload extends PluginForHost {
                 }
                 if (sec != null) {
                     wait += Long.parseLong(sec.trim()) * 1000;
+                } else {
+                    sec = br.getRegex("\\(Or wait (\\d+) seconds").getMatch(0);
+                    if (sec != null) {
+                        wait += Long.parseLong(sec.trim()) * 1000;
+                    }
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
             }
