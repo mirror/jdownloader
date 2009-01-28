@@ -250,29 +250,4 @@ public final class JavaScript {
         return null;
     }
 
-    /**
-     * TODO muss noch überarbeitet werden
-     * 
-     * @param args
-     */
-    public static void main(String[] args) {
-        try {
-            Browser b = new Browser();
-            b.getPage("http://rapidshare.com/files/157971450/Om_Jai_Laxmi_Mata.pdf ");
-            b.submitForm(b.getForm(0));
-            JavaScript js = b.getJavaScript();
-            js.javaScript="function f() {return document.getElementsByName(\"dlf\")[0].action;} f();";
-            System.out.println(js.runJavaScript());
-            System.out.println("----------");
-            b.getPage("http://dwdhome.ath.cx/test.html");
-            System.out.println(b);
-            System.out.println("----------");
-            js = b.getJavaScript();
-            js.callFunction("Aendern");
-            System.out.println(js);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
 }
