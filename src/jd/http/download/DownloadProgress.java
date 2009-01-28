@@ -23,6 +23,7 @@ public class DownloadProgress implements Serializable {
     }
     public String toString(){
         String ret=""+file+"\r\n";
+        if(chunks==null)return ret;
         for(int i=0; i<chunks.length;i++){
             ret+=i+": "+chunks[i]+"\r\n";
         }
@@ -31,6 +32,7 @@ public class DownloadProgress implements Serializable {
     }
     private ChunkProgress[] chunks;
     private int i = 0;
+    public int totalLoaded;
 
     public DownloadProgress(File outputFile) {
         this.file = outputFile;

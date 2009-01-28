@@ -43,6 +43,7 @@ public class HttpServer extends Thread {
 
     public void run() {
         while (running) {
+            if(ssocket==null)return;
             try {
                 csocket = ssocket.accept();
                 new RequestHandler(csocket, handler).run();

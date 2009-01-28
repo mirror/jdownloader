@@ -36,7 +36,7 @@ public class HTTPDownload extends DownloadInterface {
     /**
      * Flag indicates, that the server allows resuming
      */
-    private static final int FLAG_RESUME = 1 << 0;
+    public static final int FLAG_RESUME = 1 << 0;
     /**
      * indicates, that the stored filesize is correct.
      */
@@ -115,7 +115,7 @@ public class HTTPDownload extends DownloadInterface {
 
             final HTTPDownload dl = new HTTPDownload(request, br, new File(destPath), HTTPDownload.FLAG_RESUME);
             // dl.setBandwidthlimit(1024*100);
-            dl.setDesiredChunkNum(5);
+            dl.setDesiredChunkNum(3);
             dl.addDownloadListener(new DownloadListener() {
 
                 public void onStatus(DownloadEvent downloadEvent) {
@@ -167,7 +167,7 @@ public class HTTPDownload extends DownloadInterface {
 
     }
 
-    private void setDesiredChunkNum(int i) throws BrowserException, InterruptedException {
+    public void setDesiredChunkNum(int i) throws BrowserException, InterruptedException {
         if (i == desiredChunkNum) return;
 
         this.desiredChunkNum = i;
@@ -264,7 +264,7 @@ public class HTTPDownload extends DownloadInterface {
 
     }
 
-    private void start() throws IOException, BrowserException {
+    public void start() throws IOException, BrowserException {
 
         // If resumeFlag is set and ResumInfo Import fails, initiate the Default
         // ChunkSetup
@@ -413,7 +413,7 @@ public class HTTPDownload extends DownloadInterface {
             if (chunk.getChunkStart() == lastChunk.getChunkEnd() + 1) {
                 // all ok
 
-            } else if (chunk.getChunkStart() <= lastChunk.getChunkEnd() + 1) {
+            } else if (chunk.getChunkStart() < lastChunk.getChunkEnd() + 1) {
                 System.err.println("Overlap  Chunks: " + chunk + " - " + lastChunk);
             } else {
                 Long[] add;
@@ -511,15 +511,15 @@ public class HTTPDownload extends DownloadInterface {
             this.fileSize = orgRequest.getContentLength();
             this.addStatus(FLAG_FILESIZE_CORRECT);
         }
-
-        chunk.setRange(0l, fileSize / desiredChunkNum);
+        System.out.println("Chunksize: "+(fileSize / desiredChunkNum));
+        chunk.setRange(0l, fileSize / desiredChunkNum+1);
         chunks.add(chunk);
 
         for (int i = 1; i < desiredChunkNum; i++) {
             if (i < desiredChunkNum - 1) {
-                chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, fileSize * (i + 1) / desiredChunkNum);
+                chunk = new DownloadChunk(this, chunk.getChunkEnd() , fileSize * (i + 1) / desiredChunkNum+1);
             } else {
-                chunk = new DownloadChunk(this, chunk.getChunkEnd() + 1, -1);
+                chunk = new DownloadChunk(this, chunk.getChunkEnd(), -1);
 
             }
 
@@ -576,17 +576,23 @@ public class HTTPDownload extends DownloadInterface {
     //
     // }
 
-    public synchronized void saveChunkStatus() {
+    private synchronized void updateDownloadProgress() {
 
         downloadProgress.reset(chunks.size());
-
+        downloadProgress.totalLoaded=0;
         for (int i = 0; i < chunks.size(); i++) {
             DownloadChunk chunk = (DownloadChunk) chunks.get(i);
             ChunkProgress cp = chunk.getChunkProgress();
             downloadProgress.add(cp);
+            downloadProgress.totalLoaded+=cp.getEnd()-cp.getStart()-1;
         }
+        
 
-        System.out.println(downloadProgress + "");
+     
+    }
+
+    public DownloadProgress getDownloadProgress() {
+        return downloadProgress;
     }
 
     public FileChannel getOutputChannel() {
@@ -640,7 +646,7 @@ public class HTTPDownload extends DownloadInterface {
 
     protected void onBufferWritten(DownloadChunk downloadChunk) {
         fireEvent(new DownloadEvent(DownloadEvent.PROGRESS_CHUNK_BUFFERWRITTEN, this, (DownloadChunk) downloadChunk));
-
+        updateDownloadProgress();
     }
 
     public long getSpeed() {
