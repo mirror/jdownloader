@@ -35,8 +35,10 @@ import jd.http.Encoding;
 
 import org.lobobrowser.html.io.WritableLineReader;
 import org.lobobrowser.html.js.Executor;
+import org.lobobrowser.html.js.Window;
 import org.lobobrowser.html.test.SimpleUserAgentContext;
 import org.lobobrowser.js.JavaFunctionObject;
+import org.lobobrowser.js.JavaObjectWrapper;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.xml.sax.SAXException;
@@ -192,7 +194,11 @@ public final class JavaScript {
         if (debug)
             Logger.getLogger(JavaFunctionObject.class.getName()).setLevel(Level.WARNING);
         else
+        {
             Logger.getLogger(JavaFunctionObject.class.getName()).setLevel(Level.OFF);
+            Logger.getLogger(Window.class.getName()).setLevel(Level.OFF);
+            Logger.getLogger(JavaObjectWrapper.class.getName()).setLevel(Level.OFF);
+        }
         ByteArrayInputStream ba = new ByteArrayInputStream(data.getBytes());
         SimpleUserAgentContext uacontext = new SimpleUserAgentContext();
         uacontext.setExternalCSSEnabled(false);
