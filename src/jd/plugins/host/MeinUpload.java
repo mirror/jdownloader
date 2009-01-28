@@ -68,10 +68,17 @@ public class MeinUpload extends PluginForHost {
         if (form != null) {
             form.remove("method_premium");
             br.submitForm(form);
-            if (br.toString().contains("(Or wait")) {
-                String[] timestr = br.getRegex("\\(Or wait (\\d+) minutes, (\\d+) seconds\\)").getRow(0);
-                long waitTime = (Long.parseLong(timestr[0]) * 60000) + (Long.parseLong(timestr[1]) * 1000);
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
+            if (br.toString().contains("Or wait")) {
+                String min = br.getRegex("\\(Or wait (\\d+) minutes").getMatch(0);
+                String sec = br.getRegex("\\(Or wait.*?minutes, (\\d+) seconds").getMatch(0);
+                long wait = 0;
+                if (min != null) {
+                    wait += Long.parseLong(min.trim()) * 60000;
+                }
+                if (sec != null) {
+                    wait += Long.parseLong(sec.trim()) * 1000;
+                }
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait);
             }
             String[][] Str = br.getRegex("position:absolute;padding-left:(\\d+)[^>]+>(\\d+)").getMatches();
             HashMap<Integer, Integer> gr = new HashMap<Integer, Integer>();
