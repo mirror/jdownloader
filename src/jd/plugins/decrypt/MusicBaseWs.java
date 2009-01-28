@@ -34,11 +34,9 @@ public class MusicBaseWs extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         br.getPage(parameter);
         String link = br.getRegex("url=(.*?)'").getMatch(0);
         decryptedLinks.add(createDownloadlink(link));
-
         return decryptedLinks;
     }
 
