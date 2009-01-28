@@ -22,9 +22,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import com.trolltech.qt.gui.QApplication;
-import com.trolltech.qt.gui.QPushButton;
-
 import jd.OptionalPluginWrapper;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -64,13 +61,6 @@ public class JDShutdown extends PluginOptional {
         if (e.getSource() == menuItem) {
             menuItem.setSelected(!menuItem.isSelected());
             if (menuItem.isSelected()) {
-                QApplication.initialize(new String[0]);
-                QPushButton hello = new QPushButton("Hello World!");
-                hello.resize(120, 40);
-                hello.setWindowTitle("Hello World");
-                hello.show();
-                QApplication.exec();
-
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.enabled", "Das System wird nach dem Download heruntergefahren."));
             } else {
                 JDUtilities.getGUI().showMessageDialog(JDLocale.L("addons.jdshutdown.statusmessage.disabled", "Das System wird nach dem Download NICHT heruntergefahren."));
