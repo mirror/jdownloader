@@ -43,7 +43,11 @@ public class test {
         if (infos.getRouterErrorPage() != null) he.put("RouterErrorPage", SQLRouterData.replaceTimeStamps(infos.getRouterErrorPage()));
         he.put("HTMLTagCount", "" + infos.countHtmlTags());
         try {
+            for (Entry<String, String> iterable_element : he.entrySet()) {
+                System.out.println(iterable_element.getKey()+":"+iterable_element.getValue());
+            }
             String st = br.postPage("http://service.jdownloader.net/routerdb/getRouters.php", he);
+            System.out.println(st);
             // String st = br.postPage("http://localhost/router/getRouters.php",
             // he);
             // System.out.println(st);
@@ -121,12 +125,14 @@ public class test {
                 System.out.println(rfo.getKey().getReconnectMethode());
                 System.out.println("-------------------------------------------");
             }
+            /*
             System.out.println(experimentalRouters.size() + " experimentelle Router  ------------------------------------");
             for (Entry<RInfo, Integer> rfo : experimentalRouters.entrySet()) {
                 System.out.println("Routervergleichswert:" + rfo.getValue() + " Integrität:" + rfo.getKey().getIntegrety() + ":" + rfo.getKey().getRouterName());
                 System.out.println(rfo.getKey().getReconnectMethode());
                 System.out.println("-------------------------------------------");
             }
+            */
             System.out.println("Router gefunden in " + (System.currentTimeMillis() - time2) + " Millisekunden");
             System.out.println("Es wurden " + ra.size() + " Router gefunden");
 
