@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -29,6 +30,8 @@ import jd.plugins.PluginForHost;
 
 public class WrzutaPl extends PluginForHost {
 
+    private String filetype = null;
+    private String filename = null;
 
     public WrzutaPl(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,46 +48,58 @@ public class WrzutaPl extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("Nie odnaleziono pliku.")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        String filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
-        String filext = null;
-        if (filetype.equalsIgnoreCase("film")) filext = "flv";
-        if (filetype.equalsIgnoreCase("audio")) filext = "mp3";
-        if (filetype.equalsIgnoreCase("obraz")) filext = "jpg";
-        String filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3><h2>(.*?)</h2><div", Pattern.CASE_INSENSITIVE)).getMatch(0)) + "." + filext );
+        filename = (Encoding.htmlDecode(br.getRegex(Pattern.compile("anie</h3><h2>(.*?)</h2><div", Pattern.CASE_INSENSITIVE)).getMatch(0)));
         String filesize = br.getRegex(Pattern.compile("Rozmiar: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (filext == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        filetype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
-        downloadLink.setName(filename);
+        if (downloadLink.getIntegerProperty("nameextra", -1) != -1) {
+            filename = filename + "_" + downloadLink.getIntegerProperty("nameextra", -1);
+            downloadLink.setName(filename.trim());
+        } else
+            downloadLink.setName(filename.trim());
         return true;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
-    getFileInformation(downloadLink);
-
-    String filtype = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/([^/]*)").getMatch(0);
-    String filid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/"+filtype+"/([^/]*)").getMatch(0);
-    String linkurl = null;
-    String filname = downloadLink.getName();
-    System.out.println("NAZWA: "+filname);
-    if (filtype.equalsIgnoreCase("audio")) {
-    linkurl="http://wrzuta.pl/aud/file/"+filid+"/";
-    }
-    if (filtype.equalsIgnoreCase("film")) {
-        linkurl="http://wrzuta.pl/vid/file/"+filid+"/";
-    }  
-    if (filtype.equalsIgnoreCase("obraz")) {
-        linkurl="http://wrzuta.pl/img/file/"+filid+"/";
-    }
-    if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-    br.setFollowRedirects(true);
-    dl = br.openDownload(downloadLink, linkurl);
-    dl.startDownload();
+        getFileInformation(downloadLink);
+        String fileid = new Regex(downloadLink.getDownloadURL(), ".*?wrzuta.pl/" + filetype + "/([^/]*)").getMatch(0);
+        if (fileid == null || filetype == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        String linkurl = null;
+        if (filetype.equalsIgnoreCase("audio")) {
+            linkurl = "http://wrzuta.pl/aud/file/" + fileid + "/";
+        }
+        if (filetype.equalsIgnoreCase("film")) {
+            linkurl = "http://wrzuta.pl/vid/file/" + fileid + "/";
+        }
+        if (filetype.equalsIgnoreCase("obraz")) {
+            linkurl = "http://wrzuta.pl/img/file/" + fileid + "/";
+        }
+        if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
+        br.setDebug(true);
+        br.setFollowRedirects(true);
+        dl = br.openDownload(downloadLink, linkurl);
+        HTTPConnection con = dl.getConnection();
+        if (!con.getContentType().equalsIgnoreCase("unknown")) {
+            if (con.getContentType().contains("mpeg3")) {
+                downloadLink.setFinalFileName(filename.trim() + ".mp3");
+            } else if (con.getContentType().contains("flv")) {
+                downloadLink.setFinalFileName(filename.trim() + ".flv");
+            } else if (con.getContentType().contains("png")) {
+                downloadLink.setFinalFileName(filename.trim() + ".png");
+            } else if (con.getContentType().contains("jpg") || con.getContentType().contains("jpeg")) {
+                downloadLink.setFinalFileName(filename.trim() + ".jpg");
+            } else {
+                logger.info("unknown filetyp, cannot determine file extension");
+            }
+        }
+        dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {

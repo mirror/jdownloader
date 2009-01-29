@@ -1008,7 +1008,8 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public boolean hasDownloadLinkURL(String url) {
-
+        if (url == null) return false;
+        url = url.trim();
         try {
             Iterator<FilePackage> iterator = packages.iterator();
             FilePackage fp = null;

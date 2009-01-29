@@ -330,7 +330,7 @@ public class LinkStatus implements Serializable {
 
     public void reset() {
         setStatus(TODO);
-
+        errorMessage = null;
         statusText = null;
         retryCount = 0;
         value = 0;
