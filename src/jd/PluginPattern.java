@@ -56,7 +56,7 @@ public class PluginPattern {
             completePattern.append("|(" + pattern.replaceAll("\\.", "\\\\.") + "/\\?p=[\\d]+)");
         }
         completePattern.append(")");
-        logger.finest("Wordpress: " + (1 + 1 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
+        logger.finest("Wordpress: " + (1 + 1 + 1 + listType1.length + listType2.length + listType3.length) + " Pattern added!");
         return completePattern.toString();
     }
 
