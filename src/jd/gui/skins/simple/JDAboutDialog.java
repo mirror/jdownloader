@@ -83,7 +83,7 @@ public class JDAboutDialog {
         // (without fiddleing with the tablecellrenderer)
 
         String[][] devs = new String[][] { { " coalado", " support@jdownloader.org", " JDownloader core, ocr, gui, reconnect, container, website, project administration" }, { " jago", " jago@jdownloader.org", " Senior software architect in real life. Responsible for the Swing GUI design of JD." }, { " jiaz", " jiaz@jdownloader.org", " Webinterface,Hoster/Decrypter-Plugins,Support,Bugfixing,JDownloader core" }, { " Greeny", " greeny@jdownloader.org", " LangFileEditor, Support, Decrypter-Plugins, Bugfixing and making the GUI more user-friendly" }, { " Viperb0y", " support@jdownloader.org", " Hoster / Decrypter, Support and Bugfixing" }, { " DwD", " dwd@jdownloader.org", " hoster, ocr, decrypter, extractor, reconnect" }, { " Botzi", " botzi@jdownloader.org", " Hoster / Decrypter / Addons, Bugfixing, Database backend, No Support" }, { " Scr4ve", " ---", " hoster, decrypter, addons, ..." },
-                { " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" }, { " gocsp", "gocsp@jdownloader.org", " Mac Developer" }, { " Sheadox", "sheadox@jdownloader.org", " Hoster plugins" },
+                { " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" }, { " gocsp", "gocsp@jdownloader.org", " Mac Developer" }, { " Sheadox", "sheadox@jdownloader.org", " Hoster plugins" }, { " djuzi", "djuzi@jdownloader.org", " Hoster plugins, Bug fixes, Localizing, PL Translation" },
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
 
@@ -106,7 +106,7 @@ public class JDAboutDialog {
         s.add(links, BorderLayout.SOUTH);
         p.add(s, BorderLayout.SOUTH);
         s.add(titledSeparator, BorderLayout.NORTH);
-        s.setPreferredSize(new Dimension(800, 257));
+        s.setPreferredSize(new Dimension(800, 274));
 
         final JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
