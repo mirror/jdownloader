@@ -85,9 +85,11 @@ public class BadongoCom extends PluginForHost {
         isPremium();
         String link = null;
         br.getPage(downloadLink.getDownloadURL().replaceAll("\\.viajd", ".com"));
+        sleep(5000l, parameter);
         if (downloadLink.getStringProperty("type", "single").equalsIgnoreCase("split")) {
             String downloadLinks[] = br.getRegex("doDownload\\(\\'(.*?)\\'\\)").getColumn(0);
             link = downloadLinks[downloadLink.getIntegerProperty("part", 1) - 1];
+            sleep(5000l, parameter);
             br.getPage(link + "/ifr?pr=1&zenc=");
             link = link + "/loc?pr=1";
         } else {

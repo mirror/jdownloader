@@ -21,6 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -28,13 +29,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.JDLocale;
 
 public class PrzeklejPl extends PluginForHost {
 
-    
-    private static final String PATTERN_PASSWORD_WRONG = "B≥Ídnie podane has≥o!";
-    
+    private static final String PATTERN_PASSWORD_WRONG = "B.*?dnie podane has";
+
     public PrzeklejPl(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -53,49 +52,49 @@ public class PrzeklejPl extends PluginForHost {
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<p>(.*?)</p><!-- tu potrzeba ograniczania dlugosci nazwy pliku -->", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex(Pattern.compile("<span class=\"size\">\\((.*?)\\)</span>", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        downloadLink.setName(filename);
+        downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4228 $");
+        return getVersion("$Revision$");
     }
-    
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-       String passCode = null;
-        if (!br.containsHTML("<span class=\"unbold\">Wprowadü has≥o:</span>")) {
+        String passCode = null;
+        if (!br.containsHTML("<span class=\"unbold\">Wprowad")) {
             String linkurl = downloadLink.getDownloadURL();
-            // String linkurl = Encoding.htmlDecode(br.getRegex("<a class=\"download\" href=\"(.*?)\">Pobierz plik</a>").getMatch(0));
             if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, linkurl);
             dl.startDownload();
-        }
-        else {
+        } else {
             if (downloadLink.getStringProperty("pass", null) == null) {
-                passCode = Plugin.getUserInput(null, downloadLink);
+                passCode = Plugin.getUserInput("Password", downloadLink);
             } else {
-                /* gespeicherten PassCode holen */
                 passCode = downloadLink.getStringProperty("pass", null);
             }
             Form form = br.getFormbyName("haselko");
+            if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
             form.put("haslo[haslo]", passCode);
             br.setFollowRedirects(true);
-            br.submitForm(form);
-            if (br.containsHTML(PATTERN_PASSWORD_WRONG)) {
-                downloadLink.setProperty("pass", null);
-                throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.errors.wrongpassword", "Password wrong"));
+            HTTPConnection con = br.openFormConnection(form);
+            if (!con.isContentDisposition()) {
+                br.followConnection();
+                if (br.containsHTML(PATTERN_PASSWORD_WRONG)) {
+                    downloadLink.setProperty("pass", null);
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
             } else {
+                con.disconnect();
                 downloadLink.setProperty("pass", passCode);
                 dl = br.openDownload(downloadLink, form, true, 1);
-                if (!dl.getConnection().isContentDisposition()) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
                 dl.startDownload();
-                
             }
         }
     }

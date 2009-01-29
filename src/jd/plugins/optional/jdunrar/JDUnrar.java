@@ -413,7 +413,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         File ret = new File(path);
         if (!this.getPluginConfig().getBooleanProperty(JDUnrarConstants.CONFIG_KEY_USE_SUBPATH, false)) { return ret; }
 
-        path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH, "/%PACKAGENAME%");
+        path = this.getPluginConfig().getStringProperty(JDUnrarConstants.CONFIG_KEY_SUBPATH, "%PACKAGENAME%");
 
         try {
             if (link.getFilePackage().getName() != null) {
@@ -753,7 +753,7 @@ public class JDUnrar extends PluginOptional implements ControlListener, UnrarLis
         conditionEntry.setDefaultValue(false);
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH, JDLocale.L("gui.config.unrar.subpath", "Subpath")));
-        ce.setDefaultValue("/%PACKAGENAME%");
+        ce.setDefaultValue("%PACKAGENAME%");
         ce.setEnabledCondidtion(conditionEntry, "==", true);
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, JDUnrarConstants.CONFIG_KEY_SUBPATH_MINNUM, JDLocale.L("gui.config.unrar.subpath_minnum", "Only use subpath if archive contains more than x files"), 0, 600).setDefaultValue(0));
         // ce.setEnabledCondidtion(conditionEntry, "==", true);
