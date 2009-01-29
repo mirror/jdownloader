@@ -26,6 +26,8 @@ public class UploadingCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
+        br.setFollowRedirects(true);
+        br.getPage("http://www.uploading.com/lang/?lang=en");
         String filesize = br.getRegex("File size:(.*?)<br/>").getMatch(0);
         String filename = br.getRegex("<h3>Download file.*?<b>(.*?)</b>").getMatch(0);
         if (filesize == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -42,6 +44,8 @@ public class UploadingCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
+        br.setFollowRedirects(true);
+        br.getPage("http://www.uploading.com/lang/?lang=en");
         Form form = br.getForm(2);
         try {
             Thread.sleep(2000);
