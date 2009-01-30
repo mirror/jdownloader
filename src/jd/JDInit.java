@@ -800,6 +800,8 @@ public class JDInit {
         new HostPluginWrapper("wrzuta.pl", "WrzutaPl", "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+");
         new HostPluginWrapper("filefactory.pl", "FileFactoryPl", "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+");
         new HostPluginWrapper("wyslijto.pl", "WyslijToPl", "http://[\\w\\.]*?wyslijto\\.pl/(download|files/download|files/pre_download|plik)/\\w+");
+        new HostPluginWrapper("wrzucaj.com", "WrzucajCom", "http://[\\w\\.]*?wrzucaj\\.com/\\d+");
+      
 
     }
 
