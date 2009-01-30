@@ -64,7 +64,7 @@ public class FileFactoryPl extends PluginForHost {
         String linkurl =  br.getRegex("<a href=\\\\'(.*?)\\\\' style=\\\\'font-size:14px;\\\\'>DOWNLOAD FILE</a>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        this.sleep(60000, downloadLink);
+        // this.sleep(60000, downloadLink); // uncomment when they find a better way to force wait time
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
         
