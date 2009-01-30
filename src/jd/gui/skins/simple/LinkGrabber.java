@@ -1836,9 +1836,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     public void checkAlreadyinList(DownloadLink link) {
-        if (JDUtilities.getController().hasDownloadLinkURL(link.getDownloadURL())) {
-            link.getLinkStatus().setErrorMessage("Already in Downloadlist");
-            link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+        if (link.isAvailabilityChecked() && link.isAvailable()) {
+            if (JDUtilities.getController().hasDownloadLinkURL(link.getDownloadURL())) {
+                link.getLinkStatus().setErrorMessage("Already in Downloadlist");
+                link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+            }
         }
     }
 
