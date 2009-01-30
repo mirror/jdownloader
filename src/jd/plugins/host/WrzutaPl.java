@@ -95,8 +95,10 @@ public class WrzutaPl extends PluginForHost {
                 downloadLink.setFinalFileName(filename.trim() + ".png");
             } else if (con.getContentType().contains("jpg") || con.getContentType().contains("jpeg")) {
                 downloadLink.setFinalFileName(filename.trim() + ".jpg");
+            } else if (con.getContentType().contains("bmp") || con.getContentType().contains("bitmap")) {
+                downloadLink.setFinalFileName(filename.trim() + ".bmp");
             } else {
-                logger.info("unknown filetyp, cannot determine file extension");
+                logger.info("Unknown filetype, cannot determine file extension...");
             }
         }
         dl.startDownload();
