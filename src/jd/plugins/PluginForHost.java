@@ -381,41 +381,7 @@ public abstract class PluginForHost extends Plugin {
 
         if (downloadLink.isDupeCheckallowed()) {
             /* check ob Datei existiert oder bereits geladen wird */
-            DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
-            LinkStatus linkstatus = downloadLink.getLinkStatus();
-            if (block != null) {
-                linkstatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-                linkstatus.setErrorMessage(String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), block.getPlugin().getHost()));
-                return;
-            }
-            File fileOutput = new File(downloadLink.getFileOutput());
-            if (fileOutput.getParentFile() == null) {
-                linkstatus.addStatus(LinkStatus.ERROR_FATAL);
-                linkstatus.setErrorMessage(JDLocale.L("system.download.errors.invalidoutputfile", "Invalid Outputfile"));
-                return;
-            }
-            if (!fileOutput.getParentFile().exists()) {
-                fileOutput.getParentFile().mkdirs();
-            }
-            if (fileOutput.exists()) {
-                if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                    if (!new File(downloadLink.getFileOutput()).delete()) {
-                        linkstatus.addStatus(LinkStatus.ERROR_FATAL);
-                        linkstatus.setErrorMessage(JDLocale.L("system.download.errors.couldnotoverwritejdu", "Update Download Error"));
-                        return;
-                    }
-                }
-                if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
-                    if (!new File(downloadLink.getFileOutput()).delete()) {
-                        linkstatus.addStatus(LinkStatus.ERROR_FATAL);
-                        linkstatus.setErrorMessage(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
-                        return;
-                    }
-                } else {
-                    linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
-                    return;
-                }
-            }
+            if (DownloadInterface.preDownloadCheckFailed(downloadLink)) return;
         }
 
         Long t = 0l;

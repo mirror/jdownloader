@@ -187,7 +187,6 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
                 onErrorTemporarilyUnavailable(downloadLink, currentPlugin);
                 break;
-
             case LinkStatus.ERROR_AGB_NOT_SIGNED:
                 onErrorAGBNotSigned(downloadLink, currentPlugin);
                 break;
@@ -196,7 +195,7 @@ public class SingleDownloadController extends Thread {
                 break;
             case LinkStatus.ERROR_LINK_IN_PROGRESS:
                 onErrorLinkBlock(downloadLink, currentPlugin);
-
+                break;
             case LinkStatus.ERROR_FATAL:
                 onErrorFatal(downloadLink, currentPlugin);
                 break;
@@ -206,7 +205,6 @@ public class SingleDownloadController extends Thread {
             case LinkStatus.ERROR_PREMIUM:
                 onErrorPremium(downloadLink, currentPlugin);
                 break;
-
             case LinkStatus.ERROR_DOWNLOAD_INCOMPLETE:
                 onErrorIncomplete(downloadLink, currentPlugin);
                 break;
@@ -369,7 +367,6 @@ public class SingleDownloadController extends Thread {
         if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 1) {
             downloadLink.setEnabled(false);
             status.setErrorMessage(JDLocale.L("controller.status.fileexists.skip", "File already exists."));
-
             fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
         } else {
             if (new File(downloadLink.getFileOutput()).delete()) {
@@ -377,10 +374,8 @@ public class SingleDownloadController extends Thread {
             } else {
                 status.addStatus(LinkStatus.ERROR_FATAL);
                 status.setErrorMessage(JDLocale.L("controller.status.fileexists.overwritefailed", "Überschreiben fehlgeschlagen ") + downloadLink.getFileOutput());
-
             }
         }
-
         fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, downloadLink));
 
     }

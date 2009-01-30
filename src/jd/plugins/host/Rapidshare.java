@@ -226,7 +226,8 @@ public class Rapidshare extends PluginForHost {
                         ret[c] = false;
                     } else {
                         urls[c].setDownloadSize(Integer.parseInt(erg[4]));
-                        urls[c].setName(erg[5].trim());
+                        urls[c].setFinalFileName(erg[5].trim());
+                        urls[c].setDupecheckAllowed(true);
                     }
                     c++;
 
@@ -389,7 +390,7 @@ public class Rapidshare extends PluginForHost {
             this.handlePremium(downloadLink, new Account("dummy", "dummy"));
             return;
         }
-        // posturl für auswahl free7premium wird gesucht        
+        // posturl für auswahl free7premium wird gesucht
         freeOrPremiumSelectPostURL = new Regex(br, PATTERN_FIND_MIRROR_URL).getMatch(0);
         // Fehlerbehandlung auf der ersten Seite
         if (freeOrPremiumSelectPostURL == null) {
@@ -940,6 +941,7 @@ public class Rapidshare extends PluginForHost {
                     Entry<String, String> n = it.next();
                     DownloadLink dlink = new DownloadLink((PluginForHost) getWrapper().getNewPluginInstance(), link.substring(link.lastIndexOf("/") + 1), getHost(), link, true);
                     dlink.setProperty("USE_SERVER", n.getKey());
+                    dlink.setProperty("ALLOW_DUPE", true);
                     dlink.setFinalFileName("Speedtest_svr_" + n.getKey() + ".test");
                     dlink.setFilePackage(fp);
                     dlink.getLinkStatus().setStatusText("Server: " + n.getKey());

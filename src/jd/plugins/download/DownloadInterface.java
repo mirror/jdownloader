@@ -260,7 +260,7 @@ abstract public class DownloadInterface {
                 if (endByte > 0 && bufferSize > endByte - getCurrentBytesPosition() + 1) {
                     bufferSize = (int) (endByte - getCurrentBytesPosition() + 1);
                 }
-                bufferSize=Math.max((int)bufferSize, 1);
+                bufferSize = Math.max((int) bufferSize, 1);
                 /* max 2gb buffer */
                 buffer = ByteBuffer.allocateDirect((int) bufferSize);
 
@@ -1661,6 +1661,47 @@ abstract public class DownloadInterface {
      */
     abstract protected void setupChunks() throws Exception;
 
+    public static boolean preDownloadCheckFailed(DownloadLink link) {
+        DownloadLink downloadLink = link;
+        DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
+        LinkStatus linkstatus = link.getLinkStatus();
+        if (block != null) {
+            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
+            linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+            linkstatus.setErrorMessage(String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), block.getPlugin().getHost()));
+            return true;
+        }
+        File fileOutput = new File(downloadLink.getFileOutput());
+        if (fileOutput.getParentFile() == null) {
+            linkstatus.addStatus(LinkStatus.ERROR_FATAL);
+            linkstatus.setErrorMessage(JDLocale.L("system.download.errors.invalidoutputfile", "Invalid Outputfile"));
+            return true;
+        }
+        if (!fileOutput.getParentFile().exists()) {
+            fileOutput.getParentFile().mkdirs();
+        }
+        if (fileOutput.exists()) {
+            if (downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
+                if (!new File(downloadLink.getFileOutput()).delete()) {
+                    linkstatus.addStatus(LinkStatus.ERROR_FATAL);
+                    linkstatus.setErrorMessage(JDLocale.L("system.download.errors.couldnotoverwritejdu", "Update Download Error"));
+                    return true;
+                }
+            }
+            if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
+                if (!new File(downloadLink.getFileOutput()).delete()) {
+                    linkstatus.addStatus(LinkStatus.ERROR_FATAL);
+                    linkstatus.setErrorMessage(JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
+                    return true;
+                }
+            } else {
+                linkstatus.addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Startet den Download. Nach dem Aufruf dieser Funktion können keine
      * Downlaodparameter mehr gesetzt werden bzw bleiben wirkungslos.
@@ -1677,7 +1718,6 @@ abstract public class DownloadInterface {
             String name = Plugin.getFileNameFormHeader(connection);
             this.downloadLink.setFinalFileName(name);
         }
-        DownloadLink block = JDUtilities.getController().getLinkThatBlocks(downloadLink);
         downloadLink.getLinkStatus().setStatusText(null);
         if (connection == null || !connection.isOK()) {
             if (connection != null) logger.finest(connection.toString());
@@ -1687,44 +1727,7 @@ abstract public class DownloadInterface {
             error(LinkStatus.ERROR_PLUGIN_DEFEKT, "Sent a redirect to Downloadinterface");
             return false;
         }
-        if (block != null) {
-            logger.severe("File already is in progress. " + downloadLink.getFileOutput());
-            // linkStatus.addStatus(LinkStatus.ERROR_LINK_IN_PROGRESS);
-            error(LinkStatus.ERROR_LINK_IN_PROGRESS, String.format(JDLocale.L("system.download.errors.linkisBlocked", "Mirror %s is loading"), block.getPlugin().getHost()));
-            if (!handleErrors()) { return false; }
-        }
-        File fileOutput = new File(downloadLink.getFileOutput());
-        if (fileOutput.getParentFile() == null) {
-            error(LinkStatus.ERROR_FATAL, JDLocale.L("system.download.errors.invalidoutputfile", "Invalid Outputfile"));
-            if (!handleErrors()) { return false; }
-        }
-        if (!fileOutput.getParentFile().exists()) {
-            fileOutput.getParentFile().mkdirs();
-        }
-        loop: if (fileOutput.exists()) {
-            logger.severe("File already exists. " + fileOutput);
-            if (this.downloadLink.getLinkType() == DownloadLink.LINKTYPE_JDU) {
-                if (new File(downloadLink.getFileOutput()).delete()) {
-                    logger.severe("--->Overwritten");
-                    break loop;
-                } else {
-                    error(LinkStatus.ERROR_FATAL, JDLocale.L("system.download.errors.couldnotoverwritejdu", "Update Download Error"));
-                    if (!handleErrors()) { return false; }
-                }
-            }
-            if (JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_FILE_EXISTS) == 0) {
-                if (new File(downloadLink.getFileOutput()).delete()) {
-                    logger.severe("--->Overwritten");
-                } else {
-                    error(LinkStatus.ERROR_ALREADYEXISTS, JDLocale.L("system.download.errors.couldnotoverwrite", "Could not overwrite existing file"));
-                    if (!handleErrors()) { return false; }
-                }
-            } else {
-                error(LinkStatus.ERROR_ALREADYEXISTS, null);
-                if (!handleErrors()) { return false; }
-            }
-        }
-
+        if (preDownloadCheckFailed(downloadLink)) return false;
         // if (this.maxBytes > 0) {
         // logger.finer("Nibble feature active: " + maxBytes + " rest chunks to
         // 1");

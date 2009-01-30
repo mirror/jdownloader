@@ -93,6 +93,7 @@ import jd.nutils.jobber.Jobber;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
@@ -127,6 +128,8 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
 
             private final Color COLOR_ERROR_OFFLINE = new Color(255, 0, 0, 60);
 
+            private final Color COLOR_DONE_EXIST = new Color(255, 127, 0, 60);
+
             private final Color COLOR_SORT_MARK = new Color(40, 225, 40, 40);
 
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
@@ -140,7 +143,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE.darker());
                     } else if (dLink.isAvailabilityChecked()) {
-                        c.setBackground(COLOR_DONE.darker());
+                        if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                            c.setBackground(COLOR_DONE_EXIST.darker());
+                        } else {
+                            c.setBackground(COLOR_DONE.darker());
+                        }
                     }
                     if (Math.abs(sortedOn) == column) {
                         c.setBackground(COLOR_SORT_MARK.darker());
@@ -153,7 +160,11 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     if (dLink.isAvailabilityChecked() && !dLink.isAvailable()) {
                         c.setBackground(COLOR_ERROR_OFFLINE);
                     } else if (dLink.isAvailabilityChecked()) {
-                        c.setBackground(COLOR_DONE);
+                        if (dLink.getLinkStatus().hasStatus(LinkStatus.ERROR_ALREADYEXISTS)) {
+                            c.setBackground(COLOR_DONE_EXIST);
+                        } else {
+                            c.setBackground(COLOR_DONE);
+                        }
                     }
                     if (Math.abs(sortedOn) == column) {
                         c.setBackground(COLOR_SORT_MARK);
@@ -1317,8 +1328,12 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
         if (host == null) {
             fp.setDownloadLinks(linkList);
             for (int i = 0; i < files; i++) {
-                linkList.elementAt(i).setFilePackage(fp);
-
+                DownloadLink link = linkList.elementAt(i);
+                boolean avail = true;
+                if (link.isAvailabilityChecked()) avail = link.isAvailable();
+                link.getLinkStatus().reset();
+                if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
+                link.setFilePackage(fp);
             }
         } else {
             Vector<DownloadLink> linkListHost = new Vector<DownloadLink>();
@@ -1326,7 +1341,10 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             for (int i = tab.getLinkList().size() - 1; i >= 0; --i) {
                 if (linkList.elementAt(i).getHost().compareTo(host) == 0) {
                     DownloadLink link = linkList.remove(i);
-
+                    boolean avail = true;
+                    if (link.isAvailabilityChecked()) avail = link.isAvailable();
+                    link.getLinkStatus().reset();
+                    if (!avail) link.getLinkStatus().addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
                     totalLinkList.remove(link);
                     linkListHost.add(link);
                     link.setFilePackage(fp);
@@ -1554,8 +1572,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     private boolean isDupe(DownloadLink link) {
+        if (link.getBooleanProperty("ALLOW_DUPE", false)) return false;
         for (DownloadLink l : totalLinkList) {
-            if (l.getDownloadURL().equalsIgnoreCase(link.getDownloadURL()) && l.toString().equals(link.toString())) { return true; }
+            if (l.getDownloadURL().trim().equalsIgnoreCase(link.getDownloadURL().trim())) { return true; }
         }
         return false;
     }
@@ -1734,6 +1753,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 while (gathererrunning == true) {
                     while (addingLinkList.size() > 0 && gathererrunning == true) {
                         DownloadLink link = addingLinkList.remove(0);
+                        checkAlreadyinList(link);
                         attachLinkToPackage(link);
                         progress.setValue(progress.getValue() + 1);
                     }
@@ -1747,6 +1767,7 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                 /* restlichen adden */
                 while (addingLinkList.size() > 0) {
                     DownloadLink link = addingLinkList.remove(0);
+                    checkAlreadyinList(link);
                     attachLinkToPackage(link);
                     progress.setValue(progress.getValue() + 1);
                 }
@@ -1812,6 +1833,13 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
             }
         };
         gatherer.start();
+    }
+
+    public void checkAlreadyinList(DownloadLink link) {
+        if (JDUtilities.getController().hasDownloadLinkURL(link.getDownloadURL())) {
+            link.getLinkStatus().setErrorMessage("Already in Downloadlist");
+            link.getLinkStatus().addStatus(LinkStatus.ERROR_ALREADYEXISTS);
+        }
     }
 
     public void stateChanged(ChangeEvent e) {

@@ -76,7 +76,8 @@ public class GoogleGroups extends PluginForHost {
                                     break;
                                 }
                             }
-                            downloadLink.setName(strings[1]);
+                            downloadLink.setFinalFileName(strings[1]);
+                            downloadLink.setDupecheckAllowed(true);
                             downloadLink.setDownloadSize(Regex.getSize(strings[2]));
                             break;
                         }
