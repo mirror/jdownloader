@@ -799,6 +799,7 @@ public class JDInit {
         new HostPluginWrapper("przeklej.pl", "PrzeklejPl", "http://[\\w\\.]*?przeklej\\.pl/d/\\w+/.+");
         new HostPluginWrapper("wrzuta.pl", "WrzutaPl", "http://[\\w\\.]*?wrzuta\\.pl/(audio|film|obraz)/\\w+.+");
         new HostPluginWrapper("filefactory.pl", "FileFactoryPl", "http://[\\w\\.]*?filefactory\\.pl/showfile-\\d+.+");
+        new HostPluginWrapper("wyslijto.pl", "WyslijToPl", "http://[\\w\\.]*?wyslijto\\.pl/(download|files/download|files/pre_download|plik)/\\w+");
 
     }
 
