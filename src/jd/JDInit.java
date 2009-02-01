@@ -805,6 +805,7 @@ public class JDInit {
         new HostPluginWrapper("wrzucaj.com", "WrzucajCom", "http://[\\w\\.]*?wrzucaj\\.com/\\d+");
         new HostPluginWrapper("hostplik.com", "HostPlikCom", "http://[\\w\\.]*?hostplik\\.com/.*");
         new HostPluginWrapper("uploader.pl", "UploaderPl", "http://[\\w\\.]*?uploader\\.pl/\\?d=[A-F0-9]+", PluginWrapper.LOAD_ON_INIT);
+        new HostPluginWrapper("upload-drive.com", "UploadDriveCom", "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+");
 
     }
 
