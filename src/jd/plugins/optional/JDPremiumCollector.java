@@ -19,6 +19,7 @@ package jd.plugins.optional;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -108,7 +109,22 @@ public class JDPremiumCollector extends PluginOptional {
                         if (JOptionPane.showConfirmDialog(guiFrame, JDLocale.LF("plugins.optional.premiumcollector.accountsFound.message", "Found %s accounts for %s plugin! Replace old saved accounts with new accounts?", accounts.size(), plg.getHost()), JDLocale.L("plugins.optional.premiumcollector.accountsFound", "Accounts found!"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) continue;
                     }
 
-                    plg.getPlugin().setPremiumAccounts(accounts);
+                    Collections.shuffle(accounts);
+                    ArrayList<Account> oldaccounts = plg.getPlugin().getPremiumAccounts();
+                    for (Account newacc : accounts) {
+                        boolean found = false;
+                        for (Account oldacc : oldaccounts) {
+                            if (newacc.getUser().trim().equalsIgnoreCase(oldacc.getUser().trim())) {
+                                oldacc.setPass(newacc.getPass().trim());
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            oldaccounts.add(newacc);
+                        }
+                    }
+                    plg.getPlugin().setPremiumAccounts(oldaccounts);
                     logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
                     accountsFound += accounts.size();
                 }

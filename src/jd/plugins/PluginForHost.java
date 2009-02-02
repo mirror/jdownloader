@@ -638,7 +638,13 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void setPremiumAccounts(ArrayList<Account> accounts) {
-        getPluginConfig().setProperty(PROPERTY_PREMIUM, accounts);
+        ArrayList<Account> newaccounts=new ArrayList<Account>();
+        for (Account toadd:accounts){
+            if (toadd.getUser().length()!=0){
+                newaccounts.add(toadd);
+            }
+        }
+        getPluginConfig().setProperty(PROPERTY_PREMIUM, newaccounts);
         getPluginConfig().save();
     }
 
