@@ -28,6 +28,7 @@ import jd.nutils.ProcessListener;
 import jd.nutils.jobber.JDRunnable;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
+import jd.utils.EditDistance;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
@@ -793,13 +794,13 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     ArchivFile getArchivFile(String currentWorkingFile) {
 
         for (ArchivFile af : files) {
-            if (af.getFilepath().equals(currentWorkingFile)) { return af; }
+            if (af.getFilepath().equals(currentWorkingFile)) return af;
         }
         ArchivFile best = null;
         int value = Integer.MAX_VALUE;
         int cur;
         for (ArchivFile af : files) {
-            cur = JDUtilities.getLevenshteinDistance(af.getFilepath(), currentWorkingFile);
+            cur = EditDistance.getLevenshteinDistance(af.getFilepath(), currentWorkingFile);
             if (cur < value) {
                 value = cur;
                 best = af;
