@@ -103,7 +103,7 @@ import jd.plugins.PluginsC;
 public class JDUtilities {
     public static String LOGGER_NAME = "java_downloader";
     /**
-     * Parametername für den Konfigpath
+     * Parametername fÃ¼r den Konfigpath
      */
     public static final String CONFIG_PATH = "jDownloader.config";
 
@@ -127,7 +127,7 @@ public class JDUtilities {
     public static JDFileFilter filterJar = new JDFileFilter(null, ".jar", false);
 
     /**
-     * Alle verfügbaren Bilder werden hier gespeichert
+     * Alle verfÃ¼gbaren Bilder werden hier gespeichert
      */
     private static HashMap<String, Image> images = new HashMap<String, Image>();
 
@@ -147,7 +147,7 @@ public class JDUtilities {
     private static JDClassLoader jdClassLoader = null;
 
     /**
-     * Der Logger für Meldungen
+     * Der Logger fÃ¼r Meldungen
      */
     private static Logger logger = JDUtilities.getLogger();
 
@@ -226,12 +226,12 @@ public class JDUtilities {
     }
 
     /**
-     * Fügt ein Bild zur Map hinzu
+     * FÃ¼gt ein Bild zur Map hinzu
      * 
      * @param imageName
-     *            Name des Bildes, daß hinzugefügt werden soll
+     *            Name des Bildes, daÃŸ hinzugefÃ¼gt werden soll
      * @param image
-     *            Das hinzuzufügende Bild
+     *            Das hinzuzufÃ¼gende Bild
      */
     public static void addImage(String imageName, Image image) {
         Toolkit.getDefaultToolkit().prepareImage(image, -1, -1, null);
@@ -258,7 +258,7 @@ public class JDUtilities {
      * @param weightY
      *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
      * @param insets
-     *            Abstände der Komponente
+     *            AbstÃ¤nde der Komponente
      * @param fill
      *            Verteilung der Komponente innerhalb der zugewiesen Zelle/n
      * @param anchor
@@ -296,7 +296,7 @@ public class JDUtilities {
      * @param weightY
      *            Verteilung von zur Verfuegung stehendem Platz in Y-Richtung
      * @param insets
-     *            Abständer der Komponente
+     *            AbstÃ¤nder der Komponente
      * @param iPadX
      *            Leerraum zwischen einer GridBagZelle und deren Inhalt
      *            (X-Richtung)
@@ -329,10 +329,10 @@ public class JDUtilities {
     }
 
     /**
-     * Fügt dem Dateinamen den erkannten Code noch hinzu
+     * FÃ¼gt dem Dateinamen den erkannten Code noch hinzu
      * 
      * @param file
-     *            Die Datei, der der Captchacode angefügt werden soll
+     *            Die Datei, der der Captchacode angefÃ¼gt werden soll
      * @param captchaCode
      *            Der erkannte Captchacode
      * @param isGood
@@ -377,7 +377,7 @@ public class JDUtilities {
     }
 
     /**
-     * verschlüsselt string mit der übergebenen encryption (Containerpluginname
+     * verschlÃ¼sselt string mit der Ã¼bergebenen encryption (Containerpluginname
      * 
      * @param string
      * @param encryption
@@ -393,12 +393,12 @@ public class JDUtilities {
     }
 
     /**
-     * Hängt an i solange fill vorne an bis die zechenlänge von i gleich num ist
+     * HÃ¤ngt an i solange fill vorne an bis die zechenlÃ¤nge von i gleich num ist
      * 
      * @param i
      * @param num
      * @param fill
-     * @return aufgefüllte Zeichenkette
+     * @return aufgefÃ¼llte Zeichenkette
      */
     public static String fillInteger(long i, int num, String fill) {
         String ret = "" + i;
@@ -421,7 +421,7 @@ public class JDUtilities {
     }
 
     /**
-     * GIbt den Integer der sich in src befindet zurück. alle nicht
+     * GIbt den Integer der sich in src befindet zurÃ¼ck. alle nicht
      * integerzeichen werden ausgefiltert
      * 
      * @param src
@@ -552,7 +552,7 @@ public class JDUtilities {
 
     /**
      * Diese Methode erstellt einen neuen Captchadialog und liefert den
-     * eingegebenen Text zurück.
+     * eingegebenen Text zurÃ¼ck.
      * 
      * @param controller
      *            Der Controller
@@ -642,7 +642,7 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert einen Punkt zurück, mit dem eine Komponente auf eine andere
+     * Liefert einen Punkt zurÃ¼ck, mit dem eine Komponente auf eine andere
      * zentriert werden kann
      * 
      * @param parent
@@ -664,7 +664,7 @@ public class JDUtilities {
             center.x += parent.getWidth() / 2;
             center.y += parent.getHeight() / 2;
         }
-        // Dann Auszurichtende Komponente in die Berechnung einfließen lassen
+        // Dann Auszurichtende Komponente in die Berechnung einflieÃŸen lassen
         center.x -= child.getWidth() / 2;
         center.y -= child.getHeight() / 2;
         return center;
@@ -678,7 +678,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt den verwendeten Controller zurück
+     * Gibt den verwendeten Controller zurÃ¼ck
      * 
      * @return gerade verwendete controller-instanz
      */
@@ -718,7 +718,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt das aktuelle Working Directory zurück. Beim FilebRowser etc wird da
+     * Gibt das aktuelle Working Directory zurÃ¼ck. Beim FilebRowser etc wird da
      * s gebraucht.
      * 
      * @return
@@ -747,11 +747,11 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert aus der Map der geladenen Bilder ein Element zurück
+     * Liefert aus der Map der geladenen Bilder ein Element zurÃ¼ck
      * 
      * @param imageName
-     *            Name des Bildes das zurückgeliefert werden soll
-     * @return Das gewünschte Bild oder null, falls es nicht gefunden werden
+     *            Name des Bildes das zurÃ¼ckgeliefert werden soll
+     * @return Das gewÃ¼nschte Bild oder null, falls es nicht gefunden werden
      *         kann
      */
     public static Image getImage(String imageName) {
@@ -769,7 +769,7 @@ public class JDUtilities {
     }
 
     /**
-     * Prüft anhand der Globalen IP Check einstellungen die IP
+     * PrÃ¼ft anhand der Globalen IP Check einstellungen die IP
      * 
      * @return ip oder /offline
      */
@@ -832,17 +832,17 @@ public class JDUtilities {
     }
 
     /**
-     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurück
+     * Diese Funktion gibt den Pfad zum JAC-Methodenverzeichniss zurÃ¼ck
      * 
      * @author JD-Team
-     * @return gibt den Pfad zu den JAC Methoden zurück
+     * @return gibt den Pfad zu den JAC Methoden zurÃ¼ck
      */
     public static String getJACMethodsDirectory() {
         return "jd/captcha/methods/";
     }
 
     /**
-     * @return Gibt die verwendete java Version als Double Value zurück. z.B.
+     * @return Gibt die verwendete java Version als Double Value zurÃ¼ck. z.B.
      *         1.603
      */
     public static Double getJavaVersion() {
@@ -853,7 +853,7 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert einen URLClassLoader zurück, um Dateien aus dem Stammverzeichnis
+     * Liefert einen URLClassLoader zurÃ¼ck, um Dateien aus dem Stammverzeichnis
      * zu laden
      * 
      * @return URLClassLoader
@@ -862,7 +862,7 @@ public class JDUtilities {
         if (jdClassLoader == null) {
             File homeDir = JDUtilities.getJDHomeDirectoryFromEnvironment();
             // String url = null;
-            // Url Encode des pfads für den Classloader
+            // Url Encode des pfads fÃ¼r den Classloader
             logger.info("Create Classloader: for: " + homeDir.getAbsolutePath());
             jdClassLoader = new JDClassLoader(homeDir.getAbsolutePath(), Thread.currentThread().getContextClassLoader());
 
@@ -871,9 +871,9 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert das Basisverzeichnis für jD zurück.
+     * Liefert das Basisverzeichnis fÃ¼r jD zurÃ¼ck.
      * 
-     * @return ein File, daß das Basisverzeichnis angibt
+     * @return ein File, daÃŸ das Basisverzeichnis angibt
      */
     public static File getJDHomeDirectoryFromEnvironment() {
         String envDir = null;// System.getenv("JD_HOME");
@@ -931,19 +931,47 @@ public class JDUtilities {
         ret.append(JDUtilities.getRevision());
         if (JDUtilities.getController() != null && JDUtilities.getController().getWaitingUpdates() != null && JDUtilities.getController().getWaitingUpdates().size() > 0) {
             ret.append(' ');
-            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÜGBAR:"));
+            ret.append(JDLocale.L("gui.mainframe.title.updatemessage", "-->UPDATES VERFÃœGBAR:"));
             ret.append(' ');
             ret.append(JDUtilities.getController().getWaitingUpdates().size());
         }
         return ret.toString();
     }
 
-    // public static Locale getLocale() {
-    // return locale;
-    // }
+    public static int getLevenshteinDistance(String s, String t) {
+        if (s == null || t == null) { throw new IllegalArgumentException("Strings must not be null"); }
+        int n = s.length();
+        int m = t.length();
+        if (n == 0) {
+            return m;
+        } else if (m == 0) { return n; }
+        int p[] = new int[n + 1];
+        int d[] = new int[n + 1];
+        int _d[];
+        int i;
+        int j;
+        char t_j;
+        int cost;
+        for (i = 0; i <= n; i++) {
+            p[i] = i;
+        }
+        for (j = 1; j <= m; j++) {
+            t_j = t.charAt(j - 1);
+            d[0] = j;
+            for (i = 1; i <= n; i++) {
+                cost = s.charAt(i - 1) == t_j ? 0 : 1;
+                d[i] = Math.min(Math.min(d[i - 1] + 1, p[i] + 1), p[i - 1] + cost);
+            }
+            _d = p;
+            p = d;
+            d = _d;
+        }
+
+        return p[n];
+    }
 
     /**
-     * Liefert die Klasse zurück, mit der Nachrichten ausgegeben werden können
+     * Liefert die Klasse zurÃ¼ck, mit der Nachrichten ausgegeben werden kÃ¶nnen
      * Falls dieser Logger nicht existiert, wird ein neuer erstellt
      * 
      * @return LogKlasse
@@ -1002,11 +1030,11 @@ public class JDUtilities {
 
     /**
      * Geht eine Komponente so lange durch (getParent), bis ein Objekt vom Typ
-     * Frame gefunden wird, oder es keine übergeordnete Komponente gibt
+     * Frame gefunden wird, oder es keine Ã¼bergeordnete Komponente gibt
      * 
      * @param comp
      *            Komponente, dessen Frame Objekt gesucht wird
-     * @return Ein Frame Objekt, das die Komponente beinhält oder null, falls
+     * @return Ein Frame Objekt, das die Komponente beinhÃ¤lt oder null, falls
      *         keins gefunden wird
      */
     public static Frame getParentFrame(Component comp) {
@@ -1027,7 +1055,7 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin für ein Containerfile
+     * Sucht ein passendes Plugin fÃ¼r ein Containerfile
      * 
      * @param container
      *            Der Host, von dem das Plugin runterladen kann
@@ -1052,7 +1080,7 @@ public class JDUtilities {
     }
 
     /**
-     * Sucht ein passendes Plugin für einen Anbieter
+     * Sucht ein passendes Plugin fÃ¼r einen Anbieter
      * 
      * @param host
      *            Der Host, von dem das Plugin runterladen kann
@@ -1082,8 +1110,8 @@ public class JDUtilities {
     }
 
     /**
-     * Liefert alle Plugins zum Downloaden von einem Anbieter zurück. Die liste
-     * wird dabei sortiert zurückgegeben
+     * Liefert alle Plugins zum Downloaden von einem Anbieter zurÃ¼ck. Die liste
+     * wird dabei sortiert zurÃ¼ckgegeben
      * 
      * @return Plugins zum Downloaden von einem Anbieter
      */
@@ -1123,7 +1151,7 @@ public class JDUtilities {
     }
 
     /**
-     * Parsed den String revision und gibt die RevisionsNummer zurück
+     * Parsed den String revision und gibt die RevisionsNummer zurÃ¼ck
      * 
      * @param revision
      * @return RevisionsNummer
@@ -1208,7 +1236,7 @@ public class JDUtilities {
     }
 
     /**
-     * Gibt ein FileOebject zu einem Resourcstring zurück
+     * Gibt ein FileOebject zu einem Resourcstring zurÃ¼ck
      * 
      * @author JD-Team
      * @param resource
@@ -1244,13 +1272,13 @@ public class JDUtilities {
     }
 
     /**
-     * Führt einen Externen befehl aus.
+     * FÃ¼hrt einen Externen befehl aus.
      * 
      * @param command
      * @param parameter
      * @param runIn
      * @param waitForReturn
-     * @return null oder die rückgabe des befehls falls waitforreturn == true
+     * @return null oder die rÃ¼ckgabe des befehls falls waitforreturn == true
      *         ist
      */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
@@ -1307,7 +1335,7 @@ public class JDUtilities {
     }
 
     /**
-     * Setztd as aktuelle woringdirectory für den filebrowser
+     * Setztd as aktuelle woringdirectory fÃ¼r den filebrowser
      * 
      * @param f
      * @param id
@@ -1329,7 +1357,7 @@ public class JDUtilities {
     }
 
     /**
-     * Überprüft ob eine IP gültig ist. das verwendete Pattern aknn in der
+     * ÃœberprÃ¼ft ob eine IP gÃ¼ltig ist. das verwendete Pattern aknn in der
      * config editiert werden.
      * 
      * @param ip

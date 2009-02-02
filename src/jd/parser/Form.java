@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 
 import jd.config.Property;
 import jd.http.Encoding;
-import jd.utils.EditDistance;
+import jd.utils.JDUtilities;
 
 public class Form {
     public static final int METHOD_FILEPOST = 3;
@@ -347,7 +347,7 @@ public class Form {
         int bestDist = Integer.MAX_VALUE;
 
         for (Map.Entry<String, InputField> entry : vars.entrySet()) {
-            int dist = EditDistance.getLevenshteinDistance(varname, entry.getKey());
+            int dist = JDUtilities.getLevenshteinDistance(varname, entry.getKey());
             if (dist < bestDist) {
                 best = entry.getKey();
                 bestDist = dist;
