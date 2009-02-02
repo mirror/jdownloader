@@ -18,15 +18,23 @@ package jd.plugins.optional.webinterface;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import jd.config.SubConfiguration;
 import jd.http.Encoding;
@@ -72,12 +80,6 @@ public class JDSimpleWebserver extends Thread {
         }
 
         public void run() {
-            addToCurrentClientCounter(1);
-            run0();
-            addToCurrentClientCounter(-1);
-        }
-
-        public void run0() {
             try {
                 InputStream requestInputStream = Current_Socket.getInputStream();
                 BufferedInputStream reader = new BufferedInputStream(requestInputStream);
@@ -261,10 +263,6 @@ public class JDSimpleWebserver extends Thread {
 
     private static String AuthUser = "";
 
-    public static int CURRENT_CLIENT_COUNTER = 0;
-
-    private static int max_clientCounter = 0;
-
     private static boolean NeedAuth = false;
 
     private Logger logger = JDUtilities.getLogger();
@@ -272,14 +270,39 @@ public class JDSimpleWebserver extends Thread {
 
     private ServerSocket Server_Socket;
 
-    public JDSimpleWebserver() {
+    public SSLServerSocketFactory setupSSL() throws Exception {
+        char[] password = "jdwebinterface".toCharArray();
+        KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
+        FileInputStream fis = new FileInputStream(JDUtilities.getResourceFile("plugins/webinterface/jdwebinterface").getAbsolutePath());
+        ks.load(fis, password);
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+        kmf.init(ks, password);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+        tmf.init(ks);
+        SSLContext c = SSLContext.getInstance("SSL");
+        c.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        SSLServerSocketFactory sf = c.getServerSocketFactory();
+        return sf;
+    }
 
+    public JDSimpleWebserver() {
         SubConfiguration subConfig = JDUtilities.getSubConfig("WEBINTERFACE");
-        max_clientCounter = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_CONNECTIONS, 10);
+        Boolean https = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_HTTPS, false);
         AuthUser = "Basic " + Encoding.Base64Encode(subConfig.getStringProperty(JDWebinterface.PROPERTY_USER, "JD") + ":" + subConfig.getStringProperty(JDWebinterface.PROPERTY_PASS, "JD"));
         NeedAuth = subConfig.getBooleanProperty(JDWebinterface.PROPERTY_LOGIN, true);
+        int port = subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 8765);
         try {
-            Server_Socket = new ServerSocket(subConfig.getIntegerProperty(JDWebinterface.PROPERTY_PORT, 8765));
+            if (!https) {
+                Server_Socket = new ServerSocket(port);
+            } else {
+                try {
+                    ServerSocketFactory ssocketFactory = setupSSL();
+                    Server_Socket = ssocketFactory.createServerSocket(port);
+                } catch (Exception e) {
+                    logger.severe("WebInterface: Server failed to start (SSL Setup Failed)!");
+                    return;
+                }
+            }
             logger.info("Webinterface: Server started");
             start();
         } catch (IOException e) {
@@ -287,60 +310,18 @@ public class JDSimpleWebserver extends Thread {
         }
     }
 
-    /**
-     * Fügt einen Wert zum aktuellen Clientzähler hinzu
-     * 
-     * @param i
-     * @return
-     */
-    public synchronized int addToCurrentClientCounter(int i) {
-        CURRENT_CLIENT_COUNTER += i;
-        return CURRENT_CLIENT_COUNTER;
-    }
-
-    /**
-     * greift Threadsafe auf den clientcounter zu
-     * 
-     * @return
-     */
-    public synchronized int getCurrentClientCounter() {
-        return CURRENT_CLIENT_COUNTER;
-    }
-
     @Override
     public void run() {
         while (Server_Running) {
             try {
-                while (getCurrentClientCounter() >= max_clientCounter) {
-                    try {
-                        /* logger.info("warte"); */
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                    }
-                    ;
-                }
-                ;
                 Socket Client_Socket = Server_Socket.accept();
-                // logger.info("WebInterface: Client[" +
-                // getCurrentClientCounter() + "/" + max_clientCounter +
-                // "] connecting from " + Client_Socket.getInetAddress());
-
                 Thread client_thread = new Thread(new JDRequestHandler(Client_Socket));
                 client_thread.start();
-
             } catch (IOException e) {
+                e.printStackTrace();
                 logger.severe("WebInterface: Client-Connection failed");
             }
         }
-    }
-
-    /**
-     * setzt den aktuellen Client Zähler.
-     * 
-     * @param current_clientCounter
-     */
-    public synchronized void setCurrentClientCounter(int cc) {
-        CURRENT_CLIENT_COUNTER = cc;
     }
 
 }

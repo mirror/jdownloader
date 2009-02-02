@@ -37,7 +37,6 @@ public class JDWebinterface extends PluginOptional {
     static public JDWebinterface instance;
     static public Vector<FilePackage> Link_Adder_Packages = new Vector<FilePackage>();
     static public boolean gathererrunning = false;
-    static final String PROPERTY_CONNECTIONS = "PARAM_CONNECTIONS";
     static final String PROPERTY_HTTPS = "PARAM_HTTPS";
     static final String PROPERTY_LOGIN = "PARAM_LOGIN";
     static final String PROPERTY_PASS = "PARAM_PASS";
@@ -64,15 +63,10 @@ public class JDWebinterface extends PluginOptional {
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_PORT, JDLocale.L("plugins.optional.webinterface.port", "Port"), 1024, 65000));
         cfg.setStep(1);
         cfg.setDefaultValue(8765);
-        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, PROPERTY_CONNECTIONS, JDLocale.L("plugins.optional.webinterface.connections", "Max. Connections"), 1, 20));
-        cfg.setStep(1);
-        cfg.setDefaultValue(10);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_LOGIN, JDLocale.L("plugins.optional.webinterface.needlogin", "Need User Authentication")));
         cfg.setDefaultValue(true);
-        // config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX,
-        // subConfig, PROPERTY_HTTPS,
-        // JDLocale.L("plugins.optional.webinterface.https", "Use HTTPS")));
-        // cfg.setDefaultValue(false); TODO
+        config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_HTTPS, JDLocale.L("plugins.optional.webinterface.https", "Use HTTPS")));
+        cfg.setDefaultValue(false);
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, subConfig, PROPERTY_USER, JDLocale.L("plugins.optional.webinterface.loginname", "Login Name")));
         cfg.setDefaultValue("JD");
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_PASSWORDFIELD, subConfig, PROPERTY_PASS, JDLocale.L("plugins.optional.webinterface.loginpass", "Login Pass")));
