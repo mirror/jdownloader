@@ -1,7 +1,20 @@
+//    jDownloader - Downloadmanager
+//    Copyright (C) 2008  JD-Team support@jdownloader.org
+//
+//    This program is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    This program is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+//    GNU General Public License for more details.
+//
+//    You should have received a copy of the GNU General Public License
+//    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package jd.utils;
-
-import java.io.IOException;
-
 
 public class EditDistance {
     /**
@@ -13,9 +26,12 @@ public class EditDistance {
      * @return
      */
     public static int getLevenshteinDifference(String s, String t) {
-        if (s == null) {if(t==null) return 0; return t.length();}
-        if (t == null) {return s.length();}
-        if(s.equals(t))return 0;
+        if (s == null) {
+            if (t == null) return 0;
+            return t.length();
+        }
+        if (t == null) return s.length();
+        if (s.equals(t)) return 0;
         return 100 * getLevenshteinDistance(s, t) / Math.max(s.length(), t.length());
     }
 
@@ -28,8 +44,11 @@ public class EditDistance {
      * @return
      */
     public static int getLevenshteinDistance(String s, String t) {
-        if (s == null) {if(t==null) return 0; return t.length();}
-        if (t == null) {return s.length();}
+        if (s == null) {
+            if (t == null) return 0;
+            return t.length();
+        }
+        if (t == null) return s.length();
 
         int n = s.length();
         int m = t.length();
@@ -107,10 +126,4 @@ public class EditDistance {
         return d[str1.length][str2.length];
     }
 
-    public static void main(String[] args) throws IOException {
-        String scr = "mama";
-        String target = "papa";
-        int dis = getLevenshteinDistance(scr, target);
-        System.out.println(100 - (100 * dis / Math.max(scr.length(), target.length())));
-    }
 }

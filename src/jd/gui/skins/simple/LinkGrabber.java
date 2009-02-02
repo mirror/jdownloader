@@ -1606,20 +1606,6 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     public void mouseReleased(MouseEvent e) {
     }
 
-    protected synchronized void onPackageNameChanged(PackageTab tab) {
-        for (int i = 0; i < tabList.size(); i++) {
-            if (tabList.get(i) == tab) {
-                String title = tab.getPackageName();
-                if (title.length() > 20) {
-                    tabbedPane.setToolTipTextAt(i, title);
-                    title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
-                }
-                tabbedPane.setTitleAt(i, title + " (" + tab.getLinkList().size() + ")");
-                return;
-            }
-        }
-    }
-
     private void removeEmptyPackages() {
         for (int i = tabList.size() - 1; i >= 0; --i) {
             PackageTab tab = tabList.get(i);
@@ -1683,21 +1669,27 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
                     PackageTab tab;
                     for (int i = 0; i < tabList.size(); i++) {
                         tab = tabList.get(i);
-                        String title = tab.getPackageName();
-                        if (title.length() > 20) {
-                            // tabbedPane.setToolTipTextAt(i, title);
-                            title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
-                        }
-
-                        tabbedPane.add(title + "(" + tab.getLinkList().size() + ")", tab);
-
+                        tabbedPane.add(getTitleForPackageTab(tab), tab);
+                        tabbedPane.setToolTipTextAt(i, tab.getPackageName());
                     }
                     LinkGrabber.this.setTitle();
-
                 }
-
             }
         });
+    }
+
+    private synchronized String getTitleForPackageTab(PackageTab tab) {
+        String title = tab.getPackageName();
+        if (title.length() > 20) title = title.substring(0, 6) + "(...)" + title.substring(title.length() - 6);
+        return title + " (" + tab.getLinkList().size() + ")";
+    }
+
+    private synchronized void onPackageNameChanged(PackageTab tab) {
+        int i = tabList.indexOf(tab);
+        if (i == -1) return;
+
+        tabbedPane.setTitleAt(i, getTitleForPackageTab(tab));
+        tabbedPane.setToolTipTextAt(i, tab.getPackageName());
     }
 
     private void setTitle() {
@@ -1848,13 +1840,9 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     public void windowActivated(WindowEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowClosed(WindowEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void stopGatherer() {
@@ -1867,30 +1855,21 @@ public class LinkGrabber extends JFrame implements ActionListener, DropTargetLis
     }
 
     public void windowClosing(WindowEvent arg0) {
-        // TODO Auto-generated method stub
         stopGatherer();
         setVisible(false);
         dispose();
     }
 
     public void windowDeactivated(WindowEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowDeiconified(WindowEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowIconified(WindowEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
     public void windowOpened(WindowEvent arg0) {
-        // TODO Auto-generated method stub
-
     }
 
 }
