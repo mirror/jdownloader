@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 public class WrzucajCom extends PluginForHost {
 
-
     public WrzucajCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -55,21 +54,23 @@ public class WrzucajCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl =  br.getRegex("innerHTML = '<a href=\"(.*?)\">Kliknij").getMatch(0);
+        String linkurl = br.getRegex("innerHTML = '<a href=\"(.*?)\">Kliknij").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        //this.sleep(40000, downloadLink); //Remove if they find a better way to force wait time
+        // this.sleep(40000, downloadLink); //Remove if they find a better way
+        // to force wait time
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-        
+
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

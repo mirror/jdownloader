@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 public class WyslijToPl extends PluginForHost {
 
-
     public WyslijToPl(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -56,7 +55,7 @@ public class WyslijToPl extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
@@ -64,15 +63,17 @@ public class WyslijToPl extends PluginForHost {
         getFileInformation(downloadLink);
         String fileid = new Regex(downloadLink.getDownloadURL(), "([^/]+)$").getMatch(0);
         br.getPage("http://www.wyslijto.pl/files/download/" + fileid);
-        String linkurl =  "http://www.wyslijto.pl/download/" + fileid;
+        String linkurl = "http://www.wyslijto.pl/download/" + fileid;
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        // this.sleep(60000, downloadLink); // uncomment when they find a better way to force wait time
+        // this.sleep(60000, downloadLink); // uncomment when they find a better
+        // way to force wait time
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-        
+
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

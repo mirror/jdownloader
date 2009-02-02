@@ -28,7 +28,6 @@ import jd.plugins.PluginForHost;
 
 public class UploadDriveCom extends PluginForHost {
 
-
     public UploadDriveCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -43,32 +42,34 @@ public class UploadDriveCom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("Invalid file") || br.containsHTML("Invalid request") || br.containsHTML("Not Found") ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("Invalid file") || br.containsHTML("Invalid request") || br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("<b>File name:</b> (.*?)\\s+<b>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        //String filesize = br.getRegex("<b> File size:</b>\\s+(.*?)</p>").getMatch(0);
-        if (filename == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-       //|| filesize.equalsIgnoreCase("0.00 KB")) 
+        // String filesize =
+        // br.getRegex("<b> File size:</b>\\s+(.*?)</p>").getMatch(0);
+        if (filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // || filesize.equalsIgnoreCase("0.00 KB"))
         downloadLink.setName(filename.trim());
-        //downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
+        // downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",",
+        // "\\.")));
         return true;
     }
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl =  br.getRegex("<div class=\"logo\"[^>]*>\\s*<a href=\"(.*?)\"><img").getMatch(0);
+        String linkurl = br.getRegex("<div class=\"logo\"[^>]*>\\s*<a href=\"(.*?)\"><img").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-        
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }

@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 public class PliczekNet extends PluginForHost {
 
-
     public PliczekNet(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -47,7 +46,7 @@ public class PliczekNet extends PluginForHost {
         if (br.containsHTML("Not Found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("Nazwa pliku: <strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex("Wielko.. (.*?)<br>").getMatch(0);
-        if (filename == null || filesize == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
@@ -55,20 +54,20 @@ public class PliczekNet extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl =  br.getRegex("<script[^>]*></script></div>\\s*<a href=\"(.*?)\"><img").getMatch(0);
+        String linkurl = br.getRegex("<script[^>]*></script></div>\\s*<a href=\"(.*?)\"><img").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-        
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 10;
     }

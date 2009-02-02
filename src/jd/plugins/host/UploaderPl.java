@@ -44,10 +44,11 @@ public class UploaderPl extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl =  br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
+        String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        // this.sleep(30000, downloadLink); // uncomment when they find a better way to force wait time
+        // this.sleep(30000, downloadLink); // uncomment when they find a better
+        // way to force wait time
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
     }
@@ -60,10 +61,11 @@ public class UploaderPl extends PluginForHost {
     public void handleFree0(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
         br.getPage(downloadLink.getDownloadURL());
-        String linkurl =  br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
+        String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        // this.sleep(15000, downloadLink); // uncomment when they find a better way to force wait time
+        // this.sleep(15000, downloadLink); // uncomment when they find a better
+        // way to force wait time
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
     }
@@ -99,17 +101,15 @@ public class UploaderPl extends PluginForHost {
         br.setCookie("http://uploader.pl/", "PHPSESSID", cookie5);
         br.setCookie("http://uploader.pl/", "yab_last_click", cookie6);
         if (cookie1.equalsIgnoreCase("0")) throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
-
-        
     }
 
     private boolean isPremium() throws IOException {
-        
         br.getPage("http://uploader.pl/en/members.php?overview=1");
         if (br.containsHTML("package_info'\\)\"><b>Zareje")) return false;
         return true;
     }
 
+    @Override
     public AccountInfo getAccountInformation(Account account) throws Exception {
         AccountInfo ai = new AccountInfo(this, account);
         try {
@@ -135,6 +135,7 @@ public class UploaderPl extends PluginForHost {
         return ai;
     }
 
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return simultanpremium;
     }
@@ -154,10 +155,11 @@ public class UploaderPl extends PluginForHost {
                 simultanpremium++;
             }
         }
-        String linkurl =  br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
+        String linkurl = br.getRegex("downloadurl'\\);\">(.*?)</textarea>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        // this.sleep(30000, downloadLink); // uncomment when they find a better way to force wait time
+        // this.sleep(30000, downloadLink); // uncomment when they find a better
+        // way to force wait time
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
     }
@@ -169,7 +171,7 @@ public class UploaderPl extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
-        //this.setBrowserExclusive();
+        // this.setBrowserExclusive();
         br.getPage("http://uploader.pl/en");
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("has already been deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -183,7 +185,7 @@ public class UploaderPl extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4384 $");
+        return getVersion("$Revision$");
     }
 
     @Override

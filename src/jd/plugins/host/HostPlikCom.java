@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 public class HostPlikCom extends PluginForHost {
 
-
     public HostPlikCom(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -55,21 +54,22 @@ public class HostPlikCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl =  br.getRegex("onClick=\"window.location=\\\\'(.*?)\\\\'\">';").getMatch(0);
+        String linkurl = br.getRegex("onClick=\"window.location=\\\\'(.*?)\\\\'\">';").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        this.sleep(5000, downloadLink); 
+        this.sleep(5000, downloadLink);
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-        
+
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }

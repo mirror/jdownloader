@@ -38,10 +38,11 @@ public class Rs43Com extends PluginForDecrypt {
         String link = null;
         if (parameter.indexOf("rs43.com/?/") != -1) {
             link = parameter.replaceFirst("rs43\\.com/\\?/", "rapidshare.com/");
+        } else {
+            link = parameter.replaceFirst("rs43\\.com/Share\\.Mirror\\.Service/\\?/", "rapidshare.com/");
         }
-        else {link = parameter.replaceFirst("rs43\\.com/Share\\.Mirror\\.Service/\\?/", "rapidshare.com/");
-        }
-        if (link == null) return null;;
+        if (link == null) return null;
+
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;
@@ -49,6 +50,6 @@ public class Rs43Com extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4227 $");
+        return getVersion("$Revision$");
     }
 }

@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 public class FileFactoryPl extends PluginForHost {
 
-
     public FileFactoryPl(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -55,21 +54,23 @@ public class FileFactoryPl extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl =  br.getRegex("<a href=\\\\'(.*?)\\\\' style=\\\\'font-size:14px;\\\\'>DOWNLOAD FILE</a>").getMatch(0);
+        String linkurl = br.getRegex("<a href=\\\\'(.*?)\\\\' style=\\\\'font-size:14px;\\\\'>DOWNLOAD FILE</a>").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         br.setFollowRedirects(true);
-        // this.sleep(60000, downloadLink); // uncomment when they find a better way to force wait time
+        // this.sleep(60000, downloadLink); // uncomment when they find a better
+        // way to force wait time
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-        
+
     }
 
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
         return 20;
     }
