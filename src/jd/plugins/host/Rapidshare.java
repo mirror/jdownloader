@@ -971,7 +971,7 @@ public class Rapidshare extends PluginForHost {
                 logger.finer("Cookie Login");
                 return br;
             }
-//            logger.finer("HTTPS Login");
+            logger.finer("HTTPS Login");
             br.setAcceptLanguage("en, en-gb;q=0.8");
             br.getPage("https://ssl.rapidshare.com/cgi-bin/premiumzone.cgi?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             cookie = br.getCookie("http://rapidshare.com", "user");
