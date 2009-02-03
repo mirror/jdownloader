@@ -228,6 +228,15 @@ public class Rapidshare extends PluginForHost {
                         urls[c].setDownloadSize(Integer.parseInt(erg[4]));
                         urls[c].setFinalFileName(erg[5].trim());
                         urls[c].setDupecheckAllowed(true);
+                        if (urls[c].getDownloadSize() > 8192) {
+                            /* Rapidshare html endung workaround */
+                            /*
+                             * man kann jeden scheiss an die korrekte url hängen
+                             * und die api gibt das dann als filename zurück,
+                             * doofe api
+                             */
+                            urls[c].setFinalFileName(erg[5].trim().replaceAll(".html", "").replaceAll(".htm", ""));
+                        }
                     }
                     c++;
 
@@ -849,9 +858,17 @@ public class Rapidshare extends PluginForHost {
          */
         if (erg.length < 6 || !erg[2].equals("1") && !erg[2].equals("3")) { return false; }
 
-        downloadLink.setName(erg[5]);
+        downloadLink.setFinalFileName(erg[5]);
         downloadLink.setDownloadSize(Integer.parseInt(erg[4]));
         downloadLink.setDupecheckAllowed(true);
+        if (downloadLink.getDownloadSize() > 8192) {
+            /* Rapidshare html endung workaround */
+            /*
+             * man kann jeden scheiss an die korrekte url hängen und die api
+             * gibt das dann als filename zurück, doofe api
+             */
+            downloadLink.setFinalFileName(erg[5].trim().replaceAll(".html", "").replaceAll(".htm", ""));
+        }
 
         return true;
     }
