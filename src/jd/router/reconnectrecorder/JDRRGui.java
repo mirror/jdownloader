@@ -133,8 +133,8 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
                 reconnect_duration = 2000;
                 /* minimum von 2 seks */
             }
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, (reconnect_duration / 1000) * 2);
-            configuration.setProperty(Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, (reconnect_duration / 1000) / 2);
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_WAITFORIPCHANGE, ((reconnect_duration / 1000) * 2) + 10);
+            configuration.setProperty(Configuration.PARAM_HTTPSEND_IPCHECKWAITTIME, ((reconnect_duration / 1000) / 2) + 2);
             configuration.save();
             saved = true;
         }
@@ -173,7 +173,7 @@ public class JDRRGui extends JDialog implements ActionListener, WindowListener {
             setModal(true);
             setLayout(new GridBagLayout());
             JPanel p = new JPanel(new GridBagLayout());
-            btnStop = new JButton(JDLocale.L("gui.btn_stop", "Stop"));
+            btnStop = new JButton(JDLocale.L("gui.btn_abort", "Abort"));
             btnStop.addActionListener(this);
             statusicon = new RRStatus();
             JDUtilities.addToGridBag(p, statusicon, GridBagConstraints.RELATIVE, GridBagConstraints.RELATIVE, GridBagConstraints.REMAINDER, 1, 1, 1, null, GridBagConstraints.NONE, GridBagConstraints.NORTH);
