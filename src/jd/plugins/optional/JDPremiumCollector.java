@@ -49,6 +49,7 @@ public class JDPremiumCollector extends PluginOptional {
 
     private static final String PROPERTY_FETCHONSTARTUP = "PROPERTY_FETCHONSTARTUP";
     private static final String PROPERTY_ACCOUNTS = "PROPERTY_ACCOUNTS";
+    private static final String PROPERTY_ACCOUNTS2 = "PROPERTY_ACCOUNTS2";
     private static final String PROPERTY_OVERWRITE = "PROPERTY_OVERWRITE";
 
     private JFrame guiFrame;
@@ -108,7 +109,6 @@ public class JDPremiumCollector extends PluginOptional {
                     if (!subConfig.getBooleanProperty(PROPERTY_OVERWRITE, true)) {
                         if (JOptionPane.showConfirmDialog(guiFrame, JDLocale.LF("plugins.optional.premiumcollector.accountsFound.message", "Found %s accounts for %s plugin! Replace old saved accounts with new accounts?", accounts.size(), plg.getHost()), JDLocale.L("plugins.optional.premiumcollector.accountsFound", "Accounts found!"), JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) continue;
                     }
-
                     Collections.shuffle(accounts);
                     ArrayList<Account> oldaccounts = plg.getPlugin().getPremiumAccounts();
                     for (Account newacc : accounts) {
@@ -124,11 +124,34 @@ public class JDPremiumCollector extends PluginOptional {
                             oldaccounts.add(newacc);
                         }
                     }
-                    plg.getPlugin().setPremiumAccounts(oldaccounts);
-                    logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
-                    accountsFound += accounts.size();
+                    if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS, true)) {
+                        accounts = new ArrayList<Account>();
+                        for (Account acc : oldaccounts) {
+                            try {
+                                AccountInfo accInfo = plg.getPlugin().getAccountInformation(acc);
+                                if (accInfo != null && accInfo.isValid() && !accInfo.isExpired() && accInfo.getTrafficLeft() != 0) {
+                                    accounts.add(acc);
+                                } else {
+                                    if (subConfig.getBooleanProperty(PROPERTY_ACCOUNTS2, true)) {
+                                        logger.finer(plg.getHost() + " : account " + acc.getUser() + " is not valid; removed from list");
+                                    } else {
+                                        acc.setEnabled(false);
+                                        accounts.add(acc);
+                                    }
+                                }
+                            } catch (Exception e1) {
+                                e1.printStackTrace();
+                            }
+                        }
+                        plg.getPlugin().setPremiumAccounts(accounts);
+                        logger.finer(plg.getHost() + " : " + accounts.size() + " accounts inserted");
+                        accountsFound += accounts.size();
+                    } else {
+                        plg.getPlugin().setPremiumAccounts(oldaccounts);
+                        logger.finer(plg.getHost() + " : " + oldaccounts.size() + " accounts inserted");
+                        accountsFound += oldaccounts.size();
+                    }
                 }
-
                 SimpleGUI.CURRENTGUI.statusBarHandler.changeTxt(JDLocale.L("plugins.optional.premiumcollector.name", "PremiumCollector") + ": " + JDLocale.LF("plugins.optional.premiumcollector.inserted", "Successfully inserted %s accounts!", accountsFound), 10000, true);
                 logger.info("totally : " + accountsFound + " accounts inserted");
             }
@@ -178,6 +201,7 @@ public class JDPremiumCollector extends PluginOptional {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_FETCHONSTARTUP, JDLocale.L("plugins.optional.premiumcollector.autoFetch", "Automatically fetch accounts on start-up")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS, JDLocale.L("plugins.optional.premiumcollector.onlyValid", "Accept only valid and non-expired accounts")).setDefaultValue(true));
+        config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_ACCOUNTS2, JDLocale.L("plugins.optional.premiumcollector.onlyValid2", "Remove invalid and expired accounts")).setDefaultValue(true));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_OVERWRITE, JDLocale.L("plugins.optional.premiumcollector.overwrite", "Automatically overwrite accounts")).setDefaultValue(true));
     }
 
