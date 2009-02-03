@@ -20,6 +20,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
@@ -32,10 +33,11 @@ public class MegauploadComFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        String parameter = param.getCryptedUrl().replace("?f=", "xml/folderfiles.php?folderid=");
+        String id = Request.parseQuery(param.getCryptedUrl()).get("f");
+        String url = "http://www.megaupload.com/xml/folderfiles.php?folderid=" + id;
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
 
-        br.getPage(parameter);
+        br.getPage(url);
         String[] files = br.getRegex("url=\"(.*?)\"").getColumn(0);
         for (String file : files) {
             decryptedLinks.add(createDownloadlink(file));
