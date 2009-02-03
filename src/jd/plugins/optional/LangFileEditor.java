@@ -171,7 +171,6 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
         tableModel = new MyTableModel();
         table = new JXTable(tableModel);
-        table.getTableHeader().addMouseListener(this);
         table.getTableHeader().setReorderingAllowed(false);
         table.getColumn(0).setMinWidth(200);
         table.getColumn(0).setPreferredWidth(200);
