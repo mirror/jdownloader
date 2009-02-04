@@ -79,7 +79,7 @@ public class Vipfilecom extends PluginForHost {
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 1;
+        return 20;
     }
 
     @Override
