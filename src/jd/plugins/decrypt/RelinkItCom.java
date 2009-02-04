@@ -22,6 +22,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
@@ -38,7 +39,7 @@ public class RelinkItCom extends PluginForDecrypt {
 
         br.getPage(parameter);
         String link = br.getRegex("iframe frameborder=\"\\d\" width=\"\\d+%\" height=\"\\d+\"  src=\"(.*?)\"></iframe>").getMatch(0);
-        if (link == null) return null;
+        if (link == null) throw new DecrypterException("Wrong Referrer");
         decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
 
         return decryptedLinks;

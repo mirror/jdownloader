@@ -61,20 +61,28 @@ public class Vipfilecom extends PluginForHost {
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
         getFileInformation(downloadLink);
+        boolean testlink = false;
         /* DownloadLink holen, 2x der Location folgen */
-        String link = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
+        String link = Encoding.htmlDecode(br.getRegex(Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
         if (link == null) {
-            linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            return;
+            testlink = true;
+            link = br.getRegex(Pattern.compile("<a href=\"(.*?vip-file.*?)\">Test our", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (link == null) {
+                linkStatus.addStatus(LinkStatus.ERROR_FATAL);
+                return;
+            }
         }
-        /* SpeedHack */
-        br.setFollowRedirects(false);
-        br.getPage(link);
-        link = br.getRedirectLocation();
-        br.getPage(link);
-        link = br.getRedirectLocation();
-        link = link.replaceAll("file.com.*?/", "file.com:8080/");
-        br.setDebug(true);
+        if (!testlink) {
+            /* SpeedHack */
+            br.setFollowRedirects(false);
+            br.getPage(link);
+            link = br.getRedirectLocation();
+            br.getPage(link);
+            link = br.getRedirectLocation();
+            link = link.replaceAll("file.com.*?/", "file.com:8080/");
+        } else {
+            br.setFollowRedirects(true);
+        }
         br.openDownload(downloadLink, link, true, 0).startDownload();
     }
 
