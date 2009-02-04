@@ -68,10 +68,10 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        Form info = br.getForm(3);
-        String id = info.getVarsMap().get("uid");
-        Form down = br.getForm(4);
-        if (down == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked by Letitbit");
+        Form forms[] = br.getForms();
+        String id = forms[3].getVarsMap().get("uid");
+        Form down = forms[4];
+        if (forms.length != 5) throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked by Letitbit");
         HTTPConnection con = br.openGetConnection("http://letitbit.net/cap.php?jpg=" + id + ".jpg");
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, con);
