@@ -50,7 +50,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public boolean doInteraction(Object arg) {
-
         if (getBooleanProperty(PROPERTY_DISABLED, false)) {
             logger.info("deaktiviert");
             return false;
@@ -65,7 +64,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
         logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
         return true;
-
     }
 
     @Override
@@ -75,7 +73,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public void initConfig() {
-
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.externExecute.test", "Programm aufrufen")));
 
         String[] keys = new String[Replacer.KEYS.length];
@@ -92,7 +89,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, this, PROPERTY_EXECUTE_FOLDER, JDLocale.L("interaction.externExecute.executeIn", "Ausführen in (Ordner der Anwendung)")));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, this, PROPERTY_WAIT_FOR_RETURN, JDLocale.L("interaction.externExecute.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek](-1 für unendlich)"), -1, 1800).setDefaultValue(0));
-
     }
 
     @Override

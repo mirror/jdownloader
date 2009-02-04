@@ -51,9 +51,6 @@ public class PackageManager extends Interaction implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public PackageManager() {
-    }
-
     private void checkNewInstalled() {
         StringBuilder links = new StringBuilder();
         StringBuilder error = new StringBuilder();

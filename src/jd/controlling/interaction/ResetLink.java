@@ -35,9 +35,6 @@ public class ResetLink extends Interaction implements Serializable {
 
     private static final String PARAM_LAST_OR_ALL = "LAST_OR_ALL";
 
-    public ResetLink() {
-    }
-
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Reset Link");

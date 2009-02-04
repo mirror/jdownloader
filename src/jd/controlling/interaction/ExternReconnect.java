@@ -55,7 +55,6 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     @Override
     public boolean doInteraction(Object arg) {
-
         retries++;
         ProgressController progress = new ProgressController(JDLocale.L("interaction.externreconnect.progress.0_title", "ExternReconnect"), 10);
 

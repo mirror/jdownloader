@@ -26,10 +26,6 @@ public class Unrar extends Interaction implements Serializable {
         return null;
     }
 
-    private Unrar() {
-        super();
-    }
-
     @Override
     public boolean doInteraction(Object arg) {
         return true;

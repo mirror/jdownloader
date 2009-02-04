@@ -34,9 +34,6 @@ public class JDExit extends Interaction implements Serializable {
 
     private static final String NAME = JDLocale.L("interaction.jdexit.name", "JD Beenden");
 
-    public JDExit() {
-    }
-
     @Override
     public boolean doInteraction(Object arg) {
         logger.info("Starting Exit");

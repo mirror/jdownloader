@@ -48,7 +48,6 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public boolean doInteraction(Object arg) {
-
         String command = Replacer.insertVariables(getStringProperty(PROPERTY_COMMAND));
         String parameter = Replacer.insertVariables(getStringProperty(PROPERTY_PARAMETER));
 
@@ -69,7 +68,6 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
         logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, this.getBooleanProperty(PROPERTY_WAIT_TERMINATION, false) ? getIntegerProperty(PROPERTY_WAITTIME, 60) : 0));
         return true;
-
     }
 
     @Override
@@ -79,7 +77,6 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public void initConfig() {
-
         ConfigEntry cfg;
         ConfigEntry conditionEntry;
 

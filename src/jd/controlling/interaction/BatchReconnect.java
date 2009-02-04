@@ -45,16 +45,12 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     public static String PROPERTY_TERMINAL = "TERMINAL";
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
     private int retries = 0;
 
     @Override
     public boolean doInteraction(Object arg) {
-
         retries++;
         ProgressController progress = new ProgressController(JDLocale.L("interaction.batchreconnect.progress.0_title", "Batch Reconnect"), 10);
 
@@ -138,7 +134,6 @@ public class BatchReconnect extends Interaction implements Serializable {
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, conf, PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.batchreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 0, 600).setDefaultValue(0));
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, conf, PROPERTY_DO_OUTPUT, JDLocale.L("interaction.batchreconnect.doOutput", "Rückgaben im Log anzeigen")).setDefaultValue(false));
-
     }
 
     @Override
@@ -168,9 +163,7 @@ public class BatchReconnect extends Interaction implements Serializable {
         for (String element : lines) {
             cmds[cmds.length - 1] = element;
             logger.finer("Execute Batchline: " + JDUtilities.runCommand(command, cmds, executeIn, waitForReturn));
-
         }
-
     }
 
     @Override

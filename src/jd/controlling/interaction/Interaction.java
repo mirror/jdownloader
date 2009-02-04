@@ -251,7 +251,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Initialisiert die Interaction beim JD start
      */
     public void initInteraction() {
-     // Kann eigentlich entfernt werden, oder?
+        // Kann eigentlich entfernt werden, oder?
     }
 
     /**
@@ -356,12 +356,13 @@ public abstract class Interaction extends Property implements Serializable {
      * Erstellt einen neuen Thread und führt den zugehörigen Code aus (run()
      */
     protected void start() {
-        final Interaction _this = this;
         thread = new Thread() {
+
             @Override
             public void run() {
-                _this.runThreadAction();
+                Interaction.this.runThreadAction();
             }
+
         };
         thread.start();
     }
