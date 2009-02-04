@@ -18,9 +18,6 @@ package jd.controlling.interaction;
 
 import java.io.Serializable;
 import java.util.Vector;
-import java.util.logging.Logger;
-
-import jd.utils.JDUtilities;
 
 /**
  * Diese Klasse stellt einen Trigger für den Eventmanager dar
@@ -31,10 +28,7 @@ public class InteractionTrigger implements Serializable {
     /**
      * Vector mit allen bisher angelegten triggern
      */
-
     private static Vector<InteractionTrigger> events = new Vector<InteractionTrigger>();
-
-    protected static Logger logger = JDUtilities.getLogger();
 
     /**
      * serialVersionUID
@@ -78,10 +72,11 @@ public class InteractionTrigger implements Serializable {
      * @param description
      */
     public InteractionTrigger(int id, String name, String description) {
-        eventID = id;
-        events.add(this);
+        this.eventID = id;
         this.name = name;
         this.description = description;
+
+        events.add(this);
     }
 
     /**
@@ -104,15 +99,6 @@ public class InteractionTrigger implements Serializable {
 
     public String getName() {
         return name;
-    }
-
-    /**
-     * Setzt die TRiggerbeschreibung
-     * 
-     * @param description
-     */
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     @Override

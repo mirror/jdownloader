@@ -34,15 +34,10 @@ import jd.utils.JDUtilities;
  * @author JD-Team
  */
 public class ExternReconnect extends Interaction implements Serializable {
-    /**
-     * serialVersionUID
-     */
-    private static final String NAME = JDLocale.L("interaction.externreconnect.name", "Extern Reconnect");
 
-    /**
-     * parameternamen. Hier findet man nur die Namen! unter denen die parameter
-     * in die hashmap abgelegt werden
-     */
+    private static final long serialVersionUID = 4793649294489149258L;
+
+    private static final String NAME = JDLocale.L("interaction.externreconnect.name", "Extern Reconnect");
 
     private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
@@ -50,28 +45,11 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     private static final String PARAM_WAITFORIPCHANGE = "EXTERN_RECONNECT_WAITFORIPCHANGE";
 
-    // private transient String lastIP;
-
     public static final String PROPERTY_IP_WAIT_FOR_RETURN = "WAIT_FOR_RETURN";
 
-    /**
-     * Gibt den reconnectbefehl an
-     */
-    public static String PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_" + "Command";
+    public static final String PROPERTY_RECONNECT_COMMAND = "InteractionExternReconnect_Command";
 
-    /**
-     * Maximale Reconnectanzahl
-     */
-    // private static final int MAX_RETRIES = 10;
-    // private static final String PROPERTY_EXTERN_RECONNECT_DISABLED =
-    // "EXTERN_RECONNECT_DISABLED";
     private static final String PROPERTY_RECONNECT_PARAMETER = "EXTERN_RECONNECT__PARAMETER";
-
-    /**
-     * Unter diesen Namen werden die entsprechenden Parameter gespeichert
-     * 
-     */
-    private static final long serialVersionUID = 4793649294489149258L;
 
     private int retries = 0;
 
@@ -154,11 +132,6 @@ public class ExternReconnect extends Interaction implements Serializable {
     @Override
     public void resetInteraction() {
         retries = 0;
-    }
-
-    @Override
-    public void run() {
-        // Nichts zu tun. Interaction braucht keinen Thread
     }
 
     private void runCommands() {

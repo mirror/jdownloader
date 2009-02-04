@@ -24,25 +24,15 @@ import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 /**
- * Diese Klasse führt eine Test Interaction durch
+ * Diese Interaktion beendet den JDownloader.
  * 
  * @author JD-Team
  */
 public class JDExit extends Interaction implements Serializable {
 
-    /**
-     * serialVersionUID
-     */
-    private static final String NAME = JDLocale.L("interaction.jdexit.name", "JD Beenden");
-    /**
-     * Führt die Normale Interaction zurück. Nach dem Aufruf dieser methode
-     * läuft der Download wie geowhnt weiter.
-     */
-    public static String PROPERTY_QUESTION = "INTERACTION_" + NAME + "_QUESTION";
-    /**
-     * 
-     */
     private static final long serialVersionUID = -4825002404662625527L;
+
+    private static final String NAME = JDLocale.L("interaction.jdexit.name", "JD Beenden");
 
     public JDExit() {
     }
@@ -68,13 +58,6 @@ public class JDExit extends Interaction implements Serializable {
 
     @Override
     public void resetInteraction() {
-    }
-
-    /**
-     * Nichts zu tun. WebUpdate ist ein Beispiel für eine ThreadInteraction
-     */
-    @Override
-    public void run() {
     }
 
     @Override

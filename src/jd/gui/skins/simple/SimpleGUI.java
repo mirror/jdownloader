@@ -1033,7 +1033,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     logger.info("Plugin Deaktiviert: " + event.getSource());
                     if (event.getSource() instanceof Interaction) {
                         logger.info("Interaction zu Ende. Rest status");
-                        if (Interaction.getRunningInteractionsNum() == 0) {
+                        if (Interaction.areInteractionsInProgress()) {
                             statusBarHandler.changeTxt(null, 0, false);
                             frame.setTitle(JDUtilities.getJDTitle());
                         }

@@ -74,7 +74,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
      * erfolgreich abgeborhcen wurden.
      */
     void abort() {
-        logger.finer("Breche alle actove links ab");
+        logger.finer("Breche alle activeLinks ab");
         aborting = true;
         aborted = true;
 
@@ -448,7 +448,7 @@ public class DownloadWatchDog extends Thread implements ControlListener {
                     deligateFireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_SPECIFIED_DOWNLOADLINKS_CHANGED, updates));
                 }
                 int ret = 0;
-                if (Interaction.getInteractionsRunning() == 0 && activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
+                if (Interaction.areInteractionsInProgress() && activeDownloadControllers.size() < getSimultanDownloadNum() && !pause) {
                     ret = setDownloadActive();
                 }
                 if (ret == 0) {

@@ -33,34 +33,19 @@ import jd.utils.Replacer;
  * @author astaldo
  */
 public class ExternExecute extends Interaction implements Serializable, ActionListener {
-    /**
-     * serialVersionUID
-     */
+
+    private static final long serialVersionUID = 4793649294489149258L;
+
     private static final String NAME = JDLocale.L("interaction.externExecute.name", "Extern Execute");
-    /**
-     * Unter diesen Namen werden die entsprechenden Parameter gespeichert
-     * 
-     */
-    public static String PROPERTY_COMMAND = "InteractionExternExecute_" + "Command";
+
+    private static final String PROPERTY_COMMAND = "InteractionExternExecute_" + "Command";
     private static final String PROPERTY_DISABLED = "PROPERTY_DISABLED";
     private static final String PROPERTY_EXECUTE_FOLDER = "PROPERTY_EXECUTE_FOLDER";
     private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
-
     private static final String PROPERTY_WAIT_FOR_RETURN = "PROPERTY_WAIT_FOR_RETURN";
-    /**
-     * Unter diesen Namen werden die entsprechenden Parameter gespeichert
-     * 
-     */
-    public static String PROPERTY_WAIT_TERMINATION = "InteractionExternExecute_" + "WaitTermination";
-    /**
-     * 
-     */
-    private static final long serialVersionUID = 4793649294489149258L;
 
     public void actionPerformed(ActionEvent e) {
-
         doInteraction(null);
-
     }
 
     @Override
@@ -91,8 +76,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
     @Override
     public void initConfig() {
 
-        // ConfigEntry cfg;
-        // (int type, ActionListener listener, String label)
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_BUTTON, this, JDLocale.L("interaction.externExecute.test", "Programm aufrufen")));
 
         String[] keys = new String[Replacer.KEYS.length];
@@ -114,11 +97,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public void resetInteraction() {
-    }
-
-    @Override
-    public void run() {
-        // Nichts zu tun. Interaction braucht keinen Thread
     }
 
     @Override

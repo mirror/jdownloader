@@ -30,26 +30,18 @@ import jd.utils.Replacer;
 
 public class SimpleExecute extends Interaction implements Serializable, ActionListener {
 
-    public static final String CONFIGNAME = "INTERACTION_SIMPLEEXECUTE";
-    /**
-     * serialVersionUID
-     */
-    private static final String NAME = JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
-    public static String PROPERTY_COMMAND = "PROPERTY_COMMAND";
-
-    private static final String PROPERTY_EXECUTE_IN = "PROPERTY_EXECUTE_IN";
-    private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
-
-    private static final String PROPERTY_USE_EXECUTE_IN = "PROPERTY_USE_EXECUTE_IN";
-    public static String PROPERTY_WAIT_TERMINATION = "PROPERTY_WAIT_TERMINATION";
-    private static final String PROPERTY_WAITTIME = "PROPERTY_WAITTIME";
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
-    public void actionPerformed(ActionEvent e) {
+    private static final String NAME = JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
 
+    private static final String PROPERTY_COMMAND = "PROPERTY_COMMAND";
+    private static final String PROPERTY_EXECUTE_IN = "PROPERTY_EXECUTE_IN";
+    private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";
+    private static final String PROPERTY_USE_EXECUTE_IN = "PROPERTY_USE_EXECUTE_IN";
+    private static final String PROPERTY_WAIT_TERMINATION = "PROPERTY_WAIT_TERMINATION";
+    private static final String PROPERTY_WAITTIME = "PROPERTY_WAITTIME";
+
+    public void actionPerformed(ActionEvent e) {
         getConfig().requestSave();
         doInteraction(null);
     }
@@ -111,11 +103,6 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public void resetInteraction() {
-    }
-
-    @Override
-    public void run() {
-        // Nichts zu tun. Interaction braucht keinen Thread
     }
 
     @Override

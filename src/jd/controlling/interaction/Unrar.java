@@ -54,10 +54,6 @@ public class Unrar extends Interaction implements Serializable {
     }
 
     @Override
-    public void run() {
-    }
-
-    @Override
     public String toString() {
         return null;
     }

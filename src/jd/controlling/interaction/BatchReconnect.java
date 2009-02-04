@@ -146,11 +146,6 @@ public class BatchReconnect extends Interaction implements Serializable {
         retries = 0;
     }
 
-    @Override
-    public void run() {
-        // Nichts zu tun. Interaction braucht keinen Thread
-    }
-
     private void runCommands() {
         SubConfiguration conf = JDUtilities.getSubConfig("BATCHRECONNECT");
         int waitForReturn = conf.getIntegerProperty(PROPERTY_IP_WAIT_FOR_RETURN, 0);

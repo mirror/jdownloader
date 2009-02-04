@@ -19,7 +19,6 @@ package jd.controlling.interaction;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.net.URL;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -55,253 +54,12 @@ import sun.misc.BASE64Encoder;
 /**
  * Diese Klasse kann mehrere HTTPrequests durchführen. Um damit einen reconnect
  * zu simulieren
- * 
  */
 public class HTTPLiveHeader extends Interaction {
 
-    /**
-     * serialVersionUID
-     */
-    private static final String NAME = JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
-
-    // private static final String SEPARATOR =
-    // System.getProperty("line.separator");
-
-    /**
-     * 
-     */
     private static final long serialVersionUID = 5388179522151088255L;
 
-    /**
-     * Gibt das Attribut zu key in childNode zurück
-     * 
-     * @param childNode
-     * @param key
-     * @return String Atribut
-     */
-    public static String getAttribute(Node childNode, String key) {
-        NamedNodeMap att = childNode.getAttributes();
-        if (att == null || att.getNamedItem(key) == null) {
-            logger.severe("ERROR: XML Attribute missing: " + key);
-            return null;
-        }
-        return att.getNamedItem(key).getNodeValue();
-    }
-
-    public static void getDatabase() {
-        Vector<String[]> db = new Vector<String[]>();
-        String[] cScript = null;
-        try {
-            Browser br = new Browser();
-            br.getPage(new URL("http://reconnect.thau-ex.de/"));
-            // ArrayList<ArrayList<String>> cats =
-            // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(), "<a
-            // href=?cat_select=°>");
-            String[] cats = br.getRegex("<a href=\\?cat_select=(.*?)>").getColumn(-1);
-            for (String element : cats) {
-                br.getPage(new URL("http://reconnect.thau-ex.de/?cat_select=" + element));
-                // ArrayList<ArrayList<String>> router =
-                // SimpleMatches.getAllSimpleMatches(requestInfo.getHtmlCode(),
-                // "<a
-                // class=\"link\" href=?cat_select=°&show=°>°</a>");
-                String[][] router = br.getRegex("<a class=\"link\" href=\\?cat_select=(.*?)\\&show=(.*?)>(.*?)</a>").getMatches();
-                for (String[] element2 : router) {
-                    String endURL = "http://reconnect.thau-ex.de/?cat_select=" + element2[0] + "&show=" + element2[1];
-                    br.getPage(new URL(endURL));
-                    // s logger.info(requestInfo.getHtmlCode() + "");
-
-                    String code = br.getRegex("<textarea name=\"ReconnectCode\" (.*?)>.*?</textarea").getMatch(0);
-
-                    String script = HTTPLiveHeader.getScriptFromCURL(code, Encoding.htmlDecode(element2[2]));
-                    if (script == null) {
-
-                        cScript = new String[] { element2[0], element2[2], code };
-                    } else {
-                        cScript = new String[] { element2[0], element2[2], script };
-                    }
-                    db.add(cScript);
-
-                }
-
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        HashMap<String, Boolean> ch = new HashMap<String, Boolean>();
-        for (int i = db.size() - 1; i >= 0; i--) {
-            if (ch.containsKey(db.get(i)[0] + db.get(i)[1] + db.get(i)[2])) {
-                db.remove(i);
-            } else {
-
-                ch.put(db.get(i)[0] + db.get(i)[1] + db.get(i)[2], true);
-            }
-        }
-        ch.clear();
-        JDIO.saveObject(new JFrame(), db, JDUtilities.getResourceFile("lhdb.xml"), "lhdb", ".xml", true);
-    }
-
-    public static String[] getParameter(String code) {
-        logger.info("st " + code);
-        // boolean qOpen = false;
-        Vector<String> ret = new Vector<String>();
-        int c = 0;
-        int last = 0;
-        int url = -1;
-        while (true) {
-
-            int l = code.indexOf(" ", c);
-            int s = l;
-
-            if (s == -1) {
-                s = code.length();
-            }
-            String param = " " + code.substring(last, s).trim() + " ";
-            // logger.info(param);
-            if ((param.split("\"").length + 1) % 2 != 0) {
-                // logger.info("ERROR " + param.split("\"").length);
-                c = s + 1;
-                if (s == code.length()) {
-                    break;
-                }
-                continue;
-            }
-            param = param.trim();
-            if (param.startsWith("\"")) {
-                param = param.substring(1, param.length());
-            }
-            if (param.endsWith("\"")) {
-                param = param.substring(0, param.length() - 1);
-            }
-            ret.add(param);
-            if (url < 0) {
-                try {
-                    new URL(param);
-                    url = ret.size();
-                } catch (Exception e) {
-
-                }
-            }
-            c = s + 1;
-            last = c;
-            if (s == code.length()) {
-                break;
-            }
-
-        }
-        logger.info("" + ret);
-        if (url != 2 && url > 0) {
-            String u = ret.remove(url - 1);
-            ret.add(1, u);
-
-        }
-        return ret.toArray(new String[] {});
-
-    }
-
-    public static String getScriptFromCURL(String code, String name) {
-        char[] SEPARATOR = new char[] { '\r', '\n' };
-        StringBuilder ret = new StringBuilder("[[[HSRC]]]");
-        ret.append(SEPARATOR);
-        try {
-            ret.append("    [[[STEP]]]");
-            ret.append(SEPARATOR);
-            ret.append("        [[[DEFINE routername=\"");
-            ret.append(name);
-            ret.append("\"/]]]");
-            ret.append(SEPARATOR);
-            ret.append("    [[[/STEP]]]");
-            ret.append(SEPARATOR);
-            String[] lines = Regex.getLines(code);
-            for (String element : lines) {
-                if (element.trim().toLowerCase().startsWith("curl")) {
-                    try {
-                        String[] params = HTTPLiveHeader.getParameter(element);
-                        if (params.length < 2) {
-                            continue;
-                        }
-                        String url = params[1];
-                        logger.info(element + " : " + url);
-                        // String host = new URL(url).getHost();
-                        String path = new URL(url).getFile();
-
-                        // String[] login=new URL(url).getUserInfo().split(":");
-
-                        ret.append("    [[[STEP]]]");
-                        ret.append(SEPARATOR);
-                        ret.append("        [[[REQUEST]]]");
-                        ret.append(SEPARATOR);
-                        if (element.indexOf("-d ") >= 0) {
-                            ret.append("            POST ");
-                            ret.append(path);
-                            ret.append(" HTTP/1.1");
-                            ret.append(SEPARATOR);
-                            ret.append("            Host: %%%routerip%%%");
-                            ret.append(SEPARATOR);
-
-                        } else {
-                            ret.append("            GET ");
-                            ret.append(path);
-                            ret.append(" HTTP/1.1");
-                            ret.append(SEPARATOR);
-                            ret.append("            Host: %%%routerip%%%");
-                            ret.append(SEPARATOR);
-                        }
-                        for (int t = 2; t < params.length; t++) {
-                            if (params[t].equalsIgnoreCase("-H")) {
-                                t++;
-                                ret.append("            ");
-                                ret.append(params[t]);
-                                ret.append(SEPARATOR);
-                            } else if (params[t].equalsIgnoreCase("-d")) {
-                                t++;
-                                ret.append(SEPARATOR);
-                                ret.append("            ");
-                                ret.append(params[t]);
-                            } else if (params[t].equalsIgnoreCase("-u")) {
-                                t++;
-
-                                ret.append("            Authorization: Basic %%%basicauth%%%");
-                                ret.append(SEPARATOR);
-                            }
-
-                            else if (params[t].equalsIgnoreCase("-b")) {
-                                t++;
-                                ret.append("            Cookie: %%%Set-Cookie%%%");
-                                ret.append(SEPARATOR);
-                            } else if (params[t].equalsIgnoreCase("-e") || params[t].equalsIgnoreCase("--referer")) {
-                                t++;
-                                ret.append("            Referer: ");
-                                ret.append(params[t]);
-                                ret.append(SEPARATOR);
-                            } else {
-                                logger.info("Unknown flag: " + params[t] + " - ");
-                            }
-
-                        }
-                        ret.append(SEPARATOR);
-                        ret.append("        [[[/REQUEST]]]");
-                        ret.append(SEPARATOR);
-                        ret.append("    [[[/STEP]]]");
-                        ret.append(SEPARATOR);
-
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                        return null;
-                    }
-                }
-
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-
-        }
-        ret.append("[[[/HSRC]]]");
-        ret.append(SEPARATOR);
-        return ret.toString();
-    }
+    private static final String NAME = JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
 
     /**
      * @param xmlString
@@ -312,7 +70,6 @@ public class HTTPLiveHeader extends Interaction {
      * @throws SAXException
      */
     public static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {
-
         // Create a builder factory
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setValidating(validating);
@@ -323,24 +80,15 @@ public class HTTPLiveHeader extends Interaction {
         Document doc = factory.newDocumentBuilder().parse(inSource);
 
         return doc;
-
-    }
-
-    public static String[] splitLines(String source) {
-        return source.split("\r\n|\r|\n");
     }
 
     private HashMap<String, String> headerProperties;
 
-    /**
-     * Maximal 10 versuche
-     */
-    // private static final int MAX_RETRIES = 10;
-    private int
+    private int retries = 0;
 
-    retries = 0;
     private HashMap<String, String> variables;
 
+    @Override
     public boolean doInteraction(Object arg) {
         int okCounter = 0;
         // Hole die Config parameter. Über die Parameterkeys wird in der
@@ -470,7 +218,7 @@ public class HTTPLiveHeader extends Interaction {
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
-                        String[] parseLines = HTTPLiveHeader.splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
+                        String[] parseLines = Regex.getLines(toDo.getChildNodes().item(0).getNodeValue().trim());
                         for (String parseLine : parseLines) {
                             String varname = new Regex(parseLine, "(.*?):").getMatch(0);
                             String pattern = new Regex(parseLine, ".*?:(.+)").getMatch(0);
@@ -698,7 +446,7 @@ public class HTTPLiveHeader extends Interaction {
 
                 request = req.toString();
             }
-            String[] requestLines = HTTPLiveHeader.splitLines(request);
+            String[] requestLines = Regex.getLines(request);
             if (requestLines.length == 0) {
                 logger.severe("Parse Fehler:" + request);
                 return null;
@@ -789,6 +537,7 @@ public class HTTPLiveHeader extends Interaction {
 
     }
 
+    @Override
     public String getInteractionName() {
         return NAME;
     }
@@ -859,8 +608,8 @@ public class HTTPLiveHeader extends Interaction {
 
     }
 
+    @Override
     public void initConfig() {
-
     }
 
     private boolean parseError(String string) {
@@ -869,14 +618,12 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
+    @Override
     public void resetInteraction() {
         retries = 0;
     }
 
-    public void run() {
-        // Nichts zu tun. Interaction braucht keinen Thread
-    }
-
+    @Override
     public String toString() {
         return NAME;
     }

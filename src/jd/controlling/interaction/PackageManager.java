@@ -52,7 +52,6 @@ public class PackageManager extends Interaction implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public PackageManager() {
-
     }
 
     private void checkNewInstalled() {
@@ -310,10 +309,6 @@ public class PackageManager extends Interaction implements Serializable {
 
     @Override
     public void resetInteraction() {
-    }
-
-    @Override
-    public void run() {
     }
 
     @Override

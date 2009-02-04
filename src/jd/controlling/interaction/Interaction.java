@@ -107,16 +107,12 @@ public abstract class Interaction extends Property implements Serializable {
         return ret.toArray(new Interaction[] {});
     }
 
-    public synchronized static int getInteractionsRunning() {
-        return interactionsRunning;
-    }
-
     /**
      * 
      * @return Anzahl der gerade aktiven Interactionen
      */
-    public synchronized static int getRunningInteractionsNum() {
-        return interactionsRunning;
+    public synchronized static boolean areInteractionsInProgress() {
+        return interactionsRunning == 0;
     }
 
     /**
@@ -158,50 +154,11 @@ public abstract class Interaction extends Property implements Serializable {
 
             }
         }
-        if (interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED) && getInteractionsRunning() == 0 && JDUtilities.getController().getFinishedLinks().size() > 0) {
-
+        if (interactionevent.equals(INTERACTION_ALL_DOWNLOADS_FINISHED) && areInteractionsInProgress() && JDUtilities.getController().getFinishedLinks().size() > 0) {
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
-        if (interacts == 0) { return false; }
+        if (interacts == 0) return false;
         return ret;
-    }
-
-    /**
-     * Führt nur die i-te Interaction aus
-     * 
-     * @param interactionEvent
-     *            Trigger der Interaction
-     * @param param
-     *            Parameter für die Interaction
-     * @param id
-     *            der Interaktion
-     * @return wahr, wenn die Interaction abgearbeitet werden konnte, ansonsten
-     *         falsch
-     */
-    @SuppressWarnings("unchecked")
-    public static boolean handleInteraction(InteractionTrigger interactionEvent, Object param, int id) {
-        Vector<Interaction> interactions = (Vector<Interaction>) JDUtilities.getSubConfig(Configuration.CONFIG_INTERACTIONS).getProperty(Configuration.PARAM_INTERACTIONS, new Vector<Interaction>());
-
-        for (int i = 0; i < interactions.size(); i++) {
-            Interaction interaction = interactions.get(i);
-            if (interaction == null || interaction.getTrigger() == null || interactionEvent == null) {
-                continue;
-            }
-            if (interaction.getTrigger().getID() == interactionEvent.getID()) {
-                if (id == 0) {
-
-                    if (!interaction.interact(param)) {
-                        logger.severe("interaction failed: " + interaction);
-                        return false;
-                    } else {
-                        logger.info("interaction successfull: " + interaction);
-                        return true;
-                    }
-                }
-                id--;
-            }
-        }
-        return false;
     }
 
     protected transient ConfigContainer config;
@@ -237,7 +194,6 @@ public abstract class Interaction extends Property implements Serializable {
      * @param param
      */
     public void fireControlEvent(int controlID, Object param) {
-
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, controlID, param));
     }
 
@@ -295,7 +251,7 @@ public abstract class Interaction extends Property implements Serializable {
      * Initialisiert die Interaction beim JD start
      */
     public void initInteraction() {
-        // nothing to init
+     // Kann eigentlich entfernt werden, oder?
     }
 
     /**
@@ -351,7 +307,9 @@ public abstract class Interaction extends Property implements Serializable {
      * Thread Funktion. Diese Funktion wird aufgerufen wenn Interaction.start()
      * aufgerufen wird. Dabei wird ein neuer thread erstellt
      */
-    public abstract void run();
+    public void run() {
+        // Kann eigentlich entfernt werden, oder?
+    }
 
     /**
      * Wird vom neuen Thread aufgerufen, setzt die ThreadVariable
@@ -361,11 +319,11 @@ public abstract class Interaction extends Property implements Serializable {
         fireControlEvent(ControlEvent.CONTROL_PLUGIN_INACTIVE, null);
         if (getWaitForTermination()) {
             synchronized (interactionsRunning) {
-            interactionsRunning--;
+                interactionsRunning--;
             }
             logger.finer("Interaction finaly finished: " + interactionsRunning + " - " + this);
         }
-        if (getInteractionsRunning()== 0 && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING && JDUtilities.getController().getFinishedLinks().size() > 0) {
+        if (areInteractionsInProgress() && JDUtilities.getController().getDownloadStatus() == JDController.DOWNLOAD_NOT_RUNNING && JDUtilities.getController().getFinishedLinks().size() > 0) {
             Interaction.handleInteraction(Interaction.INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS, null);
         }
 
