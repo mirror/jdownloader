@@ -1,51 +1,87 @@
-CmdUtils.CreateCommand({ 
+noun_type_jd = new CmdUtils.NounType( "Selections", ["page", "tabs", "this"]);
+
+CmdUtils.CreateCommand({
   name: "jdownloader",
   icon: "http://jdownloader.org/_media/de/knowledge/wiki/jd_logo.png?w=16&h=16&cache=cache",
   homepage: "http://www.jdownloader.org/",
   author: { name: "scr4ve, JD-Team", email: "scr4ve@jdownloader.org"},
   license: "GPL",
   description: "Download files using JDownloader.",
-  takes: {"page, tabs, selected": noun_arb_text},
+  takes: {"page, tabs, this": noun_type_jd},
   preview: function( pblock, type) {
-    if(type.text.match("^t") || type.text.match("tabs"))
+    switch(type.text)
     {
-      pblock.innerHTML = "Download all links from the content of every single opened tab.";
-
-    }
-    else if(type.text.match("^p") || type.text.match("page"))
-    {
-      pblock.innerHTML = "Download all links on this page.";      
-    }
-    else if(type.text.match("^s") || type.text.match("selected"))
-    {
-      pblock.innerHTML = "Download all links from your current selection.";
-    }
-    else
-    {
-    pblock.innerHTML = "<b>&bdquo;page&ldquo;</b> to download all links on this page<br />"+
-                       "<b>&bdquo;tabs&ldquo;</b> to download all links from the content of your tabs<br />"+
-                       "<b>&bdquo;selected&ldquo;</b> to download all links from your current selection";
+      case "tabs":
+        pblock.innerHTML = "Download all links from the content of every single opened tab.";
+        break;
+      case "page":
+        pblock.innerHTML = "Download all links on this page.";      
+        break;
+      case "this":
+        pblock.innerHTML = "Download all links from your current selection.";
+        break;
+      default:
+        pblock.innerHTML = "<b>&bdquo;page&ldquo;</b> to download all links on this page<br />" +
+                        "<b>&bdquo;tabs&ldquo;</b> to download all links from the content of your tabs<br />"
+                         +"<b>&bdquo;this&ldquo;</b> to download all links from your current selection";
+        break;
     }
   },
   execute: function(type) {
-      CmdUtils.log( Application.activeWindow.tabs);
     var toclip;
-    if(type.text.match("^t") || type.text.match("tabs"))
-    { //tabs
-      Application.activeWindow.tabs.forEach(function(tab){
-        toclip= toclip +  tab.document.body.innerHTML + " " + tab.uri.spec + " ";
-      });
-    }
-    else if(type.text.match("^p") || type.text.match("page"))
-    {  //page
-      toclip = Application.activeWindow.activeTab.document.body.innerHTML + " " + Application.activeWindow.activeTab.uri.spec;
-    }
-    else if(type.text.match("^s") || type.text.match("selected"))
-    {  //selected
-      if(CmdUtils.getHtmlSelection() != "")
-      {
+    switch(type.text)
+    {
+      case "tabs":
+        Application.activeWindow.tabs.forEach(function(tab){    
+          toclip = tab.uri.spec;
+          for (var i = 0; i < tab.document.links.length; i++)
+          {
+            toclip += " " + tab.document.links.item(i).href;
+          }
+        });
+        break;
+      
+      case "page":
+        toclip  = CmdUtils.getDocument().URL;
+        for (var i = 0; i < CmdUtils.getDocument().links.length; i++)
+        {
+          toclip += " " + CmdUtils.getDocument().links[i].href;
+        }
+        break;
+      
+      case "this":
         toclip = CmdUtils.getHtmlSelection();
-      }
+        break;
+        /*
+        Not enough performance - jQuery is buggy, too, so not every link will get included.
+        Thats why i switched to the easy version.
+      
+        CmdUtils.log(CmdUtils.getHtmlSelection());
+        var links = jQuery(CmdUtils.getHtmlSelection()).find("a");
+        if(links.length == 0)
+        {
+          toclip = CmdUtils.getHtmlSelection(); //Unfortunately the parser has some problems
+          break;
+        }
+        toclip = ""; //Avoid "undefined"
+        //Insert all links from the site */
+        /*
+        CmdUtils.log(links,CmdUtils.getDocument());
+ 
+        for (var i = 0; i < links.length; i++)
+        {
+          FindCorrect: for (var j = 0; j < CmdUtils.getDocument().links.length; j++)
+          {
+            
+            if(links.get(i).pathname == CmdUtils.getDocument().links[j].pathname)
+            {
+              
+              toclip += " " + CmdUtils.getDocument().links[j].href;
+              break FindCorrect;
+            }
+          }
+        }
+        */
     }
     //Show Feedback (might be positive or negative)
     if (typeof toclip != 'undefined')
@@ -60,3 +96,5 @@ CmdUtils.CreateCommand({
     }
 }
 });
+
+
