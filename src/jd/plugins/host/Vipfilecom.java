@@ -42,30 +42,24 @@ public class Vipfilecom extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws PluginException, IOException {
         String downloadURL = downloadLink.getDownloadURL();
         this.setBrowserExclusive();
-
         br.getPage(downloadURL);
-        if (!br.containsHTML("This file not found")) {
-            String fileSize = br.getRegex("<span.*?Size:.*?<b style=.*?>(.*?)</b>").getMatch(0);
-            downloadLink.setDownloadSize(Regex.getSize(fileSize));
-            downloadLink.setName(new Regex(downloadURL, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0));
-            return true;
-        } else {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-
+        if (br.containsHTML("This file not found")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fileSize = br.getRegex("<span.*?Size:.*?<b style=.*?>(.*?)</b>").getMatch(0);
+        if (fileSize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        String fileName = new Regex(downloadURL, "http://[\\w\\.]*?vip-file\\.com/download/[a-zA-z0-9]+/(.*?)\\.html").getMatch(0);
+        downloadLink.setDownloadSize(Regex.getSize(fileSize));
+        downloadLink.setName(fileName);
+        return true;
     }
 
     @Override
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         LinkStatus linkStatus = downloadLink.getLinkStatus();
-
-        /* Nochmals das File überprüfen */
         getFileInformation(downloadLink);
         /* DownloadLink holen, 2x der Location folgen */
         String link = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(http://vip-file\\.com/download.*?)\">", Pattern.CASE_INSENSITIVE)).getMatch(0));
@@ -73,13 +67,18 @@ public class Vipfilecom extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;
         }
-        br.setFollowRedirects(true);
-
-        br.openDownload(downloadLink, link, true, 1).startDownload();
+        /* SpeedHack */
+        br.setFollowRedirects(false);
+        br.getPage(link);
+        link = br.getRedirectLocation();
+        br.getPage(link);
+        link = br.getRedirectLocation();
+        link = link.replaceAll("file.com.*?/", "file.com:8080/");
+        br.setDebug(true);
+        br.openDownload(downloadLink, link, true, 0).startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        /* TODO: Wert prüfen */
         return 1;
     }
 
