@@ -16,13 +16,17 @@
 
 package jd.plugins.host;
 
+import java.io.File;
 import java.io.IOException;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -64,11 +68,21 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        Form free = br.getForm(4);
-        if (free == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Free-Download not possible from your Country");
-        free.put("fix", "1");
+        Form info = br.getForm(3);
+        String id = info.getVarsMap().get("uid");
+        Form down = br.getForm(4);
+        if (down == null) throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked by Letitbit");
+        HTTPConnection con = br.openGetConnection("http://letitbit.net/cap.php?jpg=" + id + ".jpg");
+        File file = this.getLocalCaptchaFile(this);
+        Browser.download(file, con);
+        down.action = "http://letitbit.net/download3.php";
+        down.method = Form.METHOD_POST;
+        down.put("frameset", "Download+file");
+        String code = Plugin.getCaptchaCode(file, this, downloadLink);
+        down.put("cap", code);
+        down.put("fix", "1");
         br.setDebug(true);
-        br.submitForm(free);
+        br.submitForm(down);
         String url = br.getRegex("link=(.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         this.sleep(60000, downloadLink);
