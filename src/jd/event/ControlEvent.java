@@ -138,17 +138,18 @@ public class ControlEvent extends AWTEvent {
      * serialVersionUID
      */
     private static final long serialVersionUID = 1639354503246054870L;
-	/**
-	 * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird (oder package);
-	 * soiu7rce: link/packlage
-	 * parameter:menuitem arraylist
-	 */
+    /**
+     * wird verschickt wenn das Kontextmenü der Downloadlinks geöffnet wird
+     * (oder package); soiu7rce: link/packlage parameter:menuitem arraylist
+     */
     public static final int CONTROL_LINKLIST_CONTEXT_MENU = 22;
-	/**
-	 * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt wurde. Andere plugins und addons können dieses event abrufen und entscheiden wie die files weiterverareitet werden sollen.
-	 * Die files werden als File[] parameter übergeben
-	 */
-	public static final int CONTROL_ON_FILEOUTPUT = 33;
+    /**
+     * Wird verwendet wenn eine datei verarbeitet wurde.z.B. eine datei entpackt
+     * wurde. Andere plugins und addons können dieses event abrufen und
+     * entscheiden wie die files weiterverareitet werden sollen. Die files
+     * werden als File[] parameter übergeben
+     */
+    public static final int CONTROL_ON_FILEOUTPUT = 33;
 
     /**
      * Die ID des Ereignisses

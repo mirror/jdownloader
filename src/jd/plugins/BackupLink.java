@@ -17,58 +17,39 @@
 package jd.plugins;
 
 import java.io.File;
-import java.io.Serializable;
 
-public class BackupLink implements Serializable {
+import jd.config.Property;
+import jd.http.Encoding;
+
+public class BackupLink extends Property {
 
     public static final int LINKTYPE_CONTAINER = 1;
     public static final int LINKTYPE_NORMAL = 0;
-    
+
     private static final long serialVersionUID = 1L;
 
     // Containername
     private String container;
 
-    // Dateiname des Containers
-    
-    private String containerFile;
-
     // Index dieses DownloadLinks innerhalb der Containerdatei
-     
-    private int containerIndex = -1;
-    private String containerType;
+
     private int linkType;
-    
+
     // Von hier soll der Download stattfinden
-     
+
     private String urlDownload;
 
     public BackupLink(File containerfile, int id, String containerType) {
-        containerFile = containerfile.getAbsolutePath();
-        containerIndex = id;
-        this.containerType = containerType;
+
+        setProperty("container", containerType);
+        setProperty("containerfile", containerfile.getAbsolutePath());
+        setProperty("containerindex", id);
         linkType = LINKTYPE_CONTAINER;
     }
 
     public BackupLink(String urlDownload) {
         linkType = LINKTYPE_NORMAL;
-        this.urlDownload = urlDownload;
-    }
-
-    public String getContainer() {
-        return container;
-    }
-
-    public String getContainerFile() {
-        return containerFile;
-    }
-
-    public int getContainerIndex() {
-        return containerIndex;
-    }
-
-    public String getContainerType() {
-        return containerType;
+        this.urlDownload = Encoding.Base64Encode(urlDownload);
     }
 
     public int getLinkType() {
@@ -76,11 +57,7 @@ public class BackupLink implements Serializable {
     }
 
     public String getUrlDownload() {
-        return urlDownload;
+        return Encoding.Base64Decode(urlDownload);
     }
 
-    @Override
-    public String toString() {
-        return " containerType :" + containerType + " linkType :" + linkType + " containerIndex :" + containerIndex + " container :" + container + " urlDownload :" + urlDownload;
-    }
 }

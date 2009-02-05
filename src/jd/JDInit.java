@@ -230,19 +230,35 @@ public class JDInit {
     protected void createQueueBackup() {
         Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
         Iterator<DownloadLink> it = links.iterator();
-        Vector<BackupLink> ret = new Vector<BackupLink>();
+        ArrayList<BackupLink> ret = new ArrayList<BackupLink>();
         while (it.hasNext()) {
             DownloadLink next = it.next();
+            BackupLink bl;
             if (next.getLinkType() == DownloadLink.LINKTYPE_CONTAINER) {
-                ret.add(new BackupLink(new File(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
+                bl = (new BackupLink(new File(next.getContainerFile()), next.getContainerIndex(), next.getContainer()));
+
             } else {
-                ret.add(new BackupLink(next.getDownloadURL()));
+                bl = (new BackupLink(next.getDownloadURL()));
             }
+            bl.setProperty("downloaddirectory", next.getFilePackage().getDownloadDirectory());
+            bl.setProperty("packagename", next.getFilePackage().getName());
+            bl.setProperty("plugin", next.getPlugin().getClass().getSimpleName());
+            bl.setProperty("name", new File(next.getFileOutput()).getName());
+            bl.setProperty("properties", next.getProperties());
+            bl.setProperty("enabled", next.isEnabled());
 
+            ret.add(bl);
         }
+        if (ret.size() == 0) return;
+        File file = JDUtilities.getResourceFile("backup/links.linkbackup");
+        File old = JDUtilities.getResourceFile("backup/links_" + file.lastModified() + ".linkbackup");
 
-        JDUtilities.getResourceFile("links.linkbackup").delete();
-        JDIO.saveObject(null, ret, JDUtilities.getResourceFile("links.linkbackup"), "links.linkbackup", "linkbackup", false);
+        file.mkdirs();
+        if (file.exists()) {
+            file.renameTo(old);
+        }
+        file.delete();
+        JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
     }
 
     public void doWebupdate(final boolean guiCall) {
@@ -317,8 +333,6 @@ public class JDInit {
                     logger.finer("Files to update: " + files);
                     logger.finer("JDUs to update: " + packages.size());
 
-                    createQueueBackup();
-
                     if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_AUTO_RESTART, false)) {
                         CountdownConfirmDialog ccd = new CountdownConfirmDialog(SimpleGUI.CURRENTGUI == null ? null : SimpleGUI.CURRENTGUI.getFrame(), JDLocale.LF("init.webupdate.auto.countdowndialog", "Automatic update."), 10, true, CountdownConfirmDialog.STYLE_OK | CountdownConfirmDialog.STYLE_CANCEL);
                         if (ccd.result) {
@@ -331,7 +345,7 @@ public class JDInit {
                                 progress.finalize(10000l);
                                 return;
                             }
-
+                            createQueueBackup();
                             JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                             logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                             System.exit(0);
@@ -351,7 +365,7 @@ public class JDInit {
                                     progress.finalize(10000l);
                                     return;
                                 }
-
+                                createQueueBackup();
                                 JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                                 logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
                                 System.exit(0);
@@ -502,16 +516,7 @@ public class JDInit {
     }
 
     public void loadDownloadQueue() {
-        if (!JDUtilities.getController().initDownloadLinks()) {
-            File links = JDUtilities.getResourceFile("links.dat");
-
-            if (links != null && links.exists()) {
-                File newFile = new File(links.getAbsolutePath() + ".bup");
-                newFile.delete();
-                links.renameTo(newFile);
-                JDUtilities.getController().getUiInterface().showMessageDialog(JDLocale.L("sys.warning.linklist.incompatible", "Linkliste inkompatibel. \r\nBackup angelegt."));
-            }
-        }
+        JDUtilities.getController().initDownloadLinks();
 
     }
 

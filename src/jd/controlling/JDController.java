@@ -1036,12 +1036,21 @@ public class JDController implements ControlListener, UIListener {
      * @return true/False je nach Erfolg
      */
     public boolean initDownloadLinks() {
+        try {
+            packages = loadDownloadLinks();
 
-        packages = loadDownloadLinks();
+        } catch (Exception e) {
+            e.printStackTrace();
+            packages = null;
+        }
         if (packages == null) {
             packages = new Vector<FilePackage>();
             this.fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_LINKLIST_STRUCTURE_CHANGED, null));
-
+            File file = JDUtilities.getResourceFile("backup/links.linkbackup");
+            if (file.exists()) {
+                JDUtilities.getLogger().severe("Try to restore from backup file");
+                this.loadContainerFile(file);
+            }
             return false;
         }
 
@@ -1118,8 +1127,8 @@ public class JDController implements ControlListener, UIListener {
     }
 
     /**
-     * Hiermit wird eine Containerdatei geöffnet. Dazu wird zuerst ein passendes
-     * Plugin gesucht und danach alle DownloadLinks interpretiert
+     * Hiermit wird eine Containerdatei geöffnet. Dazu wird zuerst ein
+     * passendes Plugin gesucht und danach alle DownloadLinks interpretiert
      * 
      * @param file
      *            Die Containerdatei
@@ -1246,96 +1255,84 @@ public class JDController implements ControlListener, UIListener {
      * @param file
      *            Die Datei, aus der die Links gelesen werden
      * @return Ein neuer Vector mit den DownloadLinks
+     * @throws Exception
      */
     @SuppressWarnings("unchecked")
-    private Vector<FilePackage> loadDownloadLinks() {
-        try {
-            Object obj = JDUtilities.getDatabaseConnector().getLinks();
+    private Vector<FilePackage> loadDownloadLinks() throws Exception {
 
-            if (obj == null) {
-                File file = JDUtilities.getResourceFile("links.dat");
-                if (file.exists()) {
-                    logger.info("Wrapping links.dat");
-                    obj = JDIO.loadObject(null, file, Configuration.saveAsXML);
-                    JDUtilities.getDatabaseConnector().saveLinks(packages);
-                    // file.delete();
-                }
-            }
+        Object obj = JDUtilities.getDatabaseConnector().getLinks();
 
-            if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
-                Vector<FilePackage> packages = (Vector<FilePackage>) obj;
-                Iterator<FilePackage> iterator = packages.iterator();
-                DownloadLink localLink;
-                PluginForHost pluginForHost = null;
-                PluginsC pluginForContainer = null;
-                Iterator<DownloadLink> it;
-                FilePackage fp;
-                while (iterator.hasNext()) {
-                    fp = iterator.next();
-                    it = fp.getDownloadLinks().iterator();
-                    while (it.hasNext()) {
-                        localLink = it.next();
-                        if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
+        if (obj != null && obj instanceof Vector && (((Vector) obj).size() == 0 || ((Vector) obj).size() > 0 && ((Vector) obj).get(0) instanceof FilePackage)) {
+            Vector<FilePackage> packages = (Vector<FilePackage>) obj;
+            Iterator<FilePackage> iterator = packages.iterator();
+            DownloadLink localLink;
+            PluginForHost pluginForHost = null;
+            PluginsC pluginForContainer = null;
+            Iterator<DownloadLink> it;
+            FilePackage fp;
+            while (iterator.hasNext()) {
+                fp = iterator.next();
+                it = fp.getDownloadLinks().iterator();
+                while (it.hasNext()) {
+                    localLink = it.next();
+                    if (localLink.getLinkType() == DownloadLink.LINKTYPE_JDU && (localLink.getProperty("JDU") == null || !(localLink.getProperty("JDU") instanceof PackageData))) {
+                        iterator.remove();
+                        continue;
+                    }
+
+                    if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
+                        localLink.getLinkStatus().reset();
+                    }
+                    if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
+                        it.remove();
+                        if (fp.getDownloadLinks().size() == 0) {
                             iterator.remove();
-                            continue;
-                        }
 
-                        if (!localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) {
-                            localLink.getLinkStatus().reset();
                         }
-                        if (localLink.getLinkStatus().hasStatus(LinkStatus.FINISHED) && JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_FINISHED_DOWNLOADS_ACTION) == 1) {
-                            it.remove();
-                            if (fp.getDownloadLinks().size() == 0) {
-                                iterator.remove();
-
-                            }
-                        } else {
-                            // Anhand des Hostnamens aus dem DownloadLink
-                            // wird ein passendes Plugin gesucht
-                            try {
-                                pluginForHost = JDUtilities.getNewPluginForHostInstanz(localLink.getHost());
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            // Gibt es einen Names für ein Containerformat,
-                            // wird ein passendes Plugin gesucht
-                            try {
-                                if (localLink.getContainer() != null) {
-                                    pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
-                                    if (pluginForContainer == null) {
-                                        localLink.setEnabled(false);
-                                    }
+                    } else {
+                        // Anhand des Hostnamens aus dem DownloadLink
+                        // wird ein passendes Plugin gesucht
+                        try {
+                            pluginForHost = JDUtilities.getNewPluginForHostInstanz(localLink.getHost());
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                        // Gibt es einen Names für ein Containerformat,
+                        // wird ein passendes Plugin gesucht
+                        try {
+                            if (localLink.getContainer() != null) {
+                                pluginForContainer = JDUtilities.getPluginForContainer(localLink.getContainer(), localLink.getContainerFile());
+                                if (pluginForContainer == null) {
+                                    localLink.setEnabled(false);
                                 }
                             }
+                        }
 
-                            catch (NullPointerException e) {
-                                e.printStackTrace();
-                            }
-                            if (pluginForHost != null) {
-                                localLink.setLoadedPlugin(pluginForHost);
-                            }
-                            if (pluginForContainer != null) {
-                                localLink.setLoadedPluginForContainer(pluginForContainer);
-                            }
-                            if (pluginForHost == null) {
-                                logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
-                            }
+                        catch (NullPointerException e) {
+                            e.printStackTrace();
+                        }
+                        if (pluginForHost != null) {
+                            localLink.setLoadedPlugin(pluginForHost);
+                        }
+                        if (pluginForContainer != null) {
+                            localLink.setLoadedPluginForContainer(pluginForContainer);
+                        }
+                        if (pluginForHost == null) {
+                            logger.severe("couldn't find plugin(" + localLink.getHost() + ") for this DownloadLink." + localLink.getName());
                         }
                     }
                 }
-                return packages;
             }
-
-            return null;
-        } catch (Exception e) {
-            e.printStackTrace();
-            logger.severe("Linklist Konflikt.");
-            return null;
+            return packages;
         }
+
+        throw new Exception("Linklist incompatible");
+
     }
 
     /**
-     * Schneidet alle Links aus und fügt sie zwischen before unc after ein. Alle
+     * Schneidet alle Links aus und fügt sie zwischen before unc after ein.
+     * Alle
      * 
      * @param links
      * @param before
@@ -1731,7 +1728,8 @@ public class JDController implements ControlListener, UIListener {
     }
 
     /**
-     * Startet den download wenn er angehalten ist und hält ihn an wenn er läuft
+     * Startet den download wenn er angehalten ist und hält ihn an wenn er
+     * läuft
      */
     public void toggleStartStop() {
 
