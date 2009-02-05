@@ -49,7 +49,6 @@ public class RemixShareCom extends PluginForHost {
         String filesize = br.getRegex("</span></td><td[^>]*>(.*?)\\|").getMatch(0);
         if (filename == null || filename == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
-        System.out.println("SIZE: "+filesize);
         filesize = filesize.replaceAll("&nbsp;", " ");
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
