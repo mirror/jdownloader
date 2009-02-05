@@ -856,7 +856,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             toggleDnD();
             break;
         case JDAction.ABOUT:
-            JDAboutDialog.getDialog().setVisible(true);
+            JDAboutDialog.showDialog();
             break;
         case JDAction.CHANGES:
             showChangelogDialog();

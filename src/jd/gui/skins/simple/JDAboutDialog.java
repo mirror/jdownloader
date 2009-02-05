@@ -41,7 +41,9 @@ import jd.utils.JDTheme;
 import org.jdesktop.swingx.JXHyperlink;
 import org.jdesktop.swingx.JXTitledSeparator;
 
-public class JDAboutDialog {
+public class JDAboutDialog extends JDialog {
+
+    private static final long serialVersionUID = -2008578821095704294L;
 
     private final static class LinkAction extends AbstractAction {
 
@@ -54,31 +56,20 @@ public class JDAboutDialog {
         }
 
         public void actionPerformed(ActionEvent e) {
-
             try {
                 JLinkButton.openURL(url);
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
-
         }
     }
 
-    public static JDialog getDialog() {
-        JDialog dialog = new JDialog();
-        dialog.setResizable(false);
-        dialog.setIconImage(JDTheme.I("gui.images.jd_logo"));
-        dialog.setAlwaysOnTop(true);
-        dialog.setTitle(JDLocale.L("gui.dialog.about.title", "About JDownloader"));
+    public static void showDialog() {
+        new JDAboutDialog().setVisible(true);
+    }
+
+    public JDAboutDialog() {
         int n = 10;
-        JPanel p = new JPanel(new BorderLayout(30, 30));
-        p.setBorder(new EmptyBorder(n, n, n, n));
-        dialog.setContentPane(p);
-        JXTitledSeparator titledSeparator = new JXTitledSeparator(JDLocale.L("gui.dialog.about.jddevteam", "JDownloader Developer Team"));
-        titledSeparator.setForeground(Color.BLUE);
-        JXTitledSeparator titledSeparator2 = new JXTitledSeparator(JDLocale.L("gui.dialog.about.whatisjd", "What is jDownloader?"));
-        titledSeparator2.setForeground(Color.BLUE);
 
         // See how I added myself above. Every string starts with a single white
         // space. This improves the way the entries look in the table
@@ -88,13 +79,12 @@ public class JDAboutDialog {
                 { " eXecuTe", " jd.execute@gmail.com", " command line support, language editor, newsfeed addon, tango theme, some plugins" }, { " gocsp", " gocsp@jdownloader.org", " Mac Developer" }, { " Sheadox", " sheadox@jdownloader.org", " Hoster plugins, Decrypt plugins, Support" }, { " djuzi", " djuzi@jdownloader.org", " Hoster/Decrypter plugins, Bug fixes, Localizing, PL Translation" },
         // {" uncomment and add your nick"," xxx@yyy.com"," describe
         // yourself..."},
-
         };
 
         JTable table = new JTable(devs, new String[] { JDLocale.L("gui.dialog.about.member", "Member"), JDLocale.L("gui.dialog.about.email", "Email"), JDLocale.L("gui.dialog.about.section", "Section") });
         table.setEnabled(false);
-        JDAboutDialog.setWidth(table.getColumnModel().getColumn(0), 80);
-        JDAboutDialog.setWidth(table.getColumnModel().getColumn(1), 160);
+        setWidth(table.getColumnModel().getColumn(0), 80);
+        setWidth(table.getColumnModel().getColumn(1), 160);
 
         JPanel links = new JPanel();
         links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en"))));
@@ -103,10 +93,12 @@ public class JDAboutDialog {
         links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en"))));
 
+        JXTitledSeparator titledSeparator = new JXTitledSeparator(JDLocale.L("gui.dialog.about.jddevteam", "JDownloader Developer Team"));
+        titledSeparator.setForeground(Color.BLUE);
+
         JPanel s = new JPanel(new BorderLayout(n, n));
         s.add(new JScrollPane(table), BorderLayout.CENTER);
         s.add(links, BorderLayout.SOUTH);
-        p.add(s, BorderLayout.SOUTH);
         s.add(titledSeparator, BorderLayout.NORTH);
         s.setPreferredSize(new Dimension(800, 274));
 
@@ -114,22 +106,33 @@ public class JDAboutDialog {
         textPane.setContentType("text/html");
         textPane.setEditable(false);
         textPane.setPreferredSize(new Dimension(800, 400));
-        // p.add(titledSeparator2, BorderLayout.NORTH);
+
+        JPanel p = new JPanel(new BorderLayout(30, 30));
+        p.setBorder(new EmptyBorder(n, n, n, n));
+        p.add(s, BorderLayout.SOUTH);
         p.add(new JScrollPane(textPane), BorderLayout.CENTER);
         p.setPreferredSize(new Dimension(800, 600));
 
-        dialog.pack();
-        dialog.setLocationRelativeTo(null);
+        setResizable(false);
+        setIconImage(JDTheme.I("gui.images.jd_logo"));
+        // setAlwaysOnTop(true);
+        setModal(true);
+        setTitle(JDLocale.L("gui.dialog.about.title", "About JDownloader"));
+        setContentPane(p);
+        pack();
+        setLocationRelativeTo(null);
 
-        Thread t = new Thread() {
+        getPage(textPane);
+    }
+
+    private void getPage(final JTextPane textPane) {
+        new Thread() {
 
             @Override
             public void run() {
                 try {
                     Browser br = new Browser();
                     final String txt = br.getPage(JDLocale.L("gui.dialog.about.sourceurl", "http://service.jdownloader.org/html/about_en.html"));
-                    // JDUtilities.getGUI().showHTMLDialog(JDLocale.L(
-                    // "gui.dialog.about.title","About JDownloader"), txt);
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
                             textPane.setText(txt);
@@ -139,13 +142,11 @@ public class JDAboutDialog {
                     e.printStackTrace();
                 }
             }
-        };
-        t.start();
 
-        return dialog;
+        }.start();
     }
 
-    private static void setWidth(TableColumn column, int width) {
+    private void setWidth(TableColumn column, int width) {
         column.setMinWidth(width);
         column.setPreferredWidth(width);
         column.setMaxWidth(width);
