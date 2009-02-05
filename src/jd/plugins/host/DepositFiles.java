@@ -73,6 +73,7 @@ public class DepositFiles extends PluginForHost {
         if (form != null) {
             br.submitForm(form);
         }
+        if (br.containsHTML("We are sorry, but all downloading slots for your country are busy")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "All slots for your country are busy", 10 * 60 * 1000l);
         String wait = br.getRegex("Bitte versuchen Sie noch mal nach(.*?)<\\/strong>").getMatch(0);
         if (wait != null) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Regex.getMilliSeconds(wait)); }
 
@@ -99,7 +100,7 @@ public class DepositFiles extends PluginForHost {
         br.setFollowRedirects(true);
         setLangtoGer();
         br.getPage("http://depositfiles.com/de/gold/payment.php");
-        Form login = br.getFormbyValue("einloggen");
+        Form login = br.getFormbyValue("Anmelden");
         login.put("login", account.getUser());
         login.put("password", account.getPass());
         br.submitForm(login);

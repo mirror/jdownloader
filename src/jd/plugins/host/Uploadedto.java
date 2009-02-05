@@ -21,6 +21,7 @@ import java.io.IOException;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Encoding;
 import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -76,8 +77,8 @@ public class Uploadedto extends PluginForHost {
         br.getPage("http://uploaded.to/login");
 
         Form login = br.getForm(0);
-        login.put("email", account.getUser());
-        login.put("password", account.getPass());
+        login.put("email", Encoding.urlEncode(account.getUser()));
+        login.put("password", Encoding.urlEncode(account.getPass()));
 
         br.submitForm(login);
         if (br.containsHTML("Login failed!")) {
@@ -126,8 +127,8 @@ public class Uploadedto extends PluginForHost {
         br.getPage("http://uploaded.to/login");
 
         Form login = br.getForm(0);
-        login.put("email", account.getUser());
-        login.put("password", account.getPass());
+        login.put("email", Encoding.urlEncode(account.getUser()));
+        login.put("password", Encoding.urlEncode(account.getPass()));
 
         br.submitForm(login);
         if (br.containsHTML("Login failed!")) {
