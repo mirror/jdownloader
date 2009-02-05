@@ -226,6 +226,7 @@ public class DistributeData extends ControlBroadcaster {
         data = Encoding.urlDecode(data, true);
         ret.addAll(findLinks(true));
         data = data.replaceAll("--CUT--", "\n");
+        data = data.replaceAll("jd://", "http://");
         data = data.replaceAll("http://", "httpviajd://");
         ret.addAll(findLinks(true));
         data = data.replaceAll("httpviajd://", "http://");
