@@ -109,7 +109,7 @@ public class JDUtilities {
 
     /**
      * Die Konfiguration
-     */
+     */ 
     private static Configuration configuration = new Configuration();
 
     private static DatabaseConnector dbconnect = null;
