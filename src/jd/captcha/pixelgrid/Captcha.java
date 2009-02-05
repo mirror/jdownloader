@@ -1324,7 +1324,7 @@ public class Captcha extends PixelGrid {
                 if(isElement(getPixelValue(x, y), avg))
                     ret.append("*");
                 else
-                    ret.append("(int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue()))");
+                    ret.append((int) Math.floor(9 * (getPixelValue(x, y) / getMaxPixelValue())));
 
             }
             ret.append(new char[] {'\r', '\n'});
