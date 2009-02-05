@@ -795,9 +795,14 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         Point point = e.getPoint();
         int row = rowAtPoint(point);
 
+        if (!isRowSelected(row) && e.getButton() == MouseEvent.BUTTON3) {
+            getTreeSelectionModel().clearSelection();
+            getTreeSelectionModel().addSelectionPath(getPathForRow(row));
+        }
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
 
             if (getPathForRow(row) == null) { return; }
+            Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
             Object obj = getPathForRow(row).getLastPathComponent();
             JMenuItem tmp;
             JPopupMenu popup = new JPopupMenu();
@@ -806,7 +811,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 int enabled = 0;
                 int disabled = 0;
                 int resumeable = 0;
-                for (DownloadLink next : getSelectedDownloadLinks()) {
+                for (DownloadLink next : alllinks) {
                     if (!fps.contains(next.getFilePackage())) {
                         fps.add(next.getFilePackage());
                     }
@@ -839,7 +844,6 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 } else {
                     pluginPopup.setEnabled(false);
                 }
-                Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
                 popup.add(packagePopup);
                 popup.add(pluginPopup);
 
@@ -851,24 +855,24 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + alllinks.size() + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
-                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + disabled + ")", TreeTableAction.DOWNLOAD_ENABLE, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + disabled + ")", TreeTableAction.DOWNLOAD_ENABLE, new Property("downloadlinks", alllinks))));
                 if (disabled == 0) tmp.setEnabled(false);
-                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + enabled + ")", TreeTableAction.DOWNLOAD_DISABLE, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + enabled + ")", TreeTableAction.DOWNLOAD_DISABLE, new Property("downloadlinks", alllinks))));
                 if (enabled == 0) tmp.setEnabled(false);
-                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen"), TreeTableAction.DOWNLOAD_RESET, new Property("downloadlinks", getSelectedDownloadLinks()))));
-                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumeable + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_RESET, new Property("downloadlinks", alllinks))));
+                popup.add(tmp = new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.resume", "fortsetzen") + " (" + resumeable + ")", TreeTableAction.DOWNLOAD_RESUME, new Property("downloadlinks", alllinks))));
                 if (resumeable == 0) tmp.setEnabled(false);
 
                 popup.add(new JSeparator());
-                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben"), TreeTableAction.DOWNLOAD_NEW_PACKAGE, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.newpackage", "In neues Paket verschieben") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_NEW_PACKAGE, new Property("downloadlinks", alllinks))));
 
                 popup.add(new JSeparator());
                 popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyPassword", "Copy Password"), TreeTableAction.DOWNLOAD_COPY_PASSWORD, new Property("downloadlink", obj))));
 
                 popup.add(new JSeparator());
-                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen"), TreeTableAction.DOWNLOAD_DLC, new Property("downloadlinks", getSelectedDownloadLinks()))));
+                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + alllinks.size() + ")", TreeTableAction.DOWNLOAD_DLC, new Property("downloadlinks", alllinks))));
                 popup.add(new JSeparator());
-                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password"), TreeTableAction.SET_PW, new Property("links", alllinks))));
+                popup.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + alllinks.size() + ")", TreeTableAction.SET_PW, new Property("links", alllinks))));
                 for (Component comp : createPackageMenu(((DownloadLink) obj).getFilePackage(), fps)) {
                     packagePopup.add(comp);
                 }
@@ -886,7 +890,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         JMenu prioPopup = new JMenu(JDLocale.L("gui.table.contextmenu.priority", "Priority"));
         int prio = link.getPriority();
         HashMap<String, Object> prop = null;
-        Vector<DownloadLink> links = getSelectedDownloadLinks();
+        Vector<DownloadLink> links = getAllSelectedDownloadLinks();
         for (int i = 4; i >= -4; i--) {
             prop = new HashMap<String, Object>();
             prop.put("downloadlinks", links);
@@ -933,7 +937,22 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         } else {
             pluginPopup.setEnabled(false);
         }
-        Vector<DownloadLink> alllinks = getAllSelectedDownloadLinks();
+        int counter = 0;
+        int enabled = 0;
+        int disabled = 0;
+        Vector<DownloadLink> alllinks = new Vector<DownloadLink>();
+        for (FilePackage tfp : fps) {
+            for (DownloadLink tlink : tfp.getDownloadLinks()) {
+                alllinks.add(tlink);
+                counter++;
+                if (tlink.isEnabled()) {
+                    enabled++;
+                } else {
+                    disabled++;
+                }
+            }
+        }
+
         res.add(pluginPopup);
         res.add(buildpriomenuFilePackage(fps));
 
@@ -943,17 +962,17 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.editpackagename", "Paketname ändern"), TreeTableAction.PACKAGE_EDIT_NAME, new Property("package", fp))));
 
         res.add(new JSeparator());
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.delete", "entfernen"), TreeTableAction.DELETE, new Property("links", alllinks))));
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enable", "aktivieren"), TreeTableAction.PACKAGE_ENABLE, new Property("packages", fps))));
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren"), TreeTableAction.PACKAGE_DISABLE, new Property("packages", fps))));
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen"), TreeTableAction.PACKAGE_RESET, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.delete", "entfernen") + " (" + counter + ")", TreeTableAction.DELETE, new Property("links", alllinks))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.enable", "aktivieren") + " (" + disabled + ")", TreeTableAction.PACKAGE_ENABLE, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.disable", "deaktivieren") + " (" + enabled + ")", TreeTableAction.PACKAGE_DISABLE, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.reset", "zurücksetzen") + " (" + counter + ")", TreeTableAction.PACKAGE_RESET, new Property("packages", fps))));
         res.add(new JSeparator());
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.copyPassword", "Copy Password"), TreeTableAction.PACKAGE_COPY_PASSWORD, new Property("package", fp))));
 
         res.add(new JSeparator());
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen"), TreeTableAction.PACKAGE_DLC, new Property("packages", fps))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.dlc", "DLC erstellen") + " (" + counter + ")", TreeTableAction.PACKAGE_DLC, new Property("packages", fps))));
         res.add(new JSeparator());
-        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password"), TreeTableAction.SET_PW, new Property("links", alllinks))));
+        res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.setdlpw", "Set download password") + " (" + counter + ")", TreeTableAction.SET_PW, new Property("links", alllinks))));
         res.add(new JSeparator());
         res.add(new JMenuItem(new TreeTableAction(this, JDLocale.L("gui.table.contextmenu.packagesort", "Paket sortieren"), TreeTableAction.PACKAGE_SORT, new Property("package", fp))));
         return res;
