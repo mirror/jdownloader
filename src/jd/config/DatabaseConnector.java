@@ -19,8 +19,6 @@ package jd.config;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.sql.Connection;
@@ -62,7 +60,12 @@ public class DatabaseConnector implements Serializable {
         try {
             logger.info("Loading database");
 
-            checkDatabaseHeader();
+            if (!checkDatabaseHeader()) {
+                logger.severe("Database broken! Creating fresh Database");
+                if (!new File(configpath + "database.script").delete()) {
+                    logger.severe("Could not delete broken Database");
+                }
+            }
 
             con = DriverManager.getConnection("jdbc:hsqldb:file:" + configpath + "database;shutdown=true", "sa", "");
             con.setAutoCommit(true);
@@ -114,10 +117,11 @@ public class DatabaseConnector implements Serializable {
     /**
      * Checks the database of inconsistency
      */
-    private void checkDatabaseHeader() {
+    private boolean checkDatabaseHeader() {
         logger.info("Checking database");
         File f = new File(configpath + "database.script");
-
+        if (!f.exists()) return true;
+        boolean databaseok = true;
         try {
             BufferedReader in = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
             String line = "";
@@ -129,95 +133,54 @@ public class DatabaseConnector implements Serializable {
                 switch (counter) {
                 case 0:
                     if (!line.equals("CREATE SCHEMA PUBLIC AUTHORIZATION DBA")) {
-                        revertDatabase();
-                        return;
+                        databaseok = false;
                     }
                     break;
                 case 1:
                     if (!line.equals("CREATE MEMORY TABLE CONFIG(NAME VARCHAR(256),OBJ OBJECT)")) {
-                        revertDatabase();
-                        return;
+                        databaseok = false;
                     }
                     break;
                 case 2:
                     if (!line.equals("CREATE MEMORY TABLE LINKS(NAME VARCHAR(256),OBJ OBJECT)")) {
-                        revertDatabase();
-                        return;
+                        databaseok = false;
                     }
                     break;
                 case 3:
                     if (!line.equals("CREATE USER SA PASSWORD \"\"")) {
-                        revertDatabase();
-                        return;
+                        databaseok = false;
                     }
                     break;
                 case 4:
                     if (!line.equals("GRANT DBA TO SA")) {
-                        revertDatabase();
-                        return;
+                        databaseok = false;
                     }
                     break;
                 case 5:
                     if (!line.equals("SET WRITE_DELAY 10")) {
-                        revertDatabase();
-                        return;
+                        databaseok = false;
                     }
                     break;
                 case 6:
                     if (!line.equals("SET SCHEMA PUBLIC")) {
-                        revertDatabase();
-                        return;
+                        databaseok = false;
                     }
                     break;
                 }
-
                 counter++;
             }
 
             while (((line = in.readLine()) != null)) {
                 if (!line.matches("INSERT INTO .*? VALUES\\('.*?','.*?'\\)")) {
-                    revertDatabase();
-                    return;
+                    databaseok = false;
+                    break;
                 }
             }
-
-            backupDatabase();
             in.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Makes a backup of the database
-     */
-    private void backupDatabase() {
-        logger.info("Backup Database");
-
-        File script = new File(configpath + "database.script");
-        File scriptbackup = new File(configpath + "database.script.backup");
-
-        if (script.exists()) {
-            scriptbackup.delete();
-            JDIO.copyFile(script, scriptbackup);
-        }
-    }
-
-    /**
-     * Reverts the database to the last checkpoint
-     */
-    private void revertDatabase() {
-        logger.info("Error in database. Reverting database zu last checkpoint.");
-
-        File script = new File(configpath + "database.script");
-        File scriptbackup = new File(configpath + "database.script.backup");
-
-        if (scriptbackup.exists()) {
-            script.delete();
-            JDIO.copyFile(scriptbackup, script);
-        }
+        return databaseok;
     }
 
     /**
@@ -245,7 +208,7 @@ public class DatabaseConnector implements Serializable {
                 pst.setObject(2, data);
                 pst.execute();
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -269,7 +232,7 @@ public class DatabaseConnector implements Serializable {
             ResultSet rs = con.createStatement().executeQuery("SELECT * FROM links");
             rs.next();
             return rs.getObject(2);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -290,7 +253,7 @@ public class DatabaseConnector implements Serializable {
                 pst.setObject(1, obj);
                 pst.execute();
             }
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
