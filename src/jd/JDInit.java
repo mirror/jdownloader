@@ -698,7 +698,8 @@ public class JDInit {
         new DecryptPluginWrapper("rs43.com", "Rs43Com", "http://[\\w\\.]*?rs43\\.com/(Share\\.Mirror\\.Service/\\?|\\?)/.+");
         new DecryptPluginWrapper("relink-it.com", "RelinkItCom", "http://[\\w\\.]*?relink-it\\.com(/\\w\\w/|/)\\?.+");
         new DecryptPluginWrapper("protectlinks.com", "ProtectLinksCom", "http://[\\w\\.]*?protectlinks\\.com/\\d+");
-    }
+        new DecryptPluginWrapper("remixshare.com", "RemixShareComFolder", "http://[\\w\\.]*?remixshare\\.com/container/\\?id=[a-z0-9].+");
+   }
 
     public void loadPluginForHost() {
         new HostPluginWrapper("badongo.com", "BadongoCom", "http://[\\w\\.]*?badongo\\.viajd.*/.*file/[0-9]+\\??[0-9]*", PluginWrapper.LOAD_ON_INIT);
@@ -809,6 +810,7 @@ public class JDInit {
         new HostPluginWrapper("upload-drive.com", "UploadDriveCom", "http://[\\w\\.]*?upload-drive\\.com/\\d+/.+");
         new HostPluginWrapper("pliczek.net", "PliczekNet", "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+");
         new HostPluginWrapper("plikos.pl", "PlikosPl", "http://[\\w\\.]*?plikos\\.pl/\\w+/.+");
+        new HostPluginWrapper("remixshare.com", "RemixShareCom", "http://[\\w\\.]*?remixshare\\.com/get\\.php\\?file=[a-z0-9].+");
 
     }
 
