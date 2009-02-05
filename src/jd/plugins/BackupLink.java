@@ -28,9 +28,6 @@ public class BackupLink extends Property {
 
     private static final long serialVersionUID = 1L;
 
-    // Containername
-    private String container;
-
     // Index dieses DownloadLinks innerhalb der Containerdatei
 
     private int linkType;
