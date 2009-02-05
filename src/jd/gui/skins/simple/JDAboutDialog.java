@@ -19,6 +19,7 @@ package jd.gui.skins.simple;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.io.IOException;
 
@@ -26,7 +27,6 @@ import javax.swing.AbstractAction;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
@@ -86,20 +86,18 @@ public class JDAboutDialog extends JDialog {
         setWidth(table.getColumnModel().getColumn(0), 80);
         setWidth(table.getColumnModel().getColumn(1), 160);
 
-        JPanel links = new JPanel();
+        JPanel links = new JPanel(new FlowLayout(FlowLayout.CENTER, n, 0));
         links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.homepage", "Homepage"), JDLocale.L("gui.dialog.about.homeurl", "http://www.jdownloader.org/home?lng=en"))));
-        links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.forum", "Support board"), JDLocale.L("gui.dialog.about.forumurl", "http://www.the-lounge.org/viewforum.php?f=340"))));
-        links.add(new JSeparator());
         links.add(new JXHyperlink(new LinkAction(JDLocale.L("gui.dialog.about.chat", "Chat"), JDLocale.L("gui.dialog.about.chaturl", "http://www.jdownloader.org/support?lng=en"))));
 
         JXTitledSeparator titledSeparator = new JXTitledSeparator(JDLocale.L("gui.dialog.about.jddevteam", "JDownloader Developer Team"));
         titledSeparator.setForeground(Color.BLUE);
 
         JPanel s = new JPanel(new BorderLayout(n, n));
+        s.add(titledSeparator, BorderLayout.NORTH);
         s.add(new JScrollPane(table), BorderLayout.CENTER);
         s.add(links, BorderLayout.SOUTH);
-        s.add(titledSeparator, BorderLayout.NORTH);
         s.setPreferredSize(new Dimension(800, 274));
 
         final JTextPane textPane = new JTextPane();
@@ -109,8 +107,8 @@ public class JDAboutDialog extends JDialog {
 
         JPanel p = new JPanel(new BorderLayout(30, 30));
         p.setBorder(new EmptyBorder(n, n, n, n));
-        p.add(s, BorderLayout.SOUTH);
         p.add(new JScrollPane(textPane), BorderLayout.CENTER);
+        p.add(s, BorderLayout.SOUTH);
         p.setPreferredSize(new Dimension(800, 600));
 
         setResizable(false);

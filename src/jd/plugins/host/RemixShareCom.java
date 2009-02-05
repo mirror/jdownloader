@@ -56,7 +56,7 @@ public class RemixShareCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4444 $");
+        return getVersion("$Revision$");
     }
 
     @Override
@@ -67,7 +67,7 @@ public class RemixShareCom extends PluginForHost {
         // this.sleep(12000, downloadLink); // uncomment when they find a better
         // way to force wait time
         br.submitForm(down);
-        //br.openGetConnection(downloadLink.getDownloadURL());
+        // br.openGetConnection(downloadLink.getDownloadURL());
         dl = br.openDownload(downloadLink, br.getRedirectLocation(), false, 1);
         dl.startDownload();
 

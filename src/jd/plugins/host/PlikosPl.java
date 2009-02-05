@@ -29,7 +29,6 @@ import jd.plugins.PluginForHost;
 
 public class PlikosPl extends PluginForHost {
 
-
     public PlikosPl(PluginWrapper wrapper) {
         super(wrapper);
         this.setStartIntervall(5000l);
@@ -44,10 +43,10 @@ public class PlikosPl extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, InterruptedException, PluginException {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("plik zosta. usuni.ty") || br.containsHTML("nie zosta. odnaleziony") ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (br.containsHTML("plik zosta. usuni.ty") || br.containsHTML("nie zosta. odnaleziony")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = Encoding.htmlDecode(br.getRegex(Pattern.compile("\\s*<strong>(.*?)</strong>", Pattern.CASE_INSENSITIVE)).getMatch(0));
         String filesize = br.getRegex("Rozmiar:\\s*(.*?)<br />\\s*").getMatch(0);
-        if (filename == null || filesize == null ) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (filename == null || filesize == null) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(filename.trim());
         downloadLink.setDownloadSize(Regex.getSize(filesize.replaceAll(",", "\\.")));
         return true;
@@ -55,19 +54,19 @@ public class PlikosPl extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4390 $");
+        return getVersion("$Revision$");
     }
 
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        String linkurl =  br.getRegex("</script>\\s*</div>\\s*<p style[^>]*><a href=\"(.*?)\">Pobierz plik</a></p").getMatch(0);
+        String linkurl = br.getRegex("</script>\\s*</div>\\s*<p style[^>]*><a href=\"(.*?)\">Pobierz plik</a></p").getMatch(0);
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         logger.info(linkurl);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl);
         dl.startDownload();
-        
+
     }
 
     public int getMaxSimultanFreeDownloadNum() {

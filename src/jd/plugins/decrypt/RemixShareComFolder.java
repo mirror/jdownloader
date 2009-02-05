@@ -49,7 +49,7 @@ public class RemixShareComFolder extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4227 $");
+        return getVersion("$Revision$");
     }
 
 }
