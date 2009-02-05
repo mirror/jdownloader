@@ -22,7 +22,6 @@ import java.util.regex.Pattern;
 import jd.config.Configuration;
 import jd.nutils.Executer;
 import jd.nutils.JDHash;
-import jd.nutils.OSDetector;
 import jd.parser.Regex;
 
 public final class Sniffy {

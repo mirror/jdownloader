@@ -37,8 +37,6 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import com.ice.jni.registry.RegistryException;
-
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
