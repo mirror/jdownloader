@@ -17,6 +17,7 @@
 package jd.plugins.host;
 
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
@@ -49,6 +50,7 @@ public class ShareBaseTo extends PluginForHost {
         setBrowserExclusive();
         downloadLink.setUrlDownload(downloadLink.getDownloadURL().replaceAll("sharebase\\.de", "sharebase\\.to"));
         br.getPage(downloadLink.getDownloadURL());
+        if (br.containsHTML("Der Download existiert nicht")) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
         String[] infos = br.getRegex("<span class=\"font1\">(.*?) </span>\\((.*?)\\)</td>").getRow(0);
         if (infos == null || infos.length != 2) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         downloadLink.setName(infos[0].trim());
@@ -56,17 +58,32 @@ public class ShareBaseTo extends PluginForHost {
         return true;
     }
 
-    @Override
-    public AccountInfo getAccountInformation(Account account) throws Exception {
-        AccountInfo ai = new AccountInfo(this, account);
+    public void login(Account account) throws IOException, PluginException {
         setBrowserExclusive();
         br.setCookie("http://" + getHost(), "memm", Encoding.urlEncode(account.getUser()));
         br.setCookie("http://" + getHost(), "memp", JDHash.getMD5(account.getPass()));
         br.getPage("http://sharebase.to/members/");
-        String points = br.getMatch("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"(\\d+?) Punkte\"></td>");
-        String expire = br.getMatch("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>");
+        String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String expire = br.getRegex(Pattern.compile("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        if (points == null || expire == null) {
+            account.setEnabled(false);
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, LinkStatus.VALUE_ID_PREMIUM_DISABLE);
+        }
+    }
+
+    @Override
+    public AccountInfo getAccountInformation(Account account) throws Exception {
+        AccountInfo ai = new AccountInfo(this, account);
+        try {
+            login(account);
+        } catch (PluginException e) {
+            ai.setValid(false);
+            return ai;
+        }
+        String points = br.getRegex(Pattern.compile("<td>Premiumpunkte:</td>.*?<td><input.*cleanform.*value=\"([\\d\\.]+) Punkte\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
+        String expire = br.getRegex(Pattern.compile("<td>Premium bis:</td>.*?<td><input.*?cleanform.*? value=\"(.*?)\"></td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL)).getMatch(0);
         ai.setValidUntil(Regex.getMilliSeconds(expire, "dd.MM.yy / hh:mm", null));
-        ai.setPremiumPoints(Integer.parseInt(points));
+        ai.setPremiumPoints(Integer.parseInt(points.replaceAll("\\.", "")));
         return ai;
     }
 
@@ -78,17 +95,12 @@ public class ShareBaseTo extends PluginForHost {
     @Override
     public void handlePremium(DownloadLink downloadLink, Account account) throws Exception {
         getFileInformation(downloadLink);
-        br.setCookie("http://" + getHost(), "memm", account.getUser());
-        br.setCookie("http://" + getHost(), "memp", JDHash.getMD5(account.getPass()));
+        login(account);
 
         br.getPage(downloadLink.getDownloadURL());
         if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wartungsarbeiten", 30 * 60 * 1000l);
-        }
-        if (br.containsHTML("Der Download existiert nicht")) {
-            logger.severe("ShareBaseTo Error: File not found");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
 
         if (!br.containsHTML("favorite")) {
@@ -110,10 +122,6 @@ public class ShareBaseTo extends PluginForHost {
         /* für links welche noch mit .de in der liste stehen */
         String url = downloadLink.getDownloadURL();
         br.getPage(url);
-        if (br.containsHTML("Der Download existiert nicht")) {
-            logger.severe("ShareBaseTo Error: File not found");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
 
         Form form = br.getFormbyValue("Please Activate Javascript");
         form.setVariable(1, Encoding.urlEncode("Download Now !"));
@@ -121,9 +129,6 @@ public class ShareBaseTo extends PluginForHost {
 
         if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {
             logger.severe("ShareBaseTo Error: Too many downloads");
-            // throw new
-            // PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE,
-            // "Nur ein Download gleichzeitig!", 5000);
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 1000l);
         } else if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");

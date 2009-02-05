@@ -332,8 +332,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String PARAM_THEME = "THEME";
 
-    public static final String PARAM_USE_TWITTER = "USE_TWITTER";
-
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
 
     /**

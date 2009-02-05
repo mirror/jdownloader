@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Ant-Version: Apache Ant 1.7.0
+Created-By: coalado
+Main-Class: jd.Main
+Class-Path: libs/cobra.jar libs/clink170.jar libs/svnkit.jar libs/mail
+ .jar libs/htmlcleaner2_0.jar libs/hsqldb.jar libs/miglayout15-swing.j
+ ar libs/irclib.jar libs/BrowserLauncher2.jar libs/js.jar libs/swingx.
+ jar libs/jl1.0.jar libs/savemytube.jar
+

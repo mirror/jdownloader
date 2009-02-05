@@ -164,7 +164,7 @@ public class Uploadedto extends PluginForHost {
             }
             String message = JDLocale.L("plugins.errors.uploadedto." + error, error.replaceAll("_", " "));
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
-            linkStatus.setErrorMessage(message);
+            linkStatus.setErrorMessage("ServerError: " + message);
             return;
 
         }
