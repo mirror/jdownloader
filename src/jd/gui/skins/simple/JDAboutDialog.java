@@ -23,7 +23,7 @@ import java.awt.event.ActionEvent;
 import java.io.IOException;
 
 import javax.swing.AbstractAction;
-import javax.swing.JFrame;
+import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
@@ -36,6 +36,7 @@ import javax.swing.table.TableColumn;
 import jd.gui.skins.simple.components.JLinkButton;
 import jd.http.Browser;
 import jd.utils.JDLocale;
+import jd.utils.JDTheme;
 
 import org.jdesktop.swingx.JXHyperlink;
 import org.jdesktop.swingx.JXTitledSeparator;
@@ -64,9 +65,10 @@ public class JDAboutDialog {
         }
     }
 
-    public static JFrame getDialog() {
-        JFrame dialog = new JFrame();
+    public static JDialog getDialog() {
+        JDialog dialog = new JDialog();
         dialog.setResizable(false);
+        dialog.setIconImage(JDTheme.I("gui.images.jd_logo"));
         dialog.setAlwaysOnTop(true);
         dialog.setTitle(JDLocale.L("gui.dialog.about.title", "About JDownloader"));
         int n = 10;
