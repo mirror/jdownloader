@@ -37,6 +37,8 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import com.ice.jni.registry.RegistryException;
+
 import jd.captcha.JACController;
 import jd.captcha.JAntiCaptcha;
 import jd.captcha.pixelgrid.Captcha;
@@ -51,6 +53,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
 import jd.http.HTTPConnection;
 import jd.utils.CheckJava;
+import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
 import jd.utils.JDSounds;
 import jd.utils.JDTheme;
@@ -193,7 +196,13 @@ public class Main {
             //
             // } else if (args[i].equals("--new-instance") ||
             // args[i].equals("-n")) {
-            if (args[i].equals("--new-instance") || args[i].equals("-n")) {
+            
+            if (args[i].equals("-prot") ) {
+                
+                logger.info(args[i] + " "+args[i+1]);
+                i++;
+                
+            }else  if (args[i].equals("--new-instance") || args[i].equals("-n")) {
 
                 if (!enoughtMemory) {
                     JDUtilities.restartJD(args);
@@ -307,7 +316,9 @@ public class Main {
 
                             Toolkit.getDefaultToolkit().getSystemEventQueue().push(new JDEventQueue());
                             main.go();
-
+                            for (String p : processArgs) {
+                                logger.severe("Param: "+p);
+                             }
                             // post start parameters //
                             try {
                                 server.processParameters(processArgs);
@@ -329,6 +340,11 @@ public class Main {
 
                     Main main = new Main();
                     main.go();
+                    
+                    
+                    for (String p : args) {
+                       logger.severe("Param: "+p);
+                    }
 
                 }
 
@@ -462,7 +478,9 @@ public class Main {
         }
 
         JDUtilities.getController().fireControlEvent(new ControlEvent(this, ControlEvent.CONTROL_INIT_COMPLETE, null));
-
+ 
+            JDFileReg.registerFileExts();
+     
         try {
             Thread.sleep(3000);
         } catch (InterruptedException e) {

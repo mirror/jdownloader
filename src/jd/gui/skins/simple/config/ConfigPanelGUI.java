@@ -112,6 +112,10 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
         ce.setDefaultValue(5);
+        
+        ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
+        ce.setDefaultValue(true);
+        if(!OSDetector.isWindows())ce.setEnabled(false);
 
         // Browser Tab
         Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
