@@ -124,7 +124,8 @@ public class ShareBaseTo extends PluginForHost {
         br.getPage(url);
 
         Form form = br.getFormbyValue("Please Activate Javascript");
-        form.setVariable(1, Encoding.urlEncode("Download Now !"));
+        String id = form.getVarsMap().get("asi");
+        form.put(id, Encoding.urlEncode("Download Now !"));
         br.submitForm(form);
 
         if (br.containsHTML("Von deinem Computer ist noch ein Download aktiv.")) {
@@ -133,6 +134,9 @@ public class ShareBaseTo extends PluginForHost {
         } else if (br.containsHTML("werden derzeit Wartungsarbeiten vorgenommen")) {
             logger.severe("ShareBaseTo Error: Maintenance");
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wartungsarbeiten", 30 * 60 * 1000l);
+        } else if (br.containsHTML("Sorry, es laden derzeit")) {
+            logger.severe("ShareBaseTo Error: Too many Users");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many Users", 5 * 60 * 1000l);
         }
         String[] wait = br.getRegex("Du musst noch <strong>(\\d*?)min (\\d*?)sec</strong> warten").getRow(0);
         if (wait != null) {
