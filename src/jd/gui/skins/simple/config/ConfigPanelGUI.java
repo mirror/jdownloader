@@ -72,7 +72,7 @@ public class ConfigPanelGUI extends ConfigPanel {
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")));
-        ce.setDefaultValue(true);
+        ce.setDefaultValue(false);
 
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")));
         ce.setDefaultValue("default");
