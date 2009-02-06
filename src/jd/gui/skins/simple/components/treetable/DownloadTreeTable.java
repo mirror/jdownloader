@@ -171,6 +171,8 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private long lastMouseClicked = 0;
 
+    private boolean usedoubleclick = true;
+
     private boolean updatelock = false;
 
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
@@ -191,7 +193,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         setColumnControlVisible(true);
         SimpleGUI.CURRENTGUI.getFrame().addWindowFocusListener(this);
-
+        usedoubleclick = guiConfig.getBooleanProperty(SimpleGUI.PARAM_DCLICKPACKAGE, false);
         setEditable(false);
         setAutoscrolls(false);
         addTreeExpansionListener(this);
@@ -1235,11 +1237,11 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     public void treeWillCollapse(TreeExpansionEvent arg0) throws ExpandVetoException {
         if (updatelock) return;
-        if (System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
+        if (this.usedoubleclick && System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
     }
 
     public void treeWillExpand(TreeExpansionEvent arg0) throws ExpandVetoException {
         if (updatelock) return;
-        if (System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
+        if (this.usedoubleclick && System.currentTimeMillis() > lastMouseClicked + 200) throw new ExpandVetoException(arg0);
     }
 }

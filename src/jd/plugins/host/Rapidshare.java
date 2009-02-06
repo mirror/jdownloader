@@ -426,6 +426,7 @@ public class Rapidshare extends PluginForHost {
             if (Regex.matches(error, Pattern.compile("(in 2 Minuten)"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many users are currently downloading this file", 120 * 1000l); }
             if (Regex.matches(error, Pattern.compile("(Die Datei konnte nicht gefunden werden)"))) { throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND); }
             if (Regex.matches(error, Pattern.compile("Der Server .*? ist momentan nicht verf.*"))) { throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, JDLocale.LF("plugin.rapidshare.error.serverunavailable", "The Server %s is currently unavailable.", error.substring(11, error.indexOf(" ist"))), 3600 * 1000l); }
+            if (Regex.matches(error, PATTERM_MATCHER_ALREADY_LOADING)) { throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Already a download from your ip in progress!", 120 * 1000l); }
             // für java 1.5
             if (new Regex(error, "(kostenlose Nutzung erreicht)|(.*download.{0,3}limit.{1,50}free.{0,3}users.*)").matches()) {
 
@@ -442,14 +443,6 @@ public class Rapidshare extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitTime);
             }
-            throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
-        }
-
-        // Fehlersuche
-        if (new Regex(br, PATTERM_MATCHER_ALREADY_LOADING).matches()) {
-            logger.severe("Already downloading. Wait 2 min. or reconnect");
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 120 * 1000l);
-        } else if ((error = findError(br + "")) != null) {
             reportUnknownError(br, 2);
             throw new PluginException(LinkStatus.ERROR_FATAL, dynTranslate(error));
         }

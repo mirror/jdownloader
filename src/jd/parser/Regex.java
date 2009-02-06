@@ -29,7 +29,12 @@ import jd.utils.JDUtilities;
 public class Regex {
     public static String[] getLines(String arg) {
         if (arg == null) { return new String[] {}; }
-        return arg.split("[\r\n]{1,2}");
+        String[] temp = arg.split("[\r\n]{1,2}");
+        String[] output = new String[temp.length];
+        for (int i = 0; i < temp.length; i++) {
+            output[i] = temp[i].trim();
+        }
+        return output;
     }
 
     /**

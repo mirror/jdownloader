@@ -331,6 +331,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
 
     public static final String PARAM_THEME = "THEME";
+    
+    public static final String PARAM_DCLICKPACKAGE = "PARAM_DCLICKPACKAGE";
 
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
 

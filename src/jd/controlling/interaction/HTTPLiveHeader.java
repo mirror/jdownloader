@@ -144,6 +144,11 @@ public class HTTPLiveHeader extends Interaction {
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
         Browser br = new Browser();
+        br.forceDebug(true);
+        // if (user != null && pass != null) {
+        // br.getHeaders().put("Authorization", "Basic " +
+        // Encoding.Base64Encode(user + ":" + pass));
+        // }
         try {
             xmlScript = HTTPLiveHeader.parseXmlString(script, false);
             Node root = xmlScript.getChildNodes().item(0);

@@ -71,6 +71,9 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         look.addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
 
+        look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, SimpleGUI.PARAM_DCLICKPACKAGE, JDLocale.L("gui.config.gui.doubeclick", "Double click to expand/collapse Packages")));
+        ce.setDefaultValue(true);
+
         look.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_COMBOBOX, subConfig, SimpleGUI.PARAM_THEME, JDTheme.getThemeIDs().toArray(new String[] {}), JDLocale.L("gui.config.gui.theme", "Theme")));
         ce.setDefaultValue("default");
 
@@ -112,10 +115,10 @@ public class ConfigPanelGUI extends ConfigPanel {
 
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_SPINNER, subConfig, SimpleGUI.PARAM_NUM_PREMIUM_CONFIG_FIELDS, JDLocale.L("gui.config.gui.premiumconfigfilednum", "How many Premiumaccount fields should be displayed"), 1, 10));
         ce.setDefaultValue(5);
-        
+
         ext.addEntry(ce = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, "FILE_REGISTER", JDLocale.L("gui.config.gui.reg_protocols", "Link ccf/dlc/rsdf to JDownloader")));
         ce.setDefaultValue(true);
-        if(!OSDetector.isWindows())ce.setEnabled(false);
+        if (!OSDetector.isWindows()) ce.setEnabled(false);
 
         // Browser Tab
         Object[] browserArray = (Object[]) subConfig.getProperty(SimpleGUI.PARAM_BROWSER_VARS, null);
