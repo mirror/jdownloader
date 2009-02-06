@@ -82,6 +82,10 @@ public class HTTPLiveHeader extends Interaction {
         return doc;
     }
 
+    public static String[] splitLines(String source) {
+        return source.split("\r\n|\r|\n");
+    }
+
     private HashMap<String, String> headerProperties;
 
     private int retries = 0;
@@ -218,7 +222,7 @@ public class HTTPLiveHeader extends Interaction {
                     }
 
                     if (toDo.getNodeName().equalsIgnoreCase("PARSE")) {
-                        String[] parseLines = Regex.getLines(toDo.getChildNodes().item(0).getNodeValue().trim());
+                        String[] parseLines = HTTPLiveHeader.splitLines(toDo.getChildNodes().item(0).getNodeValue().trim());
                         for (String parseLine : parseLines) {
                             String varname = new Regex(parseLine, "(.*?):").getMatch(0);
                             String pattern = new Regex(parseLine, ".*?:(.+)").getMatch(0);
@@ -446,7 +450,7 @@ public class HTTPLiveHeader extends Interaction {
 
                 request = req.toString();
             }
-            String[] requestLines = Regex.getLines(request);
+            String[] requestLines = HTTPLiveHeader.splitLines(request);
             if (requestLines.length == 0) {
                 logger.severe("Parse Fehler:" + request);
                 return null;
