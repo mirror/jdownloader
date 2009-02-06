@@ -1106,11 +1106,18 @@ public class JDController implements ControlListener, UIListener {
                     nextDownloadLink = it2.next();
                     if (nextDownloadLink != link) {
                         if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.FINISHED)) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
-                            logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
-                            return nextDownloadLink;
+                            if (new File(nextDownloadLink.getFileOutput()).exists()) {
+                                /*
+                                 * fertige datei sollte auch auf der platte sein
+                                 * und nicht nur als fertig in der liste
+                                 */
+                                logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
+                                return nextDownloadLink;
+                            }
                         }
                         if ((nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.DOWNLOADINTERFACE_IN_PROGRESS) || nextDownloadLink.getLinkStatus().isPluginActive()) && nextDownloadLink.getFileOutput().equalsIgnoreCase(link.getFileOutput())) {
                             if (nextDownloadLink.getFinalFileName() != null) {
+                                /* Dateiname muss fertig geholt sein */
                                 logger.info("Link owner: " + nextDownloadLink.getHost() + nextDownloadLink);
                                 return nextDownloadLink;
                             }
@@ -1127,8 +1134,8 @@ public class JDController implements ControlListener, UIListener {
     }
 
     /**
-     * Hiermit wird eine Containerdatei geöffnet. Dazu wird zuerst ein
-     * passendes Plugin gesucht und danach alle DownloadLinks interpretiert
+     * Hiermit wird eine Containerdatei geöffnet. Dazu wird zuerst ein passendes
+     * Plugin gesucht und danach alle DownloadLinks interpretiert
      * 
      * @param file
      *            Die Containerdatei
@@ -1331,8 +1338,7 @@ public class JDController implements ControlListener, UIListener {
     }
 
     /**
-     * Schneidet alle Links aus und fügt sie zwischen before unc after ein.
-     * Alle
+     * Schneidet alle Links aus und fügt sie zwischen before unc after ein. Alle
      * 
      * @param links
      * @param before
@@ -1728,8 +1734,7 @@ public class JDController implements ControlListener, UIListener {
     }
 
     /**
-     * Startet den download wenn er angehalten ist und hält ihn an wenn er
-     * läuft
+     * Startet den download wenn er angehalten ist und hält ihn an wenn er läuft
      */
     public void toggleStartStop() {
 
