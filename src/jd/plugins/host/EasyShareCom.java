@@ -86,6 +86,7 @@ public class EasyShareCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setCookie("http://www.easy-share.com", "language", "en");
         br.getPage(downloadLink.getDownloadURL());
         br.setCookie("http://www.easy-share.com", "language", "en");
         if (br.containsHTML("Requested file is deleted")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
