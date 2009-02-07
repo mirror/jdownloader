@@ -104,7 +104,7 @@ public final class JavaScript {
             url = url.replace("http://", "");
             int dot = url.lastIndexOf('/');
             if (dot != -1) {
-                basename = url.substring(0, dot + 1);
+                basename = "http://" + url.substring(0, dot + 1);
             } else {
                 basename = "http://" + url + "/";
             }
@@ -245,7 +245,9 @@ public final class JavaScript {
         String ret = Context.toString(result);
         return ret;
     }
-
+    public Document getDocment() {
+        return d;
+    }
     public String toString() {
         try {
             runPage();
