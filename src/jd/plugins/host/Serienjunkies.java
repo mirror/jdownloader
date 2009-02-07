@@ -199,9 +199,9 @@ public class Serienjunkies extends PluginForHost {
                         public void run() {
                             String action2 = action;
                             Browser brd = br2[bd];
-                            for (int j = 0; j < 10; j++) {
+                            for (int j = 0; j < 20; j++) {
                                 try {
-                                    Thread.sleep(100 * j);
+                                    Thread.sleep(300 * j);
                                 } catch (InterruptedException e) {
                                     // TODO Auto-generated catch block
                                     e.printStackTrace();
