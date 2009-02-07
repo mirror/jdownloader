@@ -143,7 +143,7 @@ public class BrowseFile extends JPanel implements ActionListener {
         txtInput = new JTextField(width);
         txtInput.setEditable(editable);
         txtInput.addActionListener(this);
-        btnBrowse = new JButton(JDLocale.L("gui.btn_select", "auswählen"));
+        btnBrowse = new JButton(JDLocale.L("gui.btn_select", "Browse"));
         btnBrowse.addActionListener(this);
 
         // JDUtilities.addToGridBag(this, txtInput, 0, 0, 1, 1, 1, 0, new

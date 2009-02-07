@@ -110,7 +110,7 @@ public class ConfirmCheckBoxDialog extends JDialog implements ActionListener {
         btnOK = new JButton(JDLocale.L("gui.btn_ok", "OK"));
         btnOK.addActionListener(this);
 
-        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Abbrechen"));
+        btnCancel = new JButton(JDLocale.L("gui.btn_cancel", "Cancel"));
         btnCancel.addActionListener(this);
         btnCancel.setFocusable(false);
 

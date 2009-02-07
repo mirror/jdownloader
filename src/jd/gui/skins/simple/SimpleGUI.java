@@ -927,7 +927,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             logger.info("add to grabber");
             linkGrabber.addLinks(linkList);
         }
-        dragNDrop.setText("Grabbed: " + linkList.length + " (" + links.size() + ")");
+        dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:")+" " + linkList.length + " (" + links.size() + ")");
     }
 
     public void addUIListener(UIListener listener) {
