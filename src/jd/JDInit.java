@@ -801,8 +801,6 @@ public class JDInit {
         new HostPluginWrapper("filezzz.com", "FilezzzCom", "http://[\\w\\.]*?filezzz\\.com/download/[0-9]+/.*");
         new HostPluginWrapper("savefile.com", "SavefileCom", "http://[\\w\\.]*?savefile\\.com/files/[0-9]+");
         new HostPluginWrapper("sendspace.com", "SendspaceCom", "http://[\\w\\.]*?sendspace\\.com/file/[0-9a-zA-Z]+");
-        // new HostPluginWrapper("remixshare.com","RemixshareCom",
-        // "http://[\\w\\.]*?remixshare\\.com/\\?file=[0-9a-zA-Z]+");
         new HostPluginWrapper("speedyshare.com", "SpeedyShareCom", "http://[\\w\\.]*?speedyshare\\.com/[0-9]+.*");
         new HostPluginWrapper("fileshaker.com", "FileshakerCom", "http://[\\w\\.]*?fileshaker\\.com/.+");
         new HostPluginWrapper("adrive.com", "AdriveCom", "http://[\\w\\.].*?adrive\\.com/public/[0-9a-zA-Z]+.*");
@@ -817,7 +815,7 @@ public class JDInit {
         new HostPluginWrapper("pliczek.net", "PliczekNet", "http://[\\w\\.]*?pliczek\\.net/index\\.php\\?p=\\d+");
         new HostPluginWrapper("plikos.pl", "PlikosPl", "http://[\\w\\.]*?plikos\\.pl/\\w+/.+");
         new HostPluginWrapper("remixshare.com", "RemixShareCom", "http://[\\w\\.]*?remixshare\\.com/get\\.php\\?file=[a-z0-9].+");
-
+        new HostPluginWrapper("filesend.net", "FileSendNet", "http://[\\w\\.]*?filesend\\.net/download\\.php\\?f=[a-z0-9].+");
     }
 
     public void loadPluginOptional() {
