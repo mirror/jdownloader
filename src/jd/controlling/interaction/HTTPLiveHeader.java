@@ -144,9 +144,9 @@ public class HTTPLiveHeader extends Interaction {
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
         Browser br = new Browser();
-        br.forceDebug(true);
+        String basicauth = null;
         if (user != null && pass != null) {
-            br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(user.trim() + ":" + pass.trim()));
+            basicauth = "Basic " + Encoding.Base64Encode(user.trim() + ":" + pass.trim());
         }
         try {
             xmlScript = HTTPLiveHeader.parseXmlString(script, false);
@@ -257,7 +257,7 @@ public class HTTPLiveHeader extends Interaction {
                         }
                         Browser retbr = null;
                         try {
-                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps);
+                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, basicauth);
                         } catch (Exception e2) {
                             retbr = null;
                         }
@@ -408,7 +408,7 @@ public class HTTPLiveHeader extends Interaction {
         return false;
     }
 
-    private Browser doRequest(String request, Browser br, boolean ishttps) {
+    private Browser doRequest(String request, Browser br, boolean ishttps, String basicauth) {
         try {
             String requestType;
             String path;
@@ -418,6 +418,7 @@ public class HTTPLiveHeader extends Interaction {
             if (ishttps) http = "https://";
 
             HashMap<String, String> requestProperties = new HashMap<String, String>();
+            br.setHeaders(new HashMap<String, String>());
             String[] tmp = request.split("\\%\\%\\%(.*?)\\%\\%\\%");
             // ArrayList<String> params =
             // SimpleMatches.getAllSimpleMatches(request,
@@ -508,11 +509,12 @@ public class HTTPLiveHeader extends Interaction {
                 if (requestProperties != null) {
                     br.getHeaders().putAll(requestProperties);
                 }
+                if (!br.getHeaders().containsKey("Authorization") && basicauth != null) {
+                    br.getHeaders().put("Authorization", basicauth);
+                }
                 if (requestType.equalsIgnoreCase("GET")) {
                     logger.finer("GET " + "http://" + host + path);
-
                     br.getPage(http + host + path);
-
                 } else if (requestType.equalsIgnoreCase("POST")) {
                     String poster = post.toString().trim();
                     logger.finer("POST " + "http://" + host + path + " " + poster);
