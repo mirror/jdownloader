@@ -99,7 +99,7 @@ public class AxiFileCom extends PluginForHost {
         is.close();
         String code = new String(mycode);
 
-        if (link == null && code != null) throw new PluginException(LinkStatus.ERROR_FATAL);
+        if (link == null || code == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         dl = br.openDownload(downloadLink, link.replaceFirst(".*?axifile.com/.*?/", "http://dl.axifile.com/" + code + "/"), false, 3);
         /*
          * hoster supported wahlweise 3 files mit 1 chunk oder 1 file mit 3
