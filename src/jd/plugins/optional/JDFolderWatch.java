@@ -51,8 +51,8 @@ public class JDFolderWatch extends PluginOptional {
         return 2;
     }
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("FOLDERWATCH");
-    private ArrayList<String> added = (ArrayList<String>) subConfig.getProperty("ADDED");
+    private SubConfiguration subConfig = null;
+    private ArrayList<String> added = null;
     private check i;
 
     private boolean running = true;
@@ -61,6 +61,8 @@ public class JDFolderWatch extends PluginOptional {
 
     public JDFolderWatch(PluginWrapper wrapper) {
         super(wrapper);
+        subConfig = JDUtilities.getSubConfig("FOLDERWATCH");
+        added = (ArrayList<String>) subConfig.getProperty("ADDED");
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_BROWSEFOLDER, subConfig, "FOLDER", JDLocale.L("plugins.optional.folderwatch.folder", "Ordner:")));
         cfg.setDefaultValue(JDUtilities.getConfiguration().getDefaultDownloadDirectory());

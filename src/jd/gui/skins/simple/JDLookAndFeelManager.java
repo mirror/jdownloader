@@ -30,7 +30,6 @@ public class JDLookAndFeelManager implements Serializable {
     private static final long serialVersionUID = -8056003135389551814L;
     public static final String PARAM_PLAF = "PLAF";
     private static boolean uiInitated = false;
-    private static SubConfiguration config = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
     private String className;
 
     public static JDLookAndFeelManager[] getInstalledLookAndFeels() {
@@ -43,6 +42,7 @@ public class JDLookAndFeelManager implements Serializable {
     }
 
     public static JDLookAndFeelManager getPlaf() {
+        SubConfiguration config = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         Object plaf = config.getProperty(PARAM_PLAF, null);
         if (plaf == null) return new JDLookAndFeelManager(UIManager.getSystemLookAndFeelClassName());
         if (plaf instanceof JDLookAndFeelManager) {

@@ -958,9 +958,9 @@ abstract public class DownloadInterface {
 
     protected PluginForHost plugin;
 
-    private int readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
+    private int readTimeout = 100000;
 
-    private int requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
+    private int requestTimeout = 100000;
 
     // private int totalLoadedBytes = 0;
 
@@ -1016,12 +1016,15 @@ abstract public class DownloadInterface {
 
         downloadLink.setDownloadInstance(this);
         this.plugin = plugin;
+        requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
+        readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
 
     public DownloadInterface(PluginForHost plugin, DownloadLink downloadLink, Request request) throws IOException, PluginException {
         this(plugin, downloadLink);
         this.request = request;
-
+        requestTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_CONNECT_TIMEOUT, 100000);
+        readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
     }
 
     /**

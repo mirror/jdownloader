@@ -41,7 +41,7 @@ import jd.utils.JDUtilities;
 
 public class JDPremiumCollector extends PluginOptional {
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("JDPREMIUMCOLLECTOR");
+    private SubConfiguration subConfig = null;
 
     private static final String PROPERTY_API_URL = "PROPERTY_API_URL";
     private static final String PROPERTY_LOGIN_USER = "PROPERTY_LOGIN_USER";
@@ -56,6 +56,7 @@ public class JDPremiumCollector extends PluginOptional {
 
     public JDPremiumCollector(PluginWrapper wrapper) {
         super(wrapper);
+        subConfig = JDUtilities.getSubConfig("JDPREMIUMCOLLECTOR");
         initConfigEntries();
     }
 

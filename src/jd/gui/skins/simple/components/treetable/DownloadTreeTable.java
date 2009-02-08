@@ -137,7 +137,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     private static final long UPDATE_INTERVAL = 200;
 
-    private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private SubConfiguration guiConfig = null;
 
     private TableCellRenderer cellRenderer;
 
@@ -177,7 +177,7 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
 
     public DownloadTreeTable(DownloadTreeTableModel treeModel) {
         super(treeModel);
-
+        guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         cellRenderer = new TreeTableRenderer(this);
         model = treeModel;
         this.setUI(new TreeTablePaneUI());

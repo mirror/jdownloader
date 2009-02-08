@@ -51,7 +51,7 @@ import jd.utils.JDUtilities;
  */
 public class PackageInfo extends JDialog implements ChangeListener {
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private SubConfiguration subConfig = null;
     private static final String PROPERTY_REFRESHRATE = "PROPERTY_PACKAGE_REFRESHRATE";
 
     private static final long serialVersionUID = -9146764850581039090L;
@@ -71,6 +71,7 @@ public class PackageInfo extends JDialog implements ChangeListener {
      */
     public PackageInfo(JFrame frame, FilePackage fp) {
         super();
+        subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.fp = fp;
         setLayout(new BorderLayout(2, 2));
         setTitle(JDLocale.L("gui.packageinfo.title", "Package Information:") + " " + fp.getName());
@@ -217,7 +218,7 @@ public class PackageInfo extends JDialog implements ChangeListener {
         addEntry(JDLocale.L("gui.packageinfo.packagesize", "Packagesize"), JDUtilities.formatKbReadable(fp.getTotalEstimatedPackageSize()) + " [" + fp.getTotalEstimatedPackageSize() + " KB]");
         addEntry(JDLocale.L("gui.packageinfo.loaded", "Loaded"), JDUtilities.formatKbReadable(fp.getTotalKBLoaded()) + " [" + fp.getTotalKBLoaded() + " KB]");
         addEntry(JDLocale.L("gui.packageinfo.links", "Links"), "");
-        addEntry(JDLocale.L("gui.packageinfo.extractafter", "Autoextract"), fp.isExtractAfterDownload()?"[x]":"[ ]");
+        addEntry(JDLocale.L("gui.packageinfo.extractafter", "Autoextract"), fp.isExtractAfterDownload() ? "[x]" : "[ ]");
         int i = 0;
         JProgressBar p;
         for (DownloadLink link : fp.getDownloadLinks()) {

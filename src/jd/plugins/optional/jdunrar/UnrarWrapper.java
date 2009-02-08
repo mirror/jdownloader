@@ -121,7 +121,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
     private String latestStatus;
     private int currentVolume = 1;
     private long startTime;
-    private SubConfiguration config = JDUtilities.getSubConfig(JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
+    private SubConfiguration config=null;
     private long speed = config.getIntegerProperty("SPEED", 10000000);
     private boolean exactProgress = false;
     private int volumeNum = 1;
@@ -136,7 +136,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public UnrarWrapper(DownloadLink link) {
         this.link = link;
-
+        config = JDUtilities.getSubConfig(JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = new File(link.getFileOutput());
         archiveParts = new ArrayList<String>();
@@ -144,6 +144,7 @@ public class UnrarWrapper extends Thread implements JDRunnable {
 
     public UnrarWrapper(DownloadLink link, File file) {
         this.link = link;
+        config = JDUtilities.getSubConfig(JDLocale.L("plugins.optional.jdunrar.name", "JD-Unrar"));
         if (link == null) { throw new IllegalArgumentException("link==null"); }
         this.file = file;
         archiveParts = new ArrayList<String>();

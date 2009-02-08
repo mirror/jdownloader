@@ -25,7 +25,7 @@ import jd.utils.JDUtilities;
 
 public class PasswordList {
     public static LinkedList<String> PASSWORDLIST;
-    private static SubConfiguration CONFIG = null;
+    private transient static SubConfiguration CONFIG = null;
     private static ArrayList<String> LIST;
     public static final String PROPERTY_PASSWORDLIST = "PASSWORDLIST";
 

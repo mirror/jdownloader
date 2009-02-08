@@ -47,10 +47,11 @@ public class JDLowSpeed extends PluginOptional {
 
     private boolean isRunning = false;
     private Thread pluginThread = null;
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
+    private SubConfiguration subConfig = null;
 
     public JDLowSpeed(PluginWrapper wrapper) {
         super(wrapper);
+        subConfig = JDUtilities.getSubConfig("ADDONS_JDLOWSPEED");
         ConfigEntry cfg;
         config.addEntry(cfg = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, subConfig, PROPERTY_RAPIDSHAREONLY, JDLocale.L("plugins.optional.jdlowspeed.rsonly", "Nur Raidshare überwachen")));
         cfg.setDefaultValue(true);
@@ -137,10 +138,14 @@ public class JDLowSpeed extends PluginOptional {
         MenuItem m;
         menu.add(m = new MenuItem(MenuItem.TOGGLE, getHost(), 0).setActionListener(this));
         if (!subConfig.getBooleanProperty(PROPERTY_ENABLED, false)) {
-            //menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.enabled", "Low Speederkennung einschalten"), 0).setActionListener(this));
+            // menu.add(m = new MenuItem(MenuItem.TOGGLE,
+            // JDLocale.L("addons.jdlowspeed.statusmessage.enabled",
+            // "Low Speederkennung einschalten"), 0).setActionListener(this));
             m.setSelected(false);
         } else {
-            //menu.add(m = new MenuItem(MenuItem.TOGGLE, JDLocale.L("addons.jdlowspeed.statusmessage.disabled", "Low Speederkennung ausschalten"), 1).setActionListener(this));
+            // menu.add(m = new MenuItem(MenuItem.TOGGLE,
+            // JDLocale.L("addons.jdlowspeed.statusmessage.disabled",
+            // "Low Speederkennung ausschalten"), 1).setActionListener(this));
             m.setSelected(true);
         }
         return menu;

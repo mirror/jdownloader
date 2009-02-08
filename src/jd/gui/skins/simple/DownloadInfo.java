@@ -52,7 +52,7 @@ import jd.utils.JDUtilities;
  */
 public class DownloadInfo extends JFrame implements ChangeListener {
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private SubConfiguration subConfig = null;
     private static final String PROPERTY_REFRESHRATE = "PROPERTY_LINK_REFRESHRATE";
 
     private static final long serialVersionUID = -9146764850581039090L;
@@ -71,6 +71,7 @@ public class DownloadInfo extends JFrame implements ChangeListener {
      */
     public DownloadInfo(JFrame frame, DownloadLink dLink) {
         super();
+        subConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         downloadLink = dLink;
         setLayout(new BorderLayout(2, 2));
         setTitle(JDLocale.L("gui.linkinfo.title", "Link Information:") + " " + downloadLink.getName());

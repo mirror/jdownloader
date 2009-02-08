@@ -310,7 +310,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     public static final String GUICONFIGNAME = "simpleGUI";
 
-    private static SubConfiguration guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
+    private transient static SubConfiguration guiConfig = null;
 
     public static final String PARAM_BROWSER = "BROWSER";
 
@@ -331,7 +331,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     public static final String PARAM_START_DOWNLOADS_AFTER_START = "START_DOWNLOADS_AFTER_START";
 
     public static final String PARAM_THEME = "THEME";
-    
+
     public static final String PARAM_DCLICKPACKAGE = "PARAM_DCLICKPACKAGE";
 
     public static final String SELECTED_CONFIG_TAB = "SELECTED_CONFIG_TAB";
@@ -653,6 +653,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
      */
     public SimpleGUI() {
         super();
+        guiConfig = JDUtilities.getSubConfig(GUICONFIGNAME);
         JDLookAndFeelManager.setUIManager();
         uiListener = new Vector<UIListener>();
         frame = new JFrame();
@@ -927,7 +928,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             logger.info("add to grabber");
             linkGrabber.addLinks(linkList);
         }
-        dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:")+" " + linkList.length + " (" + links.size() + ")");
+        dragNDrop.setText(JDLocale.L("gui.droptarget.grabbed", "Grabbed:") + " " + linkList.length + " (" + links.size() + ")");
     }
 
     public void addUIListener(UIListener listener) {

@@ -51,6 +51,6 @@ public class Zero10Us extends PluginForDecrypt {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision: 4422 $");
+        return getVersion("$Revision$");
     }
 }

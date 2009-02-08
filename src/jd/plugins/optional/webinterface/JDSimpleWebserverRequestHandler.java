@@ -45,7 +45,7 @@ import jd.utils.Reconnecter;
 
 public class JDSimpleWebserverRequestHandler {
 
-    private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private SubConfiguration guiConfig = null;
     private HashMap<String, String> headers;
 
     private Logger logger = JDUtilities.getLogger();
@@ -61,6 +61,7 @@ public class JDSimpleWebserverRequestHandler {
     private static Jobber decryptJobbers;
 
     public JDSimpleWebserverRequestHandler(HashMap<String, String> headers, JDSimpleWebserverResponseCreator response) {
+        guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.response = response;
         this.headers = headers;
     }

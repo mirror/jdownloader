@@ -51,10 +51,11 @@ public class JDInfoFileWriter extends PluginOptional implements ControlListener 
         return 2;
     }
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("JDInfoFileWriter");
+    private SubConfiguration subConfig = null;
 
     public JDInfoFileWriter(PluginWrapper wrapper) {
         super(wrapper);
+        subConfig = JDUtilities.getSubConfig("JDInfoFileWriter");
         initConfig();
     }
 

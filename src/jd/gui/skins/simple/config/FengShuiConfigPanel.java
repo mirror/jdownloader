@@ -103,7 +103,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
     private JButton btnRR, btnMore, btnApply, btnCancel, btnPremium, btnAutoConfig, btnSelectRouter, btnTestReconnect;
     private JComboBox languages;
-    private SubConfiguration guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
+    private SubConfiguration guiConfig = null;
     private Configuration config = JDUtilities.getConfiguration();
     private BrowseFile downloadDirectory;
     private String ddir = null;
@@ -121,6 +121,7 @@ public class FengShuiConfigPanel extends JFrame implements ActionListener {
 
     public FengShuiConfigPanel() {
         super();
+        guiConfig = JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME);
         this.setName("FENGSHUICONFIG");
         this.setTitle(JDLocale.L("gui.config.fengshui.title", "Feng Shui Config"));
         this.addWindowListener(new LocationListener());

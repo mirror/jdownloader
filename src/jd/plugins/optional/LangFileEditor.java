@@ -95,7 +95,7 @@ import org.tmatesoft.svn.core.SVNException;
  */
 public class LangFileEditor extends PluginOptional implements MouseListener {
 
-    private SubConfiguration subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");
+    private SubConfiguration subConfig = null;
 
     private static final String PROPERTY_COLORIZE_DONE = "PROPERTY_COLORIZE_DONE";
     private static final String PROPERTY_COLORIZE_MISSING = "PROPERTY_COLORIZE_MISSING";
@@ -145,6 +145,7 @@ public class LangFileEditor extends PluginOptional implements MouseListener {
 
     public LangFileEditor(PluginWrapper wrapper) {
         super(wrapper);
+        subConfig = JDUtilities.getSubConfig("ADDONS_LANGFILEEDITOR");        
     }
 
     private void showGui() {
