@@ -400,7 +400,7 @@ public class Main {
             JDUtilities.getLogger().setLevel(Level.ALL);
         }
         JDInit.setupProxy();
-        JDInit.setupSocks();
+        JDInit.setupSocks();        
         CFGConfig.getConfig("WEBUPDATE").save();
         init.removeFiles();
 

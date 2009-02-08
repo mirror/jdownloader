@@ -48,8 +48,9 @@ public class SubConfiguration extends Property implements Serializable {
         // logger = JDUtilities.getLogger();
         this.name = name;
         File file;
-        Object props = utils.loadObject(file = new File("config/" + name + ".cfg"));
-     
+
+        Object props = utils.loadObject(file = new File(WebUpdater.getJDDirectory(), "config/" + name + ".cfg"));
+
         System.out.println("Config file: " + file.getAbsolutePath());
         file.getParentFile().mkdirs();
         if (props != null) {
@@ -58,7 +59,7 @@ public class SubConfiguration extends Property implements Serializable {
     }
 
     public void save() {
-        utils.saveObject(getProperties(), new File("config/" + name + ".cfg"));
+        utils.saveObject(getProperties(), new File(WebUpdater.getJDDirectory(), "config/" + name + ".cfg"));
     }
 
 }

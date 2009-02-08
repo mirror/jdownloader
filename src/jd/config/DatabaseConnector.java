@@ -42,7 +42,7 @@ public class DatabaseConnector implements Serializable {
 
     private HashMap<String, Object> dbdata = new HashMap<String, Object>();
 
-    private Connection con = null;
+    private static Connection con = null;
 
     static {
         try {
@@ -58,6 +58,7 @@ public class DatabaseConnector implements Serializable {
     @SuppressWarnings("unused")
     public DatabaseConnector() {
         try {
+            if (con != null) return;
             logger.info("Loading database");
 
             if (!checkDatabaseHeader()) {

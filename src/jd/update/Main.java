@@ -173,6 +173,7 @@ public class Main {
             }
             WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
+            updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
             updater.ignorePlugins(IgnorePlugins);
             updater.setprimaryUpdatePrefix(clonePrefix);
             updater.setsecondaryUpdatePrefix(clonePrefix);
@@ -196,8 +197,8 @@ public class Main {
                 updater.updateFiles(files);
             }
             Main.trace("End Webupdate with " + updater.getErrors() + " Errors");
-            if (new File("webcheck.tmp").exists()) {
-                new File("webcheck.tmp").delete();
+            if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
+                new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
             }
             System.exit(updater.getErrors());
         }
@@ -293,7 +294,7 @@ public class Main {
             } catch (UnsupportedLookAndFeelException e) {
             }
         }
-        File file = new File("webupdater.jar");
+        File file = new File(WebUpdater.getJDDirectory(), "webupdater.jar");
         if (file.exists()) {
             file.deleteOnExit();
         }
@@ -351,28 +352,29 @@ public class Main {
         }.start();
         WebUpdater updater = new WebUpdater();
         updater.setOSFilter(OSFilter);
+        updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
         updater.ignorePlugins(IgnorePlugins);
-        String warnHash = updater.getLocalHash(new File("updatewarnings.html"));
+        String warnHash = updater.getLocalHash(new File(WebUpdater.getJDDirectory(), "updatewarnings.html"));
 
-        updater.downloadBinary("updatewarnings.html", "http://service.jdownloader.org/messages/updatewarning.html", null);
+        updater.downloadBinary(new File(WebUpdater.getJDDirectory(), "updatewarnings.html").getAbsolutePath(), "http://service.jdownloader.org/messages/updatewarning.html", null);
         String hash2 = updater.getLocalHash(new File("updatewarnings.html"));
         if (hash2 != null && !hash2.equals(warnHash)) {
             String str;
             if (JOptionPane.showConfirmDialog(frame, str = utils.getLocalFile(new File("updatewarnings.html")), "UPDATE WARNINGS", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE) == JOptionPane.NO_OPTION) {
                 Main.log(log, "Abort due to warnings " + str);
 
-                new File("updatewarnings.html").delete();
-                new File("updatewarnings.html").deleteOnExit();
-                if (new File("webcheck.tmp").exists()) {
-                    new File("webcheck.tmp").delete();
+                new File(WebUpdater.getJDDirectory(), "updatewarnings.html").delete();
+                new File(WebUpdater.getJDDirectory(), "updatewarnings.html").deleteOnExit();
+                if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
+                    new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
                 }
                 Main.log(log, "Local: " + new File("").getAbsolutePath());
-                Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
+                Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
 
-                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+                Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
                 logWindow.setText(log.toString());
-                Main.writeLocalFile(new File("updateLog.txt"), log.toString());
+                Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
                 try {
                     Thread.sleep(2000);
                 } catch (InterruptedException e) {
@@ -413,7 +415,7 @@ public class Main {
 
             Main.log(log, "Install: " + zip + System.getProperty("line.separator") + System.getProperty("line.separator"));
 
-            UnZip u = new UnZip(zip, new File("."));
+            UnZip u = new UnZip(zip, WebUpdater.getJDDirectory());
             File[] efiles;
             try {
                 efiles = u.extract();
@@ -456,7 +458,7 @@ public class Main {
 
         }
         jdus.save();
-        File afile[] = (new File("packages")).listFiles();
+        File afile[] = (new File(WebUpdater.getJDDirectory(), "packages")).listFiles();
         if (afile != null) {
             for (int l = 0; l < afile.length; l++) {
                 File jdu = afile[l];
@@ -470,18 +472,18 @@ public class Main {
         Main.trace(updater.getLogger().toString());
         Main.trace("End Webupdate");
         logWindow.setText(log.toString());
-        Main.trace(new File("updateLog.txt").getAbsoluteFile());
+        Main.trace(new File(WebUpdater.getJDDirectory(), "updateLog.txt").getAbsoluteFile());
 
-        if (new File("webcheck.tmp").exists()) {
-            new File("webcheck.tmp").delete();
+        if (new File(WebUpdater.getJDDirectory(), "webcheck.tmp").exists()) {
+            new File(WebUpdater.getJDDirectory(), "webcheck.tmp").delete();
         }
-        Main.log(log, "Local: " + new File("").getAbsolutePath());
+        Main.log(log, "Local: " + WebUpdater.getJDDirectory().getAbsolutePath());
 
-        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + new File("").getAbsolutePath());
-        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, new File("").getAbsolutePath(), 0);
+        Main.log(log, "Start java -jar -Xmx512m JDownloader.jar in " + WebUpdater.getJDDirectory().getAbsolutePath());
+        Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
         logWindow.setText(log.toString());
-        Main.writeLocalFile(new File("updateLog.txt"), log.toString());
+        Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
         try {
             Thread.sleep(2000);
         } catch (InterruptedException e) {

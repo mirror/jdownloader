@@ -78,6 +78,8 @@ public class WebUpdater implements Serializable {
 
     private Integer errors = 0;
 
+    private static File jddirectory = null;
+
     public byte[] sum;
 
     /**
@@ -91,6 +93,11 @@ public class WebUpdater implements Serializable {
         setsecondaryUpdatePrefix("http://212.117.163.148/update/jd/");
         switchtosecondary = 0;
         errors = 0;
+        jddirectory = utils.getJDHomeDirectoryFromEnvironment();
+    }
+
+    public static File getJDDirectory() {
+        return jddirectory;
     }
 
     /**
@@ -195,8 +202,7 @@ public class WebUpdater implements Serializable {
             log("downloading... You must NOT close the window!");
             fileurl = urlEncode(fileurl.replaceAll("\\\\", "/"));
             String org = filepath;
-            filepath = new File(filepath + ".tmp").getAbsolutePath();
-            File file = new File(filepath);
+            File file = new File(filepath + ".tmp");
             if (file.exists() && file.isFile()) {
                 if (!file.delete()) {
                     log("Konnte Datei nicht löschen " + file);
@@ -283,10 +289,9 @@ public class WebUpdater implements Serializable {
         String hash;
 
         for (int i = files.size() - 1; i >= 0; i--) {
-            akt = new File(files.elementAt(i).elementAt(0)).getAbsolutePath();
             String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
 
-            akt = new File(tmp[0]).getAbsolutePath();
+            akt = new File(WebUpdater.getJDDirectory(), tmp[0]).getAbsolutePath();
             if (!new File(akt).exists()) {
                 log("New file. " + files.elementAt(i) + " - " + akt);
                 continue;
@@ -574,8 +579,8 @@ public class WebUpdater implements Serializable {
     public void updateFile(Vector<String> file) {
 
         String[] tmp = file.elementAt(0).split("\\?");
-        log("Webupdater: download " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
-        downloadBinary(tmp[0], tmp[0], file.elementAt(1));
+        log("Webupdater: download " + tmp[1] + " to " + new File(WebUpdater.jddirectory, tmp[0]).getAbsolutePath());
+        downloadBinary(new File(WebUpdater.jddirectory, tmp[0]).getAbsolutePath(), tmp[0], file.elementAt(1));
 
     }
 
@@ -589,15 +594,17 @@ public class WebUpdater implements Serializable {
         if (progressload != null) {
             progressload.setMaximum(files.size());
         }
+        File file = null;
         for (int i = files.size() - 1; i >= 0; i--) {
 
-            akt = new File(files.elementAt(i).elementAt(0)).getAbsolutePath();
+            akt = new File(WebUpdater.jddirectory, files.elementAt(i).elementAt(0)).getAbsolutePath();
             if (!new File(akt + ".noUpdate").exists()) {
 
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
                     String[] tmp = files.elementAt(i).elementAt(0).split("\\?");
-                    log("Webupdater: download " + tmp[1] + " to " + new File(tmp[0]).getAbsolutePath());
-                    downloadBinary(tmp[0], tmp[0], files.elementAt(i).elementAt(1));
+                    file = new File(WebUpdater.getJDDirectory(), tmp[0]);
+                    log("Webupdater: download " + tmp[1] + " to " + file.getAbsolutePath());
+                    downloadBinary(file.getAbsolutePath(), tmp[0], files.elementAt(i).elementAt(1));
                 } else {
                     log("Webupdater:  download " + onlinePath + "/" + files.elementAt(i).elementAt(0) + " to " + akt);
                     downloadBinary(akt, onlinePath + "/" + files.elementAt(i).elementAt(0), null);

@@ -263,7 +263,7 @@ public class JDInit {
 
     public void doWebupdate(final boolean guiCall) {
         CFGConfig cfg = CFGConfig.getConfig("WEBUPDATE");
-
+        cfg.setProperty(Configuration.PARAM_WEBUPDATE_DISABLE, JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false));
         cfg.setProperty("PLAF", JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getStringProperty("PLAF"));
         cfg.save();
 
@@ -283,6 +283,9 @@ public class JDInit {
 
         // LASTREQUEST = System.currentTimeMillis();
         final WebUpdater updater = new WebUpdater();
+        if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false)) {
+            updater.ignorePlugins(false);
+        }
         logger.finer("Get available files");
         // logger.info(files + "");
         final Vector<Vector<String>> files;
@@ -303,7 +306,7 @@ public class JDInit {
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
               
-                updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
+                updater.filterAvailableUpdates(files, JDUtilities.getJDHomeDirectoryFromEnvironment());
 
                 if (files != null) {
                     JDUtilities.getController().setWaitingUpdates(files);

@@ -1176,7 +1176,7 @@ public class JDUtilities {
         return JDUtilities.getScaledImageIcon(JDUtilities.getImage(imageName), width, height);
     }
 
-    public static SubConfiguration getSubConfig(String name) {
+    public synchronized static SubConfiguration getSubConfig(String name) {
         if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
 
         SubConfiguration cfg = new SubConfiguration(name);

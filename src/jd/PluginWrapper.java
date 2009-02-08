@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.event.ControlEvent;
@@ -89,12 +90,12 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
         this.className = className;
     }
 
-    public Plugin getPlugin() {
+    public synchronized Plugin getPlugin() {
         if (loadedPlugin != null) return loadedPlugin;
-
+        boolean manualupdate = JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_WEBUPDATE_DISABLE, false);
         try {
 
-            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getResourceFile("").toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
+            if (CL == null) CL = new URLClassLoader(new URL[] { JDUtilities.getJDHomeDirectoryFromEnvironment().toURI().toURL(), JDUtilities.getResourceFile("java").toURI().toURL() }, Thread.currentThread().getContextClassLoader());
             if (JDUtilities.getRunType() == JDUtilities.RUNTYPE_LOCAL_JARED && WebUpdater.PLUGIN_LIST != null) {
 
                 ArrayList<Vector<String>> filelist = new ArrayList<Vector<String>>();
@@ -115,9 +116,12 @@ public class PluginWrapper implements Comparable<PluginWrapper> {
                     File path = JDUtilities.getResourceFile(plg);
                     String hash = JDHash.getMD5(path);
                     if (hash == null || !hash.equalsIgnoreCase(entry.get(1))) {
-                        new WebUpdater().updateFile(entry);
-                        logger.info("UPdated plugin: " + plg);
-
+                        if (!manualupdate) {
+                            new WebUpdater().updateFile(entry);
+                            logger.info("Updated plugin: " + plg);
+                        } else {
+                            logger.info("New plugin: " + plg + " available, but update-on-the-fly is disabled!");
+                        }
                     }
                     progress.increase(1);
                 }
