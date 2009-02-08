@@ -78,7 +78,7 @@ public class WebUpdater implements Serializable {
 
     private Integer errors = 0;
 
-    private static File jddirectory = null;
+    private static File JD_ROOT_DIRECTORY = null;
 
     public byte[] sum;
 
@@ -93,16 +93,14 @@ public class WebUpdater implements Serializable {
         setsecondaryUpdatePrefix("http://212.117.163.148/update/jd/");
         switchtosecondary = 0;
         errors = 0;
-        jddirectory = utils.getJDHomeDirectoryFromEnvironment();
+        JD_ROOT_DIRECTORY = utils.getJDHomeDirectoryFromEnvironment();
     }
 
     public static File getJDDirectory() {
-        return jddirectory;
+        return JD_ROOT_DIRECTORY;
     }
 
-    public static void setJDDirectory(File file) {
-        jddirectory = file;
-    }
+
 
     /**
      * Lädt fileurl nach filepath herunter
@@ -583,8 +581,8 @@ public class WebUpdater implements Serializable {
     public void updateFile(Vector<String> file) {
 
         String[] tmp = file.elementAt(0).split("\\?");
-        log("Webupdater: download " + tmp[1] + " to " + new File(WebUpdater.jddirectory, tmp[0]).getAbsolutePath());
-        downloadBinary(new File(WebUpdater.jddirectory, tmp[0]).getAbsolutePath(), tmp[0], file.elementAt(1));
+        log("Webupdater: download " + tmp[1] + " to " + new File(WebUpdater.JD_ROOT_DIRECTORY, tmp[0]).getAbsolutePath());
+        downloadBinary(new File(WebUpdater.JD_ROOT_DIRECTORY, tmp[0]).getAbsolutePath(), tmp[0], file.elementAt(1));
 
     }
 
@@ -601,7 +599,7 @@ public class WebUpdater implements Serializable {
         File file = null;
         for (int i = files.size() - 1; i >= 0; i--) {
 
-            akt = new File(WebUpdater.jddirectory, files.elementAt(i).elementAt(0)).getAbsolutePath();
+            akt = new File(WebUpdater.JD_ROOT_DIRECTORY, files.elementAt(i).elementAt(0)).getAbsolutePath();
             if (!new File(akt + ".noUpdate").exists()) {
 
                 if (files.elementAt(i).elementAt(0).indexOf("?") >= 0) {
@@ -733,6 +731,11 @@ public class WebUpdater implements Serializable {
         } catch (Exception e) {
         }
         return HTMLEntities.unhtmlentities(str);
+    }
+
+    public static void setJDDirectory(File workingdir) {
+        WebUpdater.JD_ROOT_DIRECTORY=workingdir;
+        
     }
 
 }
