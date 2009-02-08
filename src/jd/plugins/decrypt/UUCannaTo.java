@@ -47,7 +47,7 @@ public class UUCannaTo extends PluginForDecrypt {
             File captchaFile = this.getLocalCaptchaFile(this);
             Browser.download(captchaFile, br.cloneBrowser().openGetConnection("http://uu.canna.to/cpuser/" + captchaUrl));
             String captchaCode = Plugin.getCaptchaCode(captchaFile, this, param);
-            Form captchaForm = br.getForm(1);
+            Form captchaForm = br.getFormbyName("download_form");
             captchaForm.put("sicherheitscode", captchaCode);
             br.submitForm(captchaForm);
 
