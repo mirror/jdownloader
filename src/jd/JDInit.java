@@ -302,7 +302,7 @@ public class JDInit {
             public void run() {
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
-
+              
                 updater.filterAvailableUpdates(files, JDUtilities.getResourceFile("."));
 
                 if (files != null) {
@@ -706,7 +706,7 @@ public class JDInit {
         new DecryptPluginWrapper("remixshare.com", "RemixShareComFolder", "http://[\\w\\.]*?remixshare\\.com/container/\\?id=[a-z0-9].+");
         new DecryptPluginWrapper("zero10.us", "Zero10Us", "http://[\\w\\.]*?zero10\\.us/\\d+");
         new DecryptPluginWrapper("h-link.us", "Zero10Us", "http://[\\w\\.]*?h-link\\.us/\\d+");
-        new DecryptPluginWrapper("jdloader", "JDLoader", "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)");
+        new DecryptPluginWrapper("jdloader", "JDLoader", "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)", PluginWrapper.LOAD_ON_INIT);
 
     }
 
