@@ -60,7 +60,6 @@ public class FilelocityCom extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
-        br.setDebug(true);
         String link = downloadLink.getDownloadURL();
         br.setFollowRedirects(false);
         // this.sleep(7001, downloadLink); // uncomment when they find a better
