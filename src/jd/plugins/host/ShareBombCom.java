@@ -76,17 +76,23 @@ public class ShareBombCom extends PluginForHost {
         getFileInformation(downloadLink);
         /* Link holen */
         String url = new Regex(br, Pattern.compile("<a href=\"/?(files/.*)\">", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (url == null) url = new Regex(br, Pattern.compile("dlLink = unescape\\('(.*?)'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
         if (url == null) { throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT); }
-        String linkurl = "http://www1.sharebomb.com/" + Encoding.htmlDecode(url);
-        /* Datei herunterladen */
-        br.setFollowRedirects(true);
-        int chunks = 0;
-        if (downloadLink.getDownloadSize() < 2097152) {
-            chunks = 1;
+        String linkurl;
+        if (url.startsWith("http")) {
+            linkurl = Encoding.htmlDecode(url);
         } else {
-            chunks = -2;
+            linkurl = "http://www1.sharebomb.com/" + Encoding.htmlDecode(url);
         }
-        dl = br.openDownload(downloadLink, linkurl, true, chunks);
+        String wait = new Regex(br, Pattern.compile("var waitTime = (\\d+);", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (wait != null) {
+            this.sleep(Long.parseLong(wait.trim()) * 1000l, downloadLink);
+        } else {
+            this.sleep(10 * 1000l, downloadLink);
+        }
+        /* Datei herunterladen */
+        br.setFollowRedirects(true);        
+        dl = br.openDownload(downloadLink, linkurl, false, 1);
         HTTPConnection con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();

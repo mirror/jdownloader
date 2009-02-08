@@ -67,6 +67,7 @@ public class Netloadin extends PluginForHost {
 
     public Netloadin(PluginWrapper wrapper) {
         super(wrapper);
+        this.setStartIntervall(1000l);
         this.enablePremium("http://netload.in/index.php?refer_id=134847&id=39");
     }
 

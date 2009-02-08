@@ -417,7 +417,7 @@ abstract public class DownloadInterface {
                         e.printStackTrace();
                     }
                     deltaTime = System.currentTimeMillis() - timer;
-
+                    if (deltaTime == 0) deltaTime = 1;
                     bytesPerSecond = 1000 * bytes / deltaTime;
                     updateSpeed();
 

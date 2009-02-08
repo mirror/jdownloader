@@ -29,6 +29,7 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
@@ -327,7 +328,7 @@ public class SingleDownloadController extends Thread {
             try {
                 plugin.sleep(Math.max((int) downloadLink.getLinkStatus().getValue(), 2000), downloadLink);
 
-            } catch (InterruptedException e) {
+            } catch (PluginException e) {
                 downloadLink.getLinkStatus().setStatusText(null);
                 return;
             }

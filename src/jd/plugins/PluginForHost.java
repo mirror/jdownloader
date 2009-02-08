@@ -564,9 +564,9 @@ public abstract class PluginForHost extends Plugin {
         if (time > 0) {
             try {
                 this.sleep(time, downloadLink);
-            } catch (InterruptedException e) {
+            } catch (PluginException e) {
                 downloadLink.getLinkStatus().setStatusText(null);
-                throw e;
+                throw new InterruptedException();
             }
             downloadLink.getLinkStatus().setStatusText(null);
             return true;
@@ -590,12 +590,16 @@ public abstract class PluginForHost extends Plugin {
         this.maxConnections = maxConnections;
     }
 
-    public void sleep(long i, DownloadLink downloadLink) throws InterruptedException {
-        while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
-            i -= 1000;
-            downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
-            downloadLink.requestGuiUpdate();
-            Thread.sleep(1000);
+    public void sleep(long i, DownloadLink downloadLink) throws PluginException {
+        try {
+            while (i > 0 && downloadLink.getDownloadLinkController() != null && !downloadLink.getDownloadLinkController().isAborted()) {
+                i -= 1000;
+                downloadLink.getLinkStatus().setStatusText(String.format(JDLocale.L("gui.downloadlink.status.wait", "wait %s min"), JDUtilities.formatSeconds(i / 1000)));
+                downloadLink.requestGuiUpdate();
+                Thread.sleep(1000);
+            }
+        } catch (InterruptedException e) {
+            throw new PluginException(LinkStatus.TODO);
         }
         downloadLink.getLinkStatus().setStatusText(null);
     }
@@ -638,9 +642,9 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void setPremiumAccounts(ArrayList<Account> accounts) {
-        ArrayList<Account> newaccounts=new ArrayList<Account>();
-        for (Account toadd:accounts){
-            if (toadd.getUser().length()!=0){
+        ArrayList<Account> newaccounts = new ArrayList<Account>();
+        for (Account toadd : accounts) {
+            if (toadd.getUser().length() != 0) {
                 newaccounts.add(toadd);
             }
         }
