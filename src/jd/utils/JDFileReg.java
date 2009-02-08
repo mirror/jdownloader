@@ -9,14 +9,23 @@ import com.ice.jni.registry.RegStringValue;
 import com.ice.jni.registry.Registry;
 import com.ice.jni.registry.RegistryException;
 import com.ice.jni.registry.RegistryKey;
+import com.ice.jni.registry.RegistryValue;
 
 public class JDFileReg {
     public static void setKey(String key, String valueName, String value) throws RegistryException {
         RegistryKey topKey = Registry.getTopLevelKey("HKCR");
-        RegistryKey localKey = topKey.createSubKey(key, value, RegistryKey.ACCESS_WRITE);
-        RegStringValue val = new RegStringValue(localKey, valueName, value);
-        localKey.setValue(val);
-        localKey.flushKey();
+        RegistryKey localKey = topKey.openSubKey(key);
+        String dv = localKey.getDefaultValue();
+
+        if (!dv.equals(value)) {
+            localKey = topKey.createSubKey(key, value, RegistryKey.ACCESS_WRITE);
+        }
+        RegistryValue v = localKey.getValue(valueName);
+        if (!v.equals(value)) {
+            RegStringValue val = new RegStringValue(localKey, valueName, value);
+            localKey.setValue(val);
+            localKey.flushKey();
+        }
     }
 
     public static void registerFileExts() {
@@ -24,32 +33,32 @@ public class JDFileReg {
         // 5bc4004260d83e0cf69addb8f9262837
         // 6f3ad5e9971f92aa28eb01c2ac11f896
         // f19fbcb71e9682d307e331c04a45fd53
-try{
-        if (OSDetector.isWindows() && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty("FILE_REGISTER", true)) {
-           
+        try {
+            if (OSDetector.isWindows() && JDUtilities.getSubConfig(SimpleGUI.GUICONFIGNAME).getBooleanProperty("FILE_REGISTER", true)) {
 
-            registerWinFileExt("dlc");
-            registerWinFileExt("ccf");
-            registerWinFileExt("jd");
-            registerWinFileExt("rsdf");
-            registerWinProtocol("jd");
-            registerWinProtocol("jdlist");
-            registerWinProtocol("dlc");
-            registerWinProtocol("ccf");
-            registerWinProtocol("rsdf");
+                registerWinFileExt("dlc");
+                registerWinFileExt("ccf");
+                registerWinFileExt("jd");
+                registerWinFileExt("rsdf");
+                registerWinProtocol("jd");
+                registerWinProtocol("jdlist");
+                registerWinProtocol("dlc");
+                registerWinProtocol("ccf");
+                registerWinProtocol("rsdf");
 
+            }
 
+        } catch (Throwable e) {
+            System.err.println("Run in " + new File("ICE_JNIRegistry.dll").getAbsolutePath());
         }
-
-}catch(Throwable e){
-    System.err.println("Run in "+new File("ICE_JNIRegistry.dll").getAbsolutePath());
-}
 
     }
 
     private static void registerWinFileExt(String ext) throws RegistryException {
         String name = "JDownloader " + ext + "-Container";
-        setKey("." + ext, "", name);
+
+        RegistryKey topKey = Registry.getTopLevelKey("HKCR");
+
         setKey(name, "", "JDownloader " + ext + " file");
         String command = JDUtilities.getResourceFile("JDownloader.exe").getAbsolutePath() + " \"%1\"";
         setKey(name + "\\shell", "", "open");
