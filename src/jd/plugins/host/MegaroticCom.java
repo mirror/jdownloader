@@ -186,7 +186,7 @@ public class MegaroticCom extends PluginForHost {
         String size = null;
         try {
             filename = br.getRegex("Dateiname:</font></b>(.*?)</div>").getMatch(0).trim();
-            size = br.getRegex("Dateigr..e:</font></b>(.*?)</div>").getMatch(0).trim();
+            size = br.getRegex("Dateigr.+?e:</font></b>(.*?)</div>").getMatch(0).trim();
         } catch (Exception e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
