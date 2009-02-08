@@ -1219,7 +1219,7 @@ public class JDUtilities {
             System.err.println("Classloader ==null: ");
             return null;
         }
-        URL clURL = JDUtilities.getJDClassLoader().getResource(resource);
+        URL clURL = cl.getResource(resource);
 
         if (clURL != null) {
             try {
@@ -1250,7 +1250,7 @@ public class JDUtilities {
      * @param waitForReturn
      * @return null oder die rÃ¼ckgabe des befehls falls waitforreturn == true
      *         ist
-     */
+     */ 
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
         Executer exec = new Executer(command);
         exec.addParameters(parameter);
