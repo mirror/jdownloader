@@ -143,7 +143,7 @@ public class Main {
     public static void main(String args[]) {
         final StringBuilder log = new StringBuilder();
         boolean OSFilter = true;
-        boolean IgnorePlugins = true;
+        boolean AllPlugins = false;
         boolean clone = false;
         String clonePrefix = null;
 
@@ -151,12 +151,12 @@ public class Main {
             if (p.trim().equalsIgnoreCase("-noosfilter")) {
                 OSFilter = false;
             } else if (p.trim().equalsIgnoreCase("-allplugins")) {
-                IgnorePlugins = false;
+                AllPlugins = true;
             } else if (p.trim().equalsIgnoreCase("-full")) {
-                IgnorePlugins = false;
+                AllPlugins = true;
                 OSFilter = false;
             } else if (p.trim().equalsIgnoreCase("-clone")) {
-                IgnorePlugins = false;
+                AllPlugins = true;
                 OSFilter = false;
                 clone = true;
             } else if (p.trim().equalsIgnoreCase("/nofilter")) {
@@ -174,7 +174,7 @@ public class Main {
             WebUpdater updater = new WebUpdater();
             updater.setOSFilter(OSFilter);
             updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
-            updater.ignorePlugins(IgnorePlugins);
+            if (AllPlugins) updater.ignorePlugins(false);
             updater.setprimaryUpdatePrefix(clonePrefix);
             updater.setsecondaryUpdatePrefix(clonePrefix);
             updater.setLogger(log);
@@ -353,7 +353,7 @@ public class Main {
         WebUpdater updater = new WebUpdater();
         updater.setOSFilter(OSFilter);
         updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
-        updater.ignorePlugins(IgnorePlugins);
+        if (AllPlugins) updater.ignorePlugins(false);
         String warnHash = updater.getLocalHash(new File(WebUpdater.getJDDirectory(), "updatewarnings.html"));
 
         updater.downloadBinary(new File(WebUpdater.getJDDirectory(), "updatewarnings.html").getAbsolutePath(), "http://service.jdownloader.org/messages/updatewarning.html", null);
