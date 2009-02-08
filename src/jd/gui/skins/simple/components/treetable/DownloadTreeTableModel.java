@@ -204,7 +204,7 @@ public class DownloadTreeTableModel extends AbstractTreeTableModel {
             case COL_FILE:
                 return filePackage.getDownloadLinks().size() + " " + JDLocale.L("gui.treetable.parts", "Teil(e)");
             case COL_HOSTER:
-                return "";
+                return filePackage.getHoster();
             case COL_STATUS:
                 return filePackage;
             case COL_PROGRESS:

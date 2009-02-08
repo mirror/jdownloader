@@ -244,15 +244,11 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
         case TreeTableAction.DOWNLOAD_BROWSE_LINK:
             link = (DownloadLink) ((TreeTableAction) ((JMenuItem) e.getSource()).getAction()).getProperty().getProperty("downloadlink");
             if (link.getLinkType() == DownloadLink.LINKTYPE_NORMAL) {
-
                 try {
                     JLinkButton.openURL(link.getBrowserUrl());
-
                 } catch (Exception e1) {
-                    // TODO Auto-generated catch block
                     e1.printStackTrace();
                 }
-
             }
 
             break;
@@ -1140,7 +1136,12 @@ public class DownloadTreeTable extends JXTreeTable implements WindowFocusListene
                 sb.append("</table>");
                 break;
             case DownloadTreeTableModel.COL_HOSTER:
-                return;
+                sb.append("<h1>" + fp.getName() + "</h1><hr>");
+                for (String hoster : fp.getHosterWithCount()) {
+                    sb.append(hoster);
+                    sb.append("<br>");
+                }
+                break;
             case DownloadTreeTableModel.COL_STATUS:
                 return;
             case DownloadTreeTableModel.COL_PROGRESS:

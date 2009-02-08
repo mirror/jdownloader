@@ -21,6 +21,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Vector;
 
 import jd.config.Property;
@@ -408,6 +409,41 @@ public class FilePackage extends Property implements Serializable {
         return downloadLinks.size();
     }
 
+    public String getHoster() {
+        LinkedList<DownloadLink> dLinks = new LinkedList<DownloadLink>(downloadLinks);
+        StringBuilder hoster = new StringBuilder();
+        String curHost;
+        while (!dLinks.isEmpty()) {
+            curHost = dLinks.removeFirst().getHost();
+            if (hoster.length() > 0) hoster.append(", ");
+            hoster.append(curHost);
+            for (int i = dLinks.size() - 1; i >= 0; --i) {
+                if (dLinks.get(i).getHost().equals(curHost)) dLinks.remove(i);
+            }
+        }
+        return hoster.toString();
+    }
+
+    public Vector<String> getHosterWithCount() {
+        Vector<String> result = new Vector<String>();
+        LinkedList<DownloadLink> dLinks = new LinkedList<DownloadLink>(downloadLinks);
+        while (!dLinks.isEmpty()) {
+            result.add(removeFirstHost(dLinks));
+        }
+        return result;
+    }
+
+    private String removeFirstHost(LinkedList<DownloadLink> dLinks) {
+        String host = dLinks.removeFirst().getHost();
+        int count = 1;
+        for (int i = dLinks.size() - 1; i >= 0; --i) {
+            if (!dLinks.get(i).getHost().equals(host)) continue;
+            dLinks.remove(i);
+            ++count;
+        }
+        return host + " (" + count + ")";
+    }
+
     public void sort(final String string) {
         if (string == null) {
             lastSort = !lastSort;
@@ -498,4 +534,5 @@ public class FilePackage extends Property implements Serializable {
         }
         updateTime = System.currentTimeMillis();
     }
+
 }
