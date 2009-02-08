@@ -100,6 +100,10 @@ public class WebUpdater implements Serializable {
         return jddirectory;
     }
 
+    public static void setJDDirectory(File file) {
+        jddirectory = file;
+    }
+
     /**
      * Lädt fileurl nach filepath herunter
      * 
