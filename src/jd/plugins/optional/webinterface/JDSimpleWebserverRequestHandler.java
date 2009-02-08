@@ -426,11 +426,9 @@ public class JDSimpleWebserverRequestHandler {
                                         if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_PACKETNAME_AS_SUBFOLDER, false)) {
                                             File file = new File(new File(fp.getDownloadDirectory()), fp.getName());
                                             if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_CREATE_SUBFOLDER_BEFORE_DOWNLOAD, false)) {
-                                                if (!file.exists()) {
-                                                    file.mkdirs();
-                                                }
-                                            } else
-                                                fp.setDownloadDirectory(file.getAbsolutePath());
+                                                if (!file.exists()) file.mkdirs();
+                                            }
+                                            fp.setDownloadDirectory(file.getAbsolutePath());
                                         } else {
                                             fp.setDownloadDirectory(fp.getDownloadDirectory());
                                         }
