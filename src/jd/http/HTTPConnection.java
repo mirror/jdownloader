@@ -19,12 +19,10 @@ package jd.http;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
-import java.net.ProtocolException;
+import java.net.Proxy;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -34,105 +32,100 @@ import java.util.Map.Entry;
 
 import jd.parser.Regex;
 
-public class HTTPConnection {
+public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
-    private HttpURLConnection connection;
+
     private String postData;
 
     private HashMap<String, List<String>> requestProperties = null;
     private long[] ranges;
     private boolean connected = false;
 
+    private JDProxy proxy = null;
+
     public boolean isConnected() {
         return connected;
     }
 
-    public HTTPConnection(URLConnection openConnection) {
-  
-        requestProperties = new HashMap<String, List<String>>();
-        connection = (HttpURLConnection) openConnection;
-        
+    public HTTPConnection(URL url, Proxy p, sun.net.www.protocol.http.Handler handler) {
 
-        Map<String, List<String>> tmp = connection.getRequestProperties();
+        super(url, p, handler);
+        this.proxy = (JDProxy) p;
+        requestProperties = new HashMap<String, List<String>>();
+
+        Map<String, List<String>> tmp = getRequestProperties();
         Iterator<Entry<String, List<String>>> set = tmp.entrySet().iterator();
         while (set.hasNext()) {
             Entry<String, List<String>> next = set.next();
             requestProperties.put(next.getKey(), next.getValue());
         }
+    }
 
+    /**
+     * Returns the proxy that has been used for this connection
+     * 
+     * @return
+     */
+    public JDProxy getProxy() {
+        return proxy;
     }
 
     public void connect() throws IOException {
         this.connected = true;
-        connection.connect();
-        
+        super.connect();
 
     }
 
-    public long getContentLength() {
-        if (connection.getHeaderField("content-length") == null) { return -1; }
-        return new Long(connection.getHeaderField("content-length"));
+    public long getLongContentLength() {
+        if (getHeaderField("content-length") == null) { return -1; }
+
+        return Long.parseLong(getHeaderField("content-length"));
+
+    }
+
+    public int getContentLength() {
+
+        return Integer.parseInt(getHeaderField("content-length"));
+
     }
 
     public String getContentType() {
-        String type = connection.getContentType();
-        if (type == null) return "unkown";
+        String type = super.getContentType();
+        if (type == null) return "unknown";
         return type;
     }
 
-    public String getHeaderField(String string) {
-        return connection.getHeaderField(string);
-    }
-
-    public Map<String, List<String>> getHeaderFields() {
-        return connection.getHeaderFields();
-    }
-
     public HttpURLConnection getHTTPURLConnection() {
-        return connection;
+        return this;
 
     }
 
     public InputStream getInputStream() throws IOException {
-        if (connection.getResponseCode() != 404) {
-            return connection.getInputStream();
+
+        // DO NOT CALL getResponseCode() here!
+        if (responseCode != 404) {
+            return super.getInputStream();
         } else {
-            return connection.getErrorStream();
+            return super.getErrorStream();
         }
     }
 
-    public OutputStream getOutputStream() throws IOException {
-        return connection.getOutputStream();
-    }
-
     public String getPostData() {
+        // AuthenticationInfo d = new
+        // sun.net.www.protocol.http.AuthenticationInfo();
+        // this.setDefaultAuthenticator(a);
         return postData;
     }
 
-    public String getRequestMethod() {
-        return connection.getRequestMethod();
-    }
-
     public Map<String, List<String>> getRequestProperties() {
+    
         return requestProperties;
 
     }
 
-    public String getRequestProperty(String string) {
-        return connection.getRequestProperty(string);
-    }
-
-    public int getResponseCode() throws IOException {
-        return connection.getResponseCode();
-    }
-
-    public URL getURL() {
-        return connection.getURL();
-    }
-
     public void post(byte[] parameter) throws IOException {
-        BufferedOutputStream wr = new BufferedOutputStream(connection.getOutputStream());
+        BufferedOutputStream wr = new BufferedOutputStream(getOutputStream());
         if (parameter != null) {
             wr.write(parameter);
         }
@@ -144,7 +137,7 @@ public class HTTPConnection {
     }
 
     public void post(String parameter) throws IOException {
-        OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
         if (parameter != null) {
             wr.write(parameter);
         }
@@ -157,7 +150,7 @@ public class HTTPConnection {
 
     public void postGzip(String parameter) throws IOException {
 
-        OutputStreamWriter wr = new OutputStreamWriter(connection.getOutputStream());
+        OutputStreamWriter wr = new OutputStreamWriter(getOutputStream());
         if (parameter != null) {
             wr.write(parameter);
         }
@@ -167,43 +160,17 @@ public class HTTPConnection {
 
     }
 
-    public void setConnectTimeout(int timeout) {
-        connection.setConnectTimeout(timeout);
-
-    }
-
-    public void setDoOutput(boolean b) {
-        connection.setDoOutput(b);
-
-    }
-
-    public void setInstanceFollowRedirects(boolean redirect) {
-        connection.setInstanceFollowRedirects(redirect);
-
-    }
-
-    public void setReadTimeout(int timeout) {
-        connection.setReadTimeout(timeout);
-
-    }
-
-    public void setRequestMethod(String string) throws ProtocolException {
-        connection.setRequestMethod(string);
-
-    }
-
     public void setRequestProperty(String key, String value) {
         LinkedList<String> l = new LinkedList<String>();
-
         l.add(value);
         requestProperties.put(key, l);
-        connection.setRequestProperty(key, value);
+        super.setRequestProperty(key, value);
 
     }
 
     public boolean isOK() {
         try {
-            if (connection.getResponseCode() > -2 && connection.getResponseCode() < 400)
+            if (getResponseCode() > -2 && getResponseCode() < 400)
                 return true;
             else
                 return false;
@@ -231,12 +198,10 @@ public class HTTPConnection {
         return this.getHeaderField("Content-Disposition") != null;
     }
 
-    public boolean disconnect() {
+    public void disconnect() {
         if (isConnected()) {
-            this.connection.disconnect();
-            return true;
+            super.disconnect();
         }
-        return false;
 
     }
 
@@ -244,8 +209,14 @@ public class HTTPConnection {
 
         StringBuilder sb = new StringBuilder();
         sb.append("-->" + this.getURL() + "\r\n");
+  
+   
+ 
         sb.append("----------------Request------------------\r\n");
-        sb.append(connection.getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
+        
+        
+        
+        sb.append(getRequestMethod() + " " + getURL().getPath() + (getURL().getQuery() != null ? "?" + getURL().getQuery() : "") + " HTTP/1.1\r\n");
         sb.append("Host: " + getURL().getHost() + (":" + getURL().getPort()) + "\r\n");
         for (Iterator<Entry<String, List<String>>> it = this.getRequestProperties().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
@@ -254,37 +225,37 @@ public class HTTPConnection {
                 value.append(';');
                 value.append(v);
             }
-            String v=value.toString();
+            String v = value.toString();
             if (v.length() > 0) v = v.substring(1);
             sb.append(next.getKey());
-            sb.append(new char[] {':', ' '});
+            sb.append(new char[] { ':', ' ' });
             sb.append(v);
-            sb.append(new char[] {'\r', '\n'});
+            sb.append(new char[] { '\r', '\n' });
         }
-        sb.append(new char[] {'\r', '\n'});
+        sb.append(new char[] { '\r', '\n' });
 
         if (this.postData != null) {
             sb.append(this.postData);
-            sb.append(new char[] {'\r', '\n'});
+            sb.append(new char[] { '\r', '\n' });
         }
         sb.append("----------------Response------------------\r\n");
 
-        for (Iterator<Entry<String, List<String>>> it = connection.getHeaderFields().entrySet().iterator(); it.hasNext();) {
+        for (Iterator<Entry<String, List<String>>> it = getHeaderFields().entrySet().iterator(); it.hasNext();) {
             Entry<String, List<String>> next = it.next();
             // Achtung cookie reihenfolge ist wichtig!!!
             for (int i = next.getValue().size() - 1; i >= 0; i--) {
                 if (next.getKey() == null) {
                     sb.append(next.getValue().get(i));
-                    sb.append(new char[] {'\r', '\n'});
+                    sb.append(new char[] { '\r', '\n' });
                 } else {
                     sb.append(next.getKey());
-                    sb.append(new char[] {':', ' '});
+                    sb.append(new char[] { ':', ' ' });
                     sb.append(next.getValue().get(i));
-                    sb.append(new char[] {'\r', '\n'});
+                    sb.append(new char[] { '\r', '\n' });
                 }
             }
         }
-        sb.append(new char[] {'\r', '\n'});
+        sb.append(new char[] { '\r', '\n' });
 
         return sb.toString();
 

@@ -41,11 +41,11 @@ public class JDProxy extends Proxy {
 
     private String pass = null;
 
-    public JDProxy(Type type, SocketAddress sa) {
+    public JDProxy(java.net.Proxy.Type type, SocketAddress sa) {
         super(type, sa);
     }
 
-    public JDProxy(Type type, String host, int port) {
+    public JDProxy(java.net.Proxy.Type type, String host, int port) {
         super(type,new InetSocketAddress(host, port));
     
        

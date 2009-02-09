@@ -195,7 +195,8 @@ public abstract class Request {
     }
 
     private void collectCookiesFromConnection() {
-        List<String> cookieHeaders = httpConnection.getHeaderFields().get("Set-Cookie");
+
+        List<String> cookieHeaders = (List<String>) httpConnection.getHeaderFields().get("Set-Cookie");
         String Date = httpConnection.getHeaderField("Date");
         if (cookieHeaders == null) { return; }
         if (cookies == null) {
@@ -437,6 +438,17 @@ public abstract class Request {
 
     public void openConnection() throws IOException {
 
+        // if (request.getHttpConnection().getResponseCode() == 401 &&
+        // logins.containsKey(request.getUrl().getHost())) {
+        // this.getHeaders().put("Authorization", "Basic " +
+        // Encoding.Base64Encode(logins.get(request.getUrl().getHost())[0] + ":"
+        // + logins.get(request.getUrl().getHost())[1]));
+        //
+        // request.getHttpConnection().disconnect();
+        // return this.getPage(string);
+        //
+        // }
+
         long tima = System.currentTimeMillis();
         // der aufruf ist ohne proxy
         // der hier mit proxy..
@@ -444,10 +456,10 @@ public abstract class Request {
         // unterst�tzt werden
         if (proxy != null) {
 
-            httpConnection = new HTTPConnection(HTTPConnecter.openConnection(url, proxy));
+            httpConnection = (HTTPConnection) url.openConnection(proxy);
 
         } else {
-            httpConnection = new HTTPConnection(HTTPConnecter.openConnection(url));
+            httpConnection = (HTTPConnection) url.openConnection();
 
         }
         httpConnection.setInstanceFollowRedirects(followRedirects);
@@ -537,6 +549,7 @@ public abstract class Request {
             if (getLocation() != null) { return "Not HTML Code. Redirect to: " + getLocation(); }
             return "No htmlCode read";
         }
+        
         return htmlCode;
     }
 

@@ -97,7 +97,8 @@ public class JDUpdater {
         // testFile = new File(cw);
         if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
        // Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" + filename);
-        new Browser().getDownload(testFile, test + cw + "/" + filename);
+        String online = test + cw.replace("\\", "/") + "/" + filename;
+        new Browser().getDownload(testFile, online);
         String hash2 = JDHash.getMD5(testFile);
         ftp.remove(file.getName());
         ftp.rename(ftp.getDir() + filename, ftp.getDir() + file.getName());
@@ -176,6 +177,7 @@ public class JDUpdater {
         System.out.println("Hashlist laden");
         WebUpdater updater = new WebUpdater();
         updater.setOSFilter(false);
+        WebUpdater.setJDDirectory(workingdir);
         updater.ignorePlugins(false);
         Vector<Vector<String>> files = null;
         try {

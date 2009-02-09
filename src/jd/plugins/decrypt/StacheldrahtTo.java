@@ -43,7 +43,10 @@ public class StacheldrahtTo extends PluginForDecrypt {
 
         progress.setRange(links.length / 2);
         for (int i = 0; i < links.length; i = i + 2) {
-            HTTPConnection httpConnection = new HTTPConnection(HTTPConnecter.openConnection(new URL("http://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links[i])));
+            /**
+             * TODO: böse art eine Connection zu öffnen!!
+             */
+            HTTPConnection httpConnection = (HTTPConnection)new URL("jdp://www.stacheldraht.to/php_docs/ajax/link_get.php?" + links[i]).openConnection();
             httpConnection.setRequestMethod("GET");
             httpConnection.setInstanceFollowRedirects(true);
             httpConnection.setRequestProperty("Host", "stacheldraht.to");

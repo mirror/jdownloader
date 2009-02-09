@@ -21,7 +21,9 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.Authenticator;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
@@ -55,12 +57,13 @@ public class Browser {
 
     private static HashMap<String, HashMap<String, Cookie>> COOKIES = new HashMap<String, HashMap<String, Cookie>>();
     private HashMap<String, HashMap<String, Cookie>> cookies = new HashMap<String, HashMap<String, Cookie>>();
-    private static HashMap<String, Auth> AUTHS = new HashMap<String, Auth>();
-    private HashMap<String, Auth> auths = new HashMap<String, Auth>();
+
     private boolean debug = false;
 
     private static HashMap<String, Long> LATEST_PAGE_REQUESTS = new HashMap<String, Long>();
+    private static HashMap<URL, Browser> URL_LINK_MAP = new HashMap<URL, Browser>();
     private HashMap<String, Long> latestRequestTimes = new HashMap<String, Long>();
+    private HashMap<String, String[]> logins = new HashMap<String, String[]>();
     private String latestReqTimeCtrlID = null;
     private long waittimeBetweenRequests = 0L;
     private boolean exclusiveReqTimeCtrl = true;
@@ -241,9 +244,16 @@ public class Browser {
     private boolean snifferDetection = false;
     private boolean cookiesExclusive = true;
     private JDProxy proxy;
+    private static final Authenticator AUTHENTICATOR = new Authenticator() {
+        protected PasswordAuthentication getPasswordAuthentication() {
+            Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
+            return br.getPasswordAuthentication(this.getRequestingURL());
+
+        }
+    };
 
     public Browser() {
-
+        Authenticator.setDefault(AUTHENTICATOR);
     }
 
     public String getAcceptLanguage() {
@@ -309,25 +319,28 @@ public class Browser {
             // throw new SnifferException();
         }
         GetRequest request = new GetRequest(string);
+
         if (proxy != null) request.setProxy(proxy);
         request.getHeaders().put("Accept-Language", acceptLanguage);
-        doAuth(request);
+
         // request.setFollowRedirects(doRedirects);
         forwardCookies(request);
         if (sendref) request.getHeaders().put("Referer", currentURL.toString());
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
-        waitForPageAccess();
-        request.connect();
+
+        connect(request);
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         String ret = null;
 
         checkContentLengthLimit(request);
+
         ret = request.read();
 
         updateCookies(request);
         this.request = request;
+
         if (this.doRedirects && request.getLocation() != null) {
             ret = this.getPage((String) null);
         } else {
@@ -338,22 +351,35 @@ public class Browser {
 
     }
 
-    private void doAuth(Request request) {
-        String host = request.getUrl().getHost();
-        if (cookiesExclusive) {
-            if (auths.containsKey(host)) {
-                request.getHeaders().put("Authorization", auths.get(host).getAuthHeader());
-            }
-            if (auths.containsKey(null)) {
-                request.getHeaders().put("Authorization", auths.get(null).getAuthHeader());
-            }
-        } else {
-            if (AUTHS.containsKey(host)) {
-                request.getHeaders().put("Authorization", AUTHS.get(host).getAuthHeader());
-            }
+    private void connect(Request request) throws IOException {
+        waitForPageAccess();
+        assignURLToBrowserInstance(request.getUrl(), this);
+        request.connect();
+        assignURLToBrowserInstance(request.getHttpConnection().getURL(), null);
 
+    }
+
+    private static void assignURLToBrowserInstance(URL url, Browser browser) {
+        if (browser == null) {
+            URL_LINK_MAP.remove(url);
+        } else {
+            URL_LINK_MAP.put(url, browser);
         }
 
+        // System.out.println("NO LINKED: " + URL_LINK_MAP);
+    }
+
+    public static URL reAssignUrlToBrowserInstance(URL url1, URL url2) {
+        assignURLToBrowserInstance(url2, getAssignedBrowserInstance(url1));
+        URL_LINK_MAP.remove(url1);
+        return url2;
+    }
+
+    /**
+     * Returns the Browserinstance that requestst this url connection
+     */
+    public static Browser getAssignedBrowserInstance(URL url) {
+        return URL_LINK_MAP.get(url);
     }
 
     private void checkContentLengthLimit(Request request) throws BrowserException {
@@ -481,7 +507,7 @@ public class Browser {
         }
         GetRequest request = new GetRequest(string);
         if (proxy != null) request.setProxy(proxy);
-        doAuth(request);
+        // doAuth(request);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
         }
@@ -495,8 +521,8 @@ public class Browser {
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
-        waitForPageAccess();
-        request.connect();
+
+        connect(request);
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
 
         updateCookies(request);
@@ -523,7 +549,7 @@ public class Browser {
         }
         GetRequest request = new GetRequest(string);
         if (proxy != null) request.setProxy(proxy);
-        doAuth(request);
+        // doAuth(request);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
         }
@@ -561,7 +587,7 @@ public class Browser {
         GetRequest request = new GetRequest(string);
         if (proxy != null) request.setProxy(proxy);
         request.setCookies(oldrequest.getCookies());
-        doAuth(request);
+        // doAuth(request);
         if (connectTimeout > 0) {
             request.setConnectTimeout(connectTimeout);
         }
@@ -604,6 +630,7 @@ public class Browser {
             // path.substring(path.lastIndexOf("/"))
             string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/" + string;
         }
+        if (string.startsWith("http")) { return Encoding.urlEncode_light("jdp" + string.substring(4)); }
         return Encoding.urlEncode_light(string);
     }
 
@@ -619,7 +646,7 @@ public class Browser {
         }
         PostRequest request = new PostRequest(url);
         if (proxy != null) request.setProxy(proxy);
-        doAuth(request);
+        // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
@@ -636,8 +663,8 @@ public class Browser {
         if (headers != null) {
             request.getHeaders().putAll(headers);
         }
-        waitForPageAccess();
-        request.connect();
+
+        connect(request);
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         this.request = request;
         if (this.doRedirects && request.getLocation() != null) {
@@ -664,7 +691,7 @@ public class Browser {
         PostRequest request = new PostRequest(url);
         if (proxy != null) request.setProxy(proxy);
         request.setCookies(oldrequest.getCookies());
-        doAuth(request);
+        // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
@@ -697,7 +724,7 @@ public class Browser {
         }
         PostRequest request = new PostRequest(url);
         if (proxy != null) request.setProxy(proxy);
-        doAuth(request);
+        // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
@@ -740,7 +767,7 @@ public class Browser {
         }
         PostRequest request = new PostRequest(url);
         if (proxy != null) request.setProxy(proxy);
-        doAuth(request);
+        // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
@@ -757,8 +784,8 @@ public class Browser {
         }
 
         String ret = null;
-        waitForPageAccess();
-        request.connect();
+
+        connect(request);
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         checkContentLengthLimit(request);
         ret = request.read();
@@ -796,7 +823,7 @@ public class Browser {
         }
         PostRequest request = new PostRequest(url);
         if (proxy != null) request.setProxy(proxy);
-        doAuth(request);
+        // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
         // request.setFollowRedirects(doRedirects);
         if (connectTimeout > 0) {
@@ -813,8 +840,8 @@ public class Browser {
         }
 
         String ret = null;
-        waitForPageAccess();
-        request.connect();
+
+        connect(request);
         if (isDebug()) JDUtilities.getLogger().finest("\r\n" + request.printHeaders());
         checkContentLengthLimit(request);
         ret = request.read();
@@ -1141,10 +1168,11 @@ public class Browser {
         br.readTimeout = readTimeout;
         br.request = request;
         br.cookies = cookies;
-        br.auths = auths;
+        br.logins = new HashMap<String, String[]>();
+        br.logins.putAll(logins);
         br.cookiesExclusive = cookiesExclusive;
         br.debug = debug;
-        br.proxy=proxy;
+        br.proxy = proxy;
         return br;
     }
 
@@ -1183,7 +1211,6 @@ public class Browser {
         this.cookiesExclusive = b;
         if (b) {
             this.cookies.clear();
-            this.auths.clear();
 
             for (Iterator<Entry<String, HashMap<String, Cookie>>> it = COOKIES.entrySet().iterator(); it.hasNext();) {
                 Entry<String, HashMap<String, Cookie>> next = it.next();
@@ -1192,8 +1219,6 @@ public class Browser {
                 tmp.putAll(next.getValue());
 
             }
-
-            auths.putAll(AUTHS);
 
         } else {
             this.cookies.clear();
@@ -1231,13 +1256,12 @@ public class Browser {
     }
 
     public void setAuth(String domain, String user, String pass) {
+        logins.put(domain.trim(), new String[] { user, pass, null });
+    }
 
-        HashMap<String, Auth> auths = this.cookiesExclusive ? this.auths : AUTHS;
-        if (user == null && pass == null) {
-            auths.remove(domain);
-        }
-        Auth auth = new Auth(domain, user, pass);
-        auths.put(domain, auth);
+    public String[] getAuth(String domain) {
+        if (!logins.containsKey(domain.trim())) return null;
+        return logins.get(domain.trim());
     }
 
     public String submitForm(String formname) throws IOException {
@@ -1269,6 +1293,11 @@ public class Browser {
         return createGetRequest(downloadURL);
     }
 
+    public String getXPathElement(String xPath) {
+        return new XPath(this.toString(), xPath).getFirstMatch();
+
+    }
+
     public DownloadInterface openDownload(DownloadLink downloadLink, String link) throws Exception {
 
         DownloadInterface dl = RAFDownload.download(downloadLink, this.createGetRequest(link));
@@ -1280,6 +1309,32 @@ public class Browser {
                 int maxRedirects = 10;
                 while (maxRedirects-- > 0) {
                     dl = RAFDownload.download(downloadLink, this.createGetRequestfromOldRequest(dl.getRequest()));
+                    try {
+                        dl.connect(this);
+                        break;
+                    } catch (PluginException e2) {
+                        continue;
+                    }
+                }
+
+            }
+        }
+        if (downloadLink.getPlugin().getBrowser() == this) {
+            downloadLink.getPlugin().setDownloadInterface(dl);
+        }
+        return dl;
+    }
+
+    public DownloadInterface openDownload(DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
+        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url, postdata));
+        try {
+            dl.connect(this);
+        } catch (PluginException e) {
+            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
+
+                int maxRedirects = 10;
+                while (maxRedirects-- > 0) {
+                    dl = RAFDownload.download(downloadLink, this.createPostRequestfromOldRequest(dl.getRequest(), postdata));
                     try {
                         dl.connect(this);
                         break;
@@ -1377,38 +1432,8 @@ public class Browser {
         return dl;
     }
 
-    public String getXPathElement(String xPath) {
-        return new XPath(this.toString(), xPath).getFirstMatch();
-
-    }
-
-    public DownloadInterface openDownload(DownloadLink downloadLink, String url, String postdata) throws MalformedURLException, IOException, Exception {
-        DownloadInterface dl = RAFDownload.download(downloadLink, this.createPostRequest(url, postdata));
-        try {
-            dl.connect(this);
-        } catch (PluginException e) {
-            if (e.getValue() == DownloadInterface.ERROR_REDIRECTED) {
-
-                int maxRedirects = 10;
-                while (maxRedirects-- > 0) {
-                    dl = RAFDownload.download(downloadLink, this.createPostRequestfromOldRequest(dl.getRequest(), postdata));
-                    try {
-                        dl.connect(this);
-                        break;
-                    } catch (PluginException e2) {
-                        continue;
-                    }
-                }
-
-            }
-        }
-        if (downloadLink.getPlugin().getBrowser() == this) {
-            downloadLink.getPlugin().setDownloadInterface(dl);
-        }
-        return dl;
-    }
-
     public void setProxy(JDProxy proxy) {
+        this.setAuth(proxy.address() + "", proxy.getUser(), proxy.getPass());
         this.proxy = proxy;
     }
 
@@ -1424,6 +1449,21 @@ public class Browser {
     public void forceDebug(boolean b) {
         this.debug = b;
 
+    }
+
+    /**
+     * Returns the Password Authentication if there are auth set for the given
+     * url
+     * 
+     * @param url
+     * @return
+     */
+    public PasswordAuthentication getPasswordAuthentication(URL url) {
+
+        String[] auth = this.getAuth(url.getHost());
+        if (auth == null) return null;
+        JDUtilities.getLogger().finest("Use Authentication for: " + url + ": " + auth[0] + " - " + auth[1]);
+        return new PasswordAuthentication(auth[0], auth[1].toCharArray());
     }
 
 }

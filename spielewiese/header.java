@@ -1,7 +1,10 @@
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import jd.http.Browser;
+import jd.http.JDProxy;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Plugin;
@@ -38,9 +41,25 @@ public class header {
         return r;
     }
 
-    public static void main(String[] args) throws UnsupportedEncodingException {
+    public static void main(String[] args) throws IOException {
         // TODO Auto-generated method stub
+        if (true) {
+            //    
+       
 
+            Browser br = new Browser();
+
+           br.setProxy(new JDProxy("jdownloader.org:3128"));
+            br.setDebug(true);
+            //br.setAuth("service.jdownloader.org", "skynet", "avoWDoKkpq");
+            // br.getHeaders().put("Authorization", "Basic " +
+            // Encoding.Base64Encode("skynet:avoWDoKkpq"));
+            br.getPage("http://skynet:avoWDoKkpq@service.jdownloader.org/admin/");
+
+     
+           System.out.println(br.getRequest().getHttpConnection());
+
+        }
         if (false) {
             SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("EEE MMM dd hh:mm:ss z yyyy");
             String expires = "Sat Dec 13 21:27:14 CET 2008";
@@ -87,12 +106,12 @@ public class header {
         if (false) {
             JDUpdateUtils.setUpdateUrl("http://service.jdownloader.org/update/update.zip");
             String jj = JDUpdateUtils.get_AddonList();
-            String kk = JDUpdateUtils.get_UpdateList();           
+            String kk = JDUpdateUtils.get_UpdateList();
         }
         if (false) {
             System.out.println(base64totext("kALaLX9NF0SfcVSf99CsZ5umsHeyg4tGhJ\"ePoCNNxv6\"mIeln34L0YRoEGBwB6lB3snQVhp1yCSznAgpjFWa\"oC_P5bc0dNsFTc6sw3YqNfRD\"hJ_RZTmQD\"s\"CwGUnTxxDPQ3zfGW8Z0A9mqLP95Qg9zwr4YLuhSIC9gOHf7TawDE\"vDUs_jI36\"CbIy\"n1I3o03BD05k6mOx3nr6C9b8tqBwhgbxV17MnrGRO0IRX2WD06r8eQndm5q9Yt8I1qRNeKMUpKIqrpGj"));
         }
-        if (true) {
+        if (false) {
             // System.out.println(new Regex(
             // "<p style=\"color:red;\">You have reached the download limit for free-users. Would you like more?</p>"
             // , ".*download.{0,3}limit.{1,50}free.{0,3}users.*").matches() +

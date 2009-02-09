@@ -18,11 +18,13 @@ public class JDFileReg {
         String dv = localKey.getDefaultValue();
 
         if (!dv.equals(value)) {
+            JDUtilities.getLogger().info("Created Windows Registry entry:"+key+"="+value);
             localKey = topKey.createSubKey(key, value, RegistryKey.ACCESS_WRITE);
         }
         RegistryValue v = localKey.getValue(valueName);
         if (!v.equals(value)) {
             RegStringValue val = new RegStringValue(localKey, valueName, value);
+            JDUtilities.getLogger().info("Created Windows Registry entry:"+key+"/"+valueName+"="+value);
             localKey.setValue(val);
             localKey.flushKey();
         }
