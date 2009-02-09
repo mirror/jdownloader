@@ -145,7 +145,7 @@ public class Serienjunkies extends PluginForHost {
 
                     try {
                         br.downloadConnection(captchaFile,con);
-                  
+                        con.disconnect();
                     } catch (Exception e) {
 
                         try {
