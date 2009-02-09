@@ -37,8 +37,7 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     private static final long serialVersionUID = 4793649294489149258L;
 
-    private static final String NAME = JDLocale.L("interaction.externreconnect.name", "Extern Reconnect");
-
+  
     private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
     public static final String PARAM_RETRIES = "EXTERN_RECONNECT_RETRIES";
@@ -64,7 +63,7 @@ public class ExternReconnect extends Interaction implements Serializable {
         int maxretries = JDUtilities.getConfiguration().getIntegerProperty(PARAM_RETRIES, 0);
         int waitForIp = JDUtilities.getConfiguration().getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
 
-        logger.info("Starting " + NAME + " #" + retries);
+        logger.info("Starting " + JDLocale.L("interaction.externreconnect.name", "Extern Reconnect") + " #" + retries);
         String preIp = JDUtilities.getIPAddress();
 
         progress.increase(1);
@@ -112,7 +111,7 @@ public class ExternReconnect extends Interaction implements Serializable {
 
     @Override
     public String getInteractionName() {
-        return NAME;
+        return JDLocale.L("interaction.externreconnect.name", "Extern Reconnect");
     }
 
     @Override

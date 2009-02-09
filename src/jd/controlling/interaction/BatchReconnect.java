@@ -29,8 +29,7 @@ import jd.utils.JDUtilities;
 
 public class BatchReconnect extends Interaction implements Serializable {
 
-    private static final String NAME = JDLocale.L("interaction.batchreconnect.name", "Batch Reconnect");
-
+ 
     private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
     public static final String PARAM_RETRIES = "EXTERN_RECONNECT_RETRIES";
@@ -61,7 +60,7 @@ public class BatchReconnect extends Interaction implements Serializable {
         int maxretries = conf.getIntegerProperty(PARAM_RETRIES, 0);
         int waitForIp = conf.getIntegerProperty(PARAM_WAITFORIPCHANGE, 10);
 
-        logger.info("Starting " + NAME + " #" + retries);
+        logger.info("Starting " + JDLocale.L("interaction.batchreconnect.toString", "Batch reconnect durchführen") + " #" + retries);
         String preIp = JDUtilities.getIPAddress();
 
         progress.increase(1);
@@ -110,7 +109,8 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     @Override
     public String getInteractionName() {
-        return NAME;
+        return JDLocale.L("interaction.batchreconnect.name", "Batch Reconnect");
+
     }
 
     @Override

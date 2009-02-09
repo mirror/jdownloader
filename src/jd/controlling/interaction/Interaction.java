@@ -53,25 +53,7 @@ public abstract class Interaction extends Property implements Serializable {
     public static InteractionTrigger INTERACTION_BEFORE_DOWNLOAD;// = new InteractionTrigger(17, JDLocale.L("interaction.trigger.before_download", "Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc", "Wird aufgerufen bevor ein neuer Download gestartet wird"));
     public static InteractionTrigger INTERACTION_EXIT;// = new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
 
-    public static void initTriggers(){
-     INTERACTION_NO_EVENT = new InteractionTrigger(0, JDLocale.L("interaction.trigger.no_event", "Kein Event"), JDLocale.L("interaction.trigger.no_event.desc", "kein Event"));
-         INTERACTION_SINGLE_DOWNLOAD_FINISHED = new InteractionTrigger(1, JDLocale.L("interaction.trigger.download_successfull", "Download erfolgreich beendet"), JDLocale.L("interaction.trigger.download_successfull.desc", "Wird aufgerufen sobald ein Download erfolgreich beendet wurde"));
-         INTERACTION_ALL_DOWNLOADS_FINISHED = new InteractionTrigger(2, JDLocale.L("interaction.trigger.all_downloads_finished", "Alle Downloads beendet"), JDLocale.L("interaction.trigger.all_downloads_finished.desc", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden"));
-         INTERACTION_DOWNLOAD_FAILED = new InteractionTrigger(3, JDLocale.L("interaction.trigger.single_download_failed", "Download fehlgeschlagen"), JDLocale.L("interaction.trigger.single_download_failed.desc", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde"));
-         INTERACTION_LINKLIST_STRUCTURE_CHANGED = new InteractionTrigger(4, JDLocale.L("interaction.trigger.linklist_structure_changed", "Linklisten Struktur geändert"), JDLocale.L("interaction.trigger.linklist_structure_changed.desc", "Wird aufgerufen wenn sich die Struktur der Linkliste geändert hat (Links eingefügt, Links fertig, ...)"));
-         INTERACTION_DOWNLOAD_BOT_DETECTED = new InteractionTrigger(5, JDLocale.L("interaction.trigger.bot_detected", "Bot erkannt"), JDLocale.L("interaction.trigger.bot_detected.desc", "jDownloader wurde als Bot erkannt"));
-         INTERACTION_APPSTART = new InteractionTrigger(7, JDLocale.L("interaction.trigger.app_start", "Programmstart"), JDLocale.L("interaction.trigger.app_start.desc", "Direkt nach dem Initialisieren von jDownloader"));
-         INTERACTION_AFTER_UNRAR = new InteractionTrigger(9, JDLocale.L("interaction.trigger.after_extract", "Nach dem Entpacken"), JDLocale.L("interaction.trigger.after_extract.desc", "Wird aufgerufen wenn die Unrar-Aktion beendet wurde."));
-         INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished", "Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc", "Wird aufgerufen wenn ein Paket fertig geladen wurde"));
-         INTERACTION_BEFORE_RECONNECT = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_reconnect", "Vor dem Reconnect"), JDLocale.L("interaction.trigger.before_reconnect.desc", "Vor dem eigentlichen Reconnect"));
-         INTERACTION_AFTER_RECONNECT = new InteractionTrigger(14, JDLocale.L("interaction.trigger.after_reconnect", "Nach dem Reconnect"), JDLocale.L("interaction.trigger.after_reconnect.desc", "Nach dem eigentlichen Reconnect"));
-         INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS = new InteractionTrigger(15, JDLocale.L("interaction.trigger.downloads_and_interactions_finished", "Downloads & Interactionen abgeschlossen"), JDLocale.L("interaction.trigger.downloads_and_interactions_finished.desc", "Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind."));
-         INTERACTION_CONTAINER_DOWNLOAD = new InteractionTrigger(16, JDLocale.L("interaction.trigger.container_download", "Linkcontainer geladen"), JDLocale.L("interaction.trigger.download_download.desc", "Wird aufgerufen wenn ein LinkContainer(DLC,RSDF,CCF,...) geladen wurde"));
-         INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(17, JDLocale.L("interaction.trigger.before_download", "Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc", "Wird aufgerufen bevor ein neuer Download gestartet wird"));
-         INTERACTION_EXIT = new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
 
-      
-    }
     /**
      * Zeigt an dass diese Interaction noch nie aufgerufen wurde
      */
@@ -107,7 +89,25 @@ public abstract class Interaction extends Property implements Serializable {
     public static Interaction[] getInteractionList() {
         return new Interaction[] { new SimpleExecute(), new ExternExecute(), new JDExit(), new ResetLink() };
     }
+    public static void initTriggers(){
+        INTERACTION_NO_EVENT = new InteractionTrigger(0, JDLocale.L("interaction.trigger.no_event", "Kein Event"), JDLocale.L("interaction.trigger.no_event.desc", "kein Event"));
+            INTERACTION_SINGLE_DOWNLOAD_FINISHED = new InteractionTrigger(1, JDLocale.L("interaction.trigger.download_successfull", "Download erfolgreich beendet"), JDLocale.L("interaction.trigger.download_successfull.desc", "Wird aufgerufen sobald ein Download erfolgreich beendet wurde"));
+            INTERACTION_ALL_DOWNLOADS_FINISHED = new InteractionTrigger(2, JDLocale.L("interaction.trigger.all_downloads_finished", "Alle Downloads beendet"), JDLocale.L("interaction.trigger.all_downloads_finished.desc", "Wird aufgerufen sobald alle Downloads beendet oder abgebrochen wurden"));
+            INTERACTION_DOWNLOAD_FAILED = new InteractionTrigger(3, JDLocale.L("interaction.trigger.single_download_failed", "Download fehlgeschlagen"), JDLocale.L("interaction.trigger.single_download_failed.desc", "Wird aufgerufen wenn ein Download wegen Fehlern abgebrochen wurde"));
+            INTERACTION_LINKLIST_STRUCTURE_CHANGED = new InteractionTrigger(4, JDLocale.L("interaction.trigger.linklist_structure_changed", "Linklisten Struktur geändert"), JDLocale.L("interaction.trigger.linklist_structure_changed.desc", "Wird aufgerufen wenn sich die Struktur der Linkliste geändert hat (Links eingefügt, Links fertig, ...)"));
+            INTERACTION_DOWNLOAD_BOT_DETECTED = new InteractionTrigger(5, JDLocale.L("interaction.trigger.bot_detected", "Bot erkannt"), JDLocale.L("interaction.trigger.bot_detected.desc", "jDownloader wurde als Bot erkannt"));
+            INTERACTION_APPSTART = new InteractionTrigger(7, JDLocale.L("interaction.trigger.app_start", "Programmstart"), JDLocale.L("interaction.trigger.app_start.desc", "Direkt nach dem Initialisieren von jDownloader"));
+            INTERACTION_AFTER_UNRAR = new InteractionTrigger(9, JDLocale.L("interaction.trigger.after_extract", "Nach dem Entpacken"), JDLocale.L("interaction.trigger.after_extract.desc", "Wird aufgerufen wenn die Unrar-Aktion beendet wurde."));
+            INTERACTION_DOWNLOAD_PACKAGE_FINISHED = new InteractionTrigger(12, JDLocale.L("interaction.trigger.package_finished", "Paket fertig"), JDLocale.L("interaction.trigger.package_finished.desc", "Wird aufgerufen wenn ein Paket fertig geladen wurde"));
+            INTERACTION_BEFORE_RECONNECT = new InteractionTrigger(13, JDLocale.L("interaction.trigger.before_reconnect", "Vor dem Reconnect"), JDLocale.L("interaction.trigger.before_reconnect.desc", "Vor dem eigentlichen Reconnect"));
+            INTERACTION_AFTER_RECONNECT = new InteractionTrigger(14, JDLocale.L("interaction.trigger.after_reconnect", "Nach dem Reconnect"), JDLocale.L("interaction.trigger.after_reconnect.desc", "Nach dem eigentlichen Reconnect"));
+            INTERACTION_AFTER_DOWNLOAD_AND_INTERACTIONS = new InteractionTrigger(15, JDLocale.L("interaction.trigger.downloads_and_interactions_finished", "Downloads & Interactionen abgeschlossen"), JDLocale.L("interaction.trigger.downloads_and_interactions_finished.desc", "Wird aufgerufen wenn alle Downloads und alle Interactionen beendet sind."));
+            INTERACTION_CONTAINER_DOWNLOAD = new InteractionTrigger(16, JDLocale.L("interaction.trigger.container_download", "Linkcontainer geladen"), JDLocale.L("interaction.trigger.download_download.desc", "Wird aufgerufen wenn ein LinkContainer(DLC,RSDF,CCF,...) geladen wurde"));
+            INTERACTION_BEFORE_DOWNLOAD = new InteractionTrigger(17, JDLocale.L("interaction.trigger.before_download", "Vor einem Download"), JDLocale.L("interaction.trigger.before_download.desc", "Wird aufgerufen bevor ein neuer Download gestartet wird"));
+            INTERACTION_EXIT = new InteractionTrigger(20, JDLocale.L("interaction.trigger.exit", "JD wird beendet"), JDLocale.L("interaction.trigger.exit.desc", "Wird beim Beenden vor dem Schließen des Programms aufgerufen"));
 
+         
+       }
     /**
      * Gibt alle Interactionen zum Trigger zurück
      * 

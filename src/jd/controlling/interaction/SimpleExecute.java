@@ -32,7 +32,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     private static final long serialVersionUID = 1L;
 
-    private static final String NAME = JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
+
 
     private static final String PROPERTY_COMMAND = "PROPERTY_COMMAND";
     private static final String PROPERTY_EXECUTE_IN = "PROPERTY_EXECUTE_IN";
@@ -72,7 +72,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public String getInteractionName() {
-        return NAME;
+        return JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
     }
 
     @Override
@@ -104,7 +104,7 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     @Override
     public String toString() {
-        return NAME;
+        return JDLocale.L("interaction.simpleExecute.name", "Programm/Script ausführen");
     }
 
 }

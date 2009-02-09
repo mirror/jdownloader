@@ -32,7 +32,7 @@ public class JDExit extends Interaction implements Serializable {
 
     private static final long serialVersionUID = -4825002404662625527L;
 
-    private static final String NAME = JDLocale.L("interaction.jdexit.name", "JD Beenden");
+
 
     @Override
     public boolean doInteraction(Object arg) {
@@ -46,7 +46,7 @@ public class JDExit extends Interaction implements Serializable {
 
     @Override
     public String getInteractionName() {
-        return NAME;
+        return  JDLocale.L("interaction.jdexit.name", "JD Beenden");
     }
 
     @Override
@@ -59,6 +59,6 @@ public class JDExit extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return NAME;
+        return  JDLocale.L("interaction.jdexit.name", "JD Beenden");
     }
 }

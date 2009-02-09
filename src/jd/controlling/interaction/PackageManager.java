@@ -45,7 +45,7 @@ import org.xml.sax.InputSource;
 
 public class PackageManager extends Interaction implements Serializable {
 
-    private static final String NAME = JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
+    
 
     private static ArrayList<PackageData> PACKAGE_DATA = null;
 
@@ -145,7 +145,7 @@ public class PackageManager extends Interaction implements Serializable {
 
     @Override
     public String getInteractionName() {
-        return NAME;
+        return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }
 
     @SuppressWarnings("unchecked")
@@ -310,6 +310,6 @@ public class PackageManager extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return NAME;
+        return JDLocale.L("interaction.packagemanager.name", "Pakete aktualisieren");
     }
 }

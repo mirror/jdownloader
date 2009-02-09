@@ -31,7 +31,7 @@ public class ResetLink extends Interaction implements Serializable {
 
     private static final long serialVersionUID = -9071890385750062424L;
 
-    private static final String NAME = JDLocale.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
+
 
     private static final String PARAM_LAST_OR_ALL = "LAST_OR_ALL";
 
@@ -60,7 +60,7 @@ public class ResetLink extends Interaction implements Serializable {
 
     @Override
     public String getInteractionName() {
-        return NAME;
+        return JDLocale.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
     }
 
     @Override
@@ -74,6 +74,6 @@ public class ResetLink extends Interaction implements Serializable {
 
     @Override
     public String toString() {
-        return NAME;
+        return JDLocale.L("interaction.resetLink.name", "Downloadlink zurücksetzen");
     }
 }

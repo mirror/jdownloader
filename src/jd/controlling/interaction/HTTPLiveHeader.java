@@ -59,7 +59,6 @@ public class HTTPLiveHeader extends Interaction {
 
     private static final long serialVersionUID = 5388179522151088255L;
 
-    private static final String NAME = JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
 
     /**
      * @param xmlString
@@ -549,7 +548,7 @@ public class HTTPLiveHeader extends Interaction {
 
     @Override
     public String getInteractionName() {
-        return NAME;
+        return JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
     }
 
     @SuppressWarnings("unchecked")
@@ -635,7 +634,7 @@ public class HTTPLiveHeader extends Interaction {
 
     @Override
     public String toString() {
-        return NAME;
+        return JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
     }
 
 }
