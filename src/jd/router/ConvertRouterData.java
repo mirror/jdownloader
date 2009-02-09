@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.nutils.io.JDIO;
 import jd.utils.JDUtilities;
@@ -153,18 +153,17 @@ public class ConvertRouterData {
         }
         JDIO.saveObject(((SimpleGUI) JDUtilities.getGUI()).getFrame(), list, file, null, null, true);
     } /*
-         * private static String replace(String arg) { return
-         * arg.replaceAll("&amp;nbsp;", " ").replaceAll("&#13;", "\n"); }
-         * 
-         * private static void formateNames(File file, File fileout) {
-         * ConvertRouterData conv = new ConvertRouterData(); Vector<String[]>
-         * routers = new Vector<String[]>(); Vector<String[]> routersv = new
-         * Vector<String[]>(); routers.addAll((Collection<? extends String[]>)
-         * Utilities.loadObject(file, true)); for (int i = 0; i <
-         * routers.size(); i++) { String[] la = routers.get(i);
-         * la[1]=replace(la[1]); routersv.add(la); } conv.saveTolist(routersv,
-         * fileout); }
-         */
+       * private static String replace(String arg) { return
+       * arg.replaceAll("&amp;nbsp;", " ").replaceAll("&#13;", "\n"); }
+       * 
+       * private static void formateNames(File file, File fileout) {
+       * ConvertRouterData conv = new ConvertRouterData(); Vector<String[]>
+       * routers = new Vector<String[]>(); Vector<String[]> routersv = new
+       * Vector<String[]>(); routers.addAll((Collection<? extends String[]>)
+       * Utilities.loadObject(file, true)); for (int i = 0; i < routers.size();
+       * i++) { String[] la = routers.get(i); la[1]=replace(la[1]);
+       * routersv.add(la); } conv.saveTolist(routersv, fileout); }
+       */
 
     private String[] toLiveHeader(RouterData routerData) {
         ip = routerData.getRouterIP();

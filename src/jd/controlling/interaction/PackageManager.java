@@ -45,8 +45,6 @@ import org.xml.sax.InputSource;
 
 public class PackageManager extends Interaction implements Serializable {
 
-    
-
     private static ArrayList<PackageData> PACKAGE_DATA = null;
 
     private static final long serialVersionUID = 1L;

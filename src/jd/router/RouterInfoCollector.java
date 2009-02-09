@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 
 import jd.JDInit;
 import jd.config.Configuration;
-import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.http.Browser;
 import jd.nutils.Threader;
 import jd.nutils.jobber.JDRunnable;
@@ -47,8 +47,9 @@ public class RouterInfoCollector {
     public final static int RInfo_ROUTERPAGE = 1 << 4;
     public final static int RInfo_ROUTERERROR = 1 << 5;
     public final static int RInfo_HOSTNAME = 1 << 6;
-    public final static int RInfo_ALL = RInfo_UPNP|RInfo_MAC|RInfo_METHODENAME|RInfo_ROUTERPAGE|RInfo_ROUTERERROR|RInfo_HOSTNAME;
-    public final static int RInfo_ROUTERSEARCH = RInfo_MAC|RInfo_ROUTERPAGE|RInfo_ROUTERERROR|RInfo_HOSTNAME;
+    public final static int RInfo_ALL = RInfo_UPNP | RInfo_MAC | RInfo_METHODENAME | RInfo_ROUTERPAGE | RInfo_ROUTERERROR | RInfo_HOSTNAME;
+    public final static int RInfo_ROUTERSEARCH = RInfo_MAC | RInfo_ROUTERPAGE | RInfo_ROUTERERROR | RInfo_HOSTNAME;
+
     public static boolean isLiveheader() {
         reconnectMethode = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS, null);
         return (reconnectType.equals(RECONNECTTYPE_LIVE_HEADER) && reconnectMethode != null);
@@ -109,7 +110,7 @@ public class RouterInfoCollector {
     public static RInfo getRInfo(final int infoToCollect) {
         final RInfo info = new RInfo();
         final Browser br = new Browser();
-        final InetAddress ia  = getRouterIP();
+        final InetAddress ia = getRouterIP();
         try {
             info.setRouterIP(getRouterIP().getHostAddress());
         } catch (Exception e) {
@@ -130,101 +131,101 @@ public class RouterInfoCollector {
             });
         }
         if ((infoToCollect & RInfo_HOSTNAME) != 0) {
-        th.add(new JDRunnable() {
+            th.add(new JDRunnable() {
 
-            public void go() throws Exception {
-                try {
-                    info.setRouterIP(ia.getHostAddress());
-                    info.setRouterHost(ia.getHostName());
-                } catch (Exception e) {
+                public void go() throws Exception {
+                    try {
+                        info.setRouterIP(ia.getHostAddress());
+                        info.setRouterHost(ia.getHostName());
+                    } catch (Exception e) {
+                    }
+
                 }
-
-            }
-        });
+            });
         }
         if ((infoToCollect & RInfo_ROUTERERROR) != 0) {
-        th.add(new JDRunnable() {
+            th.add(new JDRunnable() {
 
-            public void go() throws Exception {
-                try {
-                    info.setRouterErrorPage(br.getPage("http://" + ia.getHostName() + "/error404"));
-                } catch (IOException e) {
+                public void go() throws Exception {
+                    try {
+                        info.setRouterErrorPage(br.getPage("http://" + ia.getHostName() + "/error404"));
+                    } catch (IOException e) {
+                    }
                 }
-            }
-        });
+            });
         }
         if ((infoToCollect & RInfo_MAC) != 0) {
-        th.add(new JDRunnable() {
+            th.add(new JDRunnable() {
 
-            public void go() throws Exception {
-                try {
-                    info.setRouterMAC(new GetMacAdress().getMacAddress(ia));
-                } catch (Exception e) {
+                public void go() throws Exception {
+                    try {
+                        info.setRouterMAC(new GetMacAdress().getMacAddress(ia));
+                    } catch (Exception e) {
+                    }
                 }
-            }
-        });
+            });
         }
         th.add(new JDRunnable() {
 
+            @SuppressWarnings("unchecked")
             public void go() throws Exception {
                 if ((infoToCollect & RInfo_ROUTERPAGE) != 0) {
-                try {
-                    info.setRouterPage(br.getPage("http://" + ia.getHostName()));
+                    try {
+                        info.setRouterPage(br.getPage("http://" + ia.getHostName()));
 
-                    StringBuilder pageHeader = new StringBuilder();
-                    Map<String, List<String>> he = br.getHttpConnection().getHeaderFields();
-                    for (Entry<String, List<String>> b : he.entrySet()) {
-                        if (b.getKey() != null) {
-                            pageHeader.append(b.getKey());
-                            pageHeader.append(new char[] { ':', ' ' });
-                        }
-                        boolean bs = false;
-                        for (Iterator<String> iterator = b.getValue().iterator(); iterator.hasNext();) {
-                            String type = (String) iterator.next();
-                            if (bs) {
-                                pageHeader.append(';');
+                        StringBuilder pageHeader = new StringBuilder();
+                        Map<String, List<String>> he = br.getHttpConnection().getHeaderFields();
+                        for (Entry<String, List<String>> b : he.entrySet()) {
+                            if (b.getKey() != null) {
+                                pageHeader.append(b.getKey());
+                                pageHeader.append(new char[] { ':', ' ' });
                             }
-                            pageHeader.append(type);
+                            boolean bs = false;
+                            for (Iterator<String> iterator = b.getValue().iterator(); iterator.hasNext();) {
+                                String type = (String) iterator.next();
+                                if (bs) {
+                                    pageHeader.append(';');
+                                }
+                                pageHeader.append(type);
 
-                            bs = true;
+                                bs = true;
+                            }
+                            pageHeader.append(new char[] { '\r', '\n' });
                         }
-                        pageHeader.append(new char[] { '\r', '\n' });
-                    }
-                    info.setPageHeader(pageHeader.toString().trim());
+                        info.setPageHeader(pageHeader.toString().trim());
 
-                } catch (IOException e) {
-                }
+                    } catch (IOException e) {
+                    }
                 }
                 if ((infoToCollect & RInfo_METHODENAME) != 0) {
-                if (isLiveheader()) {
-                    String rn = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, null);
-                    if (info.getRouterName() == null) {
-                        if (rn != null) {
-                            {
-                                if (!rn.equals("Reconnect Recorder Methode")) info.setRouterName(info.getRouterName());
-                            }
-                        } else if (!reconnectMethode.matches("\\s")) {
-
-                            for (String[] script : new HTTPLiveHeader().getLHScripts()) {
-                                if (script[2].trim().equals(reconnectMethode.trim()) && (info.getRouterName() == null || !info.getRouterName().contains(script[0] + " - " + script[1]))) info.setRouterName(info.getRouterName() == null ? script[0] + " - " + script[1] : info.getRouterName() + " | " + script[0] + " - " + script[1]);
+                    if (isLiveheader()) {
+                        String rn = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_HTTPSEND_ROUTERNAME, null);
+                        if (info.getRouterName() == null) {
+                            if (rn != null) {
+                                {
+                                    if (!rn.equals("Reconnect Recorder Methode")) info.setRouterName(info.getRouterName());
+                                }
+                            } else if (!reconnectMethode.matches("\\s")) {
+                                for (String[] script : new HTTPLiveHeader().getLHScripts()) {
+                                    if (script[2].trim().equals(reconnectMethode.trim()) && (info.getRouterName() == null || !info.getRouterName().contains(script[0] + " - " + script[1]))) info.setRouterName(info.getRouterName() == null ? script[0] + " - " + script[1] : info.getRouterName() + " | " + script[0] + " - " + script[1]);
+                                }
                             }
                         }
-                    }
-                    if (rn == null || rn.equals("Reconnect Recorder Methode"))
-                        info.setReconnectMethode(SQLRouterData.setPlaceHolder(reconnectMethode));
-                    else
-                        info.setReconnectMethode(reconnectMethode);
+                        if (rn == null || rn.equals("Reconnect Recorder Methode"))
+                            info.setReconnectMethode(SQLRouterData.setPlaceHolder(reconnectMethode));
+                        else
+                            info.setReconnectMethode(reconnectMethode);
 
-                }
-                if (isClr()) {
-                    if (info.getRouterName() == null) {
-                        info.setRouterName(new Regex(info.getReconnectMethodeClr(), "<Router name=\"(.*?)\" />").getMatch(0));
                     }
-                    info.setReconnectMethodeClr(reconnectMethodeClr);
-                }
-                if (info.getRouterName() == null && info.getRouterPage()!=null) {
-                    info.setRouterName(new Regex(info.getRouterPage(), "<title>(.*?)</title>").getMatch(0));
-                }
+                    if (isClr()) {
+                        if (info.getRouterName() == null) {
+                            info.setRouterName(new Regex(info.getReconnectMethodeClr(), "<Router name=\"(.*?)\" />").getMatch(0));
+                        }
+                        info.setReconnectMethodeClr(reconnectMethodeClr);
+                    }
+                    if (info.getRouterName() == null && info.getRouterPage() != null) {
+                        info.setRouterName(new Regex(info.getRouterPage(), "<title>(.*?)</title>").getMatch(0));
+                    }
                 }
             }
         });

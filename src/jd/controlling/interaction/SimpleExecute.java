@@ -32,8 +32,6 @@ public class SimpleExecute extends Interaction implements Serializable, ActionLi
 
     private static final long serialVersionUID = 1L;
 
-
-
     private static final String PROPERTY_COMMAND = "PROPERTY_COMMAND";
     private static final String PROPERTY_EXECUTE_IN = "PROPERTY_EXECUTE_IN";
     private static final String PROPERTY_PARAMETER = "PROPERTY_PARAMETER";

@@ -30,15 +30,15 @@ import javax.swing.JSeparator;
 import javax.swing.ScrollPaneConstants;
 
 import jd.config.Configuration;
-import jd.controlling.interaction.BatchReconnect;
-import jd.controlling.interaction.ExternReconnect;
-import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.reconnect.BatchReconnect;
+import jd.controlling.reconnect.ExternReconnect;
+import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.gui.skins.simple.components.MiniLogDialog;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 public class ConfigPanelReconnect extends ConfigPanel implements ActionListener, ControlListener {
 
@@ -67,7 +67,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
 
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == box) {
-            configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, box.getSelectedItem());
+            configuration.setProperty(Configuration.PARAM_RECONNECT_TYPE, box.getSelectedIndex());
             setReconnectType();
         } else if (e.getSource() == btn) {
             save();
@@ -124,7 +124,7 @@ public class ConfigPanelReconnect extends ConfigPanel implements ActionListener,
     @Override
     public void initPanel() {
         box = new JComboBox(new String[] { JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"), JDLocale.L("modules.reconnect.types.extern", "Extern"), JDLocale.L("modules.reconnect.types.batch", "Batch"), JDLocale.L("modules.reconnect.types.clr", "CLR Script") });
-        box.setSelectedItem(configuration.getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl")));
+        box.setSelectedIndex(configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_TYPE, 0));
         box.addActionListener(this);
 
         btn = new JButton(JDLocale.L("modules.reconnect.testreconnect", "Test Reconnect"));

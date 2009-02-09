@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.config.Configuration;
+import jd.controlling.reconnect.Reconnecter;
 import jd.http.Browser;
 import jd.http.Encoding;
 import jd.parser.Form;
@@ -35,7 +36,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 public class FileFactory extends PluginForHost {
 
@@ -169,9 +169,9 @@ public class FileFactory extends PluginForHost {
         // dl.connect(br);
         // Prüft ob content disposition header da sind
         if (br.getHttpConnection().isContentDisposition()) {
-long cu = parameter.getDownloadCurrent();
+            long cu = parameter.getDownloadCurrent();
             dl.startDownload();
-            long loaded = parameter.getDownloadCurrent()-cu;
+            long loaded = parameter.getDownloadCurrent() - cu;
             if (loaded > 30 * 1024 * 1024l) {
                 Reconnecter.requestReconnect();
             }
@@ -363,7 +363,7 @@ long cu = parameter.getDownloadCurrent();
 
     @Override
     public String getVersion() {
-        
+
         return getVersion("$Revision$");
     }
 

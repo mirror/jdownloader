@@ -14,22 +14,21 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.utils;
+package jd.controlling.reconnect;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 import jd.config.Configuration;
-import jd.controlling.interaction.BatchReconnect;
-import jd.controlling.interaction.ExternReconnect;
-import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.JDController;
 import jd.controlling.interaction.Interaction;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.router.RouterInfoCollector;
+import jd.utils.JDLocale;
+import jd.utils.JDUtilities;
 
 public class Reconnecter {
 
@@ -51,80 +50,71 @@ public class Reconnecter {
         return false;
     }
 
+    /**
+     * Führt einen Reconnect durch.
+     * 
+     * @return <code>true</code>, wenn der Reconnect erfolgreich war, sonst
+     *         <code>false</code>
+     */
     public static boolean doReconnect() {
-
-        if (Reconnecter.waitForRunningRequests() > 0 && LAST_RECONNECT_SUCCESS) { return true; }
+        JDController controller = JDUtilities.getController();
+        if (Reconnecter.waitForRunningRequests() > 0 && LAST_RECONNECT_SUCCESS) return true;
         boolean ipChangeSuccess = false;
         IS_RECONNECTING = true;
         if (Reconnecter.isGlobalDisabled()) {
-
             if (System.currentTimeMillis() - lastIPUpdate > 1000 * JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty("EXTERNAL_IP_CHECK_INTERVAL", 60 * 10)) {
                 ipChangeSuccess = Reconnecter.checkExternalIPChange();
                 JDUtilities.getGUI().displayMiniWarning(JDLocale.L("gui.warning.reconnect.hasbeendisabled", "Reconnect deaktiviert!"), JDLocale.L("gui.warning.reconnect.hasbeendisabled.tooltip", "Um erfolgreich einen Reconnect durchführen zu können muss diese Funktion wieder aktiviert werden."), 60000);
-
             }
 
             if (!ipChangeSuccess) {
                 IS_RECONNECTING = false;
-
                 return false;
             }
         }
 
         ArrayList<DownloadLink> disabled = new ArrayList<DownloadLink>();
         if (!ipChangeSuccess) {
-            if (JDUtilities.getController().getForbiddenReconnectDownloadNum() > 0) {
+            if (controller.getForbiddenReconnectDownloadNum() > 0) {
                 // logger.finer("Downloads are running. reconnect is disabled");
                 IS_RECONNECTING = false;
                 return false;
             }
 
-            Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, JDUtilities.getController());
-            String type = JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl"));
-            if (type == null) {
-                IS_RECONNECTING = false;
-                logger.severe("Reconnect is not configured. Config->Reconnect!");
-                return false;
-            }
+            Interaction.handleInteraction(Interaction.INTERACTION_BEFORE_RECONNECT, controller);
+            int type = JDUtilities.getConfiguration().getIntegerProperty(Configuration.PARAM_RECONNECT_TYPE, 0);
             IS_RECONNECTING = true;
             logger.info("DO RECONNECT NOW");
             boolean interrupt = JDUtilities.getSubConfig("DOWNLOAD").getBooleanProperty("PARAM_DOWNLOAD_AUTORESUME_ON_RECONNECT", true);
             if (interrupt) {
-                JDUtilities.getController().pauseDownloads(true);
+                controller.pauseDownloads(true);
 
-                Iterator<FilePackage> iterator = JDUtilities.getController().getPackages().iterator();
-                FilePackage fp = null;
-                DownloadLink nextDownloadLink;
-
-                while (iterator.hasNext()) {
-                    fp = iterator.next();
-                    Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
-                    while (it2.hasNext()) {
-                        nextDownloadLink = it2.next();
+                for (FilePackage fp : controller.getPackages()) {
+                    for (DownloadLink nextDownloadLink : fp.getDownloadLinks()) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.PLUGIN_IN_PROGRESS)) {
                             nextDownloadLink.setEnabled(false);
-                            logger.info("disbaled +" + nextDownloadLink);
+                            logger.info("disabled " + nextDownloadLink);
                             disabled.add(nextDownloadLink);
                         }
                     }
                 }
             }
-            if (type.equals(JDLocale.L("modules.reconnect.types.extern", "Extern"))) {
-                ipChangeSuccess = new ExternReconnect().interact(null);
-            } else if (type.equals(JDLocale.L("modules.reconnect.types.batch", "Batch"))) {
-                ipChangeSuccess = new BatchReconnect().interact(null);
-            } else if (type.equals(JDLocale.L("modules.reconnect.types.clr", "CLR Script"))) {
-                ipChangeSuccess = new HTTPLiveHeader().interact(null);
-            } else {
-                ipChangeSuccess = new HTTPLiveHeader().interact(null);
+            switch (type) {
+            case 1:
+                ipChangeSuccess = new ExternReconnect().doReconnect();
+                break;
+            case 2:
+                ipChangeSuccess = new BatchReconnect().doReconnect();
+                break;
+            default:
+                ipChangeSuccess = new HTTPLiveHeader().doReconnect();
             }
             if (interrupt) {
-                JDUtilities.getController().pauseDownloads(false);
+                controller.pauseDownloads(false);
                 for (DownloadLink link : disabled) {
                     logger.info("enable +" + link);
                     link.setEnabled(true);
                 }
-
             }
 
             LAST_RECONNECT_SUCCESS = ipChangeSuccess;
@@ -133,7 +123,7 @@ public class Reconnecter {
 
         if (ipChangeSuccess) {
             Reconnecter.resetAllLinks();
-            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, JDUtilities.getController());
+            Interaction.handleInteraction(Interaction.INTERACTION_AFTER_RECONNECT, controller);
             RouterInfoCollector.showDialog();
         }
         IS_RECONNECTING = false;
@@ -144,8 +134,7 @@ public class Reconnecter {
     }
 
     public static boolean doReconnectIfRequested() {
-
-        if (RECONNECT_REQUESTS > 0) { return Reconnecter.doReconnect(); }
+        if (RECONNECT_REQUESTS > 0) return Reconnecter.doReconnect();
         return false;
     }
 
@@ -154,40 +143,29 @@ public class Reconnecter {
     }
 
     /**
-     * Führt über die in der cnfig gegebenen daten einen reconnect durch.
-     * 
-     * @return
+     * Fordert einen Reconnect über die in der Config gegebenen Daten an.
      */
     public static void requestReconnect() {
         RECONNECT_REQUESTS++;
-
     }
 
     private static void resetAllLinks() {
         Vector<FilePackage> packages = JDUtilities.getController().getPackages();
         synchronized (packages) {
-            Iterator<FilePackage> iterator = packages.iterator();
-            FilePackage fp = null;
-            DownloadLink nextDownloadLink;
-            while (iterator.hasNext()) {
-                fp = iterator.next();
-                Iterator<DownloadLink> it2 = fp.getDownloadLinks().iterator();
-                while (it2.hasNext()) {
-                    nextDownloadLink = it2.next();
+            for (FilePackage fp : packages) {
+                for (DownloadLink nextDownloadLink : fp.getDownloadLinks()) {
                     if (nextDownloadLink.getPlugin().getRemainingHosterWaittime() > 0) {
                         if (nextDownloadLink.getLinkStatus().hasStatus(LinkStatus.ERROR_IP_BLOCKED)) {
                             nextDownloadLink.getLinkStatus().setStatus(LinkStatus.TODO);
 
                             nextDownloadLink.getPlugin().resetHosterWaitTime();
-                            logger.finer("REset GLOBALS: " + nextDownloadLink.getPlugin());
+                            logger.finer("Reset GLOBALS: " + nextDownloadLink.getPlugin());
                             nextDownloadLink.getPlugin().resetPluginGlobals();
                         }
-
                     }
                 }
             }
         }
-
     }
 
     public static boolean waitForNewIP(long i) {
@@ -197,16 +175,11 @@ public class Reconnecter {
         }
         boolean ret;
         while (!(ret = Reconnecter.doReconnectIfRequested()) && (System.currentTimeMillis() < i || i <= 0)) {
-
             try {
                 Thread.sleep(300);
-
             } catch (InterruptedException e) {
             }
-
         }
-        // TODO if(ret) RouterInfoCollector.showDialog();
-
         return ret;
     }
 
@@ -223,10 +196,8 @@ public class Reconnecter {
             } catch (InterruptedException e) {
             }
             wait += 500;
-
         }
         return wait;
-
     }
 
 }

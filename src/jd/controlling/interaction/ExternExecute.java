@@ -36,8 +36,6 @@ public class ExternExecute extends Interaction implements Serializable, ActionLi
 
     private static final long serialVersionUID = 4793649294489149258L;
 
-   
-
     private static final String PROPERTY_COMMAND = "InteractionExternExecute_" + "Command";
     private static final String PROPERTY_DISABLED = "PROPERTY_DISABLED";
     private static final String PROPERTY_EXECUTE_FOLDER = "PROPERTY_EXECUTE_FOLDER";

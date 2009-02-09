@@ -14,7 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling.interaction;
+package jd.controlling.reconnect;
 
 import java.io.File;
 import java.io.IOException;
@@ -55,19 +55,8 @@ import sun.misc.BASE64Encoder;
  * Diese Klasse kann mehrere HTTPrequests durchführen. Um damit einen reconnect
  * zu simulieren
  */
-public class HTTPLiveHeader extends Interaction {
+public class HTTPLiveHeader extends ReconnectMethod {
 
-    private static final long serialVersionUID = 5388179522151088255L;
-
-
-    /**
-     * @param xmlString
-     * @param validating
-     * @return XML Dokument
-     * @throws ParserConfigurationException
-     * @throws IOException
-     * @throws SAXException
-     */
     public static Document parseXmlString(String xmlString, boolean validating) throws SAXException, IOException, ParserConfigurationException {
         // Create a builder factory
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -92,14 +81,14 @@ public class HTTPLiveHeader extends Interaction {
     private HashMap<String, String> variables;
 
     @Override
-    public boolean doInteraction(Object arg) {
+    public boolean doReconnect() {
         int okCounter = 0;
         // Hole die Config parameter. Über die Parameterkeys wird in der
         // initConfig auch der ConfigContainer für die Gui vorbereitet
         Configuration configuration = JDUtilities.getConfiguration();
         String script;
 
-        if (JDUtilities.getConfiguration().getStringProperty(Configuration.PARAM_RECONNECT_TYPE, JDLocale.L("modules.reconnect.types.liveheader", "LiveHeader/Curl")).equals(JDLocale.L("modules.reconnect.types.clr", "CLR Script"))) {
+        if (configuration.getIntegerProperty(Configuration.PARAM_RECONNECT_TYPE, 0) == 3) {
             /* konvertiert CLR zu Liveheader */
             String[] ret = CLRLoader.createLiveHeader(configuration.getStringProperty(Configuration.PARAM_HTTPSEND_REQUESTS_CLR));
             if (ret != null) {
@@ -316,9 +305,7 @@ public class HTTPLiveHeader extends Interaction {
         } catch (SAXException e) {
             progress.finalize();
             return parseError(e.getMessage());
-        }
-
-        catch (ParserConfigurationException e) {
+        } catch (ParserConfigurationException e) {
 
             e.printStackTrace();
             progress.finalize();
@@ -400,7 +387,7 @@ public class HTTPLiveHeader extends Interaction {
         }
         if (maxretries == -1 || retries <= maxretries) {
             progress.finalize();
-            return doInteraction(arg);
+            return doReconnect();
         }
         progress.finalize();
         logger.info("Rec fail: " + afterIP);
@@ -546,11 +533,6 @@ public class HTTPLiveHeader extends Interaction {
 
     }
 
-    @Override
-    public String getInteractionName() {
-        return JDLocale.L("interaction.liveHeader.name", "HTTP Live Header");
-    }
-
     @SuppressWarnings("unchecked")
     public Vector<String[]> getLHScripts() {
         File[] list = new File(new File(JDUtilities.getJDHomeDirectoryFromEnvironment(), "jd"), "router").listFiles();
@@ -622,13 +604,12 @@ public class HTTPLiveHeader extends Interaction {
     }
 
     private boolean parseError(String string) {
-        setCallCode(Interaction.INTERACTION_CALL_ERROR);
         logger.severe(string);
         return false;
     }
 
     @Override
-    public void resetInteraction() {
+    public void resetMethod() {
         retries = 0;
     }
 

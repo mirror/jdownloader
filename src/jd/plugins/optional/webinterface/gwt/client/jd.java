@@ -7,7 +7,7 @@ import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.smartgwt.client.util.*;
+import com.smartgwt.client.util.SC;
 
 public class jd implements EntryPoint {
 

@@ -17,6 +17,7 @@ package jd.plugins.host;
 
 import java.io.IOException;
 import java.util.regex.Pattern;
+
 import jd.PluginWrapper;
 import jd.http.Encoding;
 import jd.http.HTTPConnection;

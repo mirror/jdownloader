@@ -14,10 +14,9 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling.interaction;
+package jd.controlling.reconnect;
 
 import java.io.File;
-import java.io.Serializable;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,11 +32,8 @@ import jd.utils.JDUtilities;
  * 
  * @author JD-Team
  */
-public class ExternReconnect extends Interaction implements Serializable {
+public class ExternReconnect extends ReconnectMethod {
 
-    private static final long serialVersionUID = 4793649294489149258L;
-
-  
     private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
     public static final String PARAM_RETRIES = "EXTERN_RECONNECT_RETRIES";
@@ -53,7 +49,7 @@ public class ExternReconnect extends Interaction implements Serializable {
     private int retries = 0;
 
     @Override
-    public boolean doInteraction(Object arg) {
+    public boolean doReconnect() {
         retries++;
         ProgressController progress = new ProgressController(JDLocale.L("interaction.externreconnect.progress.0_title", "ExternReconnect"), 10);
 
@@ -103,15 +99,10 @@ public class ExternReconnect extends Interaction implements Serializable {
 
         if (maxretries == -1 || retries <= maxretries) {
             progress.finalize();
-            return doInteraction(arg);
+            return doReconnect();
         }
         progress.finalize();
         return false;
-    }
-
-    @Override
-    public String getInteractionName() {
-        return JDLocale.L("interaction.externreconnect.name", "Extern Reconnect");
     }
 
     @Override
@@ -124,11 +115,10 @@ public class ExternReconnect extends Interaction implements Serializable {
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PARAM_WAITFORIPCHANGE, JDLocale.L("interaction.externreconnect.waitForIp", "Auf neue IP warten [sek]"), 0, 600).setDefaultValue(20));
 
         config.addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, JDUtilities.getConfiguration(), PROPERTY_IP_WAIT_FOR_RETURN, JDLocale.L("interaction.externreconnect.waitForTermination", "Warten x Sekunden bis Befehl beendet ist [sek]"), 0, 600).setDefaultValue(0));
-
     }
 
     @Override
-    public void resetInteraction() {
+    public void resetMethod() {
         retries = 0;
     }
 
@@ -143,7 +133,6 @@ public class ExternReconnect extends Interaction implements Serializable {
         String parameter = JDUtilities.getConfiguration().getStringProperty(PROPERTY_RECONNECT_PARAMETER);
 
         logger.finer("Execute Returns: " + JDUtilities.runCommand(command, Regex.getLines(parameter), executeIn, waitForReturn));
-
     }
 
     @Override

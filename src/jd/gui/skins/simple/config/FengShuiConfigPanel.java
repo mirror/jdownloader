@@ -69,9 +69,10 @@ import jd.HostPluginWrapper;
 import jd.config.Configuration;
 import jd.config.MenuItem;
 import jd.config.SubConfiguration;
-import jd.controlling.interaction.BatchReconnect;
-import jd.controlling.interaction.ExternReconnect;
-import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.reconnect.BatchReconnect;
+import jd.controlling.reconnect.ExternReconnect;
+import jd.controlling.reconnect.HTTPLiveHeader;
+import jd.controlling.reconnect.Reconnecter;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.Progressor;
 import jd.gui.skins.simple.SimpleGUI;
@@ -88,7 +89,6 @@ import jd.router.reconnectrecorder.JDRRGui;
 import jd.utils.JDLocale;
 import jd.utils.JDTheme;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 import net.miginfocom.swing.MigLayout;
 
 public class FengShuiConfigPanel extends JFrame implements ActionListener {

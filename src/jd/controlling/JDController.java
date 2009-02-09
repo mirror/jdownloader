@@ -16,7 +16,6 @@
 
 package jd.controlling;
 
-import java.awt.Color;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -33,6 +32,7 @@ import jd.JDInit;
 import jd.config.Configuration;
 import jd.config.SubConfiguration;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.event.UIEvent;
@@ -52,7 +52,6 @@ import jd.plugins.PluginsC;
 import jd.update.PackageData;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 /**
  * Im Controller wird das ganze App gesteuert. Evebnts werden deligiert.
@@ -230,6 +229,7 @@ public class JDController implements ControlListener, UIListener {
         eventSender = getEventSender();
 
         JDUtilities.setController(this);
+        // Kann weg, oder? Ist bei allen Interactions eine leere Methode ..
         initInteractions();
 
     }
@@ -330,13 +330,7 @@ public class JDController implements ControlListener, UIListener {
         }
 
         for (int i = 0; i < packages.size(); i++) {
-
-            int rand = (int) (Math.random() * 0xffffff);
-            Color c = new Color(rand);
-            c = c.brighter();
-
             FilePackage fp = new FilePackage();
-            fp.setProperty("color", c);
             fp.setName(packages.get(i));
             String downloadDir = JDUtilities.getConfiguration().getDefaultDownloadDirectory();
 
@@ -629,44 +623,23 @@ public class JDController implements ControlListener, UIListener {
     }
 
     public String encryptDLC(String xml) {
-        // if(true)return xml;
         String[] encrypt = JDUtilities.encrypt(xml, "dlc");
-
-        // logger.info(encrypt[1] + " - ");
         if (encrypt == null) {
             logger.severe("Container Encryption failed.");
-
             return null;
-
         }
+
         String key = encrypt[1];
         xml = encrypt[0];
 
-        Vector<String> services = new Vector<String>();
+        String service = "http://service.jdownloader.org/dlcrypt/service.php";
 
-        // services.add(new URL("http://dlcrypt1.ath.cx/service.php"));
-        // services.add(new URL("http://dlcrypt2.ath.cx/service.php"));
-        // services.add(new URL("http://dlcrypt3.ath.cx/service.php"));
-        // services.add(new URL("http://dlcrypt4.ath.cx/service.php"));
-        // services.add(new URL("http://dlcrypt5.ath.cx/service.php"));
-        // Collections.sort(services, new Comparator<Object>() {
-        // public int compare(Object a, Object b) {
-        // return (int) (Math.random() * 4.0 - 2.0);
-        // }
-        // });
-        services.add(0, "http://service.jdownloader.org/dlcrypt/service.php");
-        Iterator<String> it = services.iterator();
-        // int url = 0;
-        while (it.hasNext()) {
-            try {
-                String dlcKey = callService(it.next(), key);
-                if (dlcKey == null) {
-                    continue;
-                }
-                return xml + dlcKey;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        try {
+            String dlcKey = callService(service, key);
+            if (dlcKey == null) return null;
+            return xml + dlcKey;
+        } catch (Exception e) {
+            e.printStackTrace();
         }
 
         return null;
@@ -1065,7 +1038,8 @@ public class JDController implements ControlListener, UIListener {
     }
 
     /**
-     * Initialisiert alle Interactions
+     * Initialisiert alle Interactions. <br>
+     * Kann weg, oder? Ist bei allen Interactions eine leere Methode ..
      */
     @SuppressWarnings("unchecked")
     private void initInteractions() {

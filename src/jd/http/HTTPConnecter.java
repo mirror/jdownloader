@@ -16,12 +16,6 @@
 
 package jd.http;
 
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
-
-import jd.config.Configuration;
-import jd.utils.JDUtilities;
 
 public class HTTPConnecter {
 

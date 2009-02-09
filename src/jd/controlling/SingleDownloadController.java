@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import jd.config.Configuration;
 import jd.controlling.interaction.Interaction;
 import jd.controlling.interaction.PackageManager;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.gui.skins.simple.AgbDialog;
 import jd.plugins.DownloadLink;
@@ -33,7 +34,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 /**
  * In dieser Klasse wird der Download parallel zum Hauptthread gestartet

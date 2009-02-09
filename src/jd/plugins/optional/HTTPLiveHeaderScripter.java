@@ -60,7 +60,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import jd.JDFileFilter;
 import jd.PluginWrapper;
 import jd.config.MenuItem;
-import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.gui.skins.simple.LocationListener;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.JDFileChooser;

@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.controlling.interaction.Interaction;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.plugins.DownloadLink;
@@ -30,7 +31,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 /**
  * Dieser Controller verwaltet die downloads. Während StartDownloads.java für

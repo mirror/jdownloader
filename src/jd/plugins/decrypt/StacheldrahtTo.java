@@ -21,7 +21,6 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.HTTPConnecter;
 import jd.http.HTTPConnection;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;

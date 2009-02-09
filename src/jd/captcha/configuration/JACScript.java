@@ -233,8 +233,6 @@ public class JACScript {
                         letter.reduceWhiteNoise(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
                     } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
-
-                    } else if (cmd[1].equalsIgnoreCase("resizetoHeight")) {
                         letter.resizetoHeight(Integer.parseInt(params[0].trim()), Double.parseDouble(params[1].trim()));
                         continue;
 

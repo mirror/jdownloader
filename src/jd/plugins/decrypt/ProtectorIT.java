@@ -20,20 +20,18 @@ import java.awt.Point;
 import java.io.File;
 import java.util.ArrayList;
 
-import jd.utils.JDLocale;
-
-import jd.http.HTTPConnection;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
+import jd.http.HTTPConnection;
 import jd.parser.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
 public class ProtectorIT extends PluginForDecrypt {

@@ -31,6 +31,7 @@ import jd.captcha.pixelgrid.Letter;
 import jd.captcha.utils.UTILITIES;
 import jd.controlling.DistributeData;
 import jd.controlling.ProgressController;
+import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.Encoding;
@@ -44,7 +45,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 public class Serienjunkies extends PluginForHost {
 
@@ -144,7 +144,7 @@ public class Serienjunkies extends PluginForHost {
                     captchaFile = Plugin.getLocalCaptchaFile(this, ".gif");
 
                     try {
-                        br.downloadConnection(captchaFile,con);
+                        br.downloadConnection(captchaFile, con);
                         con.disconnect();
                     } catch (Exception e) {
 

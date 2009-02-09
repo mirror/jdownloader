@@ -80,16 +80,7 @@ public class InteractionTrigger implements Serializable {
     }
 
     /**
-     * Gibt die Triggerbeschreibung zurück
-     * 
-     * @return
-     */
-    public String getDescription() {
-        return description;
-    }
-
-    /**
-     * Gibt die EventID zurück. Es gibt keine setID!
+     * Gibt die EventID zurück.
      * 
      * @return
      */
@@ -99,6 +90,15 @@ public class InteractionTrigger implements Serializable {
 
     public String getName() {
         return name;
+    }
+
+    /**
+     * Gibt die Triggerbeschreibung zurück
+     * 
+     * @return
+     */
+    public String getDescription() {
+        return description;
     }
 
     @Override

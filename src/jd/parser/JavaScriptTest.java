@@ -2,9 +2,9 @@ package jd.parser;
 
 import java.io.IOException;
 
-import org.xml.sax.SAXException;
-
 import jd.http.Browser;
+
+import org.xml.sax.SAXException;
 
 public class JavaScriptTest {
     public static String getRSCOMServer(String link) throws IOException, SAXException {

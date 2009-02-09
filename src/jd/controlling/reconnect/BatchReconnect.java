@@ -14,9 +14,7 @@
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package jd.controlling.interaction;
-
-import java.io.Serializable;
+package jd.controlling.reconnect;
 
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -27,9 +25,8 @@ import jd.parser.Regex;
 import jd.utils.JDLocale;
 import jd.utils.JDUtilities;
 
-public class BatchReconnect extends Interaction implements Serializable {
+public class BatchReconnect extends ReconnectMethod {
 
- 
     private static final String PARAM_IPCHECKWAITTIME = "EXTERN_RECONNECT_IPCHECKWAITTIME";
 
     public static final String PARAM_RETRIES = "EXTERN_RECONNECT_RETRIES";
@@ -42,14 +39,12 @@ public class BatchReconnect extends Interaction implements Serializable {
 
     private static final String PROPERTY_RECONNECT_EXECUTE_FOLDER = "RECONNECT_EXECUTE_FOLDER";
 
-    public static String PROPERTY_TERMINAL = "TERMINAL";
-
-    private static final long serialVersionUID = 1L;
+    public static final String PROPERTY_TERMINAL = "TERMINAL";
 
     private int retries = 0;
 
     @Override
-    public boolean doInteraction(Object arg) {
+    public boolean doReconnect() {
         retries++;
         ProgressController progress = new ProgressController(JDLocale.L("interaction.batchreconnect.progress.0_title", "Batch Reconnect"), 10);
 
@@ -101,16 +96,10 @@ public class BatchReconnect extends Interaction implements Serializable {
 
         if (maxretries == -1 || retries <= maxretries) {
             progress.finalize();
-            return doInteraction(arg);
+            return doReconnect();
         }
         progress.finalize();
         return false;
-    }
-
-    @Override
-    public String getInteractionName() {
-        return JDLocale.L("interaction.batchreconnect.name", "Batch Reconnect");
-
     }
 
     @Override
@@ -137,7 +126,7 @@ public class BatchReconnect extends Interaction implements Serializable {
     }
 
     @Override
-    public void resetInteraction() {
+    public void resetMethod() {
         retries = 0;
     }
 

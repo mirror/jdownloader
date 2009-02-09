@@ -30,9 +30,9 @@ import java.util.logging.Logger;
 import jd.captcha.JACController;
 import jd.controlling.DistributeData;
 import jd.controlling.JDController;
+import jd.controlling.reconnect.Reconnecter;
 import jd.gui.UIInterface;
 import jd.utils.JDUtilities;
-import jd.utils.Reconnecter;
 
 public class Server extends UnicastRemoteObject implements ServerInterface {
 

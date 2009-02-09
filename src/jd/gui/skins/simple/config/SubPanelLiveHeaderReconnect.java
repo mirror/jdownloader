@@ -48,7 +48,7 @@ import javax.swing.event.DocumentListener;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.config.Configuration;
-import jd.controlling.interaction.HTTPLiveHeader;
+import jd.controlling.reconnect.HTTPLiveHeader;
 import jd.http.Encoding;
 import jd.router.FindRouterIP;
 import jd.router.GetRouterInfo;
@@ -216,6 +216,7 @@ class SubPanelLiveHeaderReconnect extends ConfigPanel implements ActionListener 
             dialog.pack();
             dialog.setLocationRelativeTo(null);
             dialog.setVisible(true);
+            if (op.getValue() == null) return;
             int answer = ((Integer) op.getValue()).intValue();
             if (answer != JOptionPane.CANCEL_OPTION && list.getSelectedValue() != null) {
                 String selected = (String) list.getSelectedValue();

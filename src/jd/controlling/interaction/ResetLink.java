@@ -31,8 +31,6 @@ public class ResetLink extends Interaction implements Serializable {
 
     private static final long serialVersionUID = -9071890385750062424L;
 
-
-
     private static final String PARAM_LAST_OR_ALL = "LAST_OR_ALL";
 
     @Override
