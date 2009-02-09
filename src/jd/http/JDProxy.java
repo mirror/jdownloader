@@ -20,6 +20,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.SocketAddress;
 
+import jd.parser.Regex;
+
 public class JDProxy extends Proxy {
     private String user = null;
 
@@ -40,19 +42,37 @@ public class JDProxy extends Proxy {
     }
 
     private String pass = null;
+    private int port = 80;
+    private String host;
+
+    public int getPort() {
+        return port;
+    }
 
     public JDProxy(java.net.Proxy.Type type, SocketAddress sa) {
         super(type, sa);
+
+        this.host = new Regex(sa.toString(), "(.*)\\/").getMatch(0);
+
     }
 
     public JDProxy(java.net.Proxy.Type type, String host, int port) {
-        super(type,new InetSocketAddress(host, port));
-    
+        super(type, new InetSocketAddress(host, port));
        
+        this.port = port;
+        this.host = host;
+
     }
 
-    public JDProxy(String host_port) {
-        super(JDProxy.Type.HTTP,new InetSocketAddress(host_port.split("\\:")[0], Integer.parseInt(host_port.split("\\:")[1])));
+    public JDProxy(String hostAndPort) {
+        super(JDProxy.Type.HTTP, new InetSocketAddress(hostAndPort.split("\\:")[0], Integer.parseInt(hostAndPort.split("\\:")[1])));
+        port = Integer.parseInt(hostAndPort.split("\\:")[1]);
+        this.host = hostAndPort.split("\\:")[0];
+
+    }
+
+    public String getHost() {
+        return host;
     }
 
 }

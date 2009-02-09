@@ -247,7 +247,7 @@ public class Browser {
     private static final Authenticator AUTHENTICATOR = new Authenticator() {
         protected PasswordAuthentication getPasswordAuthentication() {
             Browser br = Browser.getAssignedBrowserInstance(this.getRequestingURL());
-            return br.getPasswordAuthentication(this.getRequestingURL());
+            return br.getPasswordAuthentication(this.getRequestingURL(), this.getRequestingHost(), this.getRequestingPort());
 
         }
     };
@@ -377,8 +377,12 @@ public class Browser {
 
     /**
      * Returns the Browserinstance that requestst this url connection
+     * 
+     * @param port
+     * @param host
      */
     public static Browser getAssignedBrowserInstance(URL url) {
+
         return URL_LINK_MAP.get(url);
     }
 
@@ -1256,12 +1260,20 @@ public class Browser {
     }
 
     public void setAuth(String domain, String user, String pass) {
-        logins.put(domain.trim(), new String[] { user, pass, null });
+        domain = domain.trim();
+        if (domain.indexOf(":") <= 0) {
+            domain += ":80";
+        }
+        logins.put(domain, new String[] { user, pass });
     }
 
     public String[] getAuth(String domain) {
-        if (!logins.containsKey(domain.trim())) return null;
-        return logins.get(domain.trim());
+        domain = domain.trim();
+        if (domain.indexOf(":") <= 0) {
+            domain += ":80";
+        }
+        if (!logins.containsKey(domain)) return null;
+        return logins.get(domain);
     }
 
     public String submitForm(String formname) throws IOException {
@@ -1433,7 +1445,8 @@ public class Browser {
     }
 
     public void setProxy(JDProxy proxy) {
-        this.setAuth(proxy.address() + "", proxy.getUser(), proxy.getPass());
+
+        this.setAuth(proxy.getHost() + ":" + proxy.getPort(), proxy.getUser(), proxy.getPass());
         this.proxy = proxy;
     }
 
@@ -1456,13 +1469,15 @@ public class Browser {
      * url
      * 
      * @param url
+     * @param port
+     * @param host
      * @return
      */
-    public PasswordAuthentication getPasswordAuthentication(URL url) {
-
-        String[] auth = this.getAuth(url.getHost());
+    public PasswordAuthentication getPasswordAuthentication(URL url, String host, int port) {
+        if (port <= 0) port = 80;
+        String[] auth = this.getAuth(host + ":" + port);
         if (auth == null) return null;
-        JDUtilities.getLogger().finest("Use Authentication for: " + url + ": " + auth[0] + " - " + auth[1]);
+        JDUtilities.getLogger().finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
         return new PasswordAuthentication(auth[0], auth[1].toCharArray());
     }
 
