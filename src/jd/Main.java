@@ -264,6 +264,7 @@ public class Main {
         } catch (Exception e) {
             // TODO: handle exception
         }
+        Interaction.initTriggers();
         Main.setSplashStatus(splashScreen, 10, JDLocale.L("gui.splash.text.loadLanguage", "lade Sprachen"));
 
         JDTheme.setTheme("default");

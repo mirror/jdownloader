@@ -42,6 +42,8 @@ public class DatabaseConnector implements Serializable {
 
     private HashMap<String, Object> dbdata = new HashMap<String, Object>();
 
+   
+
     private static Connection con = null;
 
     static {
@@ -104,7 +106,9 @@ public class DatabaseConnector implements Serializable {
             ResultSet rs = con.createStatement().executeQuery("SELECT * FROM config");
             while (rs.next()) {
                 try {
+              
                     dbdata.put(rs.getString(1), rs.getObject(2));
+                 
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -188,6 +192,7 @@ public class DatabaseConnector implements Serializable {
      * Returns a configuration
      */
     public Object getData(String name) {
+      
         return dbdata.get(name);
     }
 

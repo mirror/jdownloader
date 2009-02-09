@@ -67,9 +67,11 @@ public class SubConfiguration extends Property implements Serializable {
     public SubConfiguration(String name) {
 
         this.name = name;
+     
         Object props = JDUtilities.getDatabaseConnector().getData(name);
         if (props != null) {
             this.setProperties((HashMap<String, Object>) props);
+        
         }
 
     }

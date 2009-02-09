@@ -109,7 +109,7 @@ public class JDUtilities {
 
     /**
      * Die Konfiguration
-     */ 
+     */
     private static Configuration configuration = new Configuration();
 
     private static DatabaseConnector dbconnect = null;
@@ -165,6 +165,7 @@ public class JDUtilities {
      * nur 1 UserIO Dialog gleichzeitig (z.b.PW,Captcha)
      */
     private static Semaphore userio_sem = new Semaphore(1);
+    private static boolean SUBCONFIG_LOCK;
 
     public static String getSimString(String a, String b) {
         StringBuilder ret = new StringBuilder();
@@ -1177,12 +1178,27 @@ public class JDUtilities {
     }
 
     public synchronized static SubConfiguration getSubConfig(String name) {
-        if (subConfigs.containsKey(name)) { return subConfigs.get(name); }
+        if(SUBCONFIG_LOCK){            
 
-        SubConfiguration cfg = new SubConfiguration(name);
-        subConfigs.put(name, cfg);
-        cfg.save();
-        return cfg;
+            new Exception("Static Database init error!!").printStackTrace();
+        }
+        SUBCONFIG_LOCK = true;  
+        try {
+            
+          
+            if (subConfigs.containsKey(name)) {
+               return subConfigs.get(name);
+            }
+         
+            SubConfiguration cfg = new SubConfiguration(name);
+           
+            subConfigs.put(name, cfg);
+            cfg.save();
+            return cfg;
+         
+        } finally {
+           SUBCONFIG_LOCK = false;
+        }
 
     }
 
@@ -1250,7 +1266,7 @@ public class JDUtilities {
      * @param waitForReturn
      * @return null oder die rÃ¼ckgabe des befehls falls waitforreturn == true
      *         ist
-     */ 
+     */
     public static String runCommand(String command, String[] parameter, String runIn, int waitForReturn) {
         Executer exec = new Executer(command);
         exec.addParameters(parameter);
@@ -1351,10 +1367,13 @@ public class JDUtilities {
     }
 
     public synchronized static DatabaseConnector getDatabaseConnector() {
-        if (dbconnect == null) {
-            dbconnect = new DatabaseConnector();
-        }
-        return dbconnect;
+
+    
+            if (dbconnect == null) {
+                dbconnect = new DatabaseConnector();
+            }
+            return dbconnect;
+      
     }
 
     /**
