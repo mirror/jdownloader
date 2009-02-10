@@ -36,6 +36,7 @@ public class RapidsafeDe extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();

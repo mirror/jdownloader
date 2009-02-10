@@ -1456,16 +1456,22 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     }
 
     public void createHostPluginsMenuEntries() {
-        Component temp = (menHosts.getComponentCount() != 0) ? menHosts.getComponent(0) : SimpleGUI.createMenuItem(this.actionHostConfig);
+        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+
+        Component temp = null;
+        Component temp2 = null;
+        if (menHosts.getComponentCount() != 0) {
+            temp = menHosts.getComponent(0);
+            temp2 = menHosts.getComponent(1);
+        } else {
+            temp = SimpleGUI.createMenuItem(actionHostConfig);
+            temp2 = SimpleGUI.getJMenuItem(premium);
+            ((JMenuItem) temp2).setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
+        }
         menHosts.removeAll();
         menHosts.add(temp);
-
-        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
-        JMenuItem premItem = SimpleGUI.getJMenuItem(premium);
-        premItem.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
-        temp = (menHosts.getComponentCount() != 0) ? menHosts.getComponent(0) : premItem;
-
-        menHosts.add(temp);
+        menHosts.add(temp2);
+        
         boolean ispremium = premium.isSelected();
         menHosts.addSeparator();
         for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
