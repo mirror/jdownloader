@@ -143,6 +143,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
             } else if (col == 6) {
                 pluginsForHost.get(row).setUsePlugin((Boolean) value);
             }
+            ((SimpleGUI) JDUtilities.getGUI()).createHostPluginsMenuEntries();
         }
     }
 
@@ -245,7 +246,7 @@ public class ConfigPanelPluginForHost extends ConfigPanel implements ActionListe
         new DropTarget(table, this);
 
         TableColumn column = null;
-        
+
         for (int c = 0; c < tableModel.getColumnCount(); c++) {
             column = table.getColumnModel().getColumn(c);
             switch (c) {

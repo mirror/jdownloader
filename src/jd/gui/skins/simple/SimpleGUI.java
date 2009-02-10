@@ -53,7 +53,6 @@ import java.util.logging.Logger;
 import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -161,8 +160,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
          */
         private static final long serialVersionUID = 3676496738341246846L;
 
-        private JCheckBox chbPremium;
-
         private JLabel lblMessage;
 
         private JLabel lblSimu;
@@ -191,12 +188,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             lblMessage = new JLabel(JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
             lblMessage.setIcon(statusIcon);
             statusBarHandler = new LabelHandler(lblMessage, JDLocale.L("sys.message.welcome", "Welcome to JDownloader"));
-
-            chbPremium = new JCheckBox(JDLocale.L("gui.statusbar.premium", "Premium"));
-            chbPremium.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
-            chbPremium.addChangeListener(this);
             JDUtilities.getController().addControlListener(this);
-            chbPremium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
             lblSpeed = new JLabel(JDLocale.L("gui.statusbar.speed", "Max. Speed"));
             lblSimu = new JLabel(JDLocale.L("gui.statusbar.sim_ownloads", "Max.Dls."));
 
@@ -214,18 +206,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
             spMaxDls.addChangeListener(this);
 
             panel.add(lblMessage);
-            right.add(chbPremium);
-            addItem(right, bundle(lblSimu, spMaxDls));
-            addItem(right, bundle(lblSpeed, spMax));
+            addItem(false, right, bundle(lblSimu, spMaxDls));
+            addItem(true, right, bundle(lblSpeed, spMax));
         }
 
-        void addItem(JComponent where, Component component) {
+        void addItem(boolean seperator, JComponent where, Component component) {
             int n = 10;
             Dimension d = new Dimension(n, 0);
             JSeparator separator = new JSeparator(SwingConstants.VERTICAL);
             separator.setPreferredSize(new Dimension(n, n));
             where.add(new Box.Filler(d, d, d));
-            where.add(separator);
+            if (seperator) where.add(separator);
             where.add(component);
         }
 
@@ -255,8 +246,6 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                     setSpinnerSpeed(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, 0));
                 } else if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN)) {
                     spMaxDls.setValue(p.getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, 2));
-                } else if (p == JDUtilities.getConfiguration() && event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
-                    chbPremium.setSelected(p.getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
                 } else if (event.getID() == ControlEvent.CONTROL_ALL_DOWNLOADS_FINISHED) {
                     btnStartStop.setIcon(new ImageIcon(JDUtilities.getImage(getStartStopDownloadImage())));
                     btnPause.setIcon(new ImageIcon(JDUtilities.getImage(getPauseImage())));
@@ -284,25 +273,16 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         }
 
         public void stateChanged(ChangeEvent e) {
-
             if (e.getSource() == spMax) {
                 colorizeSpinnerSpeed();
                 SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
                 subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SPEED, (Integer) spMax.getValue());
                 subConfig.save();
-
             } else if (e.getSource() == spMaxDls) {
                 SubConfiguration subConfig = JDUtilities.getSubConfig("DOWNLOAD");
                 subConfig.setProperty(Configuration.PARAM_DOWNLOAD_MAX_SIMULTAN, (Integer) spMaxDls.getValue());
                 subConfig.save();
-
-            } else if (e.getSource() == chbPremium) {
-                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) != chbPremium.isSelected()) {
-                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, chbPremium.isSelected());
-                    JDUtilities.getConfiguration().save();
-                }
             }
-
         }
     }
 
@@ -617,6 +597,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JMenu menHosts;
 
     private JMenuItem menViewLog = null;
+
+    private MenuItem premium = null;
 
     /**
      * Komponente, die den Fortschritt aller Plugins anzeigt
@@ -1067,6 +1049,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
                             btnReconnect.setIcon(new ImageIcon(JDUtilities.getImage(getDoReconnectImage())));
                         } else if (event.getParameter().equals(Configuration.PARAM_CLIPBOARD_ALWAYS_ACTIVE)) {
                             btnClipBoard.setIcon(new ImageIcon(JDUtilities.getImage(getClipBoardImage())));
+                        } else if (event.getParameter().equals(Configuration.PARAM_USE_GLOBAL_PREMIUM)) {
+                            premium.setSelected(((Property) event.getSource()).getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
                         }
                     }
                     break;
@@ -1304,6 +1288,17 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
 
         menViewLog = SimpleGUI.createMenuItem(actionLog);
+        premium = new MenuItem(MenuItem.TOGGLE, JDLocale.L("gui.statusbar.premium", "Premium"), 0);
+        premium.setActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent arg0) {
+                premium.setSelected(!premium.isSelected());
+                if (JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true) != premium.isSelected()) {
+                    JDUtilities.getConfiguration().setProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, premium.isSelected());
+                    JDUtilities.getConfiguration().save();
+                    createHostPluginsMenuEntries();
+                }
+            }
+        });
 
         // Adds the menus from the Addons
         createOptionalPluginsMenuEntries();
@@ -1453,40 +1448,48 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         Component temp = (menHosts.getComponentCount() != 0) ? menHosts.getComponent(0) : SimpleGUI.createMenuItem(this.actionHostConfig);
         menHosts.removeAll();
         menHosts.add(temp);
-        menHosts.addSeparator();
 
-        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-            if (wrapper.isLoaded()) {
-                final PluginForHost helpPlugin = wrapper.getPlugin();
-                if (helpPlugin.createMenuitems() != null) {
-                    JMenuItem mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
-                    if (mi != null) {
-                        menHosts.add(mi);
+        premium.setSelected(JDUtilities.getConfiguration().getBooleanProperty(Configuration.PARAM_USE_GLOBAL_PREMIUM, true));
+        JMenuItem premItem = SimpleGUI.getJMenuItem(premium);
+        premItem.setToolTipText(JDLocale.L("gui.tooltip.statusbar.premium", "Aus/An schalten des Premiumdownloads"));
+        temp = (menHosts.getComponentCount() != 0) ? menHosts.getComponent(0) : premItem;
 
-                        ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                        ((JMenu) mi).addMenuListener(new MenuListener() {
-                            public void menuCanceled(MenuEvent e) {
-                            }
+        menHosts.add(temp);
+        if (premium.isSelected()) {
+            menHosts.addSeparator();
+            for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+                if (wrapper.isLoaded() && wrapper.usePlugin()) {
+                    final PluginForHost helpPlugin = wrapper.getPlugin();
+                    if (helpPlugin.createMenuitems() != null) {
+                        JMenuItem mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
+                        if (mi != null) {
+                            menHosts.add(mi);
 
-                            public void menuDeselected(MenuEvent e) {
-                            }
+                            ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                            ((JMenu) mi).addMenuListener(new MenuListener() {
+                                public void menuCanceled(MenuEvent e) {
+                                }
 
-                            public void menuSelected(MenuEvent e) {
-                                JMenu m = (JMenu) e.getSource();
-                                JMenuItem c;
-                                m.removeAll();
-                                for (MenuItem menuItem : helpPlugin.createMenuitems()) {
-                                    c = SimpleGUI.getJMenuItem(menuItem);
-                                    if (c == null) {
-                                        m.addSeparator();
-                                    } else {
-                                        m.add(c);
+                                public void menuDeselected(MenuEvent e) {
+                                }
+
+                                public void menuSelected(MenuEvent e) {
+                                    JMenu m = (JMenu) e.getSource();
+                                    JMenuItem c;
+                                    m.removeAll();
+                                    for (MenuItem menuItem : helpPlugin.createMenuitems()) {
+                                        c = SimpleGUI.getJMenuItem(menuItem);
+                                        if (c == null) {
+                                            m.addSeparator();
+                                        } else {
+                                            m.add(c);
+                                        }
                                     }
                                 }
-                            }
-                        });
-                    } else {
-                        menHosts.addSeparator();
+                            });
+                        } else {
+                            menHosts.addSeparator();
+                        }
                     }
                 }
             }
