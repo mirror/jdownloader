@@ -95,10 +95,18 @@ public abstract class Request {
 
     private URL url;
     private JDProxy proxy;
-
+    private static String http2JDP(String string) {
+        if (string.startsWith("http")) { return ("jdp" + string.substring(4)); }
+        return string;
+    }
+    
+    private static String jdp2http(String string) {
+        if (string.startsWith("jdp")) { return ("http" + string.substring(3)); }
+        return string;
+    }
     public Request(String url) throws MalformedURLException {
 
-        this.url = new URL(Encoding.urlEncode_light(url));
+        this.url = new URL(Encoding.urlEncode_light(http2JDP(url)));
 
         readTimeout = JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_READ_TIMEOUT, 100000);
 
@@ -397,6 +405,7 @@ public abstract class Request {
     public URL getUrl() {
         return url;
     }
+
 
     private boolean hasCookies() {
 

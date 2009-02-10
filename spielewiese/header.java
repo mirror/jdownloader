@@ -1,10 +1,13 @@
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
 import jd.http.Browser;
 import jd.http.JDProxy;
+import jd.parser.Form;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.Plugin;
@@ -45,19 +48,24 @@ public class header {
         // TODO Auto-generated method stub
         if (true) {
             //    
-       
 
             Browser br = new Browser();
-
-           br.setProxy(new JDProxy("jdownloader.org:3128"));
+            Browser.init();
             br.setDebug(true);
-            //br.setAuth("service.jdownloader.org", "skynet", "avoWDoKkpq");
-            // br.getHeaders().put("Authorization", "Basic " +
-            // Encoding.Base64Encode("skynet:avoWDoKkpq"));
-            br.getPage("http://skynet:avoWDoKkpq@service.jdownloader.org/admin/");
 
-     
-           System.out.println(br.getRequest().getHttpConnection());
+            JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
+            p.setUser("");
+            p.setPass("");
+            br.setProxy(p);
+            br.setAuth("service.jdownloader.org", "", "");
+           
+            br.getPage("https://ssl.rapidshare.com/premiumzone.html");
+            Form forms = br.getForms()[0];
+            forms.put("login", "");
+            forms.put("password", "");
+            br.submitForm(forms);
+
+            System.out.println(br + "");
 
         }
         if (false) {

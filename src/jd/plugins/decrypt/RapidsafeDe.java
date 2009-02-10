@@ -29,6 +29,7 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.utils.JDUtilities;
 
 public class RapidsafeDe extends PluginForDecrypt {
 
@@ -52,6 +53,26 @@ public class RapidsafeDe extends PluginForDecrypt {
             String dat = br.getRegex("RapidSafePSC\\('(.*?=.*?&t=.*?)','.*?'\\);").getMatch(0);
             br.postPage(parameter, dat);
 
+            String pass = getPluginConfig().getStringProperty("PASS");
+            for (int i = 0; i < 5; i++) {
+
+                Regex pw = br.getRegex("RapidSafePSC\\('(.*?)'\\+escape\\(document\\.getElementById\\('linkpassword'\\)\\.value\\)\\+'(.*?)','(.*?)'\\)");
+                if (pw.matches()) {
+                    if (i > 0) pass = null;
+                    String[] pwDat = pw.getRow(0);
+                    String post = pwDat[0] + pwDat[1];
+                    if (pass == null) pass = JDUtilities.getGUI().showUserInputDialog("Password?");
+                    if (pass == null) return decryptedLinks;
+
+                    br.postPage(parameter, post + pass.trim());
+
+                } else {
+                    break;
+                }
+            }
+            if (pass != null) {
+                this.getPluginConfig().setProperty("PASS", pass);
+            }
             dat = br.getRegex("RapidSafePSC\\('(.*?)&adminlogin='").getMatch(0);
             br.postPage(parameter, dat + "&f=1");
 
@@ -73,11 +94,17 @@ public class RapidsafeDe extends PluginForDecrypt {
 
             progress.setRange(flash.size());
 
-            for (int flashcounter = 0; flashcounter < flash.size(); flashcounter++) {
+            main: for (int flashcounter = 0; flashcounter < flash.size(); flashcounter++) {
                 boolean repeat = true;
                 long[] zaehler = new long[7];
                 String[] search2 = new String[0];
+                int retries = 0;
                 while (repeat) {
+                    retries++;
+                    if (retries > 10) {
+                        logger.severe("Decrypt error: HOst server error. please try again later");
+                        continue main;
+                    }
                     try {
                         URLConnectionAdapter con = br.openGetConnection(parameter + flash.get(flashcounter));
 
@@ -106,8 +133,9 @@ public class RapidsafeDe extends PluginForDecrypt {
                             zaehler[i] = (int) Long.parseLong(spin(search1[i][1].toUpperCase()), 16);
                         }
                         repeat = false;
-                    } catch (NumberFormatException e) {
+                    } catch (Exception e) {
                         logger.info("Error while parsing. Loading flash again!");
+
                     }
                 }
 
