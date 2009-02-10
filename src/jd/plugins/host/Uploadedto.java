@@ -293,6 +293,7 @@ public class Uploadedto extends PluginForHost {
         br.setFollowRedirects(false);
 
         Form form = br.getFormbyName("download_form");
+        if (form == null || br.containsHTML("Versuch es sp")) throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "ServerProblem", 10 * 60 * 1000l);
         if (form != null) {
             form.put("download_submit", "Download");
             sleep(10000l, downloadLink);
@@ -306,7 +307,7 @@ public class Uploadedto extends PluginForHost {
         dl.setFileSizeVerified(true);
         if (dl.getConnection().getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            linkStatus.setValue(5 * 60 * 1000l);
+            linkStatus.setValue(10 * 60 * 1000l);
             return;
         }
         dl.startDownload();
