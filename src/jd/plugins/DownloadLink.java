@@ -187,19 +187,22 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     public DownloadLink addSourcePluginPassword(String sourcePluginPassword) {
-
         if (sourcePluginPasswords.indexOf(sourcePluginPassword) < 0 && sourcePluginPassword != null && sourcePluginPassword.trim().length() > 0) {
             sourcePluginPasswords.add(sourcePluginPassword);
         }
-
         return this;
+    }
+
+    public void addSourcePluginPasswords(String[] sourcePluginPasswords) {
+        for (int i = 0; i < sourcePluginPasswords.length; i++) {
+            addSourcePluginPassword(sourcePluginPasswords[i]);
+        }
     }
 
     public void addSourcePluginPasswords(Vector<String> sourcePluginPasswords) {
         for (int i = 0; i < sourcePluginPasswords.size(); i++) {
             addSourcePluginPassword(sourcePluginPasswords.get(i));
         }
-
     }
 
     public boolean isDupeCheckallowed() {
@@ -341,9 +344,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
      * zwangsläufig um einen Valid-Filename. Dieser String eignet sich zur
      * darstellung des link und kann zusatzinformationen wie dateigröße oder
      * verfügbarkeit haben Diese Zusatzinformationen liefert das zugehörige
-     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein
-     * muss darf diese FUnktion nicht verwendet werden um eine datei zu
-     * benennen.
+     * Plugin ACHTUNG: Weil der Dateiname kein zuverlässiger Dateiname sein muss
+     * darf diese FUnktion nicht verwendet werden um eine datei zu benennen.
      * 
      * @return Erweiterter "Dateiname"
      */
@@ -572,10 +574,10 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+
-     * Diese FUnktion führt keinen!! Check durch. Sie prüft nur ob schon
-     * geprüft worden ist. anschießend kann mit isAvailable() die
-     * verfügbarkeit überprüft werden
+     * Gibt zurück ob Dieser Link schon auf verfügbarkeit getestet wurde.+ Diese
+     * FUnktion führt keinen!! Check durch. Sie prüft nur ob schon geprüft
+     * worden ist. anschießend kann mit isAvailable() die verfügbarkeit
+     * überprüft werden
      * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
@@ -951,9 +953,8 @@ public class DownloadLink extends Property implements Serializable, Comparable<D
     }
 
     /**
-     * Diese Methhode fragt das eigene Plugin welche Informationen über die
-     * File bereit gestellt werden. Der String eignet Sich zur Darstellung in
-     * der UI
+     * Diese Methhode fragt das eigene Plugin welche Informationen über die File
+     * bereit gestellt werden. Der String eignet Sich zur Darstellung in der UI
      * 
      * @return STring
      */

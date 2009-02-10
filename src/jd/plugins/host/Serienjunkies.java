@@ -112,7 +112,6 @@ public class Serienjunkies extends PluginForHost {
                                     try {
                                         Thread.sleep(1200);
                                     } catch (InterruptedException e) {
-                                        // TODO Auto-generated catch block
                                         e.printStackTrace();
                                     }
                                     progress.increase(1);
@@ -127,7 +126,6 @@ public class Serienjunkies extends PluginForHost {
                                 try {
                                     Thread.sleep(100);
                                 } catch (InterruptedException e) {
-                                    // TODO Auto-generated catch block
                                     e.printStackTrace();
                                 }
                                 progress.increase(1);
@@ -203,7 +201,6 @@ public class Serienjunkies extends PluginForHost {
                                 try {
                                     Thread.sleep(300 * j);
                                 } catch (InterruptedException e) {
-                                    // TODO Auto-generated catch block
                                     e.printStackTrace();
                                 }
                                 try {
@@ -237,9 +234,7 @@ public class Serienjunkies extends PluginForHost {
                                             }
                                         }
                                     }
-
                                 } catch (Exception e) {
-                                    // TODO Auto-generated catch block
                                     e.printStackTrace();
                                 }
 
@@ -260,7 +255,6 @@ public class Serienjunkies extends PluginForHost {
                         try {
                             t.wait();
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                     }
@@ -279,13 +273,6 @@ public class Serienjunkies extends PluginForHost {
         if (!url.startsWith("http://")) {
             url = "http://" + url;
         }
-        new Thread(new Runnable() {
-
-            public void run() {
-                // TODO Auto-generated method stub
-
-            }
-        }).start();
         try {
             if (!url.matches(".*sa[fv]e/f.*")) {
                 url = url.replaceAll("safe/", "safe/f");
@@ -428,7 +415,6 @@ public class Serienjunkies extends PluginForHost {
                             try {
                                 Thread.sleep(1200);
                             } catch (InterruptedException e) {
-                                // TODO Auto-generated catch block
                                 e.printStackTrace();
                             }
                             progress.increase(1);
@@ -454,7 +440,6 @@ public class Serienjunkies extends PluginForHost {
                         try {
                             Thread.sleep(100);
                         } catch (InterruptedException e) {
-                            // TODO Auto-generated catch block
                             e.printStackTrace();
                         }
                         progress.increase(1);
@@ -525,7 +510,6 @@ public class Serienjunkies extends PluginForHost {
     }
 
     public String getVersion() {
-
         return getVersion("$Revision$");
     }
 

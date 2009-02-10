@@ -50,20 +50,20 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     private static Logger logger = JDUtilities.getLogger();
 
     private static final long serialVersionUID = 1L;
+
     public final static int STYLE_OK = 1 << 1;
     public final static int STYLE_CANCEL = 1 << 2;
     public final static int STYLE_YES = 1 << 3;
     public final static int STYLE_NO = 1 << 4;
     public final static int STYLE_STOP_COUNTDOWN = 1 << 5;
     public final static int STYLE_MSGLABLE = 1 << 6;
-    public final static int STYLE_NO_MSGLABLE = 1 << 10;
     public final static int STYLE_DETAILLABLE = 1 << 7;
     public final static int STYLE_NOTALWAYSONTOP = 1 << 8;
     public final static int STYLE_INPUTFIELD = 1 << 9;
-    
+    public final static int STYLE_NO_MSGLABLE = 1 << 10;
+
     public static boolean showCountdownConfirmDialog(Frame owner, String msg, int countdown) {
         CountdownConfirmDialog d = new CountdownConfirmDialog(owner, msg, countdown);
-
         return d.result;
     }
 
@@ -92,16 +92,14 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
     }
 
     public CountdownConfirmDialog(final Frame owner, final String title, final String msg, final int countdown, final boolean defaultResult, final int style) {
-        this(owner, title, countdown, defaultResult,null, style, msg);
+        this(owner, title, countdown, defaultResult, null, style, msg);
     }
 
-    public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult,final Dimension size, final int style, final String... msg) {
+    public CountdownConfirmDialog(final Frame owner, final String title, final int countdown, final boolean defaultResult, final Dimension size, final int style, final String... msg) {
         super(owner);
         this.titleText = title;
 
-        if (title != null) {
-            this.setTitle(title);
-        }
+        if (title != null) this.setTitle(title);
 
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
@@ -151,7 +149,7 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                 while (--c >= 0) {
                     if (countdownThread == null) { return; }
                     if (titleText != null) {
-                        setTitle(JDUtilities.formatSeconds(c) + ">>"+titleText);
+                        setTitle(JDUtilities.formatSeconds(c) + ">>" + titleText);
                     } else {
                         setTitle(JDUtilities.formatSeconds(c) + " mm:ss");
                     }
@@ -172,40 +170,34 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
 
         };
 
-        if((style & STYLE_NO_MSGLABLE) == 0)
-        {
-        if ((style & STYLE_MSGLABLE) != 0) {
-            htmlArea = new JLabel(msg[0]);
-        } else {
-            htmlArea = new JTextPane();
-            ((JTextPane) htmlArea).setEditable(false);
-            ((JTextPane) htmlArea).setContentType("text/html");
-            ((JTextPane) htmlArea).setText(msg[0]);
-            ((JTextPane) htmlArea).requestFocusInWindow();
-            ((JTextPane) htmlArea).addHyperlinkListener(this);
+        if ((style & STYLE_NO_MSGLABLE) == 0) {
+            if ((style & STYLE_MSGLABLE) != 0) {
+                htmlArea = new JLabel(msg[0]);
+            } else {
+                htmlArea = new JTextPane();
+                ((JTextPane) htmlArea).setEditable(false);
+                ((JTextPane) htmlArea).setContentType("text/html");
+                ((JTextPane) htmlArea).setText(msg[0]);
+                ((JTextPane) htmlArea).requestFocusInWindow();
+                ((JTextPane) htmlArea).addHyperlinkListener(this);
 
-        }
+            }
         }
         if ((style & STYLE_INPUTFIELD) != 0) {
-            if(msg!=null)
-            {
-            if((style & STYLE_NO_MSGLABLE) != 0)
-            inputField = new JTextField(msg[0]);
-            else if(msg.length>1)
-                inputField = new JTextField(msg[1]);
+            if (msg != null) {
+                if ((style & STYLE_NO_MSGLABLE) != 0) {
+                    inputField = new JTextField(msg[0]);
+                } else if (msg.length > 1) {
+                    inputField = new JTextField(msg[1]);
+                }
             }
-            if(inputField==null)
-                inputField = new JTextField();
+            if (inputField == null) inputField = new JTextField();
             inputField.addKeyListener(new KeyListener() {
 
                 public void keyPressed(KeyEvent e) {
-                    // TODO Auto-generated method stub
-
                 }
 
                 public void keyReleased(KeyEvent e) {
-                    // TODO Auto-generated method stub
-
                 }
 
                 public void keyTyped(KeyEvent e) {
@@ -213,17 +205,15 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
                         countdownThread.interrupt();
                     }
                     countdownThread = null;
-
                 }
             });
         }
         int g = 0;
-        if((style & STYLE_NO_MSGLABLE) == 0)
-        {
-        scrollPane = new JScrollPane(htmlArea);
-        JDUtilities.addToGridBag(this, scrollPane, 0, g++, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        if ((style & STYLE_NO_MSGLABLE) == 0) {
+            scrollPane = new JScrollPane(htmlArea);
+            JDUtilities.addToGridBag(this, scrollPane, 0, g++, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
         }
-        JDUtilities.addToGridBag(this, inputField, 0, g++, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
+        if ((style & STYLE_INPUTFIELD) != 0) JDUtilities.addToGridBag(this, inputField, 0, g++, 3, 1, 1, 1, null, GridBagConstraints.BOTH, GridBagConstraints.NORTHWEST);
 
         if ((style & STYLE_DETAILLABLE) != 0) {
             final JButton btnDetails = new JButton(JDLocale.L("gui.btn_details", "details"));
@@ -272,15 +262,12 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         }
 
         pack();
-        if(size!=null)
-        {
+        if (size != null) {
             int width = size.width;
             int hight = size.height;
-            if(width<0 || getWidth()>width)
-                width=getWidth();
-            if(hight<0 || getHeight()>hight)
-                hight=getHeight();
-            
+            if (width < 0 || getWidth() > width) width = getWidth();
+            if (hight < 0 || getHeight() > hight) hight = getHeight();
+
             setSize(width, hight);
         }
         setLocation(JDUtilities.getCenterOfComponent(null, this));
@@ -310,21 +297,15 @@ public class CountdownConfirmDialog extends JDialog implements ActionListener, H
         if (e.getEventType() == HyperlinkEvent.EventType.ACTIVATED) {
             try {
                 JLinkButton.openURL(e.getURL());
-
             } catch (Exception e1) {
-                // TODO Auto-generated catch block
                 e1.printStackTrace();
             }
         }
     }
 
-    public static String getInputDialog(Frame owner,String value, String title, int countdown) {
-        CountdownConfirmDialog dia = new CountdownConfirmDialog(new JFrame(),title, countdown, false,new Dimension(300, -1), STYLE_OK | STYLE_CANCEL | STYLE_INPUTFIELD| STYLE_NO_MSGLABLE, value);
+    public static String getInputDialog(Frame owner, String value, String title, int countdown) {
+        CountdownConfirmDialog dia = new CountdownConfirmDialog(new JFrame(), title, countdown, false, new Dimension(300, -1), STYLE_OK | STYLE_CANCEL | STYLE_INPUTFIELD | STYLE_NO_MSGLABLE, value);
         return dia.input;
     }
 
-    public static void main(String[] args) {
-        System.out.println(getInputDialog(new JFrame(),"Your name is ...", "this is a test", 30));
-        System.exit(0);
-    }
 }
