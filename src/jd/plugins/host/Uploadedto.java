@@ -292,7 +292,7 @@ public class Uploadedto extends PluginForHost {
 
         br.setFollowRedirects(false);
 
-        Form form = br.getFormbyValue("Download");
+        Form form = br.getFormbyName("download_form");
         if (form != null) {
             form.put("download_submit", "Download");
             sleep(10000l, downloadLink);
