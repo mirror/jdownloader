@@ -105,6 +105,10 @@ public class Browser {
     public void setWaittimeBetweenPageRequests(long value) {
         waittimeBetweenRequests = value;
     }
+    private static String http2JDP(String string) {
+        if (string.startsWith("http")) { return ("jdp" + string.substring(4)); }
+        return string;
+    }
 
     private void waitForPageAccess() {
         if (latestReqTimeCtrlID == null) return;
@@ -322,7 +326,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new SnifferException();
         }
-        GetRequest request = new GetRequest(string);
+        GetRequest request = new GetRequest(http2JDP(string));
 
         if (proxy != null) request.setProxy(proxy);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -513,7 +517,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        GetRequest request = new GetRequest(string);
+        GetRequest request = new GetRequest(http2JDP(string));
         if (proxy != null) request.setProxy(proxy);
         // doAuth(request);
         if (connectTimeout > 0) {
@@ -555,7 +559,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        GetRequest request = new GetRequest(string);
+        GetRequest request = new GetRequest(http2JDP(string));
         if (proxy != null) request.setProxy(proxy);
         // doAuth(request);
         if (connectTimeout > 0) {
@@ -592,7 +596,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        GetRequest request = new GetRequest(string);
+        GetRequest request = new GetRequest(http2JDP(string));
         if (proxy != null) request.setProxy(proxy);
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
@@ -638,7 +642,6 @@ public class Browser {
             // path.substring(path.lastIndexOf("/"))
             string = "http://" + request.getHttpConnection().getURL().getHost() + path + "/" + string;
         }
-        if (string.startsWith("http")) { return Encoding.urlEncode_light("jdp" + string.substring(4)); }
         return Encoding.urlEncode_light(string);
     }
 
@@ -652,7 +655,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        PostRequest request = new PostRequest(url);
+        PostRequest request = new PostRequest(http2JDP(url));
         if (proxy != null) request.setProxy(proxy);
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -696,7 +699,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        PostRequest request = new PostRequest(url);
+        PostRequest request = new PostRequest(http2JDP(url));
         if (proxy != null) request.setProxy(proxy);
         request.setCookies(oldrequest.getCookies());
         // doAuth(request);
@@ -730,7 +733,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        PostRequest request = new PostRequest(url);
+        PostRequest request = new PostRequest(http2JDP(url));
         if (proxy != null) request.setProxy(proxy);
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -773,7 +776,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        PostRequest request = new PostRequest(url);
+        PostRequest request = new PostRequest(http2JDP(url));
         if (proxy != null) request.setProxy(proxy);
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -829,7 +832,7 @@ public class Browser {
         if (snifferCheck()) {
             // throw new IOException("Sniffer found");
         }
-        PostRequest request = new PostRequest(url);
+        PostRequest request = new PostRequest(http2JDP(url));
         if (proxy != null) request.setProxy(proxy);
         // doAuth(request);
         request.getHeaders().put("Accept-Language", acceptLanguage);
@@ -959,7 +962,7 @@ public class Browser {
 
         case Form.METHOD_FILEPOST:
 
-            HTTPPost up = new HTTPPost(action, doRedirects);
+            HTTPPost up = new HTTPPost(http2JDP(action), doRedirects);
             if (proxy != null) up.setProxy(proxy);
             up.doUpload();
 
