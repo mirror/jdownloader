@@ -53,7 +53,7 @@ public class RapidsafeDe extends PluginForDecrypt {
             String dat = br.getRegex("RapidSafePSC\\('(.*?=.*?&t=.*?)','.*?'\\);").getMatch(0);
             br.postPage(parameter, dat);
 
-            String pass = getPluginConfig().getStringProperty("PASS");
+            String pass = getPluginConfig().getStringProperty("pass");
             for (int i = 0; i < 5; i++) {
 
                 Regex pw = br.getRegex("RapidSafePSC\\('(.*?)'\\+escape\\(document\\.getElementById\\('linkpassword'\\)\\.value\\)\\+'(.*?)','(.*?)'\\)");
@@ -71,7 +71,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                 }
             }
             if (pass != null) {
-                this.getPluginConfig().setProperty("PASS", pass);
+                this.getPluginConfig().setProperty("pass", pass);
             }
             dat = br.getRegex("RapidSafePSC\\('(.*?)&adminlogin='").getMatch(0);
             br.postPage(parameter, dat + "&f=1");
