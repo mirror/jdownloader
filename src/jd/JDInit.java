@@ -756,7 +756,7 @@ public class JDInit {
         new HostPluginWrapper("Files.To", "FilesTo", "http://[\\w\\.]*?files\\.to/get/[0-9]+/[a-zA-Z0-9]+");
         new HostPluginWrapper("File-Upload.net", "FileUploadnet", "((http://[\\w\\.]*?file-upload\\.net/(member/){0,1}download-\\d+/(.*?).html)|(http://[\\w\\.]*?file-upload\\.net/(view-\\d+/(.*?).html|member/view_\\d+_(.*?).html))|(http://[\\w\\.]*?file-upload\\.net/member/data3\\.php\\?user=(.*?)&name=(.*)))");
         new HostPluginWrapper("gigasize.com", "GigaSizeCom", "http://[\\w\\.]*?gigasize\\.com/get\\.php.*", PluginWrapper.LOAD_ON_INIT);
-        new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "httpviajd://[\\d\\w\\.:\\-@]*/.*\\.(ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts)");
+        new HostPluginWrapper("HTTP Links", "HTTPAllgemein", "httpviajd://[\\d\\w\\.:\\-@]*/.*\\.(otrkey|ac3|3gp|7zip|7z|aiff|aif|aifc|au|avi|bin|bz2|ccf|cue|divx|dlc|doc|docx|dot|exe|flv|gif|gz|iso|java|jpg|jpeg|mkv|mp2|mp3|mp4|mov|movie|mpe|mpeg|mpg|msi|png|pdf|ppt|pptx|pps|ppz|pot|qt|rar|rsdf|rtf|snd|tar|tif|tiff|viv|vivo|wav|wmv|xla|xls|zip|ts)");
         new HostPluginWrapper("ImageFap.com", "ImageFap", "http://[\\w\\.]*?imagefap.com/image.php\\?id=.*(&pgid=.*&gid=.*&page=.*)?");
         new HostPluginWrapper("letitbit.net", "LetitBitNet", "http://[\\w\\.]*?letitbit\\.net/download/[a-zA-Z0-9]+?/.*");
         new HostPluginWrapper("Mediafire.Com", "MediafireCom", "http://[\\w\\.]*?mediafire\\.com/(download\\.php\\?.+|\\?.+|file/.+)");
@@ -824,7 +824,7 @@ public class JDInit {
         new HostPluginWrapper("remixshare.com", "RemixShareCom", "http://[\\w\\.]*?remixshare\\.com/get\\.php\\?file=[a-z0-9]+");
         new HostPluginWrapper("filesend.net", "FileSendNet", "http://[\\w\\.]*?filesend\\.net/download\\.php\\?f=[a-z0-9]+");
         new HostPluginWrapper("filelocity.com", "FilelocityCom", "http://[\\w\\.]*?filelocity\\.com/\\?act=download&file=[a-z0-9]+");
-        new HostPluginWrapper("uploadbox.com", "UploadBoxCom", "http://[\\w\\.]*?uploadbox\\.com/files/[0-9a-zA-Z]+");
+        new HostPluginWrapper("uploadbox.com", "UploadBoxCom", "http://[\\w\\.]*?uploadbox\\.com/.*?files/[0-9a-zA-Z]+");
     }
 
     public void loadPluginOptional() {

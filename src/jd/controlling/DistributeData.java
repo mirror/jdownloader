@@ -394,10 +394,15 @@ public class DistributeData extends ControlBroadcaster {
             }
             StringBuilder buff = new StringBuilder(data);
             Browser br = new Browser();
+            br.setFollowRedirects(false);
             for (String url : urls) {
 
                 try {
                     buff.append(br.getPage(url));
+                    if (br.getRedirectLocation() != null) {
+                        buff.append(' ');
+                        buff.append(br.getRedirectLocation());
+                    }
                     buff.append(' ');
                 } catch (Exception e) {
                 }

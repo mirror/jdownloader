@@ -42,6 +42,8 @@ public class UploadBoxCom extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink parameter) throws Exception {
         this.setBrowserExclusive();
+        String id = new Regex(parameter.getDownloadURL(), "files/([0-9a-zA-Z]+)").getMatch(0);
+        parameter.setUrlDownload("http://www.uploadbox.com/en/files/" + id);
         br.getPage(parameter.getDownloadURL());
         if (br.containsHTML("class=\"not_found\">")) throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         String filename = br.getRegex("<li><strong>File name:</strong>(.*?)</li>").getMatch(0);
@@ -88,7 +90,7 @@ public class UploadBoxCom extends PluginForHost {
 
     @Override
     public String getVersion() {
-        return getVersion("$Revision:$");
+        return getVersion("$Revision$");
     }
 
 }

@@ -299,7 +299,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         case ARCHIVE_TYPE_UNIX:
             return new File(file.getParentFile(), file.getName().replaceFirst("\\.a.$", ""));
         case ARCHIVE_TYPE_NORMAL:
-            return new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\..*)", ""));
+            return new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", ""));
         default:
             return null;
         }
@@ -359,7 +359,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
      * @return
      */
     private ArrayList<File> validateNormalType(File file) {
-        final String matcher = file.getName().replaceFirst("\\.[\\d]+($|\\..*)", "\\\\.[\\\\d]+$1");
+        final String matcher = file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\\\.[\\\\d]+$1");
         ArrayList<DownloadLink> missing = JDUtilities.getController().getDownloadLinksByNamePattern(matcher);
         for (DownloadLink miss : missing) {
             File par1 = new File(miss.getFileOutput()).getParentFile();
@@ -380,7 +380,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         for (int i = 0; i < files.length; i++) {
             String volume = JDUtilities.fillString(c + "", "0", "", 3);
             File newFile;
-            if ((newFile = new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\..*)", "\\." + volume + "$1"))).exists()) {
+            if ((newFile = new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", "\\." + volume + "$1"))).exists()) {
 
                 c++;
                 ret.add(newFile);
@@ -440,7 +440,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
         case ARCHIVE_TYPE_UNIX:
             return new File(file.getParentFile(), file.getName().replaceFirst("\\.a.$", ".aa"));
         case ARCHIVE_TYPE_NORMAL:
-            return new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.)", ".001$1"));
+            return new File(file.getParentFile(), file.getName().replaceFirst("\\.[\\d]+($|\\.[^\\d]*$)", ".001$1"));
         default:
             return null;
         }
@@ -457,7 +457,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
 
         if (file.getName().matches(".*\\.aa$")) return true;
 
-        if (file.getName().matches(".*\\.001($|\\..*)")) return true;
+        if (file.getName().matches(".*\\.001($|\\.[^\\d]*$)")) return true;
 
         return false;
     }
@@ -485,7 +485,7 @@ public class JDHJSplit extends PluginOptional implements ControlListener {
             return ARCHIVE_TYPE_UNIX;
 
         }
-        if (name.matches(".*\\.[\\d]+($|\\..*)")) return ARCHIVE_TYPE_NORMAL;
+        if (name.matches(".*\\.[\\d]+($|\\.[^\\d]*$)")) return ARCHIVE_TYPE_NORMAL;
         {
             try {
                 Signature fs = FileSignatures.getFileSignature(file);
