@@ -132,9 +132,8 @@ public class HTTPLiveHeader extends ReconnectMethod {
         headerProperties = new HashMap<String, String>();
         progress.increase(1);
         Browser br = new Browser();
-        String basicauth = null;
         if (user != null && pass != null) {
-            basicauth = "Basic " + Encoding.Base64Encode(user.trim() + ":" + pass.trim());
+            br.setAuth(ip, user, pass);
         }
         try {
             xmlScript = HTTPLiveHeader.parseXmlString(script, false);
@@ -245,7 +244,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
                         }
                         Browser retbr = null;
                         try {
-                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps, basicauth);
+                            retbr = doRequest(toDo.getChildNodes().item(0).getNodeValue().trim(), br, ishttps);
                         } catch (Exception e2) {
                             retbr = null;
                         }
@@ -394,7 +393,7 @@ public class HTTPLiveHeader extends ReconnectMethod {
         return false;
     }
 
-    private Browser doRequest(String request, Browser br, boolean ishttps, String basicauth) {
+    private Browser doRequest(String request, Browser br, boolean ishttps) {
         try {
             String requestType;
             String path;
@@ -494,9 +493,6 @@ public class HTTPLiveHeader extends ReconnectMethod {
                 br.setReadTimeout(5000);
                 if (requestProperties != null) {
                     br.getHeaders().putAll(requestProperties);
-                }
-                if (!br.getHeaders().containsKey("Authorization") && basicauth != null) {
-                    br.getHeaders().put("Authorization", basicauth);
                 }
                 if (requestType.equalsIgnoreCase("GET")) {
                     logger.finer("GET " + "http://" + host + path);

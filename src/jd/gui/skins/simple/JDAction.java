@@ -46,6 +46,7 @@ public class JDAction extends AbstractAction {
     public static final int APP_LOAD_CONTAINER = 15;
     public static final int APP_LOAD_DLC = 23;
     public static final int APP_LOG = 17;
+    public static final int APP_BACKUP = 241;
     public static final int APP_PAUSE_DOWNLOADS = 22;
     public static final int APP_RECONNECT = 19;
     public static final int APP_SAVE_DLC = 24;

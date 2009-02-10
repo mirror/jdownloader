@@ -100,8 +100,6 @@ public class WebUpdater implements Serializable {
         return JD_ROOT_DIRECTORY;
     }
 
-
-
     /**
      * Lädt fileurl nach filepath herunter
      * 
@@ -112,73 +110,77 @@ public class WebUpdater implements Serializable {
     public boolean downloadBinary(String filepath, String fileurl, String Hash) {
         String finalurl = fileurl;
         boolean useprefixes = false;
-        boolean returnval = false;
         boolean primaryfirst = true;
         synchronized (switchtosecondary) {
             if (switchtosecondary > 10) primaryfirst = false;
         }
         String localhash;
-        try {
-            /* wurde komplette url oder nur relativ angegeben? */
+        for (int i = 1; i < 5; i++) {
             try {
-                new URL(fileurl);
-            } catch (Exception e1) {
-                /* primary update server */
-                if (primaryfirst) {
+                /* wurde komplette url oder nur relativ angegeben? */
+                try {
+                    new URL(fileurl);
+                } catch (Exception e1) {
+                    /* primary update server */
+                    if (primaryfirst) {
+                        finalurl = this.getprimaryUpdatePrefix() + fileurl;
+                    } else {
+                        finalurl = this.getsecondaryUpdatePrefix() + fileurl;
+                    }
+                    useprefixes = true;
+                }
+                /* von absolut oder primary laden */
+                downloadBinaryIntern(filepath, finalurl);
+
+                /* hashcheck 1 */
+                if (Hash != null) {
+                    localhash = getLocalHash(new File(filepath));
+                    if (localhash != null && localhash.equalsIgnoreCase(Hash)) {
+                        if (useprefixes) {
+                            synchronized (switchtosecondary) {
+                                if (primaryfirst) switchtosecondary--;
+                            }
+                        }
+                        return true;
+                    }
+                }
+                /* falls von absolut geladen wurde, dann hier stop */
+                if (!useprefixes) {
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                    }
+                    continue;
+                }
+                synchronized (switchtosecondary) {
+                    if (primaryfirst) switchtosecondary++;
+                }
+                /* secondary update server */
+                if (!primaryfirst) {
                     finalurl = this.getprimaryUpdatePrefix() + fileurl;
                 } else {
                     finalurl = this.getsecondaryUpdatePrefix() + fileurl;
                 }
-                useprefixes = true;
-            }
-            /* von absolut oder primary laden */
-            returnval = downloadBinaryIntern(filepath, finalurl);
-
-            /* hashcheck 1 */
-            if (Hash != null) {
-                localhash = getLocalHash(new File(filepath));
-                if (localhash != null && localhash.equalsIgnoreCase(Hash)) {
-                    if (useprefixes) {
-                        synchronized (switchtosecondary) {
-                            if (primaryfirst) switchtosecondary--;
+                downloadBinaryIntern(filepath, finalurl);
+                if (Hash != null) {
+                    localhash = getLocalHash(new File(filepath));
+                    if (localhash != null && localhash.equalsIgnoreCase(Hash)) {
+                        if (useprefixes) {
+                            synchronized (switchtosecondary) {
+                                if (!primaryfirst) switchtosecondary = 0;
+                            }
                         }
-                    }
-                    return true;
-                }
-            }
-            /* falls von absolut geladen wurde, dann hier stop */
-            if (!useprefixes) {
-                if (returnval == false) {
-                    synchronized (errors) {
-                        errors++;
+                        return true;
                     }
                 }
-                return returnval;
+            } catch (Exception e2) {
+                log(e2.toString());
+                log("Fehler beim laden von " + finalurl);
             }
-            synchronized (switchtosecondary) {
-                if (primaryfirst) switchtosecondary++;
+            try {
+                Thread.sleep(250);
+            } catch (InterruptedException e) {
             }
-            /* secondary update server */
-            if (!primaryfirst) {
-                finalurl = this.getprimaryUpdatePrefix() + fileurl;
-            } else {
-                finalurl = this.getsecondaryUpdatePrefix() + fileurl;
-            }
-            returnval = downloadBinaryIntern(filepath, finalurl);
-            if (Hash != null) {
-                localhash = getLocalHash(new File(filepath));
-                if (localhash != null && localhash.equalsIgnoreCase(Hash)) {
-                    if (useprefixes) {
-                        synchronized (switchtosecondary) {
-                            if (!primaryfirst) switchtosecondary = 0;
-                        }
-                    }
-                    return true;
-                }
-            }
-        } catch (Exception e2) {
-            log(e2.toString());
-            log("Fehler beim laden von " + finalurl);
         }
         synchronized (errors) {
             errors++;
@@ -734,8 +736,8 @@ public class WebUpdater implements Serializable {
     }
 
     public static void setJDDirectory(File workingdir) {
-        WebUpdater.JD_ROOT_DIRECTORY=workingdir;
-        
+        WebUpdater.JD_ROOT_DIRECTORY = workingdir;
+
     }
 
 }

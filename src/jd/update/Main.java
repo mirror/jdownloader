@@ -374,11 +374,7 @@ public class Main {
                 Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
                 logWindow.setText(log.toString());
-                Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                }
+                Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());                
                 System.exit(0);
                 return;
             }
@@ -483,11 +479,7 @@ public class Main {
         Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
         logWindow.setText(log.toString());
-        Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-        }
+        Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());        
         System.exit(0);
     }
 

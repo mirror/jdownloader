@@ -21,7 +21,6 @@ import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.io.File;
 import java.io.IOException;
-import java.net.CookieHandler;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -44,7 +43,6 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.CountdownConfirmDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.XTrustProvider;
 import jd.nutils.OSDetector;
 import jd.nutils.io.JDIO;
 import jd.parser.Regex;
@@ -227,7 +225,7 @@ public class JDInit {
         }).start();
     }
 
-    protected void createQueueBackup() {
+    public synchronized static void createQueueBackup() {
         Vector<DownloadLink> links = JDUtilities.getController().getDownloadLinks();
         Iterator<DownloadLink> it = links.iterator();
         ArrayList<BackupLink> ret = new ArrayList<BackupLink>();
@@ -251,13 +249,15 @@ public class JDInit {
         }
         if (ret.size() == 0) return;
         File file = JDUtilities.getResourceFile("backup/links.linkbackup");
-        File old = JDUtilities.getResourceFile("backup/links_" + file.lastModified() + ".linkbackup");
-
-        file.mkdirs();
         if (file.exists()) {
-            file.renameTo(old);
+            File old = JDUtilities.getResourceFile("backup/links_" + file.lastModified() + ".linkbackup");
+
+            file.mkdirs();
+            if (file.exists()) {
+                file.renameTo(old);
+            }
+            file.delete();
         }
-        file.delete();
         JDIO.saveObject(null, ret, file, "links.linkbackup", "linkbackup", false);
     }
 
@@ -305,7 +305,7 @@ public class JDInit {
             public void run() {
                 PackageManager pm = new PackageManager();
                 ArrayList<PackageData> packages = pm.getDownloadedPackages();
-              
+
                 updater.filterAvailableUpdates(files, JDUtilities.getJDHomeDirectoryFromEnvironment());
 
                 if (files != null) {
@@ -351,6 +351,7 @@ public class JDInit {
                             createQueueBackup();
                             JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                             logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                            if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
                             System.exit(0);
                         }
                     } else {
@@ -371,6 +372,7 @@ public class JDInit {
                                 createQueueBackup();
                                 JDIO.writeLocalFile(JDUtilities.getResourceFile("webcheck.tmp"), new Date().toString() + "\r\n(Revision" + JDUtilities.getRevision() + ")");
                                 logger.info(JDUtilities.runCommand("java", new String[] { "-jar", "webupdater.jar", "/restart", "/rt" + JDUtilities.getRunType() }, JDUtilities.getResourceFile(".").getAbsolutePath(), 0));
+                                if (JDUtilities.getController() != null) JDUtilities.getController().prepareShutdown();
                                 System.exit(0);
                             }
                         } catch (HeadlessException e) {

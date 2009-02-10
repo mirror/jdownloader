@@ -80,6 +80,7 @@ import javax.swing.event.MenuListener;
 
 import jd.HostPluginWrapper;
 import jd.JDFileFilter;
+import jd.JDInit;
 import jd.OptionalPluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.Configuration;
@@ -542,6 +543,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
 
     private JDAction actionLog;
 
+    private JDAction actionBackup;
+
     private JDAction actionPause;
 
     private JDAction actionReconnect;
@@ -597,6 +600,8 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
     private JMenu menHosts;
 
     private JMenuItem menViewLog = null;
+
+    private JMenuItem createBackup = null;
 
     private MenuItem premium = null;
 
@@ -789,6 +794,9 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         case JDAction.APP_LOG:
             logDialog.setVisible(!logDialog.isVisible());
             menViewLog.setSelected(!logDialog.isVisible());
+            break;
+        case JDAction.APP_BACKUP:
+            JDInit.createQueueBackup();
             break;
         case JDAction.APP_RECONNECT:
             new Thread() {
@@ -1255,6 +1263,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         actionExit = new JDAction(this, JDTheme.V("gui.images.exit"), "action.exit", JDAction.APP_EXIT);
         actionRestart = new JDAction(this, JDTheme.V("gui.images.exit"), "action.restart", JDAction.APP_RESTART);
         actionLog = new JDAction(this, JDTheme.V("gui.images.terminal"), "action.viewlog", JDAction.APP_LOG);
+        actionBackup = new JDAction(this, JDTheme.V("gui.images.save"), "action.backup", JDAction.APP_BACKUP);
         actionClipBoard = new JDAction(this, getClipBoardImage(), "action.clipboard", JDAction.APP_CLIPBOARD);
         actionConfig = new JDAction(this, JDTheme.V("gui.images.configuration"), "action.configuration", JDAction.APP_CONFIGURATION);
         actionReconnect = new JDAction(this, JDTheme.V("gui.images.reconnect"), "action.reconnect", JDAction.APP_RECONNECT);
@@ -1288,6 +1297,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         JMenu menHelp = new JMenu(JDLocale.L("gui.menu.plugins.help", "?"));
 
         menViewLog = SimpleGUI.createMenuItem(actionLog);
+        createBackup = SimpleGUI.createMenuItem(actionBackup);
         premium = new MenuItem(MenuItem.TOGGLE, JDLocale.L("gui.statusbar.premium", "Premium"), 0);
         premium.setActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent arg0) {
@@ -1327,6 +1337,7 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         menExtra.add(SimpleGUI.createMenuItem(actionDnD));
 
         menHelp.add(menViewLog);
+        menHelp.add(createBackup);
         menHelp.addSeparator();
         menHelp.add(SimpleGUI.createMenuItem(actionHelp));
         menHelp.add(SimpleGUI.createMenuItem(actionWiki));
@@ -1455,44 +1466,44 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         temp = (menHosts.getComponentCount() != 0) ? menHosts.getComponent(0) : premItem;
 
         menHosts.add(temp);
-        if (premium.isSelected()) {
-            menHosts.addSeparator();
-            for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
-                if (wrapper.isLoaded() && wrapper.usePlugin()) {
-                    final PluginForHost helpPlugin = wrapper.getPlugin();
-                    if (helpPlugin.createMenuitems() != null) {
-                        JMenuItem mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
-                        if (mi != null) {
-                            menHosts.add(mi);
+        boolean ispremium = premium.isSelected();
+        menHosts.addSeparator();
+        for (HostPluginWrapper wrapper : JDUtilities.getPluginsForHost()) {
+            if (wrapper.isLoaded() && wrapper.usePlugin()) {
+                final PluginForHost helpPlugin = wrapper.getPlugin();
+                if (helpPlugin.createMenuitems() != null) {
+                    JMenuItem mi = SimpleGUI.getJMenuItem(new MenuItem(MenuItem.CONTAINER, helpPlugin.getHost(), 0));
+                    if (mi != null) {
+                        mi.setEnabled(ispremium);
+                        menHosts.add(mi);
+                        ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
+                        ((JMenu) mi).addMenuListener(new MenuListener() {
+                            public void menuCanceled(MenuEvent e) {
+                            }
 
-                            ((JMenu) mi).removeMenuListener(((JMenu) mi).getMenuListeners()[0]);
-                            ((JMenu) mi).addMenuListener(new MenuListener() {
-                                public void menuCanceled(MenuEvent e) {
-                                }
+                            public void menuDeselected(MenuEvent e) {
+                            }
 
-                                public void menuDeselected(MenuEvent e) {
-                                }
-
-                                public void menuSelected(MenuEvent e) {
-                                    JMenu m = (JMenu) e.getSource();
-                                    JMenuItem c;
-                                    m.removeAll();
-                                    for (MenuItem menuItem : helpPlugin.createMenuitems()) {
-                                        c = SimpleGUI.getJMenuItem(menuItem);
-                                        if (c == null) {
-                                            m.addSeparator();
-                                        } else {
-                                            m.add(c);
-                                        }
+                            public void menuSelected(MenuEvent e) {
+                                JMenu m = (JMenu) e.getSource();
+                                JMenuItem c;
+                                m.removeAll();
+                                for (MenuItem menuItem : helpPlugin.createMenuitems()) {
+                                    c = SimpleGUI.getJMenuItem(menuItem);
+                                    if (c == null) {
+                                        m.addSeparator();
+                                    } else {
+                                        m.add(c);
                                     }
                                 }
-                            });
-                        } else {
-                            menHosts.addSeparator();
-                        }
+                            }
+                        });
+                    } else {
+                        menHosts.addSeparator();
                     }
                 }
             }
+
         }
         if (menHosts.getItemCount() == 0) {
             menHosts.setEnabled(false);

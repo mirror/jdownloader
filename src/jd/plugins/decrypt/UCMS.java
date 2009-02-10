@@ -61,6 +61,7 @@ public class UCMS extends PluginForDecrypt {
             }
 
             String pass = br.getRegex(Pattern.compile("CopyToClipboard\\(this\\)\\; return\\(false\\)\\;\">(.*?)<\\/a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+            if (pass == null) pass = br.getRegex("<B>Passwort:</B> <input value=\"(.*?)\".*?<").getMatch(0);
             if (pass != null) {
                 if (pass.equals("keins ben&ouml;tigt") || pass.equals("kein pw") || pass.equals("N/A") || pass.equals("n/a") || pass.equals("-") || pass.equals("-kein Passwort-") || pass.equals("-No Pass-") || pass.equals("ohne PW")) {
                     pass = null;
@@ -77,7 +78,7 @@ public class UCMS extends PluginForDecrypt {
                         }
 
                         logger.finest("Captcha Protected");
-                        String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
+                        String captchaAdress = host + new Regex(element[2], Pattern.compile("<IMG SRC=\"(/.*?)\"", Pattern.CASE_INSENSITIVE)).getMatch(0);
                         captchaFile = getLocalCaptchaFile(this);
                         Browser.download(captchaFile, captchaAdress);
                         capTxt = Plugin.getCaptchaCode(this, "hardcoremetal.biz", captchaFile, false, param);

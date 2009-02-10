@@ -72,7 +72,7 @@ public class DDLWarez extends PluginForDecrypt {
                 String action = form.getAction(base);
 
                 if (action.contains("get_file")) {
-                    Browser clone = br.cloneBrowser();
+                    Browser clone = br.cloneBrowser();                    
                     for (int retry = 1; retry <= 10; retry++) {
                         try {
                             clone.submitForm(form);
@@ -139,21 +139,23 @@ public class DDLWarez extends PluginForDecrypt {
                 }
 
                 Form form = br.getForm(1);
+                boolean docaptcha = false;
                 if (form != null && form.containsHTML("captchaO")) {
+                    docaptcha = true;
                     File file;
-                    int i=10;
+                    int i = 10;
                     while (true) {
                         i--;
-                        if(i<=0){
+                        if (i <= 0) {
                             logger.severe("Could not download Captcha");
                             return null;
                         }
                         file = this.getLocalCaptchaFile(this);
-                        Browser.download(file, br.cloneBrowser().openGetConnection("http://"+br.getHost()+"/"+br.getRegex("<img src=\"(images/captcha/[^\"]*)\" style=\"border: 0px;\">").getMatch(0)));
+                        Browser.download(file, br.cloneBrowser().openGetConnection("http://" + br.getHost() + "/" + br.getRegex("<img src=\"(images/captcha/[^\"]*)\" style=\"border: 0px;\">").getMatch(0)));
                         try {
                             File f = convert(file);
                             if (f == null || !f.exists()) continue;
-                            file=f;
+                            file = f;
                             break;
                         } catch (Exception e) {
                             continue;
@@ -161,16 +163,23 @@ public class DDLWarez extends PluginForDecrypt {
 
                     }
                     String captcha = getCaptchaCode(file, this, param);
-                    int erg= Integer.parseInt(captcha.substring(0, 1));
-                    if(captcha.charAt(1)=='p')
-                        erg+=Integer.parseInt(captcha.substring(2, 3));
-                    else if (captcha.charAt(1)=='m')
-                        erg-=Integer.parseInt(captcha.substring(2, 3));
-                    else if (captcha.charAt(1)=='x')
-                        erg*=Integer.parseInt(captcha.substring(2, 3));
-                    form.put("captchaO", ""+erg);
+                    int erg = Integer.parseInt(captcha.substring(0, 1));
+                    if (captcha.charAt(1) == 'p')
+                        erg += Integer.parseInt(captcha.substring(2, 3));
+                    else if (captcha.charAt(1) == 'm')
+                        erg -= Integer.parseInt(captcha.substring(2, 3));
+                    else if (captcha.charAt(1) == 'x') erg *= Integer.parseInt(captcha.substring(2, 3));
+                    form.put("captchaO", "" + erg);
+                } else if (form.containsHTML("in das Textfeld")) {
+                    String text = form.getRegex("Schreibe \"(.*?)\" in").getMatch(0);
+                    if (text == null) return null;
+                    form.put("simple", text);
+                    docaptcha = true;
+                }
+                if (docaptcha == true) {
                     br.submitForm(form);
                     if (br.containsHTML("Captcha-Fehler")) continue;
+                    if (br.containsHTML("in das Textfeld und klicke")) continue;
                 }
 
                 Form[] forms = br.getForms();
@@ -241,7 +250,7 @@ public class DDLWarez extends PluginForDecrypt {
                 }
                 // BasicWindow.showImage(tmp.getFullImage(), "img " + i);
             }
-if(n<4)return null;
+            if (n < 4) return null;
             frames[n - 4].crop(10, 20, 10, 10);
             frames[n - 3].crop(10, 20, 10, 10);
             frames[n - 2].crop(10, 20, 10, 10);

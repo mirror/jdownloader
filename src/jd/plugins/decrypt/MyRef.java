@@ -35,9 +35,8 @@ public class MyRef extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String parameter = param.toString();
-
         String downloadid = new Regex(parameter, "\\?([\\d].*)").getMatch(0);
-        br.getPage("http://myref.de/go_counter.php?id=" + downloadid);
+        br.getPage("http://www.myref.de/go_counter.php?id=" + downloadid);
         decryptedLinks.add(createDownloadlink(br.getRedirectLocation()));
 
         return decryptedLinks;
