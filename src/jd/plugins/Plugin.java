@@ -163,6 +163,7 @@ public abstract class Plugin implements ActionListener {
         String date = String.format("%1$td.%1$tm.%1$tY_%1$tH.%1$tM.%1$tS.", calendar) + new Random().nextInt(999);
 
         File dest = JDUtilities.getResourceFile("captchas/" + plugin.getHost() + "/" + date + extension);
+        dest.deleteOnExit();
         return dest;
     }
 
@@ -393,9 +394,9 @@ public abstract class Plugin implements ActionListener {
                     }
                 }
             } else if (new Regex(contentdisposition, "=\\?.*?\\?.*?\\?=").matches()) {
-                /*Unicode Format wie es 4Shared nutzt*/
+                /* Unicode Format wie es 4Shared nutzt */
                 String tokens[][] = new Regex(contentdisposition, "=\\?(.*?)\\?(.*?)\\?=").getMatches();
-                if (tokens.length == 1 && tokens[0].length == 2) {                    
+                if (tokens.length == 1 && tokens[0].length == 2) {
                     try {
                         contentdisposition = new String(tokens[0][1].trim().getBytes("ISO-8859-1"), tokens[0][0].trim());
                         continue;
