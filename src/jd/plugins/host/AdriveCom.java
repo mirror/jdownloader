@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -43,7 +43,7 @@ public class AdriveCom extends PluginForHost {
         this.setBrowserExclusive();
         br.getPage(downloadLink.getDownloadURL());
         String linkurl = Encoding.htmlDecode(new Regex(br, Pattern.compile("<a href=\"(.*?)\">here</a>", Pattern.CASE_INSENSITIVE)).getMatch(0));
-        HTTPConnection con = br.openGetConnection(linkurl);
+        URLConnectionAdapter con = br.openGetConnection(linkurl);
         if (!con.isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("File overlimit")) {
@@ -76,7 +76,7 @@ public class AdriveCom extends PluginForHost {
         if (linkurl == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         /* Datei herunterladen */
         dl = br.openDownload(downloadLink, linkurl, true, 1);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             br.followConnection();
             if (br.containsHTML("File overlimit")) {

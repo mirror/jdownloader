@@ -6,7 +6,6 @@ import java.net.URL;
 import java.net.URLConnection;
 
 import jd.http.Browser;
-import jd.http.HTTPConnection;
 
 public class Handler extends sun.net.www.protocol.https.Handler {
     public Handler() {
@@ -35,7 +34,12 @@ public class Handler extends sun.net.www.protocol.https.Handler {
             String[] logins = u.getUserInfo().split(":");
             Browser.getAssignedBrowserInstance(u).setAuth(u.getHost(), logins[0], logins.length > 1 ? logins[1] : "");
         }
-        return new HTTPConnection(Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect)), p, this);
+        // return new
+        // JDHttpsURLConnectionImpl(Browser.reAssignUrlToBrowserInstance(u, new
+        // URL(urlCorrect)), p, this);
+        URL nurl = Browser.reAssignUrlToBrowserInstance(u, new URL(urlCorrect));
+        URLConnection con = nurl.openConnection(p);//super.openConnection(nurl, p);
+        return new jd.http.HTTPsConnection(con,p);
 
     }
 

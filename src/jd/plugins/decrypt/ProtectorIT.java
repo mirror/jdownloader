@@ -25,7 +25,7 @@ import jd.controlling.ProgressController;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.ClickPositionDialog;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
@@ -81,7 +81,7 @@ public class ProtectorIT extends PluginForDecrypt {
         containerlink = null;
         if (containerlink != null) {
             try {
-                HTTPConnection con = br.openGetConnection(containerlink);
+                URLConnectionAdapter con = br.openGetConnection(containerlink);
                 File container = JDUtilities.getResourceFile("container/" + getFileNameFormHeader(con));
                 Browser.download(container, con);
                 decryptedLinks.addAll(JDUtilities.getController().getContainerLinks(container));

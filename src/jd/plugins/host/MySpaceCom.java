@@ -19,7 +19,7 @@ package jd.plugins.host;
 import java.io.IOException;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -44,7 +44,7 @@ public class MySpaceCom extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        HTTPConnection urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
+        URLConnectionAdapter urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
         if (!urlConnection.isOK()) {
             urlConnection.disconnect();
             return false;

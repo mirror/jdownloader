@@ -18,7 +18,7 @@ package jd.plugins.host;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -93,7 +93,7 @@ public class FastShareorg extends PluginForHost {
         sleep(10000, downloadLink);
 
         dl = RAFDownload.download(downloadLink, br.createGetRequest(url), false, 1);
-        HTTPConnection urlConnection = dl.connect(br);
+        URLConnectionAdapter urlConnection = dl.connect(br);
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
             linkStatus.setValue(20 * 60 * 1000l);

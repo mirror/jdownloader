@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.Authenticator;
+import java.net.CookieHandler;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -52,6 +53,7 @@ public class Browser {
 
         public BrowserException(String string) {
             super(string);
+           
         }
     }
 
@@ -158,7 +160,7 @@ public class Browser {
 
     }
 
-    public void forwardCookies(HTTPConnection con) throws MalformedURLException {
+    public void forwardCookies(URLConnectionAdapter con) throws MalformedURLException {
         if (con == null) { return; }
         String host = Browser.getHost(con.getURL().toString());
         HashMap<String, Cookie> cookies = getCookies().get(host);
@@ -253,7 +255,9 @@ public class Browser {
     };
 
     public Browser() {
-        Authenticator.setDefault(AUTHENTICATOR);
+      
+//        JDProxy p = new JDProxy(JDProxy.Type.SOCKS, "localhost", 1080);
+//        this.setProxy(p);
     }
 
     public String getAcceptLanguage() {
@@ -409,7 +413,7 @@ public class Browser {
         return request;
     }
 
-    public HTTPConnection openFormConnection(Form form) throws IOException {
+    public URLConnectionAdapter openFormConnection(Form form) throws IOException {
         if (form == null) return null;
         String base = null;
         if (request != null) base = request.getUrl().toString();
@@ -499,7 +503,7 @@ public class Browser {
 
     }
 
-    public HTTPConnection openGetConnection(String string) throws IOException {
+    public URLConnectionAdapter openGetConnection(String string) throws IOException {
         string = getURL(string);
         boolean sendref = true;
         if (currentURL == null) {
@@ -638,7 +642,7 @@ public class Browser {
         return Encoding.urlEncode_light(string);
     }
 
-    private HTTPConnection openPostConnection(String url, HashMap<String, String> post) throws IOException {
+    private URLConnectionAdapter openPostConnection(String url, HashMap<String, String> post) throws IOException {
         url = getURL(url);
         boolean sendref = true;
         if (currentURL == null) {
@@ -754,7 +758,7 @@ public class Browser {
         return createPostRequest(url, Request.parseQuery(post));
     }
 
-    public HTTPConnection openPostConnection(String url, String post) throws IOException {
+    public URLConnectionAdapter openPostConnection(String url, String post) throws IOException {
 
         return openPostConnection(url, Request.parseQuery(post));
     }
@@ -982,12 +986,12 @@ public class Browser {
             Request request = new Request(up.getConnection()) {
 
                 @Override
-                public void postRequest(HTTPConnection httpConnection) throws IOException {
+                public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
 
                 }
 
                 @Override
-                public void preRequest(HTTPConnection httpConnection) throws IOException {
+                public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
 
                 }
 
@@ -1057,14 +1061,14 @@ public class Browser {
      * @return
      * @throws IOException
      */
-    public String loadConnection(HTTPConnection con) throws IOException {
+    public String loadConnection(URLConnectionAdapter con) throws IOException {
         checkContentLengthLimit(request);
         if (con == null) return request.read();
         return Request.read(con);
 
     }
 
-    public HTTPConnection getHttpConnection() {
+    public URLConnectionAdapter getHttpConnection() {
         if (request == null) return null;
         return request.getHttpConnection();
     }
@@ -1077,7 +1081,7 @@ public class Browser {
      * @return Erfolg true/false
      * @throws IOException
      */
-    public static void download(File file, HTTPConnection con) throws IOException {
+    public static void download(File file, URLConnectionAdapter con) throws IOException {
 
         if (file.isFile()) {
             if (!file.delete()) {
@@ -1110,7 +1114,7 @@ public class Browser {
 
         urlString = URLDecoder.decode(urlString, "UTF-8");
 
-        HTTPConnection con = this.openGetConnection(urlString);
+        URLConnectionAdapter con = this.openGetConnection(urlString);
         con.setInstanceFollowRedirects(true);
         download(file, con);
 
@@ -1124,7 +1128,7 @@ public class Browser {
      * @param con
      * @throws IOException
      */
-    public void downloadConnection(File file, HTTPConnection con) throws IOException {
+    public void downloadConnection(File file, URLConnectionAdapter con) throws IOException {
         if (con == null) con = request.getHttpConnection();
         con.setInstanceFollowRedirects(true);
         download(file, con);
@@ -1186,7 +1190,7 @@ public class Browser {
 
     }
 
-    public HTTPConnection openFormConnection(int i) throws IOException {
+    public URLConnectionAdapter openFormConnection(int i) throws IOException {
         return openFormConnection(getForm(i));
 
     }
@@ -1479,6 +1483,13 @@ public class Browser {
         if (auth == null) return null;
         JDUtilities.getLogger().finest("Use Authentication for: " + host + ":" + port + ": " + auth[0] + " - " + auth[1]);
         return new PasswordAuthentication(auth[0], auth[1].toCharArray());
+    }
+
+    public static void init() {
+        Authenticator.setDefault(AUTHENTICATOR);
+        CookieHandler.setDefault(null);
+        XTrustProvider.install();
+
     }
 
 }

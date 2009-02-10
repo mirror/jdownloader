@@ -22,6 +22,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.regex.Pattern;
 
+
+import jd.http.URLConnectionAdapter;
+
 import jd.PluginWrapper;
 import jd.http.HTTPConnection;
 import jd.parser.Regex;
@@ -70,7 +73,7 @@ public class AxiFileCom extends PluginForHost {
         br.getPage("http://www.axifile.com/javascript/donwload.js");
         br.setCookie("http://" + br.getHost(), "pv", br.getRegex("setCookie\\(\"pv\",\"(.*?)\"").getMatch(0));
         br.setCookie("http://" + br.getHost(), "flv", "y");
-        HTTPConnection con = br.openGetConnection("http://www.axifile.com/flash/baner.swf");
+        URLConnectionAdapter con = br.openGetConnection("http://www.axifile.com/flash/baner.swf");
         BufferedInputStream is = new BufferedInputStream(con.getInputStream());
 
         int i;

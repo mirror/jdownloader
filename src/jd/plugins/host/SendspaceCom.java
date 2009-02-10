@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -88,7 +88,7 @@ public class SendspaceCom extends PluginForHost {
         /* Datei herunterladen */
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl, true, 1);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (con.getURL().toExternalForm().contains("?e=")) {
             con.disconnect();
             br.getPage(con.getURL().toExternalForm());

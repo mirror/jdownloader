@@ -32,20 +32,21 @@ import java.util.Map.Entry;
 
 import jd.parser.Regex;
 
-public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection {
+public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection implements URLConnectionAdapter {
 
     public static final int HTTP_NOT_IMPLEMENTED = HttpURLConnection.HTTP_NOT_IMPLEMENTED;
 
-    private String postData;
+    protected String postData;
 
-    private HashMap<String, List<String>> requestProperties = null;
-    private long[] ranges;
-    private boolean connected = false;
+    protected HashMap<String, List<String>> requestProperties = null;
+    protected long[] ranges;
+    protected boolean connectionnEstabilished = false;
 
-    private JDProxy proxy = null;
+    protected JDProxy proxy = null;
 
     public boolean isConnected() {
-        return connected;
+        
+        return connectionnEstabilished;
     }
 
     public HTTPConnection(URL url, Proxy p, sun.net.www.protocol.http.Handler handler) {
@@ -60,6 +61,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
             Entry<String, List<String>> next = set.next();
             requestProperties.put(next.getKey(), next.getValue());
         }
+     
     }
 
     /**
@@ -72,7 +74,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     }
 
     public void connect() throws IOException {
-        this.connected = true;
+        this.connectionnEstabilished = true;
         super.connect();
 
     }
@@ -96,10 +98,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         return type;
     }
 
-    public HttpURLConnection getHTTPURLConnection() {
-        return this;
 
-    }
 
     public InputStream getInputStream() throws IOException {
 
@@ -112,9 +111,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     }
 
     public String getPostData() {
-        // AuthenticationInfo d = new
-        // sun.net.www.protocol.http.AuthenticationInfo();
-        // this.setDefaultAuthenticator(a);
+
         return postData;
     }
 
@@ -201,6 +198,7 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
     public void disconnect() {
         if (isConnected()) {
             super.disconnect();
+            this.connectionnEstabilished=false;
         }
 
     }
@@ -260,4 +258,9 @@ public class HTTPConnection extends sun.net.www.protocol.http.HttpURLConnection 
         return sb.toString();
 
     }
+    
+    
+    
+    
+    
 }

@@ -24,7 +24,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.crypt.AESdecrypt;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -54,7 +54,7 @@ public class CryptItCom extends PluginForDecrypt {
         parameter = parameter.replace("/e/", "/d/");
         parameter = parameter.replace("ccf://", "http://");
 
-        HTTPConnection con = br.openGetConnection(parameter);
+        URLConnectionAdapter con = br.openGetConnection(parameter);
 
         if (con.getContentType().indexOf("text/html") >= 0) {
             logger.info(br.loadConnection(con));

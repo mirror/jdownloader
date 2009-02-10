@@ -86,7 +86,7 @@ public abstract class Request {
 
     private HashMap<String, String> headers;
     private String htmlCode;
-    protected HTTPConnection httpConnection;
+    protected URLConnectionAdapter httpConnection;
 
     private long readTime = -1;
     private int readTimeout;
@@ -121,7 +121,7 @@ public abstract class Request {
         return httpConnection.toString();
     }
 
-    public Request(HTTPConnection con) {
+    public Request(URLConnectionAdapter con) {
         httpConnection = con;
         collectCookiesFromConnection();
     }
@@ -349,7 +349,7 @@ public abstract class Request {
         return htmlCode;
     }
 
-    public HTTPConnection getHttpConnection() {
+    public URLConnectionAdapter getHttpConnection() {
         return httpConnection;
     }
 
@@ -456,10 +456,10 @@ public abstract class Request {
         // unterst�tzt werden
         if (proxy != null) {
 
-            httpConnection = (HTTPConnection) url.openConnection(proxy);
+            httpConnection = (URLConnectionAdapter) url.openConnection(proxy);
 
         } else {
-            httpConnection = (HTTPConnection) url.openConnection();
+            httpConnection = (URLConnectionAdapter) url.openConnection();
 
         }
         httpConnection.setInstanceFollowRedirects(followRedirects);
@@ -484,9 +484,9 @@ public abstract class Request {
 
     }
 
-    public abstract void postRequest(HTTPConnection httpConnection) throws IOException;
+    public abstract void postRequest(URLConnectionAdapter httpConnection) throws IOException;
 
-    abstract public void preRequest(HTTPConnection httpConnection) throws IOException;
+    abstract public void preRequest(URLConnectionAdapter httpConnection) throws IOException;
 
     public String read() throws IOException {
         long tima = System.currentTimeMillis();
@@ -496,7 +496,7 @@ public abstract class Request {
         return htmlCode.toString();
     }
 
-    public static String read(HTTPConnection con) throws IOException {
+    public static String read(URLConnectionAdapter con) throws IOException {
         BufferedReader rd;
         if (con.getHeaderField("Content-Encoding") != null && con.getHeaderField("Content-Encoding").equalsIgnoreCase("gzip")) {
 
@@ -562,11 +562,11 @@ public abstract class Request {
         Request ret = new Request(this.getUrl() + "") {
 
             @Override
-            public void postRequest(HTTPConnection httpConnection) throws IOException {
+            public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
             }
 
             @Override
-            public void preRequest(HTTPConnection httpConnection) throws IOException {
+            public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
                 httpConnection.setRequestMethod("HEAD");
             }
 

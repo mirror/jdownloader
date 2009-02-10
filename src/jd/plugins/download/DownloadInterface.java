@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 import jd.config.Configuration;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.http.Request;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -75,7 +75,7 @@ abstract public class DownloadInterface {
 
         private long chunkBytesLoaded = 0;
 
-        private HTTPConnection connection;
+        private URLConnectionAdapter connection;
 
         private long desiredBps;
 
@@ -107,7 +107,7 @@ abstract public class DownloadInterface {
          * @param endByte
          * @param connection
          */
-        public Chunk(long startByte, long endByte, HTTPConnection connection, DownloadInterface dl) {
+        public Chunk(long startByte, long endByte, URLConnectionAdapter connection, DownloadInterface dl) {
             this.startByte = startByte;
             this.endByte = endByte;
             this.connection = connection;
@@ -174,7 +174,7 @@ abstract public class DownloadInterface {
          * @param connection
          * @return
          */
-        private HTTPConnection copyConnection(HTTPConnection connection) {
+        private URLConnectionAdapter copyConnection(URLConnectionAdapter connection) {
             try {
                 while (downloadLink.getPlugin().waitForNextConnectionAllowed()) {
                 }
@@ -193,7 +193,7 @@ abstract public class DownloadInterface {
                 logger.finer("Übernehme Verbindung bei " + connection.getRange()[0]);
                 return connection;
             }
-            // connection.getHTTPURLConnection().disconnect();
+            // connection.disconnect();
 
             try {
                 Browser br = plugin.getBrowser().cloneBrowser();
@@ -215,14 +215,14 @@ abstract public class DownloadInterface {
                 }
 
                 br.getHeaders().put("Range", "bytes=" + start + "-" + end);
-                HTTPConnection con;
-                if (connection.getHTTPURLConnection().getDoOutput()) {
+                URLConnectionAdapter con;
+                if (connection.getDoOutput()) {
                     con = br.openPostConnection(connection.getURL() + "", connection.getPostData());
                 } else {
                     con = br.openGetConnection(connection.getURL() + "");
                 }
                 if (!con.isOK()) {
-                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getHTTPURLConnection().getResponseMessage());
+                    error(LinkStatus.ERROR_DOWNLOAD_FAILED, "Server: " + con.getResponseMessage());
                     return null;
                 }
                 if (con.getHeaderField("Location") != null) {
@@ -685,7 +685,7 @@ abstract public class DownloadInterface {
         // }
         // inputStream.close();
         // channel.close();
-        // connection.getHTTPURLConnection().disconnect();
+        // connection.disconnect();
         //
         // buffer.flip();
         //
@@ -942,7 +942,7 @@ abstract public class DownloadInterface {
 
     private int chunksInProgress = 0;
 
-    protected HTTPConnection connection;
+    protected URLConnectionAdapter connection;
 
     protected DownloadLink downloadLink;
 
@@ -1156,14 +1156,14 @@ abstract public class DownloadInterface {
 
     }
 
-    public HTTPConnection connect(Browser br) throws Exception {
+    public URLConnectionAdapter connect(Browser br) throws Exception {
         br.setRequest(request);
-        HTTPConnection ret = connect();
+        URLConnectionAdapter ret = connect();
 
         return ret;
     }
 
-    public HTTPConnection connect() throws Exception {
+    public URLConnectionAdapter connect() throws Exception {
         logger.finer("Connect...");
         if (request == null) throw new IllegalStateException("Wrong Mode. Instance is in direct Connection mode");
         this.connected = true;
@@ -1862,7 +1862,7 @@ abstract public class DownloadInterface {
         this.doFileSizeCheck = b;
     }
 
-    public HTTPConnection getConnection() {
+    public URLConnectionAdapter getConnection() {
         // TODO Auto-generated method stub
         return this.connection;
     }

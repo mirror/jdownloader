@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -46,7 +46,7 @@ public class SpiegelDe extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
-        HTTPConnection urlConnection;
+        URLConnectionAdapter urlConnection;
         try {
             urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
         } catch (IOException e) {
@@ -83,7 +83,7 @@ public class SpiegelDe extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);
-        HTTPConnection urlConnection = dl.connect();
+        URLConnectionAdapter urlConnection = dl.connect();
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);
             return;

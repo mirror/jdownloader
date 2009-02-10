@@ -26,7 +26,7 @@ import jd.config.ConfigEntry;
 import jd.config.Configuration;
 import jd.controlling.ProgressController;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -145,7 +145,7 @@ public class MySpaceCom extends PluginForDecrypt {
 
             String link = dUrls[i];
             DownloadLink dl_link = createDownloadlink("myspace://" + link);
-            HTTPConnection c = br.openGetConnection(link);
+            URLConnectionAdapter c = br.openGetConnection(link);
             long lng = c.getContentLength();
             c.disconnect();
             if (getPluginConfig().getBooleanProperty(ENABLE_SUBFOLDERS1)) {

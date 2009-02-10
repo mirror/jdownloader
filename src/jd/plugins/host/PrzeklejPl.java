@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -82,7 +82,7 @@ public class PrzeklejPl extends PluginForHost {
             if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
             form.put("haslo[haslo]", passCode);
             br.setFollowRedirects(true);
-            HTTPConnection con = br.openFormConnection(form);
+            URLConnectionAdapter con = br.openFormConnection(form);
             if (!con.isContentDisposition()) {
                 br.followConnection();
                 if (br.containsHTML(PATTERN_PASSWORD_WRONG)) {

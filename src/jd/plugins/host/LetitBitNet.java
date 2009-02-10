@@ -21,7 +21,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -72,7 +72,7 @@ public class LetitBitNet extends PluginForHost {
         String id = forms[3].getVarsMap().get("uid");
         Form down = forms[4];
         if (forms.length != 8) throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked by Letitbit");
-        HTTPConnection con = br.openGetConnection("http://letitbit.net/cap.php?jpg=" + id + ".jpg");
+        URLConnectionAdapter con = br.openGetConnection("http://letitbit.net/cap.php?jpg=" + id + ".jpg");
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, con);
         down.action = "http://letitbit.net/download3.php";

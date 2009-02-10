@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -143,7 +143,7 @@ public class Freaksharenet extends PluginForHost {
         request = br.createRequest(downloadLink.getDownloadURL());
         dl = RAFDownload.download(downloadLink, request);
 
-        HTTPConnection urlConnection = dl.connect(br);
+        URLConnectionAdapter urlConnection = dl.connect(br);
         if (urlConnection.getContentType().equals("text/html; charset=ISO-8859-1")) {
             logger.finer("Direct Download disabled");
             br.followConnection();

@@ -17,7 +17,7 @@
 package jd.plugins.host;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -84,7 +84,7 @@ public class Dataupde extends PluginForHost {
         dl = new RAFDownload(this, downloadLink, br.createFormRequest(form));
         dl.setChunkNum(1);
         dl.setResume(false);
-        HTTPConnection urlConnection = dl.connect(br);
+        URLConnectionAdapter urlConnection = dl.connect(br);
         /* Datei herunterladen */
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);

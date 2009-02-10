@@ -49,7 +49,7 @@ public class KewlshareCom extends PluginForHost {
         form = br.getForm(0);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, form, false, 1);
-        if (dl.getConnection().getHTTPURLConnection().getURL().toString().contains("MAX_BY_IP")) {
+        if (dl.getConnection().getURL().toString().contains("MAX_BY_IP")) {
             dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 2 * 60 * 60 * 1000l);
         }

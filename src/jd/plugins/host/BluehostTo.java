@@ -21,7 +21,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.parser.XPath;
@@ -91,7 +91,7 @@ public class BluehostTo extends PluginForHost {
         getFileInformation(downloadLink);
         login(account);
         br.setFollowRedirects(true);
-        HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getContentType().contains("text")) {
             br.followConnection();
             Form download = br.getFormbyName("download");

@@ -28,7 +28,7 @@ import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.http.Request;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
@@ -249,7 +249,7 @@ public class Megauploadcom extends PluginForHost {
 
         File file = this.getLocalCaptchaFile(this);
         logger.info("Captcha " + captchaURL);
-        HTTPConnection con = br.cloneBrowser().openGetConnection(captchaURL);
+        URLConnectionAdapter con = br.cloneBrowser().openGetConnection(captchaURL);
 
         Browser.download(file, con);
 

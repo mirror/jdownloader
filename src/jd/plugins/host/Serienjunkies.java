@@ -35,7 +35,7 @@ import jd.controlling.reconnect.Reconnecter;
 import jd.event.ControlEvent;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -93,7 +93,7 @@ public class Serienjunkies extends PluginForHost {
                     String captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];
                     Browser capbr = br.cloneBrowser();
                     capbr.setFollowRedirects(true);
-                    HTTPConnection con = capbr.openGetConnection(captchaAdress);
+                    URLConnectionAdapter con = capbr.openGetConnection(captchaAdress);
 
                     if (con.getResponseCode() < 0) {
                         captchaAdress = "http://" + subdomain + "serienjunkies.org" + gifs[0][1];

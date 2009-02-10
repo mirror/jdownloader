@@ -41,7 +41,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.components.TextAreaDialog;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.http.PostRequest;
 import jd.http.Request;
 import jd.nutils.JDHash;
@@ -508,7 +508,7 @@ public class Rapidshare extends PluginForHost {
         // Download
         dl = new RAFDownload(this, downloadLink, request);
         long startTime = System.currentTimeMillis();
-        HTTPConnection con = dl.connect();
+        URLConnectionAdapter con = dl.connect();
         if (!con.isContentDisposition() && con.getHeaderField("Cache-Control") != null) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
@@ -624,7 +624,7 @@ public class Rapidshare extends PluginForHost {
         dl.setResume(true);
         // Premiumdownloads erlauben chunkload
         dl.setChunkNum(JDUtilities.getSubConfig("DOWNLOAD").getIntegerProperty(Configuration.PARAM_DOWNLOAD_MAX_CHUNKS, 2));
-        HTTPConnection urlConnection;
+        URLConnectionAdapter urlConnection;
         try {
             urlConnection = dl.connect(br);
         } catch (Exception e) {

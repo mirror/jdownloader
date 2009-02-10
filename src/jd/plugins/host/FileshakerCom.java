@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -66,7 +66,7 @@ public class FileshakerCom extends PluginForHost {
         Form form = br.getForm(0);
         if (form == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
         dl = br.openDownload(downloadLink, form);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 5 * 60 * 1000l);

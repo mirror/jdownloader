@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -93,7 +93,7 @@ public class ShareBombCom extends PluginForHost {
         /* Datei herunterladen */
         br.setFollowRedirects(true);        
         dl = br.openDownload(downloadLink, linkurl, false, 1);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() != 200 && con.getResponseCode() != 206) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 30 * 1000l);

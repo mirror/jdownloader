@@ -44,7 +44,7 @@ import jd.gui.skins.simple.SimpleGUI;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.HTMLParser;
 import jd.parser.Regex;
 import jd.utils.JDUtilities;
@@ -334,7 +334,7 @@ public abstract class Plugin implements ActionListener {
      * @return Filename aus dem header (content disposition) extrahiert
      * @throws Exception
      */
-    static public String getFileNameFormHeader(HTTPConnection urlConnection) {
+    static public String getFileNameFormHeader(URLConnectionAdapter urlConnection) {
         if (urlConnection.getHeaderField("content-disposition") == null || urlConnection.getHeaderField("content-disposition").indexOf("filename") < 0) { return Plugin.getFileNameFormURL(urlConnection.getURL()); }
         return getFileNameFromDispositionHeader(urlConnection.getHeaderField("content-disposition"));
     }

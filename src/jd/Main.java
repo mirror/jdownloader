@@ -49,7 +49,7 @@ import jd.event.ControlEvent;
 import jd.gui.skins.simple.JDEventQueue;
 import jd.gui.skins.simple.SimpleGUI;
 import jd.http.Browser;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.utils.CheckJava;
 import jd.utils.JDFileReg;
 import jd.utils.JDLocale;
@@ -79,7 +79,7 @@ public class Main {
             if (path.contains("http://")) {
                 try {
                     Browser br = new Browser();
-                    HTTPConnection httpConnection;
+                    URLConnectionAdapter httpConnection;
                     httpConnection = br.openGetConnection(path);
 
                     if (httpConnection.getContentLength() == -1 || httpConnection.getContentLength() == 0) {

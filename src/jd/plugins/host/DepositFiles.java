@@ -23,7 +23,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -84,7 +84,7 @@ public class DepositFiles extends PluginForHost {
         if (form == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setDebug(true);
         dl = br.openDownload(downloadLink, form, true, 1);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);
@@ -189,7 +189,7 @@ public class DepositFiles extends PluginForHost {
         if (link == null) throw new PluginException(LinkStatus.ERROR_FATAL);
         br.setDebug(true);
         dl = br.openDownload(downloadLink, link, true, 0);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (Plugin.getFileNameFormHeader(con) == null || Plugin.getFileNameFormHeader(con).indexOf("?") >= 0) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_RETRY);

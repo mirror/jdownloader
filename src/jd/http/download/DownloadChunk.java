@@ -28,7 +28,7 @@ import java.util.Set;
 import java.util.Map.Entry;
 
 import jd.http.Browser;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.http.Request;
 import jd.nutils.jobber.JDRunnable;
 import jd.utils.JDLocale;
@@ -41,7 +41,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
     private static final int SPEEDMETER_INTERVAL = 3000;
     private Request request;
 
-    private HTTPConnection connection;
+    private URLConnectionAdapter connection;
     private InputStream inputStream;
     private long writePosition = 0;
 
@@ -103,7 +103,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
             request.connect();
             this.connection = request.getHttpConnection();
         } else {
-            HTTPConnection connection = request.getHttpConnection();
+            URLConnectionAdapter connection = request.getHttpConnection();
 
             Browser br = owner.getBrowser().cloneBrowser();
 
@@ -129,8 +129,8 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
             } else {
                 br.getHeaders().put("Range", "bytes=" + getChunkStart() + "-" + this.getChunkEnd());
             }
-            HTTPConnection con;
-            if (connection.getHTTPURLConnection().getDoOutput()) {
+            URLConnectionAdapter con;
+            if (connection.getDoOutput()) {
                 con = br.openPostConnection(connection.getURL() + "", connection.getPostData());
             } else {
                 con = br.openGetConnection(connection.getURL() + "");
@@ -156,7 +156,7 @@ public class DownloadChunk extends DownloadChunkInterface implements JDRunnable 
 
         }
 
-        if (!this.connection.isOK()) throw new BrowserException(JDLocale.LF("exceptions.browserexception.badrequest", "Bad Request: %s(%s)", connection.getHTTPURLConnection().getResponseMessage(), connection.getResponseCode() + ""), BrowserException.TYPE_BADREQUEST);
+        if (!this.connection.isOK()) throw new BrowserException(JDLocale.LF("exceptions.browserexception.badrequest", "Bad Request: %s(%s)", connection.getResponseMessage(), connection.getResponseCode() + ""), BrowserException.TYPE_BADREQUEST);
 
         connection.setReadTimeout(TIMEOUT_READ);
         connection.setConnectTimeout(TIMEOUT_CONNECT);

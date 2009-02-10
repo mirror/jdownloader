@@ -51,7 +51,7 @@ public class HTTPPost {
     /**
      * Interne Connection
      */
-    private HTTPConnection connection;
+    private URLConnectionAdapter connection;
     /**
      * Redirects automatisch folgen
      */
@@ -123,10 +123,10 @@ public class HTTPPost {
             url = u;
             logger.fine("POST " + url);
             if (proxy != null) {
-                connection = (HTTPConnection) url.openConnection(proxy);
+                connection = (URLConnectionAdapter) url.openConnection(proxy);
 
             } else {
-                connection = (HTTPConnection) url.openConnection();
+                connection = (URLConnectionAdapter) url.openConnection();
 
             }
             connection.setRequestMethod("POST");
@@ -166,10 +166,10 @@ public class HTTPPost {
             url = new URL("http://" + ip + ":" + port + path + query);
             logger.fine("POST " + url);
             if (proxy != null) {
-                connection = (HTTPConnection) url.openConnection(proxy);
+                connection = (URLConnectionAdapter) url.openConnection(proxy);
 
             } else {
-                connection = (HTTPConnection) url.openConnection();
+                connection = (URLConnectionAdapter) url.openConnection();
 
             }
             connection.setRequestMethod("POST");
@@ -254,7 +254,7 @@ public class HTTPPost {
     /**
      * @return the connection
      */
-    public HTTPConnection getConnection() {
+    public URLConnectionAdapter getConnection() {
         return connection;
     }
 

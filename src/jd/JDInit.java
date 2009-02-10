@@ -389,8 +389,7 @@ public class JDInit {
     }
 
     void init() {
-        CookieHandler.setDefault(null);
-        XTrustProvider.install();
+        Browser.init();
     }
 
     public JDController initController() {

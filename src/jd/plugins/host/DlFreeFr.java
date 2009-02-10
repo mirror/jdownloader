@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -27,7 +27,7 @@ public class DlFreeFr extends PluginForHost {
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.isContentDisposition()) {
             downloadLink.setFinalFileName(Plugin.getFileNameFormHeader(con));
             downloadLink.setDownloadSize(con.getContentLength());

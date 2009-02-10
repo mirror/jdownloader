@@ -24,7 +24,7 @@ import java.util.Map;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
@@ -78,7 +78,7 @@ public class RapidsafeDe extends PluginForDecrypt {
                 String[] search2 = new String[0];
                 while (repeat) {
                     try {
-                        HTTPConnection con = br.openGetConnection(parameter + flash.get(flashcounter));
+                        URLConnectionAdapter con = br.openGetConnection(parameter + flash.get(flashcounter));
 
                         BufferedInputStream input = new BufferedInputStream(con.getInputStream());
                         StringBuilder sb = new StringBuilder();

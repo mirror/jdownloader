@@ -95,7 +95,7 @@ public class PostRequest extends Request {
     }
 
     @Override
-    public void postRequest(HTTPConnection httpConnection) throws IOException {
+    public void postRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setDoOutput(true);
         String parameter = postDataString != null ? postDataString : getPostDataString();
         if (parameter != null) {
@@ -110,7 +110,7 @@ public class PostRequest extends Request {
     }
 
     @Override
-    public void preRequest(HTTPConnection httpConnection) throws IOException {
+    public void preRequest(URLConnectionAdapter httpConnection) throws IOException {
         httpConnection.setRequestMethod("POST");
 
     }

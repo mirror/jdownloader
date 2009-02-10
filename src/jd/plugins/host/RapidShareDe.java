@@ -23,7 +23,7 @@ import jd.PluginWrapper;
 import jd.http.Cookie;
 import jd.http.Encoding;
 import jd.http.GetRequest;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.http.PostRequest;
 import jd.nutils.JDHash;
 import jd.nutils.io.JDIO;
@@ -161,7 +161,7 @@ public class RapidShareDe extends PluginForHost {
         }
         String url = new Regex(page, "\\:<\\/b> <a href\\=\"([^\"].*)\">.*?.rapidshare.de").getMatch(0);
 
-        HTTPConnection urlConnection;
+        URLConnectionAdapter urlConnection;
         GetRequest req = new GetRequest(url);
         r.getCookies().add(new Cookie(getHost(), "user", user + "-" + formatPass));
         dl = RAFDownload.download(downloadLink, req, true, 0);

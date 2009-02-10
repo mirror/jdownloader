@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -61,7 +61,7 @@ public class YourFilesBiz extends PluginForHost {
         String url = br.getRegex(Pattern.compile("return false;}document.location=\"(.*?)\"'", Pattern.CASE_INSENSITIVE)).getMatch(0);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, url);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);

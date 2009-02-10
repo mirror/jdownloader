@@ -22,7 +22,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Form;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -173,7 +173,7 @@ public class Uploadedto extends PluginForHost {
         if (br.getRedirectLocation() == null) {
             logger.info("InDirect Downloads active");
             Form form = br.getFormbyValue("Download");
-            HTTPConnection con = br.openFormConnection(form);
+            URLConnectionAdapter con = br.openFormConnection(form);
             if (br.getRedirectLocation() == null) {
                 con.disconnect();
                 logger.severe("Endlink not found");

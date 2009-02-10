@@ -18,7 +18,7 @@ package jd.plugins.host;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -40,7 +40,7 @@ public class MyVideo extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws Exception {
-        HTTPConnection con = br.openGetConnection(downloadLink.getDownloadURL());
+        URLConnectionAdapter con = br.openGetConnection(downloadLink.getDownloadURL());
         if (con.getResponseCode() == 200) { return true; }
         return false;
     }

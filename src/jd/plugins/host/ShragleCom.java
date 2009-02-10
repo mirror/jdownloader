@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.JDHash;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -113,7 +113,7 @@ public class ShragleCom extends PluginForHost {
             br.setFollowRedirects(true);
             dl = br.openDownload(downloadLink, form, true, 0);
         }
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);
@@ -158,7 +158,7 @@ public class ShragleCom extends PluginForHost {
         sleep(Long.parseLong(wait.trim()) * 1000l, downloadLink);
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, form, true, 1);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (!con.isContentDisposition()) {
             con.disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 60 * 60 * 1000l);

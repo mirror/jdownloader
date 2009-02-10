@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.gui.skins.simple.ConvertDialog.ConversionMode;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -43,7 +43,7 @@ public class ClipfishDe extends PluginForHost {
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) {
         try {
-            HTTPConnection urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
+            URLConnectionAdapter urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
             if (!urlConnection.isOK()) return false;
             downloadLink.setDownloadSize(urlConnection.getContentLength());
             return true;
@@ -77,7 +77,7 @@ public class ClipfishDe extends PluginForHost {
             return;
         }
         br.openGetConnection(downloadLink.getDownloadURL());
-        HTTPConnection urlConnection;
+        URLConnectionAdapter urlConnection;
         dl = new RAFDownload(this, downloadLink, br.createGetRequest(downloadLink.getDownloadURL()));
         dl.setChunkNum(1);
         dl.setResume(false);

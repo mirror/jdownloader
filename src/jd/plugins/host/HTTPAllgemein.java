@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -78,7 +78,7 @@ public class HTTPAllgemein extends PluginForHost {
             br.getHeaders().put("Authorization", basicauth);
         }
         br.setFollowRedirects(true);
-        HTTPConnection urlConnection = null;
+        URLConnectionAdapter urlConnection = null;
         try {
             urlConnection = br.openGetConnection(downloadLink.getDownloadURL());
             if (urlConnection.getResponseCode() == 401) {

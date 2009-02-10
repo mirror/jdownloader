@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.http.Request;
 import jd.parser.Form;
 import jd.parser.Regex;
@@ -293,7 +293,7 @@ public class Netloadin extends PluginForHost {
             dl = RAFDownload.download(downloadLink, con, true, 0);
             // dl.headFake(null);
             dl.setFirstChunkRangeless(true);
-            HTTPConnection connection = dl.connect(br);
+            URLConnectionAdapter connection = dl.connect(br);
             for (int i = 0; i < 10 && (!connection.isOK()); i++) {
                 try {
                     con = br.createRequest(url);

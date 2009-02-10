@@ -20,7 +20,7 @@ import java.io.IOException;
 
 import jd.PluginWrapper;
 import jd.config.Configuration;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginForHost;
@@ -45,7 +45,7 @@ public class RappersIn extends PluginForHost {
 
     @Override
     public boolean getFileInformation(DownloadLink downloadLink) throws IOException {
-        HTTPConnection urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
+        URLConnectionAdapter urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
         if (!urlConnection.isOK()) return false;
         downloadLink.setDownloadSize(urlConnection.getContentLength());
         return true;
@@ -74,7 +74,7 @@ public class RappersIn extends PluginForHost {
             linkStatus.addStatus(LinkStatus.ERROR_FILE_NOT_FOUND);
             return;
         }
-        HTTPConnection urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
+        URLConnectionAdapter urlConnection = br.openGetConnection(getDownloadUrl(downloadLink));
 
         if (urlConnection.getContentLength() == 0) {
             linkStatus.addStatus(LinkStatus.ERROR_FATAL);

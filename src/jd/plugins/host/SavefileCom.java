@@ -21,7 +21,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Encoding;
-import jd.http.HTTPConnection;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
@@ -82,7 +82,7 @@ public class SavefileCom extends PluginForHost {
         /* Datei herunterladen */
         br.setFollowRedirects(true);
         dl = br.openDownload(downloadLink, linkurl, true, 0);
-        HTTPConnection con = dl.getConnection();
+        URLConnectionAdapter con = dl.getConnection();
         if (con.getResponseCode() == 416) {
             // HTTP/1.1 416 Requested Range Not Satisfiable
             con.disconnect();
