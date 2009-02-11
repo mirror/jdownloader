@@ -3,6 +3,7 @@ package jd.gui.skins.simple.components;
 import java.awt.AlphaComposite;
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
@@ -46,9 +47,15 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
             cache[x] = 0;
 
         }
+
         this.setVisible(false);
         JDUtilities.getController().addControlListener(this);
 
+    }
+
+    public Dimension getPreferredSize() {
+     
+return new Dimension(300,55);
     }
 
     public void start() {
@@ -185,6 +192,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
             fadeTimer = null;
         }
         this.setVisible(true);
+
         fadeSteps = .1f;
         fadeTimer = new Timer(75, this);
         fadeTimer.setInitialDelay(0);

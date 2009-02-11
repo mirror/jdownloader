@@ -71,6 +71,7 @@ import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
@@ -977,7 +978,10 @@ public class SimpleGUI implements UIInterface, ActionListener, UIListener, Windo
         toolBar.add(createMenuButton(actionUpdate));
         if (guiConfig.getBooleanProperty(SimpleGUI.PARAM_SHOW_SPEEDMETER, true)) {
             speedmeter = new SpeedMeterPanel();
-            toolBar.add(Box.createGlue());
+          if(!UIManager.getLookAndFeel().getName().equals("Nimbus")){
+              toolBar.add(Box.createGlue());
+          }
+//            toolBar.add(Box.createGlue());
             toolBar.add(speedmeter);
         }
         JPanel panel = new JPanel(new BorderLayout());
