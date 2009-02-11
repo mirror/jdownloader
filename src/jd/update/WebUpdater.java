@@ -71,8 +71,11 @@ public class WebUpdater implements Serializable {
 
     private JProgressBar progressload = null;
 
-    private String primaryUpdatePrefix;
-    private String secondaryUpdatePrefix;
+    private static String primaryUpdatePrefix;
+    private static String primaryUpdatePrefixfromServer = null;
+    private static String secondaryUpdatePrefix;
+    private static String secondaryUpdatePrefixfromServer = null;
+    private static boolean useUpdatePrefixFromServer = true;
 
     private Integer switchtosecondary = 0;
 
@@ -357,7 +360,7 @@ public class WebUpdater implements Serializable {
         if (progresslist != null) {
             progresslist.setValue(20);
         }
-
+        JDUpdateUtils.update_ServerList();
         source = JDUpdateUtils.get_UpdateList();
 
         if (progresslist != null) {
@@ -476,20 +479,34 @@ public class WebUpdater implements Serializable {
         return this.OSFilter;
     }
 
+    public static void setIgnoreUpdatePrefixFromServer(boolean b) {
+        useUpdatePrefixFromServer = b;
+    }
+
     public String getprimaryUpdatePrefix() {
-        return this.primaryUpdatePrefix;
+        if (useUpdatePrefixFromServer && primaryUpdatePrefixfromServer != null) return primaryUpdatePrefixfromServer;
+        return primaryUpdatePrefix;
     }
 
     public String getsecondaryUpdatePrefix() {
-        return this.secondaryUpdatePrefix;
+        if (useUpdatePrefixFromServer && secondaryUpdatePrefixfromServer != null) return secondaryUpdatePrefixfromServer;
+        return secondaryUpdatePrefix;
     }
 
-    public void setprimaryUpdatePrefix(String prefix) {
-        this.primaryUpdatePrefix = prefix;
+    public static void setprimaryUpdatePrefix(String prefix) {
+        primaryUpdatePrefix = prefix;
     }
 
-    public void setsecondaryUpdatePrefix(String prefix) {
-        this.secondaryUpdatePrefix = prefix;
+    public static void setprimaryUpdatePrefixfromServer(String prefix) {
+        primaryUpdatePrefixfromServer = prefix;
+    }
+
+    public static void setsecondaryUpdatePrefix(String prefix) {
+        secondaryUpdatePrefix = prefix;
+    }
+
+    public static void setsecondaryUpdatePrefixfromServer(String prefix) {
+        secondaryUpdatePrefixfromServer = prefix;
     }
 
     /**

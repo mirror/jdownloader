@@ -175,8 +175,8 @@ public class Main {
             updater.setOSFilter(OSFilter);
             updater.ignorePlugins(!SubConfiguration.getSubConfig("WEBUPDATE").getBooleanProperty("WEBUPDATE_DISABLE", false));
             if (AllPlugins) updater.ignorePlugins(false);
-            updater.setprimaryUpdatePrefix(clonePrefix);
-            updater.setsecondaryUpdatePrefix(clonePrefix);
+            WebUpdater.setprimaryUpdatePrefix(clonePrefix);
+            WebUpdater.setsecondaryUpdatePrefix(clonePrefix);
             updater.setLogger(log);
             Main.trace("Start Webupdate");
             Vector<Vector<String>> files;
@@ -374,7 +374,7 @@ public class Main {
                 Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
                 logWindow.setText(log.toString());
-                Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());                
+                Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
                 System.exit(0);
                 return;
             }
@@ -479,7 +479,7 @@ public class Main {
         Main.runCommand("java", new String[] { "-Xmx512m", "-jar", "JDownloader.jar" }, WebUpdater.getJDDirectory().getAbsolutePath(), 0);
 
         logWindow.setText(log.toString());
-        Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());        
+        Main.writeLocalFile(new File(WebUpdater.getJDDirectory(), "updateLog.txt"), log.toString());
         System.exit(0);
     }
 

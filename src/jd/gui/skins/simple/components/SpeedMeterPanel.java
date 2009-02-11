@@ -19,7 +19,6 @@ import javax.swing.UIManager;
 import javax.swing.plaf.FontUIResource;
 
 import jd.config.Configuration;
-import jd.config.Property;
 import jd.event.ControlEvent;
 import jd.event.ControlListener;
 import jd.utils.JDUtilities;
@@ -74,18 +73,17 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         };
         th.start();
 
-       
         fadeIn();
         // ctor
     }
 
     public void stop() {
-        if(th!=null){
-        th.interrupt();
-        th = null;
+        if (th != null) {
+            th.interrupt();
+            th = null;
         }
         fadeOut();
-       
+
     }
 
     // public Dimension getPreferredSize() {
@@ -102,7 +100,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
         Graphics2D g2 = (Graphics2D) g;
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setStroke(new BasicStroke(1));
-     
+
         // g2.clearRect(0, 0, getWidth(), getHeight());
         Color col1 = new Color(0x7CD622);
         Color col2 = new Color(0x339933);
@@ -169,9 +167,7 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
     } // paintComponent
 
     public void controlEvent(ControlEvent event) {
-
         if (event.getID() == ControlEvent.CONTROL_JDPROPERTY_CHANGED) {
-            Property p = (Property) event.getSource();
             if (event.getParameter().equals(Configuration.PARAM_DOWNLOAD_MAX_SPEED)) {
                 update();
             }
@@ -210,18 +206,17 @@ public class SpeedMeterPanel extends JPanel implements ControlListener, ActionLi
 
     public void actionPerformed(ActionEvent e) {
         opacity += fadeSteps;
-        if (opacity > 1 ) {
+        if (opacity > 1) {
             opacity = 1;
             fadeTimer.stop();
             fadeTimer = null;
-        }else if(opacity < 0) {
+        } else if (opacity < 0) {
             opacity = 0;
             this.setVisible(false);
             fadeTimer.stop();
             fadeTimer = null;
         }
-        
-  
+
         update();
     }
     // public void paintComponent(Graphics g) {

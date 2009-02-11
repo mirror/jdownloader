@@ -25,6 +25,8 @@ public class JDUpdateUtils {
 
     private static Integer lock = 1;
 
+    private static boolean ServerListUpdated = false;
+
     private static void updateLists_ParseZip(ByteBuffer updateLists_Internal) throws IOException {
         ZipInputStream ZipStream = new ZipInputStream(InputStreamfromByteBuffer(updateLists_Internal));
         ZipEntry ze = null;
@@ -39,16 +41,49 @@ public class JDUpdateUtils {
         }
     }
 
+    public static synchronized void update_ServerList() {
+        if (ServerListUpdated) return;
+        try {
+            String ServerList = ByteBuffer2String(download(listpath + "server.lst", -1));
+            String Servers[] = splitLines(ServerList);
+            if (Servers.length > 0) {
+                try {
+                    new URL(Servers[0].trim());
+                    WebUpdater.setprimaryUpdatePrefixfromServer(Servers[0].trim());
+                } catch (Exception e) {
+                }
+            }
+            if (Servers.length > 1) {
+                try {
+                    new URL(Servers[1].trim());
+                    WebUpdater.setsecondaryUpdatePrefixfromServer(Servers[1].trim());
+                } catch (Exception e) {
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        ServerListUpdated = true;
+    }
+
+    private static String ByteBuffer2String(ByteBuffer input) {
+        if (input == null) return null;
+        byte[] b = new byte[input.limit()];
+        input.get(b);
+        try {
+            return new String(b, "UTF-8").trim();
+        } catch (Exception e) {
+        }
+        return null;
+    }
+
     private static synchronized void updateLists_Internal() {
         if (System.currentTimeMillis() - last_updateLists_Internal < interval_updateLists_Internal) return;
         String newhash = null;
         /* update.md5 holen */
         System.out.println("Fetch Update Hash");
         try {
-            ByteBuffer hashfile = download(listpath + "update.md5", -1);
-            byte[] b = new byte[hashfile.limit()];
-            hashfile.get(b);
-            newhash = new String(b, "UTF-8").trim();
+            newhash = ByteBuffer2String(download(listpath + "update.md5", -1));
         } catch (Exception e) {
             e.printStackTrace();
             System.out.println("Could not fetch Update Hash!");
@@ -246,6 +281,10 @@ public class JDUpdateUtils {
 
     public static void setUpdateUrl(String url) {
         listpath = url;
+    }
+
+    public static String[] splitLines(String source) {
+        return source.split("\r\n|\r|\n");
     }
 
 }

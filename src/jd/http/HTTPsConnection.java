@@ -1,10 +1,8 @@
 package jd.http;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.Proxy;
 import java.net.URLConnection;
 import java.util.HashMap;
