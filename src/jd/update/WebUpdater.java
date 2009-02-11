@@ -75,7 +75,7 @@ public class WebUpdater implements Serializable {
     private static String primaryUpdatePrefixfromServer = null;
     private static String secondaryUpdatePrefix;
     private static String secondaryUpdatePrefixfromServer = null;
-    private static boolean useUpdatePrefixFromServer = true;
+    private boolean useUpdatePrefixFromServer = true;
 
     private Integer switchtosecondary = 0;
 
@@ -479,7 +479,7 @@ public class WebUpdater implements Serializable {
         return this.OSFilter;
     }
 
-    public static void setIgnoreUpdatePrefixFromServer(boolean b) {
+    public void useUpdatePrefixFromServer(boolean b) {
         useUpdatePrefixFromServer = b;
     }
 

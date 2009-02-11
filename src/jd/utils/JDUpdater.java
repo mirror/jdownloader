@@ -96,7 +96,8 @@ public class JDUpdater {
         ftp.stor(new FileInputStream(file), filename);
         // testFile = new File(cw);
         if (cw.startsWith("/") || cw.startsWith("\\")) cw = cw.substring(1);
-       // Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" + filename);
+        // Browser.downloadBinary(testFile.getAbsolutePath(), test + cw + "/" +
+        // filename);
         String online = test + cw.replace("\\", "/") + "/" + filename;
         new Browser().getDownload(testFile, online);
         String hash2 = JDHash.getMD5(testFile);
@@ -135,7 +136,7 @@ public class JDUpdater {
             logger.severe("ABBRUCH");
             return;
         }
-        SKIP_UPLOAD=(JOptionPane.showConfirmDialog(null, "Skip upload?")==JOptionPane.OK_OPTION);
+        SKIP_UPLOAD = (JOptionPane.showConfirmDialog(null, "Skip upload?") == JOptionPane.OK_OPTION);
         workingdir = fc.getSelectedFile();
         if (workingdir == null) {
             logger.severe("ABBRUCH");
@@ -176,6 +177,7 @@ public class JDUpdater {
 
         System.out.println("Hashlist laden");
         WebUpdater updater = new WebUpdater();
+        updater.useUpdatePrefixFromServer(false);
         updater.setOSFilter(false);
         WebUpdater.setJDDirectory(workingdir);
         updater.ignorePlugins(false);
@@ -196,16 +198,15 @@ public class JDUpdater {
         }
 
         System.out.println("Working dir überprüfen");
-        
+
         ArrayList<String> hashlist = new ArrayList<String>();
         for (File f : localfiles) {
-            if(f.getName().endsWith(".jar")){
+            if (f.getName().endsWith(".jar")) {
                 hashlist.add(JDHash.getMD5(f));
-                }
+            }
             if (!webupdaterfiles.containsKey(f.getAbsolutePath())) {
                 if (!f.isDirectory()) {
-                    
-             
+
                     int answer = JOptionPane.showConfirmDialog(null, "Datei " + f.getAbsolutePath() + " ist im Workingdir, aber nicht in der Updatelist. entfernen?");
                     if (answer == JOptionPane.CANCEL_OPTION) break;
                     if (answer == JOptionPane.OK_OPTION) {
@@ -219,7 +220,7 @@ public class JDUpdater {
             }
 
         }
-        
+
         System.out.println(hashlist);
         System.out.println("Workingdir aktualisieren");
         // boolean success = false;
