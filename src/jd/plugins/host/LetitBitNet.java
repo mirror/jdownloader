@@ -18,6 +18,7 @@ package jd.plugins.host;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,6 +30,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.utils.JDLocale;
 
 public class LetitBitNet extends PluginForHost {
 
@@ -68,34 +70,55 @@ public class LetitBitNet extends PluginForHost {
     @Override
     public void handleFree(DownloadLink downloadLink) throws Exception {
         getFileInformation(downloadLink);
+        br.setDebug(true);
         Form forms[] = br.getForms();
-        String id = forms[3].getVarsMap().get("uid");
-        Form down = forms[4];
-        if (forms.length != 8) throw new PluginException(LinkStatus.ERROR_FATAL, "Your country is blocked by Letitbit");
-        URLConnectionAdapter con = br.openGetConnection("http://letitbit.net/cap.php?jpg=" + id + ".jpg");
+        String captchaurl = null;
+        if (forms.length != 8) {
+            //first trying to bypass block using webproxy:
+            br.setFollowRedirects(true);
+            String randomain = String.valueOf((int)(Math.random()*9+1));
+            br.getPage("http://www.gur"+randomain+".info/index.php");
+            br.postPage("http://www.gur"+randomain+".info/index.php", "q="+downloadLink.getDownloadURL()+"&hl[include_form]=0&hl[remove_scripts]=0&hl[accept_cookies]=1&hl[show_images]=1&hl[show_referer]=0&hl[strip_meta]=0&hl[strip_title]=0&hl[session_cookies]=0") ;  
+            forms = br.getForms();
+            captchaurl = br.getRegex(Pattern.compile("<div.*?class=\"cont.*?<img src=\"(.*?)\"", Pattern.DOTALL | Pattern.CASE_INSENSITIVE)).getMatch(0);
+            
+            //formaction =  forms[3].action;          
+            if (captchaurl==null) throw new PluginException(LinkStatus.ERROR_FATAL, JDLocale.L("plugins.hoster.letitbitnet.errors.countryblock","Letitbit forbidden downloading this file in your country"));
+
+
+        }
+        else {
+            String id = forms[3].getVarsMap().get("uid");
+            captchaurl = "http://letitbit.net/cap.php?jpg=" + id + ".jpg";
+
+        }
+        Form down = br.getFormbyID("Premium");
+        URLConnectionAdapter con = br.openGetConnection(captchaurl);
         File file = this.getLocalCaptchaFile(this);
         Browser.download(file, con);
-        down.action = "http://letitbit.net/download3.php";
         down.method = Form.METHOD_POST;
         down.put("frameset", "Download+file");
         String code = Plugin.getCaptchaCode(file, this, downloadLink);
         down.put("cap", code);
         down.put("fix", "1");
-        br.setDebug(true);
+        br.getPage(downloadLink.getDownloadURL());
+        down.action = "http://letitbit.net/download3.php";
         br.submitForm(down);
-        String url = br.getRegex("link=(.*?)\"").getMatch(0);
+        if (!br.containsHTML("<frame")) throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        br.getPage(br.getRegex("<frame.*?src=\"(.*?)\"").getMatch(0));
+        String url = br.getRegex("<div.*?id=\"links\".*?>\\s+<a\\s+href=\"(.*?)\"").getMatch(0);
         if (url == null) throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFEKT);
-        this.sleep(60000, downloadLink);
+        this.sleep(2000, downloadLink);
         dl = br.openDownload(downloadLink, url, true, 1);
         if (dl.getConnection().getResponseCode() == 404) {
             dl.getConnection().disconnect();
-            throw new PluginException(LinkStatus.ERROR_RETRY);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
         }
         dl.startDownload();
     }
 
     public int getMaxSimultanFreeDownloadNum() {
-        return 20;
+        return 10;
     }
 
     @Override
